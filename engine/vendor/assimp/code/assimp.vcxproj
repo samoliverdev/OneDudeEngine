@@ -1,0 +1,841 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B1882269-B8CD-32C8-AA36-4FEB5BAE2F27}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>assimp</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">assimp.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">assimp-vc143-mtd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">assimp.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">assimp-vc143-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">assimp.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">assimp-vc143-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">assimp.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">assimp-vc143-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_DEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Debug\assimp-vc143-mtd.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ProgramDataBaseFileName>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Release\assimp-vc143-mt.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ProgramDataBaseFileName>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\MinSizeRel\assimp-vc143-mt.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\RelWithDebInfo\assimp-vc143-mt.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;OPENDDL_STATIC_LIBARY;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_OBJ_EXPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_FBX_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_GLTF_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\.;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\pugixml\src;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\rapidjson\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\unzip;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\contrib\openddlparser\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..\include;E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/c++/OneDudeEngine_0.2 -BE:/c++/OneDudeEngine_0.2 --check-stamp-file E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/c++/OneDudeEngine_0.2 -BE:/c++/OneDudeEngine_0.2 --check-stamp-file E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/c++/OneDudeEngine_0.2 -BE:/c++/OneDudeEngine_0.2 --check-stamp-file E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/c++/OneDudeEngine_0.2 -BE:/c++/OneDudeEngine_0.2 --check-stamp-file E:/c++/OneDudeEngine_0.2/engine/vendor/assimp/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Assimp.cpp" />
+    <ResourceCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\res\assimp.rc" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CApi\CInterfaceIOWrapper.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CApi\CInterfaceIOWrapper.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\StbCommon.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Compression.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Compression.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\BaseImporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\BaseProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\BaseProcess.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Importer.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\ScenePrivate.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\PostStepRegistry.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\ImporterRegistry.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\DefaultProgressHandler.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\DefaultIOStream.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\IOSystem.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\DefaultIOSystem.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\ZipArchiveIOSystem.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\PolyTools.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Maybe.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Importer.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\IFF.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\SGSpatialSort.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\VertexTriangleAdjacency.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\VertexTriangleAdjacency.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\SpatialSort.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\SceneCombiner.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\ScenePreprocessor.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\ScenePreprocessor.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\SkeletonMeshBuilder.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\StackAllocator.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\StackAllocator.inl" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\StandardShapes.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\TargetAnimation.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\TargetAnimation.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\RemoveComments.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Subdivision.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\scene.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Bitmap.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Version.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\CreateAnimMesh.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\simd.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\simd.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\material.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\AssertHandler.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Exceptional.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Base64.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Geometry\GeometryUtils.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Geometry\GeometryUtils.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\LogStream.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Logger.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\NullLogger.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Win32DebugLogStream.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\DefaultLogger.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\FileLogStream.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\StdOStreamLogStream.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Common\Exporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\CApi\AssimpCExport.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\BlobIOSystem.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\CalcTangentsProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\CalcTangentsProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ComputeUVMappingProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ComputeUVMappingProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ConvertToLHProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ConvertToLHProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\EmbedTexturesProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\EmbedTexturesProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindDegenerates.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindDegenerates.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindInstancesProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindInstancesProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindInvalidDataProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FindInvalidDataProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FixNormalsStep.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\FixNormalsStep.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\DropFaceNormalsProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\DropFaceNormalsProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenFaceNormalsProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenFaceNormalsProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenVertexNormalsProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenVertexNormalsProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\PretransformVertices.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\PretransformVertices.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ImproveCacheLocality.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ImproveCacheLocality.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\JoinVerticesProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\JoinVerticesProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\LimitBoneWeightsProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\LimitBoneWeightsProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\RemoveRedundantMaterials.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\RemoveRedundantMaterials.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\RemoveVCProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\RemoveVCProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SortByPTypeProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SortByPTypeProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SplitLargeMeshes.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SplitLargeMeshes.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\TextureTransform.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\TextureTransform.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\TriangulateProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\TriangulateProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ValidateDataStructure.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ValidateDataStructure.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\OptimizeGraph.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\OptimizeGraph.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\OptimizeMeshes.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\OptimizeMeshes.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\DeboneProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\DeboneProcess.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ProcessHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ProcessHelper.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\MakeVerboseFormat.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\MakeVerboseFormat.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ScaleProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ScaleProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ArmaturePopulate.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\ArmaturePopulate.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenBoundingBoxesProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\GenBoundingBoxesProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SplitByBoneCountProcess.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\PostProcessing\SplitByBoneCountProcess.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Material\MaterialSystem.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\Material\MaterialSystem.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STEPParser\STEPFileReader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STEPParser\STEPFileReader.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STEPParser\STEPFileEncoding.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STEPParser\STEPFileEncoding.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter_Node.hpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter_Geometry.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter_Material.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AMF\AMFImporter_Postprocess.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3DS\3DSConverter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3DS\3DSHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3DS\3DSLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3DS\3DSLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AC\ACLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\AC\ACLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\ASE\ASELoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\ASE\ASELoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\ASE\ASEParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\ASE\ASEParser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Assbin\AssbinLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Assbin\AssbinLoader.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\B3D\B3DImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\B3D\B3DImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\BVH\BVHLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\BVH\BVHLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaHelper.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Collada\ColladaParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\DXF\DXFLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\DXF\DXFLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\DXF\DXFHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\CSM\CSMLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\CSM\CSMLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\HMP\HMPFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\HMP\HMPLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\HMP\HMPLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\HMP\HalfLifeFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRMeshLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRMeshLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRShared.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRShared.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IQM\IQMImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IQM\iqm.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IQM\IQMImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Irr\IRRLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOAnimation.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOAnimation.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOBLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWO\LWOMaterial.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWS\LWSLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\LWS\LWSLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\M3DMaterials.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\M3DImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\M3DImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\M3DWrapper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\M3DWrapper.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\M3D\m3d.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD2\MD2FileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD2\MD2Loader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD2\MD2Loader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD2\MD2NormalTable.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD3\MD3FileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD3\MD3Loader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD3\MD3Loader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD5\MD5Loader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD5\MD5Loader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD5\MD5Parser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MD5\MD5Parser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDC\MDCFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDC\MDCLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDC\MDCLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDC\MDCNormalTable.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\MDLDefaultColorMap.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\MDLFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\MDLLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\MDLLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\MDLMaterialLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HalfLifeMDLBaseHeader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1FileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1MDLLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1MDLLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1ImportDefinitions.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1ImportSettings.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\HL1MeshTrivert.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\LogFunctions.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\UniqueNameGenerator.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MDL\HalfLife\UniqueNameGenerator.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\NFF\NFFLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\NFF\NFFLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\NDO\NDOLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\NDO\NDOLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\OFF\OFFLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\OFF\OFFLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileMtlImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileMtlImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjFileParser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Obj\ObjTools.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreImporter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreStructs.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreParsingUtils.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreBinarySerializer.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreXmlSerializer.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreImporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreStructs.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreBinarySerializer.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreXmlSerializer.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ogre\OgreMaterial.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\OpenGEX\OpenGEXImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\OpenGEX\OpenGEXImporter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\OpenGEX\OpenGEXStructs.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ply\PlyLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ply\PlyLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ply\PlyParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Ply\PlyParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MS3D\MS3DLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MS3D\MS3DLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\COB\COBLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\COB\COBLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\COB\COBScene.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderDNA.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderDNA.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderDNA.inl" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderScene.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderScene.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderSceneGen.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderIntermediate.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderModifier.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderModifier.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderBMesh.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderBMesh.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderTessellator.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderTessellator.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderCustomData.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Blender\BlenderCustomData.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCReaderGen1_2x3.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCReaderGen2_2x3.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCReaderGen_2x3.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCUtil.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCUtil.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCGeometry.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCMaterial.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCProfile.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCCurve.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCBoolean.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\IFC\IFCOpenings.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\XGL\XGLLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\XGL\XGLLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXCompileConfig.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXTokenizer.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXTokenizer.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXImportSettings.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXConverter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXConverter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXUtil.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXUtil.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXDocument.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXDocument.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXProperties.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXProperties.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXMeshGeometry.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXMeshGeometry.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXMaterial.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXModel.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXAnimation.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXNodeAttribute.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXDeformer.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXBinaryTokenizer.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXDocumentUtil.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\FBX\FBXCommon.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3D\Q3DLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3D\Q3DLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3BSP\Q3BSPFileData.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3BSP\Q3BSPFileParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3BSP\Q3BSPFileParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3BSP\Q3BSPFileImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Q3BSP\Q3BSPFileImporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Raw\RawLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Raw\RawLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\SIB\SIBImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\SIB\SIBImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\SMD\SMDLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\SMD\SMDLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STL\STLLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\STL\STLLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Terragen\TerragenLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Terragen\TerragenLoader.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Unreal\UnrealLoader.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\Unreal\UnrealLoader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X\XFileHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X\XFileImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X\XFileImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X\XFileParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X\XFileParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Geometry2D.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Geometry3D.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Group.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Light.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Metadata.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Networking.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Postprocess.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Rendering.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Shape.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Texturing.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Macro.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DImporter_Node.hpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DGeoHelper.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DGeoHelper.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DXmlHelper.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\X3D\X3DXmlHelper.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFCommon.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFCommon.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFAsset.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFAsset.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFAssetWriter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFAssetWriter.inl" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF\glTFImporter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2Asset.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2Asset.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2AssetWriter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2AssetWriter.inl" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2Importer.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\glTF2\glTF2Importer.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\3MFTypes.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\XmlSerializer.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\XmlSerializer.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\D3MFImporter.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\D3MFImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\D3MFOpcPackage.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\D3MFOpcPackage.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\3MF\3MFXmlTags.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDCpp14.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDImporter.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDImporter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDPmdParser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDPmxParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDPmxParser.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\code\AssetLib\MMD\MMDVmdParser.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\crypt.c" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\crypt.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\ioapi.c" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\ioapi.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\unzip.c" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\unzip\unzip.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\common\shapes.cc" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\common\shapes.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\common\utils.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\advancing_front.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\advancing_front.cc" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\cdt.cc" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\cdt.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\sweep.cc" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\sweep.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\sweep_context.cc" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\poly2tri\poly2tri\sweep\sweep_context.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\clipper\clipper.hpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\clipper\clipper.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\OpenDDLParser.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\DDLNode.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\OpenDDLCommon.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\OpenDDLExport.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\Value.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\code\OpenDDLStream.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\OpenDDLParser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\OpenDDLParserUtils.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\OpenDDLCommon.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\OpenDDLExport.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\OpenDDLStream.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\DDLNode.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\openddlparser\include\openddlparser\Value.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcAdjacencyInfo.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcArithmeticCodec.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcArithmeticCodec.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcBinaryStream.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcCommon.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDVEncodeParams.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDynamicVectorDecoder.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDynamicVectorDecoder.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDynamicVectorEncoder.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDynamicVectorEncoder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcDynamicVector.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcFIFO.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcIndexedFaceSet.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcIndexedFaceSet.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcSC3DMCDecoder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcSC3DMCDecoder.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcSC3DMCEncodeParams.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcSC3DMCEncoder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcSC3DMCEncoder.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTimer.h" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTools.cpp" />
+    <ClCompile Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleFans.cpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleFans.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleListDecoder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleListDecoder.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleListEncoder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcTriangleListEncoder.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcVector.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\Open3DGC\o3dgcVector.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\pugixml\src\pugiconfig.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\pugixml\src\pugixml.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\stb\stb_image.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\anim.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\aabb.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ai_assert.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\camera.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\color4.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\color4.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\config.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ColladaMetaData.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\commonMetaData.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\defs.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\cfileio.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\light.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\material.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\material.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\matrix3x3.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\matrix3x3.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\matrix4x4.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\matrix4x4.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\mesh.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ObjMaterial.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\pbrmaterial.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\GltfMaterial.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\postprocess.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\quaternion.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\quaternion.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\scene.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\metadata.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\texture.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\types.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\vector2.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\vector2.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\vector3.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\vector3.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\version.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\cimport.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\AssertHandler.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\importerdesc.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Importer.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\IOStream.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\IOSystem.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\cexport.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Exporter.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\DefaultIOStream.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ZipArchiveIOSystem.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SceneCombiner.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\fast_atof.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\qnan.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\BaseImporter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Hash.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\MemoryIOWrapper.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ParsingUtils.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\StreamReader.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\StreamWriter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\StringComparison.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\StringUtils.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SGSpatialSort.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\GenericProperty.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SpatialSort.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SkeletonMeshBuilder.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SmallVector.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SmoothingGroups.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\SmoothingGroups.inl" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\StandardShapes.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\RemoveComments.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Subdivision.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Vertex.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\LineSplitter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\TinyFormatter.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Profiler.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\LogAux.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Bitmap.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\XMLTools.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\IOStreamBuffer.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\CreateAnimMesh.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\XmlParser.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\MathFunctions.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Exceptional.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\ByteSwapper.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Base64.hpp" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\include\assimp\Compiler\pstdint.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\c++\OneDudeEngine_0.2\ZERO_CHECK.vcxproj">
+      <Project>{DCF52214-7648-3485-A539-F0573868C010}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\c++\OneDudeEngine_0.2\engine\vendor\assimp\contrib\zlib\zlibstatic.vcxproj">
+      <Project>{790F3BA8-EBD9-36C0-AA65-3BDA5AEDE5E7}</Project>
+      <Name>zlibstatic</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

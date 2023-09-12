@@ -1,0 +1,12 @@
+Shader: res/Builtins/Shaders/Unlit.glsl
+Maps:
+  - Name: mainTex
+    Type: 0
+    Texture: res/textures/rock.jpg
+    Vector: [0, 0, 0, 0]
+    Value: 0
+  - Name: color
+    Type: 4
+    Texture: ""
+    Vector: [1, 1, 1, 1]
+    Value: 0
