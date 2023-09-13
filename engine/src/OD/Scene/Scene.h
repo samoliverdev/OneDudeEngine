@@ -107,6 +107,14 @@ public:
     inline EntityId id(){ return _id; }
     inline Scene* scene(){ return _scene; }
 
+    bool operator==(const Entity& other) const {
+        return _id == other._id && _scene == other._scene;
+    }
+
+    bool operator!=(const Entity& other) const {
+        return !(*this == other);
+    }
+
 private:
     EntityId _id;
     Scene* _scene;

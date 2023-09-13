@@ -77,7 +77,7 @@ void Application::vsync(bool enabled){ Platform::SetVSync(enabled); }
 bool Application::vsync(){ return Platform::IsVSync(); }
 
 void Application::_OnResize(int width, int height){
-    _width = _width;
+    _width = width;
     _heigth = height;
 
     //mainModule->OnResize(_width, _height);

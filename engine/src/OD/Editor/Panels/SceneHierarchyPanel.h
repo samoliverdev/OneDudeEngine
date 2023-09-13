@@ -12,7 +12,7 @@ private:
     Scene* _scene;
     Entity _selectionContext;
 
-    void DrawEntityNode(Entity entity);
+    void DrawEntityNode(Entity entity, bool root);
     void DrawComponents(Entity entity);
 };
 

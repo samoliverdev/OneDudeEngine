@@ -8,7 +8,7 @@
 using namespace OD;
 
 struct ECS_4: public OD::Module {
-    OD::Scene scene;
+    OD::Scene* scene;
     //CameraMovement camMove;
 
     Entity mainEntity;
@@ -23,11 +23,15 @@ struct ECS_4: public OD::Module {
 
         Application::vsync(false);
 
-        scene.AddSystem<PhysicsSystem>();
-        scene.AddSystem<StandRendererSystem>();
-        scene.AddSystem<ScriptSystem>();
-        scene.GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
-        scene.Start();
+        SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+        SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
+        SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+
+        scene = SceneManager::Get().NewScene();
+        scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
+        scene->Start();
+
+
         Ref<Model> floorModel = AssetManager::Get().LoadModel("res/models/plane.glb");
         floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -38,19 +42,19 @@ struct ECS_4: public OD::Module {
         cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
         cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
-        Entity e = scene.AddEntity();
+        Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().position(Vector3(0,-2, 0));
         e.GetComponent<TransformComponent>().localScale(Vector3(10, 1, 10));
         MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
         _meshRenderer.mesh = floorModel;
 
-        Entity e2 = scene.AddEntity();
+        Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().position(Vector3(-8, 0, -4));
         e2.GetComponent<TransformComponent>().localScale(Vector3(4*1, 4*1, 4*1));
         MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
         _meshRenderer2.mesh = cubeModel;
 
-        Entity camera = scene.AddEntity();
+        Entity camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
         camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 2, 4));
         camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
@@ -59,7 +63,7 @@ struct ECS_4: public OD::Module {
         //camMove.moveSpeed = 60;
         cam.farClipPlane = 1000;
 
-        mainEntity = scene.AddEntity();
+        mainEntity = scene->AddEntity("Main");
         mainEntity.GetComponent<TransformComponent>().localPosition(Vector3(2, 0, 0));
         MeshRendererComponent& meshRenderer = mainEntity.AddComponent<MeshRendererComponent>();
         
@@ -70,21 +74,21 @@ struct ECS_4: public OD::Module {
         );
         meshRenderer.subMeshIndex = -1;
 
-        light = scene.AddEntity();
+        light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(0,0,0);
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().localEulerAngles(Vector3(4, -125, 0));
         
         ///*
-        Entity pointLight = scene.AddEntity();
+        Entity pointLight = scene->AddEntity("Point Light");
         LightComponent& _pointLight = pointLight.AddComponent<LightComponent>();
         _pointLight.type = LightComponent::Type::Point;
         _pointLight.color *= 5;
         _pointLight.radius = 10;
         pointLight.GetComponent<TransformComponent>().position(Vector3(4, 4, 0));
 
-        Entity pointLight2 = scene.AddEntity();
+        Entity pointLight2 = scene->AddEntity("Point Light 2");
         LightComponent& _pointLight2 = pointLight2.AddComponent<LightComponent>();
         _pointLight2.type = LightComponent::Type::Point;
         _pointLight2.color = Vector3(0,0,5);
@@ -95,7 +99,7 @@ struct ECS_4: public OD::Module {
         for(int i = 0; i < 100; i++){
             float posRange = 20;
 
-            Entity e = scene.AddEntity();
+            Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
             mr.mesh = cubeModel;
         
@@ -104,8 +108,10 @@ struct ECS_4: public OD::Module {
             e.GetComponent<TransformComponent>().localEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
             otherEntity = e;
 
-            scene.SetParent(mainEntity.id(), e.id());
+            scene->SetParent(mainEntity.id(), e.id());
         }
+
+        Application::AddModule<Editor>();
     }
 
     void OnUpdate(float deltaTime) override {
@@ -114,14 +120,14 @@ struct ECS_4: public OD::Module {
         mainEntity.GetComponent<TransformComponent>().localEulerAngles(Vector3(0, Platform::GetTime() * 40, 0));
         otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
-        scene.Update();
+        scene->Update();
     }   
 
     void OnRender(float deltaTime) override {
         //Renderer::SetDepthTest(DepthTest::LESS);
         Renderer::SetCullFace(CullFace::BACK);
 
-        scene.Draw();
+        scene->Draw();
         
         Vector3 pos = otherEntity.GetComponent<TransformComponent>().position();
         //LogInfo("Pos (%f, %f, %f)", pos.x, pos.y, pos.z);
