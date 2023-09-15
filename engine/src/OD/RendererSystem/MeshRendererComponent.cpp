@@ -51,7 +51,18 @@ void MeshRendererComponent::Deserialize(YAML::Node& in, Entity& e){
 }
 
 void MeshRendererComponent::OnGui(Entity& e){
-    
+    MeshRendererComponent& mesh = e.GetComponent<MeshRendererComponent>();
+
+    if(mesh.mesh == nullptr){
+        ImGui::Text("No Model");
+    } else {
+        ImGui::Text("Path: %s", mesh.mesh->path().c_str());
+        ImGui::Text("Mesh: %zd", mesh.mesh->meshs.size());
+        ImGui::Text("Materials: %zd", mesh.mesh->materials.size());
+        ImGui::Text("Animations: %zd", mesh.mesh->animations.size());
+
+        ImGui::DragInt("subMeshIndex", &mesh.subMeshIndex);
+    }
 }
 
 }

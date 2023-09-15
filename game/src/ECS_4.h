@@ -1,6 +1,7 @@
 #pragma once
 
 #include <OD/OD.h>
+#include <OD/AnimationSystem/Animator.h>
 #include "CameraMovement.h"
 #include <assert.h>
 #include "Ultis.h"
@@ -18,6 +19,20 @@ struct ECS_4: public OD::Module {
 
     Transform gismoTransform;
 
+    void AddCharacter(Vector3 pos){
+        Entity character = scene->AddEntity("Character");
+        character.GetComponent<TransformComponent>().localPosition(pos);
+        character.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
+        MeshRendererComponent& charMesh = character.AddComponent<MeshRendererComponent>();
+        charMesh.mesh = AssetManager::Get().LoadModel(
+            "res/models/Skinned/VampireALusth.dae",
+            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkinnedModel.glsl")
+        );
+        Ref<Model> anim = AssetManager::Get().LoadModel("res/models/Skinned/Capoeira.dae");
+        AnimatorComponent& charAnimator = character.AddComponent<AnimatorComponent>();
+        charAnimator.Play(anim->animations[0].get());
+    }
+
     void OnInit() override {
         LogInfo("Game Init");
 
@@ -26,11 +41,11 @@ struct ECS_4: public OD::Module {
         SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
         SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
         SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+        SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
 
         scene = SceneManager::Get().NewScene();
         scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
         scene->Start();
-
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel("res/models/plane.glb");
         floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
@@ -66,7 +81,6 @@ struct ECS_4: public OD::Module {
         mainEntity = scene->AddEntity("Main");
         mainEntity.GetComponent<TransformComponent>().localPosition(Vector3(2, 0, 0));
         MeshRendererComponent& meshRenderer = mainEntity.AddComponent<MeshRendererComponent>();
-        
         meshRenderer.mesh = cubeModel;
         meshRenderer.mesh = AssetManager::Get().LoadModel(
             "res/models/backpack/backpack.obj",
@@ -76,9 +90,9 @@ struct ECS_4: public OD::Module {
 
         light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(0,0,0);
+        lightComponent.color = Vector3(1,1,1);
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(4, -125, 0));
+        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));
         
         ///*
         Entity pointLight = scene->AddEntity("Point Light");
@@ -109,6 +123,11 @@ struct ECS_4: public OD::Module {
             otherEntity = e;
 
             scene->SetParent(mainEntity.id(), e.id());
+        }
+
+        for(int i = 0; i < 5; i++){
+            float posRange = 20;
+            AddCharacter(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         }
 
         Application::AddModule<Editor>();
@@ -151,6 +170,7 @@ struct ECS_4: public OD::Module {
     }
 
     void OnGUI() override {
+        /*
         ImGui::Begin("Directional Light");
 
         static float translation[] = {45, -125, 0.0};
@@ -162,6 +182,7 @@ struct ECS_4: public OD::Module {
         light.GetComponent<LightComponent>().color = Vector3(color[0], color[1], color[2]);
         
         ImGui::End();
+        */
     }
 
     void OnResize(int width, int height) override{

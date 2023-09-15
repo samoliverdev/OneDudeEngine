@@ -66,8 +66,13 @@ std::mutex wakeMutex;    // used in conjunction with the wakeCondition above
 uint64_t currentLabel = 0;    // tracks the state of execution of the main thread
 std::atomic<uint64_t> finishedLabel;    // track the state of execution across background worker threads
 
+bool inited = false;
 
 void Initialize(){
+    if(inited == true) return;
+
+    inited = true;
+
     // Initialize the worker execution state to 0:
     finishedLabel.store(0);
 

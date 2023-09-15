@@ -18,17 +18,25 @@ public:
     inline void localPosition(Vector3 pos){ _localPosition = pos; _isDirt = true; }
 
     inline Vector3 localEulerAngles(){ 
-        Vector3 result = _localRotation.eulerAngles();
-        return Vector3(Mathf::Rad2Deg(result.x), Mathf::Rad2Deg(result.y), Mathf::Rad2Deg(result.z));
+        //Vector3 result = _localRotation.eulerAngles();
+        //return Vector3(Mathf::Rad2Deg(result.x), Mathf::Rad2Deg(result.y), Mathf::Rad2Deg(result.z));
+        return _localEulerAngles;
     }
 
     inline void localEulerAngles(Vector3 euler){ 
-        _localRotation.eulerAngles(Vector3(Mathf::Deg2Rad(euler.x), Mathf::Deg2Rad(euler.y), Mathf::Deg2Rad(euler.z)));
+        //_localRotation.eulerAngles(Vector3(Mathf::Deg2Rad(euler.x), Mathf::Deg2Rad(euler.y), Mathf::Deg2Rad(euler.z)));
+        //_isDirt = true;
+        _localEulerAngles = euler;
+        _localRotation.eulerAngles(Vector3(Mathf::Deg2Rad(_localEulerAngles.x), Mathf::Deg2Rad(_localEulerAngles.y), Mathf::Deg2Rad(_localEulerAngles.z)));
         _isDirt = true;
     }
 
     inline Quaternion localRotation(){ return _localRotation; }
-    inline void localRotation(Quaternion rot){ _localRotation = rot; _isDirt = true; }
+    inline void localRotation(Quaternion rot){ 
+        _localRotation = rot; 
+        _isDirt = true; 
+        _localEulerAngles = _localRotation.eulerAngles();
+    }
 
     inline Vector3 localScale(){ return _localScale; }
     inline void localScale(Vector3 scale){ _localScale = scale; _isDirt = true; }
@@ -40,6 +48,7 @@ protected:
     Vector3 _localPosition = Vector3::zero;
     Vector3 _localScale = Vector3::one;
     Quaternion _localRotation = Quaternion::identity;
+    Vector3 _localEulerAngles = Vector3::zero;
     Matrix4 _localModelMatrix = Matrix4::identity;
 
     //Entity* entity;

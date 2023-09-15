@@ -103,6 +103,12 @@ public:
         return GetComponent<T>();
     }
 
+    template<typename T>
+    void RemoveComponent(){
+        Assert(HasComponent<T>() && "Entity does not have component!");
+        _scene->_registry.remove<T>(_id);
+    }
+
     inline bool IsValid(){ return _isValid; }
     inline EntityId id(){ return _id; }
     inline Scene* scene(){ return _scene; }

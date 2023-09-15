@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "OD/Core/ImGui.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -50,6 +51,8 @@ void imguiOnInit(GLFWwindow* window){
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
 
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("res/Builtins/Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.0f);
+
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
@@ -60,6 +63,8 @@ void imguiOnInit(GLFWwindow* window){
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+
+    ImGuiSetDarkTheme();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
