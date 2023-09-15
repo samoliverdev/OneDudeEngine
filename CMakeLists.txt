@@ -42,6 +42,7 @@ add_subdirectory(engine/vendor/yaml-cpp)
 project(engine)
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
+    engine/vendor/tinyfiledialogs/*.c
     engine/vendor/glad/*.c 
     engine/vendor/stb/*.c 
     engine/vendor/glm/*.cpp

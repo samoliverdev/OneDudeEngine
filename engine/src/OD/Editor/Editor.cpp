@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Utils/PlatformUtils.h"
 
 namespace OD{
 
@@ -75,9 +76,34 @@ void Editor::DrawMainPanel(){
 
     if(ImGui::BeginMainMenuBar()){
         if(ImGui::BeginMenu("File")){
-            if(ImGui::MenuItem("Open", "Ctrl+O")){}
-            if(ImGui::MenuItem("Save", "Ctrl+S")){}
-            if(ImGui::MenuItem("Exit", "Alt+F4")){ Application::Quit(); }
+            if(ImGui::MenuItem("New", "Ctrl+N")){ 
+                Scene* scene = SceneManager::Get().NewScene();
+                scene->Start();
+                _sceneHierarchyPanel.UnselectContext();
+            }
+
+            if(ImGui::MenuItem("Open...", "Ctrl+O")){ 
+                std::string path = FileDialogs::OpenFile(""); 
+                if(path.empty() == false){
+                    Scene* scene = SceneManager::Get().NewScene();
+                    scene->Load(path.c_str());
+                    scene->Start();
+                }
+                _sceneHierarchyPanel.UnselectContext();
+            }
+
+            if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")){
+                std::string path = FileDialogs::SaveFile("");
+                if(path.empty() == false){
+                    Scene* scene = SceneManager::Get().activeScene();
+                    scene->Save(path.c_str());
+                } 
+            }
+
+            if(ImGui::MenuItem("Exit", "Alt+F4")){ 
+                Application::Quit(); 
+            }
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();

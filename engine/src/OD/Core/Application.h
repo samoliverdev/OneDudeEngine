@@ -42,7 +42,7 @@ public:
     }
 
     static std::vector<std::string> args;
-    
+
 private:
 
     static std::vector<Module*> _modules;
