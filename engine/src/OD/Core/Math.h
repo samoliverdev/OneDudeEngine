@@ -150,6 +150,9 @@ struct Matrix4: glm::mat4{
     Matrix4(glm::mat4 m);
     Matrix4(float f = 1.0f);
 
+    //operator glm::mat4(){ return (glm::mat4)*this; }
+    inline float* raw(){ return &((*this)[0].x); }
+
     static const Matrix4 identity;
     static const Matrix4 zero;
 

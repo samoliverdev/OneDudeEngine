@@ -200,6 +200,8 @@ struct Scene: public Asset {
         return static_cast<T*>(_systems[GetType<T>()]);
     }
 
+    Entity GetMainCamera2();
+
     void Start(){
         _running = true;
     }

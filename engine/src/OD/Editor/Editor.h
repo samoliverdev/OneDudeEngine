@@ -14,6 +14,8 @@ public:
     void OnGUI() override;
     void OnResize(int width, int height) override;
 
+    enum class GizmosType{None, Translation, Rotation, Scale};
+
 private:
     SceneHierarchyPanel _sceneHierarchyPanel;
 
@@ -21,7 +23,10 @@ private:
     bool _showInspector = true;
     bool _open = true;
 
+    GizmosType _gizmoType;
+
     void DrawMainPanel();
+    void DrawGizmos();
 };
 
 }

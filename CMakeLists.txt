@@ -47,6 +47,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/stb/*.c 
     engine/vendor/glm/*.cpp
     engine/vendor/imgui/*.cpp 
+    engine/vendor/ImGuizmo/*.cpp 
     engine/vendor/entt/*.cpp
     engine/src/*.cpp
 )
@@ -55,6 +56,7 @@ add_library(engine STATIC ${ENGINE_SOURCE_FILES})
 target_include_directories(engine PUBLIC 
     engine/vendor/
     engine/vendor/imgui/
+    engine/vendor/ImGuizmo/
     engine/vendor/glfw/include/
     engine/vendor/assimp/include/
     engine/vendor/bullet3/src

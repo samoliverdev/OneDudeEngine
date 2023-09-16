@@ -4,6 +4,7 @@
 #include "Scripts.h"
 #include "OD/OD.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/RendererSystem/CameraComponent.h"
 
 namespace OD{
 
@@ -174,6 +175,14 @@ Scene::~Scene(){
     for(auto i: _standSystems) delete i;
     for(auto i: _rendererSystems) delete i;
     for(auto i: _physicsSystems) delete i;
+}
+
+Entity Scene::GetMainCamera2(){
+    for(auto e: _registry.view<CameraComponent>()){
+        return Entity(e, this);
+    }
+
+    return Entity();
 }
 
 void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){

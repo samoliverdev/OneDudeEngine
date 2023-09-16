@@ -51,7 +51,6 @@ void SceneHierarchyPanel::OnGui(bool* showSceneHierarchy, bool* showInspector){
             ImGui::EndPopup();
         }
     }
-    ImGui::End();
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
