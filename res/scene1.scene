@@ -1,14 +1,367 @@
 Scene: Untitled
 Entities:
   - InfoComponent:
-      name: MainCube
+      name: PhysicsCube
     TransformComponent:
-      localPosition: [2, 13, 0]
+      localPosition: [0, 0, 0]
       localRotation: [0, 0, 0, 1]
+      localScale: [1, 1, 1]
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [3.15337372, 12.5317326, 0.0589562431]
+      localRotation: [1.84312321e-05, -0.0362665281, -0.000121493271, 0.999342144]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
       boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.29246891, 16.8656826, -1.35133684]
+      localRotation: [-0.233145326, -0.0907277837, 0.103138886, 0.962691069]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [-0.864761293, 12.5274134, -1.23860097]
+      localRotation: [0.0356647931, -0.00102315913, 0.999347746, 0.0055680112]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [6.65425444, 0.54507035, 0.195253089]
+      localRotation: [0.0056467792, 0.244105011, -0.000182033167, 0.969732344]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [-0.131875813, 4.07545757, -4.83711672]
+      localRotation: [-0.464489818, 0.0986871421, -0.00943301711, 0.880011976]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [2.83059382, 15.6682053, 0.426771462]
+      localRotation: [0.0633288845, -0.0113296965, -0.164950266, 0.984201431]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.80839384, 12.4692478, -0.0615702309]
+      localRotation: [0.00595373893, 0.00672119297, 0.000206109515, 0.999959648]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.68132758, 12.5321465, -1.24904001]
+      localRotation: [-3.68530482e-06, -0.0645993799, -0.000144712845, 0.997911274]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.70911348, 12.5321045, 1.18357015]
+      localRotation: [3.88304352e-06, -0.0189255066, -0.000145121739, 0.999820888]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.15350831, 14.9702177, -0.598347902]
+      localRotation: [-0.222342268, -0.0760917366, 0.180567235, 0.955075622]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.20290411, 15.9683571, -0.892234147]
+      localRotation: [-0.205633685, -0.08178664, 0.110876702, 0.968881845]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.41772997, 16.2079639, -2.59240794]
+      localRotation: [-0.679217637, -0.111544333, 0.062135946, 0.722745061]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [4.85878563, 9.52240467, 0.334196419]
+      localRotation: [-0.110684164, -0.0332443602, -0.578329086, 0.80757618]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [7.21648359, 0.5491184, -2.34306216]
+      localRotation: [0.214949355, 0.215365201, 0.673016846, 0.674138665]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [5.14370203, 0.550000012, 0.951815963]
+      localRotation: [0.705557942, -0.0467770323, 0.0467766486, 0.705557883]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [6.85622644, 0.549996376, 2.15519309]
+      localRotation: [0.473561108, -0.473562092, -0.525106847, 0.52511102]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.95345116, 13.3127098, -0.00716621289]
+      localRotation: [0.00811897125, -0.00341310003, -0.0132876653, 0.999872923]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [2.03042674, 14.0661602, 0.0810706094]
+      localRotation: [0.0229963548, -0.0043849037, -0.0325167403, 0.999197006]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [2.12990689, 14.8647814, 0.43043375]
+      localRotation: [0.0243567359, -0.000872823817, -0.012169851, 0.999628842]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [1.81484449, 13.5956507, 1.37023997]
+      localRotation: [0.0704083368, -0.0539178737, 0.00517703546, 0.996046543]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: PhysicsCube
+    TransformComponent:
+      localPosition: [0.762573123, 12.5323963, -0.0828587636]
+      localRotation: [9.11236111e-06, 0.0209473018, -0.000144290054, 0.999780595]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/mat1.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+    ScriptComponent:
+      {}
+  - InfoComponent:
+      name: Trigger
+    TransformComponent:
+      localPosition: [3.19030213, 25.8970432, 4.07078695]
+      localRotation: [0.735395908, -0.0338667557, 0.665206611, -0.124683902]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 38
+      boxShapeSize: [4, 5, 4]
+  - InfoComponent:
+      name: MainCube
+    TransformComponent:
+      localPosition: [-1.14256203, 6.02918196, -0.035901662]
+      localRotation: [7.93909567e-06, 0.00045162969, -0.000175670648, 0.999999881]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 74
+      boxShapeSize: [9, 12, 6]
     MeshRendererComponent:
       modelPath: res/models/Cube.glb
       materials:
@@ -31,8 +384,8 @@ Entities:
   - InfoComponent:
       name: Camera
     TransformComponent:
-      localPosition: [0, 15, 15]
-      localRotation: [-0.21643962, 0, 0, 0.976296008]
+      localPosition: [1.21516812, 15.5372562, 18.7261276]
+      localRotation: [-0.20074439, -0.0563882589, -0.0115748411, 0.977950931]
       localScale: [1, 1, 1]
     CameraComponent:
       type: 0
@@ -47,7 +400,7 @@ Entities:
       id: TestId
       speed: 20
   - InfoComponent:
-      name: Entity
+      name: Light
     TransformComponent:
       localPosition: [-2, 4, -1]
       localRotation: [0.0161147937, -0.886470556, 0.0309562311, 0.461467326]

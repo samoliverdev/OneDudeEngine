@@ -192,6 +192,7 @@ void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     gismoShader->SetMatrix4("view", camera.view);
     gismoShader->SetMatrix4("projection", camera.projection);
     
+    glLineWidth(lineWidth);
     glBindVertexArray(wiredCubeVAO);
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);

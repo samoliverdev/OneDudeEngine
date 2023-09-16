@@ -16,7 +16,7 @@ Mesh::~Mesh(){
 }
 
 void Mesh::UpdateMesh(){
-    Assert(isReadable == true && "Only can Update isReadable Mesh");
+    Assert(_isReadable == true && "Only can Update isReadable Mesh");
 
     //if(vao == 0){
         glGenVertexArrays(1, &_vao);

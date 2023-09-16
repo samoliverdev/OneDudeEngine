@@ -3,6 +3,7 @@
 #include "OD/RendererSystem/CameraComponent.h"
 #include "OD/RendererSystem/LightComponent.h"
 #include "OD/RendererSystem/MeshRendererComponent.h"
+#include "OD/PhysicsSystem/PhysicsSystem.h"
 #include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
 
@@ -51,6 +52,7 @@ void SceneHierarchyPanel::OnGui(bool* showSceneHierarchy, bool* showInspector){
             ImGui::EndPopup();
         }
     }
+    ImGui::End();
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
@@ -173,9 +175,17 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
-        float p[] = {transform.localPosition().x, transform.localPosition().y, transform.localPosition().z};
-        if(ImGui::DragFloat3("Position", p, 0.5f)){
-            transform.localPosition(Vector3(p[0], p[1], p[2]));
+        if(e.HasComponent<RigidbodyComponent>()){
+            RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
+            float p[] = {rb.position().x, rb.position().y, rb.position().z};
+            if(ImGui::DragFloat3("Position", p, 0.5f)){
+                rb.position(Vector3(p[0], p[1], p[2]));
+            }
+        } else {
+            float p[] = {transform.localPosition().x, transform.localPosition().y, transform.localPosition().z};
+            if(ImGui::DragFloat3("Position", p, 0.5f)){
+                transform.localPosition(Vector3(p[0], p[1], p[2]));
+            }
         }  
 
         float r[] = {transform.localEulerAngles().x, transform.localEulerAngles().y, transform.localEulerAngles().z};
@@ -193,6 +203,7 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
     DrawComponent<LightComponent>(entity, "Light");
     DrawComponent<AnimatorComponent>(entity, "Animator");
     DrawComponent<MeshRendererComponent>(entity, "MeshRenderer");
+    DrawComponent<RigidbodyComponent>(entity, "Rigidbody");
 }
 
 }

@@ -94,6 +94,7 @@ struct Test2{
 struct Physics_6: OD::Module {
     Scene* scene;
     //CameraMovement camMove;
+    Entity camera;
 
     bool spawnInput;
     bool lastSpawnInput;
@@ -126,13 +127,13 @@ struct Physics_6: OD::Module {
         //Application::SetVSync(false);
 
         scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
-        Entity& light = scene->AddEntity();
+        Entity& light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(0,0,0);
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().localEulerAngles(Vector3(4, -125, 0));
 
-        Entity camera = scene->AddEntity("Camera");
+        camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
         camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 15, 15));
         camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
@@ -163,21 +164,29 @@ struct Physics_6: OD::Module {
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
         floorEntityP.shape({25,0.1f,25});
         floorEntityP.mass(0);
+        floorEntityP.type(RigidbodyComponent::Type::Static);
+        //floorEntityP.neverSleep(true);
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Entity character2Entity = scene->AddEntity("MainCube");
-        scene->SetParent(floorEntity.id(), character2Entity.id());
+        //scene->SetParent(floorEntity.id(), character2Entity.id());
 
         MeshRendererComponent& character2Renderer = character2Entity.AddComponent<MeshRendererComponent>();
         character2Renderer.mesh = cubeModel;
         RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
         physicObject.shape({1,1,1});
         physicObject.mass(1);
+        //physicObject.neverSleep(true);
         character2Entity.GetComponent<TransformComponent>().position({2, 13, 0});
         character2Entity.GetComponent<TransformComponent>().rotation(Quaternion::identity);
 
-        scene->Save("res/scene1.scene");
+        Entity trigger = scene->AddEntity("Trigger");
+        RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();
+        _trigger.shape({4,1,4});
+        _trigger.type(RigidbodyComponent::Type::Trigger);
+        _trigger.neverSleep(true);
 
+        //scene->Save("res/scene1.scene");
         scene->Start();
 
         Application::AddModule<Editor>();
@@ -186,21 +195,29 @@ struct Physics_6: OD::Module {
     void OnUpdate(float deltaTime) override {
         scene->Update();
 
+        TransformComponent& camT = camera.GetComponent<TransformComponent>();
+        
+        /*RayResult hit;
+        if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.position(), camT.back() * 1000.0f, hit)){
+            LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
+        }*/
+
         lastSpawnInput = spawnInput;
         spawnInput = Input::IsKey(KeyCode::R);
 
         if(spawnInput == true && lastSpawnInput == false){
-            //scene->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
-            //scene->Save("res/scene1.scene");
+            scene->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            scene->Save("res/scene1.scene");
             
-            scene = SceneManager::Get().NewScene();
-            scene->Load("res/scene1.scene");
-            scene->Start();
+            //scene = SceneManager::Get().NewScene();
+            //scene->Load("res/scene1.scene");
+            //scene->Start();
         }
     }   
 
     void OnRender(float deltaTime) override {
         scene->Draw();
+        scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 
     void OnGUI() override {

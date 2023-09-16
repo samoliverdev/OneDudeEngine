@@ -75,8 +75,37 @@ void DrawMainPanel(){
     if(open) ImGui::End();
 }
 
+bool BeginDocking(){return true;}
+void EndDocking(){}
+
 void Editor::DrawMainPanel(){
+    DrawGizmos();
+
     ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    /*static bool open = true;
+    if (open){
+    ImGuiWindowFlags dockspace_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    dockspace_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    dockspace_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+    ImGui::SetNextWindowBgAlpha(0); // Transparent background
+    ImGui::Begin("DockSpace", &open, dockspace_flags);
+    ImGui::PopStyleVar(3);
+
+    // Dockspace layout
+    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable){
+        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    }*/
 
     if(ImGui::BeginMainMenuBar()){
         if(ImGui::BeginMenu("File")){
@@ -116,7 +145,10 @@ void Editor::DrawMainPanel(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
 
-    DrawGizmos();
+    //DrawGizmos();
+
+    //}
+    //if(open) ImGui::End();
 }
 
 void Editor::DrawGizmos(){
@@ -127,13 +159,12 @@ void Editor::DrawGizmos(){
         cam.UpdateCameraData(t);
 
         ImGuizmo::Enable(true);
-
         ImGuizmo::SetOrthographic(false);
         //ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
         //ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-        
+
         Matrix4 view = cam.camera().view;
         Matrix4 projection = cam.camera().projection;
 

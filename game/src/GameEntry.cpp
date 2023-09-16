@@ -13,7 +13,7 @@
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
         0, 0,
-        1280, 720,
+        800, 600,
         "Game1"
     };
 }

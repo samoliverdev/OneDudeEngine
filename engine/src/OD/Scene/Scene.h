@@ -214,8 +214,8 @@ struct Scene: public Asset {
 
         if(_running == false) return;
 
-        for(auto& s: _physicsSystems) s->Update();
-        for(auto& s: _standSystems) s->Update();
+        for(auto s: _physicsSystems) s->Update();
+        for(auto s: _standSystems) s->Update();
     }
 
     void Draw(){

@@ -218,7 +218,7 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
         Archive s;
         func.second.serialize(e, s);
 
-        Assert(s.Values().empty() == false);
+        Assert(s.values().empty() == false);
 
         ApplySerializer(s, func.first, out);
     }

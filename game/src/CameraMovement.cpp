@@ -51,10 +51,12 @@ void CameraMovementScript::OnUpdate(){
 
     Vector3 pos = transform.localPosition();
 
-    if(Input::IsKey(KeyCode::W)) pos += transform.back() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::S)) pos += transform.forward() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::A)) pos += transform.left() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::D)) pos += transform.right() * moveSpeed * Application::deltaTime();
+    if(Input::IsMouseButton(MouseButton::Right)){
+        if(Input::IsKey(KeyCode::W)) pos += transform.back() * moveSpeed * Application::deltaTime();
+        if(Input::IsKey(KeyCode::S)) pos += transform.forward() * moveSpeed * Application::deltaTime();
+        if(Input::IsKey(KeyCode::A)) pos += transform.left() * moveSpeed * Application::deltaTime();
+        if(Input::IsKey(KeyCode::D)) pos += transform.right() * moveSpeed * Application::deltaTime();
+    }
 
     double xpos;
     double ypos;
