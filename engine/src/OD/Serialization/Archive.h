@@ -9,7 +9,7 @@ namespace OD{
 struct Archive;
 
 struct ArchiveValue{
-    enum class Type{Float, Int, String, Vector3, Vector4, Quaternion, List};
+    enum class Type{Float, Int, String, Vector3, Vector4, Quaternion, T, TList};
 
     Type type;
     std::string name;
@@ -83,7 +83,7 @@ public:
     template<typename T>
     void Add(std::vector<T>& list, std::string name){
         ArchiveValue sv;
-        sv.type = ArchiveValue::Type::List;
+        sv.type = ArchiveValue::Type::TList;
         sv.name = name;
 
         for(int i = 0; i < list.size(); i++){
@@ -91,6 +91,19 @@ public:
             list[i].Serialize(ar);
             sv.children.push_back(ar);
         }
+
+        _values.push_back(sv);
+    }
+
+    template<typename T>
+    void Add(T& list, std::string name){
+        ArchiveValue sv;
+        sv.type = ArchiveValue::Type::T;
+        sv.name = name;
+
+        Archive ar;
+        list.Serialize(ar);
+        sv.children.push_back(ar);
 
         _values.push_back(sv);
     }
@@ -114,12 +127,18 @@ public:
             //    printf("Value: %s %s\n", i.name.c_str(), (*i.stringValue)->c_str());
             //}
 
-            if(i.type == ArchiveValue::Type::List){
+            if(i.type == ArchiveValue::Type::TList){
                 printf("%s:\n", i.name.c_str());
                 level += 1;
                 for(auto& j: i.children){
                     j.Show(level+1);
                 }
+            }
+
+            if(i.type == ArchiveValue::Type::T){
+                printf("%s:\n", i.name.c_str());
+                level += 1;
+                i.children[0].Show(level+1);
             }
         }
     }

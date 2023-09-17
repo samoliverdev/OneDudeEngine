@@ -101,7 +101,7 @@ struct SkinnedMesh_7: OD::Module {
     void OnRender(float deltaTime) override {
         OD_PROFILE_FUNCTION();
 
-        cam.SetPerspective(60, 0.1f, 1000.0f);
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
         cam.view = camTransform.GetLocalModelMatrix().inverse();
 
         Renderer::Begin();

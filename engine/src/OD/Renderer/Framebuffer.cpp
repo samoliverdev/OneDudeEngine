@@ -125,9 +125,12 @@ void Framebuffer::Destroy(){
 }
 
 void Framebuffer::Resize(int width, int height){
+    if(_specification.width == width && _specification.height == height) return;
+
     _specification.width = width;
     _specification.height = height;
-    //Invalidate();
+    
+    Invalidate();
 }
 
 void Framebuffer::Invalidate(){
@@ -162,7 +165,7 @@ void Framebuffer::Invalidate(){
 
 void Framebuffer::Bind(){
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    //glViewport(0, 0, specification.width, specification.height);
+    //glViewport(0, 0, _specification.width, _specification.height);
 }
     
 void Framebuffer::Unbind(){

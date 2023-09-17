@@ -26,11 +26,11 @@ struct CameraComponent{
 
     inline Camera camera(){ return _camera; }
     
-    inline void UpdateCameraData(TransformComponent& transform){
+    inline void UpdateCameraData(TransformComponent& transform, int width, int height){
         if(type == Type::Perspective)
-            _camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane);
+            _camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane, width, height);
         else    
-            _camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane);
+            _camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, width, height);
 
         _camera.view = transform.globalModelMatrix().inverse();
     }

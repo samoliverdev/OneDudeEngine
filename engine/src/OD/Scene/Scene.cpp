@@ -127,7 +127,8 @@ void InfoComponent::OnGui(Entity& e){
 #pragma endregion
 
 #pragma region Scene
-void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
+
+void Scene::ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
     out << YAML::Key << name;
     out << YAML::BeginMap;
     for(auto i: s.values()){
@@ -141,7 +142,7 @@ void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
     out << YAML::EndMap;
 }
 
-void LoadSerializer(Archive& s, YAML::Node& node){
+void Scene::LoadSerializer(Archive& s, YAML::Node& node){
     for(auto i: s.values()){
         if(i.type == ArchiveValue::Type::Float){
             *i.floatValue = node[i.name].as<float>();
@@ -194,8 +195,9 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     if(e.HasComponent<CameraComponent>()) CameraComponent::Serialize(out, e);
     if(e.HasComponent<RigidbodyComponent>()) RigidbodyComponent::Serialize(out, e);
     if(e.HasComponent<MeshRendererComponent>()) MeshRendererComponent::Serialize(out, e);
+    if(e.HasComponent<ScriptComponent>()) ScriptComponent::Serialize(out, e);
 
-    if(e.HasComponent<ScriptComponent>()){
+    /*if(e.HasComponent<ScriptComponent>()){
         auto& component = e.GetComponent<ScriptComponent>();
 
         out << YAML::Key << "ScriptComponent";
@@ -210,7 +212,7 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
         }
        
         out << YAML::EndMap;
-    }
+    }*/
 
     for(auto func: SceneManager::Get()._serializeFuncs){
         if(func.second.hasComponent(e) == false) continue;
@@ -286,7 +288,8 @@ void Scene::Load(const char* path){
             if(meshRenderer) MeshRendererComponent::Deserialize(meshRenderer, deserializedEntity);
 
             auto script = e["ScriptComponent"];
-            if(script){
+            if(script) ScriptComponent::Deserialize(script, deserializedEntity);
+            /*if(script){
                 for(auto func: SceneManager::Get()._serializeScriptFuncs){
                     auto component = script[func.first];
                     if(component){
@@ -297,7 +300,7 @@ void Scene::Load(const char* path){
                         LoadSerializer(s, component);
                     }
                 }
-            }
+            }*/
 
             for(auto func: SceneManager::Get()._serializeFuncs){
                 auto component = e[func.first];
@@ -308,6 +311,55 @@ void Scene::Load(const char* path){
                     func.second.serialize(deserializedEntity, s);
                     LoadSerializer(s, component);
                 }
+            }
+        }
+    }
+}
+#pragma endregion
+
+#pragma region SceneManager
+void SceneManager::DrawArchive(Archive& ar){
+    const ImGuiTreeNodeFlags treeNodeFlags = 
+        //ImGuiTreeNodeFlags_DefaultOpen 
+        //| ImGuiTreeNodeFlags_Framed 
+            ImGuiTreeNodeFlags_AllowItemOverlap
+        | ImGuiTreeNodeFlags_SpanAvailWidth
+        | ImGuiTreeNodeFlags_FramePadding;
+
+    
+    std::hash<std::string> hasher;
+
+    for(auto i: ar.values()){
+        if(i.type == ArchiveValue::Type::Float){
+            ImGui::DragFloat(i.name.c_str(), i.floatValue);
+        }
+        if(i.type == ArchiveValue::Type::String){
+            char buffer[256];
+            memset(buffer, 0, sizeof(buffer));
+            strcpy_s(buffer, sizeof(buffer), i.stringValue->c_str());
+            if(ImGui::InputText(i.name.c_str(), buffer, sizeof(buffer))){
+                *i.stringValue = std::string(buffer);
+            }
+        }
+
+        if(i.type == ArchiveValue::Type::T){
+            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
+                DrawArchive(i.children[0]);
+                ImGui::TreePop();
+            }
+        }
+
+        if(i.type == ArchiveValue::Type::TList){
+            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
+                int index = 0;
+                for(auto j: i.children){
+                    if(ImGui::TreeNodeEx((void*)(hasher(i.name)+index), treeNodeFlags, std::to_string(index).c_str())){
+                        DrawArchive(j);
+                        ImGui::TreePop();
+                    }
+                    index += 1;
+                }
+                ImGui::TreePop();
             }
         }
     }

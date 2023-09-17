@@ -11,8 +11,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [3.15337372, 12.5317326, 0.0589562431]
-      localRotation: [1.84312321e-05, -0.0362665281, -0.000121493271, 0.999342144]
+      localPosition: [2, 13.1208181, 5.522241e-11]
+      localRotation: [1.86264511e-11, -2.76613281e-19, 1.67638084e-10, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -27,8 +27,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.29246891, 16.8656826, -1.35133684]
-      localRotation: [-0.233145326, -0.0907277837, 0.103138886, 0.962691069]
+      localPosition: [2, 11.9691277, -2.37973558e-10]
+      localRotation: [1.05549895e-10, -2.2567537e-19, -6.14672924e-10, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -43,8 +43,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [-0.864761293, 12.5274134, -1.23860097]
-      localRotation: [0.0356647931, -0.00102315913, 0.999347746, 0.0055680112]
+      localPosition: [2, 10.4836216, 2.46378778e-10]
+      localRotation: [-3.41484951e-10, 5.82714879e-19, 4.40826042e-10, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -59,8 +59,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [6.65425444, 0.54507035, 0.195253089]
-      localRotation: [0.0056467792, 0.244105011, -0.000182033167, 0.969732344]
+      localPosition: [2, 8.53393936, -6.36276656e-11]
+      localRotation: [2.17308602e-10, -2.0594317e-19, 6.20881775e-12, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -75,8 +75,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [-0.131875813, 4.07545757, -4.83711672]
-      localRotation: [-0.464489818, 0.0986871421, -0.00943301711, 0.880011976]
+      localPosition: [-7.15487766, 0.549999893, 1.18645155]
+      localRotation: [0.654830217, -0.654830158, 0.266828477, -0.266828537]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -91,8 +91,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [2.83059382, 15.6682053, 0.426771462]
-      localRotation: [0.0633288845, -0.0113296965, -0.164950266, 0.984201431]
+      localPosition: [4.00026131, 0.549999893, 2.24751163]
+      localRotation: [3.06236791e-09, 0.207346588, -1.98970739e-07, 0.97826755]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -107,8 +107,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.80839384, 12.4692478, -0.0615702309]
-      localRotation: [0.00595373893, 0.00672119297, 0.000206109515, 0.999959648]
+      localPosition: [5.24868727, 0.549999952, 1.28703845]
+      localRotation: [-8.79527651e-09, 0.18147628, -2.90342285e-07, 0.983395338]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -123,8 +123,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.68132758, 12.5321465, -1.24904001]
-      localRotation: [-3.68530482e-06, -0.0645993799, -0.000144712845, 0.997911274]
+      localPosition: [7.12875032, 0.549999893, 0.0478080846]
+      localRotation: [-2.49954368e-09, -0.0331954323, 3.16716239e-07, 0.999448836]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -139,8 +139,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.70911348, 12.5321045, 1.18357015]
-      localRotation: [3.88304352e-06, -0.0189255066, -0.000145121739, 0.999820888]
+      localPosition: [4.80246782, 0.549999833, -0.410284996]
+      localRotation: [0.0314500071, -0.0314500369, -0.706407249, 0.706406832]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -155,8 +155,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.15350831, 14.9702177, -0.598347902]
-      localRotation: [-0.222342268, -0.0760917366, 0.180567235, 0.955075622]
+      localPosition: [4.74630165, 0.549999893, -2.56076336]
+      localRotation: [0.39930898, 0.399309307, 0.583568692, 0.583568335]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -171,8 +171,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.20290411, 15.9683571, -0.892234147]
-      localRotation: [-0.205633685, -0.08178664, 0.110876702, 0.968881845]
+      localPosition: [-15.454483, 15.5825291, -1.08924329]
+      localRotation: [-0.0868026614, 0.0332698226, -0.803961933, 0.587370098]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -187,8 +187,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [1.41772997, 16.2079639, -2.59240794]
-      localRotation: [-0.679217637, -0.111544333, 0.062135946, 0.722745061]
+      localPosition: [-11.9684763, 26.0022068, -1.02094734]
+      localRotation: [-0.0961090252, -0.0925423354, 0.895023465, -0.425596058]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -203,8 +203,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [4.85878563, 9.52240467, 0.334196419]
-      localRotation: [-0.110684164, -0.0332443602, -0.578329086, 0.80757618]
+      localPosition: [0.180586129, 0.560611486, -4.05352879]
+      localRotation: [0.703863978, -0.654601753, -0.235348389, 0.143816516]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -219,120 +219,8 @@ Entities:
   - InfoComponent:
       name: PhysicsCube
     TransformComponent:
-      localPosition: [7.21648359, 0.5491184, -2.34306216]
-      localRotation: [0.214949355, 0.215365201, 0.673016846, 0.674138665]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [5.14370203, 0.550000012, 0.951815963]
-      localRotation: [0.705557942, -0.0467770323, 0.0467766486, 0.705557883]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [6.85622644, 0.549996376, 2.15519309]
-      localRotation: [0.473561108, -0.473562092, -0.525106847, 0.52511102]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [1.95345116, 13.3127098, -0.00716621289]
-      localRotation: [0.00811897125, -0.00341310003, -0.0132876653, 0.999872923]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [2.03042674, 14.0661602, 0.0810706094]
-      localRotation: [0.0229963548, -0.0043849037, -0.0325167403, 0.999197006]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [2.12990689, 14.8647814, 0.43043375]
-      localRotation: [0.0243567359, -0.000872823817, -0.012169851, 0.999628842]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [1.81484449, 13.5956507, 1.37023997]
-      localRotation: [0.0704083368, -0.0539178737, 0.00517703546, 0.996046543]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [0.762573123, 12.5323963, -0.0828587636]
-      localRotation: [9.11236111e-06, 0.0209473018, -0.000144290054, 0.999780595]
+      localPosition: [1.99944603, 0.54999119, -0.000445417041]
+      localRotation: [4.10393841e-06, -0.0111470772, -4.88266596e-06, 0.999937892]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -347,21 +235,21 @@ Entities:
   - InfoComponent:
       name: Trigger
     TransformComponent:
-      localPosition: [3.19030213, 25.8970432, 4.07078695]
-      localRotation: [0.735395908, -0.0338667557, 0.665206611, -0.124683902]
+      localPosition: [0, 0, 0]
+      localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
-      mass: 38
-      boxShapeSize: [4, 5, 4]
+      mass: 1
+      boxShapeSize: [4, 1, 4]
   - InfoComponent:
       name: MainCube
     TransformComponent:
-      localPosition: [-1.14256203, 6.02918196, -0.035901662]
-      localRotation: [7.93909567e-06, 0.00045162969, -0.000175670648, 0.999999881]
-      localScale: [1, 1, 1]
+      localPosition: [17.1747017, -3.90433097, -0.757940412]
+      localRotation: [-0.0595202036, -0.0425749868, -0.837031543, 0.542238832]
+      localScale: [5.37562084, 6.39621735, 20.3284855]
     RigidbodyComponent:
-      mass: 74
-      boxShapeSize: [9, 12, 6]
+      mass: 1
+      boxShapeSize: [1, 1, 1]
     MeshRendererComponent:
       modelPath: res/models/Cube.glb
       materials:
@@ -384,8 +272,8 @@ Entities:
   - InfoComponent:
       name: Camera
     TransformComponent:
-      localPosition: [1.21516812, 15.5372562, 18.7261276]
-      localRotation: [-0.20074439, -0.0563882589, -0.0115748411, 0.977950931]
+      localPosition: [-1.27698159, 19.1925449, 21.69417]
+      localRotation: [-0.271071881, -0.0905527174, -0.0256238393, 0.957947612]
       localScale: [1, 1, 1]
     CameraComponent:
       type: 0

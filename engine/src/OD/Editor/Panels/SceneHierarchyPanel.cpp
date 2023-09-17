@@ -1,11 +1,14 @@
 #include "SceneHierarchyPanel.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Scene/Scripts.h"
 #include "OD/RendererSystem/CameraComponent.h"
 #include "OD/RendererSystem/LightComponent.h"
 #include "OD/RendererSystem/MeshRendererComponent.h"
 #include "OD/PhysicsSystem/PhysicsSystem.h"
 #include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <functional>
+#include <string>
 
 namespace OD{
 
@@ -38,19 +41,9 @@ void SceneHierarchyPanel::OnGui(bool* showSceneHierarchy, bool* showInspector){
     ImGui::Begin("Properties", showInspector);
     if(_selectionContext.IsValid()){
         DrawComponents(_selectionContext);
-
         ImGui::Separator();
-
-        if(ImGui::Button("Add Component"))
-            ImGui::OpenPopup("AddComponent");
-
-        if(ImGui::BeginPopup("AddComponent")){
-            if(ImGui::MenuItem("Light")){
-                _selectionContext.AddOrGetComponent<LightComponent>();
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
+        ImGui::Spacing();
+        ShowAddComponent(_selectionContext);
     }
     ImGui::End();
 }
@@ -161,6 +154,74 @@ void DrawComponent(Entity e, const char* name, UIFunction function){
     }
 }
 
+void SceneHierarchyPanel::DrawArchive(Archive& ar){
+    const ImGuiTreeNodeFlags treeNodeFlags = 
+        //ImGuiTreeNodeFlags_DefaultOpen 
+        //| ImGuiTreeNodeFlags_Framed 
+            ImGuiTreeNodeFlags_AllowItemOverlap
+        | ImGuiTreeNodeFlags_SpanAvailWidth
+        | ImGuiTreeNodeFlags_FramePadding;
+
+    
+    std::hash<std::string> hasher;
+
+    for(auto i: ar.values()){
+        if(i.type == ArchiveValue::Type::Float){
+            ImGui::DragFloat(i.name.c_str(), i.floatValue);
+        }
+        if(i.type == ArchiveValue::Type::String){
+            char buffer[256];
+            memset(buffer, 0, sizeof(buffer));
+            strcpy_s(buffer, sizeof(buffer), i.stringValue->c_str());
+            if(ImGui::InputText(i.name.c_str(), buffer, sizeof(buffer))){
+                *i.stringValue = std::string(buffer);
+            }
+        }
+
+        if(i.type == ArchiveValue::Type::T){
+            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
+                DrawArchive(i.children[0]);
+                ImGui::TreePop();
+            }
+        }
+
+        if(i.type == ArchiveValue::Type::TList){
+            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
+                int index = 0;
+                for(auto j: i.children){
+                    if(ImGui::TreeNodeEx((void*)(hasher(i.name)+index), treeNodeFlags, std::to_string(index).c_str())){
+                        DrawArchive(j);
+                        ImGui::TreePop();
+                    }
+                    index += 1;
+                }
+                ImGui::TreePop();
+            }
+        }
+    }
+}
+
+void SceneHierarchyPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name, SceneManager::SerializeFuncs &sf){
+    const ImGuiTreeNodeFlags treeNodeFlags = 
+        ImGuiTreeNodeFlags_DefaultOpen 
+        | ImGuiTreeNodeFlags_Framed 
+        | ImGuiTreeNodeFlags_AllowItemOverlap
+        | ImGuiTreeNodeFlags_SpanAvailWidth
+        | ImGuiTreeNodeFlags_FramePadding;
+
+    if(sf.hasComponent(e)){
+        std::hash<std::string> hasher;
+        bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
+        if(open){
+            Archive ar;
+            sf.serialize(e, ar);
+            DrawArchive(ar);
+
+            ImGui::TreePop();
+        }
+    }
+}
+
 void SceneHierarchyPanel::DrawComponents(Entity entity){
     TransformComponent& transform = entity.GetComponent<TransformComponent>();
     InfoComponent& info = entity.GetComponent<InfoComponent>();
@@ -175,18 +236,18 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
-        if(e.HasComponent<RigidbodyComponent>()){
-            RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
-            float p[] = {rb.position().x, rb.position().y, rb.position().z};
-            if(ImGui::DragFloat3("Position", p, 0.5f)){
-                rb.position(Vector3(p[0], p[1], p[2]));
-            }
-        } else {
+        //if(e.HasComponent<RigidbodyComponent>()){
+        //    RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
+        //    float p[] = {rb.position().x, rb.position().y, rb.position().z};
+        //    if(ImGui::DragFloat3("Position", p, 0.5f)){
+        //        rb.position(Vector3(p[0], p[1], p[2]));
+        //    }
+        //} else {
             float p[] = {transform.localPosition().x, transform.localPosition().y, transform.localPosition().z};
             if(ImGui::DragFloat3("Position", p, 0.5f)){
                 transform.localPosition(Vector3(p[0], p[1], p[2]));
             }
-        }  
+        //}  
 
         float r[] = {transform.localEulerAngles().x, transform.localEulerAngles().y, transform.localEulerAngles().z};
         if(ImGui::DragFloat3("Rotation", r, 0.5f)){
@@ -199,11 +260,45 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
         } 
     });
 
+    ImGui::Spacing(); ImGui::Spacing();
+
     DrawComponent<CameraComponent>(entity, "Camera");
     DrawComponent<LightComponent>(entity, "Light");
     DrawComponent<AnimatorComponent>(entity, "Animator");
     DrawComponent<MeshRendererComponent>(entity, "MeshRenderer");
     DrawComponent<RigidbodyComponent>(entity, "Rigidbody");
+    DrawComponent<ScriptComponent>(entity, "Script");
+
+    ImGui::Spacing(); ImGui::Spacing();
+
+    for(auto& i: SceneManager::Get()._serializeFuncs){
+        DrawComponentFromSerializeFuncs(entity, i.first, i.second);
+    }
+}
+
+void SceneHierarchyPanel::ShowAddComponent(Entity entity){
+    if(ImGui::Button("Add Component"))
+        ImGui::OpenPopup("AddComponent");
+
+    if(ImGui::BeginPopup("AddComponent")){
+        if(ImGui::MenuItem("LightComponent")){
+            _selectionContext.AddOrGetComponent<LightComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+        if(ImGui::MenuItem("CameraComponent")){
+            _selectionContext.AddOrGetComponent<CameraComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+        if(ImGui::MenuItem("RigidbodyComponent")){
+            _selectionContext.AddOrGetComponent<RigidbodyComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+        if(ImGui::MenuItem("MeshRendererComponent")){
+            _selectionContext.AddOrGetComponent<MeshRendererComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 }

@@ -246,6 +246,8 @@ private:
     }
     
     void SerializeEntity(YAML::Emitter& out, Entity& e);
+    void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out);
+    void LoadSerializer(Archive& s, YAML::Node& node);
 
     bool _running = false;
 
@@ -262,7 +264,9 @@ private:
 
 struct SceneManager{
     friend class Editor;
+    friend class SceneHierarchyPanel;
     friend struct Scene;
+    friend struct ScriptComponent;
 
     enum class SceneState {Playing, Paused, Editor};
 
@@ -274,7 +278,10 @@ struct SceneManager{
     inline SceneState sceneState(){ return _sceneState; }
     inline bool inEditor(){ return _inEditor; }
 
-    inline Scene* activeScene(){ return _activeScene; }
+    inline Scene* activeScene(){ 
+        if(_activeScene == nullptr) return NewScene();
+        return _activeScene; 
+    }
 
     inline Scene* NewScene(){
         delete _activeScene;
@@ -331,6 +338,8 @@ struct SceneManager{
             e.AddSystem<T>();
         };
     }   
+
+    void DrawArchive(Archive& ar);
 
 private:
     struct SerializeFuncs{

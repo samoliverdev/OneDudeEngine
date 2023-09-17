@@ -7,14 +7,43 @@
 
 using namespace OD;
 
+struct Test1{
+    float a;
+
+    void Serialize(Archive& ar){
+        ar.name("Test1");
+
+        ar.Add(&a, "a");
+    }
+};
+
+struct Test2{
+    std::vector<Test1> b;
+
+    void Serialize(Archive& ar){
+        ar.name("Test2");
+
+        b.push_back({20});
+        b.push_back({254});
+
+        ar.Add(b, "b");
+    }
+};
+
 struct TestC{
     std::string id = "TestId";
     float speed = 20;
+    std::vector<Test1> test1s = {{20}, {245}};
+
+    Test1 test1 = {55};
 
     void Serialize(Archive& s){
-        //s.SetName("TestC");
+        s.name("TestC");
+
         s.Add(&id, "id");
         s.Add(&speed, "speed");
+        s.Add(test1s, "test1s");
+        s.Add(test1, "test1");
 
         //LogInfo("OnSerialize TestC %zd", s.Values().size());
     }
@@ -58,7 +87,7 @@ struct PhysicsCubeS: public Script{
         ///*
         t += Application::deltaTime();
         if(t > 5){
-            entity().scene()->DestroyEntity(entity().id());
+            //entity().scene()->DestroyEntity(entity().id());
             //LogInfo("ToDestroy");
         }
         //*/
@@ -66,28 +95,6 @@ struct PhysicsCubeS: public Script{
 
     void OnDestroy() override{
         LogInfo("PhysicsCubeS OnDestroy");
-    }
-};
-
-struct Test1{
-    float a;
-
-    void Serialize(Archive& ar){
-        ar.name("Test1");
-        ar.Add(&a, "a");
-    }
-};
-
-struct Test2{
-    std::vector<Test1> b;
-
-    void Serialize(Archive& ar){
-        ar.name("Test2");
-
-        b.push_back({20});
-        b.push_back({254});
-
-        ar.Add(b, "b");
     }
 };
 
@@ -187,7 +194,7 @@ struct Physics_6: OD::Module {
         _trigger.neverSleep(true);
 
         //scene->Save("res/scene1.scene");
-        scene->Start();
+        //scene->Start();
 
         Application::AddModule<Editor>();
     }
@@ -217,7 +224,7 @@ struct Physics_6: OD::Module {
 
     void OnRender(float deltaTime) override {
         scene->Draw();
-        scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+        //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 
     void OnGUI() override {

@@ -24,6 +24,9 @@ struct StandRendererSystem: public OD::System{
     void Update() override;
     StandRendererSystem();
 
+    inline void SetOutFrameBuffer(Framebuffer* out){ _outFramebuffer = out; }
+    inline void overrideCamera(Camera* cam){ _overrideCamera = cam; } 
+
 private:
     Ref<Shader> _spriteShader;
     Mesh _spriteMesh;
@@ -33,6 +36,10 @@ private:
     Ref<Shader> _postProcessingShader;
 
     Matrix4 _lightSpaceMatrix;
+
+    Framebuffer* _outFramebuffer;
+
+    Camera* _overrideCamera = nullptr;
 
     void SetStandUniforms(Shader& material);
     void RenderScene(Camera& camera);

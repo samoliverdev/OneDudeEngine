@@ -4,6 +4,7 @@
 #include "MeshRendererComponent.h"
 #include "CameraComponent.h"
 #include "LightComponent.h"
+#include "OD/PhysicsSystem/PhysicsSystem.h"
 
 namespace OD{
 
@@ -85,7 +86,7 @@ void StandRendererSystem::RenderSceneShadow(Matrix4 lightSpaceMatrix){
 }
 
 void StandRendererSystem::RenderScene(Camera& camera){
-    Renderer::SetCamera(camera);
+    Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
     
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
@@ -133,8 +134,6 @@ StandRendererSystem::StandRendererSystem(){
 }
 
 void StandRendererSystem::Update(){
-    //Assert(CameraComponent::mainCamera != nullptr);
-
     UpdateCurrentLight();
 
     auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
@@ -158,10 +157,19 @@ void StandRendererSystem::Update(){
     _shadowMap->Bind();
     Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
     RenderSceneShadow(_lightSpaceMatrix);
-
     _shadowMap->Unbind();
-    Renderer::SetViewport(0, 0, Application::screenWidth(), Application::screenHeight());
-    
+
+    int width = Application::screenWidth();
+    int height = Application::screenHeight();
+
+    if(_outFramebuffer != nullptr){
+        _outFramebuffer->Bind();
+        width = _outFramebuffer->width();
+        height = _outFramebuffer->height();
+    }
+
+    Renderer::SetViewport(0, 0, width, height);
+
     Camera cam;
 
     auto view2 = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
@@ -169,11 +177,15 @@ void StandRendererSystem::Update(){
         auto& c = view2.get<CameraComponent>(entity);
         auto& t = view2.get<TransformComponent>(entity);
 
-        c.UpdateCameraData(t);
+        c.UpdateCameraData(t, width, height);
         cam = c.camera();
     }
 
     RenderScene(cam);
+
+    scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+
+    if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
 
     //Renderer::Blit(shadowMap, nullptr, *postProcessingShader, -1);
     

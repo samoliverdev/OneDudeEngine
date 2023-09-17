@@ -74,7 +74,7 @@ struct Light_3: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        cam.SetPerspective(60, 0.1f, 1000.0f);
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
         cam.view = camTransform.GetLocalModelMatrix().inverse();
 
         model->materials[0]->SetVector3("viewPos", camTransform.localPosition());

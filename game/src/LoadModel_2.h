@@ -51,7 +51,7 @@ struct LoadModel_2: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        cam.SetPerspective(60, 0.1f, 1000.0f);
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
         cam.view = camTransform.GetLocalModelMatrix().inverse();
 
         Renderer::Begin();

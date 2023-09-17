@@ -26,12 +26,12 @@ private:
 };
 
 struct ScriptComponent{
-    //static void Serialize(YAML::Emitter& out, Entity& e);
-    //static void Deserialize(YAML::Node& in, Entity& e);
-    //static void OnGui(Entity& e);
-    
     friend struct ScriptSystem;
     friend struct Scene;
+
+    static void Serialize(YAML::Emitter& out, Entity& e);
+    static void Deserialize(YAML::Node& in, Entity& e);
+    static void OnGui(Entity& e);
 
     template<typename T>
     T* AddScript(){
