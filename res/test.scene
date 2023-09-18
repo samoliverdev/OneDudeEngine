@@ -1,0 +1,70 @@
+Scene: Untitled
+Entities:
+  - InfoComponent:
+      name: Trigger
+    TransformComponent:
+      localPosition: [0, 0, 0]
+      localRotation: [0, 0, 0, 1]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [4, 1, 4]
+  - InfoComponent:
+      name: MainCube
+    TransformComponent:
+      localPosition: [2, 13, 0]
+      localRotation: [0, 0, 0, 1]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: res/textures/rock.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+  - InfoComponent:
+      name: Floor
+    TransformComponent:
+      localPosition: [0, 0, 0]
+      localRotation: [0, 0, 0, 1]
+      localScale: [1, 1, 1]
+    RigidbodyComponent:
+      mass: 0
+      boxShapeSize: [25, 0.100000001, 25]
+    MeshRendererComponent:
+      modelPath: res/models/plane.glb
+      materials:
+        - materialPath: res/textures/floor.material
+          materialShader: res/Builtins/Shaders/Unlit.glsl
+  - InfoComponent:
+      name: Camera
+    TransformComponent:
+      localPosition: [0, 15, 15]
+      localRotation: [-0.21643962, 0, 0, 0.976296008]
+      localScale: [1, 1, 1]
+    CameraComponent:
+      type: 0
+      orthographicSize: 5
+      fieldOfView: 45
+      nearClipPlane: 0.100000001
+      farClipPlane: 1000
+    ScriptComponent:
+      CameraMovementScript:
+        moveSpeed: 60
+        rotSpeed: 50
+    TestC:
+      id: TestId
+      speed: 20
+      ? - Test1
+        - a: 20
+        - Test1
+        - a: 245
+      : test1
+      ? a: 55
+  - InfoComponent:
+      name: Light
+    TransformComponent:
+      localPosition: [-2, 4, -1]
+      localRotation: [0.0161147937, -0.886470556, 0.0309562311, 0.461467326]
+      localScale: [1, 1, 1]
