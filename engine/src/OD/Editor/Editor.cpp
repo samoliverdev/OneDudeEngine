@@ -107,7 +107,6 @@ void Editor::DrawMainWorkspace(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
 
-
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::Begin("Viewport");
 

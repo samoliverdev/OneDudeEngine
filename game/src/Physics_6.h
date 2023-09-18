@@ -87,7 +87,7 @@ struct PhysicsCubeS: public Script{
         ///*
         t += Application::deltaTime();
         if(t > 5){
-            //entity().scene()->DestroyEntity(entity().id());
+            entity().scene()->DestroyEntity(entity().id());
             //LogInfo("ToDestroy");
         }
         //*/
@@ -109,14 +109,14 @@ struct Physics_6: OD::Module {
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-        Test2 t2;
+        /*Test2 t2;
         Archive a;
-
         t2.Serialize(a);
-        a.Show();
+        a.Show();*/
         
         SceneManager::Get().RegisterComponent<TestC>("TestC");
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
+        SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
         SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
         SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
@@ -201,10 +201,11 @@ struct Physics_6: OD::Module {
 
     void OnUpdate(float deltaTime) override {
         scene->Update();
+        if(scene->running() == false) return;
 
+        /*
         TransformComponent& camT = camera.GetComponent<TransformComponent>();
-        
-        /*RayResult hit;
+        RayResult hit;
         if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.position(), camT.back() * 1000.0f, hit)){
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
         }*/
@@ -228,8 +229,7 @@ struct Physics_6: OD::Module {
     }
 
     void OnGUI() override {
-        return;
-
+        /*
         ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
         static bool b = true;
@@ -251,6 +251,7 @@ struct Physics_6: OD::Module {
         }
 
         ImGui::End();
+        */
     }
 
     void OnResize(int width, int height) override {}

@@ -164,6 +164,7 @@ void Framebuffer::Invalidate(){
 }
 
 void Framebuffer::Bind(){
+    Assert(_framebuffer != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
     //glViewport(0, 0, _specification.width, _specification.height);
 }

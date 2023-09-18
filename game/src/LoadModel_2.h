@@ -36,6 +36,8 @@ struct LoadModel_2: OD::Module {
         camTransform.localPosition(Vector3(0, 2, 4));
         camTransform.localEulerAngles(Vector3(-25, 0, 0));
 
+        camMove.transform = &camTransform;
+
         //model = Model::CreateFromFile("res/models/suzane.obj");
         //model->SetShader(Shader::CreateFromFile("res/shaders/model.glsl"));
         //model->materials[0].SetTexture("texture1", Texture2D::CreateFromFile("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));

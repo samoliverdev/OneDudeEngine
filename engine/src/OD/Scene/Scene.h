@@ -234,12 +234,20 @@ private:
         TransformComponent& transform = _registry.get<TransformComponent>(entity);
 
         for(auto i: transform._children){
-            DestroyEntity(i);
+            _DestroyEntity(i);
         }
 
         if(transform._hasParent){
             TransformComponent& parent = _registry.get<TransformComponent>(transform._parent);
-            parent._children.clear();
+            //parent._children.clear();
+            parent._children.erase(
+                std::remove(
+                    parent._children.begin(), 
+                    parent._children.end(), 
+                    entity
+                ), 
+                parent._children.end()
+            );
         }
 
         _registry.destroy(entity);
@@ -339,7 +347,7 @@ struct SceneManager{
         };
     }   
 
-    void DrawArchive(Archive& ar);
+    static void DrawArchive(Archive& ar);
 
 private:
     struct SerializeFuncs{

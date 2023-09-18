@@ -1,26 +1,10 @@
 Scene: Untitled
 Entities:
   - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [2, 12.9730177, 0]
-      localRotation: [0, 0, 0, 1]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
-    MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: res/mat1.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
-    ScriptComponent:
-      {}
-  - InfoComponent:
       name: Trigger
     TransformComponent:
-      localPosition: [0, 0, 0]
-      localRotation: [0, 0, 0, 1]
+      localPosition: [7.36272501e-11, -0.520465076, 2.31691055e-11]
+      localRotation: [-6.52307236e-11, -2.7417092e-20, 2.99671954e-10, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
@@ -28,9 +12,9 @@ Entities:
   - InfoComponent:
       name: MainCube
     TransformComponent:
-      localPosition: [5.29758215, 12.3403263, 0]
+      localPosition: [2, 12.9028158, 0]
       localRotation: [0, 0, 0, 1]
-      localScale: [5.37562084, 6.39621735, 20.3284855]
+      localScale: [1, 1, 1]
     RigidbodyComponent:
       mass: 1
       boxShapeSize: [1, 1, 1]
@@ -66,11 +50,14 @@ Entities:
       nearClipPlane: 0.100000001
       farClipPlane: 1000
     ScriptComponent:
-      "":
-        {}
+      CameraMovementScript:
+        moveSpeed: 134
+        rotSpeed: 94
     TestC:
       id: TestId
       speed: 20
+      test1:
+        a: 55003
   - InfoComponent:
       name: Light
     TransformComponent:

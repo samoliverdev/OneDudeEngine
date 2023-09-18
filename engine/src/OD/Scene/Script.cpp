@@ -5,6 +5,8 @@
 namespace OD{
 
 void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
+    LogInfo("Script Name: %s", name.c_str());
+
     out << YAML::Key << name;
     out << YAML::BeginMap;
     for(auto i: s.values()){
@@ -14,6 +16,15 @@ void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
         if(i.type == ArchiveValue::Type::Vector3) out << YAML::Key << i.name << YAML::Value << (*i.vector3Value);
         if(i.type == ArchiveValue::Type::Vector4) out << YAML::Key << i.name << YAML::Value << (*i.vector4Value);
         if(i.type == ArchiveValue::Type::Quaternion) out << YAML::Key << i.name << YAML::Value << (*i.quaternionValue);
+        if(i.type == ArchiveValue::Type::T) ApplySerializer(i.children[0], i.name, out);
+        
+        /*if(i.type == ArchiveValue::Type::TList){
+            out << YAML::BeginSeq;
+            for(auto j: i.children){
+                ApplySerializer(j, j.name(), out);
+            }
+            out << YAML::EndSeq;
+        }*/
     }
     out << YAML::EndMap;
 }
@@ -38,6 +49,9 @@ void LoadSerializer(Archive& s, YAML::Node& node){
         if(i.type == ArchiveValue::Type::String){
             *i.stringValue = node[i.name].as<std::string>();
         }
+        if(i.type == ArchiveValue::Type::T){
+            LoadSerializer(i.children[0], node[i.name]);
+        }
     }
 }
 
@@ -50,7 +64,7 @@ void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
     for(auto i: component._instances){
         Archive s;
         i.second->Serialize(s);
-        if(s.values().empty() == false) continue;
+        if(s.values().empty()) continue;
 
         ApplySerializer(s, s.name(), out);
     }
@@ -90,7 +104,7 @@ void ScriptComponent::OnGui(Entity& e){
         if(open){
             Archive ar;
             i.second.serialize(e, ar);
-            SceneManager::Get().DrawArchive(ar);
+            SceneManager::DrawArchive(ar);
             
             ImGui::TreePop();
         }

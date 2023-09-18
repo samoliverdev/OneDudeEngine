@@ -85,9 +85,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     if(entityDeleted){
         _scene->DestroyEntity(entity.id());
-        if(_selectionContext == entity){
-            _selectionContext = Entity();
-        }
+        _selectionContext = Entity();
+        //if(_selectionContext == entity) _selectionContext = Entity();
     }
 }
 
@@ -215,7 +214,8 @@ void SceneHierarchyPanel::DrawComponentFromSerializeFuncs(Entity e, std::string 
         if(open){
             Archive ar;
             sf.serialize(e, ar);
-            DrawArchive(ar);
+            //DrawArchive(ar);
+            SceneManager::DrawArchive(ar);
 
             ImGui::TreePop();
         }

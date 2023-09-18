@@ -2,11 +2,14 @@
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
 #include <stdio.h>
+#include <filesystem>
 
 extern OD::ApplicationConfig GetStartAppConfig();
 extern OD::Module* CreateMainModule();
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]){
+    std::filesystem::current_path("../../");
+
     for(int i = 0; i < argc; i++){
         OD::Application::args.push_back(std::string(argv[i]));
     }

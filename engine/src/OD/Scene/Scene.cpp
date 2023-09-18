@@ -25,7 +25,7 @@ void TransformComponent::Deserialize(YAML::Node& in, Entity& e){
     auto& tc = e.GetComponent<TransformComponent>();
     tc.localPosition(in["localPosition"].as<Vector3>());
     tc.localRotation(in["localRotation"].as<Quaternion>());
-    tc.localScale(in["Scale"].as<Vector3>());
+    tc.localScale(in["localScale"].as<Vector3>());
 }
 
 void TransformComponent::OnGui(Entity& e){
@@ -118,7 +118,8 @@ void InfoComponent::Serialize(YAML::Emitter& out, Entity& e){
 }
 
 void InfoComponent::Deserialize(YAML::Node& in, Entity& e){
-
+    auto& tc = e.GetComponent<InfoComponent>();
+    tc.name = in["name"].as<std::string>();
 }
 
 void InfoComponent::OnGui(Entity& e){
@@ -138,6 +139,17 @@ void Scene::ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
         if(i.type == ArchiveValue::Type::Vector3) out << YAML::Key << i.name << YAML::Value << (*i.vector3Value);
         if(i.type == ArchiveValue::Type::Vector4) out << YAML::Key << i.name << YAML::Value << (*i.vector4Value);
         if(i.type == ArchiveValue::Type::Quaternion) out << YAML::Key << i.name << YAML::Value << (*i.quaternionValue);
+        if(i.type == ArchiveValue::Type::T) ApplySerializer(i.children[0], i.name, out);
+        
+        /*if(i.type == ArchiveValue::Type::TList){
+            out << YAML::Key << i.name << YAML::BeginSeq;
+            for(auto j: i.children){
+                out << YAML::BeginMap;
+                ApplySerializer(j, j.name(), out);
+                out << YAML::EndMap;
+            }
+            out << YAML::EndSeq;
+        }*/
     }
     out << YAML::EndMap;
 }
@@ -162,6 +174,14 @@ void Scene::LoadSerializer(Archive& s, YAML::Node& node){
         if(i.type == ArchiveValue::Type::String){
             *i.stringValue = node[i.name].as<std::string>();
         }
+        if(i.type == ArchiveValue::Type::T){
+            LoadSerializer(i.children[0], node[i.name]);
+        }
+        /*if(i.type == ArchiveValue::Type::TList){
+            for(auto j: node[i.name]){
+                LoadSerializer(i.children[index], j);
+            }
+        }*/
     }
 }
 
@@ -264,16 +284,10 @@ void Scene::Load(const char* path){
     auto entities = data["Entities"];
     if(entities){
         for(auto e: entities){
-            std::string name;
+            Entity deserializedEntity = AddEntity();
 
             auto infoComponent = e["InfoComponent"];
-            if(infoComponent){
-                name = infoComponent["Name"].as<std::string>();
-            }
-
-            Entity deserializedEntity = AddEntity(name);
-
-            LogInfo("Loading Enity: %s", name.c_str());
+            if(infoComponent) InfoComponent::Deserialize(infoComponent, deserializedEntity);
 
             auto transform = e["TransformComponent"];
             if(transform) TransformComponent::Deserialize(transform, deserializedEntity);

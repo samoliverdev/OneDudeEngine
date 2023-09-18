@@ -50,8 +50,6 @@ protected:
     Quaternion _localRotation = Quaternion::identity;
     Vector3 _localEulerAngles = Vector3::zero;
     Matrix4 _localModelMatrix = Matrix4::identity;
-
-    //Entity* entity;
 };
 
 }

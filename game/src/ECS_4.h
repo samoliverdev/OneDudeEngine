@@ -110,7 +110,7 @@ struct ECS_4: public OD::Module {
         pointLight2.GetComponent<TransformComponent>().position(Vector3(-3, 0.5f, 0));
         //*/
 
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < 5; i++){
             float posRange = 20;
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
@@ -125,7 +125,7 @@ struct ECS_4: public OD::Module {
             scene->SetParent(mainEntity.id(), e.id());
         }
 
-        for(int i = 0; i < 5; i++){
+        for(int i = 0; i < 2; i++){
             float posRange = 20;
             AddCharacter(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         }
