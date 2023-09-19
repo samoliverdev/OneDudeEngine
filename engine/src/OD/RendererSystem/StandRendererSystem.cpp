@@ -26,7 +26,7 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
         auto& transform = view.get<TransformComponent>(e);
 
         if(light.type == LightComponent::Type::Directional){
-            shader.SetVector3("directionalLightColor", light.color);
+            shader.SetVector3("directionalLightColor", light.color * light.intensity);
             shader.SetVector3("directionalLightDir", -transform.forward());
         }
 
@@ -48,7 +48,7 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
             shader.SetVector3(buff, t.position());
 
             sprintf(buff, "pointLights[%d].color", i);
-            shader.SetVector3(buff, l.color);
+            shader.SetVector3(buff, l.color * l.intensity);
 
             sprintf(buff, "pointLights[%d].radius", i);
             shader.SetFloat(buff, l.radius);
@@ -67,7 +67,17 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
 
 void StandRendererSystem::UpdateCurrentLight(){}
 
-void StandRendererSystem::RenderSceneShadow(Matrix4 lightSpaceMatrix){
+void StandRendererSystem::RenderSceneShadow(LightComponent& light, TransformComponent& transform){
+    float near_plane = 0.05f, far_plane = 1000;
+    float lightBoxHalfExtend = 50;
+    Matrix4 lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
+    
+    Vector3 lightCenter = transform.position();
+    Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
+    Matrix4 lightView = Matrix4::LookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));  
+    //lightView = directionalLight->entity->transform().globalModelMatrix().inverse();
+    _lightSpaceMatrix = lightProjection * lightView; 
+
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::FRONT);
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
@@ -77,16 +87,24 @@ void StandRendererSystem::RenderSceneShadow(Matrix4 lightSpaceMatrix){
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
-        for(Ref<Mesh> m: c.mesh->meshs){
+        for(Ref<Mesh> m: c.model()->meshs){
             _shadowMapShader->Bind();
-            _shadowMapShader->SetMatrix4("lightSpaceMatrix", lightSpaceMatrix);
+            _shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
             Renderer::DrawMesh(*m, t.globalModelMatrix(), *_shadowMapShader);
         }
     }
 }
 
-void StandRendererSystem::RenderScene(Camera& camera){
-    Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
+void StandRendererSystem::ClearSceneShadow(){
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+}
+
+void StandRendererSystem::RenderScene(Camera& camera, bool isMain){
+    if(isMain){
+        Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
+    } else {
+        Renderer::SetCamera(camera);
+    }
     
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
@@ -96,11 +114,17 @@ void StandRendererSystem::RenderScene(Camera& camera){
     for(auto _entity: view1){
         auto& c = view1.get<MeshRendererComponent>(_entity);
         auto& t = view1.get<TransformComponent>(_entity);
-    
-        for(Ref<Material> i: c.mesh->materials){
-            SetStandUniforms(*i->shader);
+
+        int index = 0;
+        for(Ref<Material> i: c.model()->materials){
+            if(c.materialsOverride()[index] != nullptr) 
+                SetStandUniforms(*c.materialsOverride()[index]->shader);
+            else 
+                SetStandUniforms(*i->shader);
+                
+            index += 1;
         }
-        Renderer::DrawModel(*c.mesh, t.globalModelMatrix(), c.subMeshIndex, c.materialOverride);
+        Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
     }
 
     auto view2 = scene()->GetRegistry().view<SpriteComponent, TransformComponent>();
@@ -124,8 +148,8 @@ StandRendererSystem::StandRendererSystem(){
     //spriteShader = scene->GetAssetManager().LoadShaderFromFiles("sprite", "res/shaders/sprite.vert", "res/shaders/sprite.frag");
 
     FrameBufferSpecification specification;
-    specification.width = 1024 * 8;
-    specification.height = 1024 * 8;
+    specification.width = 1024 * 4;
+    specification.height = 1024 * 4;
     specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT, false};
     _shadowMap = new Framebuffer(specification);
 
@@ -136,29 +160,29 @@ StandRendererSystem::StandRendererSystem(){
 void StandRendererSystem::Update(){
     UpdateCurrentLight();
 
+    bool hasShadow = false;
     auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
     for(auto entity: view){
         auto& light = view.get<LightComponent>(entity);
         auto& transform = view.get<TransformComponent>(entity);
 
         if(light.type != LightComponent::Type::Directional) continue;
+        if(light.renderShadow == false) continue;
 
-        float near_plane = 0.05f, far_plane = 1000;
-        float lightBoxHalfExtend = 50;
-        Matrix4 lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
-        
-        Vector3 lightCenter = transform.position();
-        Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
-        Matrix4 lightView = Matrix4::LookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));  
-        //lightView = directionalLight->entity->transform().globalModelMatrix().inverse();
-        _lightSpaceMatrix = lightProjection * lightView; 
+        _shadowMap->Bind();
+        Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+        RenderSceneShadow(light, transform);
+        _shadowMap->Unbind();
+
+        hasShadow = true;
+        break;
+    }
+    if(hasShadow == false){
+        _shadowMap->Bind();
+        ClearSceneShadow();
+        _shadowMap->Unbind();
     }
     
-    _shadowMap->Bind();
-    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
-    RenderSceneShadow(_lightSpaceMatrix);
-    _shadowMap->Unbind();
-
     int width = Application::screenWidth();
     int height = Application::screenHeight();
 
@@ -169,34 +193,20 @@ void StandRendererSystem::Update(){
     }
 
     Renderer::SetViewport(0, 0, width, height);
-
-    Camera cam;
-
     auto view2 = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto entity: view2){
         auto& c = view2.get<CameraComponent>(entity);
         auto& t = view2.get<TransformComponent>(entity);
 
         c.UpdateCameraData(t, width, height);
-        cam = c.camera();
+        if(c.isMain){
+            RenderScene(c.camera(), true);
+            break;
+        }
     }
-
-    RenderScene(cam);
-
     scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
     if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
-
-    //Renderer::Blit(shadowMap, nullptr, *postProcessingShader, -1);
-    
-    ///*
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //Renderer::Clean(1,1,1,1);
-    //Renderer::SetDepthTest(DepthTest::DISABLE); 
-    //shadowMapShader->Bind();
-    //shadowMapShader->SetFramebuffer("mainTex", *shadowMap, 0, -1);
-    //Renderer::DrawMeshRaw(fullscreenQuad);
-    //*/
 }
 
 }

@@ -72,7 +72,7 @@ struct PhysicsCubeS: public Script{
         entity().GetComponent<TransformComponent>().rotation(Quaternion::identity);
 
         MeshRendererComponent& renderer = entity().AddOrGetComponent<MeshRendererComponent>();
-        renderer.mesh = cubeModel;
+        renderer.model(cubeModel);
 
         RigidbodyComponent& physicObject = entity().AddOrGetComponent<RigidbodyComponent>();
         
@@ -136,9 +136,9 @@ struct Physics_6: OD::Module {
         scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
         Entity& light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(0,0,0);
+        lightComponent.color = Vector3(1,1,1);
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(4, -125, 0));
+        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));
 
         camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
@@ -152,7 +152,8 @@ struct Physics_6: OD::Module {
         cam.farClipPlane = 1000;
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel("res/models/plane.glb");
-        floorModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+        //floorModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+        //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //floorModel->materials[0]->shader = AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
         //floorModel->materials[0]->SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/floor.jpg", false, OD::TextureFilter::Linear, false));
         //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
@@ -160,14 +161,16 @@ struct Physics_6: OD::Module {
         //floorModel->materials[0]->Save(std::string("res/mat1.material"));
 
         Ref<Model> cubeModel = Model::CreateFromFile("res/models/Cube.glb");
-        cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/rock.material");
+        //cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/rock.material");
+        //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //cubeModel->materials[0]->shader = AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
         //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
         //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
         Entity floorEntity = scene->AddEntity("Floor");
         MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
-        floorRenderer.mesh = floorModel;
+        floorRenderer.model(floorModel);
+        floorRenderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
         floorEntityP.shape({25,0.1f,25});
         floorEntityP.mass(0);
@@ -179,7 +182,8 @@ struct Physics_6: OD::Module {
         //scene->SetParent(floorEntity.id(), character2Entity.id());
 
         MeshRendererComponent& character2Renderer = character2Entity.AddComponent<MeshRendererComponent>();
-        character2Renderer.mesh = cubeModel;
+        character2Renderer.model(cubeModel);
+        character2Renderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/rock.material");
         RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
         physicObject.shape({1,1,1});
         physicObject.mass(1);

@@ -35,9 +35,13 @@ void LightComponent::OnGui(Entity& e){
         light.color = Vector3(color[0], color[1], color[2]);
     }
 
+    ImGui::DragFloat("intensity", &light.intensity, 0.025f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
     if(light.type == LightComponent::Type::Point){
-        ImGui::DragFloat("radus", &light.radius);
+        ImGui::DragFloat("radus", &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     }
+
+    ImGui::Checkbox("renderShadow", &light.renderShadow);
 }
 
 }

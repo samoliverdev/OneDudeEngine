@@ -1,4 +1,4 @@
-Shader: res/Builtins/Shaders/Unlit.glsl
+Shader: res/Builtins/Shaders/StandDiffuse.glsl
 Maps:
   - Name: mainTex
     Type: 0

@@ -291,7 +291,7 @@ void PhysicsSystem::Update(){
         data->_shape->setLocalScaling(ToBullet(transform.localScale()));
     }
 
-    //CheckForCollisionEvents();
+    CheckForCollisionEvents();
 }
 
 void PhysicsSystem::CheckForCollisionEvents(){

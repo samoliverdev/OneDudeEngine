@@ -16,9 +16,25 @@ struct MeshRendererComponent{
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
 
-    Ref<Model> mesh;
-    int subMeshIndex = -1;
-    Ref<Material> materialOverride;
+    inline Ref<Model> model(){ return _model; }
+    inline void model(Ref<Model> m){
+        _model = m;
+        _materialsOverride.resize(_model->materials.size());
+    }
+
+    inline int subMeshIndex(){ return _subMeshIndex; }
+    inline void subMeshIndex(int v){
+        _subMeshIndex = v;
+        if(v < -1) _subMeshIndex = -1;
+        if(_model != nullptr && v >= static_cast<int>(_model->meshs.size())) _subMeshIndex = _model->meshs.size()-1;
+    }
+
+    inline std::vector<Ref<Material>>& materialsOverride(){ return _materialsOverride; }
+
+private:
+    Ref<Model> _model = nullptr;
+    int _subMeshIndex = -1;
+    std::vector<Ref<Material>> _materialsOverride;
 };
 
 };

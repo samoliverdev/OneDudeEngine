@@ -35,6 +35,10 @@ class Renderer {
 public:
     enum class RenderMode{SHADED, WIREFRAME};
 
+    static int drawCalls;
+    static int vertices;
+    static int tris;
+
     static void Begin();
     static void End();
 
@@ -45,7 +49,7 @@ public:
     static void DrawMeshRaw(Mesh& mesh);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& shader);
-    static void DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex = -1, Ref<Material> materialOverride = nullptr);
+    static void DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex = -1, std::vector<Ref<Material>>* materialsOverride = nullptr);
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);

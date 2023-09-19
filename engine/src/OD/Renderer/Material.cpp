@@ -97,7 +97,7 @@ Ref<Material> Material::CreateFromFile(std::string const &path){
 
     YAML::Node data = YAML::Load(strStream.str());
     if(!data["Shader"] || !data["Maps"]){
-        LogInfo("Coud not load Scene: %s", path.c_str());
+        LogInfo("Coud not load Material: %s", path.c_str());
         return nullptr;
     }
 

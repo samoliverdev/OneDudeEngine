@@ -107,6 +107,13 @@ void Editor::DrawMainWorkspace(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
 
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Renderer Stats");
+    ImGui::Text("DrawCalls: %d", Renderer::drawCalls);
+    ImGui::Text("Vertices: %dk", Renderer::vertices / 1000);
+    ImGui::Text("Tris: %dk", Renderer::tris / 1000);
+    ImGui::End();
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::Begin("Viewport");
 
@@ -244,55 +251,63 @@ void Editor::DrawMainPanel(){
 }
 
 void Editor::DrawGizmos(){
-    Entity camE = SceneManager::Get().activeScene()->GetMainCamera2();
-    if(_sceneHierarchyPanel.selectionContext().IsValid() && camE.IsValid() && camE.HasComponent<CameraComponent>() && _gizmoType != Editor::GizmosType::None){
-        TransformComponent& t = camE.GetComponent<TransformComponent>();
+    if(_sceneHierarchyPanel.selectionContext().IsValid() == false) return;
+    if(_gizmoType == Editor::GizmosType::None) return;
 
-        ImGuizmo::Enable(true);
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::SetDrawlist();
-        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-        //ImGuiIO& io = ImGui::GetIO();
-        //ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+    Camera cam = _cam.cam;
 
-        Matrix4 view = _cam.cam.view;
-        Matrix4 projection = _cam.cam.projection;
+    if(SceneManager::Get().activeScene()->running()){
+        Entity camE = SceneManager::Get().activeScene()->GetMainCamera2();
+        if(camE.IsValid() == false) return;
 
-        TransformComponent& tc = _sceneHierarchyPanel.selectionContext().GetComponent<TransformComponent>();
-        Matrix4 trans = tc.globalModelMatrix();
+        CameraComponent& cameraComponent = camE.GetComponent<CameraComponent>();
+        cam = cameraComponent.camera();
+    }
+    
+    ImGuizmo::Enable(true);
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+    //ImGuiIO& io = ImGui::GetIO();
+    //ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-        bool snap = Input::IsKey(KeyCode::Control);
-        float snapValue = 1;
-        if(_gizmoType == Editor::GizmosType::Rotation) snapValue = 45;
+    Matrix4 view = cam.view;
+    Matrix4 projection = cam.projection;
 
-        float snapValues[3] = {snapValue, snapValue, snapValue};
+    TransformComponent& tc = _sceneHierarchyPanel.selectionContext().GetComponent<TransformComponent>();
+    Matrix4 trans = tc.globalModelMatrix();
 
-        ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;
-        if(_gizmoType == Editor::GizmosType::Rotation) gizmoType = ImGuizmo::OPERATION::ROTATE;
-        if(_gizmoType == Editor::GizmosType::Scale) gizmoType = ImGuizmo::OPERATION::SCALE;
+    bool snap = Input::IsKey(KeyCode::Control);
+    float snapValue = 1;
+    if(_gizmoType == Editor::GizmosType::Rotation) snapValue = 45;
 
-        ImGuizmo::Manipulate(
-            view.raw(),
-            projection.raw(),
-            gizmoType, 
-            ImGuizmo::LOCAL,
-            trans.raw(),
-            nullptr,
-            (snap ? snapValues : nullptr)
-        );
+    float snapValues[3] = {snapValue, snapValue, snapValue};
 
-        if(ImGuizmo::IsUsing()){
-            glm::vec3 s;
-            glm::quat r;
-            glm::vec3 t;
-            glm::vec3 sk;
-            glm::vec4 p;
-            glm::decompose((glm::mat4)trans, s, r, t, sk, p);
+    ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+    if(_gizmoType == Editor::GizmosType::Rotation) gizmoType = ImGuizmo::OPERATION::ROTATE;
+    if(_gizmoType == Editor::GizmosType::Scale) gizmoType = ImGuizmo::OPERATION::SCALE;
 
-            if(_gizmoType == Editor::GizmosType::Translation) tc.position(t);
-            if(_gizmoType == Editor::GizmosType::Rotation) tc.rotation(r);
-            if(_gizmoType == Editor::GizmosType::Scale) tc.localScale(s);
-        }
+    ImGuizmo::Manipulate(
+        view.raw(),
+        projection.raw(),
+        gizmoType, 
+        ImGuizmo::LOCAL,
+        trans.raw(),
+        nullptr,
+        (snap ? snapValues : nullptr)
+    );
+
+    if(ImGuizmo::IsUsing()){
+        glm::vec3 s;
+        glm::quat r;
+        glm::vec3 t;
+        glm::vec3 sk;
+        glm::vec4 p;
+        glm::decompose((glm::mat4)trans, s, r, t, sk, p);
+
+        if(_gizmoType == Editor::GizmosType::Translation) tc.position(t);
+        if(_gizmoType == Editor::GizmosType::Rotation) tc.rotation(r);
+        if(_gizmoType == Editor::GizmosType::Scale) tc.localScale(s);
     }
 }
 

@@ -19,6 +19,8 @@ struct CameraComponent{
 
     Type type = Type::Perspective;
 
+    bool isMain = true;
+
     float orthographicSize = 5;
     float fieldOfView = 45;
     float nearClipPlane = 0.1f;

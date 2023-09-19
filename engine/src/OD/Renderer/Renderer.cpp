@@ -16,6 +16,10 @@ Ref<Shader> gismoShader;
 Mesh fullScreenQuad;
 Camera camera;
 
+int Renderer::drawCalls;
+int Renderer::vertices;
+int Renderer::tris;
+
 void CreateLineVAO(){
     glGenVertexArrays(1, &lineVAO);
 	glBindVertexArray(lineVAO);
@@ -86,7 +90,12 @@ void Renderer::_Shutdown(){
 
 }
 
-void Renderer::Begin(){}
+void Renderer::Begin(){
+    drawCalls = 0;
+    vertices = 0;
+    tris = 0;
+}
+
 void Renderer::End(){}
 
 void Renderer::Clean(float r, float g, float b, float a){
@@ -100,6 +109,10 @@ void Renderer::SetCamera(Camera& _camera){
 
 void Renderer::DrawMeshRaw(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
+
+    drawCalls += 1;
+    vertices += mesh._vertexCount;
+    tris += mesh._indiceCount;
 
     glBindVertexArray(mesh._vao);
     glCheckError();
@@ -119,6 +132,10 @@ void Renderer::DrawMeshRaw(Mesh& mesh){
 void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
     Assert(mesh.IsValid() && "Mesh is not vali!");
     Assert(shader.IsValid()  && "Shader is not vali!");
+
+    drawCalls += 1;
+    vertices += mesh._vertexCount;
+    tris += mesh._indiceCount;
     
     shader.Bind();
     shader.SetMatrix4("model", modelMatrix);
@@ -143,13 +160,14 @@ void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& material){
     DrawMesh(mesh, modelMatrix, *shader);
 }
 
-void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, Ref<Material> materialOverride){
-    //Assert(model.meshs.size() == model.materials.size());
+void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, std::vector<Ref<Material>>* materialsOverride){
+    Assert(model.meshs.size() == model.materials.size());
     Assert(subMeshIndex < (int)model.meshs.size());
+    if(materialsOverride != nullptr) Assert(model.meshs.size() == materialsOverride->size());
 
     if(subMeshIndex > -1){
         Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[subMeshIndex] : nullptr;
-        if(materialOverride != nullptr) targetMaterial = materialOverride;
+        if((*materialsOverride)[subMeshIndex] != nullptr) targetMaterial = (*materialsOverride)[subMeshIndex];
         Assert(targetMaterial != nullptr);
 
         targetMaterial->UpdateUniforms();
@@ -157,7 +175,7 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, Re
     } else {
         for(int i = 0; i < model.meshs.size(); i++){
             Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[i] : nullptr;
-            if(materialOverride != nullptr) targetMaterial = materialOverride;
+            if((*materialsOverride)[i] != nullptr) targetMaterial = (*materialsOverride)[i];
             Assert(targetMaterial != nullptr);
 
             targetMaterial->UpdateUniforms();
@@ -167,6 +185,10 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, Re
 }
 
 void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
+    drawCalls += 1;
+    vertices += 2;
+    tris += 0;
+
     gismoShader->Bind();
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4::identity);
@@ -186,6 +208,10 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
 }
 
 void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
+    drawCalls += 1;
+    vertices += 8;
+    tris += 24;
+
     gismoShader->Bind();
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", modelMatrix);

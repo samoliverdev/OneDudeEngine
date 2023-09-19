@@ -194,7 +194,6 @@ std::vector<Ref<Texture2D>> Model::loadMaterialTextures(aiMaterial *mat, aiTextu
         //LogInfo("Blende %f", (float)blend);
 
         std::string filename = this->_directory + '/' +std::string(str.C_Str());
-        LogInfo("Loading Texture %s", filename.c_str());
         
         //Ref<Texture2D> texture = Texture2D::CreateFromFile(filename.c_str(), false, TextureFilter::Linear);
         Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), TextureFilter::Linear, true);

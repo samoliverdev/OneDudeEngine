@@ -13,14 +13,13 @@ struct LightComponent{
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
 
-    enum class Type{
-        Directional, Point, Spot 
-    };
+    enum class Type{ Directional, Point, Spot };
 
     Type type = Type::Directional;
     Vector3 color = {1,1,1};
-
+    float intensity = 1;
     float radius = 5;
+    bool renderShadow = true;
 };
 
 }

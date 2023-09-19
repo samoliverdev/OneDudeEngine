@@ -154,7 +154,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, Model& model){
     auto& boneInfoMap = model.boneInfoMap();//getting m_BoneInfoMap from Model class
     int& boneCount = model.boneCounter(); //getting the m_BoneCounter from Model class
 
-    LogInfo("%zd %d", boneInfoMap.size(), boneCount);
+    //LogInfo("%zd %d", boneInfoMap.size(), boneCount);
     Assert(boneInfoMap.size() == boneCount);
 
     //reading channels(bones engaged in an animation and their keyframes)

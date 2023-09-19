@@ -1,46 +1,2947 @@
 Scene: Untitled
 Entities:
   - InfoComponent:
-      name: Trigger
+      name: Entity30
     TransformComponent:
-      localPosition: [7.36272501e-11, -0.520465076, 2.31691055e-11]
-      localRotation: [-6.52307236e-11, -2.7417092e-20, 2.99671954e-10, 1]
+      localPosition: [8, 3, 3]
+      localRotation: [-0.273562431, -0.68205595, -0.209464163, 0.645048797]
       localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [4, 1, 4]
-  - InfoComponent:
-      name: MainCube
-    TransformComponent:
-      localPosition: [2, 12.9028158, 0]
-      localRotation: [0, 0, 0, 1]
-      localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 1
-      boxShapeSize: [1, 1, 1]
     MeshRendererComponent:
       modelPath: res/models/Cube.glb
       materials:
-        - materialPath: res/textures/rock.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
   - InfoComponent:
-      name: Floor
+      name: Entity171
     TransformComponent:
-      localPosition: [0, 0, 0]
+      localPosition: [15, 15, -17]
+      localRotation: [0.650981188, 0.221435755, -0.543084145, 0.481922537]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity31
+    TransformComponent:
+      localPosition: [8, 4, 4]
+      localRotation: [-0.715667486, -0.187824249, -0.362180233, 0.566892922]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity72
+    TransformComponent:
+      localPosition: [18, 16, -16]
+      localRotation: [0.634147823, -0.449164748, -0.345219046, 0.526242673]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity66
+    TransformComponent:
+      localPosition: [20, 1, 15]
+      localRotation: [-0.0925174356, -0.712307274, 0.593767822, 0.362627506]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity119
+    TransformComponent:
+      localPosition: [13, 4, 10]
+      localRotation: [0.360316813, -0.566096723, -0.377595127, -0.638066053]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity34
+    TransformComponent:
+      localPosition: [-19, 5, -8]
+      localRotation: [-0.762562156, -0.339709252, -0.212483764, 0.507885098]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity194
+    TransformComponent:
+      localPosition: [2, 18, -19]
+      localRotation: [0.511972249, 0.485859066, 0.54656589, -0.450656325]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity161
+    TransformComponent:
+      localPosition: [-9, 18, 16]
+      localRotation: [-0.201426655, 0.468381912, -0.834189892, 0.210173637]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity164
+    TransformComponent:
+      localPosition: [-11, 19, 10]
+      localRotation: [-0.0377158523, -0.342262626, 0.861286581, 0.373656482]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity54
+    TransformComponent:
+      localPosition: [-4, 6, -7]
+      localRotation: [0.35735023, 0.916845024, 0.176117063, -0.0260552429]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity8
+    TransformComponent:
+      localPosition: [5, 0, 14]
+      localRotation: [0.698369563, -0.199939266, -0.674884558, -0.129749864]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity120
+    TransformComponent:
+      localPosition: [2, 13, 20]
+      localRotation: [-0.0757576525, -0.193797842, 0.320157081, -0.924230814]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity143
+    TransformComponent:
+      localPosition: [-8, 19, -2]
+      localRotation: [0.0395874083, -0.469629556, 0.274395943, 0.838205159]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity43
+    TransformComponent:
+      localPosition: [8, 0, 3]
+      localRotation: [-0.437411189, -0.359995365, 0.499515921, 0.65540725]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity15
+    TransformComponent:
+      localPosition: [-8, 20, 8]
+      localRotation: [-0.156577215, -0.474988371, 0.865408719, 0.0306161791]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity74
+    TransformComponent:
+      localPosition: [10, 15, -18]
+      localRotation: [-0.400509685, -0.153045923, -0.690345526, 0.582745194]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity86
+    TransformComponent:
+      localPosition: [7, 6, -4]
+      localRotation: [0.386579871, 0.658126593, 0.426509142, 0.485299289]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity25
+    TransformComponent:
+      localPosition: [18, 4, -2]
+      localRotation: [0.0327796936, -0.726916194, -0.178785235, 0.662234306]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity38
+    TransformComponent:
+      localPosition: [15, 17, 12]
+      localRotation: [-0.339666605, 0.763670743, 0.0606392622, 0.545670688]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity189
+    TransformComponent:
+      localPosition: [-1, 10, -15]
+      localRotation: [-0.544703484, -0.58509469, -0.190949753, 0.569649458]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity107
+    TransformComponent:
+      localPosition: [12, 13, 2]
+      localRotation: [0.23188436, 0.704632282, -0.567883313, 0.356695175]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity97
+    TransformComponent:
+      localPosition: [9, 16, 2]
+      localRotation: [0.746826053, 0.120895445, -0.607512832, 0.241998613]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity192
+    TransformComponent:
+      localPosition: [11, 15, -7]
+      localRotation: [0.42324689, -0.459280908, -0.771183968, -0.123281918]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity136
+    TransformComponent:
+      localPosition: [-14, 20, -12]
+      localRotation: [0.241870522, -0.631593585, 0.45653072, 0.578072786]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity137
+    TransformComponent:
+      localPosition: [-14, 10, -1]
+      localRotation: [0.00346431136, 0.742497861, -0.438714325, 0.506176412]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity92
+    TransformComponent:
+      localPosition: [1, 2, -18]
+      localRotation: [0.231225297, -0.920413375, -0.259995043, 0.178260431]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity122
+    TransformComponent:
+      localPosition: [11, 17, -13]
+      localRotation: [0.142793909, -0.639130473, 0.0897304714, 0.750380278]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity52
+    TransformComponent:
+      localPosition: [-13, 9, -2]
+      localRotation: [-0.197805554, 0.963626862, -0.121139675, 0.132746354]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity100
+    TransformComponent:
+      localPosition: [-17, 19, -1]
+      localRotation: [-0.0179285109, -0.76524806, 0.354688883, 0.536907732]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [14, 9, -15]
+      localRotation: [0.563843608, 0.777489126, -0.243577227, 0.135134131]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity188
+    TransformComponent:
+      localPosition: [-10, 17, 16]
+      localRotation: [-0.461120129, 0.328913778, -0.478572518, 0.670933902]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity120
+    TransformComponent:
+      localPosition: [19, 3, 14]
+      localRotation: [-0.0537252054, 0.830302477, 0.530620575, 0.161719814]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity7
+    TransformComponent:
+      localPosition: [0, 15, 17]
+      localRotation: [-0.66166991, 0.265948266, 0.649516225, 0.26380524]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity124
+    TransformComponent:
+      localPosition: [20, 6, 19]
+      localRotation: [-0.661359251, 0.279799491, -0.524788439, 0.4570705]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity168
+    TransformComponent:
+      localPosition: [-15, 12, -2]
+      localRotation: [0.472461939, -0.669466734, 0.478641748, 0.315429926]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity133
+    TransformComponent:
+      localPosition: [-15, 3, 0]
+      localRotation: [0.610647142, 0.6913957, -0.328859895, -0.202319324]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity37
+    TransformComponent:
+      localPosition: [8, 5, 2]
+      localRotation: [0.334430575, 0.460721523, 0.749796689, 0.337189466]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity198
+    TransformComponent:
+      localPosition: [2, 10, -19]
+      localRotation: [-0.80606246, 0.130414069, -0.55290103, 0.165999845]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity195
+    TransformComponent:
+      localPosition: [-16, 13, 19]
+      localRotation: [0.600901604, -0.167794347, 0.754609644, -0.203289643]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity154
+    TransformComponent:
+      localPosition: [-19, 15, -14]
+      localRotation: [0.0265835449, -0.218284339, 0.67863971, 0.700780511]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity123
+    TransformComponent:
+      localPosition: [11, 7, 10]
+      localRotation: [-0.951753497, -0.0233254172, 0.199585229, -0.231920168]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity83
+    TransformComponent:
+      localPosition: [-19, 5, 9]
+      localRotation: [-0.768155038, -0.22301589, -0.588977814, 0.115355358]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity154
+    TransformComponent:
+      localPosition: [-4, 13, -16]
+      localRotation: [-0.419913173, 0.273730993, 0.788886786, 0.355530441]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity71
+    TransformComponent:
+      localPosition: [16, 4, -13]
+      localRotation: [0.0276960284, 0.493770063, 0.741484344, 0.453459024]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity1
+    TransformComponent:
+      localPosition: [15, 8, 7]
+      localRotation: [-0.34096542, 0.642991602, 0.415999442, 0.545205355]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity163
+    TransformComponent:
+      localPosition: [-19, 2, -20]
+      localRotation: [0.880320251, 0.391943783, -0.108695596, -0.244134426]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity42
+    TransformComponent:
+      localPosition: [9, 19, -12]
+      localRotation: [0.052008532, 0.738977611, 0.608132482, 0.28527528]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity110
+    TransformComponent:
+      localPosition: [-14, 7, 0]
+      localRotation: [-0.910474896, 0.142123893, 0.337451309, 0.192256987]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity104
+    TransformComponent:
+      localPosition: [-5, 19, -11]
+      localRotation: [0.228758141, -0.865841269, -0.339791149, 0.287281364]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity94
+    TransformComponent:
+      localPosition: [9, 9, -1]
+      localRotation: [0.442864984, -0.284595042, 0.83988148, 0.132194638]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity4
+    TransformComponent:
+      localPosition: [2, 17, 8]
+      localRotation: [0.245025769, 0.759994924, 0.562025905, 0.215631545]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity148
+    TransformComponent:
+      localPosition: [12, 4, 2]
+      localRotation: [-0.349481791, -0.236346737, 0.679168165, 0.600610852]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity130
+    TransformComponent:
+      localPosition: [-10, 3, -18]
+      localRotation: [0.633298695, 0.454274833, 0.59807688, -0.1867387]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity80
+    TransformComponent:
+      localPosition: [-18, 4, 3]
+      localRotation: [-0.388210475, 0.188518375, 0.892282367, -0.132610828]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity95
+    TransformComponent:
+      localPosition: [-9, 1, 12]
+      localRotation: [0.521008909, -0.184926033, -0.628347397, -0.547294796]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity68
+    TransformComponent:
+      localPosition: [-4, 10, 7]
+      localRotation: [-0.115773544, 0.162308529, -0.797771871, 0.569045186]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity124
+    TransformComponent:
+      localPosition: [14, 18, -17]
+      localRotation: [0.563289642, 0.644226432, 0.00927372277, 0.517292142]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity122
+    TransformComponent:
+      localPosition: [-2, 18, 17]
+      localRotation: [-0.196430698, -0.0423474684, -0.925143182, 0.322074026]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity72
+    TransformComponent:
+      localPosition: [7, 5, -2]
+      localRotation: [-0.262367278, -0.749950707, 0.0477071404, 0.605360627]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity1
+    TransformComponent:
+      localPosition: [2, 20, 15]
+      localRotation: [0.48720783, 0.312162578, -0.724961281, 0.373649776]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity160
+    TransformComponent:
+      localPosition: [-5, 20, 17]
+      localRotation: [-0.651090562, 0.353826791, -0.0983231366, 0.664244056]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity58
+    TransformComponent:
+      localPosition: [-2, 9, -15]
+      localRotation: [0.611608624, -0.398526669, 0.657622099, -0.186130285]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity79
+    TransformComponent:
+      localPosition: [-17, 19, -8]
+      localRotation: [-0.047811307, 0.912293434, 0.0212869979, 0.406179219]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity91
+    TransformComponent:
+      localPosition: [7, 1, -15]
+      localRotation: [0.0774386674, -0.602172911, 0.748119473, 0.267783821]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [-18, 6, 6]
+      localRotation: [-0.146821171, 0.0539493635, 0.767023623, 0.622260213]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity1
+    TransformComponent:
+      localPosition: [-10, 1, -16]
+      localRotation: [-0.624317646, -0.306435794, 0.617334485, -0.367726386]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity198
+    TransformComponent:
+      localPosition: [-19, 5, 4]
+      localRotation: [0.191341683, -0.461939722, 0.800103188, -0.331413627]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity22
+    TransformComponent:
+      localPosition: [4, 11, 1]
+      localRotation: [-0.404057384, -0.022628054, 0.519650698, -0.752455115]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity33
+    TransformComponent:
+      localPosition: [8, 17, -2]
+      localRotation: [-0.0600991435, -0.858209252, -0.462761641, 0.213814452]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity170
+    TransformComponent:
+      localPosition: [20, 17, -20]
+      localRotation: [-0.253019154, 0.692023933, -0.241777554, -0.63136971]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity151
+    TransformComponent:
+      localPosition: [-1, 8, 6]
+      localRotation: [0.99232769, -0.0780978799, 0.00751992641, -0.0955502912]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity12
+    TransformComponent:
+      localPosition: [20, 17, 19]
+      localRotation: [0.201247051, -0.759850919, 0.485348314, 0.382835746]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity152
+    TransformComponent:
+      localPosition: [-19, 20, -2]
+      localRotation: [0.575017631, 0.0456246138, -0.816862464, 0.00298086181]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity81
+    TransformComponent:
+      localPosition: [19, 1, 2]
+      localRotation: [-0.055054307, -0.55095762, 0.0309121981, 0.83214128]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity103
+    TransformComponent:
+      localPosition: [9, 18, 19]
+      localRotation: [-0.741922796, 0.0944643989, 0.655915678, 0.101989046]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity194
+    TransformComponent:
+      localPosition: [18, 10, 20]
+      localRotation: [-0.889042854, -0.214748248, -0.384296119, -0.125707716]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity188
+    TransformComponent:
+      localPosition: [9, 10, -20]
+      localRotation: [-0.213611946, 0.102771357, 0.791900337, 0.562762737]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity91
+    TransformComponent:
+      localPosition: [-17, 12, -18]
+      localRotation: [-0.500873983, -0.00174622238, -0.455763698, -0.735800028]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity67
+    TransformComponent:
+      localPosition: [-14, 20, -11]
+      localRotation: [-0.232411027, -0.70111084, -0.32841602, 0.588703394]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity170
+    TransformComponent:
+      localPosition: [20, 13, 10]
+      localRotation: [0.800388992, 0.141683802, -0.112486705, 0.571532905]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity75
+    TransformComponent:
+      localPosition: [-16, 16, 0]
+      localRotation: [-0.0862900168, -0.651946723, -0.0734135285, 0.749753296]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity164
+    TransformComponent:
+      localPosition: [-4, 6, -8]
+      localRotation: [0.545620978, -0.449775249, -0.545620978, -0.449775249]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity12
+    TransformComponent:
+      localPosition: [14, 7, 9]
+      localRotation: [0.530835092, 0.340349287, -0.668374538, 0.394527465]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity58
+    TransformComponent:
+      localPosition: [11, 1, -9]
+      localRotation: [0.39463833, -0.815126598, -0.358249813, 0.226905912]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [-1, 19, 8]
+      localRotation: [-0.602168798, -0.343349814, 0.645746946, -0.320178866]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity136
+    TransformComponent:
+      localPosition: [19, 9, -20]
+      localRotation: [-0.236783639, -0.191314355, -0.821185708, 0.48268649]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity16
+    TransformComponent:
+      localPosition: [15, 3, 10]
+      localRotation: [0.247615367, 0.0943479538, 0.118533403, 0.956940353]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity164
+    TransformComponent:
+      localPosition: [17, 6, -3]
+      localRotation: [0.52959168, -0.468543172, -0.697409272, 0.116706222]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity110
+    TransformComponent:
+      localPosition: [-16, 1, -1]
+      localRotation: [-0.472361386, -0.549566984, -0.33435446, 0.602542877]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity159
+    TransformComponent:
+      localPosition: [8, 3, 14]
+      localRotation: [-0.258994818, 0.731340647, 0.62738049, 0.0667552873]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity2
+    TransformComponent:
+      localPosition: [7, 12, 9]
+      localRotation: [-0.0360902995, -0.0300595053, -0.949771345, 0.309399873]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity93
+    TransformComponent:
+      localPosition: [9, 11, 6]
+      localRotation: [-0.512262881, -0.486026347, -0.521987975, 0.478428334]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity53
+    TransformComponent:
+      localPosition: [12, 20, -17]
+      localRotation: [0.180532098, 0.197339147, 0.140351146, 0.953292727]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity66
+    TransformComponent:
+      localPosition: [-17, 7, 17]
+      localRotation: [-0.662726581, 0.591493011, 0.0815678686, 0.451969147]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity134
+    TransformComponent:
+      localPosition: [-17, 15, 12]
+      localRotation: [-0.373571932, 0.670098662, 0.184856504, 0.614198685]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity111
+    TransformComponent:
+      localPosition: [11, 10, -18]
+      localRotation: [0.443544537, -0.423159391, 0.177506015, 0.769867539]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity85
+    TransformComponent:
+      localPosition: [5, 2, -2]
+      localRotation: [0.66368854, 0.10355939, -0.370114028, -0.641723156]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [-19, 12, -6]
+      localRotation: [-0.667043388, 0.482896566, 0.497224689, 0.273187876]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity177
+    TransformComponent:
+      localPosition: [-11, 12, -17]
+      localRotation: [0.320569634, -0.676054895, -0.642939806, 0.163747787]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity43
+    TransformComponent:
+      localPosition: [-1, 13, -11]
+      localRotation: [0.779817283, 0.416055739, -0.394699305, -0.250988185]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity183
+    TransformComponent:
+      localPosition: [-18, 7, -3]
+      localRotation: [-0.495896429, -0.411339819, -0.655112863, 0.394605458]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity68
+    TransformComponent:
+      localPosition: [-18, 5, 14]
+      localRotation: [0.112117745, -0.60295856, 0.0464177206, 0.788489759]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity59
+    TransformComponent:
+      localPosition: [9, 9, -15]
+      localRotation: [-0.279398471, 0.217449367, 0.777076542, -0.520388663]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity154
+    TransformComponent:
+      localPosition: [-17, 11, -12]
+      localRotation: [0.808739781, 0.0211776234, 0.58758384, -0.0153864603]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity77
+    TransformComponent:
+      localPosition: [9, 1, 8]
+      localRotation: [0.633932948, -0.347550005, -0.590765238, 0.358237833]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity87
+    TransformComponent:
+      localPosition: [-1, 8, -13]
+      localRotation: [0.84821862, 0.263232201, -0.251606554, 0.384614319]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity154
+    TransformComponent:
+      localPosition: [-2, 5, -7]
+      localRotation: [0.750691295, -0.294815719, 0.578967214, -0.119762823]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity29
+    TransformComponent:
+      localPosition: [4, 17, 4]
+      localRotation: [-0.134880975, -0.13600105, -0.883271337, -0.427951545]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity148
+    TransformComponent:
+      localPosition: [1, 4, 16]
+      localRotation: [0.152870268, -0.523124993, -0.0817233473, 0.834441245]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity102
+    TransformComponent:
+      localPosition: [-10, 10, -17]
+      localRotation: [-0.242842376, -0.829816043, -0.17928271, 0.469351351]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity34
+    TransformComponent:
+      localPosition: [10, 19, 14]
+      localRotation: [0.405452311, 0.689704061, -0.403309286, 0.444137812]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity88
+    TransformComponent:
+      localPosition: [-16, 7, 20]
+      localRotation: [0.086865738, 0.902135313, 0.0405061282, -0.420672625]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity79
+    TransformComponent:
+      localPosition: [-16, 8, 3]
+      localRotation: [0.195448175, 0.745951831, 0.331013143, 0.543862283]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity33
+    TransformComponent:
+      localPosition: [7, 19, 4]
+      localRotation: [0.681125402, 0.553495944, -0.35295096, -0.324246705]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity181
+    TransformComponent:
+      localPosition: [19, 16, 11]
+      localRotation: [-0.630469322, 0.683216155, -0.128918901, 0.345114708]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity31
+    TransformComponent:
+      localPosition: [11, 17, 19]
+      localRotation: [0.105375431, 0.304234624, -0.85956794, 0.396837771]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity49
+    TransformComponent:
+      localPosition: [-12, 13, -16]
+      localRotation: [-0.0850311369, -0.968084574, 0.228976533, 0.0561401024]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity57
+    TransformComponent:
+      localPosition: [-15, 7, 10]
+      localRotation: [0.314166933, -0.571731031, -0.757126749, -0.0343777835]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity194
+    TransformComponent:
+      localPosition: [11, 6, 1]
+      localRotation: [0.369826108, 0.819963217, 0.141225696, 0.413454175]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity7
+    TransformComponent:
+      localPosition: [6, 7, 1]
+      localRotation: [-0.608959556, 0.261499584, -0.685540199, -0.301364958]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity163
+    TransformComponent:
+      localPosition: [-17, 16, 12]
+      localRotation: [0.182278767, -0.146773905, -0.666033387, 0.708259463]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity80
+    TransformComponent:
+      localPosition: [-17, 8, -7]
+      localRotation: [0.390275717, 0.465212107, -0.712780893, 0.351007044]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity14
+    TransformComponent:
+      localPosition: [4, 16, 12]
+      localRotation: [-0.0810221285, 0.759194851, 0.432206959, 0.479849756]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity172
+    TransformComponent:
+      localPosition: [-11, 15, 20]
+      localRotation: [-0.796865642, 0.565199673, 0.0587417334, 0.205192626]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity190
+    TransformComponent:
+      localPosition: [18, 10, -14]
+      localRotation: [-0.483969003, 0.652355254, 0.316066027, 0.490213186]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity9
+    TransformComponent:
+      localPosition: [-17, 8, 5]
+      localRotation: [0.314755082, -0.0231280625, 0.471644938, -0.82337445]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity31
+    TransformComponent:
+      localPosition: [15, 8, 18]
+      localRotation: [0.248910129, -0.778027177, -0.441271544, 0.371479183]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity75
+    TransformComponent:
+      localPosition: [2, 2, 9]
+      localRotation: [-0.733239472, -0.544273853, 0.346850485, 0.214057297]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity78
+    TransformComponent:
+      localPosition: [-15, 6, -8]
+      localRotation: [0.55688715, 0.416536152, -0.600863099, 0.394129306]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity18
+    TransformComponent:
+      localPosition: [-7, 1, 4]
+      localRotation: [-0.708433747, 0.448785871, -0.495802641, 0.22559385]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity132
+    TransformComponent:
+      localPosition: [1, 2, -11]
+      localRotation: [0.884717941, 0.210961252, 0.0586969666, 0.411490262]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity117
+    TransformComponent:
+      localPosition: [4, 15, 20]
+      localRotation: [-0.610833883, 0.437866449, 0.50014621, 0.430126399]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity116
+    TransformComponent:
+      localPosition: [13, 9, -9]
+      localRotation: [-0.675942481, 0.0392995775, -0.568179488, 0.467685074]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity167
+    TransformComponent:
+      localPosition: [2, 10, -12]
+      localRotation: [0.353487313, -0.21369797, 0.710504413, -0.569704592]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity4
+    TransformComponent:
+      localPosition: [-11, 14, -19]
+      localRotation: [-0.0244300514, -0.979337454, 0.182282984, -0.0841088071]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity133
+    TransformComponent:
+      localPosition: [-9, 3, -11]
+      localRotation: [0.801501632, -0.338040829, 0.319303215, 0.375990689]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity194
+    TransformComponent:
+      localPosition: [-18, 0, 4]
+      localRotation: [-0.503556788, 0.513651371, 0.487527579, 0.494883507]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity17
+    TransformComponent:
+      localPosition: [-13, 5, 9]
+      localRotation: [-0.649072945, 0.252378702, 0.679397762, 0.231145054]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity3
+    TransformComponent:
+      localPosition: [8, 8, -4]
+      localRotation: [-0.80240339, -0.417037725, -0.0530129224, 0.423577547]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [1, 0, -13]
+      localRotation: [-0.18186228, -0.249958441, -0.540886223, 0.782233357]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity63
+    TransformComponent:
+      localPosition: [-15, 12, -8]
+      localRotation: [-0.306307763, 0.536949575, -0.574060857, 0.536949575]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity50
+    TransformComponent:
+      localPosition: [3, 2, 15]
+      localRotation: [-0.282679528, 0.43016246, 0.764528573, 0.388006151]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity172
+    TransformComponent:
+      localPosition: [16, 8, -8]
+      localRotation: [-0.030196324, -0.677970409, 0.0178720355, 0.734251201]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity15
+    TransformComponent:
+      localPosition: [-3, 1, 8]
+      localRotation: [-0.490251869, 0.38972339, -0.289484769, -0.723855913]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity39
+    TransformComponent:
+      localPosition: [2, 6, -3]
+      localRotation: [-0.147083759, 0.669810653, 0.598198712, 0.414582103]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity158
+    TransformComponent:
+      localPosition: [-20, 11, -6]
+      localRotation: [0.0523464754, 0.26687628, 0.679802418, 0.68110621]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity36
+    TransformComponent:
+      localPosition: [-3, 16, -15]
+      localRotation: [0.4399454, 0.786633074, -0.432955295, -0.0143557787]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity5
+    TransformComponent:
+      localPosition: [-11, 12, -1]
+      localRotation: [-0.623355329, -0.448418379, 0.531529486, 0.357526958]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity192
+    TransformComponent:
+      localPosition: [-16, 10, 11]
+      localRotation: [-0.304978311, -0.188341156, -0.784639835, 0.505822182]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity2
+    TransformComponent:
+      localPosition: [7, 1, 14]
+      localRotation: [0.391328305, -0.564976454, 0.63858974, 0.34621799]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity164
+    TransformComponent:
+      localPosition: [-17, 6, -19]
+      localRotation: [0.449953616, 0.854570448, 0.237324402, 0.10453815]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity103
+    TransformComponent:
+      localPosition: [-20, 9, 5]
+      localRotation: [0.0890212357, 0.738525033, -0.508343577, 0.433869481]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity188
+    TransformComponent:
+      localPosition: [0, 12, -20]
+      localRotation: [-0.290036917, 0.602139652, -0.719966471, -0.186961472]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity31
+    TransformComponent:
+      localPosition: [-7, 2, -20]
+      localRotation: [-0.58784914, -0.745978832, -0.294984162, -0.104562849]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity183
+    TransformComponent:
+      localPosition: [4, 0, -12]
+      localRotation: [-0.537573636, -0.376758188, -0.625077724, 0.422309965]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity102
+    TransformComponent:
+      localPosition: [-10, 4, 10]
+      localRotation: [0.22948207, -0.833222687, -0.453065366, 0.218654156]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity130
+    TransformComponent:
+      localPosition: [-7, 10, -14]
+      localRotation: [-0.619265795, -0.154722989, 0.364704639, 0.677909374]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity124
+    TransformComponent:
+      localPosition: [15, 11, 17]
+      localRotation: [-0.147631139, 0.220045373, -0.360262275, -0.894425035]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity154
+    TransformComponent:
+      localPosition: [-8, 0, 7]
+      localRotation: [0.7421664, -0.358821094, 0.549264371, 0.136912704]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity199
+    TransformComponent:
+      localPosition: [-7, 13, 7]
+      localRotation: [-0.478282422, -0.270599157, -0.834561288, -0.0391093493]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity153
+    TransformComponent:
+      localPosition: [-18, 16, 2]
+      localRotation: [0.671022177, -0.032628566, -0.476026595, 0.567506194]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity64
+    TransformComponent:
+      localPosition: [-6, 3, 7]
+      localRotation: [-0.798208594, 0.0649822801, 0.372802019, 0.468678057]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity71
+    TransformComponent:
+      localPosition: [14, 18, 17]
+      localRotation: [-0.773543656, -0.199195564, 0.446392059, 0.403342783]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity195
+    TransformComponent:
+      localPosition: [6, 15, -19]
+      localRotation: [0.0503356159, -0.75404799, 0.557820559, 0.343094826]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity185
+    TransformComponent:
+      localPosition: [8, 2, 2]
+      localRotation: [0.397692114, 0.725187898, -0.448572516, 0.338712573]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity103
+    TransformComponent:
+      localPosition: [-6, 1, 12]
+      localRotation: [-0.682476997, -0.451641083, 0.52577734, -0.231956303]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity169
+    TransformComponent:
+      localPosition: [-17, 8, -8]
+      localRotation: [0.876347303, -0.406155348, 0.117016941, -0.230998456]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity15
+    TransformComponent:
+      localPosition: [-1, 17, 15]
+      localRotation: [0.628719091, -0.137706921, -0.479309052, 0.59666729]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity24
+    TransformComponent:
+      localPosition: [8, 17, -7]
+      localRotation: [-0.7067976, 0.16709736, -0.287965178, -0.624172688]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity61
+    TransformComponent:
+      localPosition: [-9, 17, -5]
+      localRotation: [0.217866927, -0.497740895, 0.809695959, 0.221766502]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity128
+    TransformComponent:
+      localPosition: [-2, 12, -18]
+      localRotation: [0.679716825, -0.177772745, -0.601234794, 0.380655646]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity69
+    TransformComponent:
+      localPosition: [11, 5, 0]
+      localRotation: [-0.0191738904, -0.233595163, -0.881868958, 0.409112453]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity66
+    TransformComponent:
+      localPosition: [19, 9, 19]
+      localRotation: [-0.590894401, 0.587156773, -0.334654719, 0.440564215]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity138
+    TransformComponent:
+      localPosition: [-18, 0, 14]
+      localRotation: [0.00235426053, 0.0857511759, 0.898075998, 0.431393981]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity11
+    TransformComponent:
+      localPosition: [-18, 4, -12]
+      localRotation: [0.599836469, 0.334911376, -0.718838334, 0.106311023]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity22
+    TransformComponent:
+      localPosition: [-16, 18, 10]
+      localRotation: [-0.185520038, -0.948508024, -0.246931449, 0.0702838898]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity112
+    TransformComponent:
+      localPosition: [-13, 13, -20]
+      localRotation: [0.762977719, 0.277302951, 0.557593405, 0.173371792]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity61
+    TransformComponent:
+      localPosition: [7, 17, 3]
+      localRotation: [-0.929816425, 0.22991991, 0.201886281, 0.204500005]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity75
+    TransformComponent:
+      localPosition: [19, 10, -16]
+      localRotation: [-0.429492533, 0.901510596, 0.0146646854, 0.0509875976]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity140
+    TransformComponent:
+      localPosition: [-16, 4, -5]
+      localRotation: [0.493828684, -0.24344869, -0.821868956, -0.146278754]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity188
+    TransformComponent:
+      localPosition: [5, 8, -6]
+      localRotation: [0.982674062, -0.0327244736, 0.0149348937, -0.181818113]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity95
+    TransformComponent:
+      localPosition: [5, 7, 17]
+      localRotation: [0.922660112, -0.241400287, 0.239644825, 0.181644171]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity156
+    TransformComponent:
+      localPosition: [-15, 15, 1]
+      localRotation: [0.0443311185, -0.274998605, 0.0204031747, 0.960205317]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity78
+    TransformComponent:
+      localPosition: [18, 5, 10]
+      localRotation: [0.044355914, -0.067001611, -0.358487189, -0.930069983]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity133
+    TransformComponent:
+      localPosition: [7, 13, -18]
+      localRotation: [0.535432577, -0.381456345, -0.286462367, 0.696952224]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity40
+    TransformComponent:
+      localPosition: [4, 10, 8]
+      localRotation: [0.139917582, 0.291209579, 0.0886828899, -0.942207634]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity1
+    TransformComponent:
+      localPosition: [-3, 13, -1]
+      localRotation: [-0.483436972, 0.153786391, -0.713818789, -0.482805699]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity165
+    TransformComponent:
+      localPosition: [-4, 20, 15]
+      localRotation: [0.0317970365, 0.549532712, -0.651157379, 0.522490919]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity171
+    TransformComponent:
+      localPosition: [13, 18, 4]
+      localRotation: [0.161373481, 0.0751418024, 0.891232193, 0.417154104]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity193
+    TransformComponent:
+      localPosition: [8, 19, -2]
+      localRotation: [0.447505057, 0.207846418, 0.284395903, 0.821984231]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity184
+    TransformComponent:
+      localPosition: [-6, 10, -1]
+      localRotation: [-0.0337222219, -0.952826083, 0.0118295299, 0.301405638]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity4
+    TransformComponent:
+      localPosition: [3, 14, -13]
+      localRotation: [0.16287744, 0.550428391, 0.0913851857, 0.813724995]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity194
+    TransformComponent:
+      localPosition: [13, 5, 9]
+      localRotation: [-0.903165877, -0.0573551878, -0.419642091, 0.0700166821]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity136
+    TransformComponent:
+      localPosition: [-9, 9, -12]
+      localRotation: [-0.253582865, 0.275268167, 0.839256883, 0.394424886]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity7
+    TransformComponent:
+      localPosition: [-16, 8, 5]
+      localRotation: [0.512798369, -0.100900516, -0.131710976, 0.84232372]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity37
+    TransformComponent:
+      localPosition: [19, 3, 6]
+      localRotation: [-0.310434788, 0.806535304, -0.492805004, -0.10136193]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity117
+    TransformComponent:
+      localPosition: [-4, 13, -2]
+      localRotation: [0.471993625, 0.701003015, -0.45035398, 0.288093746]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity92
+    TransformComponent:
+      localPosition: [-11, 7, 7]
+      localRotation: [0.820470393, 0.416798592, 0.389661729, -0.0356512666]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity26
+    TransformComponent:
+      localPosition: [15, 0, 1]
+      localRotation: [-0.269309461, -0.730668426, -0.00697925687, 0.62733376]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity188
+    TransformComponent:
+      localPosition: [-6, 3, -18]
+      localRotation: [-0.594175816, -0.420327485, -0.679721713, -0.0908752084]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity145
+    TransformComponent:
+      localPosition: [11, 14, -6]
+      localRotation: [-0.8816275, -0.143010527, -0.2293365, 0.3868922]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity70
+    TransformComponent:
+      localPosition: [-18, 2, 0]
+      localRotation: [0.0358023122, 0.369687915, 0.137167424, 0.91827774]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity22
+    TransformComponent:
+      localPosition: [-4, 1, 8]
+      localRotation: [0.256901234, -0.736695826, -0.2689237, -0.564766407]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity46
+    TransformComponent:
+      localPosition: [-5, 1, -18]
+      localRotation: [-0.598114014, 0.797136784, 0.0263602566, 0.0783439055]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity23
+    TransformComponent:
+      localPosition: [11, 5, 7]
+      localRotation: [0.460930824, 0.624489665, -0.106853575, 0.621399701]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity145
+    TransformComponent:
+      localPosition: [0, 5, 2]
+      localRotation: [0.466110349, -0.353110582, 0.745957613, 0.318749666]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity180
+    TransformComponent:
+      localPosition: [3, 15, -12]
+      localRotation: [-0.443265945, 0.780484438, 0.0726094395, 0.434841633]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity103
+    TransformComponent:
+      localPosition: [-19, 15, 0]
+      localRotation: [-0.0702843964, 0.842773318, -0.254640669, 0.468989849]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity111
+    TransformComponent:
+      localPosition: [-5, 5, -5]
+      localRotation: [-0.695750475, 0.00984695554, -0.717386365, 0.0345132947]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity142
+    TransformComponent:
+      localPosition: [-16, 20, -19]
+      localRotation: [-0.544897676, 0.0125992149, 0.550307691, 0.63252598]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity12
+    TransformComponent:
+      localPosition: [18, 12, 10]
+      localRotation: [-0.38423723, -0.849213958, 0.351533383, 0.0873013735]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity1
+    TransformComponent:
+      localPosition: [-15, 10, -16]
+      localRotation: [-0.555717468, 0.336167485, 0.652763426, 0.389960945]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity23
+    TransformComponent:
+      localPosition: [13, 11, -3]
+      localRotation: [-0.762084603, 0.348285735, 0.373658717, -0.397873461]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity44
+    TransformComponent:
+      localPosition: [7, 18, 11]
+      localRotation: [0.395639658, 0.817500174, 0.226248011, -0.352100402]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity87
+    TransformComponent:
+      localPosition: [-6, 19, 5]
+      localRotation: [-0.893352032, 0.244175509, -0.372469813, -0.059721414]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity79
+    TransformComponent:
+      localPosition: [-16, 19, -16]
+      localRotation: [0.139786452, 0.297678947, 0.910178721, 0.251836479]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity195
+    TransformComponent:
+      localPosition: [14, 5, 13]
+      localRotation: [-0.425374657, -0.108194187, -0.898494422, 0.00762943551]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity193
+    TransformComponent:
+      localPosition: [9, 18, -14]
+      localRotation: [-0.208228111, -0.490088046, -0.751552463, 0.389388859]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity147
+    TransformComponent:
+      localPosition: [-8, 7, -10]
+      localRotation: [0.53583771, 0.283616602, -0.754639328, 0.250916481]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity70
+    TransformComponent:
+      localPosition: [-5, 17, 2]
+      localRotation: [0.178719312, -0.687425435, 0.502670348, 0.492775977]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity164
+    TransformComponent:
+      localPosition: [-7, 9, 12]
+      localRotation: [-0.334658861, 0.906690538, -0.15914385, 0.201467216]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity189
+    TransformComponent:
+      localPosition: [10, 13, 5]
+      localRotation: [0.419951349, 0.15981552, 0.893098116, 0.0218085423]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity81
+    TransformComponent:
+      localPosition: [-2, 1, 8]
+      localRotation: [0.180309474, -0.366475075, 0.890015125, 0.202626675]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity142
+    TransformComponent:
+      localPosition: [-6, 15, -5]
+      localRotation: [0.370792896, 0.0877378732, 0.108975366, -0.918117166]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity127
+    TransformComponent:
+      localPosition: [14, 19, -2]
+      localRotation: [0.479919404, -0.0738031715, 0.11885561, 0.86608541]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity153
+    TransformComponent:
+      localPosition: [-14, 19, 5]
+      localRotation: [0.136898682, 0.246758059, -0.0432111919, 0.95838505]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity132
+    TransformComponent:
+      localPosition: [-18, 17, -15]
+      localRotation: [0.726438165, 0.427949548, 0.537445605, 0.0172888935]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity29
+    TransformComponent:
+      localPosition: [-12, 19, 14]
+      localRotation: [-0.670034409, 0.330125839, 0.366231084, 0.554928482]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity158
+    TransformComponent:
+      localPosition: [-15, 6, -6]
+      localRotation: [0.307878315, 0.468497038, -0.707687557, 0.429999799]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity120
+    TransformComponent:
+      localPosition: [3, 13, -16]
+      localRotation: [0.27888158, 0.759938538, 0.564712107, -0.160682291]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity143
+    TransformComponent:
+      localPosition: [-15, 11, 5]
+      localRotation: [0.504344225, 0.495617658, 0.64343977, 0.293232381]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity143
+    TransformComponent:
+      localPosition: [-4, 13, -5]
+      localRotation: [0.460207164, 0.476889074, -0.570894778, 0.484629095]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity171
+    TransformComponent:
+      localPosition: [6, 3, -4]
+      localRotation: [-0.334055156, -0.718719184, -0.236236319, 0.562176406]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity170
+    TransformComponent:
+      localPosition: [2, 4, -20]
+      localRotation: [0.165586188, 0.722759604, 0.247926012, 0.623484135]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity144
+    TransformComponent:
+      localPosition: [-9, 12, 15]
+      localRotation: [0.624459207, -0.0302679986, 0.156644911, 0.764589369]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity70
+    TransformComponent:
+      localPosition: [17, 9, 4]
+      localRotation: [-0.393904448, 0.645615816, 0.393904448, 0.522359073]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity156
+    TransformComponent:
+      localPosition: [-15, 10, -10]
+      localRotation: [-0.487258852, -0.421487927, -0.611121953, -0.459844232]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity26
+    TransformComponent:
+      localPosition: [19, 7, 4]
+      localRotation: [-0.165213838, 0.849555671, 0.426354855, 0.263023287]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity195
+    TransformComponent:
+      localPosition: [-2, 5, -3]
+      localRotation: [0.418790787, 0.514792502, -0.57478112, 0.478779316]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity161
+    TransformComponent:
+      localPosition: [16, 15, -10]
+      localRotation: [0.919272542, -0.243310526, -0.0612903647, 0.303284377]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity90
+    TransformComponent:
+      localPosition: [-20, 4, 14]
+      localRotation: [-0.635348976, 0.287698984, 0.64616859, 0.309882462]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity60
+    TransformComponent:
+      localPosition: [7, 5, 8]
+      localRotation: [0.441374719, 0.412257791, 0.00123593211, 0.797013402]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity135
+    TransformComponent:
+      localPosition: [-12, 2, 20]
+      localRotation: [-0.520908058, 0.256933033, 0.578893423, -0.572295964]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity186
+    TransformComponent:
+      localPosition: [-3, 5, -4]
+      localRotation: [-0.135935187, -0.563591719, 0.195081994, 0.791093528]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity27
+    TransformComponent:
+      localPosition: [6, 0, -8]
+      localRotation: [0.582684338, 0.706914723, -0.38961935, 0.0945906639]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity107
+    TransformComponent:
+      localPosition: [2, 3, 4]
+      localRotation: [0.421554744, -0.62711525, 0.225101367, 0.615099609]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity175
+    TransformComponent:
+      localPosition: [17, 19, 4]
+      localRotation: [0.14701575, 0.691654742, 0.321019709, 0.630036712]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity167
+    TransformComponent:
+      localPosition: [1, 1, 6]
+      localRotation: [0.00350521505, 0.501241863, -0.138944, 0.854071856]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Entity8
+    TransformComponent:
+      localPosition: [0, 11, 2]
+      localRotation: [0.75321877, 0.348337471, 0.524068654, 0.191506267]
+      localScale: [1, 1, 1]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Point Light 2
+    TransformComponent:
+      localPosition: [-3, 0.5, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 0
-      boxShapeSize: [25, 0.100000001, 25]
+  - InfoComponent:
+      name: Point Light
+    TransformComponent:
+      localPosition: [4, 4, 0]
+      localRotation: [0, 0, 0, 1]
+      localScale: [1, 1, 1]
+  - InfoComponent:
+      name: Directional Light
+    TransformComponent:
+      localPosition: [-2, 4, -1]
+      localRotation: [0.176703557, -0.819491148, 0.339444399, 0.426600069]
+      localScale: [1, 1, 1]
+  - InfoComponent:
+      name: Main
+    TransformComponent:
+      localPosition: [2, 0, 0]
+      localRotation: [0, -0.887763977, 0, 0.460298955]
+      localScale: [1, 1, 1]
     MeshRendererComponent:
-      modelPath: res/models/plane.glb
+      modelPath: res/models/backpack/backpack.obj
       materials:
-        - materialPath: res/textures/floor.material
-          materialShader: res/Builtins/Shaders/Unlit.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+    ScriptComponent:
+      RotateScript:
+        speed: 40
   - InfoComponent:
       name: Camera
     TransformComponent:
-      localPosition: [0, 15, 15]
+      localPosition: [0, 4.37778378, 9.09917259]
       localRotation: [-0.21643962, 0, 0, 0.976296008]
       localScale: [1, 1, 1]
     CameraComponent:
@@ -51,16 +2952,27 @@ Entities:
       farClipPlane: 1000
     ScriptComponent:
       CameraMovementScript:
-        moveSpeed: 134
-        rotSpeed: 94
-    TestC:
-      id: TestId
-      speed: 20
-      test1:
-        a: 55003
+        moveSpeed: 60
+        rotSpeed: 50
   - InfoComponent:
-      name: Light
+      name: Cube
     TransformComponent:
-      localPosition: [-2, 4, -1]
-      localRotation: [0.0161147937, -0.886470556, 0.0309562311, 0.461467326]
-      localScale: [1, 1, 1]
+      localPosition: [-8, 0, -4]
+      localRotation: [0, 0, 0, 1]
+      localScale: [4, 4, 4]
+    MeshRendererComponent:
+      modelPath: res/models/Cube.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
+  - InfoComponent:
+      name: Floor
+    TransformComponent:
+      localPosition: [0, -2, 0]
+      localRotation: [0, 0, 0, 1]
+      localScale: [10, 1, 10]
+    MeshRendererComponent:
+      modelPath: res/models/plane.glb
+      materials:
+        - materialPath: ""
+          materialShader: res/Builtins/Shaders/StandDiffuse.glsl
