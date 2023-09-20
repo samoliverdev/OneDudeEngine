@@ -8,6 +8,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Renderer/Renderer.h"
 #include "OD/Renderer/Camera.h"
+#include "OD/Core/Instrumentor.h"
 #include <unordered_map>
 #include <string>
 #include <entt/entt.hpp>
@@ -207,6 +208,8 @@ struct Scene: public Asset {
     }
 
     void Update(){ 
+        OD_PROFILE_SCOPE("Scene::Update");
+
         for(auto e: _toDestroy){
             _DestroyEntity(e);
         }
@@ -219,6 +222,8 @@ struct Scene: public Asset {
     }
 
     void Draw(){
+        OD_PROFILE_SCOPE("Scene::Draw");
+
         Renderer::Begin();
         for(auto& s: _rendererSystems) s->Update();        
         Renderer::End();

@@ -15,6 +15,66 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
     shader.SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
     shader.SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
 
+    std::vector<EntityId> pointLights;
+    bool hasDirectionalLight = false;
+
+    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
+    for(auto e: view){
+        auto& light = view.get<LightComponent>(e);
+        auto& transform = view.get<TransformComponent>(e);
+
+        if(light.type == LightComponent::Type::Directional){
+            shader.SetVector3("directionalLightColor", light.color * light.intensity);
+            shader.SetVector3("directionalLightDir", -transform.forward());
+            hasDirectionalLight = true;
+        }
+
+        if(light.type == LightComponent::Type::Point){
+            pointLights.push_back(e);
+        }
+    }
+
+    if(hasDirectionalLight == false){
+        shader.SetVector3("directionalLightDir", Vector3::zero);
+        shader.SetVector3("directionalLightColor", Vector3::zero);
+    }
+
+    const int maxPointLight = 4;
+    char buff[200];
+
+    for(int i = 0; i < maxPointLight; i++){
+        if(i < pointLights.size()){
+            LightComponent& l = scene()->GetRegistry().get<LightComponent>(pointLights[i]);
+            TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(pointLights[i]);
+
+            sprintf(buff, "pointLights[%d].position", i);
+            shader.SetVector3(buff, t.position());
+
+            sprintf(buff, "pointLights[%d].color", i);
+            shader.SetVector3(buff, l.color * l.intensity);
+
+            sprintf(buff, "pointLights[%d].radius", i);
+            shader.SetFloat(buff, l.radius);
+        } else {
+            sprintf(buff, "pointLights[%d].position", i);
+            shader.SetVector3(buff, Vector3::zero);
+
+            sprintf(buff, "pointLights[%d].color", i);
+            shader.SetVector3(buff, Vector3::zero);
+
+            sprintf(buff, "pointLights[%d].radius", i);
+            shader.SetFloat(buff, 5);
+        }
+    }
+}
+
+void StandRendererSystem::SetStandUniforms2(Material& shader){
+    shader.shader->Bind();
+
+    shader.SetVector3("ambientLight", sceneLightSettings.ambient);
+    shader.shader->SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
+    shader.shader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+
     shader.SetVector3("directionalLightDir", Vector3::zero);
     shader.SetVector3("directionalLightColor", Vector3::zero);
 
@@ -68,6 +128,8 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
 void StandRendererSystem::UpdateCurrentLight(){}
 
 void StandRendererSystem::RenderSceneShadow(LightComponent& light, TransformComponent& transform){
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderSceneShadow");
+
     float near_plane = 0.05f, far_plane = 1000;
     float lightBoxHalfExtend = 50;
     Matrix4 lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
@@ -96,10 +158,13 @@ void StandRendererSystem::RenderSceneShadow(LightComponent& light, TransformComp
 }
 
 void StandRendererSystem::ClearSceneShadow(){
+    OD_PROFILE_SCOPE("StandRendererSystem::ClearSceneShadow");
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 }
 
 void StandRendererSystem::RenderScene(Camera& camera, bool isMain){
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
+
     if(isMain){
         Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
     } else {
@@ -117,10 +182,13 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain){
 
         int index = 0;
         for(Ref<Material> i: c.model()->materials){
-            if(c.materialsOverride()[index] != nullptr) 
+            if(c.materialsOverride()[index] != nullptr){
+                //SetStandUniforms2(*c.materialsOverride()[index]); 
                 SetStandUniforms(*c.materialsOverride()[index]->shader);
-            else 
+            } else {
+                //SetStandUniforms2(*i); 
                 SetStandUniforms(*i->shader);
+            }
                 
             index += 1;
         }
@@ -158,6 +226,8 @@ StandRendererSystem::StandRendererSystem(){
 }
 
 void StandRendererSystem::Update(){
+    OD_PROFILE_SCOPE("StandRendererSystem::Update");
+
     UpdateCurrentLight();
 
     bool hasShadow = false;

@@ -7,32 +7,65 @@
 namespace OD{
 
 void Material::SetFloat(const char* name, float value){
-    maps[name].type = MaterialMap::Type::Float;
-    maps[name].value = value;
+    MaterialMap& map = maps[name];
+
+    //if(map.value == value) return;
+
+    map.type = MaterialMap::Type::Float;
+    map.value = value;
+    map.isDirt = true;
+    _isDirt = true;
 }
 
 void Material::SetVector2(const char* name, Vector2 value){
-    maps[name].type = MaterialMap::Type::Vector2;
-    maps[name].vector = Vector4(value.x, value.y, 0, 1);
+    MaterialMap& map = maps[name];
+
+    //if(map.vector == Vector4(value.x, value.y, 0, 1)) return;
+
+    map.type = MaterialMap::Type::Vector2;
+    map.vector = Vector4(value.x, value.y, 0, 1);
+    map.isDirt = true;
+    _isDirt = true;
 }
 
 void Material::SetVector3(const char* name, Vector3 value){
-    maps[name].type = MaterialMap::Type::Vector3;
-    maps[name].vector = Vector4(value.x, value.y, value.z, 1);
+    MaterialMap& map = maps[name];
+
+    //if(map.vector == Vector4(value.x, value.y, value.z, 1)) return;
+
+    map.type = MaterialMap::Type::Vector3;
+    map.vector = Vector4(value.x, value.y, value.z, 1);
+    map.isDirt = true;
+    _isDirt = true;
 }
 
 void Material::SetVector4(const char* name, Vector4 value){
-    maps[name].type = MaterialMap::Type::Vector4;
-    maps[name].vector = value;
+    MaterialMap& map = maps[name];
+
+    //if(map.vector == value) return;
+
+    map.type = MaterialMap::Type::Vector4;
+    map.vector = value;
+    map.isDirt = true;
+    _isDirt = true;
 }
 
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
-    maps[name].type = MaterialMap::Type::Texture;
-    maps[name].texture = tex;
+    MaterialMap& map = maps[name];
+
+    //if(map.texture == tex) return;
+
+    map.type = MaterialMap::Type::Texture;
+    map.texture = tex;
+    map.isDirt = true;
+    _isDirt = true;
 }
 
 void Material::UpdateUniforms(){
     Assert(shader != nullptr);
+
+    //if(_isDirt == false) return;
+    //_isDirt = false;
 
     shader->Bind();
 
@@ -40,6 +73,9 @@ void Material::UpdateUniforms(){
 
     for(auto i: maps){
         MaterialMap& map = i.second;
+
+        //if(map.isDirt == false) continue;
+        //map.isDirt = false;
 
         if(map.type == MaterialMap::Type::Float){
             shader->SetFloat(i.first.c_str(), map.value);

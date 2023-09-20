@@ -3,6 +3,7 @@
 #include "OD/Renderer/Renderer.h"
 #include "ImGui.h"
 #include "Input.h"
+#include "Instrumentor.h"
 
 namespace OD{
 
@@ -48,9 +49,26 @@ bool Application::Run(){
         Platform::PumpMessages();
         Platform::PreUpdate();
 
-        for(auto i: _modules) i->OnUpdate(_deltaTime);
-        for(auto i: _modules) i->OnRender(_deltaTime);
-        for(auto i: _modules) i->OnGUI();
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnUpdate");
+            for(auto i: _modules) i->OnUpdate(_deltaTime);
+        }
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnRender");
+            for(auto i: _modules) i->OnRender(_deltaTime);
+        }
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnGUI");
+            for(auto i: _modules) i->OnGUI();
+        }
+
+        ImGui::Begin("Profile");
+        for(auto i: Instrumentor::Get().results()){ 
+            float durration = (i.end - i.start) * 0.001f;
+            ImGui::Text("%s: %.3f.ms", i.name, durration);
+        }
+        Instrumentor::Get().results().clear();
+        ImGui::End();
 
         Platform::LateUpdate();
         Platform::SwapBuffers();

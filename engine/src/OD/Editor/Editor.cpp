@@ -7,6 +7,7 @@
 #include <ImGuizmo/ImGuizmo.h>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "OD/Core/Application.h"
+#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 
@@ -29,6 +30,8 @@ void Editor::OnInit(){
 }
 
 void Editor::OnUpdate(float deltaTime){
+    OD_PROFILE_SCOPE("Editor::OnUpdate");
+
     if(SceneManager::Get().activeScene()->running()){
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr);
     } else {
@@ -107,12 +110,20 @@ void Editor::DrawMainWorkspace(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
 
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+    //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::Begin("Renderer Stats");
     ImGui::Text("DrawCalls: %d", Renderer::drawCalls);
     ImGui::Text("Vertices: %dk", Renderer::vertices / 1000);
     ImGui::Text("Tris: %dk", Renderer::tris / 1000);
     ImGui::End();
+
+    //ImGui::Begin("Profile");
+    //for(auto i: Instrumentor::Get().results()){ 
+    //    float durration = (i.end - i.start) * 0.001f;
+    //    ImGui::Text("%s: %.3f.ms", i.name, durration);
+    //}
+    //Instrumentor::Get().results().clear();
+    //ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::Begin("Viewport");
@@ -196,25 +207,34 @@ void Editor::DrawMainPanel(){
     float height = ImGui::GetFrameHeight();
     if(ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)){
         if(ImGui::BeginMenuBar()){
-            ImGui::Text("Happy secondary menu bar");
-            ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+            bool sceneRunning = SceneManager::Get().activeScene()->running();
+            ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
+            //ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
             //ImGui::Button("Test", ImVec2(0, height-1));
             
-            ImGui::BeginTabBar("BeginTabBar");
+            /*ImGui::BeginTabBar("BeginTabBar");
             
             if(ImGui::BeginTabItem("Workspace", &workspace)){
-                ImGui::EndTabItem();
                 DrawMainWorkspace();
+                
+                ImGui::EndTabItem();
             }
 
             if(ImGui::BeginTabItem("Workspace2", &code)){
-                ImGui::Begin("Code");
+                static bool test1 = true;
+                ImGui::Begin("Test1__", &test1);
+                ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
                 ImGui::End();
 
-                ImGui::EndTabItem();
+                static bool test2 = true;
+                ImGui::Begin("Test2__", &test2);
+                ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
+                ImGui::End();
+
+                ImGui::EndTabItem();  
             }
             
-            ImGui::EndTabBar();
+            ImGui::EndTabBar();*/
             
             ImGui::EndMenuBar();
         }
@@ -242,7 +262,7 @@ void Editor::DrawMainPanel(){
         ImGui::End();
     }*/
 
-    //DrawMainWorkspace();
+    DrawMainWorkspace();
 
     //DrawGizmos();
 

@@ -20,69 +20,24 @@
 #include <algorithm>
 #include <fstream>
 #include <thread>
+#include <sstream>
 
 namespace OD{
 
 struct ProfileResult{
-    std::string name;
+    const char* name;
     long long start, end;
     uint32_t threadID;
 };
 
-struct InstrumentationSession{
-    std::string name;
-};
-
 class Instrumentor{
 private:
-    InstrumentationSession* _currentSession;
-    std::ofstream _outputStream;
-    int _profileCount;
+    std::vector<ProfileResult> _results;
 public:
-    Instrumentor(): _currentSession(nullptr), _profileCount(0){}
-
-    void BeginSession(const std::string& name, const std::string& filepath = "results.json"){
-        _outputStream.open(filepath);
-        WriteHeader();
-        _currentSession = new InstrumentationSession{ name };
-    }
-
-    void EndSession(){
-        WriteFooter();
-        _outputStream.close();
-        delete _currentSession;
-        _currentSession = nullptr;
-        _profileCount = 0;
-    }
+    std::vector<ProfileResult>& results(){ return _results; }
 
     void WriteProfile(const ProfileResult& result){
-        if (_profileCount++ > 0)
-            _outputStream << ",";
-
-        std::string name = result.name;
-        std::replace(name.begin(), name.end(), '"', '\'');
-
-        _outputStream << "{";
-        _outputStream << "\"cat\":\"function\",";
-        _outputStream << "\"dur\":" << (result.end - result.start) << ',';
-        _outputStream << "\"name\":\"" << name << "\",";
-        _outputStream << "\"ph\":\"X\",";
-        _outputStream << "\"pid\":0,";
-        _outputStream << "\"tid\":" << result.threadID << ",";
-        _outputStream << "\"ts\":" << result.start;
-        _outputStream << "}";
-
-        _outputStream.flush();
-    }
-
-    void WriteHeader(){
-        _outputStream << "{\"otherData\": {},\"traceEvents\":[";
-        _outputStream.flush();
-    }
-
-    void WriteFooter(){
-        _outputStream << "]}";
-        _outputStream.flush();
+        _results.push_back(result);
     }
 
     static Instrumentor& Get(){
@@ -108,6 +63,7 @@ public:
         long long end = std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
 
         uint32_t threadID = std::hash<std::thread::id>{}(std::this_thread::get_id());
+        //Instrumentor::Get().WriteProfile({ _name, start, end, threadID });
         Instrumentor::Get().WriteProfile({ _name, start, end, threadID });
 
         _stopped = true;
@@ -121,13 +77,9 @@ private:
 }
 
 #if OD_PROFILE
-#define OD_PROFILE_BEGIN_SESSION(name, filepath) ::OD::Instrumentor::Get().BeginSession(name, filepath)
-#define OD_PROFILE_END_SESSION() ::OD::Instrumentor::Get().EndSession()
 #define OD_PROFILE_SCOPE(name) ::OD::InstrumentationTimer timer##__LINE__(name);
 #define OD_PROFILE_FUNCTION() OD_PROFILE_SCOPE(__FUNCSIG__)
 #else
-#define OD_PROFILE_BEGIN_SESSION(name, filepath)
-#define OD_PROFILE_END_SESSION()
 #define OD_PROFILE_SCOPE(name)
 #define OD_PROFILE_FUNCTION()
 #endif

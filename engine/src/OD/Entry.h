@@ -14,16 +14,12 @@ int main(int argc, char *argv[]){
         OD::Application::args.push_back(std::string(argv[i]));
     }
 
-    OD_PROFILE_BEGIN_SESSION("Startup", "OD_Profile_Startup.json");
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig())) {
         printf("Application failed to create!.\n");
         return 1;
     }
-    OD_PROFILE_END_SESSION();
     
-    OD_PROFILE_BEGIN_SESSION("Runtime", "OD_Profile_Runtime.json");
     OD::Application::Run();
-    OD_PROFILE_END_SESSION();
 
     return 0;
 }

@@ -5,6 +5,7 @@
 #include "OD/Renderer/Shader.h"
 #include "OD/Renderer/Mesh.h"
 #include "OD/Renderer/Framebuffer.h"
+#include "OD/Renderer/Material.h"
 
 namespace OD{
 
@@ -46,6 +47,7 @@ private:
     Camera* _overrideCamera = nullptr;
 
     void SetStandUniforms(Shader& material);
+    void SetStandUniforms2(Material& material);
     void RenderScene(Camera& camera, bool isMain);
     void RenderSceneShadow(LightComponent& light, TransformComponent& transform);
     void ClearSceneShadow();

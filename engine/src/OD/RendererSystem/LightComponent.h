@@ -9,6 +9,8 @@
 namespace OD{
 
 struct LightComponent{
+    friend class StandRendererSystem;
+
     static void Serialize(YAML::Emitter& out, Entity& e);
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);

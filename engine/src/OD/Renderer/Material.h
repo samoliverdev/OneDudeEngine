@@ -16,6 +16,7 @@ struct MaterialMap{
     Ref<Texture2D> texture;
     Vector4 vector;
     float value;
+    bool isDirt = true;
 };
 
 class Material: public Asset{
@@ -45,6 +46,9 @@ public:
     void Save(std::string& path);
 
     static Ref<Material> CreateFromFile(std::string const &path);
+
+private:
+    bool _isDirt = true;
 };
 
 }

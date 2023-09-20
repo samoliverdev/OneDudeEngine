@@ -20,7 +20,7 @@
 #include <typeinfo>
 #include <typeindex>
 
-#define OD_PROFILE 0
+#define OD_PROFILE 1
 
 // logging macros
 //#if defined(_DEBUG)
