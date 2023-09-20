@@ -4,6 +4,7 @@
 #include "ImGui.h"
 #include "Input.h"
 #include "Instrumentor.h"
+#include "JobSystem.h"
 
 namespace OD{
 
@@ -31,6 +32,7 @@ bool Application::Create(Module* mainModule, ApplicationConfig appConfig){
 
     Renderer::_Initialize();
     //Input::_Initialize(0, 0);
+    JobSystem::Initialize();
 
     _mainModule = mainModule;
     AddModule(_mainModule);

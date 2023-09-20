@@ -1,26 +1,9 @@
-//
-// Basic instrumentation profiler by Cherno
-
-// Usage: include this header file somewhere in your code (eg. precompiled header), and then use like:
-//
-// Instrumentor::Get().BeginSession("Session Name");        // Begin session 
-// {
-//     InstrumentationTimer timer("Profiled Scope Name");   // Place code like this in scopes you'd like to include in profiling
-//     // Code
-// }
-// Instrumentor::Get().EndSession();                        // End Session
-//
-// You will probably want to macro-fy this, to switch on/off easily and use things like __FUNCSIG__ for the profile name.
-//
 #pragma once
 
 #include "OD/Defines.h"
 #include <string>
 #include <chrono>
-#include <algorithm>
-#include <fstream>
 #include <thread>
-#include <sstream>
 
 namespace OD{
 

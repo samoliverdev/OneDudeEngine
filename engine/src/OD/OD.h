@@ -35,6 +35,7 @@
 #include "OD/RendererSystem/SpriteComponent.h"
 #include "OD/RendererSystem/CameraComponent.h"
 #include "OD/RendererSystem/LightComponent.h"
+#include "OD/RendererSystem/EnvironmentComponent.h"
 
 #include "OD/PhysicsSystem/PhysicsSystem.h"
 

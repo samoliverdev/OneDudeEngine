@@ -2,16 +2,25 @@
 #include "StandRendererSystem.h"
 #include "SpriteComponent.h"
 #include "MeshRendererComponent.h"
+#include "EnvironmentComponent.h"
 #include "CameraComponent.h"
 #include "LightComponent.h"
 #include "OD/PhysicsSystem/PhysicsSystem.h"
+#include <unordered_map>
 
 namespace OD{
+
+struct RenderGroupTarget{
+    Ref<Mesh> mesh;
+    Matrix4 trans;
+};
+
+EnvironmentSettings environmentSettings;
 
 void StandRendererSystem::SetStandUniforms(Shader& shader){
     shader.Bind();
 
-    shader.SetVector3("ambientLight", sceneLightSettings.ambient);
+    shader.SetVector3("ambientLight", environmentSettings.ambient);
     shader.SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
     shader.SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
 
@@ -48,63 +57,6 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
             TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(pointLights[i]);
 
             sprintf(buff, "pointLights[%d].position", i);
-            shader.SetVector3(buff, t.position());
-
-            sprintf(buff, "pointLights[%d].color", i);
-            shader.SetVector3(buff, l.color * l.intensity);
-
-            sprintf(buff, "pointLights[%d].radius", i);
-            shader.SetFloat(buff, l.radius);
-        } else {
-            sprintf(buff, "pointLights[%d].position", i);
-            shader.SetVector3(buff, Vector3::zero);
-
-            sprintf(buff, "pointLights[%d].color", i);
-            shader.SetVector3(buff, Vector3::zero);
-
-            sprintf(buff, "pointLights[%d].radius", i);
-            shader.SetFloat(buff, 5);
-        }
-    }
-}
-
-void StandRendererSystem::SetStandUniforms2(Material& shader){
-    shader.shader->Bind();
-
-    shader.SetVector3("ambientLight", sceneLightSettings.ambient);
-    shader.shader->SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
-    shader.shader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
-
-    shader.SetVector3("directionalLightDir", Vector3::zero);
-    shader.SetVector3("directionalLightColor", Vector3::zero);
-
-    std::vector<EntityId> pointLights;
-
-    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
-    for(auto e: view){
-        auto& light = view.get<LightComponent>(e);
-        auto& transform = view.get<TransformComponent>(e);
-
-        if(light.type == LightComponent::Type::Directional){
-            shader.SetVector3("directionalLightColor", light.color * light.intensity);
-            shader.SetVector3("directionalLightDir", -transform.forward());
-        }
-
-        if(light.type == LightComponent::Type::Point){
-            pointLights.push_back(e);
-        }
-    }
-
-    const int maxPointLight = 4;
-    char buff[200];
-
-    for(int i = 0; i < maxPointLight; i++){
-        if(i < pointLights.size()){
-            sprintf(buff, "pointLights[%d].position", i);
-
-            LightComponent& l = scene()->GetRegistry().get<LightComponent>(pointLights[i]);
-            TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(pointLights[i]);
-
             shader.SetVector3(buff, t.position());
 
             sprintf(buff, "pointLights[%d].color", i);
@@ -175,6 +127,8 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain){
     Renderer::SetCullFace(CullFace::BACK);
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 
+    std::unordered_map< Ref<Material>, std::vector<RenderGroupTarget> > groups; 
+
     auto view1 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view1){
         auto& c = view1.get<MeshRendererComponent>(_entity);
@@ -184,15 +138,24 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain){
         for(Ref<Material> i: c.model()->materials){
             if(c.materialsOverride()[index] != nullptr){
                 //SetStandUniforms2(*c.materialsOverride()[index]); 
-                SetStandUniforms(*c.materialsOverride()[index]->shader);
+                //SetStandUniforms(*c.materialsOverride()[index]->shader);
+                groups[c.materialsOverride()[index]].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             } else {
                 //SetStandUniforms2(*i); 
-                SetStandUniforms(*i->shader);
+                //SetStandUniforms(*i->shader);
+                groups[i].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             }
                 
             index += 1;
         }
-        Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
+        //Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
+    }
+    for(auto i: groups){
+        SetStandUniforms(*i.first->shader);
+        i.first->UpdateUniforms();
+        for(auto j: i.second){
+            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader);
+        }
     }
 
     auto view2 = scene()->GetRegistry().view<SpriteComponent, TransformComponent>();
@@ -227,6 +190,13 @@ StandRendererSystem::StandRendererSystem(){
 
 void StandRendererSystem::Update(){
     OD_PROFILE_SCOPE("StandRendererSystem::Update");
+
+    environmentSettings = EnvironmentSettings();
+    auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
+    for(auto entity: _view){
+        environmentSettings = _view.get<EnvironmentComponent>(entity).settings;
+        break;
+    }
 
     UpdateCurrentLight();
 

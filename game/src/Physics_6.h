@@ -133,7 +133,11 @@ struct Physics_6: OD::Module {
 
         //Application::SetVSync(false);
 
-        scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
+        //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
+
+        Entity env = scene->AddEntity("Env");
+        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+
         Entity& light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(1,1,1);

@@ -4,6 +4,7 @@
 #include "OD/RendererSystem/CameraComponent.h"
 #include "OD/RendererSystem/LightComponent.h"
 #include "OD/RendererSystem/MeshRendererComponent.h"
+#include "OD/RendererSystem/EnvironmentComponent.h"
 #include "OD/PhysicsSystem/PhysicsSystem.h"
 #include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
@@ -23,29 +24,31 @@ void SceneHierarchyPanel::OnGui(bool* showSceneHierarchy, bool* showInspector){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
         }
-    }
+    
 
-    if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
-        _selectionContext = Entity();
-    }
-
-    if(ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)){
-        if(ImGui::MenuItem("Create Empty Entity")){
-            _scene->AddEntity("Empty Entity");
+        if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
+            _selectionContext = Entity();
         }
-        ImGui::EndPopup();
+
+        if(ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)){
+            if(ImGui::MenuItem("Create Empty Entity")){
+                _scene->AddEntity("Empty Entity");
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::End();
     }
 
-    ImGui::End();
-
-    ImGui::Begin("Properties", showInspector);
-    if(_selectionContext.IsValid()){
-        DrawComponents(_selectionContext);
-        ImGui::Separator();
-        ImGui::Spacing();
-        ShowAddComponent(_selectionContext);
+    if(ImGui::Begin("Properties", showInspector)){
+        if(_selectionContext.IsValid()){
+            DrawComponents(_selectionContext);
+            ImGui::Separator();
+            ImGui::Spacing();
+            ShowAddComponent(_selectionContext);
+        }
+        ImGui::End();
     }
-    ImGui::End();
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
@@ -261,7 +264,8 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
     });
 
     ImGui::Spacing(); ImGui::Spacing();
-
+    
+    DrawComponent<EnvironmentComponent>(entity, "Environment");
     DrawComponent<CameraComponent>(entity, "Camera");
     DrawComponent<LightComponent>(entity, "Light");
     DrawComponent<AnimatorComponent>(entity, "Animator");

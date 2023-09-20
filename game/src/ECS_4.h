@@ -18,7 +18,7 @@ struct RotateScript: public Script{
 
     void OnUpdate() override {
         TransformComponent& transform = entity().GetComponent<TransformComponent>();
-        transform.localEulerAngles(Vector3(0, Platform::GetTime() * speed, 0));
+        transform.localEulerAngles(Vector3(transform.localEulerAngles().x, Platform::GetTime() * speed, transform.localEulerAngles().z));
     }
 };
 
@@ -60,7 +60,7 @@ struct ECS_4: public OD::Module {
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
         scene = SceneManager::Get().NewScene();
-        scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
+        //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
         //scene->Start();
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
@@ -78,6 +78,9 @@ struct ECS_4: public OD::Module {
         //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
         //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
+
+        Entity env = scene->AddEntity("Env");
+        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
 
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().position(Vector3(0,-2, 0));
@@ -137,10 +140,11 @@ struct ECS_4: public OD::Module {
         pointLight2.GetComponent<TransformComponent>().position(Vector3(-3, 0.5f, 0));
         //*/
 
-        for(int i = 0; i < 2500; i++){
-            float posRange = 20;
+        for(int i = 0; i < 10000; i++){
+            float posRange = 200;
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
+            e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
             mr.model(cubeModel);
             mr.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
@@ -154,7 +158,7 @@ struct ECS_4: public OD::Module {
         }
 
         for(int i = 0; i < 0; i++){
-            float posRange = 100;
+            float posRange = 50;
             AddCharacter(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         }
 

@@ -13,13 +13,7 @@ struct SpriteComponent;
 struct MeshRendererComponent;
 struct LightComponent;
 
-struct SceneLightSettings{
-    Vector3 ambient = {0.1f, 0.1f, 0.1f};
-};
-
 struct StandRendererSystem: public OD::System{
-    SceneLightSettings sceneLightSettings;
-
     SystemType Type() override { return SystemType::Renderer; }
     
     void Update() override;
@@ -47,7 +41,6 @@ private:
     Camera* _overrideCamera = nullptr;
 
     void SetStandUniforms(Shader& material);
-    void SetStandUniforms2(Material& material);
     void RenderScene(Camera& camera, bool isMain);
     void RenderSceneShadow(LightComponent& light, TransformComponent& transform);
     void ClearSceneShadow();

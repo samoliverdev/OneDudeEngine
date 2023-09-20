@@ -38,21 +38,20 @@ void AnimatorSystem::Update(){
         MeshRendererComponent& renderer = view.get<MeshRendererComponent>(e);
 
         if(anim.anim == nullptr) continue;
-        if(renderer.mesh == nullptr) continue;
+        if(renderer.model() == nullptr) continue;
 
         anim.anim->UpdateAnimation(Application::deltaTime());
 
         auto transforms = anim.anim->finalBoneMatrices();
         for (int i = 0; i < transforms.size(); ++i){
             std::string s = "finalBonesMatrices[" + std::to_string(i) + "]";
-            for(auto j: renderer.mesh->materials){
+            for(auto j: renderer.model()->materials){
                 j->BindGlobal();
                 j->SetGlobalMatrix4(s.c_str(), transforms[i]);
             }
         }
     }
 #else
-    JobSystem::Initialize();
     for(auto e: view){
         AnimatorComponent& anim = view.get<AnimatorComponent>(e);
         MeshRendererComponent& renderer = view.get<MeshRendererComponent>(e);
