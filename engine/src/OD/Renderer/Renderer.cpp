@@ -307,6 +307,40 @@ void Renderer::SetCullFace(CullFace cullFace){
     }
 }
 
+void Renderer::SetBlend(bool b){
+    if(b){
+        glEnable(GL_BLEND);
+    } else {
+        glDisable(GL_BLEND);
+    }
+    glCheckError();
+}
+
+int BlendModeToGL(BlendMode blendMode){
+    if(blendMode == BlendMode::ZERO) return GL_ZERO;
+    if(blendMode == BlendMode::ONE) return GL_ONE;
+    if(blendMode == BlendMode::SRC_COLOR) return GL_SRC_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_SRC_COLOR) return GL_ONE_MINUS_SRC_COLOR;
+    if(blendMode == BlendMode::DST_COLOR) return GL_DST_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_DST_COLOR) return GL_ONE_MINUS_DST_COLOR;
+    if(blendMode == BlendMode::SRC_ALPHA) return GL_SRC_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_SRC_ALPHA) return GL_ONE_MINUS_SRC_ALPHA;
+    if(blendMode == BlendMode::DST_ALPHA) return GL_DST_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_DST_ALPHA) return GL_ONE_MINUS_DST_ALPHA;
+    if(blendMode == BlendMode::CONSTANT_COLOR) return GL_CONSTANT_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_CONSTANT_COLOR) return GL_ONE_MINUS_CONSTANT_COLOR;
+    if(blendMode == BlendMode::CONSTANT_ALPHA) return GL_CONSTANT_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_CONSTANT_ALPHA) return GL_ONE_MINUS_CONSTANT_ALPHA;
+
+    Assert(false);
+    return 0;
+}
+
+void Renderer::SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
+    glBlendFunc(BlendModeToGL(sfactor), BlendModeToGL(dfactor));
+    glCheckError();
+}
+
 void Renderer::BeginFramebuffer(Framebuffer* framebuffer){
     framebuffer->Bind();
 }
@@ -319,15 +353,17 @@ void Renderer::Blit(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass
     } else {
         dst->Bind();
     }
-
+    glCheckError();
+    
     Renderer::Clean(1,1,1,1);
     Renderer::SetDepthTest(DepthTest::DISABLE); 
+    glCheckError();
 
     shader.Bind();
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
-    
     Renderer::DrawMeshRaw(fullScreenQuad);
+    glCheckError();
 }
 
 }

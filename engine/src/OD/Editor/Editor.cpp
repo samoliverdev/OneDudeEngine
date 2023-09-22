@@ -33,12 +33,12 @@ void Editor::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("Editor::OnUpdate");
 
     if(SceneManager::Get().activeScene()->running()){
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr);
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr, Transform());
     } else {
         _cam.OnUpdate();
         _cam.cam.SetPerspective(45, 0.1f, 10000.0f, _viewportSize.x, _viewportSize.y);
         _cam.cam.view = _cam.transform.GetLocalModelMatrix().inverse();
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam);
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam, _cam.transform);
     }
 
     SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
@@ -199,8 +199,9 @@ void Editor::DrawMainPanel(){
 
     DrawMainMenuBar();
 
-    bool workspace;
-    bool code;
+    static bool workspace = true;
+    static bool code = true;
+    bool isCode;
 
     ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
@@ -209,32 +210,23 @@ void Editor::DrawMainPanel(){
         if(ImGui::BeginMenuBar()){
             bool sceneRunning = SceneManager::Get().activeScene()->running();
             ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
-            //ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
-            //ImGui::Button("Test", ImVec2(0, height-1));
+            ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+            ImGui::Button("Test", ImVec2(0, height-1));
             
-            /*ImGui::BeginTabBar("BeginTabBar");
+            ImGui::BeginTabBar("BeginTabBar");
             
-            if(ImGui::BeginTabItem("Workspace", &workspace)){
-                DrawMainWorkspace();
-                
+            if(ImGui::BeginTabItem("Workspace", &workspace, ImGuiTabItemFlags_NoCloseButton)){
+                //DrawMainWorkspace();
+                isCode = false;
                 ImGui::EndTabItem();
             }
 
             if(ImGui::BeginTabItem("Workspace2", &code)){
-                static bool test1 = true;
-                ImGui::Begin("Test1__", &test1);
-                ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
-                ImGui::End();
-
-                static bool test2 = true;
-                ImGui::Begin("Test2__", &test2);
-                ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
-                ImGui::End();
-
+                isCode = true;
                 ImGui::EndTabItem();  
             }
             
-            ImGui::EndTabBar();*/
+            ImGui::EndTabBar();
             
             ImGui::EndMenuBar();
         }
@@ -262,7 +254,23 @@ void Editor::DrawMainPanel(){
         ImGui::End();
     }*/
 
-    DrawMainWorkspace();
+    if(isCode == false){
+        DrawMainWorkspace();
+    }
+
+    if(isCode == true){
+        static bool test1 = true;
+        if(test1 && ImGui::Begin("Test1__", &test1)){
+            ImGui::Text("Scene Status");
+            ImGui::End();
+        }
+
+        static bool test2 = true;
+        if(test2 && ImGui::Begin("Test2__", &test2)){
+            ImGui::Text("Scene Status");
+            ImGui::End();
+        }
+    }
 
     //DrawGizmos();
 

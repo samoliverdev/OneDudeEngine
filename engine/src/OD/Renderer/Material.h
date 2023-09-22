@@ -23,7 +23,7 @@ class Material: public Asset{
 public:
     Ref<Shader> shader;
     std::unordered_map<std::string, MaterialMap> maps;
-    //bool isTransparent = false;
+    bool isBlend = false;
 
     void SetFloat(const char* name, float value);
     void SetVector2(const char* name, Vector2 value);

@@ -30,6 +30,23 @@ enum class CullFace{
     FRONT_AND_BACK  = 3
 };
 
+enum class BlendMode{
+    ZERO,
+    ONE,
+    SRC_COLOR,
+    ONE_MINUS_SRC_COLOR,
+    DST_COLOR,
+    ONE_MINUS_DST_COLOR,
+    SRC_ALPHA,
+    ONE_MINUS_SRC_ALPHA,
+    DST_ALPHA,
+    ONE_MINUS_DST_ALPHA,
+    CONSTANT_COLOR,
+    ONE_MINUS_CONSTANT_COLOR,
+    CONSTANT_ALPHA,
+    ONE_MINUS_CONSTANT_ALPHA	
+};
+
 class Renderer {
     friend class Application;
 public:
@@ -60,6 +77,8 @@ public:
     static void SetRenderMode(RenderMode mode);
     static void SetDepthTest(DepthTest depthTest);
     static void SetCullFace(CullFace cullFace);
+    static void SetBlend(bool blend);
+    static void SetBlendFunc(BlendMode sfactor, BlendMode dfactor);
 
     static void BeginFramebuffer(Framebuffer* framebuffer);
     static void Blit(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass = 0);

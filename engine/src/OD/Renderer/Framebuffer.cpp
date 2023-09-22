@@ -97,6 +97,10 @@ Framebuffer::Framebuffer(FrameBufferSpecification specification){
     Invalidate();
 }
 
+Framebuffer::~Framebuffer(){
+    Destroy();
+}
+
 bool Framebuffer::IsValid(){
     return _framebuffer != 0;
 }

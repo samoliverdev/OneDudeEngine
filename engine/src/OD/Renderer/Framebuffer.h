@@ -29,6 +29,8 @@ struct FrameBufferSpecification{
 class Framebuffer{
 public:
     Framebuffer(FrameBufferSpecification specification);
+    ~Framebuffer();
+
     void Resize(int width, int height);
     bool IsValid();
     void Destroy();

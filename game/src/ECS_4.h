@@ -47,6 +47,17 @@ struct ECS_4: public OD::Module {
         charAnimator.Play(anim->animations[0].get());
     }
 
+    void AddTransparent(Vector3 pos){
+        Entity et = scene->AddEntity("Transparent");
+        et.GetComponent<TransformComponent>().position(pos);
+        et.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
+        MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
+        _meshRenderer3.model(AssetManager::Get().LoadModel("res/Builtins/Models/plane.obj"));
+        _meshRenderer3.model()->materials[0]->isBlend = true;
+        _meshRenderer3.model()->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/UnlitBlend.glsl");
+        _meshRenderer3.model()->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", TextureFilter::Linear, true));
+    }
+
     void OnInit() override {
         LogInfo("Game Init");
 
@@ -95,6 +106,10 @@ struct ECS_4: public OD::Module {
         MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
         _meshRenderer2.model(cubeModel);
         _meshRenderer2.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+
+        AddTransparent(Vector3(5, 3, -8));
+        AddTransparent(Vector3(6, 3, -12));
+        AddTransparent(Vector3(8, 3, -20));
 
         Entity camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
