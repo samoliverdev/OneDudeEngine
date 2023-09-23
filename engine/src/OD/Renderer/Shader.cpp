@@ -275,6 +275,11 @@ void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
     SetInt(name, index);
 }
 
+void Shader::SetCubemap(const char* name, Cubemap& value, int index){
+    value.Bind(index);
+    SetInt(name, index);
+}
+
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
     glActiveTexture(GL_TEXTURE0 + index);
     if(colorAttachmentIndex == -1){

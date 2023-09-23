@@ -5,10 +5,14 @@ layout (location = 0) in vec3 _pos;
 layout (location = 1) in vec2 _texCoord;
 layout (location = 2) in vec3 _normal;
 
+layout (location = 10) in mat4 _modelInstancing;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
+
+uniform float useInstancing = 0;
 
 out VsOut{
     vec3 pos;
@@ -19,16 +23,18 @@ out VsOut{
     vec4 fragPosLightSpace;
 } vsOut;
 
-void main() {
+void main(){
+    mat4 targetModelMatrix = (useInstancing >= 1.0 ? _modelInstancing : model);
+
     vsOut.pos = _pos;
     vsOut.normal = _normal;
     vsOut.texCoord = _texCoord;
-    vsOut.worldPos = vec3(model * vec4(_pos, 1.0));
+    vsOut.worldPos = vec3(targetModelMatrix * vec4(_pos, 1.0));
     //worldNormal = vec3(model * vec4(normal, 1.01));
-    vsOut.worldNormal = mat3(transpose(inverse(model))) * _normal; // for non-uniform scale objects
+    vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * _normal; // for non-uniform scale objects
     vsOut.fragPosLightSpace = lightSpaceMatrix * vec4(vsOut.worldPos, 1);
 
-    gl_Position = projection * view * model * vec4(_pos, 1.0);
+    gl_Position = projection * view * targetModelMatrix * vec4(_pos, 1.0);
 }
 #endif
 

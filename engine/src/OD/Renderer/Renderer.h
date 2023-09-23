@@ -62,11 +62,14 @@ public:
     static void Clean(float r, float g, float b, float a);
 
     static void SetCamera(Camera& camera);
+    static Camera GetCamera();
 
     static void DrawMeshRaw(Mesh& mesh);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& shader);
     static void DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex = -1, std::vector<Ref<Material>>* materialsOverride = nullptr);
+
+    static void DrawMeshInstancing(Mesh& mesh, Shader& shader, int count);
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
@@ -75,6 +78,7 @@ public:
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
     static void SetRenderMode(RenderMode mode);
+    static void SetDepthMask(bool value);
     static void SetDepthTest(DepthTest depthTest);
     static void SetCullFace(CullFace cullFace);
     static void SetBlend(bool blend);

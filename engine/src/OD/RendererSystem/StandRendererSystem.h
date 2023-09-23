@@ -6,6 +6,7 @@
 #include "OD/Renderer/Mesh.h"
 #include "OD/Renderer/Framebuffer.h"
 #include "OD/Renderer/Material.h"
+#include "OD/Renderer/Cubemap.h"
 
 namespace OD{
 
@@ -43,7 +44,7 @@ private:
 
     Matrix4 _lightSpaceMatrix;
 
-    Framebuffer* _outFramebuffer;
+    Framebuffer* _outFramebuffer = nullptr;
     
     Framebuffer* _pp1;
     Framebuffer* _pp2;
@@ -53,6 +54,10 @@ private:
     Transform _overrideCameraTrans;
 
     std::vector<PostProcessingPass*> _ppPass;
+
+    Ref<Shader> _skyboxShader;
+    Mesh _skyboxMesh;
+    Ref<Cubemap> _skyboxCubemap;
 
     void SetStandUniforms(Shader& material);
     void RenderScene(Camera& camera, bool isMain, Vector3 camPOs);

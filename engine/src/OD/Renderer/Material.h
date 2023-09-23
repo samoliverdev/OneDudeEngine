@@ -3,6 +3,7 @@
 #include "OD/Defines.h"
 #include "OD/Renderer/Shader.h"
 #include "OD/Renderer/Texture.h"
+#include "OD/Renderer/Cubemap.h"
 
 namespace OD{
 

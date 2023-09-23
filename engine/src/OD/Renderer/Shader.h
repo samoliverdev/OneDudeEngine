@@ -5,6 +5,7 @@
 #include "OD/Core/Math.h"
 #include "OD/Platform/GL.h"
 #include "Texture.h"
+#include "Cubemap.h"
 #include "Framebuffer.h"
 
 namespace OD {
@@ -31,7 +32,10 @@ public:
     void SetVector4(const char* name, Vector4 value);
     void SetMatrix4(const char* name, Matrix4 value);
     void SetTexture2D(const char* name, Texture2D& value, int index);
+    void SetCubemap(const char* name, Cubemap& value, int index);
     void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
+
+    inline unsigned int rendererId(){ return _rendererId; }
 
 private:
     unsigned int _rendererId;

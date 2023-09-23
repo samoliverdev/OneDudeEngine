@@ -28,10 +28,13 @@ public:
 
     std::vector<unsigned int> indices;
 
+    std::vector<Matrix4> instancingModelMatrixs;
+
     Mesh();
     ~Mesh();
 
     void UpdateMesh();
+    void UpdateMeshInstancingModelMatrixs();
 
     bool IsValid();
     void Destroy();
@@ -44,6 +47,8 @@ public:
     static Mesh SkyboxCube();
     static Mesh CenterQuad(bool useIndices);
 
+    inline unsigned int rendererId(){ return _vao; }
+
 private:
     bool _isReadable = false;
 
@@ -54,6 +59,8 @@ private:
     unsigned int _normalVbo = 0;
     unsigned int _colorVbo = 0;
     unsigned int _tangentVbo = 0;
+
+    unsigned int _instancingModelMatrixsVbo = 0;
     
     //unsigned int jointVbo; 
     //unsigned int weightsVbo;  

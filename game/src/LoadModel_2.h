@@ -2,57 +2,54 @@
 
 #include <OD/OD.h>
 #include "CameraMovement.h"
+#include "Ultis.h"
 
 using namespace OD;
 
 struct LoadModel_2: OD::Module {
     Ref<Model> model;
     Ref<Shader> shader;
-    Transform modelTransform;
     Transform camTransform;
     Camera cam;
     CameraMovement camMove;
 
-    Vector3 cubePositions[10] = {
-        Vector3( 0.0f,  0.0f,  0.0f), 
-        Vector3( 2.0f,  5.0f, -15.0f), 
-        Vector3(-1.5f, -2.2f, -2.5f),  
-        Vector3(-3.8f, -2.0f, -12.3f),  
-        Vector3( 2.4f, -0.4f, -3.5f),  
-        Vector3(-1.7f,  3.0f, -7.5f),  
-        Vector3( 1.3f, -2.0f, -2.5f),  
-        Vector3( 1.5f,  2.0f, -2.5f), 
-        Vector3( 1.5f,  0.2f, -1.5f), 
-        Vector3(-1.3f,  1.0f, -1.5f)  
-    };
+    std::vector<Matrix4> transforms;
 
     void OnInit() override {
         LogInfo("Game Init");
-        //LogInfo("SizeOf glm::vec3: %zu", sizeof(glm::vec3));
-        //LogInfo("SizeOf Vector3 %zu", sizeof(Vector3));
-        //LogInfo("(%f, %f, %f)", (Vector3(1,1,1)+Vector3(2,2,2)).x, (Vector3(1,1,1) * 2.0f).y, (glm::vec3(1,1,1) * 5.0f).z);
 
-        modelTransform.localPosition(Vector3::zero);
+        Application::vsync(false);
+
         camTransform.localPosition(Vector3(0, 2, 4));
         camTransform.localEulerAngles(Vector3(-25, 0, 0));
 
         camMove.transform = &camTransform;
 
-        //model = Model::CreateFromFile("res/models/suzane.obj");
-        //model->SetShader(Shader::CreateFromFile("res/shaders/model.glsl"));
-        //model->materials[0].SetTexture("texture1", Texture2D::CreateFromFile("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
+        model = AssetManager::Get().LoadModel("res/models/cube.glb");
+        model->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
+        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
 
-        model = AssetManager::Get().LoadModel("res/models/suzane.obj");
-        model->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/shaders/model.glsl");
-        model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
+        for(int i = 0; i < 100000; i++){
+            float posRange = 25;
+
+            Transform t;
+
+            float angle = 20.0f * i; 
+            t.localPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
+            t.localEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+
+            transforms.push_back(t.GetLocalModelMatrix());
+        }
     }
 
     void OnUpdate(float deltaTime) override {
         camMove.OnUpdate();
-        modelTransform.localEulerAngles(Vector3(0, Platform::GetTime() * 20, 0));
+        //modelTransform.localEulerAngles(Vector3(0, Platform::GetTime() * 20, 0));
     }   
 
     void OnRender(float deltaTime) override {
+        OD_PROFILE_SCOPE("LoadModel_2::OnRender");
+
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
         cam.view = camTransform.GetLocalModelMatrix().inverse();
 
@@ -63,13 +60,30 @@ struct LoadModel_2: OD::Module {
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
         //Renderer::DrawModel(*model, modelTransform.GetLocalModelMatrix());
 
+        bool useInstancing = true;
+
+        if(useInstancing){  
+            model->materials[0]->UpdateUniforms();
+
+            model->meshs[0]->instancingModelMatrixs.clear();
+            for(auto i: transforms){
+                model->meshs[0]->instancingModelMatrixs.push_back(i);
+            }
+            model->meshs[0]->UpdateMeshInstancingModelMatrixs();
+
+            Renderer::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->shader, transforms.size());
+        } else {
+            for(auto i: transforms){
+                Renderer::DrawModel(*model, i);
+            }
+        }
         
-        for(unsigned int i = 0; i < 10; i++){
+        /*for(int i = 0; i < 10; i++){
             modelTransform.localPosition(cubePositions[i]);
             float angle = 20.0f * i; 
             modelTransform.localEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
             Renderer::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-        }
+        }*/
         
 
         Renderer::End();
@@ -78,6 +92,12 @@ struct LoadModel_2: OD::Module {
     void OnGUI() override {
         //static bool show;
         //ImGui::ShowDemoWindow(&show);
+
+        ImGui::Begin("Renderer Stats");
+        ImGui::Text("DrawCalls: %d", Renderer::drawCalls);
+        ImGui::Text("Vertices: %dk", Renderer::vertices / 1000);
+        ImGui::Text("Tris: %dk", Renderer::tris / 1000);
+        ImGui::End();
     }
 
     void OnResize(int width, int height) override {;

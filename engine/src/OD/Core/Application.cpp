@@ -64,13 +64,14 @@ bool Application::Run(){
             for(auto i: _modules) i->OnGUI();
         }
 
-        ImGui::Begin("Profile");
-        for(auto i: Instrumentor::Get().results()){ 
-            float durration = (i.end - i.start) * 0.001f;
-            ImGui::Text("%s: %.3f.ms", i.name, durration);
-        }
-        Instrumentor::Get().results().clear();
-        ImGui::End();
+        /*if(ImGui::Begin("Profile")){
+            for(auto i: Instrumentor::Get().results()){ 
+                float durration = (i.end - i.start) * 0.001f;
+                ImGui::Text("%s: %.3f.ms", i.name, durration);
+            }
+            Instrumentor::Get().results().clear();
+            ImGui::End();
+        }*/
 
         Platform::LateUpdate();
         Platform::SwapBuffers();

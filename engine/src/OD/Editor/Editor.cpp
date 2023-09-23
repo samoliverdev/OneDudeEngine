@@ -14,6 +14,8 @@ namespace OD{
 Editor* Editor::instance;
 
 void Editor::OnInit(){
+    ImGuiLayer::SetCleanAll(true);
+
     FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
@@ -117,13 +119,14 @@ void Editor::DrawMainWorkspace(){
     ImGui::Text("Tris: %dk", Renderer::tris / 1000);
     ImGui::End();
 
-    //ImGui::Begin("Profile");
-    //for(auto i: Instrumentor::Get().results()){ 
-    //    float durration = (i.end - i.start) * 0.001f;
-    //    ImGui::Text("%s: %.3f.ms", i.name, durration);
-    //}
-    //Instrumentor::Get().results().clear();
-    //ImGui::End();
+    if(ImGui::Begin("Profile")){
+        for(auto i: Instrumentor::Get().results()){ 
+            float durration = (i.end - i.start) * 0.001f;
+            ImGui::Text("%s: %.3f.ms", i.name, durration);
+        }
+        Instrumentor::Get().results().clear();
+    }
+    ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::Begin("Viewport");
@@ -212,6 +215,11 @@ void Editor::DrawMainPanel(){
             ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
             ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
             ImGui::Button("Test", ImVec2(0, height-1));
+
+            static int e = 0;
+            ImGui::RadioButton("radio a", &e, 0); ImGui::SameLine();
+            ImGui::RadioButton("radio b", &e, 1); ImGui::SameLine();
+            ImGui::RadioButton("radio c", &e, 2);
             
             ImGui::BeginTabBar("BeginTabBar");
             
@@ -258,7 +266,7 @@ void Editor::DrawMainPanel(){
         DrawMainWorkspace();
     }
 
-    if(isCode == true){
+    /*if(isCode == true){
         static bool test1 = true;
         if(test1 && ImGui::Begin("Test1__", &test1)){
             ImGui::Text("Scene Status");
@@ -270,7 +278,7 @@ void Editor::DrawMainPanel(){
             ImGui::Text("Scene Status");
             ImGui::End();
         }
-    }
+    }*/
 
     //DrawGizmos();
 

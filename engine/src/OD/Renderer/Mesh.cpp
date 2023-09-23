@@ -121,6 +121,44 @@ void Mesh::UpdateMesh(){
     glBindVertexArray(0);
 }
 
+void Mesh::UpdateMeshInstancingModelMatrixs(){
+    Assert(_vao != 0);
+
+    glBindVertexArray(_vao);
+    glCheckError();
+
+    if(instancingModelMatrixs.empty() == false){
+        if(_instancingModelMatrixsVbo == 0){
+            glGenBuffers(1, &_instancingModelMatrixsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, _instancingModelMatrixsVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+
+            std::size_t vec4Size = sizeof(glm::vec4);
+            glEnableVertexAttribArray(10); 
+            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+            glEnableVertexAttribArray(11); 
+            glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+            glEnableVertexAttribArray(12); 
+            glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+            glEnableVertexAttribArray(13); 
+            glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+            glCheckError();
+
+            glVertexAttribDivisor(10, 1);
+            glVertexAttribDivisor(11, 1);
+            glVertexAttribDivisor(12, 1);
+            glVertexAttribDivisor(13, 1);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _instancingModelMatrixsVbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
+        }
+    }
+
+    glBindVertexArray(0);
+}
+
 bool Mesh::IsValid(){
     return _vao != 0;
 }

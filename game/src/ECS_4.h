@@ -107,6 +107,15 @@ struct ECS_4: public OD::Module {
         _meshRenderer2.model(cubeModel);
         _meshRenderer2.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
 
+        /*Entity sponza = scene->AddEntity("Sponza");
+        sponza.GetComponent<TransformComponent>().position(Vector3(0,0,0));
+        sponza.GetComponent<TransformComponent>().localScale(Vector3(1, 1, 1));
+        MeshRendererComponent& sponzaModel = sponza.AddComponent<MeshRendererComponent>();
+        sponzaModel.model(AssetManager::Get().LoadModel(
+            "res/Sponza/sponza.obj",
+            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
+        ));*/
+
         AddTransparent(Vector3(5, 3, -8));
         AddTransparent(Vector3(6, 3, -12));
         AddTransparent(Vector3(8, 3, -20));
@@ -122,18 +131,18 @@ struct ECS_4: public OD::Module {
 
         mainEntity = scene->AddEntity("Main");
         mainEntity.GetComponent<TransformComponent>().localPosition(Vector3(2, 0, 0));
-        MeshRendererComponent& meshRenderer = mainEntity.AddComponent<MeshRendererComponent>();
-        //meshRenderer.model(cubeModel);
+        /*MeshRendererComponent& meshRenderer = mainEntity.AddComponent<MeshRendererComponent>();
         meshRenderer.model(AssetManager::Get().LoadModel(
             "res/models/backpack/backpack.obj",
             AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
         ));
-        meshRenderer.subMeshIndex(-1);
+        meshRenderer.subMeshIndex(-1);*/
         mainEntity.AddComponent<ScriptComponent>().AddScript<RotateScript>();
 
         light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(1,1,1);
+        lightComponent.renderShadow = false;
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));
         
@@ -178,6 +187,7 @@ struct ECS_4: public OD::Module {
         }
 
         Application::AddModule<Editor>();
+        //scene->Start();
     }
 
     void OnUpdate(float deltaTime) override {

@@ -107,6 +107,10 @@ void Renderer::SetCamera(Camera& _camera){
     camera = _camera;
 }
 
+Camera Renderer::GetCamera(){
+    return camera;
+}
+
 void Renderer::DrawMeshRaw(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
 
@@ -167,7 +171,7 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, st
 
     if(subMeshIndex > -1){
         Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[subMeshIndex] : nullptr;
-        if((*materialsOverride)[subMeshIndex] != nullptr) targetMaterial = (*materialsOverride)[subMeshIndex];
+        if(materialsOverride != nullptr && (*materialsOverride)[subMeshIndex] != nullptr) targetMaterial = (*materialsOverride)[subMeshIndex];
         Assert(targetMaterial != nullptr);
 
         targetMaterial->UpdateUniforms();
@@ -175,13 +179,38 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, st
     } else {
         for(int i = 0; i < model.meshs.size(); i++){
             Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[i] : nullptr;
-            if((*materialsOverride)[i] != nullptr) targetMaterial = (*materialsOverride)[i];
+            if(materialsOverride != nullptr && (*materialsOverride)[i] != nullptr) targetMaterial = (*materialsOverride)[i];
             Assert(targetMaterial != nullptr);
 
             targetMaterial->UpdateUniforms();
             DrawMesh(*model.meshs[i], modelMatrix, *targetMaterial->shader);
         }
     }
+}
+
+void Renderer::DrawMeshInstancing(Mesh& mesh, Shader& shader, int count){
+    Assert(mesh.IsValid() && "Mesh is not vali!");
+    Assert(shader.IsValid()  && "Shader is not vali!");
+
+    drawCalls += 1;
+    vertices += mesh._vertexCount * count;
+    tris += mesh._indiceCount * count;
+    
+    shader.Bind();
+    shader.SetFloat("useInstancing", 1.0f);
+    shader.SetMatrix4("view", camera.view);
+    shader.SetMatrix4("projection", camera.projection);
+
+    glBindVertexArray(mesh._vao);
+
+    if(mesh._ebo != 0){
+        glDrawElementsInstanced(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0, count);
+    } else {
+        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh._vertexCount, count);
+    }
+
+    glBindVertexArray(0);
+    glCheckError();
 }
 
 void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
@@ -241,6 +270,15 @@ void Renderer::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
 void Renderer::SetRenderMode(RenderMode mode){
     if(mode == RenderMode::SHADED) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if(mode == RenderMode::WIREFRAME) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glCheckError();
+}
+
+void Renderer::SetDepthMask(bool value){
+    if(value){
+        glDepthMask(GL_TRUE);
+    } else {
+        glDepthMask(GL_FALSE);
+    }
     glCheckError();
 }
 

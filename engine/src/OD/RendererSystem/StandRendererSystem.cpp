@@ -33,6 +33,22 @@ struct RenderGroupTarget{
     Matrix4 trans;
 };
 
+struct InstancingKey{
+    Ref<Material> material;
+    Ref<Mesh> mesh;
+
+    bool operator==(const InstancingKey& p) const{
+        return material->shader->rendererId() == p.material->shader->rendererId() && 
+                mesh->rendererId() == p.mesh->rendererId();
+    }
+};
+
+struct InstancingKeyHasher{
+    std::size_t operator()(const InstancingKey& k) const{
+        return k.material->shader->rendererId() + k.mesh->rendererId();
+    }
+};
+
 EnvironmentSettings environmentSettings;
 
 void StandRendererSystem::SetStandUniforms(Shader& shader){
@@ -135,19 +151,36 @@ void StandRendererSystem::ClearSceneShadow(){
 void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
+    // --------- Set Camera --------- 
     if(isMain){
         Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
     } else {
         Renderer::SetCamera(camera);
     }
+
+    // --------- Clean --------- 
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+
+    // --------- Render Sky --------- 
+    //Renderer::SetDepthTest(DepthTest::ALWAYS);
+    Renderer::SetCullFace(CullFace::BACK);
+    Renderer::SetDepthMask(false);
+    _skyboxShader->Bind();
+    _skyboxShader->SetCubemap("mainTex", *_skyboxCubemap, 0);
+    _skyboxShader->SetMatrix4("projection", Renderer::GetCamera().projection);
+    Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
+    _skyboxShader->SetMatrix4("view", skyboxView);
+    Renderer::DrawMeshRaw(_skyboxMesh);
+    Renderer::SetDepthMask(true);
     
+    // --------- Render Opaques --------- 
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
-    Renderer::SetBlend(false);
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 
     std::unordered_map< Ref<Material>, std::vector<RenderGroupTarget> > groups; 
     std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderGroupTarget>> >groupsBlend; 
+
+    std::unordered_map< InstancingKey, std::vector<Matrix4>, InstancingKeyHasher > groupsInstancing; 
 
     auto view1 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view1){
@@ -164,6 +197,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
                 groupsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             } else {
                 groups[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                groupsInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
             }
                 
             index += 1;
@@ -171,14 +205,34 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         //Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
     }
 
-    for(auto i: groups){
-        SetStandUniforms(*i.first->shader);
-        i.first->UpdateUniforms();
-        for(auto j: i.second){
-            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader);
+    bool instancing = true;
+
+    if(instancing){
+        for(auto& i: groupsInstancing){
+            SetStandUniforms(*i.first.material->shader);
+            i.first.material->UpdateUniforms();
+
+            i.first.mesh->instancingModelMatrixs.clear();
+            for(auto j: i.second){
+                i.first.mesh->instancingModelMatrixs.push_back(j);
+            }
+            i.first.mesh->UpdateMeshInstancingModelMatrixs();
+
+            Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader, i.second.size());
+            //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
+        }
+        //LogInfo("GroupsInstancing count: %zd", groupsInstancing.size());
+    } else {
+        for(auto i: groups){
+            SetStandUniforms(*i.first->shader);
+            i.first->UpdateUniforms();
+            for(auto j: i.second){
+                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader);
+            }
         }
     }
     
+    // --------- Render Blends --------- 
     Renderer::SetCullFace(CullFace::NONE);
     Renderer::SetBlend(true);
     Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
@@ -193,6 +247,9 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     }
     }
 
+    Renderer::SetBlend(false);
+
+    // --------- Render Sprites --------- 
     auto view2 = scene()->GetRegistry().view<SpriteComponent, TransformComponent>();
     for(auto _entity: view2){
         auto& c = view2.get<SpriteComponent>(_entity);
@@ -235,8 +292,19 @@ StandRendererSystem::StandRendererSystem(){
     _pp2 = new Framebuffer(framebufferSpecification);
     _pp2->Invalidate();
 
-    _ppPass.push_back(new TestPP1(0));
-    _ppPass.push_back(new TestPP1(3));
+    _skyboxShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxCubemap.glsl");
+    _skyboxMesh = Mesh::SkyboxCube();
+    _skyboxCubemap = Cubemap::CreateFromFile(
+        "res/Builtins/Textures/Skybox/right.jpg",
+        "res/Builtins/Textures/Skybox/left.jpg",
+        "res/Builtins/Textures/Skybox/top.jpg",
+        "res/Builtins/Textures/Skybox/bottom.jpg",
+        "res/Builtins/Textures/Skybox/front.jpg",
+        "res/Builtins/Textures/Skybox/back.jpg"
+    );
+
+    //_ppPass.push_back(new TestPP1(0));
+    //_ppPass.push_back(new TestPP1(3));
 }
 
 StandRendererSystem::~StandRendererSystem(){

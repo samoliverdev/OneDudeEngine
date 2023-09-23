@@ -65,7 +65,7 @@ void imguiOnInit(GLFWwindow* window){
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGuiSetDarkTheme();
+    ImGuiLayer::SetDarkTheme();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -87,8 +87,10 @@ void imguiOnUpdate(GLFWwindow* window){
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
-    glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
+    if(ImGuiLayer::GetCleanAll() == true){
+        glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Update and Render additional Platform Windows
