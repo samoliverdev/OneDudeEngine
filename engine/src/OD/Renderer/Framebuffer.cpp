@@ -32,16 +32,26 @@ void Framebuffer::GenColorAttachment(int index){
             format = GL_RED_INTEGER;
         }
 
+        bool multisample = _specification.sample > 1;
+
         unsigned int colorAttachment;
         glGenTextures(1, &colorAttachment);
-        glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, _specification.width, _specification.height, 0, format, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glCheckError();
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
-        glCheckError();
+        if(multisample){
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorAttachment);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, _specification.sample, internalFormat, _specification.width, _specification.height, GL_TRUE);
+            glCheckError();
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment, 0);
+            glCheckError();
+        } else {
+            glBindTexture(GL_TEXTURE_2D, colorAttachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, _specification.width, _specification.height, 0, format, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glCheckError();
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
+            glCheckError();
+        }
 
         _colorAttachments.push_back(colorAttachment);
     }
@@ -67,28 +77,42 @@ void Framebuffer::GenDepthAttachment(){
         attachment = GL_DEPTH_ATTACHMENT;
     }
 
+    bool multisample = _specification.sample > 1;
+
     if(_specification.depthAttachment.writeOnly){
         glGenRenderbuffers(1, &_depthAttachment);
         glBindRenderbuffer(GL_RENDERBUFFER, _depthAttachment);
-        glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, _specification.width, _specification.height); // use a single renderbuffer object for both a depth AND stencil buffer.
+        if(multisample){
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, _specification.sample, internalFormat, _specification.width, _specification.height); // use a single renderbuffer object for both a depth AND stencil buffer.
+        } else {    
+            glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, _specification.width, _specification.height); // use a single renderbuffer object for both a depth AND stencil buffer.
+        }
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, _depthAttachment); // now actually attach it
         glCheckError();
     } else {
         glGenTextures(1, &_depthAttachment);
-        glBindTexture(GL_TEXTURE_2D, _depthAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, _specification.width, _specification.height, 0, format, type, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        if(multisample){
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, _depthAttachment);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, _specification.sample, internalFormat, _specification.width, _specification.height, GL_TRUE);
+            glCheckError();
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, _depthAttachment, 0);
+            glCheckError();
+        } else {
+            glBindTexture(GL_TEXTURE_2D, _depthAttachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, _specification.width, _specification.height, 0, format, type, NULL);
+            glCheckError();
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
+            glCheckError();
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
-
-        glCheckError();
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, _depthAttachment, 0);
-        glCheckError();
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, _depthAttachment, 0);
+            glCheckError();
+        }
     }
 }
 

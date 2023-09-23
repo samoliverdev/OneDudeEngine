@@ -85,7 +85,8 @@ public:
     static void SetBlendFunc(BlendMode sfactor, BlendMode dfactor);
 
     static void BeginFramebuffer(Framebuffer* framebuffer);
-    static void Blit(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass = 0);
+    static void BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass = 0);
+    static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst);
 
 private:
     static void _Initialize();

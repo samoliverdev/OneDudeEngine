@@ -186,8 +186,8 @@ struct ECS_4: public OD::Module {
             AddCharacter(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         }
 
-        Application::AddModule<Editor>();
-        //scene->Start();
+        //Application::AddModule<Editor>();
+        scene->Start();
     }
 
     void OnUpdate(float deltaTime) override {

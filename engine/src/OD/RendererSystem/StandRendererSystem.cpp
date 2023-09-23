@@ -20,7 +20,7 @@ public:
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
         _ppShader->Bind();
         _ppShader->SetFloat("option", _option);
-        Renderer::Blit(src, dst, *_ppShader);
+        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
@@ -205,7 +205,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         //Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
     }
 
-    bool instancing = true;
+    bool instancing = false;
 
     if(instancing){
         for(auto& i: groupsInstancing){
@@ -283,9 +283,11 @@ StandRendererSystem::StandRendererSystem(){
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
     
+    framebufferSpecification.sample = 8;
     _finalColor = new Framebuffer(framebufferSpecification);
     _finalColor->Invalidate();
 
+    framebufferSpecification.sample = 1;
     _pp1 = new Framebuffer(framebufferSpecification);
     _pp1->Invalidate();
 
@@ -386,13 +388,16 @@ void StandRendererSystem::Update(){
     }
     scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
+    Renderer::BlitFramebuffer(_finalColor, _pp1);
+
     bool step = false;
-    #define SRC_FRAMEBUFFER() step == false ? _finalColor : _pp1
+    Framebuffer* finalFramebuffer = _pp1;
 
     for(auto i: _ppPass){
+        finalFramebuffer = step == false ? _pp2 : _pp1;
         i->OnRenderImage(
-            step == false ? _finalColor : _pp1, 
-            step == false ? _pp1 : _finalColor
+            step == false ? _pp1 : _pp2, 
+            step == false ? _pp2 : _pp1
         );
         step = !step;
     }
@@ -411,9 +416,9 @@ void StandRendererSystem::Update(){
     }*/
 
     if(_outFramebuffer != nullptr){
-        Renderer::Blit( _finalColor, _outFramebuffer, *_blitShader);
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
     } else {
-        Renderer::Blit( _finalColor, nullptr, *_blitShader);
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
     }
 
     _finalColor->Unbind();

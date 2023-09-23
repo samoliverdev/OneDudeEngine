@@ -383,7 +383,7 @@ void Renderer::BeginFramebuffer(Framebuffer* framebuffer){
     framebuffer->Bind();
 }
 
-void Renderer::Blit(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
+void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
     Assert(src != nullptr);
 
     if(dst == nullptr){
@@ -402,6 +402,14 @@ void Renderer::Blit(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass
     //src->BindColorAttachmentTexture(shader, 0);
     Renderer::DrawMeshRaw(fullScreenQuad);
     glCheckError();
+}
+
+void Renderer::BlitFramebuffer(Framebuffer* src, Framebuffer* dst){
+    Assert(src != nullptr);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, src->renderId());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst == nullptr ? 0 : dst->renderId());
+    glBlitFramebuffer(0, 0, src->width(), src->height(), 0, 0, src->width(), src->height(), GL_COLOR_BUFFER_BIT, GL_NEAREST); 
 }
 
 }

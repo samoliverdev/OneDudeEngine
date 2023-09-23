@@ -18,7 +18,7 @@ struct FramebufferAttachment{
 struct FrameBufferSpecification{
     int width;
     int height;
-    unsigned sample = 1;
+    unsigned int sample = 1;
 
     std::vector<FramebufferAttachment> colorAttachments;
     FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
@@ -43,6 +43,8 @@ public:
 
     inline int width(){ return _specification.width; }
     inline int height(){ return _specification.height; }
+
+    inline unsigned int renderId(){ return _framebuffer; }
 
 private:
     FrameBufferSpecification _specification;
