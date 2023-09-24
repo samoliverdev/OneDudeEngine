@@ -26,6 +26,26 @@ void Framebuffer::GenColorAttachment(int index){
             internalFormat = GL_RGB8;
             format = GL_RGBA;
         }
+
+        if(_specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB16F){
+            internalFormat = GL_RGB16F;
+            format = GL_RGB;
+        }
+
+        if(_specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA16F){
+            internalFormat = GL_RGBA16F;
+            format = GL_RGBA;
+        }
+
+        if(_specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB32F){
+            internalFormat = GL_RGB32F;
+            format = GL_RGB;
+        }
+
+        if(_specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F){
+            internalFormat = GL_RGBA32F;
+            format = GL_RGBA;
+        }
         
         if(_specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RED_INTEGER){
             internalFormat = GL_R32I;
@@ -179,6 +199,15 @@ void Framebuffer::Invalidate(){
     if(_specification.colorAttachments.size() == 0){
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
+    } else if(_specification.colorAttachments.size() > 1){
+        Assert(_specification.colorAttachments.size() <= 4);
+		
+        std::vector<GLenum> buffers;
+        for(int i = 0; i < _specification.colorAttachments.size(); i++){
+            buffers.push_back(GL_COLOR_ATTACHMENT0+i);
+        }
+		
+        glDrawBuffers(_specification.colorAttachments.size(), &buffers[0]);
     }
 
     //Check Erros

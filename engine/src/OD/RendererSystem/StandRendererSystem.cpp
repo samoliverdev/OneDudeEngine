@@ -28,6 +28,36 @@ private:
     Ref<Shader> _ppShader;
 };
 
+class GameCorrectionPP: public PostProcessingPass{
+public:
+    GameCorrectionPP(){
+        _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/GamaCorrectionPP.glsl");
+    }
+
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
+        _ppShader->Bind();
+        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
+    }
+
+private:
+    Ref<Shader> _ppShader;
+};
+
+class ToneMappingPP: public PostProcessingPass{
+public:
+    ToneMappingPP(){
+        _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/ToneMappingPP.glsl");
+    }
+
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
+        _ppShader->Bind();
+        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
+    }
+
+private:
+    Ref<Shader> _ppShader;
+};
+
 struct RenderGroupTarget{
     Ref<Mesh> mesh;
     Matrix4 trans;
@@ -50,6 +80,175 @@ struct InstancingKeyHasher{
 };
 
 EnvironmentSettings environmentSettings;
+
+StandRendererSystem::StandRendererSystem(){
+    //glEnable(GL_FRAMEBUFFER_SRGB); 
+
+    _spriteMesh = Mesh::CenterQuad(true);
+    _spriteShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Sprite.glsl");
+
+    FrameBufferSpecification specification;
+    specification.width = 1024 * 4;
+    specification.height = 1024 * 4;
+    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT, false};
+    _shadowMap = new Framebuffer(specification);
+
+    _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
+    _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
+    _blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
+
+    FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
+    
+    framebufferSpecification.sample = 8;
+    _finalColor = new Framebuffer(framebufferSpecification);
+    _finalColor->Invalidate();
+
+    framebufferSpecification.sample = 1;
+    _pp1 = new Framebuffer(framebufferSpecification);
+    _pp1->Invalidate();
+
+    _pp2 = new Framebuffer(framebufferSpecification);
+    _pp2->Invalidate();
+
+    _skyboxShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxCubemap.glsl");
+    _skyboxMesh = Mesh::SkyboxCube();
+    _skyboxCubemap = Cubemap::CreateFromFile(
+        "res/Builtins/Textures/Skybox/right.jpg",
+        "res/Builtins/Textures/Skybox/left.jpg",
+        "res/Builtins/Textures/Skybox/top.jpg",
+        "res/Builtins/Textures/Skybox/bottom.jpg",
+        "res/Builtins/Textures/Skybox/front.jpg",
+        "res/Builtins/Textures/Skybox/back.jpg"
+    );
+
+    //_ppPass.push_back(new TestPP1(0));
+    //_ppPass.push_back(new TestPP1(3));
+
+    //_ppPass.push_back(new GameCorrectionPP());
+    _ppPass.push_back(new ToneMappingPP());
+}
+
+StandRendererSystem::~StandRendererSystem(){
+    for(auto i: _ppPass){
+        delete i;
+    }
+
+    delete _shadowMap;
+    delete _finalColor;
+    delete _pp1;
+    delete _pp2;
+}
+
+void StandRendererSystem::Update(){
+    OD_PROFILE_SCOPE("StandRendererSystem::Update");
+
+    // ---------- Setups ---------- 
+    environmentSettings = EnvironmentSettings();
+    auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
+    for(auto entity: _view){
+        environmentSettings = _view.get<EnvironmentComponent>(entity).settings;
+        break;
+    }
+
+    // ---------- Render Shadows ---------- 
+    UpdateCurrentLight();
+
+    bool hasShadow = false;
+    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
+    for(auto entity: view){
+        auto& light = view.get<LightComponent>(entity);
+        auto& transform = view.get<TransformComponent>(entity);
+
+        if(light.type != LightComponent::Type::Directional) continue;
+        if(light.renderShadow == false) continue;
+
+        _shadowMap->Bind();
+        Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+        RenderSceneShadow(light, transform);
+        _shadowMap->Unbind();
+
+        hasShadow = true;
+        break;
+    }
+    if(hasShadow == false){
+        _shadowMap->Bind();
+        ClearSceneShadow();
+        _shadowMap->Unbind();
+    }
+    
+    // ---------- Render Cameras ---------- 
+
+    int width = Application::screenWidth();
+    int height = Application::screenHeight();
+
+    if(_outFramebuffer != nullptr){
+        _outFramebuffer->Bind();
+        width = _outFramebuffer->width();
+        height = _outFramebuffer->height();
+    }
+
+    _finalColor->Resize(width, height);
+    _pp1->Resize(width, height);
+    _pp2->Resize(width, height);
+    
+    _finalColor->Bind();
+
+    Renderer::SetViewport(0, 0, width, height);
+    auto view2 = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
+    for(auto entity: view2){
+        auto& c = view2.get<CameraComponent>(entity);
+        auto& t = view2.get<TransformComponent>(entity);
+
+        c.UpdateCameraData(t, width, height);
+        if(c.isMain){
+            RenderScene(c.camera(), true, _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position());
+            break;
+        }
+    }
+    scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+
+    Renderer::BlitFramebuffer(_finalColor, _pp1);
+
+    bool step = false;
+    Framebuffer* finalFramebuffer = _pp1;
+
+    for(auto i: _ppPass){
+        finalFramebuffer = step == false ? _pp2 : _pp1;
+        i->OnRenderImage(
+            step == false ? _pp1 : _pp2, 
+            step == false ? _pp2 : _pp1
+        );
+        step = !step;
+    }
+
+    /*if(_outFramebuffer != nullptr){
+        _postProcessingShader->Bind();
+        
+        _postProcessingShader->SetFloat("option", 0);
+        Renderer::Blit(_finalColor, _pp1, *_postProcessingShader);
+
+        _postProcessingShader->SetFloat("option", 3);
+        Renderer::Blit(_pp1, _finalColor, *_postProcessingShader);
+
+        _postProcessingShader->SetFloat("option", 5);
+        Renderer::Blit(_finalColor, _outFramebuffer, *_postProcessingShader);
+    }*/
+
+    if(_outFramebuffer != nullptr){
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
+    } else {
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
+    }
+
+    _finalColor->Unbind();
+    _pp1->Unbind();
+    _pp2->Unbind();
+    if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
+}
+
+/////////////////////////////////////////////////
 
 void StandRendererSystem::SetStandUniforms(Shader& shader){
     shader.Bind();
@@ -262,169 +461,4 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         Renderer::DrawMesh(_spriteMesh, t.globalModelMatrix(), *_spriteShader);
     }
 }
-
-StandRendererSystem::StandRendererSystem(){
-    //glEnable(GL_FRAMEBUFFER_SRGB); 
-
-    _spriteMesh = Mesh::CenterQuad(true);
-    _spriteShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Sprite.glsl");
-
-    FrameBufferSpecification specification;
-    specification.width = 1024 * 4;
-    specification.height = 1024 * 4;
-    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT, false};
-    _shadowMap = new Framebuffer(specification);
-
-    _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
-    _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
-    _blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
-
-    FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
-    
-    framebufferSpecification.sample = 8;
-    _finalColor = new Framebuffer(framebufferSpecification);
-    _finalColor->Invalidate();
-
-    framebufferSpecification.sample = 1;
-    _pp1 = new Framebuffer(framebufferSpecification);
-    _pp1->Invalidate();
-
-    _pp2 = new Framebuffer(framebufferSpecification);
-    _pp2->Invalidate();
-
-    _skyboxShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxCubemap.glsl");
-    _skyboxMesh = Mesh::SkyboxCube();
-    _skyboxCubemap = Cubemap::CreateFromFile(
-        "res/Builtins/Textures/Skybox/right.jpg",
-        "res/Builtins/Textures/Skybox/left.jpg",
-        "res/Builtins/Textures/Skybox/top.jpg",
-        "res/Builtins/Textures/Skybox/bottom.jpg",
-        "res/Builtins/Textures/Skybox/front.jpg",
-        "res/Builtins/Textures/Skybox/back.jpg"
-    );
-
-    //_ppPass.push_back(new TestPP1(0));
-    //_ppPass.push_back(new TestPP1(3));
-}
-
-StandRendererSystem::~StandRendererSystem(){
-    for(auto i: _ppPass){
-        delete i;
-    }
-
-    delete _shadowMap;
-    delete _finalColor;
-    delete _pp1;
-    delete _pp2;
-}
-
-void StandRendererSystem::Update(){
-    OD_PROFILE_SCOPE("StandRendererSystem::Update");
-
-    // ---------- Setups ---------- 
-    environmentSettings = EnvironmentSettings();
-    auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
-    for(auto entity: _view){
-        environmentSettings = _view.get<EnvironmentComponent>(entity).settings;
-        break;
-    }
-
-    // ---------- Render Shadows ---------- 
-    UpdateCurrentLight();
-
-    bool hasShadow = false;
-    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
-    for(auto entity: view){
-        auto& light = view.get<LightComponent>(entity);
-        auto& transform = view.get<TransformComponent>(entity);
-
-        if(light.type != LightComponent::Type::Directional) continue;
-        if(light.renderShadow == false) continue;
-
-        _shadowMap->Bind();
-        Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
-        RenderSceneShadow(light, transform);
-        _shadowMap->Unbind();
-
-        hasShadow = true;
-        break;
-    }
-    if(hasShadow == false){
-        _shadowMap->Bind();
-        ClearSceneShadow();
-        _shadowMap->Unbind();
-    }
-    
-    // ---------- Render Cameras ---------- 
-
-    int width = Application::screenWidth();
-    int height = Application::screenHeight();
-
-    if(_outFramebuffer != nullptr){
-        _outFramebuffer->Bind();
-        width = _outFramebuffer->width();
-        height = _outFramebuffer->height();
-    }
-
-    _finalColor->Resize(width, height);
-    _pp1->Resize(width, height);
-    _pp2->Resize(width, height);
-    
-    _finalColor->Bind();
-
-    Renderer::SetViewport(0, 0, width, height);
-    auto view2 = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
-    for(auto entity: view2){
-        auto& c = view2.get<CameraComponent>(entity);
-        auto& t = view2.get<TransformComponent>(entity);
-
-        c.UpdateCameraData(t, width, height);
-        if(c.isMain){
-            RenderScene(c.camera(), true, _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position());
-            break;
-        }
-    }
-    scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
-
-    Renderer::BlitFramebuffer(_finalColor, _pp1);
-
-    bool step = false;
-    Framebuffer* finalFramebuffer = _pp1;
-
-    for(auto i: _ppPass){
-        finalFramebuffer = step == false ? _pp2 : _pp1;
-        i->OnRenderImage(
-            step == false ? _pp1 : _pp2, 
-            step == false ? _pp2 : _pp1
-        );
-        step = !step;
-    }
-
-    /*if(_outFramebuffer != nullptr){
-        _postProcessingShader->Bind();
-        
-        _postProcessingShader->SetFloat("option", 0);
-        Renderer::Blit(_finalColor, _pp1, *_postProcessingShader);
-
-        _postProcessingShader->SetFloat("option", 3);
-        Renderer::Blit(_pp1, _finalColor, *_postProcessingShader);
-
-        _postProcessingShader->SetFloat("option", 5);
-        Renderer::Blit(_finalColor, _outFramebuffer, *_postProcessingShader);
-    }*/
-
-    if(_outFramebuffer != nullptr){
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
-    } else {
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
-    }
-
-    _finalColor->Unbind();
-    _pp1->Unbind();
-    _pp2->Unbind();
-    if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
-}
-
 }

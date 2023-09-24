@@ -175,6 +175,11 @@ void RigidbodyComponent::position(Vector3 position){
     trans.setIdentity();
     trans.setOrigin(ToBullet(position));
     _data->_body->setWorldTransform(trans);
+    _data->_motionState->setWorldTransform(trans);
+
+    _data->_body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    _data->_body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    _data->_body->clearForces();
 }
 
 Vector3 RigidbodyComponent::velocity(){

@@ -7,7 +7,7 @@ namespace OD{
 class Shader;
 
 enum class FramebufferTextureFormat{
-    None, RGB, RGBA8,RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
+    None, RGB, RGBA8, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
 };
 
 struct FramebufferAttachment{

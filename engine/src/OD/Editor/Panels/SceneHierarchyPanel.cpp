@@ -239,18 +239,18 @@ void SceneHierarchyPanel::DrawComponents(Entity entity){
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
-        //if(e.HasComponent<RigidbodyComponent>()){
-        //    RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
-        //    float p[] = {rb.position().x, rb.position().y, rb.position().z};
-        //    if(ImGui::DragFloat3("Position", p, 0.5f)){
-        //        rb.position(Vector3(p[0], p[1], p[2]));
-        //    }
-        //} else {
+        if(e.HasComponent<RigidbodyComponent>()){
+            RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
+            float p[] = {rb.position().x, rb.position().y, rb.position().z};
+            if(ImGui::DragFloat3("Position", p, 0.5f)){
+                rb.position(Vector3(p[0], p[1], p[2]));
+            }
+        } else {
             float p[] = {transform.localPosition().x, transform.localPosition().y, transform.localPosition().z};
             if(ImGui::DragFloat3("Position", p, 0.5f)){
                 transform.localPosition(Vector3(p[0], p[1], p[2]));
             }
-        //}  
+        }  
 
         float r[] = {transform.localEulerAngles().x, transform.localEulerAngles().y, transform.localEulerAngles().z};
         if(ImGui::DragFloat3("Rotation", r, 0.5f)){
