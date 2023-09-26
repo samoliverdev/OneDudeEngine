@@ -29,13 +29,17 @@ struct StandRendererSystem: public OD::System{
     inline void SetOutFrameBuffer(Framebuffer* out){ _outFramebuffer = out; }
     inline void overrideCamera(Camera* cam, Transform trans){ _overrideCamera = cam; _overrideCameraTrans = trans;} 
 
-    inline Framebuffer& finalColor(){ return *_finalColor; }
+    inline Framebuffer* finalColor(){ return _finalColor; }
+    inline Framebuffer* objectsId(){ return _objectsId; }
+    //inline Framebuffer* finalColor2(){ return _finalColor2; }
 
     inline void AddPostProcessingPass(PostProcessingPass* pass){ _ppPass.push_back(pass); }
 
 private:
     Ref<Shader> _spriteShader;
     Mesh _spriteMesh;
+
+    Framebuffer* _objectsId;
 
     Framebuffer* _shadowMap;
     Ref<Shader> _shadowMapShader;
@@ -49,6 +53,7 @@ private:
     Framebuffer* _pp1;
     Framebuffer* _pp2;
     Framebuffer* _finalColor;
+    Framebuffer* _finalColor2;
 
     Camera* _overrideCamera = nullptr;
     Transform _overrideCameraTrans;

@@ -98,19 +98,21 @@ StandRendererSystem::StandRendererSystem(){
     _blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
 
     FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}, {FramebufferTextureFormat::RED_INTEGER}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
-    
     framebufferSpecification.sample = 8;
     _finalColor = new Framebuffer(framebufferSpecification);
-    _finalColor->Invalidate();
 
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RED_INTEGER}};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::None};
     framebufferSpecification.sample = 1;
-    _pp1 = new Framebuffer(framebufferSpecification);
-    _pp1->Invalidate();
+    _objectsId = new Framebuffer(framebufferSpecification);
 
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
+    framebufferSpecification.sample = 1;
+    _finalColor2 = new Framebuffer(framebufferSpecification);
+    _pp1 = new Framebuffer(framebufferSpecification);
     _pp2 = new Framebuffer(framebufferSpecification);
-    _pp2->Invalidate();
 
     _skyboxShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxCubemap.glsl");
     _skyboxMesh = Mesh::SkyboxCube();
@@ -184,7 +186,7 @@ void StandRendererSystem::Update(){
     int height = Application::screenHeight();
 
     if(_outFramebuffer != nullptr){
-        _outFramebuffer->Bind();
+        //_outFramebuffer->Bind();
         width = _outFramebuffer->width();
         height = _outFramebuffer->height();
     }
@@ -192,6 +194,7 @@ void StandRendererSystem::Update(){
     _finalColor->Resize(width, height);
     _pp1->Resize(width, height);
     _pp2->Resize(width, height);
+    ////_finalColor2->Resize(width, height);
     
     _finalColor->Bind();
 
@@ -209,7 +212,11 @@ void StandRendererSystem::Update(){
     }
     scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
+    //LogInfo("ReadPixel(1): %d",_finalColor->ReadPixel(1, 50, 50));
+
     Renderer::BlitFramebuffer(_finalColor, _pp1);
+    Renderer::BlitFramebuffer(_finalColor, _objectsId, 1);
+    //Renderer::BlitQuadPostProcessing(_finalColor, _pp1, *_blitShader);
 
     bool step = false;
     Framebuffer* finalFramebuffer = _pp1;
@@ -223,26 +230,15 @@ void StandRendererSystem::Update(){
         step = !step;
     }
 
-    /*if(_outFramebuffer != nullptr){
-        _postProcessingShader->Bind();
-        
-        _postProcessingShader->SetFloat("option", 0);
-        Renderer::Blit(_finalColor, _pp1, *_postProcessingShader);
-
-        _postProcessingShader->SetFloat("option", 3);
-        Renderer::Blit(_pp1, _finalColor, *_postProcessingShader);
-
-        _postProcessingShader->SetFloat("option", 5);
-        Renderer::Blit(_finalColor, _outFramebuffer, *_postProcessingShader);
-    }*/
-
     if(_outFramebuffer != nullptr){
         Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
+        //Renderer::BlitQuadPostProcessing(finalFramebuffer, _finalColor2, *_blitShader);
     } else {
         Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
     }
 
     _finalColor->Unbind();
+    //_finalColor2->Unbind();
     _pp1->Unbind();
     _pp2->Unbind();
     if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();

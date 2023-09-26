@@ -3,6 +3,7 @@
 #include "OD/Core/Module.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Editor/Panels/SceneHierarchyPanel.h"
+#include "OD/Editor/Panels/ContentBrowserPanel.h"
 #include "OD/Renderer/Framebuffer.h"
 #include "EditorCamera.h"
 
@@ -24,6 +25,7 @@ private:
     static Editor* instance;
 
     SceneHierarchyPanel _sceneHierarchyPanel;
+    ContentBrowserPanel _contentBrowserPanel;
 
     bool _showSceneHierarchy = true;
     bool _showInspector = true;
@@ -34,6 +36,8 @@ private:
     Framebuffer* _framebuffer;
     std::string _curScenePath;
     EditorCamera _cam;
+
+    ImVec2 m_ViewportBounds[2];
 
     void HandleShotcuts();
     void PlayScene();

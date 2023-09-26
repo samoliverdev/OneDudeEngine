@@ -264,7 +264,10 @@ void PhysicsSystem::Init(Scene* scene){
 }
 
 void PhysicsSystem::Update(){
-    _world->stepSimulation(Application::deltaTime());
+    if(scene()->running() == false) return;
+
+    if(scene()->running())
+        _world->stepSimulation(Application::deltaTime());
     
     auto view = scene()->GetRegistry().view<RigidbodyComponent, TransformComponent>();
 
@@ -401,6 +404,8 @@ void PhysicsSystem::CheckForCollisionEvents(){
 }
 
 void PhysicsSystem::ShowDebugGizmos(){
+    //if(scene()->running()) return;
+
     _world->debugDrawWorld();
 }
 

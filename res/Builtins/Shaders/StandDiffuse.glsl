@@ -65,7 +65,8 @@ in VsOut{
     vec4 fragPosLightSpace;
 } fsIn;
 
-out vec4 fragColor;
+layout (location = 0) out vec4 fragColor;
+layout (location = 1) out int fragColor2;
 
 vec3 CalcDirectionalLight(){
     vec3 norm = normalize(fsIn.worldNormal);
@@ -158,5 +159,7 @@ void main() {
 
     //float gamma = 2.2;
     //fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
+
+    fragColor2 = 50;
 }
 #endif

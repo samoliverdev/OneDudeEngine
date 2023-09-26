@@ -12,7 +12,7 @@ Entities:
   - InfoComponent:
       name: MainCube
     TransformComponent:
-      localPosition: [2, 12.924819, 0]
+      localPosition: [2, 12.9442415, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
     RigidbodyComponent:

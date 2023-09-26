@@ -8,6 +8,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
+#include <filesystem>
 
 namespace OD{
 
@@ -20,7 +21,6 @@ void Editor::OnInit(){
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
     _framebuffer = new Framebuffer(framebufferSpecification);
-    _framebuffer->Invalidate();
 
     _viewportSize.x = _framebuffer->width();
     _viewportSize.y = _framebuffer->height();
@@ -45,6 +45,21 @@ void Editor::OnUpdate(float deltaTime){
 
     SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
     if(_framebuffer->IsValid() && _viewportSize.x != 0 && _viewportSize.y != 0) _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+
+    
+    /*if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
+        auto[mx, my] = ImGui::GetMousePos();
+        mx -= m_ViewportBounds[0].x;
+        my -= m_ViewportBounds[0].y;
+        Vector2 viewportSize = Vector2(m_ViewportBounds[1].x, m_ViewportBounds[1].y) - Vector2(m_ViewportBounds[0].x, m_ViewportBounds[0].y);
+        my = viewportSize.y - my;
+        int mouseX = (int)mx;
+        int mouseY = (int)my;
+
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->Bind();
+        LogInfo("ReadPixel(1): %d",SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ReadPixel(1, mouseX, mouseY));
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->Unbind();
+    }*/
 
     HandleShotcuts();
 }
@@ -111,6 +126,7 @@ void Editor::HandleShotcuts(){
 void Editor::DrawMainWorkspace(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
+    _contentBrowserPanel.OnGui();
 
     //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::Begin("Renderer Stats");
@@ -137,8 +153,47 @@ void Editor::DrawMainWorkspace(){
     _viewportSize.x = viewportPanelSize.x;
     _viewportSize.y = viewportPanelSize.y;
 
+    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+    auto viewportOffset = ImGui::GetWindowPos();
+    //ImVec2 m_ViewportBounds[2];
+    m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+
     uint32_t textureId = _framebuffer->ColorAttachmentId(0);
+
+    auto[mx, my] = ImGui::GetMousePos();
+    mx -= m_ViewportBounds[0].x;
+    my -= m_ViewportBounds[0].y;
+    Vector2 viewportSize = Vector2(m_ViewportBounds[1].x, m_ViewportBounds[1].y) - Vector2(m_ViewportBounds[0].x, m_ViewportBounds[0].y);
+    my = viewportSize.y - my;
+    int mouseX = (int)mx;
+    int mouseY = (int)my;
+
+    //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
+    
+    if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
+        //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Bind();
+        //LogInfo("ReadPixel(1): %d",SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->ReadPixel(0, mouseX, mouseY));
+        //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Unbind();
+
+        //textureId = SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(1);
+        //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(0);
+    }
+    
+    //ImGui::Image((ImTextureID)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+
+    if(ImGui::BeginDragDropTarget()){
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ContentBrowserPanelFile");
+
+        if(payload != nullptr){
+            std::filesystem::path* path = (std::filesystem::path*)payload->Data;
+            LogInfo("%s", path->string().c_str());
+        }
+        
+        ImGui::EndDragDropTarget();
+    }
 
     //_framebuffer->Resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
 
@@ -303,7 +358,9 @@ void Editor::DrawGizmos(){
     ImGuizmo::Enable(true);
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+    //ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+    ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
     //ImGuiIO& io = ImGui::GetIO();
     //ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 

@@ -220,6 +220,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     #endif
 
+    //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
+
     LogInfo("Glfw creationg windows: %s %d %d", applicationName, width, height);
     window = glfwCreateWindow(width, height, applicationName, NULL, NULL);
 

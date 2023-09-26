@@ -215,9 +215,10 @@ struct Scene: public Asset {
         }
         _toDestroy.clear();
 
-        if(_running == false) return;
+        //if(_running == false) return;
 
         for(auto s: _physicsSystems) s->Update();
+        if(_running == false) return;
         for(auto s: _standSystems) s->Update();
     }
 

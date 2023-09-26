@@ -86,7 +86,7 @@ public:
 
     static void BeginFramebuffer(Framebuffer* framebuffer);
     static void BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass = 0);
-    static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst);
+    static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
 private:
     static void _Initialize();

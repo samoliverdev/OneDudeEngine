@@ -56,6 +56,7 @@ void Framebuffer::GenColorAttachment(int index){
 
         unsigned int colorAttachment;
         glGenTextures(1, &colorAttachment);
+        glCheckError();
 
         if(multisample){
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorAttachment);
@@ -78,6 +79,8 @@ void Framebuffer::GenColorAttachment(int index){
 }
 
 void Framebuffer::GenDepthAttachment(){
+    if(_specification.depthAttachment.colorFormat == FramebufferTextureFormat::None) return;
+
     GLenum internalFormat = GL_DEPTH24_STENCIL8;
     GLenum format = GL_DEPTH_STENCIL;
     GLenum type = GL_UNSIGNED_INT_24_8;
@@ -142,30 +145,34 @@ Framebuffer::Framebuffer(FrameBufferSpecification specification){
 }
 
 Framebuffer::~Framebuffer(){
-    Destroy();
+    //Destroy();
 }
 
 bool Framebuffer::IsValid(){
-    return _framebuffer != 0;
+    return _framebuffer > 0;
 }
 
 void Framebuffer::Destroy(){
+    Assert(_framebuffer > 0);
+    LogInfo("Framebuffer::Destroy %d", _framebuffer);
+    
     glDeleteFramebuffers(1, &_framebuffer);
+    glCheckError();
 
     for(int i = 0; i < _specification.colorAttachments.size(); i++){
-        if(_specification.colorAttachments[i].writeOnly){
-            glDeleteRenderbuffers(1, &_colorAttachments[i]);
-        } else {
+        //if(_specification.colorAttachments[i].writeOnly){
+        //    glDeleteRenderbuffers(1, &_colorAttachments[i]);
+        //} else {
             glDeleteTextures(1, &_colorAttachments[i]);
-        }
+        //}
     }
+    glCheckError();
 
     if(_specification.depthAttachment.writeOnly){
         glDeleteRenderbuffers(1, &_depthAttachment);
     } else {
         glDeleteTextures(1, &_depthAttachment);
     }
-    
     glCheckError();
 
     _framebuffer = 0;
@@ -182,7 +189,7 @@ void Framebuffer::Resize(int width, int height){
 }
 
 void Framebuffer::Invalidate(){
-   //Clean Framebuffer
+    //Clean Framebuffer
     if(_framebuffer) Destroy();
     
     //Gen Framebuffer
@@ -199,6 +206,7 @@ void Framebuffer::Invalidate(){
     if(_specification.colorAttachments.size() == 0){
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
+        glCheckError();
     } else if(_specification.colorAttachments.size() > 1){
         Assert(_specification.colorAttachments.size() <= 4);
 		
@@ -208,26 +216,30 @@ void Framebuffer::Invalidate(){
         }
 		
         glDrawBuffers(_specification.colorAttachments.size(), &buffers[0]);
+        glCheckError();
     }
 
     //Check Erros
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
         LogError("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-        assert(false);
+        Assert(false);
     }
     
     //Unbind
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
 }
 
 void Framebuffer::Bind(){
-    Assert(_framebuffer != 0);
+    Assert(_framebuffer > 0);
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+    glCheckError();
     //glViewport(0, 0, _specification.width, _specification.height);
 }
     
 void Framebuffer::Unbind(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
 }
 
 /*
@@ -239,11 +251,25 @@ void Framebuffer::BindColorAttachmentTexture(Shader& shader, int index){
 */
 
 unsigned int Framebuffer::ColorAttachmentId(int index){ 
+    Assert(index < _colorAttachments.size());
     return _colorAttachments[index]; 
 }
 
 unsigned int Framebuffer::DepthAttachmentId(){
     return _depthAttachment;
+}
+
+int Framebuffer::ReadPixel(int attachmentIndex, int x, int y){
+    Assert(attachmentIndex < _colorAttachments.size());
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+    glCheckError();
+
+    int pixelData;
+    glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+    glCheckError();
+    
+    return pixelData;
 }
 
 }

@@ -17,6 +17,7 @@ GLenum glCheckError_(const char *file, int line){
         }
         //std::cout << error << " | " << file << " (" << line << ")" << std::endl;
         LogError("OpenGL:ERROR: %s(%d) | %s (%d)\n", error.c_str(), errorCode, file, line);
+        //Assert(false);
     }
     return errorCode;
 }

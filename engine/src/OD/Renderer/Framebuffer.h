@@ -41,6 +41,8 @@ public:
     unsigned int ColorAttachmentId(int index);
     unsigned int DepthAttachmentId();
 
+    int ReadPixel(int attachmentIndex, int x, int y);
+
     inline int width(){ return _specification.width; }
     inline int height(){ return _specification.height; }
 

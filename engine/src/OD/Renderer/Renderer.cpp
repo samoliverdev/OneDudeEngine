@@ -404,12 +404,18 @@ void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     glCheckError();
 }
 
-void Renderer::BlitFramebuffer(Framebuffer* src, Framebuffer* dst){
+void Renderer::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     Assert(src != nullptr);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src->renderId());
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst == nullptr ? 0 : dst->renderId());
+    glCheckError();
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + srcPass); 
+    glCheckError();
+
     glBlitFramebuffer(0, 0, src->width(), src->height(), 0, 0, src->width(), src->height(), GL_COLOR_BUFFER_BIT, GL_NEAREST); 
+    glCheckError();
 }
 
 }

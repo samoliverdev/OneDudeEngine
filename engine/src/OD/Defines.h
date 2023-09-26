@@ -7,11 +7,9 @@
 #include <vector>
 #include <string>
 #include <bitset>
-//#include <cassert>
 #include <memory>
 #include <sstream>
 #include <fstream>
-#include <assert.h>
 #include <iostream>
 #include <algorithm>
 #include <functional>
@@ -19,6 +17,9 @@
 #include <unordered_map>
 #include <typeinfo>
 #include <typeindex>
+
+#undef NDEBUG
+#include <assert.h>
 
 #define OD_PROFILE 1
 
