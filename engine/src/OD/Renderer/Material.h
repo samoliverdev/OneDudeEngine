@@ -46,6 +46,8 @@ public:
 
     void Save(std::string& path);
 
+    void OnGui() override;
+
     static Ref<Material> CreateFromFile(std::string const &path);
 
 private:

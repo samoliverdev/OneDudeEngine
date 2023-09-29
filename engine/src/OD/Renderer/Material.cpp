@@ -3,6 +3,7 @@
 #include <fstream>
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/AssetManager.h"
+#include "OD/Core/ImGui.h"
 
 namespace OD{
 
@@ -124,6 +125,34 @@ void Material::Save(std::string& path){
 
     std::ofstream fout(path);
     fout << out.c_str();
+}
+
+void Material::OnGui(){
+    for(auto i: maps){
+        if(i.second.type == MaterialMap::Type::Float){
+            ImGui::DragFloat(i.first.c_str(), &i.second.value);
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector2){
+            ImGui::DragFloat2(i.first.c_str(), &i.second.vector[0]);
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector3){
+            ImGui::DragFloat3(i.first.c_str(), &i.second.vector[0]);
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector4){
+            ImGui::DragFloat4(i.first.c_str(), &i.second.vector[0]);
+        }
+
+        if(i.second.type == MaterialMap::Type::Texture){
+            const float widthSize = 60;
+            float aspect = i.second.texture->width() / i.second.texture->height();
+            ImGui::Image((void*)(uint64_t)i.second.texture->renderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
+            ImGui::SameLine();
+            ImGui::Text(i.first.c_str());
+        }
+    }
 }
 
 Ref<Material> Material::CreateFromFile(std::string const &path){

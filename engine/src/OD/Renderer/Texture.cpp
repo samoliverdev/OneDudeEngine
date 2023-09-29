@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "OD/Core/ImGui.h"
 #include <stb/stb_image.h>
 
 namespace OD{
@@ -50,6 +51,16 @@ void Texture2D::Bind(int index, const char* name, Shader& shader){
 }
 */
 
+void Texture2D::OnGui(){
+    ImGui::Text("--------Texture2D--------");
+    ImGui::Text("Path: %s", path().c_str());
+
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+    float aspect = _width / _height;
+    ImGui::Image((void*)(uint64_t)_id, ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 0), ImVec2(1, -1));
+}
+
 Ref<Texture2D> Texture2D::CreateFromFile(const char* filePath, TextureFilter filter, bool mipmap){
     Ref<Texture2D> texture = CreateRef<Texture2D>();
 
@@ -90,6 +101,10 @@ Ref<Texture2D> Texture2D::CreateFromFile(const char* filePath, TextureFilter fil
 
     texture->_path = std::string(filePath);
     return texture;
+}
+
+Ref<Texture2D> Texture2D::CreateFromFile(const char* filePath){
+    return CreateFromFile(filePath, TextureFilter::Linear, true);
 }
 
 }

@@ -1,4 +1,5 @@
 #include "ContentBrowserPanel.h"
+#include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
 #include <filesystem>
 #include <string>
@@ -17,6 +18,8 @@ void ContentBrowserPanel::OnGui(){
 
     if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
         _selectedFile = std::filesystem::path();
+        _editor->_selectionAsset = nullptr;
+        _editor->_selectionOnAsset = false;
     }
 
     ImGui::End();
@@ -50,6 +53,10 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
         if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, relativePathString.c_str())){
             if(ImGui::IsItemClicked()){
                 _selectedFile = _path;
+
+                if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
+                    _editor->SetSelectionAsset(AssetTypesDB::Get()._assetFuncs[_selectedFile.extension().string()].CreateFromFile(_selectedFile.string().c_str()));
+                }
             }
 
             if(_path == _selectedFile && ImGui::BeginDragDropSource()){

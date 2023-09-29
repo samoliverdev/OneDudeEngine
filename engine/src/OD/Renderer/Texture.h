@@ -22,7 +22,14 @@ public:
     void Bind(int index);
     //void Bind(int index, const char* name, Shader& shader);
 
+    void OnGui() override;
+
+    inline unsigned int width(){ return _width; }
+    inline unsigned int height(){ return _height; }
+    inline unsigned int renderId(){ return _id; }
+
     static Ref<Texture2D> CreateFromFile(const char* filePath, TextureFilter filter, bool mipmap); 
+    static Ref<Texture2D> CreateFromFile(const char* filePath); 
 
 private:
     unsigned int _id;

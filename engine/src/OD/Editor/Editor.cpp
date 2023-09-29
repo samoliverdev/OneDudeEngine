@@ -29,6 +29,10 @@ void Editor::OnInit(){
 
     _cam.OnStart();
     _cam.moveSpeed = 60;
+
+    _sceneHierarchyPanel.SetEditor(this);
+    _inspectorPanel.SetEditor(this);
+    _contentBrowserPanel.SetEditor(this);
 }
 
 void Editor::OnUpdate(float deltaTime){
@@ -77,14 +81,14 @@ void Editor::PlayScene(){
 void Editor::StopScene(){
     Scene* scene = SceneManager::Get().NewScene();
     scene->Load(_curScenePath.empty() ? "res/temp.scene" : _curScenePath.c_str());
-    _sceneHierarchyPanel.UnselectContext();
+    UnselectAll();
 }
 
 void Editor::NewScene(){
     if(SceneManager::Get().activeScene()->running()) return;
 
     Scene* scene = SceneManager::Get().NewScene();
-    _sceneHierarchyPanel.UnselectContext();
+    UnselectAll();
     _curScenePath = "";
 }   
 
@@ -97,7 +101,7 @@ void Editor::OpenScene(){
         scene->Load(path.c_str());
         _curScenePath = scene->path();
     }
-    _sceneHierarchyPanel.UnselectContext();
+    UnselectAll();
 }
 
 void Editor::SaveAsScene(){
@@ -125,8 +129,14 @@ void Editor::HandleShotcuts(){
 
 void Editor::DrawMainWorkspace(){
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
-    _sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
+    _sceneHierarchyPanel.SetEditor(this);
+
+    _inspectorPanel.SetScene(SceneManager::Get().activeScene());
+    _inspectorPanel.SetEditor(this);
+    
+    _sceneHierarchyPanel.OnGui();
     _contentBrowserPanel.OnGui();
+    _inspectorPanel.OnGui();
 
     //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::Begin("Renderer Stats");
@@ -342,7 +352,7 @@ void Editor::DrawMainPanel(){
 }
 
 void Editor::DrawGizmos(){
-    if(_sceneHierarchyPanel.selectionContext().IsValid() == false) return;
+    if(_selectionEntity.IsValid() == false) return;
     if(_gizmoType == Editor::GizmosType::None) return;
 
     Camera cam = _cam.cam;
@@ -367,7 +377,7 @@ void Editor::DrawGizmos(){
     Matrix4 view = cam.view;
     Matrix4 projection = cam.projection;
 
-    TransformComponent& tc = _sceneHierarchyPanel.selectionContext().GetComponent<TransformComponent>();
+    TransformComponent& tc = _selectionEntity.GetComponent<TransformComponent>();
     Matrix4 trans = tc.globalModelMatrix();
 
     bool snap = Input::IsKey(KeyCode::Control);

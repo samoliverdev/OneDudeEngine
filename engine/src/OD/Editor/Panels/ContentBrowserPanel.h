@@ -4,13 +4,18 @@
 
 namespace OD{
 
+class Editor;
+
 class ContentBrowserPanel{
 public:
     ContentBrowserPanel();
-
+    
+    inline void SetEditor(Editor* editor){ _editor = editor; }
     void OnGui();
 
 private:
+    Editor* _editor;
+    
     std::filesystem::path _curDirectory;
     std::filesystem::path _selectedFile;
 

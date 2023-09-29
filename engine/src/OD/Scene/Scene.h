@@ -279,6 +279,7 @@ private:
 struct SceneManager{
     friend class Editor;
     friend class SceneHierarchyPanel;
+    friend class InspectorPanel;
     friend struct Scene;
     friend struct ScriptComponent;
 
