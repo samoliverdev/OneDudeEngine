@@ -2,7 +2,6 @@
 
 #include "OD/Scene/Scene.h"
 #include "OD/Renderer/Mesh.h"
-#include "StandRendererSystem.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 

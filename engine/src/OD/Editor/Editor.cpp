@@ -2,6 +2,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Utils/PlatformUtils.h"
 #include "OD/RendererSystem/CameraComponent.h"
+#include "OD/RendererSystem/StandRendererSystem.h"
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>

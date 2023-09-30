@@ -8,11 +8,12 @@
 #include "OD/Renderer/Material.h"
 #include "OD/Renderer/Cubemap.h"
 
-namespace OD{
+#include "CameraComponent.h"
+#include "MeshRendererComponent.h"
+#include "LightComponent.h"
+#include "EnvironmentComponent.h"
 
-struct SpriteComponent;
-struct MeshRendererComponent;
-struct LightComponent;
+namespace OD{
 
 class PostProcessingPass{
 public:
@@ -70,5 +71,16 @@ private:
     void ClearSceneShadow();
     void UpdateCurrentLight();
 };
+
+struct StandRendererSystemStartup{
+    StandRendererSystemStartup(){
+        SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("Environment");
+        SceneManager::Get().RegisterCoreComponent<CameraComponent>("Camera");
+        SceneManager::Get().RegisterCoreComponent<LightComponent>("Light");
+        SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRenderer");
+    }
+};
+
+extern StandRendererSystemStartup standRendererSystemStartup;
 
 };

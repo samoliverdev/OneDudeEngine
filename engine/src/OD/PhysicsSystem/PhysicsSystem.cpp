@@ -6,6 +6,8 @@
 
 namespace OD{
 
+PhysicsSystemStartup physicsSystemStartup;
+
 #pragma region Core
 struct Rigidbody{
     btBoxShape* _shape = nullptr;

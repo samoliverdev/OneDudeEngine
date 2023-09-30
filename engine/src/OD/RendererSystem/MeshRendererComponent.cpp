@@ -1,4 +1,5 @@
 #include "MeshRendererComponent.h"
+#include "StandRendererSystem.h"
 
 namespace OD{
 

@@ -141,6 +141,40 @@ void InspectorPanel::DrawArchive(Archive& ar){
     }
 }
 
+void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::CoreComponent &f){
+    std::hash<std::string> hasher;
+
+    const ImGuiTreeNodeFlags treeNodeFlags = 
+        ImGuiTreeNodeFlags_DefaultOpen 
+        | ImGuiTreeNodeFlags_Framed 
+        | ImGuiTreeNodeFlags_AllowItemOverlap
+        | ImGuiTreeNodeFlags_SpanAvailWidth
+        | ImGuiTreeNodeFlags_FramePadding;
+
+    if(f.hasComponent(e)){
+        bool removeComponent = false;
+
+        bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
+
+        if(ImGui::BeginPopupContextItem()){
+            if(ImGui::MenuItem("Remove Component")){
+                removeComponent = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        if(open){
+            f.onGui(e);
+            ImGui::TreePop();
+        }
+
+        if(removeComponent){
+            //e.RemoveComponent<T>();
+            f.removeComponent(e);
+        }
+    }
+}
+
 void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name, SceneManager::SerializeFuncs &sf){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 
@@ -150,8 +184,18 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         | ImGuiTreeNodeFlags_FramePadding;
 
     if(sf.hasComponent(e)){
+        bool removeComponent = false;
         std::hash<std::string> hasher;
+
         bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
+
+        if(ImGui::BeginPopupContextItem()){
+            if(ImGui::MenuItem("Remove Component")){
+                removeComponent = true;
+            }
+            ImGui::EndPopup();
+        }
+
         if(open){
             Archive ar;
             sf.serialize(e, ar);
@@ -159,6 +203,11 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
             SceneManager::DrawArchive(ar);
 
             ImGui::TreePop();
+        }
+
+        if(removeComponent){
+            //e.RemoveComponent<T>();
+            sf.removeComponent(e);
         }
     }
 }
@@ -201,17 +250,25 @@ void InspectorPanel::DrawComponents(Entity entity){
         } 
     });
 
-    ImGui::Spacing(); ImGui::Spacing();
+    ImGui::Spacing();
+    //ImGui::Separator();
+    ImGui::Spacing();
     
-    DrawComponent<EnvironmentComponent>(entity, "Environment");
-    DrawComponent<CameraComponent>(entity, "Camera");
-    DrawComponent<LightComponent>(entity, "Light");
-    DrawComponent<AnimatorComponent>(entity, "Animator");
-    DrawComponent<MeshRendererComponent>(entity, "MeshRenderer");
-    DrawComponent<RigidbodyComponent>(entity, "Rigidbody");
-    DrawComponent<ScriptComponent>(entity, "Script");
+    //DrawComponent<EnvironmentComponent>(entity, "Environment");
+    //DrawComponent<CameraComponent>(entity, "Camera");
+    //DrawComponent<LightComponent>(entity, "Light");
+    //DrawComponent<AnimatorComponent>(entity, "Animator");
+    //DrawComponent<MeshRendererComponent>(entity, "MeshRenderer");
+    //DrawComponent<RigidbodyComponent>(entity, "Rigidbody");
+    //DrawComponent<ScriptComponent>(entity, "Script");
 
-    ImGui::Spacing(); ImGui::Spacing();
+    for(auto& i: SceneManager::Get()._coreComponents){
+        DrawComponentFromCoreComponents(entity, i.first, i.second);
+    }
+
+    ImGui::Spacing();
+    //ImGui::Separator();
+    ImGui::Spacing(); 
 
     for(auto& i: SceneManager::Get()._serializeFuncs){
         DrawComponentFromSerializeFuncs(entity, i.first, i.second);
@@ -223,7 +280,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         ImGui::OpenPopup("AddComponent");
 
     if(ImGui::BeginPopup("AddComponent")){
-        if(ImGui::MenuItem("LightComponent")){
+        /*if(ImGui::MenuItem("LightComponent")){
             _editor->_selectionEntity.AddOrGetComponent<LightComponent>();
             ImGui::CloseCurrentPopup();
         }
@@ -238,7 +295,26 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         if(ImGui::MenuItem("MeshRendererComponent")){
             _editor->_selectionEntity.AddOrGetComponent<MeshRendererComponent>();
             ImGui::CloseCurrentPopup();
+        }*/
+        
+        for(auto& i: SceneManager::Get()._coreComponents){
+            if(ImGui::MenuItem(i.first.c_str())){
+                i.second.addComponent(_editor->_selectionEntity);
+                ImGui::CloseCurrentPopup();
+            }
         }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing(); 
+
+        for(auto& i: SceneManager::Get()._serializeFuncs){
+            if(ImGui::MenuItem(i.first.c_str())){
+                i.second.addComponent(_editor->_selectionEntity);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
         ImGui::EndPopup();
     }
 }

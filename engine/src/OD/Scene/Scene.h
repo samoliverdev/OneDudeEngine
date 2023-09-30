@@ -305,6 +305,42 @@ struct SceneManager{
     }
 
     template<typename T>
+    void RegisterCoreComponent(std::string name){
+        Assert(_coreComponents.find(name) == _coreComponents.end());
+
+        CoreComponent funcs;
+
+        funcs.hasComponent = [](Entity& e){
+            return e.HasComponent<T>();
+        };
+
+        funcs.addComponent = [](Entity& e){
+            e.AddOrGetComponent<T>();
+        };
+
+        funcs.removeComponent = [](Entity& e){
+            e.RemoveComponent<T>();
+        };
+
+        funcs.serialize = [](YAML::Emitter& out, Entity& e){
+            e.AddOrGetComponent<T>();
+            T::Serialize(out, e);
+        };
+
+        funcs.deserialize = [](YAML::Node& in, Entity& e){
+            e.AddOrGetComponent<T>();
+            T::Deserialize(in, e);
+        };
+
+        funcs.onGui = [](Entity& e){
+            e.AddOrGetComponent<T>();
+            T::OnGui(e);
+        };
+        
+        _coreComponents[name] = funcs;
+    }
+
+    template<typename T>
     void RegisterComponent(std::string name){
         Assert(_serializeFuncs.find(name) == _serializeFuncs.end());
 
@@ -312,6 +348,14 @@ struct SceneManager{
 
         funcs.hasComponent = [](Entity& e){
             return e.HasComponent<T>();
+        };
+
+        funcs.addComponent = [](Entity& e){
+            e.AddOrGetComponent<T>();
+        };
+
+        funcs.removeComponent = [](Entity& e){
+            e.RemoveComponent<T>();
         };
 
         funcs.serialize = [](Entity& e, Archive& s){
@@ -359,7 +403,18 @@ struct SceneManager{
 private:
     struct SerializeFuncs{
         std::function<bool(Entity&)> hasComponent;
+        std::function<void(Entity&)> addComponent;
+        std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&,Archive&)> serialize;
+    };
+
+    struct CoreComponent{
+        std::function<bool(Entity&)> hasComponent;
+        std::function<void(Entity&)> addComponent;
+        std::function<void(Entity&)> removeComponent;
+        std::function<void(YAML::Emitter&, Entity&)> serialize;
+        std::function<void(YAML::Node&, Entity&)> deserialize;
+        std::function<void(Entity&)> onGui;
     };
 
     SceneState _sceneState;
@@ -367,6 +422,7 @@ private:
 
     Scene* _activeScene;
 
+    std::unordered_map<std::string, CoreComponent> _coreComponents;
     std::unordered_map<std::string, SerializeFuncs> _serializeFuncs;
     std::unordered_map<std::string, SerializeFuncs> _serializeScriptFuncs;
     std::unordered_map<std::string, std::function<void(Scene&)> > _addSystemFuncs;

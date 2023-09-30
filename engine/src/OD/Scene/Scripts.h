@@ -106,4 +106,12 @@ private:
     }
 };
 
+struct ScriptSystemStartup{
+    ScriptSystemStartup(){
+        SceneManager::Get().RegisterCoreComponent<ScriptComponent>("Script");
+    }
+};
+
+extern ScriptSystemStartup scriptSystemStartup;
+
 }

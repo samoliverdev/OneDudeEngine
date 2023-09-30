@@ -4,6 +4,8 @@
 
 namespace OD{
 
+ScriptSystemStartup scriptSystemStartup;
+
 void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
     LogInfo("Script Name: %s", name.c_str());
 

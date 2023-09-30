@@ -4,6 +4,8 @@
 
 namespace OD{
 
+AnimatorSystemStartup animatorSystemStartup;
+
 void AnimatorComponent::Serialize(YAML::Emitter& out, Entity& e){
 
 }

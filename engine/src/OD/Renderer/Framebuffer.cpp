@@ -154,7 +154,7 @@ bool Framebuffer::IsValid(){
 
 void Framebuffer::Destroy(){
     Assert(_framebuffer > 0);
-    LogInfo("Framebuffer::Destroy %d", _framebuffer);
+    //LogInfo("Framebuffer::Destroy %d", _framebuffer);
     
     glDeleteFramebuffers(1, &_framebuffer);
     glCheckError();
