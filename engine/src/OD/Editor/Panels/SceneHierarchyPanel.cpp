@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <functional>
 #include <string>
+#include <imgui/imgui_internal.h>
 
 namespace OD{
 
@@ -36,6 +37,32 @@ void SceneHierarchyPanel::OnGui(){
             ImGui::EndPopup();
         }
 
+        /*ImGui::Button("test", ImGui::GetContentRegionAvail());
+        if(ImGui::BeginDragDropTarget()){
+            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
+            if(payload != nullptr){
+                Entity* path = (Entity*)payload->Data;
+                LogInfo("this: %s", path->GetComponent<InfoComponent>().name.c_str());
+                if(path->IsValid()){}
+            }
+            ImGui::EndDragDropTarget();
+        }*/
+
+        ImGui::BeginChild("BottomBar", ImVec2(0,0), false, 0); // Use avail width/height
+        //ImGui::Text("Footer");
+        ImGui::EndChild();
+        if(ImGui::BeginDragDropTarget()){
+            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
+            if(payload != nullptr){
+                Entity* targetEntity = (Entity*)payload->Data;
+                LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
+                if(targetEntity->IsValid()){
+                    _scene->CleanParent(targetEntity->id());
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
         ImGui::End();
     }
 }
@@ -43,6 +70,8 @@ void SceneHierarchyPanel::OnGui(){
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     TransformComponent& transform = entity.GetComponent<TransformComponent>();
     InfoComponent& info = entity.GetComponent<InfoComponent>();
+
+    Entity children;
 
     if(root && transform.hasParent()) return;
 
@@ -58,6 +87,25 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     if(ImGui::IsItemClicked()){
         //_editor->_selectionEntity = entity;
         _editor->SetSelectionEntity(entity);
+    }
+
+    if(entity.IsValid() && ImGui::BeginDragDropSource()){
+        ImGui::SetDragDropPayload("EntityMoveDragDrop", &entity, sizeof(Entity), ImGuiCond_Once);
+        ImGui::EndDragDropSource();
+    }
+
+    if(ImGui::BeginDragDropTarget()){
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
+
+        if(payload != nullptr){
+            Entity* targetEntity = (Entity*)payload->Data;
+            LogInfo("this: %s to: %s", entity.GetComponent<InfoComponent>().name.c_str(), targetEntity->GetComponent<InfoComponent>().name.c_str());
+            if(entity.IsValid() && targetEntity->IsValid() && entity.id() != targetEntity->id()){
+                children = *targetEntity;
+            }
+        }
+        
+        ImGui::EndDragDropTarget();
     }
 
     bool entityDeleted = false;
@@ -81,6 +129,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         //_editor->_selectionEntity = Entity();
         _editor->SetSelectionEntity(Entity());
         //if(_selectionContext == entity) _selectionContext = Entity();
+    } else if(children.IsValid()){
+        _scene->SetParent(entity.id(), children.id());
     }
 }
 }

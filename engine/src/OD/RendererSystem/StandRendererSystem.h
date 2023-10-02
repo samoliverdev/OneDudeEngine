@@ -74,10 +74,10 @@ private:
 
 struct StandRendererSystemStartup{
     StandRendererSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("Environment");
-        SceneManager::Get().RegisterCoreComponent<CameraComponent>("Camera");
-        SceneManager::Get().RegisterCoreComponent<LightComponent>("Light");
-        SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRenderer");
+        SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
+        SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
+        SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
+        SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
     }
 };
 

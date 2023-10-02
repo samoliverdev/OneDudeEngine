@@ -13,6 +13,7 @@
 #include <string>
 #include <entt/entt.hpp>
 #include <functional>
+#include <algorithm>
 #include <yaml-cpp/yaml.h>
 
 namespace OD {
@@ -24,8 +25,8 @@ struct System;
 struct Scene;
 
 class TransformComponent: public Transform{
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
+    //static void Serialize(YAML::Emitter& out, Entity& e);
+    //static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
     
     friend struct Scene;
@@ -59,8 +60,8 @@ private:
 };
 
 struct InfoComponent{
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
+    //static void Serialize(YAML::Emitter& out, Entity& e);
+    //static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
     
     friend struct Scene;
@@ -154,7 +155,7 @@ struct Scene: public Asset {
 
     Entity AddEntity(std::string name = "Entity"){
         EntityId e = _registry.create();
-
+        
         InfoComponent& info = _registry.emplace<InfoComponent>(e);
         info.name = name;
         
@@ -168,9 +169,64 @@ struct Scene: public Asset {
         _toDestroy.push_back(entity);
     }
 
+    bool IsChildOf(EntityId parent, EntityId child){
+        TransformComponent& _parent = _registry.get<TransformComponent>(parent);
+
+        for(auto i: _parent._children){
+            if(i == child) return true;
+            bool r = IsChildOf(i, child);
+            if(r == true) return true;
+        }
+
+        return false;
+    }
+
+    /*bool IsParentOf(EntityId parent, EntityId entity){
+        TransformComponent& _entity = _registry.get<TransformComponent>(parent);
+
+        if(_entity._hasParent){
+            if(_entity.parent() == parent) return true;
+            return IsParentOf(_entity.parent(), entity);
+        }
+
+        return false;
+    }*/
+
+    void CleanParent(EntityId entity){
+        TransformComponent& _entity = _registry.get<TransformComponent>(entity);
+
+        if(_entity.hasParent()){
+            TransformComponent& _p = _registry.get<TransformComponent>(_entity.parent());
+            _p._children.erase(
+                std::remove(_p._children.begin(), _p._children.end(), entity),
+                _p._children.end()
+            );
+        }
+
+        _entity._hasParent = false;
+    }
+
     void SetParent(EntityId parent, EntityId child){
+        if(parent == child){
+            LogWarning("ERROR: Trying set parent with itself");
+            return;
+        }
+
         TransformComponent& _parent = _registry.get<TransformComponent>(parent);
         TransformComponent& _child = _registry.get<TransformComponent>(child);
+
+        if(IsChildOf(child, parent)){
+            LogWarning("ERROR: Trying set parent with one of your childrens");
+            return;
+        }
+
+        if(_child.hasParent()){
+            TransformComponent& _p = _registry.get<TransformComponent>(_child.parent());
+            _p._children.erase(
+                std::remove(_p._children.begin(), _p._children.end(), child),
+                _p._children.end()
+            );
+        }
 
         _parent._children.emplace_back(child);
         _child._parent = parent;
@@ -260,8 +316,15 @@ private:
     }
     
     void SerializeEntity(YAML::Emitter& out, Entity& e);
+    Entity DeserializeEntity(YAML::Node& e);
+
     void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out);
     void LoadSerializer(Archive& s, YAML::Node& node);
+
+    void TransformSerialize(YAML::Emitter& out, Entity& e);
+    void TransformDeserialize(YAML::Node& in, Entity& e);
+    void InfoSerialize(YAML::Emitter& out, Entity& e);
+    void InfoDeserialize(YAML::Node& in, Entity& e);
 
     bool _running = false;
 

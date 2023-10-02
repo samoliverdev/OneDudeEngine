@@ -29,7 +29,7 @@ struct AnimatorSystem: public System{
 
 struct AnimatorSystemStartup{
     AnimatorSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("Animator");
+        SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
     }
 };
 

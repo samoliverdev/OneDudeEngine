@@ -239,6 +239,8 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
 
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
 
+    if(rb._data == nullptr) return;
+
     Rigidbody* data = rb._data;
     data->_world->removeRigidBody(data->_body);
 

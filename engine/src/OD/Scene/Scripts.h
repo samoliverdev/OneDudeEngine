@@ -108,7 +108,7 @@ private:
 
 struct ScriptSystemStartup{
     ScriptSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<ScriptComponent>("Script");
+        SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
     }
 };
 

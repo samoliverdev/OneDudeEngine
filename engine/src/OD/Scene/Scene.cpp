@@ -9,7 +9,7 @@
 namespace OD{
 
 #pragma region TransformComponent
-void TransformComponent::Serialize(YAML::Emitter& out, Entity& e){
+/*void TransformComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "TransformComponent";
     out << YAML::BeginMap;
 
@@ -17,7 +17,7 @@ void TransformComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "localPosition" << YAML::Value << transform.localPosition();
     out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
     out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
-    
+
     out << YAML::EndMap;
 }
 
@@ -27,7 +27,7 @@ void TransformComponent::Deserialize(YAML::Node& in, Entity& e){
     tc.localRotation(in["localRotation"].as<Quaternion>());
     tc.localScale(in["localScale"].as<Vector3>());
 }
-
+*/
 void TransformComponent::OnGui(Entity& e){
     
 }
@@ -107,7 +107,7 @@ void TransformComponent::rotation(Quaternion rotation){
 #pragma endregion
 
 #pragma region InfoComponent
-void InfoComponent::Serialize(YAML::Emitter& out, Entity& e){
+/*void InfoComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "InfoComponent";
     out << YAML::BeginMap;
 
@@ -121,7 +121,7 @@ void InfoComponent::Deserialize(YAML::Node& in, Entity& e){
     auto& tc = e.GetComponent<InfoComponent>();
     tc.name = in["name"].as<std::string>();
 }
-
+*/
 void InfoComponent::OnGui(Entity& e){
     
 }
@@ -185,6 +185,54 @@ void Scene::LoadSerializer(Archive& s, YAML::Node& node){
     }
 }
 
+void Scene::TransformSerialize(YAML::Emitter& out, Entity& e){
+    out << YAML::Key << "TransformComponent";
+    out << YAML::BeginMap;
+
+    auto& transform = e.GetComponent<TransformComponent>();
+    out << YAML::Key << "localPosition" << YAML::Value << transform.localPosition();
+    out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
+    out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
+
+    out << YAML::Key << "Children" << YAML::BeginSeq;
+    for(auto i: transform._children){
+        SerializeEntity(out, Entity(i, this));
+    }
+    out << YAML::EndSeq;
+    
+    out << YAML::EndMap;
+}
+
+void Scene::TransformDeserialize(YAML::Node& in, Entity& e){
+    auto& tc = e.GetComponent<TransformComponent>();
+    tc.localPosition(in["localPosition"].as<Vector3>());
+    tc.localRotation(in["localRotation"].as<Quaternion>());
+    tc.localScale(in["localScale"].as<Vector3>());
+
+    auto entities = in["Children"];
+    if(entities){
+        for(auto _e: entities){
+            Entity children = DeserializeEntity(_e);
+            SetParent(e.id(), children.id());
+        }
+    }
+}
+
+void Scene::InfoSerialize(YAML::Emitter& out, Entity& e){
+    out << YAML::Key << "InfoComponent";
+    out << YAML::BeginMap;
+
+    auto& info = e.GetComponent<InfoComponent>();
+    out << YAML::Key << "name" << YAML::Value << info.name;
+    
+    out << YAML::EndMap;
+}
+
+void Scene::InfoDeserialize(YAML::Node& in, Entity& e){
+    auto& tc = e.GetComponent<InfoComponent>();
+    tc.name = in["name"].as<std::string>();
+}
+
 Scene::Scene(){
     for(auto i: SceneManager::Get()._addSystemFuncs){
         LogInfo("Adding system: %s", i.first.c_str());
@@ -210,29 +258,13 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     out << YAML::BeginMap;
     //out << YAML::Key << "Entity" << YAML::Value << "10";
 
-    if(e.HasComponent<InfoComponent>()) InfoComponent::Serialize(out, e);
-    if(e.HasComponent<TransformComponent>()) TransformComponent::Serialize(out, e);
-    if(e.HasComponent<CameraComponent>()) CameraComponent::Serialize(out, e);
-    if(e.HasComponent<RigidbodyComponent>()) RigidbodyComponent::Serialize(out, e);
-    if(e.HasComponent<MeshRendererComponent>()) MeshRendererComponent::Serialize(out, e);
-    if(e.HasComponent<ScriptComponent>()) ScriptComponent::Serialize(out, e);
+    if(e.HasComponent<InfoComponent>()) InfoSerialize(out, e);
+    if(e.HasComponent<TransformComponent>()) TransformSerialize(out, e);
 
-    /*if(e.HasComponent<ScriptComponent>()){
-        auto& component = e.GetComponent<ScriptComponent>();
-
-        out << YAML::Key << "ScriptComponent";
-        out << YAML::BeginMap;
-
-        for(auto i: component._instances){
-            Archive s;
-            i.second->Serialize(s);
-            if(s.values().empty() == false) continue;
-
-            ApplySerializer(s, s.name(), out);
-        }
-       
-        out << YAML::EndMap;
-    }*/
+    for(auto func: SceneManager::Get()._coreComponents){
+        if(func.second.hasComponent(e) == false) continue;
+        func.second.serialize(out, e);
+    }
 
     for(auto func: SceneManager::Get()._serializeFuncs){
         if(func.second.hasComponent(e) == false) continue;
@@ -248,6 +280,36 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     out << YAML::EndMap;
 }
 
+Entity Scene::DeserializeEntity(YAML::Node& e){
+    Entity deserializedEntity = AddEntity();
+
+    auto infoComponent = e["InfoComponent"];
+    if(infoComponent) InfoDeserialize(infoComponent, deserializedEntity);
+
+    auto transform = e["TransformComponent"];
+    if(transform) TransformDeserialize(transform, deserializedEntity);
+
+    for(auto func: SceneManager::Get()._coreComponents){
+        auto component = e[func.first];
+        if(component){
+            func.second.deserialize(component, deserializedEntity);
+        }
+    }
+
+    for(auto func: SceneManager::Get()._serializeFuncs){
+        auto component = e[func.first];
+        if(component){
+            LogInfo("%s", func.first.c_str());
+
+            Archive s;
+            func.second.serialize(deserializedEntity, s);
+            LoadSerializer(s, component);
+        }
+    }
+
+    return deserializedEntity;
+}
+
 void Scene::Save(const char* path){
     YAML::Emitter out;
 
@@ -257,6 +319,7 @@ void Scene::Save(const char* path){
     _registry.view<TransformComponent, InfoComponent>().each([&](auto entityId, auto& transform, auto& info){
         Entity e(entityId, this);
         if(e.IsValid() == false) return;
+        if(transform.hasParent()) return;
 
         SerializeEntity(out, e);
     });
@@ -284,48 +347,7 @@ void Scene::Load(const char* path){
     auto entities = data["Entities"];
     if(entities){
         for(auto e: entities){
-            Entity deserializedEntity = AddEntity();
-
-            auto infoComponent = e["InfoComponent"];
-            if(infoComponent) InfoComponent::Deserialize(infoComponent, deserializedEntity);
-
-            auto transform = e["TransformComponent"];
-            if(transform) TransformComponent::Deserialize(transform, deserializedEntity);
-
-            auto cam = e["CameraComponent"];
-            if(cam) CameraComponent::Deserialize(cam, deserializedEntity);
-
-            auto rb = e["RigidbodyComponent"];
-            if(rb) RigidbodyComponent::Deserialize(rb, deserializedEntity);
-
-            auto meshRenderer = e["MeshRendererComponent"];
-            if(meshRenderer) MeshRendererComponent::Deserialize(meshRenderer, deserializedEntity);
-
-            auto script = e["ScriptComponent"];
-            if(script) ScriptComponent::Deserialize(script, deserializedEntity);
-            /*if(script){
-                for(auto func: SceneManager::Get()._serializeScriptFuncs){
-                    auto component = script[func.first];
-                    if(component){
-                        LogInfo("%s", func.first.c_str());
-
-                        Archive s;
-                        func.second.serialize(deserializedEntity, s);
-                        LoadSerializer(s, component);
-                    }
-                }
-            }*/
-
-            for(auto func: SceneManager::Get()._serializeFuncs){
-                auto component = e[func.first];
-                if(component){
-                    LogInfo("%s", func.first.c_str());
-
-                    Archive s;
-                    func.second.serialize(deserializedEntity, s);
-                    LoadSerializer(s, component);
-                }
-            }
+            DeserializeEntity(e);
         }
     }
 }

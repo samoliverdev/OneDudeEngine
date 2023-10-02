@@ -226,18 +226,18 @@ void InspectorPanel::DrawComponents(Entity entity){
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
-        if(e.HasComponent<RigidbodyComponent>()){
+        /*if(e.HasComponent<RigidbodyComponent>()){
             RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
             float p[] = {rb.position().x, rb.position().y, rb.position().z};
             if(ImGui::DragFloat3("Position", p, 0.5f)){
                 rb.position(Vector3(p[0], p[1], p[2]));
             }
-        } else {
+        } else {*/
             float p[] = {transform.localPosition().x, transform.localPosition().y, transform.localPosition().z};
             if(ImGui::DragFloat3("Position", p, 0.5f)){
                 transform.localPosition(Vector3(p[0], p[1], p[2]));
             }
-        }  
+        //}  
 
         float r[] = {transform.localEulerAngles().x, transform.localEulerAngles().y, transform.localEulerAngles().z};
         if(ImGui::DragFloat3("Rotation", r, 0.5f)){
@@ -254,14 +254,6 @@ void InspectorPanel::DrawComponents(Entity entity){
     //ImGui::Separator();
     ImGui::Spacing();
     
-    //DrawComponent<EnvironmentComponent>(entity, "Environment");
-    //DrawComponent<CameraComponent>(entity, "Camera");
-    //DrawComponent<LightComponent>(entity, "Light");
-    //DrawComponent<AnimatorComponent>(entity, "Animator");
-    //DrawComponent<MeshRendererComponent>(entity, "MeshRenderer");
-    //DrawComponent<RigidbodyComponent>(entity, "Rigidbody");
-    //DrawComponent<ScriptComponent>(entity, "Script");
-
     for(auto& i: SceneManager::Get()._coreComponents){
         DrawComponentFromCoreComponents(entity, i.first, i.second);
     }
@@ -280,23 +272,6 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         ImGui::OpenPopup("AddComponent");
 
     if(ImGui::BeginPopup("AddComponent")){
-        /*if(ImGui::MenuItem("LightComponent")){
-            _editor->_selectionEntity.AddOrGetComponent<LightComponent>();
-            ImGui::CloseCurrentPopup();
-        }
-        if(ImGui::MenuItem("CameraComponent")){
-            _editor->_selectionEntity.AddOrGetComponent<CameraComponent>();
-            ImGui::CloseCurrentPopup();
-        }
-        if(ImGui::MenuItem("RigidbodyComponent")){
-            _editor->_selectionEntity.AddOrGetComponent<RigidbodyComponent>();
-            ImGui::CloseCurrentPopup();
-        }
-        if(ImGui::MenuItem("MeshRendererComponent")){
-            _editor->_selectionEntity.AddOrGetComponent<MeshRendererComponent>();
-            ImGui::CloseCurrentPopup();
-        }*/
-        
         for(auto& i: SceneManager::Get()._coreComponents){
             if(ImGui::MenuItem(i.first.c_str())){
                 i.second.addComponent(_editor->_selectionEntity);

@@ -1,64 +1,62 @@
 Scene: Untitled
 Entities:
   - InfoComponent:
-      name: PhysicsCube
-    TransformComponent:
-      localPosition: [0, 0, 0]
-      localRotation: [0, 0, 0, 1]
-      localScale: [1, 1, 1]
-    ScriptComponent:
-      PhysicsCubeS:
-        t: 0
-  - InfoComponent:
       name: Trigger
     TransformComponent:
       localPosition: [0, 0, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
+      Children:
+        []
     RigidbodyComponent:
       mass: 1
       boxShapeSize: [4, 1, 4]
   - InfoComponent:
       name: MainCube
     TransformComponent:
-      localPosition: [1.82871711, 5.624228, 0]
+      localPosition: [2, 13, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
+      Children:
+        []
     MeshRendererComponent:
       modelPath: res/models/Cube.glb
       materials:
         - materialPath: ""
           materialShader: res/Builtins/Shaders/Model.glsl
+    RigidbodyComponent:
+      mass: 1
+      boxShapeSize: [1, 1, 1]
   - InfoComponent:
       name: Floor
     TransformComponent:
       localPosition: [0, 0, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
-    RigidbodyComponent:
-      mass: 0
-      boxShapeSize: [25, 0.100000001, 25]
+      Children:
+        []
     MeshRendererComponent:
       modelPath: res/models/plane.glb
       materials:
         - materialPath: ""
           materialShader: res/Builtins/Shaders/Model.glsl
+    RigidbodyComponent:
+      mass: 0
+      boxShapeSize: [25, 0.100000001, 25]
   - InfoComponent:
       name: Camera
     TransformComponent:
-      localPosition: [-0.363795072, 18.9809647, 21.9416256]
-      localRotation: [-0.251723915, -0.0506459735, -0.0131922895, 0.966382921]
+      localPosition: [0, 15, 15]
+      localRotation: [-0.21643962, 0, 0, 0.976296008]
       localScale: [1, 1, 1]
+      Children:
+        []
     CameraComponent:
       type: 0
       orthographicSize: 5
       fieldOfView: 45
       nearClipPlane: 0.100000001
       farClipPlane: 1000
-    ScriptComponent:
-      CameraMovementScript:
-        moveSpeed: 60
-        rotSpeed: 50
     TestC:
       id: TestId
       speed: 20
@@ -70,9 +68,13 @@ Entities:
       localPosition: [-2, 4, -1]
       localRotation: [0.176703557, -0.819491148, 0.339444399, 0.426600069]
       localScale: [1, 1, 1]
+      Children:
+        []
   - InfoComponent:
       name: Env
     TransformComponent:
-      localPosition: [-1.07288361e-06, 7.15255737e-06, -5.53718424]
+      localPosition: [0, 0, 0]
       localRotation: [0, 0, 0, 1]
       localScale: [1, 1, 1]
+      Children:
+        []
