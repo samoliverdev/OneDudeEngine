@@ -47,7 +47,7 @@ void MeshRendererComponent::Deserialize(YAML::Node& in, Entity& e){
     }
 
     LogInfo("Model %s", mc.model()->path().c_str());
-    LogInfo("Shader %s", mc.model()->materials[0]->shader->path().c_str());
+    LogInfo("Shader %s", mc.model()->materials[0]->shader()->path().c_str());
 }
 
 void MeshRendererComponent::OnGui(Entity& e){

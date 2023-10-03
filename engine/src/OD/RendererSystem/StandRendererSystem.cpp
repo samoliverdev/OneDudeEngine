@@ -68,14 +68,14 @@ struct InstancingKey{
     Ref<Mesh> mesh;
 
     bool operator==(const InstancingKey& p) const{
-        return material->shader->rendererId() == p.material->shader->rendererId() && 
+        return material->shader()->rendererId() == p.material->shader()->rendererId() && 
                 mesh->rendererId() == p.mesh->rendererId();
     }
 };
 
 struct InstancingKeyHasher{
     std::size_t operator()(const InstancingKey& k) const{
-        return k.material->shader->rendererId() + k.mesh->rendererId();
+        return k.material->shader()->rendererId() + k.mesh->rendererId();
     }
 };
 
@@ -387,7 +387,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             Ref<Material> targetMaterial = i;
             if(c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
 
-            if(targetMaterial->isBlend){
+            if(targetMaterial->isBlend()){
                 float distance = Vector3::Distance(camPos, t.position());
                 groupsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             } else {
@@ -404,7 +404,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     if(instancing){
         for(auto& i: groupsInstancing){
-            SetStandUniforms(*i.first.material->shader);
+            SetStandUniforms(*i.first.material->shader());
             i.first.material->UpdateUniforms();
 
             i.first.mesh->instancingModelMatrixs.clear();
@@ -413,16 +413,16 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             }
             i.first.mesh->UpdateMeshInstancingModelMatrixs();
 
-            Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader, i.second.size());
+            Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
             //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
         }
         //LogInfo("GroupsInstancing count: %zd", groupsInstancing.size());
     } else {
         for(auto i: groups){
-            SetStandUniforms(*i.first->shader);
+            SetStandUniforms(*i.first->shader());
             i.first->UpdateUniforms();
             for(auto j: i.second){
-                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader);
+                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
             }
         }
     }
@@ -434,10 +434,10 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     for(auto it = groupsBlend.rbegin(); it != groupsBlend.rend(); it++){
     for(auto i: it->second){
-        SetStandUniforms(*i.first->shader);
+        SetStandUniforms(*i.first->shader());
         i.first->UpdateUniforms();
         for(auto j: i.second){
-            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader);
+            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
         }
     }
     }

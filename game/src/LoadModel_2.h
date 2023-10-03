@@ -26,7 +26,7 @@ struct LoadModel_2: OD::Module {
         camMove.transform = &camTransform;
 
         model = AssetManager::Get().LoadModel("res/models/cube.glb");
-        model->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
+        model->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
 
         for(int i = 0; i < 100000; i++){
@@ -71,7 +71,7 @@ struct LoadModel_2: OD::Module {
             }
             model->meshs[0]->UpdateMeshInstancingModelMatrixs();
 
-            Renderer::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->shader, transforms.size());
+            Renderer::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->shader(), transforms.size());
         } else {
             for(auto i: transforms){
                 Renderer::DrawModel(*model, i);

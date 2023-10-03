@@ -146,9 +146,9 @@ Ref<Material> Model::processMaterial(aiMesh *mesh, const aiScene *scene, Ref<Sha
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl");
+        out->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
     } else {
-        out->shader = customShader;
+        out->shader(customShader);
     }
 
     // process materials

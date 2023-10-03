@@ -1,5 +1,8 @@
 #version 330 core
 
+#pragma SupportInstancing false
+#pragma BlendMode Blend
+
 #if defined(VERTEX)
 layout (location = 0) in vec3 _pos;
 layout (location = 1) in vec2 _texCoord;

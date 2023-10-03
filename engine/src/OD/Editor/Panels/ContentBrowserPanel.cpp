@@ -17,11 +17,11 @@ void ContentBrowserPanel::OnGui(){
     ImGui::Begin("ContentBrowserPanel");
     DrawDir(_assetsDirectory, _assetsDirectory);
 
-    if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
+    /*if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
         _selectedFile = std::filesystem::path();
         _editor->_selectionAsset = nullptr;
         _editor->_selectionOnAsset = false;
-    }
+    }*/
 
     ImGui::End();
 }

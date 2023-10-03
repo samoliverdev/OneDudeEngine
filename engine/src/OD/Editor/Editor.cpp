@@ -191,6 +191,8 @@ void Editor::DrawMainWorkspace(){
         //textureId = SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(1);
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(0);
     }
+
+    ImVec2 imagePos = ImGui::GetCursorPos();
     
     //ImGui::Image((ImTextureID)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
@@ -205,6 +207,13 @@ void Editor::DrawMainWorkspace(){
         
         ImGui::EndDragDropTarget();
     }
+
+    ImGui::SetCursorPos(ImVec2(imagePos.x + 5, imagePos.y + 5));
+    ImGui::BeginGroup();
+    ImGui::SmallButton("X"); 
+    ImGui::SmallButton("Y");
+    ImGui::SmallButton("Z");
+    ImGui::EndGroup();
 
     //_framebuffer->Resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
 

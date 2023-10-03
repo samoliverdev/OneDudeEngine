@@ -37,7 +37,7 @@ struct Light_3: OD::Module {
         //LogInfo("(%f, %f, %f)", (Vector3(1,1,1)+Vector3(2,2,2)).x, (Vector3(1,1,1) * 2.0f).y, (glm::vec3(1,1,1) * 5.0f).z);
 
         lightModel = AssetManager::Get().LoadModel("res/models/sphere.obj");
-        lightModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/shaders/UnlitColor.glsl");
+        lightModel->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/shaders/UnlitColor.glsl"));
         lightModel->materials[0]->SetVector3("color", Vector3(1,1,1));
         lightTransform.localScale(Vector3(0.1f, 0.1f, 0.1f));
         lightTransform.localPosition(Vector3(-1, 2, 2));
@@ -53,7 +53,7 @@ struct Light_3: OD::Module {
         //model->materials[0].SetTexture("texture1", Texture2D::CreateFromFile("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
 
         model = AssetManager::Get().LoadModel("res/models/suzane.obj");
-        model->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/shaders/light.glsl");
+        model->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/shaders/light.glsl"));
         model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
         model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
         model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));

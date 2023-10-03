@@ -76,8 +76,8 @@ void AnimatorSystem::Update(){
         for (int i = 0; i < transforms.size(); ++i){
             std::string s = "finalBonesMatrices[" + std::to_string(i) + "]";
             for(auto j: renderer.model()->materials){
-                j->BindGlobal();
-                j->SetGlobalMatrix4(s.c_str(), transforms[i]);
+                j->shader()->Bind();
+                j->shader()->SetMatrix4(s.c_str(), transforms[i]);
             }
         }
     }   

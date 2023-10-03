@@ -4,9 +4,10 @@
 #pragma BlendMode Off
 
 #pragma BeginProperties
-Texture2D mainTex White
-Texture2D normal White
+Float useInstancing 0
 Color4 color
+Texture2D mainTex White
+Color4 color2
 #pragma EndProperties
 
 #if defined(VERTEX)
@@ -49,6 +50,7 @@ void main(){
 
 #if defined(FRAGMENT)
 uniform vec4 color = vec4(1, 1, 1, 1);
+uniform vec4 color2 = vec4(1, 1, 1, 1);
 uniform sampler2D mainTex;
 uniform sampler2D shadowMap;
 
@@ -146,7 +148,7 @@ void main() {
     vec3 norm = normalize(fsIn.worldNormal);
     //vec3 viewDir = normalize(viewPos - FragPos);
 
-    vec4 objectColor = texColor * color;
+    vec4 objectColor = texColor * color * color2;
 
     float shadow = ShadowCalculation(fsIn.fragPosLightSpace); 
 

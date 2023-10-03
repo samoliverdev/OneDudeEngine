@@ -2,11 +2,19 @@ Shader: res/Builtins\Shaders\StandDiffuse.glsl
 Maps:
   - Name: mainTex
     Type: 0
-    Texture: res/textures\image.jpg
+    Texture: res/textures\block.png
     Vector: [0, 0, 0, 0]
     Value: 0
+    vectorIsColor: false
+  - Name: normal
+    Type: 0
+    Texture: res/textures\character_1.png
+    Vector: [0, 0, 0, 0]
+    Value: 0
+    vectorIsColor: false
   - Name: color
     Type: 4
     Texture: ""
-    Vector: [1, 1, 1, 1]
+    Vector: [0, 0.0452919267, 0.4472574, 1]
     Value: 0
+    vectorIsColor: true

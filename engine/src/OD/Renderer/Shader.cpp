@@ -11,8 +11,9 @@ void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName
     pathWithoutFileName = fullPath.substr(0, found + 1);
 }
 
-std::string load(std::string path, std::string includeIndentifier = "#include"){
-    includeIndentifier += ' ';
+std::string Shader::load(std::string path){
+    std::string includeIndentifier = "#include ";
+    //includeIndentifier += ' ';
     static bool isRecursiveCall = false;
 
     std::string fullSourceCode = "";
@@ -23,8 +24,57 @@ std::string load(std::string path, std::string includeIndentifier = "#include"){
         return fullSourceCode;
     }
 
+    bool beginProperties = false;
+
     std::string lineBuffer;
     while (std::getline(file, lineBuffer)){
+        std::vector<std::string> pragmaLine;
+        std::stringstream ss(lineBuffer);
+        std::string _out;
+        int index = 0;
+
+        if(lineBuffer.find("#pragma") != lineBuffer.npos){
+            pragmaLine.clear();
+            while(ss >> _out){
+                if(index != 0) pragmaLine.push_back(_out);
+                index += 1;
+            }
+        }
+
+        for(auto i: pragmaLine){
+            LogInfo("%s", i.c_str());
+        }
+
+        if(beginProperties == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginProperties"){
+            beginProperties = true;
+            continue;
+        }
+        if(beginProperties == true && pragmaLine.size() > 0 && pragmaLine[0] == "EndProperties"){
+            beginProperties = false;
+            continue;
+        }
+
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "SupportInstancing" && pragmaLine[1] == "true"){
+            _supportInstancing = true;
+        }
+
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "BlendMode" && pragmaLine[1] == "Blend"){
+            _blendMode = BlendMode::Blend;
+        }
+
+        if(beginProperties){
+            pragmaLine.clear();
+            while(ss >> _out){
+                pragmaLine.push_back(_out);
+                index += 1;
+            }
+            _properties.push_back(pragmaLine);
+
+            LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
+
+            continue;
+        }
+
         // Look for the new shader include identifier
         if (lineBuffer.find(includeIndentifier) != lineBuffer.npos){
             // Remove the include identifier, this will cause the path to remain
@@ -54,6 +104,10 @@ std::string load(std::string path, std::string includeIndentifier = "#include"){
         fullSourceCode += '\0';
 
     file.close();
+
+    /*for(auto i: _properties){
+        LogInfo("Propertie: %s, %s", i[0].c_str(), i[1].c_str());
+    }*/
 
     return fullSourceCode;
 }
@@ -102,7 +156,7 @@ GLenum ShaderTypeFromString(const std::string& type){
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     Ref<Shader> out = CreateRef<Shader>();
 
-    std::string source = load(filepath);
+    std::string source = out->load(filepath);
 
     auto shaderSources = out->PreProcess(source);
     out->Compile(shaderSources);

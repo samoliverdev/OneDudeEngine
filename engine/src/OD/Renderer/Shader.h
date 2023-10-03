@@ -15,6 +15,8 @@ class Renderer;
 class Shader: public Asset{
     friend class Renderer;
 public:
+    enum class BlendMode{ OFF, Blend};
+
     virtual ~Shader();
 
     static Ref<Shader> CreateFromFile(const std::string& filepath);
@@ -37,10 +39,19 @@ public:
 
     inline unsigned int rendererId(){ return _rendererId; }
 
+    inline BlendMode blendMode(){ return _blendMode; }
+    inline bool supportInstancing(){ return _supportInstancing; }
+    inline std::vector<std::vector<std::string>>& properties(){ return _properties; }
+
 private:
+    BlendMode _blendMode = BlendMode::OFF;
+    bool _supportInstancing = false;
+
     unsigned int _rendererId;
     std::unordered_map<std::string, GLint> _uniforms;
+    std::vector<std::vector<std::string>> _properties;
     
+    std::string load(std::string path);
     GLint GetLocation(const char* name);
 	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
 	void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);

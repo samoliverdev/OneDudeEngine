@@ -48,19 +48,23 @@ void SceneHierarchyPanel::OnGui(){
             ImGui::EndDragDropTarget();
         }*/
 
+        if(ImGui::IsDragDropActive()){
+
         ImGui::BeginChild("BottomBar", ImVec2(0,0), false, 0); // Use avail width/height
-        //ImGui::Text("Footer");
-        ImGui::EndChild();
-        if(ImGui::BeginDragDropTarget()){
-            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
-            if(payload != nullptr){
-                Entity* targetEntity = (Entity*)payload->Data;
-                LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
-                if(targetEntity->IsValid()){
-                    _scene->CleanParent(targetEntity->id());
+            //ImGui::Text("Footer");
+            ImGui::EndChild();
+            if(ImGui::BeginDragDropTarget()){
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
+                if(payload != nullptr){
+                    Entity* targetEntity = (Entity*)payload->Data;
+                    LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
+                    if(targetEntity->IsValid()){
+                        _scene->CleanParent(targetEntity->id());
+                    }
                 }
+                ImGui::EndDragDropTarget();
             }
-            ImGui::EndDragDropTarget();
+
         }
         
         ImGui::End();

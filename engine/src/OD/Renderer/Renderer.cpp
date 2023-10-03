@@ -160,7 +160,7 @@ void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
 
 void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& material){
     material.UpdateUniforms();
-    Ref<Shader> shader = material.shader;
+    Ref<Shader> shader = material.shader();
     DrawMesh(mesh, modelMatrix, *shader);
 }
 
@@ -175,7 +175,7 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, st
         Assert(targetMaterial != nullptr);
 
         targetMaterial->UpdateUniforms();
-        DrawMesh(*model.meshs[subMeshIndex], modelMatrix, *targetMaterial->shader);
+        DrawMesh(*model.meshs[subMeshIndex], modelMatrix, *targetMaterial->shader());
     } else {
         for(int i = 0; i < model.meshs.size(); i++){
             Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[i] : nullptr;
@@ -183,7 +183,7 @@ void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, st
             Assert(targetMaterial != nullptr);
 
             targetMaterial->UpdateUniforms();
-            DrawMesh(*model.meshs[i], modelMatrix, *targetMaterial->shader);
+            DrawMesh(*model.meshs[i], modelMatrix, *targetMaterial->shader());
         }
     }
 }
