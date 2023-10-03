@@ -7,6 +7,7 @@
 namespace OD{
 
 std::filesystem::path _assetsDirectory = "res/";
+std::filesystem::path _curDragDrop;
 
 ContentBrowserPanel::ContentBrowserPanel(){
     _curDirectory = _assetsDirectory;
@@ -51,7 +52,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
 
         ImGuiTreeNodeFlags flags = (_path == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
         if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, relativePathString.c_str())){
-            if(ImGui::IsItemClicked()){
+            if(ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)){
                 _selectedFile = _path;
 
                 if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
@@ -59,8 +60,9 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
                 }
             }
 
-            if(_path == _selectedFile && ImGui::BeginDragDropSource()){
-                ImGui::SetDragDropPayload("ContentBrowserPanelFile", &_selectedFile, sizeof(_selectedFile), ImGuiCond_Once);
+            if(ImGui::BeginDragDropSource()){
+                _curDragDrop = _path;
+                ImGui::SetDragDropPayload(FILE_MOVE_PAYLOAD, &_curDragDrop, sizeof(_curDragDrop), ImGuiCond_Once);
                 ImGui::EndDragDropSource();
             }
 

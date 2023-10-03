@@ -1,8 +1,8 @@
-Shader: res/Builtins/Shaders/Unlit.glsl
+Shader: res/Builtins\Shaders\StandDiffuse.glsl
 Maps:
   - Name: mainTex
     Type: 0
-    Texture: res/textures/floor.jpg
+    Texture: res/textures\image.jpg
     Vector: [0, 0, 0, 0]
     Value: 0
   - Name: color

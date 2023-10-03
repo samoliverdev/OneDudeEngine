@@ -23,6 +23,8 @@
 
 #define OD_PROFILE 1
 
+#define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"
+
 // logging macros
 //#if defined(_DEBUG)
 	#define _LOG(level, message, ...) \

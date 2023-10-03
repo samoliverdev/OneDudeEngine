@@ -6,8 +6,6 @@
 
 namespace OD{
 
-PhysicsSystemStartup physicsSystemStartup;
-
 #pragma region Core
 struct Rigidbody{
     btBoxShape* _shape = nullptr;
@@ -62,17 +60,21 @@ void RigidbodyComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "RigidbodyComponent";
     out << YAML::BeginMap;
 
-    auto& cam = e.GetComponent<RigidbodyComponent>();
-    out << YAML::Key << "mass" << YAML::Value << cam.mass();
-    out << YAML::Key << "boxShapeSize" << YAML::Value << cam.shape();
+    auto& c = e.GetComponent<RigidbodyComponent>();
+    out << YAML::Key << "type" << YAML::Value << (int)c.type();
+    out << YAML::Key << "boxShapeSize" << YAML::Value << c.shape();
+    out << YAML::Key << "mass" << YAML::Value << c.mass();
+    out << YAML::Key << "neverSleep" << YAML::Value << c.neverSleep();
     
     out << YAML::EndMap;
 }
 
 void RigidbodyComponent::Deserialize(YAML::Node& in, Entity& e){
     auto& c = e.AddOrGetComponent<RigidbodyComponent>();
-    c.mass(in["mass"].as<float>());
+    c.type((Type)in["type"].as<int>());
     c.shape(in["boxShapeSize"].as<Vector3>());
+    c.mass(in["mass"].as<float>());
+    c.neverSleep(in["neverSleep"].as<bool>());
 }
 
 void RigidbodyComponent::OnGui(Entity& e){

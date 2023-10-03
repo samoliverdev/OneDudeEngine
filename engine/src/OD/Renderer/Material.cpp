@@ -4,6 +4,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/AssetManager.h"
 #include "OD/Core/ImGui.h"
+#include <filesystem>
 
 namespace OD{
 
@@ -98,15 +99,80 @@ void Material::UpdateUniforms(){
     }
 }
 
+void Material::OnGui(){
+    bool toSave = false;
+
+    ImGui::BeginGroup();
+    ImGui::Text("Shader: %s", (shader == nullptr ? "" : shader->path().c_str()));
+    ImGui::EndGroup();
+    ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
+        if(path->string().empty() == false && path->extension() == ".glsl"){
+            shader = AssetManager::Get().LoadShaderFromFile(path->string());
+            toSave = true;
+        }
+    });
+
+    for(auto& i: maps){
+        if(i.second.type == MaterialMap::Type::Float){
+            if(ImGui::DragFloat(i.first.c_str(), &i.second.value)){
+                toSave = true;
+            }
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector2){
+            if(ImGui::DragFloat2(i.first.c_str(), &i.second.vector[0])){
+                toSave = true;
+            }
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector3){
+            if(ImGui::ColorEdit4(i.first.c_str(), &i.second.vector[0])){
+                toSave = true;
+            }
+        }
+
+        if(i.second.type == MaterialMap::Type::Vector4){
+            if(ImGui::ColorEdit4(i.first.c_str(), &i.second.vector[0])){
+                toSave = true;
+            }
+        }
+
+        if(i.second.type == MaterialMap::Type::Texture){
+            const float widthSize = 60;
+            float aspect = i.second.texture->width() / i.second.texture->height();
+
+            ImGui::BeginGroup();
+            ImVec2 imagePos = ImGui::GetCursorPos();
+            ImGui::Image((void*)(uint64_t)i.second.texture->renderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
+            ImGui::SetCursorPos(imagePos);
+            if(ImGui::SmallButton("X")){
+                i.second.texture = AssetManager::Get().LoadDefautlTexture2D();
+                toSave = true;
+            }
+            ImGui::EndGroup();
+
+            ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
+                if(path->string().empty() == false && (path->extension() == ".png" || path->extension() == ".jpg")){
+                    i.second.texture = AssetManager::Get().LoadTexture2D(path->string(), TextureFilter::Linear, true);
+                    toSave = true;
+                }
+            });
+
+            ImGui::SameLine();
+            ImGui::Text(i.first.c_str());
+        }
+    }
+
+    if(toSave && _path.empty() == false) Save(_path);
+}
+
 void Material::Save(std::string& path){
     YAML::Emitter out;
 
     out << YAML::BeginMap;
     out << YAML::Key << "Shader" << YAML::Value << shader->path();
-
     out << YAML::Key << "Maps" << YAML::BeginSeq;
 
-    
     for(auto i: maps){
         const std::string& name = i.first;
         MaterialMap& map = i.second;
@@ -125,34 +191,6 @@ void Material::Save(std::string& path){
 
     std::ofstream fout(path);
     fout << out.c_str();
-}
-
-void Material::OnGui(){
-    for(auto i: maps){
-        if(i.second.type == MaterialMap::Type::Float){
-            ImGui::DragFloat(i.first.c_str(), &i.second.value);
-        }
-
-        if(i.second.type == MaterialMap::Type::Vector2){
-            ImGui::DragFloat2(i.first.c_str(), &i.second.vector[0]);
-        }
-
-        if(i.second.type == MaterialMap::Type::Vector3){
-            ImGui::DragFloat3(i.first.c_str(), &i.second.vector[0]);
-        }
-
-        if(i.second.type == MaterialMap::Type::Vector4){
-            ImGui::DragFloat4(i.first.c_str(), &i.second.vector[0]);
-        }
-
-        if(i.second.type == MaterialMap::Type::Texture){
-            const float widthSize = 60;
-            float aspect = i.second.texture->width() / i.second.texture->height();
-            ImGui::Image((void*)(uint64_t)i.second.texture->renderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
-            ImGui::SameLine();
-            ImGui::Text(i.first.c_str());
-        }
-    }
 }
 
 Ref<Material> Material::CreateFromFile(std::string const &path){

@@ -255,6 +255,7 @@ void InspectorPanel::DrawComponents(Entity entity){
     ImGui::Spacing();
     
     for(auto& i: SceneManager::Get()._coreComponents){
+        //LogInfo("%s", i.first.c_str());
         DrawComponentFromCoreComponents(entity, i.first, i.second);
     }
 

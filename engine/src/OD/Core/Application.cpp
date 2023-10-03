@@ -6,6 +6,7 @@
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "AssetManager.h"
+#include "OD/CoreModulesStartup.h"
 
 namespace OD{
 
@@ -34,7 +35,8 @@ bool Application::Create(Module* mainModule, ApplicationConfig appConfig){
     Renderer::_Initialize();
     //Input::_Initialize(0, 0);
     JobSystem::Initialize();
-    AssetTypesDB::_Init();
+    //AssetTypesDB::_Init();
+    CoreModulesStartup();
 
     _mainModule = mainModule;
     AddModule(_mainModule);

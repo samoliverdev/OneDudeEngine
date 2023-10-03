@@ -370,6 +370,7 @@ struct SceneManager{
     template<typename T>
     void RegisterCoreComponent(std::string name){
         Assert(_coreComponents.find(name) == _coreComponents.end());
+        //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
         CoreComponent funcs;
 

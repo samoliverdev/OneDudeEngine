@@ -1,5 +1,6 @@
 #include "MeshRendererComponent.h"
 #include "StandRendererSystem.h"
+#include <filesystem>
 
 namespace OD{
 
@@ -8,13 +9,13 @@ void MeshRendererComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::BeginMap;
 
     auto& mesh = e.GetComponent<MeshRendererComponent>();
-    out << YAML::Key << "modelPath" << YAML::Value << (mesh.model() == nullptr ? std::string("") : mesh.model()->path());
+    out << YAML::Key << "_model" << YAML::Value << (mesh.model() == nullptr ? std::string("") : mesh.model()->path());
+    out << YAML::Key << "_subMeshIndex" << YAML::Value << mesh._subMeshIndex;
 
-    out << YAML::Key << "materials" << YAML::BeginSeq;
-    for(auto i: mesh.model()->materials){
+    out << YAML::Key << "_materialsOverride" << YAML::BeginSeq;
+    for(auto i: mesh._materialsOverride){
         out << YAML::BeginMap;
-        out << YAML::Key << "materialPath" << YAML::Value << i->path();
-        out << YAML::Key << "materialShader" << YAML::Value << (i->shader == nullptr ? "" : i->shader->path());
+        out << YAML::Key << "path" << YAML::Value << (i == nullptr ? std::string("") :  i->path());
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
@@ -26,25 +27,23 @@ void MeshRendererComponent::Serialize(YAML::Emitter& out, Entity& e){
 void MeshRendererComponent::Deserialize(YAML::Node& in, Entity& e){
     auto& mc = e.AddOrGetComponent<MeshRendererComponent>();
 
-    std::string modelPath = in["modelPath"].as<std::string>();
+    std::string modelPath = in["_model"].as<std::string>();
     //LogInfo("Model %s", modelPath.c_str());
 
     if(modelPath.empty() == false){
         Ref<Model> model = AssetManager::Get().LoadModel(modelPath);
         mc.model(model);
+    }
 
-        int index = 0;
-        for(auto i: in["materials"]){
-            std::string materialPath = i["materialPath"].as<std::string>();
-            std::string shaderPath = i["materialShader"].as<std::string>();
+    mc._subMeshIndex = in["_subMeshIndex"].as<int>();
 
-            if(materialPath.empty() == false){
-                model->materials[index] = AssetManager::Get().LoadMaterial(materialPath);
-            } else {
-                model->materials[index]->shader = AssetManager::Get().LoadShaderFromFile(shaderPath);
-            }
-            index += 1;
-        }
+    int index = 0;
+    for(auto i: in["_materialsOverride"]){
+        std::string materialPath = i["path"].as<std::string>();
+        if(materialPath.empty() == false){
+            mc._materialsOverride[index] = AssetManager::Get().LoadMaterial(materialPath);
+        } 
+        index += 1;
     }
 
     LogInfo("Model %s", mc.model()->path().c_str());
@@ -69,13 +68,27 @@ void MeshRendererComponent::OnGui(Entity& e){
         int index = 0;
         for(auto i: mesh._materialsOverride){
             if(ImGui::TreeNode(std::to_string(index).c_str())){
+                ImGui::BeginGroup();
                 if(i == nullptr)
                     ImGui::Text("None");
                 else 
                     ImGui::Text("Path: %s", i->path().c_str());
+
+                ImGui::SameLine();
+                if(ImGui::SmallButton("X")){
+                    mesh._materialsOverride[index] = nullptr;
+                }
+                ImGui::EndGroup();
     
                 ImGui::TreePop();
             }
+
+            ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
+                if(path->string().empty() == false && path->extension() == ".material"){
+                    mesh._materialsOverride[index] = AssetManager::Get().LoadMaterial(path->string());
+                }
+            });
+
             index += 1;
         }
 

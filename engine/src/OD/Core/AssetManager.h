@@ -33,6 +33,15 @@ public:
         _assetFuncs[fileExtension] = funcs;
     }
 
+    template<typename T>
+    void RegisterAssetType(std::string fileExtension, std::function<Ref<Asset>(const char*)> createFromFile){
+        Assert(_assetFuncs.find(fileExtension) == _assetFuncs.end());
+
+        AssetFuncs funcs;
+        funcs.CreateFromFile = createFromFile;
+        _assetFuncs[fileExtension] = funcs;
+    }
+
     inline bool HasAssetByExtension(std::string fileExtension){
         return _assetFuncs.find(fileExtension) != _assetFuncs.end();
     }
@@ -42,13 +51,10 @@ public:
         return global;
     }
 
-    inline static void _Init(){
-        AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png");
-        AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg");
-        AssetTypesDB::Get().RegisterAssetType<Material>(".material");
-    }
-
     std::unordered_map<std::string, AssetFuncs> _assetFuncs;
+
+private:
+    AssetTypesDB(){}
 };
 
 class AssetManager{
@@ -57,6 +63,8 @@ public:
     Ref<Shader> LoadShaderFromFile(const std::string& filepath);
     Ref<Model> LoadModel(const std::string &path, Ref<Shader> customShader = nullptr);
     Ref<Material> LoadMaterial(const std::string &path);
+
+    Ref<Texture2D> LoadDefautlTexture2D();
 
     inline void UnloadAll(){
         _meshs.clear();

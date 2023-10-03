@@ -11,8 +11,6 @@
 
 namespace OD{
 
-StandRendererSystemStartup standRendererSystemStartup;
-
 class TestPP1: public PostProcessingPass{
 public:
     TestPP1(int option):_option(option){

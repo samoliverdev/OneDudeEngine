@@ -72,15 +72,4 @@ private:
     void UpdateCurrentLight();
 };
 
-struct StandRendererSystemStartup{
-    StandRendererSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
-        SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
-        SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
-        SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
-    }
-};
-
-extern StandRendererSystemStartup standRendererSystemStartup;
-
 };

@@ -98,13 +98,4 @@ private:
     static PhysicsSystem* instance;
 };
 
-struct PhysicsSystemStartup{
-    PhysicsSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
-        LogInfo("PhysicsSystemStartup");
-    }
-};
-
-extern PhysicsSystemStartup physicsSystemStartup;
-
 }

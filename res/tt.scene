@@ -9,8 +9,10 @@ Entities:
       Children:
         []
     RigidbodyComponent:
-      mass: 1
+      type: 3
       boxShapeSize: [4, 1, 4]
+      mass: 1
+      neverSleep: true
   - InfoComponent:
       name: MainCube
     TransformComponent:
@@ -20,13 +22,15 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      modelPath: res/models/Cube.glb
-      materials:
-        - materialPath: ""
-          materialShader: res/Builtins/Shaders/Model.glsl
+      _model: res/models/Cube.glb
+      _subMeshIndex: -1
+      _materialsOverride:
+        - path: res/mat1.material
     RigidbodyComponent:
-      mass: 1
+      type: 0
       boxShapeSize: [1, 1, 1]
+      mass: 1
+      neverSleep: false
   - InfoComponent:
       name: Floor
     TransformComponent:
@@ -36,13 +40,15 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      modelPath: res/models/plane.glb
-      materials:
-        - materialPath: ""
-          materialShader: res/Builtins/Shaders/Model.glsl
+      _model: res/models/plane.glb
+      _subMeshIndex: -1
+      _materialsOverride:
+        - path: res/textures/floor.material
     RigidbodyComponent:
-      mass: 0
+      type: 1
       boxShapeSize: [25, 0.100000001, 25]
+      mass: 0
+      neverSleep: false
   - InfoComponent:
       name: Camera
     TransformComponent:
@@ -70,6 +76,12 @@ Entities:
       localScale: [1, 1, 1]
       Children:
         []
+    LightComponent:
+      type: 0
+      color: [1, 1, 1]
+      intensity: 1
+      radius: 5
+      renderShadow: true
   - InfoComponent:
       name: Env
     TransformComponent:
@@ -78,3 +90,5 @@ Entities:
       localScale: [1, 1, 1]
       Children:
         []
+    EnvironmentComponent:
+      settings.ambient: [0.109999999, 0.159999996, 0.25]

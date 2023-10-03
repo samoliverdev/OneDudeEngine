@@ -84,14 +84,13 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.id(), flags, info.name.c_str());
     
-    if(ImGui::IsItemClicked()){
-        //_editor->_selectionEntity = entity;
-        _editor->SetSelectionEntity(entity);
-    }
-
     if(entity.IsValid() && ImGui::BeginDragDropSource()){
         ImGui::SetDragDropPayload("EntityMoveDragDrop", &entity, sizeof(Entity), ImGuiCond_Once);
         ImGui::EndDragDropSource();
+    }
+
+    if(ImGui::IsItemClicked()){
+        _editor->SetSelectionEntity(entity);
     }
 
     if(ImGui::BeginDragDropTarget()){

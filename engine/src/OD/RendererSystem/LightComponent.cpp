@@ -3,11 +3,26 @@
 namespace OD{
 
 void LightComponent::Serialize(YAML::Emitter& out, Entity& e){
+    out << YAML::Key << "LightComponent";
+    out << YAML::BeginMap;
 
+    auto& c = e.GetComponent<LightComponent>();
+    out << YAML::Key << "type" << YAML::Value << (int)c.type;
+    out << YAML::Key << "color" << YAML::Value << c.color;
+    out << YAML::Key << "intensity" << YAML::Value << c.intensity;
+    out << YAML::Key << "radius" << YAML::Value << c.radius;
+    out << YAML::Key << "renderShadow" << YAML::Value << c.renderShadow;
+    
+    out << YAML::EndMap;
 }
 
 void LightComponent::Deserialize(YAML::Node& in, Entity& e){
-
+    auto& c = e.AddOrGetComponent<LightComponent>();
+    c.type = (LightComponent::Type)in["type"].as<int>();
+    c.color = in["color"].as<Vector3>();
+    c.intensity = in["intensity"].as<float>();
+    c.radius = in["radius"].as<float>();
+    c.renderShadow = in["renderShadow"].as<bool>();
 }
 
 void LightComponent::OnGui(Entity& e){

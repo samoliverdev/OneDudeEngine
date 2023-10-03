@@ -1,6 +1,13 @@
 #pragma once
 
 #include <imgui/imgui.h>
+#include <functional>
+#include <filesystem>
+#include "OD/Defines.h"
+
+namespace ImGui{
+    void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func);
+}
 
 namespace OD{
 

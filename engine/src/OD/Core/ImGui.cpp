@@ -1,5 +1,21 @@
 #include "ImGui.h"
 
+namespace ImGui{
+
+void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func){
+    if(ImGui::BeginDragDropTarget()){
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(FILE_MOVE_PAYLOAD);
+        if(payload != nullptr){
+            std::filesystem::path* path = (std::filesystem::path*)payload->Data;
+            LogInfo("%s %s", path->string().c_str(), path->extension().string().c_str());
+            func(path);
+        }
+        ImGui::EndDragDropTarget();
+    }
+}
+
+}
+
 namespace OD{
 
 bool cleanAll = false;

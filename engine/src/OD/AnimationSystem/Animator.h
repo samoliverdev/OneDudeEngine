@@ -27,12 +27,4 @@ struct AnimatorSystem: public System{
     virtual void Update() override;
 };
 
-struct AnimatorSystemStartup{
-    AnimatorSystemStartup(){
-        SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
-    }
-};
-
-extern AnimatorSystemStartup animatorSystemStartup;
-
 }

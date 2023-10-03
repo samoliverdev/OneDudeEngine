@@ -43,4 +43,8 @@ Ref<Model> AssetManager::LoadModel(const std::string &path, Ref<Shader> customSh
     return model;
 }   
 
+Ref<Texture2D> AssetManager::LoadDefautlTexture2D(){
+    return LoadTexture2D("res/Builtins/Textures/White.jpg", TextureFilter::Linear, true);
+}
+
 }
