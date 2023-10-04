@@ -66,7 +66,7 @@ struct PhysicsCubeS: public Script{
         //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
         //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
-        cubeModel->materials[0] = Material::CreateFromFile("res/mat1.material");
+        cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/mat1.material"); //Material::CreateFromFile("res/mat1.material");
 
         entity().GetComponent<TransformComponent>().position({2, 13, 0});
         entity().GetComponent<TransformComponent>().rotation(Quaternion::identity);

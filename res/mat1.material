@@ -1,8 +1,9 @@
 Shader: res/Builtins\Shaders\StandDiffuse.glsl
+enableInstancing: true
 Maps:
   - Name: mainTex
     Type: 0
-    Texture: res/textures\block.png
+    Texture: res/textures\image.jpg
     Vector: [0, 0, 0, 0]
     Value: 0
     vectorIsColor: false
@@ -15,6 +16,6 @@ Maps:
   - Name: color
     Type: 4
     Texture: ""
-    Vector: [0, 0.0452919267, 0.4472574, 1]
+    Vector: [1, 1, 1, 1]
     Value: 0
     vectorIsColor: true

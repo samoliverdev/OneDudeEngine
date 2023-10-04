@@ -18,6 +18,7 @@ class AssetTypesDB{
 public:
     struct AssetFuncs{
         std::function<Ref<Asset>(const char*)> CreateFromFile;
+        //Ref<Asset> (*CreateFromFile)(const char*);
     };
 
     template<typename T>
@@ -59,12 +60,15 @@ private:
 
 class AssetManager{
 public:
-    Ref<Texture2D> LoadTexture2D(const std::string& filePath, TextureFilter filter, bool mipmap); 
+    Ref<Texture2D> LoadTexture2D(const std::string& filePath, Texture2DSetting settings); 
+    Ref<Texture2D> LoadTexture2D(const std::string& filePath); 
+
     Ref<Shader> LoadShaderFromFile(const std::string& filepath);
     Ref<Model> LoadModel(const std::string &path, Ref<Shader> customShader = nullptr);
     Ref<Material> LoadMaterial(const std::string &path);
 
     Ref<Texture2D> LoadDefautlTexture2D();
+    Ref<Shader> LoadErrorShader();
 
     inline void UnloadAll(){
         _meshs.clear();

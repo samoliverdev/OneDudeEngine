@@ -170,7 +170,7 @@ void Material::OnGui(){
 
             ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
                 if(path->string().empty() == false && (path->extension() == ".png" || path->extension() == ".jpg")){
-                    i.second.texture = AssetManager::Get().LoadTexture2D(path->string(), TextureFilter::Linear, true);
+                    i.second.texture = AssetManager::Get().LoadTexture2D(path->string(), {TextureFilter::Linear, true});
                     toSave = true;
                 }
             });
@@ -178,6 +178,10 @@ void Material::OnGui(){
             ImGui::SameLine();
             ImGui::Text(i.first.c_str());
         }
+    }
+
+    if(ImGui::Checkbox("enableInstancing", &_enableInstancing)){
+        toSave = true;
     }
 
     ImGui::Spacing();ImGui::Spacing();
@@ -202,6 +206,7 @@ void Material::Save(std::string& path){
 
     out << YAML::BeginMap;
     out << YAML::Key << "Shader" << YAML::Value << _shader->path();
+    out << YAML::Key << "enableInstancing" << YAML::Value << _enableInstancing;
     out << YAML::Key << "Maps" << YAML::BeginSeq;
 
     for(auto i: _maps){
@@ -243,6 +248,8 @@ Ref<Material> Material::CreateFromFile(std::string const &path){
 
     //LogInfo("%s", shaderPath.c_str());
 
+    if(data["enableInstancing"]) out->_enableInstancing = data["enableInstancing"].as<bool>();
+
     for(auto i: data["Maps"]){
         MaterialMap map;
         map.type = (MaterialMap::Type)i["Type"].as<int>();
@@ -256,7 +263,7 @@ Ref<Material> Material::CreateFromFile(std::string const &path){
         if(texturePath.empty()){
             map.texture = nullptr;
         } else {
-            map.texture = AssetManager::Get().LoadTexture2D(texturePath, TextureFilter::Linear, false);
+            map.texture = AssetManager::Get().LoadTexture2D(texturePath, {TextureFilter::Linear, false});
         }
 
         out->_maps[i["Name"].as<std::string>()] = map;

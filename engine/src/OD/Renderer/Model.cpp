@@ -196,15 +196,14 @@ std::vector<Ref<Texture2D>> Model::loadMaterialTextures(aiMaterial *mat, aiTextu
         std::string filename = this->_directory + '/' +std::string(str.C_Str());
         
         //Ref<Texture2D> texture = Texture2D::CreateFromFile(filename.c_str(), false, TextureFilter::Linear);
-        Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), TextureFilter::Linear, true);
+        Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), {TextureFilter::Linear, true});
         textures.push_back(texture);
     }
 
     if(textures.empty()){
         textures.push_back(AssetManager::Get().LoadTexture2D(
             "res/Builtins/Textures/White.jpg", 
-            OD::TextureFilter::Linear, 
-            false
+            {OD::TextureFilter::Linear, false}
         ));
     }
 

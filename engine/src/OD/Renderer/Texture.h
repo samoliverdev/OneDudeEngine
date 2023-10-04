@@ -8,11 +8,16 @@
 namespace OD {
 
 enum class TextureFilter {
-    Nearest = GL_NEAREST,
-    Linear = GL_LINEAR
+    Nearest,
+    Linear
 };
 
 class Renderer;
+
+struct Texture2DSetting{
+    TextureFilter filter = TextureFilter::Linear;
+    bool mipmap = true;
+};
 
 class Texture2D: public Asset{
     friend class Renderer;
@@ -28,7 +33,7 @@ public:
     inline unsigned int height(){ return _height; }
     inline unsigned int renderId(){ return _id; }
 
-    static Ref<Texture2D> CreateFromFile(const char* filePath, TextureFilter filter, bool mipmap); 
+    static Ref<Texture2D> CreateFromFile(const char* filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromFile(const char* filePath); 
 
 private:
@@ -42,8 +47,12 @@ private:
     unsigned int _filterMin;
     unsigned int _filterMax;
     bool _mipmap;
+    Texture2DSetting _settings;
 
+    void Create(const char* path, Texture2DSetting settings);
     void texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data);
+
+    void SaveSettings();
 };
 
 }

@@ -39,6 +39,9 @@ public:
         return _shader->blendMode() == Shader::BlendMode::Blend;
     }
 
+    inline bool enableInstancing(){ return _enableInstancing; }
+    inline bool supportInstancing(){ return _shader != nullptr && _shader->supportInstancing(); }
+
     void SetFloat(const char* name, float value);
     void SetVector2(const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value, bool isColor = false);
@@ -54,7 +57,9 @@ public:
     static Ref<Material> CreateFromFile(std::string const &path);
 
 private:
+    bool _enableInstancing = false;
     bool _isDirt = true;
+
     Ref<Shader> _shader;
     std::unordered_map<std::string, MaterialMap> _maps;
 

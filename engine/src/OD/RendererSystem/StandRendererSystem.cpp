@@ -58,23 +58,23 @@ private:
     Ref<Shader> _ppShader;
 };
 
-struct RenderGroupTarget{
+struct RenderTarget{
     Ref<Mesh> mesh;
     Matrix4 trans;
 };
 
-struct InstancingKey{
+struct RenderTargetInstancing{
     Ref<Material> material;
     Ref<Mesh> mesh;
 
-    bool operator==(const InstancingKey& p) const{
+    bool operator==(const RenderTargetInstancing& p) const{
         return material->shader()->rendererId() == p.material->shader()->rendererId() && 
                 mesh->rendererId() == p.mesh->rendererId();
     }
 };
 
 struct InstancingKeyHasher{
-    std::size_t operator()(const InstancingKey& k) const{
+    std::size_t operator()(const RenderTargetInstancing& k) const{
         return k.material->shader()->rendererId() + k.mesh->rendererId();
     }
 };
@@ -367,15 +367,15 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     _skyboxShader->SetMatrix4("view", skyboxView);
     Renderer::DrawMeshRaw(_skyboxMesh);
     Renderer::SetDepthMask(true);
+
+    // --------- Render Targets --------- 
+    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 
+    std::unordered_map< RenderTargetInstancing, std::vector<Matrix4>, InstancingKeyHasher > renderTargetOpaquesInstancing; 
+    std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderTarget>> >renderTargetsBlend; 
     
-    // --------- Render Opaques --------- 
+    // --------- Setup Render Opaques --------- 
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
-
-    std::unordered_map< Ref<Material>, std::vector<RenderGroupTarget> > groups; 
-    std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderGroupTarget>> >groupsBlend; 
-
-    std::unordered_map< InstancingKey, std::vector<Matrix4>, InstancingKeyHasher > groupsInstancing; 
 
     auto view1 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view1){
@@ -389,10 +389,16 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
             if(targetMaterial->isBlend()){
                 float distance = Vector3::Distance(camPos, t.position());
-                groupsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                renderTargetsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             } else {
-                groups[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
-                groupsInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
+                if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
+                    renderTargetOpaquesInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
+                } else {
+                    renderTargetsOpaques[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                }
+
+                //renderTargets[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                //renderTargetInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
             }
                 
             index += 1;
@@ -400,30 +406,28 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         //Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
     }
 
-    bool instancing = false;
+    // --------- Render Opaques Instancing --------- 
+    for(auto& i: renderTargetOpaquesInstancing){
+        SetStandUniforms(*i.first.material->shader());
+        i.first.material->UpdateUniforms();
 
-    if(instancing){
-        for(auto& i: groupsInstancing){
-            SetStandUniforms(*i.first.material->shader());
-            i.first.material->UpdateUniforms();
-
-            i.first.mesh->instancingModelMatrixs.clear();
-            for(auto j: i.second){
-                i.first.mesh->instancingModelMatrixs.push_back(j);
-            }
-            i.first.mesh->UpdateMeshInstancingModelMatrixs();
-
-            Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
-            //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
+        i.first.mesh->instancingModelMatrixs.clear();
+        for(auto j: i.second){
+            i.first.mesh->instancingModelMatrixs.push_back(j);
         }
-        //LogInfo("GroupsInstancing count: %zd", groupsInstancing.size());
-    } else {
-        for(auto i: groups){
-            SetStandUniforms(*i.first->shader());
-            i.first->UpdateUniforms();
-            for(auto j: i.second){
-                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
-            }
+        i.first.mesh->UpdateMeshInstancingModelMatrixs();
+
+        Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
+        //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
+    }
+    //LogInfo("GroupsInstancing count: %zd", groupsInstancing.size());
+
+    // --------- Render Opaques --------- 
+    for(auto i: renderTargetsOpaques){
+        SetStandUniforms(*i.first->shader());
+        i.first->UpdateUniforms();
+        for(auto j: i.second){
+            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
         }
     }
     
@@ -432,14 +436,14 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     Renderer::SetBlend(true);
     Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
 
-    for(auto it = groupsBlend.rbegin(); it != groupsBlend.rend(); it++){
-    for(auto i: it->second){
-        SetStandUniforms(*i.first->shader());
-        i.first->UpdateUniforms();
-        for(auto j: i.second){
-            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
+    for(auto it = renderTargetsBlend.rbegin(); it != renderTargetsBlend.rend(); it++){
+        for(auto i: it->second){
+            SetStandUniforms(*i.first->shader());
+            i.first->UpdateUniforms();
+            for(auto j: i.second){
+                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
+            }
         }
-    }
     }
 
     Renderer::SetBlend(false);

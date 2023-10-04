@@ -54,7 +54,7 @@ struct ECS_4: public OD::Module {
         MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
         _meshRenderer3.model(AssetManager::Get().LoadModel("res/Builtins/Models/plane.obj"));
         _meshRenderer3.model()->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/UnlitBlend.glsl"));
-        _meshRenderer3.model()->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", TextureFilter::Linear, true));
+        _meshRenderer3.model()->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
     }
 
     void OnInit() override {

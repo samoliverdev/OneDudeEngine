@@ -27,7 +27,7 @@ struct LoadModel_2: OD::Module {
 
         model = AssetManager::Get().LoadModel("res/models/cube.glb");
         model->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
-        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
+        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", {OD::TextureFilter::Linear, false}));
 
         for(int i = 0; i < 100000; i++){
             float posRange = 25;

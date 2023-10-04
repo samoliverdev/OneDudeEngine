@@ -6,14 +6,15 @@ void CoreModulesStartup(){
     //LogInfo("CoreModulesStartup");
 
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const char* path){
-        return AssetManager::Get().LoadTexture2D(path, TextureFilter::Linear, true);
+        return AssetManager::Get().LoadTexture2D(path);
     });
     
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const char* path){
-        return AssetManager::Get().LoadTexture2D(path, TextureFilter::Linear, true);
+        return AssetManager::Get().LoadTexture2D(path);
     });
 
     AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const char* path){
+        LogInfo("FullPath: %s", path);
         return AssetManager::Get().LoadMaterial(path);
     });
 

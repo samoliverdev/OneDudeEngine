@@ -41,9 +41,9 @@ std::string Shader::load(std::string path){
             }
         }
 
-        for(auto i: pragmaLine){
+        /*for(auto i: pragmaLine){
             LogInfo("%s", i.c_str());
-        }
+        }*/
 
         if(beginProperties == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginProperties"){
             beginProperties = true;
@@ -70,7 +70,7 @@ std::string Shader::load(std::string path){
             }
             _properties.push_back(pragmaLine);
 
-            LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
+            //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
 
             continue;
         }

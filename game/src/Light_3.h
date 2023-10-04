@@ -54,7 +54,7 @@ struct Light_3: OD::Module {
 
         model = AssetManager::Get().LoadModel("res/models/suzane.obj");
         model->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/shaders/light.glsl"));
-        model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", OD::TextureFilter::Linear, false));
+        model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", {OD::TextureFilter::Linear, false}));
         model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
         model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));
         model->materials[0]->SetVector3("light.position", lightTransform.localPosition());

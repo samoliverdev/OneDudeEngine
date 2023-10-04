@@ -49,6 +49,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
         std::string relativePathString = relativePath.string();
 
         if(p.is_directory() == true) continue;
+        if(_path.extension() == ".meta") continue;
 
         ImGuiTreeNodeFlags flags = (_path == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
         if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, relativePathString.c_str())){
