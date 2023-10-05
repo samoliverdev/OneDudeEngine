@@ -97,7 +97,8 @@ struct ECS_4: public OD::Module {
         e.GetComponent<TransformComponent>().localScale(Vector3(10, 1, 10));
         MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
         _meshRenderer.model(floorModel);
-        _meshRenderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+        _meshRenderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial(std::string("res/textures/floor.material"));
+        LogInfo("LoadMaterial: %s Hash: %zd", std::string("res/textures/floor.material").c_str(), std::hash<std::string>{}(std::string("res/textures/floor.material")));
 
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().position(Vector3(-8, 0, -4));

@@ -1,5 +1,5 @@
 Shader: res/Builtins/Shaders/StandDiffuse.glsl
-enableInstancing: false
+enableInstancing: true
 Maps:
   - Name: mainTex
     Type: 0

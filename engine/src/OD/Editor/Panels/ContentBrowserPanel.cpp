@@ -3,6 +3,7 @@
 #include "OD/Core/ImGui.h"
 #include <filesystem>
 #include <string>
+#include <algorithm>
 
 namespace OD{
 
@@ -55,9 +56,11 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
         if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, relativePathString.c_str())){
             if(ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)){
                 _selectedFile = _path;
+                std::string _pathString = _selectedFile.string();
+                std::replace(_pathString.begin(), _pathString.end(), '\\', '/'); // replace all 'x' to 'y'
 
                 if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
-                    _editor->SetSelectionAsset(AssetTypesDB::Get()._assetFuncs[_selectedFile.extension().string()].CreateFromFile(_selectedFile.string().c_str()));
+                    _editor->SetSelectionAsset(AssetTypesDB::Get()._assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
                 }
             }
 

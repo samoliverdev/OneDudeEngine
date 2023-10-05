@@ -1,20 +1,20 @@
 #include "CoreModulesStartup.h"
+#include <filesystem>
 
 namespace OD{
 
 void CoreModulesStartup(){
     //LogInfo("CoreModulesStartup");
 
-    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const char* path){
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){
         return AssetManager::Get().LoadTexture2D(path);
     });
     
-    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const char* path){
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){
         return AssetManager::Get().LoadTexture2D(path);
     });
 
-    AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const char* path){
-        LogInfo("FullPath: %s", path);
+    AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){
         return AssetManager::Get().LoadMaterial(path);
     });
 

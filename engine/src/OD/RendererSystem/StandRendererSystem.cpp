@@ -420,7 +420,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
         //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
     }
-    //LogInfo("GroupsInstancing count: %zd", groupsInstancing.size());
+    //LogInfo("renderTargetOpaquesInstancing count: %zd", renderTargetOpaquesInstancing.size());
 
     // --------- Render Opaques --------- 
     for(auto i: renderTargetsOpaques){
@@ -430,6 +430,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
         }
     }
+    //LogInfo("renderTargetsOpaques count: %zd", renderTargetsOpaques.size());
     
     // --------- Render Blends --------- 
     Renderer::SetCullFace(CullFace::NONE);

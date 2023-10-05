@@ -142,6 +142,7 @@ void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
     tris += mesh._indiceCount;
     
     shader.Bind();
+    shader.SetFloat("useInstancing", 0);
     shader.SetMatrix4("model", modelMatrix);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);

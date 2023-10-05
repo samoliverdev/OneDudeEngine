@@ -17,8 +17,7 @@ namespace OD{
 class AssetTypesDB{
 public:
     struct AssetFuncs{
-        std::function<Ref<Asset>(const char*)> CreateFromFile;
-        //Ref<Asset> (*CreateFromFile)(const char*);
+        std::function<Ref<Asset>(const std::string&)> CreateFromFile;
     };
 
     template<typename T>
@@ -35,7 +34,7 @@ public:
     }
 
     template<typename T>
-    void RegisterAssetType(std::string fileExtension, std::function<Ref<Asset>(const char*)> createFromFile){
+    void RegisterAssetType(std::string fileExtension, std::function<Ref<Asset>(const std::string&)> createFromFile){
         Assert(_assetFuncs.find(fileExtension) == _assetFuncs.end());
 
         AssetFuncs funcs;
@@ -78,10 +77,7 @@ public:
         _materials.clear();
     }
 
-    inline static AssetManager& Get(){
-        static AssetManager global;
-        return global;
-    }
+    static AssetManager& Get();
 
 private:
     std::unordered_map<std::string, Ref<Mesh>> _meshs;
