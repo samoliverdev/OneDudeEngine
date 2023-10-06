@@ -37,6 +37,7 @@ add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/assimp)
 add_subdirectory(engine/vendor/bullet3)
 add_subdirectory(engine/vendor/yaml-cpp)
+add_subdirectory(engine/vendor/soloud)
 
 #----------------Engine------------------
 project(engine)
@@ -61,6 +62,7 @@ target_include_directories(engine PUBLIC
     engine/vendor/assimp/include/
     engine/vendor/bullet3/src
     engine/vendor/entt/
+    engine/vendor/soloud/include/
     engine/vendor/yaml-cpp/include/
     engine/src/
 )
@@ -69,6 +71,7 @@ target_link_libraries(engine PUBLIC
     glfw 
     assimp
     yaml-cpp
+    soloud
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
 )
 
@@ -78,5 +81,5 @@ project(game)
 file(GLOB_RECURSE GAME_SOURCE_FILES game/src/*.cpp)
 add_executable(game ${GAME_SOURCE_FILES})
 target_include_directories(game PUBLIC engine/src/)
-target_include_directories(game PRIVATE game/src/)
+target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)

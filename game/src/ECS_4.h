@@ -5,6 +5,12 @@
 #include "CameraMovement.h"
 #include <assert.h>
 #include "Ultis.h"
+#include <soloud.h>
+#include <soloud_wav.h>
+#include <soloud_speech.h>
+#include <soloud_thread.h>
+#include <thread>
+#include <future>
 
 using namespace OD;
 
@@ -33,6 +39,11 @@ struct ECS_4: public OD::Module {
 
     Transform gismoTransform;
 
+    std::future<void> playMusic;
+
+    SoLoud::Soloud soloud;
+    SoLoud::Wav sample;
+
     void AddCharacter(Vector3 pos){
         Entity character = scene->AddEntity("Character");
         character.GetComponent<TransformComponent>().localPosition(pos);
@@ -59,6 +70,11 @@ struct ECS_4: public OD::Module {
 
     void OnInit() override {
         LogInfo("Game Init");
+
+        soloud.init();
+    
+        sample.load("res/sounds/2ne1_2.mp3");
+        soloud.play(sample);
 
         Application::vsync(false);
 
