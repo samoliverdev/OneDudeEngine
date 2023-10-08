@@ -148,6 +148,11 @@ Framebuffer::~Framebuffer(){
     //Destroy();
 }
 
+void Framebuffer::Reload(FrameBufferSpecification specification){
+    _specification = specification;
+    Invalidate();
+}
+
 bool Framebuffer::IsValid(){
     return _framebuffer > 0;
 }

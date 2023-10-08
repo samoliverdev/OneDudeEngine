@@ -21,17 +21,7 @@ in vec3 pos;
 
 out vec4 fragColor;
 
-vec4 color1 = vec4(0.4, 0.96, 1.0, 0.92);
-vec4 color2 = vec4(0.0, 0.24, 1.0, 1.0);
-
-float Remap(float In, vec2 InMinMax, vec2 OutMinMax){
-    return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
-}
-
 void main() {
     fragColor = texture(mainTex, pos);
-
-    float t = Remap(normalize(pos).y, vec2(-1,1), vec2(0, 1));
-    fragColor = mix(color1, color2, t);
 }
 #endif

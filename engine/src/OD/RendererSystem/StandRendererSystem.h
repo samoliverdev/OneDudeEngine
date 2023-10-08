@@ -18,6 +18,7 @@ namespace OD{
 class PostProcessingPass{
 public:
     virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
+    bool enable = true;
 };
 
 struct StandRendererSystem: public OD::System{
@@ -61,7 +62,7 @@ private:
 
     std::vector<PostProcessingPass*> _ppPass;
 
-    Ref<Shader> _skyboxShader;
+    //Ref<Shader> _skyboxShader;
     Mesh _skyboxMesh;
     Ref<Cubemap> _skyboxCubemap;
 

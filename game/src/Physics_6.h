@@ -52,7 +52,7 @@ struct TestC{
 struct PhysicsCubeS: public Script{
     float t;
 
-    void Serialize(Archive& s){
+    void Serialize(Archive& s) override{
         s.name("PhysicsCubeS");
         s.Add(&t, "t");
     }
@@ -138,7 +138,7 @@ struct Physics_6: OD::Module {
         Entity env = scene->AddEntity("Env");
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
 
-        Entity& light = scene->AddEntity("Light");
+        Entity light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(1,1,1);
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));

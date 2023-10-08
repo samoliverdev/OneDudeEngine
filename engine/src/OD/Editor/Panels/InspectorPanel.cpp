@@ -219,10 +219,18 @@ void InspectorPanel::DrawComponents(Entity entity){
     DrawComponent<InfoComponent>(entity, "Info", [&](Entity e){
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
+        
         strcpy_s(buffer, sizeof(buffer), info.name.c_str());
         if(ImGui::InputText("Name", buffer, sizeof(buffer))){
             info.name = std::string(buffer);
         }
+
+        strcpy_s(buffer, sizeof(buffer), info.tag.c_str());
+        if(ImGui::InputText("Tag", buffer, sizeof(buffer))){
+            info.tag = std::string(buffer);
+        }
+
+        ImGui::Text("Id: %zd", e.id());
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){

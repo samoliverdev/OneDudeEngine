@@ -27,6 +27,11 @@ public:
     
     static inline Editor* Get(){ return instance; }
 
+    inline void SetSelectionAsset(Ref<Asset> asset){
+        _selectionAsset = asset;
+        _selectionOnAsset = true;
+    }
+
 private:
     static Editor* instance;
 
@@ -53,11 +58,6 @@ private:
     inline void SetSelectionEntity(Entity entity){
         _selectionEntity = entity;
         _selectionOnAsset = false;
-    }
-
-    inline void SetSelectionAsset(Ref<Asset> asset){
-        _selectionAsset = asset;
-        _selectionOnAsset = true;
     }
 
     inline void UnselectAll(){

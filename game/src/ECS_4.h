@@ -73,8 +73,8 @@ struct ECS_4: public OD::Module {
 
         soloud.init();
     
-        sample.load("res/sounds/2ne1_2.mp3");
-        soloud.play(sample);
+        /*sample.load("res/sounds/2ne1_2.mp3");
+        soloud.play(sample);*/
 
         Application::vsync(false);
 

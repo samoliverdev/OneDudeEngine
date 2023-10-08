@@ -31,6 +31,7 @@ public:
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
 
+    void Reload(FrameBufferSpecification specification);
     void Resize(int width, int height);
     bool IsValid();
     void Destroy();
@@ -47,6 +48,7 @@ public:
     inline int height(){ return _specification.height; }
 
     inline unsigned int renderId(){ return _framebuffer; }
+    inline FrameBufferSpecification specification(){ return _specification; }
 
 private:
     FrameBufferSpecification _specification;

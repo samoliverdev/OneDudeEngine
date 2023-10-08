@@ -11,7 +11,7 @@ public:
     virtual void OnGui(){}
 
 protected:
-    std::string _path;
+    std::string _path = "Memory";
 };
 
 }

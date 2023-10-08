@@ -51,6 +51,7 @@ void main(){
 uniform vec4 color = vec4(1, 1, 1, 1);
 uniform sampler2D mainTex;
 uniform sampler2D shadowMap;
+uniform float shadowBias = 0.001;
 
 //Lights
 uniform vec3 ambientLight = vec3(0.1, 0.1, 0.1);
@@ -117,8 +118,8 @@ float ShadowCalculation(vec4 fragPosLightSpace){
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     float bias = max((0.05/32) * (1.0 - dot(fsIn.worldNormal, directionalLightDir)), (0.005/16));
-    bias = 0.001/2;
-    bias = 0;
+    bias = shadowBias;
+    //bias = 0;
     
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
     //shadow = 0;

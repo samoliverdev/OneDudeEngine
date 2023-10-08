@@ -65,6 +65,15 @@ void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     _isDirt = true;
 }
 
+void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
+    MaterialMap& map = _maps[name];
+
+    map.type = MaterialMap::Type::Cubemap;
+    map.cubemap = tex;
+    map.isDirt = true;
+    _isDirt = true;
+}
+
 void Material::UpdateUniforms(){
     Assert(_shader != nullptr);
 
@@ -96,6 +105,10 @@ void Material::UpdateUniforms(){
         if(map.type == MaterialMap::Type::Texture){
             _shader->SetTexture2D(i.first.c_str(), *i.second.texture, curTex);
             //i.second.texture->Bind(curTex, i.first.c_str(), *shader);
+            curTex += 1;
+        }
+        if(map.type == MaterialMap::Type::Cubemap){
+            _shader->SetCubemap(i.first.c_str(), *i.second.cubemap, curTex);
             curTex += 1;
         }
     }
@@ -180,7 +193,7 @@ void Material::OnGui(){
         }
     }
 
-    if(ImGui::Checkbox("enableInstancing", &_enableInstancing)){
+    if(_shader != nullptr && _shader->supportInstancing() && ImGui::Checkbox("enableInstancing", &_enableInstancing)){
         toSave = true;
     }
 
@@ -193,7 +206,7 @@ void Material::OnGui(){
 
         std::string supportInstancing = "false";
         if(_shader != nullptr && _shader->supportInstancing() == true) supportInstancing = "true";
-        ImGui::Text("SupportInstancing: %s", supportInstancing);
+        ImGui::Text("SupportInstancing: %s", supportInstancing.c_str());
 
         ImGui::TreePop();
     }
@@ -207,7 +220,7 @@ void Material::Save(std::string& path){
     out << YAML::BeginMap;
     out << YAML::Key << "Shader" << YAML::Value << _shader->path();
     out << YAML::Key << "enableInstancing" << YAML::Value << _enableInstancing;
-    out << YAML::Key << "Maps" << YAML::BeginSeq;
+    out << YAML::Key << "Maps" << YAML::Value << YAML::BeginSeq;
 
     for(auto i: _maps){
         const std::string& name = i.first;

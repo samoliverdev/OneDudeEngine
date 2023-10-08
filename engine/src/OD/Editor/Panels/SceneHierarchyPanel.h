@@ -15,6 +15,8 @@ private:
     Scene* _scene;
     Editor* _editor;
 
+    Entity toDestroy;
+
     void DrawEntityNode(Entity entity, bool root);
 };
 

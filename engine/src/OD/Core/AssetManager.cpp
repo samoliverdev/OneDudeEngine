@@ -43,7 +43,8 @@ Ref<Shader> AssetManager::LoadShaderFromFile(const std::string& filePath){
 Ref<Material> AssetManager::LoadMaterial(const std::string &path){
     if(_materials.count(path)) return _materials[path];
 
-    LogInfo("LoadMaterial: %s Hash: %zd Size: %zd", path.c_str(), std::hash<std::string>{}(path), path.size());
+    //LogInfo("LoadMaterial: %s Hash: %zd Size: %zd", path.c_str(), std::hash<std::string>{}(path), path.size());
+    LogInfo("LoadMaterial: %s", path.c_str());
 
     Ref<Material> material = Material::CreateFromFile(path);
     _materials[path] = material;

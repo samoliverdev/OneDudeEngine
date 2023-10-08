@@ -5,7 +5,7 @@
 namespace OD{
 
 void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
-    LogInfo("Script Name: %s", name.c_str());
+    //LogInfo("Script Name: %s", name.c_str());
 
     out << YAML::Key << name;
     out << YAML::BeginMap;
@@ -50,7 +50,8 @@ void LoadSerializer(Archive& s, YAML::Node& node){
             *i.stringValue = node[i.name].as<std::string>();
         }
         if(i.type == ArchiveValue::Type::T){
-            LoadSerializer(i.children[0], node[i.name]);
+            YAML::Node children = node[i.name];
+            LoadSerializer(i.children[0], children);
         }
     }
 }

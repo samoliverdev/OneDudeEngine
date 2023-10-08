@@ -25,10 +25,6 @@ struct System;
 struct Scene;
 
 class TransformComponent: public Transform{
-    //static void Serialize(YAML::Emitter& out, Entity& e);
-    //static void Deserialize(YAML::Node& in, Entity& e);
-    static void OnGui(Entity& e);
-    
     friend struct Scene;
 
 public:
@@ -60,13 +56,10 @@ private:
 };
 
 struct InfoComponent{
-    //static void Serialize(YAML::Emitter& out, Entity& e);
-    //static void Deserialize(YAML::Node& in, Entity& e);
-    static void OnGui(Entity& e);
-    
     friend struct Scene;
 
     std::string name = "Entity";
+    std::string tag =  "";
 
 private:
     bool _active;

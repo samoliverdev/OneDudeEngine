@@ -47,6 +47,7 @@ class ToneMappingPP: public PostProcessingPass{
 public:
     ToneMappingPP(){
         _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/ToneMappingPP.glsl");
+        enable = false;
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
@@ -114,19 +115,7 @@ StandRendererSystem::StandRendererSystem(){
     _pp1 = new Framebuffer(framebufferSpecification);
     _pp2 = new Framebuffer(framebufferSpecification);
 
-    _skyboxShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxCubemap.glsl");
     _skyboxMesh = Mesh::SkyboxCube();
-    _skyboxCubemap = Cubemap::CreateFromFile(
-        "res/Builtins/Textures/Skybox/right.jpg",
-        "res/Builtins/Textures/Skybox/left.jpg",
-        "res/Builtins/Textures/Skybox/top.jpg",
-        "res/Builtins/Textures/Skybox/bottom.jpg",
-        "res/Builtins/Textures/Skybox/front.jpg",
-        "res/Builtins/Textures/Skybox/back.jpg"
-    );
-
-    //_ppPass.push_back(new TestPP1(0));
-    //_ppPass.push_back(new TestPP1(3));
 
     //_ppPass.push_back(new GameCorrectionPP());
     _ppPass.push_back(new ToneMappingPP());
@@ -150,7 +139,33 @@ void StandRendererSystem::Update(){
     environmentSettings = EnvironmentSettings();
     auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
     for(auto entity: _view){
-        environmentSettings = _view.get<EnvironmentComponent>(entity).settings;
+        EnvironmentComponent& environmentComponent = _view.get<EnvironmentComponent>(entity);
+        if(environmentComponent._inited == false) environmentComponent.Init();
+        
+        if(environmentComponent.settings.msaaQuality != environmentSettings.msaaQuality && environmentSettings.antiAliasing != environmentSettings.antiAliasing){
+            FrameBufferSpecification fs1 = _finalColor->specification();
+            fs1.sample = 1;
+            if(environmentComponent.settings.antiAliasing == AntiAliasing::MSAA){
+                fs1.sample = MSAAQualityLookup[(int)environmentComponent.settings.msaaQuality];
+            }
+            _finalColor->Reload(fs1);
+        }
+
+        if(environmentComponent.settings.shadowQuality != environmentSettings.shadowQuality){
+            int size = ShadowQualityLookup[(int)environmentComponent.settings.shadowQuality];
+            _shadowMap->Resize(size, size);
+        }
+
+        if(environmentComponent.settings.colorCorrection != environmentSettings.colorCorrection){
+            if(environmentComponent.settings.colorCorrection == ColorCorrection::ColorCorrection){
+                _ppPass[_ppPass.size()-1]->enable = true;
+            } else {
+                _ppPass[_ppPass.size()-1]->enable = false;
+            }
+        }
+
+        environmentSettings = environmentComponent.settings;
+
         break;
     }
 
@@ -186,7 +201,6 @@ void StandRendererSystem::Update(){
     int height = Application::screenHeight();
 
     if(_outFramebuffer != nullptr){
-        //_outFramebuffer->Bind();
         width = _outFramebuffer->width();
         height = _outFramebuffer->height();
     }
@@ -194,7 +208,6 @@ void StandRendererSystem::Update(){
     _finalColor->Resize(width, height);
     _pp1->Resize(width, height);
     _pp2->Resize(width, height);
-    ////_finalColor2->Resize(width, height);
     
     _finalColor->Bind();
 
@@ -206,13 +219,14 @@ void StandRendererSystem::Update(){
 
         c.UpdateCameraData(t, width, height);
         if(c.isMain){
-            RenderScene(c.camera(), true, _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position());
+            Camera cam = c.camera();
+            RenderScene(cam, true, _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position());
             break;
         }
     }
     scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
-    //LogInfo("ReadPixel(1): %d",_finalColor->ReadPixel(1, 50, 50));
+    //LogInfo("ReadPixel(1): %d", _finalColor->ReadPixel(1, 50, 50));
 
     Renderer::BlitFramebuffer(_finalColor, _pp1);
     Renderer::BlitFramebuffer(_finalColor, _objectsId, 1);
@@ -223,22 +237,29 @@ void StandRendererSystem::Update(){
 
     for(auto i: _ppPass){
         finalFramebuffer = step == false ? _pp2 : _pp1;
-        i->OnRenderImage(
-            step == false ? _pp1 : _pp2, 
-            step == false ? _pp2 : _pp1
-        );
+
+        if(i->enable){
+            i->OnRenderImage(
+                step == false ? _pp1 : _pp2, 
+                step == false ? _pp2 : _pp1
+            );
+        } else {
+            Renderer::BlitFramebuffer(
+                step == false ? _pp1 : _pp2,
+                step == false ? _pp2 : _pp1
+            );
+        }
+
         step = !step;
     }
 
     if(_outFramebuffer != nullptr){
         Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
-        //Renderer::BlitQuadPostProcessing(finalFramebuffer, _finalColor2, *_blitShader);
     } else {
         Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
     }
 
     _finalColor->Unbind();
-    //_finalColor2->Unbind();
     _pp1->Unbind();
     _pp2->Unbind();
     if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
@@ -251,6 +272,7 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
 
     shader.SetVector3("ambientLight", environmentSettings.ambient);
     shader.SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
+    shader.SetFloat("shadowBias", environmentSettings.shadowBias);
     shader.SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
 
     std::vector<EntityId> pointLights;
@@ -322,7 +344,7 @@ void StandRendererSystem::RenderSceneShadow(LightComponent& light, TransformComp
     _lightSpaceMatrix = lightProjection * lightView; 
 
     Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(CullFace::FRONT);
+    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 
     auto view = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
@@ -354,19 +376,24 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     }
 
     // --------- Clean --------- 
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    Renderer::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
 
     // --------- Render Sky --------- 
-    //Renderer::SetDepthTest(DepthTest::ALWAYS);
-    Renderer::SetCullFace(CullFace::BACK);
-    Renderer::SetDepthMask(false);
-    _skyboxShader->Bind();
-    _skyboxShader->SetCubemap("mainTex", *_skyboxCubemap, 0);
-    _skyboxShader->SetMatrix4("projection", Renderer::GetCamera().projection);
-    Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
-    _skyboxShader->SetMatrix4("view", skyboxView);
-    Renderer::DrawMeshRaw(_skyboxMesh);
-    Renderer::SetDepthMask(true);
+    if(environmentSettings.sky != nullptr){
+        Assert(environmentSettings.sky->shader() != nullptr);
+
+        environmentSettings.sky->UpdateUniforms();
+
+        Renderer::SetCullFace(CullFace::BACK);
+        Renderer::SetDepthMask(false);
+        environmentSettings.sky->shader()->Bind();
+        //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
+        environmentSettings.sky->shader()->SetMatrix4("projection", Renderer::GetCamera().projection);
+        Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
+        environmentSettings.sky->shader()->SetMatrix4("view", skyboxView);
+        Renderer::DrawMeshRaw(_skyboxMesh);
+        Renderer::SetDepthMask(true);
+    }
 
     // --------- Render Targets --------- 
     std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 

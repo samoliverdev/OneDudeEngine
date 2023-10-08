@@ -22,14 +22,14 @@ struct Data{
     enum class Type{Int, Float};
 
     Type type;
-    char* name;
+    const char* name;
 
     float* fValue;
     int* iValue;
 };
 
 struct Datas{
-    void AddIntMember(int* value, char* name){
+    void AddIntMember(int* value, const char* name){
         Data d;
         d.type = Data::Type::Int;
         d.iValue = value;
@@ -37,7 +37,7 @@ struct Datas{
         datas.push_back(d);
     }
 
-    void AddFloatMember(float* value, char* name){
+    void AddFloatMember(float* value, const char* name){
         Data d;
         d.type = Data::Type::Float;
         d.fValue = value;

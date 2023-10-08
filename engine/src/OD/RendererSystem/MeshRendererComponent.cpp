@@ -1,5 +1,6 @@
 #include "MeshRendererComponent.h"
 #include "StandRendererSystem.h"
+#include "OD/Utils/ImGuiCustomDraw.h"
 #include <filesystem>
 
 namespace OD{
@@ -12,7 +13,7 @@ void MeshRendererComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "_model" << YAML::Value << (mesh.model() == nullptr ? std::string("") : mesh.model()->path());
     out << YAML::Key << "_subMeshIndex" << YAML::Value << mesh._subMeshIndex;
 
-    out << YAML::Key << "_materialsOverride" << YAML::BeginSeq;
+    out << YAML::Key << "_materialsOverride" << YAML::Value << YAML::BeginSeq;
     for(auto i: mesh._materialsOverride){
         out << YAML::BeginMap;
         out << YAML::Key << "path" << YAML::Value << (i == nullptr ? std::string("") :  i->path());
@@ -68,7 +69,7 @@ void MeshRendererComponent::OnGui(Entity& e){
         int index = 0;
         for(auto i: mesh._materialsOverride){
             if(ImGui::TreeNode(std::to_string(index).c_str())){
-                ImGui::BeginGroup();
+                /*ImGui::BeginGroup();
                 if(i == nullptr)
                     ImGui::Text("None");
                 else 
@@ -78,16 +79,18 @@ void MeshRendererComponent::OnGui(Entity& e){
                 if(ImGui::SmallButton("X")){
                     mesh._materialsOverride[index] = nullptr;
                 }
-                ImGui::EndGroup();
+                ImGui::EndGroup();*/
+
+                ImGui::DrawMaterialAsset("override", mesh._materialsOverride[index]);
     
                 ImGui::TreePop();
             }
 
-            ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
+            /*ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
                 if(path->string().empty() == false && path->extension() == ".material"){
                     mesh._materialsOverride[index] = AssetManager::Get().LoadMaterial(path->string());
                 }
-            });
+            });*/
 
             index += 1;
         }

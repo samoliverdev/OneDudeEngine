@@ -9,12 +9,13 @@ namespace OD{
 
 struct MaterialMap{
     enum class Type{
-        Texture, Float, Vector2, Vector3, Vector4 
+        Texture, Float, Vector2, Vector3, Vector4, Cubemap 
     };
 
     Type type;
 
     Ref<Texture2D> texture;
+    Ref<Cubemap> cubemap;
     
     Vector4 vector;
     bool vectorIsColor = false;
@@ -47,6 +48,7 @@ public:
     void SetVector3(const char* name, Vector3 value, bool isColor = false);
     void SetVector4(const char* name, Vector4 value, bool isColor = false);
     void SetTexture(const char* name, Ref<Texture2D> tex);
+    void SetCubemap(const char* name, Ref<Cubemap> tex);
 
     void UpdateUniforms();
 

@@ -19,12 +19,35 @@ void SceneHierarchyPanel::OnGui(){
     if(_scene == nullptr) return;
 
     if(ImGui::Begin("Scene Hierarchy")){
-        auto view = _scene->GetRegistry().view<TransformComponent, InfoComponent>();
-        for(auto e: view){
+        /*for(auto e: _scene->GetRegistry().view<TransformComponent, InfoComponent>()){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
-        }
-    
+        }*/
+
+        /*auto v = _scene->GetRegistry().view<entt::entity>();
+        for(auto it = v.rbegin(), last = v.rend(); it != last; ++it){
+            Entity _e(*it, _scene);
+            DrawEntityNode(_e, true);
+        }*/
+        
+        /*auto v = _scene->GetRegistry().view<entt::entity>();
+        std::for_each(v.rbegin(), v.rend(), [&](auto e){
+            Entity _e(e, _scene);
+            DrawEntityNode(_e, true);
+        });*/
+
+        _scene->GetRegistry().each([&](auto e){
+            Entity _e(e, _scene);
+            DrawEntityNode(_e, true);
+        });
+
+        /*if(toDestroy.IsValid()){
+            _scene->DestroyEntity(toDestroy.id());
+            _editor->SetSelectionEntity(Entity());
+            toDestroy = Entity();
+            return;
+        }*/
+
         if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
             //_editor->_selectionEntity = Entity();
             _editor->SetSelectionEntity(Entity());
@@ -72,6 +95,8 @@ void SceneHierarchyPanel::OnGui(){
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
+    Assert(entity.IsValid());
+
     TransformComponent& transform = entity.GetComponent<TransformComponent>();
     InfoComponent& info = entity.GetComponent<InfoComponent>();
 
@@ -128,10 +153,12 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(entityDeleted){
+        LogInfo("To Destroy Entity: %d", entity.id());
+
         _scene->DestroyEntity(entity.id());
-        //_editor->_selectionEntity = Entity();
         _editor->SetSelectionEntity(Entity());
-        //if(_selectionContext == entity) _selectionContext = Entity();
+
+        //toDestroy = entity;
     } else if(children.IsValid()){
         _scene->SetParent(entity.id(), children.id());
     }

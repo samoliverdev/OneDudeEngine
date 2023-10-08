@@ -9,29 +9,6 @@
 namespace OD{
 
 #pragma region TransformComponent
-/*void TransformComponent::Serialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "TransformComponent";
-    out << YAML::BeginMap;
-
-    auto& transform = e.GetComponent<TransformComponent>();
-    out << YAML::Key << "localPosition" << YAML::Value << transform.localPosition();
-    out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
-    out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
-
-    out << YAML::EndMap;
-}
-
-void TransformComponent::Deserialize(YAML::Node& in, Entity& e){
-    auto& tc = e.GetComponent<TransformComponent>();
-    tc.localPosition(in["localPosition"].as<Vector3>());
-    tc.localRotation(in["localRotation"].as<Quaternion>());
-    tc.localScale(in["localScale"].as<Vector3>());
-}
-*/
-void TransformComponent::OnGui(Entity& e){
-    
-}
-
 Matrix4 TransformComponent::globalModelMatrix(){
     if(_hasParent){
         TransformComponent& parent = _registry->get<TransformComponent>(_parent);
@@ -42,26 +19,26 @@ Matrix4 TransformComponent::globalModelMatrix(){
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = globalModelMatrix();
-    return matrix4.inverse() * Vector4(dir.x, dir.y, dir.z, 0);
-    //return matrix4.inverse().MultiplyVector(dir);
+    //return matrix4.inverse() * Vector4(dir.x, dir.y, dir.z, 0);
+    return matrix4.inverse().MultiplyVector(dir);
 }
 
 Vector3 TransformComponent::TransformDirection(Vector3 dir){
     Matrix4 matrix4 = globalModelMatrix();
-    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
-    //return matrix4.MultiplyVector(dir);
+    //return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    return matrix4.MultiplyVector(dir);
 }
 
 Vector3 TransformComponent::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = globalModelMatrix();
-    return matrix4.inverse() * Vector4(point.x, point.y, point.z, 1);
-    //return matrix4.inverse().MultiplyPoint(point);
+    //return matrix4.inverse() * Vector4(point.x, point.y, point.z, 1);
+    return matrix4.inverse().MultiplyPoint(point);
 }
 
 Vector3 TransformComponent::TransformPoint(Vector3 point){
     Matrix4 matrix4 = globalModelMatrix();
-    return matrix4 * Vector4(point.x, point.y, point.z, 1);
-    //return matrix4.MultiplyPoint(point);
+    //return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    return matrix4.MultiplyPoint(point);
 }
 
 //Quaternion InverseTransformRot(Quaternion world, Quaternion rot){
@@ -107,24 +84,6 @@ void TransformComponent::rotation(Quaternion rotation){
 #pragma endregion
 
 #pragma region InfoComponent
-/*void InfoComponent::Serialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "InfoComponent";
-    out << YAML::BeginMap;
-
-    auto& info = e.GetComponent<InfoComponent>();
-    out << YAML::Key << "name" << YAML::Value << info.name;
-    
-    out << YAML::EndMap;
-}
-
-void InfoComponent::Deserialize(YAML::Node& in, Entity& e){
-    auto& tc = e.GetComponent<InfoComponent>();
-    tc.name = in["name"].as<std::string>();
-}
-*/
-void InfoComponent::OnGui(Entity& e){
-    
-}
 #pragma endregion
 
 #pragma region Scene
@@ -175,7 +134,8 @@ void Scene::LoadSerializer(Archive& s, YAML::Node& node){
             *i.stringValue = node[i.name].as<std::string>();
         }
         if(i.type == ArchiveValue::Type::T){
-            LoadSerializer(i.children[0], node[i.name]);
+            YAML::Node n = node[i.name];
+            LoadSerializer(i.children[0], n);
         }
         /*if(i.type == ArchiveValue::Type::TList){
             for(auto j: node[i.name]){
@@ -194,9 +154,10 @@ void Scene::TransformSerialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
     out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
 
-    out << YAML::Key << "Children" << YAML::BeginSeq;
+    out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
     for(auto i: transform._children){
-        SerializeEntity(out, Entity(i, this));
+        Entity entity = Entity(i, this);
+        SerializeEntity(out, entity);
     }
     out << YAML::EndSeq;
     
@@ -315,14 +276,35 @@ void Scene::Save(const char* path){
 
     out << YAML::BeginMap;
     out << YAML::Key << "Scene" << YAML::Value << "Untitled";
-    out << YAML::Key << "Entities" << YAML::BeginSeq;
-    _registry.view<TransformComponent, InfoComponent>().each([&](auto entityId, auto& transform, auto& info){
+    out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
+
+    /*_registry.view<TransformComponent, InfoComponent>().each([&](auto entityId, auto& transform, auto& info){
         Entity e(entityId, this);
         if(e.IsValid() == false) return;
         if(transform.hasParent()) return;
 
         SerializeEntity(out, e);
-    });
+    });*/
+
+    /*_registry.each([&](auto entityId){
+        Entity e(entityId, this);
+        if(e.IsValid() == false) return;
+        TransformComponent& transform = e.GetComponent<TransformComponent>();
+        if(transform.hasParent()) return;
+
+        SerializeEntity(out, e);
+    });*/
+
+    auto v = _registry.view<entt::entity>();
+    for(auto it = v.rbegin(); it != v.rend(); ++it){
+        Entity e(*it, this);
+        if(e.IsValid() == false) return;
+        TransformComponent& transform = e.GetComponent<TransformComponent>();
+        if(transform.hasParent()) return;
+
+        SerializeEntity(out, e);
+    }
+
     out << YAML::EndSeq;
     out << YAML::EndMap;
 

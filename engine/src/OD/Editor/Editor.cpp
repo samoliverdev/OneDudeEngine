@@ -22,6 +22,7 @@ void Editor::OnInit(){
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
     _framebuffer = new Framebuffer(framebufferSpecification);
+    _framebuffer->Invalidate();
 
     _viewportSize.x = _framebuffer->width();
     _viewportSize.y = _framebuffer->height();
@@ -49,7 +50,8 @@ void Editor::OnUpdate(float deltaTime){
     }
 
     SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
-    if(_framebuffer->IsValid() && _viewportSize.x != 0 && _viewportSize.y != 0) _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+    //if(_framebuffer->IsValid() && _viewportSize.x != 0 && _viewportSize.y != 0) _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+    _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
 
     
     /*if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
@@ -80,6 +82,8 @@ void Editor::PlayScene(){
 }
 
 void Editor::StopScene(){
+    //if(SceneManager::Get().activeScene() != nullptr && SceneManager::Get().activeScene()->running() == false) return;
+
     Scene* scene = SceneManager::Get().NewScene();
     scene->Load(_curScenePath.empty() ? "res/temp.scene" : _curScenePath.c_str());
     UnselectAll();
