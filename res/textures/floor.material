@@ -1,4 +1,4 @@
-Shader: res/Builtins/Shaders/StandDiffuse.glsl
+Shader: res/Builtins\Shaders\StandDiffuse.glsl
 enableInstancing: true
 Maps:
   - Name: mainTex
@@ -7,9 +7,21 @@ Maps:
     Vector: [0, 0, 0, 0]
     Value: 0
     vectorIsColor: false
+  - Name: normal
+    Type: 0
+    Texture: res/Builtins/Textures/White.jpg
+    Vector: [0, 0, 0, 0]
+    Value: 0
+    vectorIsColor: false
   - Name: color
     Type: 4
     Texture: ""
     Vector: [1, 1, 1, 1]
     Value: 0
+    vectorIsColor: true
+  - Name: shininess
+    Type: 1
+    Texture: ""
+    Vector: [0, 0, 0, 0]
+    Value: 1
     vectorIsColor: false

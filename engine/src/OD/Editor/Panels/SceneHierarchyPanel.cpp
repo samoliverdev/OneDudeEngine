@@ -36,7 +36,7 @@ void SceneHierarchyPanel::OnGui(){
             DrawEntityNode(_e, true);
         });*/
 
-        _scene->GetRegistry().each([&](auto e){
+        _scene->GetRegistry().view<entt::entity>().each([&](auto e){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
         });

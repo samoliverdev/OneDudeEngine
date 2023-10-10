@@ -28,7 +28,7 @@ struct EnvironmentSettings{
 
     ShadowQuality shadowQuality = ShadowQuality::Ultra;
     float shadowBias = 0.0001f;
-    bool shadowBackFaceRender = false;
+    bool shadowBackFaceRender = true;
 
     AntiAliasing antiAliasing;
     MSAAQuality msaaQuality = MSAAQuality::MSAA_4;

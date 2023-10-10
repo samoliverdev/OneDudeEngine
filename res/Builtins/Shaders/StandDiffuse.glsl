@@ -7,6 +7,7 @@
 Texture2D mainTex White
 Texture2D normal White
 Color4 color
+Float shininess 0
 #pragma EndProperties
 
 #if defined(VERTEX)
@@ -53,18 +54,32 @@ uniform sampler2D mainTex;
 uniform sampler2D shadowMap;
 uniform float shadowBias = 0.001;
 
+uniform float shininess = 0;
+uniform vec3 viewPos;
+
 //Lights
 uniform vec3 ambientLight = vec3(0.1, 0.1, 0.1);
 uniform vec3 directionalLightDir = vec3(45, -125, 0.0);
 uniform vec3 directionalLightColor = vec3(1, 1, 1);
+uniform float directionalLightspecular = 1;
 
-struct PointLight{
-    vec3 position;
+struct Light{
+    float type;
+    vec3 pos;
+    vec3 dir;
+
     vec3 color;
+    float specular;
+    float falloff;
+
     float radius;
+
+    float coneAngleOuter;
+    float coneAngleInner;
 };
-#define NR_POINT_LIGHTS 4  
-uniform PointLight pointLights[NR_POINT_LIGHTS];
+#define MAX_LIGHTS 12
+uniform Light lights[MAX_LIGHTS];
+uniform int lightsCount = 0;
 
 in VsOut{
     vec3 pos;
@@ -79,10 +94,22 @@ layout (location = 0) out vec4 fragColor;
 layout (location = 1) out int fragColor2;
 
 vec3 CalcDirectionalLight(){
-    vec3 norm = normalize(fsIn.worldNormal);
     vec3 lightDir = normalize(directionalLightDir);
-    float diff = max(dot(norm, lightDir), 0.0);
-    return directionalLightColor * diff;
+    vec3 viewDir = normalize(viewPos - fsIn.worldPos);
+    vec3 halfDir = normalize(lightDir + viewDir);
+    vec3 normal = normalize(fsIn.worldNormal);
+
+    float attenuation = 1;
+
+    float spec = pow(max(dot(normal, halfDir), 0.0), shininess) * directionalLightspecular;
+    vec3 specular = directionalLightColor * spec;
+    specular *= attenuation;
+
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = directionalLightColor * diff;
+    diffuse *= attenuation;
+
+    return diffuse + specular;
 }
 
 float CalcPointLightAttenuation(vec3 pos, vec3 lightPos, float lightRadius){
@@ -95,16 +122,44 @@ float CalcPointLightAttenuation(vec3 pos, vec3 lightPos, float lightRadius){
     return att;
 }
 
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos){
-    vec3 lightDir = normalize(light.position - fragPos);
-    // diffuse shading
+vec3 CalcPointLight(Light light, vec3 normal, vec3 fragPos){
+    vec3 lightDir   = normalize(light.pos - fragPos);
+    vec3 viewDir    = normalize(viewPos - fragPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+
+    float attenuation = CalcPointLightAttenuation(fragPos, light.pos, light.radius);
+
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess) * light.specular;
+    vec3 specular = light.color * spec;
+    specular *= attenuation;
+
     float diff = max(dot(normal, lightDir), 0.0);
-    // attenuation 
-    float attenuation = CalcPointLightAttenuation(fragPos, light.position, light.radius);
-    // combine results
+    vec3 diffuse = light.color * diff;
+    diffuse *= attenuation;
+
+    return diffuse + specular;
+} 
+
+vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos){
+    vec3 lightDir = normalize(light.pos - fragPos);
+    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    
+    float attenuation = CalcPointLightAttenuation(fragPos, light.pos, light.radius);
+
+    float theta = dot(-lightDir, normalize(light.dir));
+    float epsilon = light.coneAngleInner - light.coneAngleOuter;
+    attenuation *= clamp((theta - light.coneAngleOuter) / epsilon, 0.0, 1.0);  
+    
+    float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = light.color  * diff;
-    diffuse  *= attenuation;
-    return diffuse;
+    diffuse *= attenuation;
+
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess) * light.specular;
+    vec3 specular = light.color * spec;
+    specular *= attenuation;
+
+    return diffuse + specular;
 } 
 
 float ShadowCalculation(vec4 fragPosLightSpace){
@@ -122,7 +177,7 @@ float ShadowCalculation(vec4 fragPosLightSpace){
     //bias = 0;
     
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
-    //shadow = 0;
+    shadow = 0;
     
     int sampleRadius = 2;
     vec2 pixelSize = 1.0 / textureSize(shadowMap, 0);
@@ -155,8 +210,13 @@ void main() {
     vec3 lightResult = CalcDirectionalLight();
     lightResult *= (1 - shadow);
 
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        lightResult += CalcPointLight(pointLights[i], norm, fsIn.worldPos); 
+    for(int i = 0; i < lightsCount; i++){
+        if(lights[i].type <= 1){
+            lightResult += CalcPointLight(lights[i], norm, fsIn.worldPos); 
+        } else if(lights[i].type <= 2){
+            lightResult += CalcSpotLight(lights[i], norm, fsIn.worldPos); 
+        }
+    }
 
     vec3 ambient = ambientLight;
     vec3 result = (ambient + lightResult) * objectColor.rgb;
@@ -167,7 +227,6 @@ void main() {
     //result = vec3(1-shadow, 1-shadow, 1-shadow);
     fragColor = vec4(result, 1);
     //fragColor = objectColor;
-
     //float gamma = 2.2;
     //fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
 

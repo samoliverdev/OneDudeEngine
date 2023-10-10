@@ -18,8 +18,16 @@ struct LightComponent{
 
     Type type = Type::Directional;
     Vector3 color = {1,1,1};
+    
     float intensity = 1;
+    float specular = 1;
+    float falloff = 1;
+
     float radius = 5;
+
+    float coneAngleInner = 45;
+    float coneAngleOuter = 45;
+    
     bool renderShadow = true;
 };
 

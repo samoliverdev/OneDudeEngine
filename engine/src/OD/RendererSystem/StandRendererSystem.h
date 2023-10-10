@@ -66,7 +66,7 @@ private:
     Mesh _skyboxMesh;
     Ref<Cubemap> _skyboxCubemap;
 
-    void SetStandUniforms(Shader& material);
+    void SetStandUniforms(Vector3 viewPos, Shader& material);
     void RenderScene(Camera& camera, bool isMain, Vector3 camPOs);
     void RenderSceneShadow(LightComponent& light, TransformComponent& transform);
     void ClearSceneShadow();

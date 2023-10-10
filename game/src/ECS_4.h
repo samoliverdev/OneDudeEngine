@@ -158,7 +158,7 @@ struct ECS_4: public OD::Module {
         light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(1,1,1);
-        lightComponent.intensity = 2;
+        lightComponent.intensity = 1;
         lightComponent.renderShadow = false;
         light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));

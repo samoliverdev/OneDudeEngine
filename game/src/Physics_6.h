@@ -4,6 +4,7 @@
 #include "CameraMovement.h"
 #include <assert.h>
 #include "Ultis.h"
+#include <entt/entt.hpp>
 
 using namespace OD;
 
@@ -108,6 +109,25 @@ struct Physics_6: OD::Module {
 
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
+
+        using namespace entt::literals;
+
+        entt::meta<TestC>()
+            .type(entt::type_hash<TestC>::value())
+            .data<&TestC::id>("id"_hs)
+            .data<&TestC::speed>("speed"_hs)
+            .data<&TestC::test1s>("test1s"_hs)
+            .data<&TestC::test1>("test1"_hs);
+
+        TestC t;
+        t.id = "lolo";
+
+        for(auto &&[id, type]: entt::resolve<TestC>().base()) {
+            std::cout << type.info().name() << std::endl;
+        }
+
+        auto _id = entt::resolve<TestC>().data("id"_hs);
+        LogInfo("Test: %s", _id.get(t).cast<std::string>().c_str());
 
         /*Test2 t2;
         Archive a;

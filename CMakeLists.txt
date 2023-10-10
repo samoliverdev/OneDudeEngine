@@ -49,7 +49,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/glm/*.cpp
     engine/vendor/imgui/*.cpp 
     engine/vendor/ImGuizmo/*.cpp 
-    #engine/vendor/entt/*.cpp
+    engine/vendor/entt/*.cpp
     engine/src/*.cpp
 )
 add_library(engine STATIC ${ENGINE_SOURCE_FILES})

@@ -141,15 +141,15 @@ void StandRendererSystem::Update(){
     for(auto entity: _view){
         EnvironmentComponent& environmentComponent = _view.get<EnvironmentComponent>(entity);
         if(environmentComponent._inited == false) environmentComponent.Init();
-        
-        if(environmentComponent.settings.msaaQuality != environmentSettings.msaaQuality && environmentSettings.antiAliasing != environmentSettings.antiAliasing){
+
+        /*if(environmentComponent.settings.msaaQuality != environmentSettings.msaaQuality && environmentComponent.settings.antiAliasing != environmentSettings.antiAliasing){
             FrameBufferSpecification fs1 = _finalColor->specification();
             fs1.sample = 1;
             if(environmentComponent.settings.antiAliasing == AntiAliasing::MSAA){
                 fs1.sample = MSAAQualityLookup[(int)environmentComponent.settings.msaaQuality];
             }
             _finalColor->Reload(fs1);
-        }
+        }*/
 
         if(environmentComponent.settings.shadowQuality != environmentSettings.shadowQuality){
             int size = ShadowQualityLookup[(int)environmentComponent.settings.shadowQuality];
@@ -267,16 +267,20 @@ void StandRendererSystem::Update(){
 
 /////////////////////////////////////////////////
 
-void StandRendererSystem::SetStandUniforms(Shader& shader){
+void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     shader.Bind();
 
+    shader.SetVector3("viewPos", viewPos);
+
     shader.SetVector3("ambientLight", environmentSettings.ambient);
-    shader.SetFramebuffer("shadowMap", *_shadowMap, 1, -1);
+    shader.SetFramebuffer("shadowMap", *_shadowMap, 2, -1);
     shader.SetFloat("shadowBias", environmentSettings.shadowBias);
     shader.SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
 
-    std::vector<EntityId> pointLights;
+    std::vector<EntityId> lights;
     bool hasDirectionalLight = false;
+
+    const int maxLights = 12;
 
     auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
     for(auto e: view){
@@ -286,11 +290,14 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
         if(light.type == LightComponent::Type::Directional){
             shader.SetVector3("directionalLightColor", light.color * light.intensity);
             shader.SetVector3("directionalLightDir", -transform.forward());
+            shader.SetFloat("directionalLightspecular", light.specular);
             hasDirectionalLight = true;
         }
 
-        if(light.type == LightComponent::Type::Point){
-            pointLights.push_back(e);
+        if(lights.size() > maxLights) continue;
+
+        if(light.type == LightComponent::Type::Point || light.type == LightComponent::Type::Spot){
+            lights.push_back(e);
         }
     }
 
@@ -299,31 +306,47 @@ void StandRendererSystem::SetStandUniforms(Shader& shader){
         shader.SetVector3("directionalLightColor", Vector3::zero);
     }
 
-    const int maxPointLight = 4;
+    shader.SetInt("lightsCount", lights.size());
+
     char buff[200];
+    for(int i = 0; i < lights.size(); i++){
+        LightComponent& l = scene()->GetRegistry().get<LightComponent>(lights[i]);
+        TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(lights[i]);
 
-    for(int i = 0; i < maxPointLight; i++){
-        if(i < pointLights.size()){
-            LightComponent& l = scene()->GetRegistry().get<LightComponent>(pointLights[i]);
-            TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(pointLights[i]);
+        sprintf(buff, "lights[%d].type", i);
+        shader.SetFloat(buff, (int)l.type);
 
-            sprintf(buff, "pointLights[%d].position", i);
-            shader.SetVector3(buff, t.position());
+        sprintf(buff, "lights[%d].pos", i);
+        shader.SetVector3(buff, t.position());
 
-            sprintf(buff, "pointLights[%d].color", i);
-            shader.SetVector3(buff, l.color * l.intensity);
+        sprintf(buff, "lights[%d].dir", i);
+        shader.SetVector3(buff, t.forward());
 
-            sprintf(buff, "pointLights[%d].radius", i);
+        sprintf(buff, "lights[%d].color", i);
+        shader.SetVector3(buff, l.color * l.intensity);
+
+        sprintf(buff, "lights[%d].specular", i);
+        shader.SetFloat(buff, l.specular);
+
+        sprintf(buff, "lights[%d].falloff", i);
+        shader.SetFloat(buff, l.falloff);
+
+        if(l.type == LightComponent::Type::Point){
+            sprintf(buff, "lights[%d].radius", i);
             shader.SetFloat(buff, l.radius);
-        } else {
-            sprintf(buff, "pointLights[%d].position", i);
-            shader.SetVector3(buff, Vector3::zero);
+        }
 
-            sprintf(buff, "pointLights[%d].color", i);
-            shader.SetVector3(buff, Vector3::zero);
+        if(l.type == LightComponent::Type::Spot){
+            sprintf(buff, "lights[%d].radius", i);
+            shader.SetFloat(buff, l.radius);
 
-            sprintf(buff, "pointLights[%d].radius", i);
-            shader.SetFloat(buff, 5);
+            if(l.coneAngleInner > l.coneAngleOuter) l.coneAngleInner = l.coneAngleOuter;
+
+            sprintf(buff, "lights[%d].coneAngleOuter", i);
+            shader.SetFloat(buff, Mathf::Cos(Mathf::Deg2Rad(l.coneAngleOuter)));
+
+            sprintf(buff, "lights[%d].coneAngleInner", i);
+            shader.SetFloat(buff, Mathf::Cos(Mathf::Deg2Rad(l.coneAngleInner)));
         }
     }
 }
@@ -435,7 +458,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     // --------- Render Opaques Instancing --------- 
     for(auto& i: renderTargetOpaquesInstancing){
-        SetStandUniforms(*i.first.material->shader());
+        SetStandUniforms(camPos, *i.first.material->shader());
         i.first.material->UpdateUniforms();
 
         i.first.mesh->instancingModelMatrixs.clear();
@@ -451,7 +474,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     // --------- Render Opaques --------- 
     for(auto i: renderTargetsOpaques){
-        SetStandUniforms(*i.first->shader());
+        SetStandUniforms(camPos, *i.first->shader());
         i.first->UpdateUniforms();
         for(auto j: i.second){
             Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
@@ -466,7 +489,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     for(auto it = renderTargetsBlend.rbegin(); it != renderTargetsBlend.rend(); it++){
         for(auto i: it->second){
-            SetStandUniforms(*i.first->shader());
+            SetStandUniforms(camPos, *i.first->shader());
             i.first->UpdateUniforms();
             for(auto j: i.second){
                 Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());

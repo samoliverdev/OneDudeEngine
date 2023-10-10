@@ -31,7 +31,7 @@ void LightComponent::OnGui(Entity& e){
     const char* projectionTypeString[] = {"Directional", "Point", "Spot"};
     const char* curProjectionTypeString = projectionTypeString[(int)light.type];
     if(ImGui::BeginCombo("Type", curProjectionTypeString)){
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < 3; i++){
             bool isSelected = curProjectionTypeString == projectionTypeString[i];
             if(ImGui::Selectable(projectionTypeString[i], isSelected)){
                 curProjectionTypeString = projectionTypeString[i];
@@ -45,15 +45,33 @@ void LightComponent::OnGui(Entity& e){
         ImGui::EndCombo();
     }
 
+    ImGui::Spacing();ImGui::Spacing();
+
     float color[] = {light.color.x, light.color.y, light.color.z};
     if(ImGui::ColorEdit3("color", color)){
         light.color = Vector3(color[0], color[1], color[2]);
     }
-    
+
     ImGui::DragFloat("intensity", &light.intensity, 0.025f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::DragFloat("specular", &light.specular, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::DragFloat("falloff", &light.falloff, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::Spacing();ImGui::Spacing();
 
     if(light.type == LightComponent::Type::Point){
-        ImGui::DragFloat("radus", &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat("radius", &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    }
+
+    if(light.type == LightComponent::Type::Spot){
+        ImGui::DragFloat("radius", &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+        if(light.coneAngleInner > light.coneAngleOuter){
+            light.coneAngleInner = light.coneAngleOuter;
+        }
+
+        ImGui::DragFloat("coneAngleInner", &light.coneAngleInner, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat("coneAngleOuter", &light.coneAngleOuter, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        
     }
 
     ImGui::Checkbox("renderShadow", &light.renderShadow);
