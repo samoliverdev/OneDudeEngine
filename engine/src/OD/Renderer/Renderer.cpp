@@ -10,6 +10,9 @@ namespace OD{
 unsigned int lineVAO;
 unsigned int lineVBO;
 
+unsigned int textQuadVAO;
+unsigned int textQuadVBO;
+
 unsigned int wiredCubeVAO;
 
 Ref<Shader> gismoShader;
@@ -76,6 +79,29 @@ void CreateWiredCubeVAO(){
 	glBindVertexArray(0);
 }
 
+void CreateTextQuadVAO(){
+    glGenVertexArrays(1, &textQuadVAO);
+    glGenBuffers(1, &textQuadVBO);
+    glCheckError();
+
+    glBindVertexArray(textQuadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 5, NULL, GL_DYNAMIC_DRAW);
+    glCheckError();
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glCheckError();
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glCheckError();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);   
+    glCheckError();
+}
+
 void Renderer::_Initialize(){
     glEnable(GL_DEPTH_TEST); 
 
@@ -84,6 +110,7 @@ void Renderer::_Initialize(){
     gismoShader = Shader::CreateFromFile("res/Builtins/Shaders/Gizmos.glsl");
     CreateLineVAO();
     CreateWiredCubeVAO();
+    CreateTextQuadVAO();
 }
 
 void Renderer::_Shutdown(){
@@ -252,6 +279,61 @@ void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     glBindVertexArray(wiredCubeVAO);
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    glCheckError();
+}
+
+void Renderer::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color){
+    s.Bind();
+    s.SetVector3("color", color);
+    s.SetMatrix4("projection", camera.projection);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(textQuadVAO);
+    glCheckError();
+
+    int x = pos.x;
+    int y = pos.y;
+
+    // iterate through all characters
+    std::string::const_iterator c;
+    for(c = text.begin(); c != text.end(); c++){
+        Character ch = f._characters[*c];
+
+        float xpos = x + ch.bearing.x * scale;
+        float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+        float zpos = 0;
+
+        float w = ch.size.x * scale;
+        float h = ch.size.y * scale;
+        // update VBO for each character
+        float vertices[6][5] = {
+            { xpos,     ypos + h, zpos,   0.0f, 0.0f },            
+            { xpos,     ypos,     zpos,   0.0f, 1.0f },
+            { xpos + w, ypos,     zpos,   1.0f, 1.0f },
+
+            { xpos,     ypos + h, zpos,   0.0f, 0.0f },
+            { xpos + w, ypos,     zpos,   1.0f, 1.0f },
+            { xpos + w, ypos + h, zpos,   1.0f, 0.0f }           
+        };
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.textureID);
+        glCheckError();
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCheckError();
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glCheckError();
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glCheckError();
 }
 

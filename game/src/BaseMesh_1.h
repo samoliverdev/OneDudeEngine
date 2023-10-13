@@ -2,6 +2,7 @@
 
 #include <OD/OD.h>
 #include <chrono>
+#include <functional>
 
 using namespace OD;
 
@@ -68,7 +69,11 @@ struct CompTest1{
 
 struct BaseMesh_1: OD::Module {
     Mesh mesh;
-    Ref<Shader> shader;
+    
+    Ref<Shader> meshShader;
+    Ref<Shader> fontShader;
+
+    Ref<Font> font;
 
     void OnInit() override {
         LogInfo("Game Init");
@@ -93,7 +98,7 @@ struct BaseMesh_1: OD::Module {
         mesh.UpdateMesh();
         */
 
-        JobSystem::Initialize();
+        /*JobSystem::Initialize();
         JobSystem::Execute([] { Spin(100); });
 		JobSystem::Execute([] { Spin(100); });
 		JobSystem::Execute([] { Spin(100); });
@@ -107,9 +112,12 @@ struct BaseMesh_1: OD::Module {
             LogInfo("JobIndex: %d, Group Index: %d", args.jobIndex, args.groupIndex);
             arr[args.jobIndex] += 20;
         });
-        JobSystem::Wait();
+        JobSystem::Wait();*/
 
-        shader = Shader::CreateFromFile("res/shaders/test.glsl");
+        meshShader = Shader::CreateFromFile("res/shaders/test.glsl");
+        fontShader = Shader::CreateFromFile("res/Builtins/Shaders/Font.glsl");
+
+        font = Font::CreateFromFile("res/Builtins/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     }
 
     void OnUpdate(float deltaTime) override {
@@ -118,10 +126,26 @@ struct BaseMesh_1: OD::Module {
 
     void OnRender(float deltaTime) override {
         Renderer::Begin();
+
         Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
+        Renderer::SetBlend(false);
+
+        Camera cam = {Matrix4::identity, Matrix4::identity};
+        Renderer::SetCamera(cam);
 
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
-        Renderer::DrawMesh(mesh, Matrix4::identity, *shader);
+        Renderer::DrawMesh(mesh, Matrix4::identity, *meshShader);
+
+        /////////// Render Text ///////////
+
+        Renderer::SetBlend(true);
+        Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+        
+        cam = {Matrix4::identity, Matrix4::Ortho(0.0f, Application::screenWidth(), 0.0f, Application::screenHeight(), -10, 10)};
+        Renderer::SetCamera(cam);
+
+        Renderer::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Vector3(0.5f, 0.8f, 0.2f));
+        Renderer::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::screenWidth()-260, Application::screenHeight()-30, 0), 0.5f, Vector3(0.3, 0.7f, 0.9f));
 
         Renderer::End();
     }
@@ -131,6 +155,5 @@ struct BaseMesh_1: OD::Module {
         //ImGui::ShowDemoWindow(&show);
     }
 
-    void OnResize(int width, int height) override {;
-    }
+    void OnResize(int width, int height) override {}
 };

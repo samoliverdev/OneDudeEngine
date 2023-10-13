@@ -33,11 +33,17 @@ set(YAML_BUILD_SHARED_LIBS  OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS  OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_INSTALL  OFF CACHE BOOL "" FORCE)
 
+set(FT_WITH_BZIP2  OFF CACHE BOOL "" FORCE)
+set(FT_WITH_HARFBUZZ  OFF CACHE BOOL "" FORCE)
+set(FT_WITH_PNG  OFF CACHE BOOL "" FORCE)
+set(FT_WITH_ZLIB  OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/assimp)
 add_subdirectory(engine/vendor/bullet3)
 add_subdirectory(engine/vendor/yaml-cpp)
 add_subdirectory(engine/vendor/soloud)
+add_subdirectory(engine/vendor/freetype)
 
 #----------------Engine------------------
 project(engine)
@@ -64,6 +70,7 @@ target_include_directories(engine PUBLIC
     engine/vendor/entt/
     engine/vendor/soloud/include/
     engine/vendor/yaml-cpp/include/
+    engine/vendor/freetype/include/
     engine/src/
 )
 
@@ -72,6 +79,7 @@ target_link_libraries(engine PUBLIC
     assimp
     yaml-cpp
     soloud
+    freetype
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
 )
 

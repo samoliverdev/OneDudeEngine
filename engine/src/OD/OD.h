@@ -25,6 +25,7 @@
 #include "OD/Renderer/Model.h"
 #include "OD/Renderer/Material.h"
 #include "OD/Renderer/Framebuffer.h"
+#include "OD/Renderer/Font.h"
 
 #include "OD/Serialization/Archive.h"
 

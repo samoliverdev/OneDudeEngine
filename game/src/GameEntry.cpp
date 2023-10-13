@@ -19,7 +19,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 3;
+    int i = 0;
     if(OD::Application::args.size() > 1) i = atoi(OD::Application::args[1].c_str());
 
     if(i == 0) return new BaseMesh_1();

@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Framebuffer.h"
+#include "Font.h"
 
 namespace OD {
 
@@ -73,6 +74,8 @@ public:
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
+
+    static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color);
 
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
