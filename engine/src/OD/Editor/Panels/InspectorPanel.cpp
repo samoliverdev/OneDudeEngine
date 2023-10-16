@@ -94,8 +94,10 @@ void DrawComponent(Entity e, const char* name, UIFunction function){
     }
 }
 
-void InspectorPanel::DrawArchive(Archive& ar){
-    const ImGuiTreeNodeFlags treeNodeFlags = 
+void InspectorPanel::DrawArchive(ArchiveNode& ar){
+    ArchiveNode::DrawArchive(ar);
+
+    /*const ImGuiTreeNodeFlags treeNodeFlags = 
         //ImGuiTreeNodeFlags_DefaultOpen 
         //| ImGuiTreeNodeFlags_Framed 
             ImGuiTreeNodeFlags_AllowItemOverlap
@@ -105,32 +107,32 @@ void InspectorPanel::DrawArchive(Archive& ar){
     
     std::hash<std::string> hasher;
 
-    for(auto i: ar.values()){
-        if(i.type == ArchiveValue::Type::Float){
-            ImGui::DragFloat(i.name.c_str(), i.floatValue);
+    for(auto i: ar.values){
+        if(i.second.type == ArchiveNode::Type::Float){
+            ImGui::DragFloat(i.first.c_str(), static_cast<float*>(i.second.value));
         }
-        if(i.type == ArchiveValue::Type::String){
+        if(i.second.type == ArchiveNode::Type::String){
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
-            strcpy_s(buffer, sizeof(buffer), i.stringValue->c_str());
-            if(ImGui::InputText(i.name.c_str(), buffer, sizeof(buffer))){
-                *i.stringValue = std::string(buffer);
+            strcpy_s(buffer, sizeof(buffer), i.second.stringValue.c_str());
+            if(ImGui::InputText(i.first.c_str(), buffer, sizeof(buffer))){
+                i.second.stringValue = std::string(buffer);
             }
         }
 
-        if(i.type == ArchiveValue::Type::T){
-            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
-                DrawArchive(i.children[0]);
+        if(i.second.type == ArchiveNode::Type::Object){
+            if(ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first.c_str())){
+                DrawArchive(i.second);
                 ImGui::TreePop();
             }
         }
 
-        if(i.type == ArchiveValue::Type::TList){
-            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
+        if(i.second.type == ArchiveNode::Type::List){
+            if(ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first.c_str())){
                 int index = 0;
-                for(auto j: i.children){
-                    if(ImGui::TreeNodeEx((void*)(hasher(i.name)+index), treeNodeFlags, std::to_string(index).c_str())){
-                        DrawArchive(j);
+                for(auto j: i.second.values){
+                    if(ImGui::TreeNodeEx((void*)(hasher(i.first)+index), treeNodeFlags, std::to_string(index).c_str())){
+                        DrawArchive(j.second);
                         ImGui::TreePop();
                     }
                     index += 1;
@@ -138,7 +140,7 @@ void InspectorPanel::DrawArchive(Archive& ar){
                 ImGui::TreePop();
             }
         }
-    }
+    }*/
 }
 
 void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::CoreComponent &f){
@@ -197,10 +199,9 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         }
 
         if(open){
-            Archive ar;
+            ArchiveNode ar(ArchiveNode::Type::Object, "", nullptr, false);
             sf.serialize(e, ar);
-            //DrawArchive(ar);
-            SceneManager::DrawArchive(ar);
+            ArchiveNode::DrawArchive(ar);
 
             ImGui::TreePop();
         }
@@ -230,7 +231,7 @@ void InspectorPanel::DrawComponents(Entity entity){
             info.tag = std::string(buffer);
         }
 
-        ImGui::Text("Id: %zd", e.id());
+        ImGui::Text("Id: %zd", (size_t)e.id());
     });
 
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){

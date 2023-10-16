@@ -11,7 +11,7 @@ namespace OD{
 struct Script{
     friend struct ScriptComponent;
 
-    virtual void Serialize(Archive& s){}
+    virtual void Serialize(ArchiveNode& s){}
 
     virtual void OnStart(){}
     virtual void OnDestroy(){}

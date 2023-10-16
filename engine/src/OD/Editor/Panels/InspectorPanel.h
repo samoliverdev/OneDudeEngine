@@ -22,7 +22,7 @@ private:
     void ShowAddComponent(Entity entity);
     void DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::CoreComponent &f);
     void DrawComponentFromSerializeFuncs(Entity e, std::string name, SceneManager::SerializeFuncs &sf);
-    void DrawArchive(Archive& ar);
+    void DrawArchive(ArchiveNode& ar);
 };
 
 }

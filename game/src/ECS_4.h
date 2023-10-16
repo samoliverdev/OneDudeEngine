@@ -17,8 +17,8 @@ using namespace OD;
 struct RotateScript: public Script{
     float speed = 40;
 
-    void Serialize(Archive& s) override {
-        s.name("RotateScript");
+    void Serialize(ArchiveNode& s) override {
+        s.name = "RotateScript";
         s.Add(&speed, "speed");
     }
 
@@ -72,6 +72,8 @@ struct ECS_4: public OD::Module {
         LogInfo("Game Init");
 
         soloud.init();
+
+        //LogInfo("Size of: %zd", sizeof(ArchiveNode));
     
         /*sample.load("res/sounds/2ne1_2.mp3");
         soloud.play(sample);*/

@@ -75,10 +75,17 @@ void Editor::OnRender(float deltaTime){
 
 }
 
+Scene* lastScene;
+
 void Editor::PlayScene(){
     Scene* scene = SceneManager::Get().activeScene();
     if(_curScenePath.empty()) scene->Save("res/temp.scene");
     scene->Start();
+
+    /*lastScene = SceneManager::Get().activeScene();
+    Scene* s = Scene::Copy(lastScene);
+    SceneManager::Get().activeScene(s);
+    s->Start();*/
 }
 
 void Editor::StopScene(){
@@ -87,6 +94,9 @@ void Editor::StopScene(){
     Scene* scene = SceneManager::Get().NewScene();
     scene->Load(_curScenePath.empty() ? "res/temp.scene" : _curScenePath.c_str());
     UnselectAll();
+
+    /*delete SceneManager::Get().activeScene();
+    SceneManager::Get().activeScene(lastScene);*/
 }
 
 void Editor::NewScene(){

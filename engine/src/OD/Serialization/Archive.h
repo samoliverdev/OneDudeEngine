@@ -3,154 +3,171 @@
 #include "OD/Core/Math.h"
 #include <string>
 #include <vector>
+#include <functional>
+#include "Serialization.h"
 
 namespace OD{
 
-struct Archive;
+struct ArchiveListFunctions{
+    std::function<void(void)> clean;
+    std::function<void(void)> push;
+    std::function<void(void)> pop;
+    std::function<int(void)> size;
+};
 
-struct ArchiveValue{
-    enum class Type{Float, Int, String, Vector3, Vector4, Quaternion, T, TList};
+struct ArchiveNode{
+    enum class Type{Object, Float, Int, String, Vector3, Vector4, Quaternion, List};
+
+    ArchiveNode(){}
+    ArchiveNode(Type _type, std::string _name, void* _value, bool _isReadMode):
+        type(_type), name(_name), value(_value), isReadMode(_isReadMode){}
 
     Type type;
     std::string name;
-    
+    void* value;
+    bool isReadMode;
+
+    std::string stringValue;
     union{
-        float* floatValue;
-        int* intValue;
-        std::string* stringValue;
-        Vector3* vector3Value;
-        Vector4* vector4Value;
-        Quaternion* quaternionValue;
+        float floatValue;
+        int intValue;
+        float vectorValue[4];
     };
+    ArchiveListFunctions listFunctions;
 
-    std::vector<Archive> children;
-};
-
-struct Archive{
-public:
-    inline void Clean(){
-        _values.clear();
-    }
+    std::map<std::string, ArchiveNode> values;
 
     inline void Add(float* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::Float;
-        sv.floatValue = value;
-        sv.name = name;
-        _values.push_back(sv);
+        /*if(isReadMode){
+            *value = values[name].floatValue;
+        } else {*/
+            ArchiveNode node(Type::Float, name, value, isReadMode);
+            node.floatValue = *value;
+            values[name] = node;
+        //}
     }
 
     inline void Add(int* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::Int;
-        sv.intValue = value;
-        sv.name = name;
-        _values.push_back(sv);
-    }
-
-    inline void Add(std::string* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::String;
-        sv.stringValue = value;
-        sv.name = name;
-        _values.push_back(sv);
+        /*if(isReadMode){
+            *value = values[name].intValue;
+        } else {*/
+            ArchiveNode node(Type::Int, name, value, isReadMode);
+            node.intValue = *value;
+            values[name] = node;
+        //}
     }
 
     inline void Add(Vector3* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::String;
-        sv.vector3Value = value;
-        sv.name = name;
-        _values.push_back(sv);
+        /*if(isReadMode){
+            *value = Vector3(
+                values[name].vectorValue[0],
+                values[name].vectorValue[1],
+                values[name].vectorValue[2]
+            );
+        } else {*/
+            ArchiveNode node(Type::Vector3, name, value, isReadMode);
+            node.vectorValue[0] = value->x;
+            node.vectorValue[1] = value->y;
+            node.vectorValue[2] = value->z;
+            values[name] = node;
+        //}
     }
 
     inline void Add(Vector4* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::String;
-        sv.vector4Value = value;
-        sv.name = name;
-        _values.push_back(sv);
+        /*if(isReadMode){
+            *value = Vector4(
+                values[name].vectorValue[0],
+                values[name].vectorValue[1],
+                values[name].vectorValue[2],
+                values[name].vectorValue[3]
+            );
+        } else {*/
+            ArchiveNode node(Type::Vector4, name, value, isReadMode);
+            node.vectorValue[0] = value->x;
+            node.vectorValue[1] = value->y;
+            node.vectorValue[2] = value->z;
+            node.vectorValue[3] = value->w;
+            values[name] = node;
+        //}
     }
 
     inline void Add(Quaternion* value, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::String;
-        sv.quaternionValue = value;
-        sv.name = name;
-        _values.push_back(sv);
+        /*if(isReadMode){
+            *value = Quaternion(
+                values[name].vectorValue[0],
+                values[name].vectorValue[1],
+                values[name].vectorValue[2],
+                values[name].vectorValue[3]
+            );
+        } else {*/
+            ArchiveNode node(Type::Quaternion, name, value, isReadMode);
+            node.vectorValue[0] = value->x;
+            node.vectorValue[1] = value->y;
+            node.vectorValue[2] = value->z;
+            node.vectorValue[3] = value->w;
+            values[name] = node;
+        //}
+    }
+
+    inline void Add(std::string* value, std::string name){
+        /*if(isReadMode){
+            *value = values[name].stringValue;
+        } else {*/
+            ArchiveNode node(Type::String, name, value, isReadMode);
+            node.stringValue = *value;
+            values[name] = node;
+        //}
     }
 
     template<typename T>
-    void Add(std::vector<T>& list, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::TList;
-        sv.name = name;
-
-        for(int i = 0; i < list.size(); i++){
-            Archive ar;
-            list[i].Serialize(ar);
-            sv.children.push_back(ar);
-        }
-
-        _values.push_back(sv);
+    void Add(T& value, std::string name){
+        /*if(isReadMode){
+            value.Serialize(values[name]);
+        } else {*/
+            ArchiveNode node(Type::Object, name, nullptr, isReadMode);
+            value.Serialize(node);
+            values[name] = node;
+        //}
     }
 
     template<typename T>
-    void Add(T& list, std::string name){
-        ArchiveValue sv;
-        sv.type = ArchiveValue::Type::T;
-        sv.name = name;
+    void Add(std::vector<T>& value, std::string name){
+        /*if(isReadMode){
+            value.clear();
+            for(auto i: values[name].values){
+                value.push_back(T());
+                value[value.size()-1].Serialize(i.second);
+            }   
+        } else {*/
+            ArchiveNode nodeList(Type::List, name, nullptr, isReadMode);
+            
+            nodeList.listFunctions.clean = [&]{value.clear();};
+            nodeList.listFunctions.push = [&]{value.push_back(T());};
 
-        Archive ar;
-        list.Serialize(ar);
-        sv.children.push_back(ar);
+            for(int i = 0; i < value.size(); i++){
+                ArchiveNode _node(Type::Object, name, nullptr, isReadMode);
+                value[i].Serialize(_node);
+                nodeList.values[std::to_string(i)] = _node;
+            }
 
-        _values.push_back(sv);
+            values[name] = nodeList;
+        //}
+
+
     }
 
-    inline void Show(int level = 0){
-        for(int x = 0; x < level; x++){
-            printf("  ");
-        }
-
-        printf("Archive: %s\n", _name.c_str());
-
-        for(auto& i: _values){
-            printf("  ");
-            for(int x = 0; x < level; x++){
-                printf("  ");
-            }
-
-            if(i.type == ArchiveValue::Type::Float) printf("%s: %f\n", i.name.c_str(), *i.floatValue);
-            if(i.type == ArchiveValue::Type::Int) printf("%s: %d\n", i.name.c_str(), *i.intValue);
-            //if(i.type == ArchiveValue::Type::String){
-            //    printf("Value: %s %s\n", i.name.c_str(), (*i.stringValue)->c_str());
-            //}
-
-            if(i.type == ArchiveValue::Type::TList){
-                printf("%s:\n", i.name.c_str());
-                level += 1;
-                for(auto& j: i.children){
-                    j.Show(level+1);
-                }
-            }
-
-            if(i.type == ArchiveValue::Type::T){
-                printf("%s:\n", i.name.c_str());
-                level += 1;
-                i.children[0].Show(level+1);
-            }
-        }
+    inline void Clean(){
+        values.clear();
     }
 
-    inline std::string& name(){ return _name; }
-    inline void name(std::string name){ _name = name; }
-
-    inline std::vector<ArchiveValue>& values(){ return _values; }
-
-private:
-    std::vector<ArchiveValue> _values;
-    std::string _name;
+    inline Vector3 AsVector3(){ return Vector3(vectorValue[0], vectorValue[1], vectorValue[2]); }
+    inline Vector4 AsVector4(){ return Vector4(vectorValue[0], vectorValue[1], vectorValue[2], vectorValue[3]); }
+    inline Quaternion AsQuaternion(){ return Quaternion(vectorValue[0], vectorValue[1], vectorValue[2], vectorValue[3]); }
+    
+    static void SaveSerializer(ArchiveNode& s, std::string name, YAML::Emitter& out);
+    static void LoadSerializer(ArchiveNode& s, YAML::Node& node);
+    static void DrawArchive(ArchiveNode& ar);
 };
+
 
 }

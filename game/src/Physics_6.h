@@ -11,9 +11,8 @@ using namespace OD;
 struct Test1{
     float a;
 
-    void Serialize(Archive& ar){
-        ar.name("Test1");
-
+    void Serialize(ArchiveNode& ar){
+        ar.name = "Test1";
         ar.Add(&a, "a");
     }
 };
@@ -21,8 +20,8 @@ struct Test1{
 struct Test2{
     std::vector<Test1> b;
 
-    void Serialize(Archive& ar){
-        ar.name("Test2");
+    void Serialize(ArchiveNode& ar){
+        ar.name = "Test2";
 
         b.push_back({20});
         b.push_back({254});
@@ -38,8 +37,8 @@ struct TestC{
 
     Test1 test1 = {55};
 
-    void Serialize(Archive& s){
-        s.name("TestC");
+    void Serialize(ArchiveNode& s){
+        s.name = "TestC";
 
         s.Add(&id, "id");
         s.Add(&speed, "speed");
@@ -53,8 +52,8 @@ struct TestC{
 struct PhysicsCubeS: public Script{
     float t;
 
-    void Serialize(Archive& s) override{
-        s.name("PhysicsCubeS");
+    void Serialize(ArchiveNode& s) override{
+        s.name = "PhysicsCubeS";
         s.Add(&t, "t");
     }
 

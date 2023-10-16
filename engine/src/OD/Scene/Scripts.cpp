@@ -4,58 +4,6 @@
 
 namespace OD{
 
-void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
-    //LogInfo("Script Name: %s", name.c_str());
-
-    out << YAML::Key << name;
-    out << YAML::BeginMap;
-    for(auto i: s.values()){
-        if(i.type == ArchiveValue::Type::Float) out << YAML::Key << i.name << YAML::Value << (*i.floatValue);
-        if(i.type == ArchiveValue::Type::Int) out << YAML::Key << i.name << YAML::Value << (*i.intValue);
-        if(i.type == ArchiveValue::Type::String) out << YAML::Key << i.name << YAML::Value << (*i.stringValue);
-        if(i.type == ArchiveValue::Type::Vector3) out << YAML::Key << i.name << YAML::Value << (*i.vector3Value);
-        if(i.type == ArchiveValue::Type::Vector4) out << YAML::Key << i.name << YAML::Value << (*i.vector4Value);
-        if(i.type == ArchiveValue::Type::Quaternion) out << YAML::Key << i.name << YAML::Value << (*i.quaternionValue);
-        if(i.type == ArchiveValue::Type::T) ApplySerializer(i.children[0], i.name, out);
-        
-        /*if(i.type == ArchiveValue::Type::TList){
-            out << YAML::BeginSeq;
-            for(auto j: i.children){
-                ApplySerializer(j, j.name(), out);
-            }
-            out << YAML::EndSeq;
-        }*/
-    }
-    out << YAML::EndMap;
-}
-
-void LoadSerializer(Archive& s, YAML::Node& node){
-    for(auto i: s.values()){
-        if(i.type == ArchiveValue::Type::Float){
-            *i.floatValue = node[i.name].as<float>();
-        }
-        if(i.type == ArchiveValue::Type::Int){
-            *i.intValue = node[i.name].as<int>();
-        }
-        if(i.type == ArchiveValue::Type::Vector3){
-            *i.vector3Value = node[i.name].as<Vector3>();
-        }
-        if(i.type == ArchiveValue::Type::Vector4){
-            *i.vector4Value = node[i.name].as<Vector4>();
-        }
-        if(i.type == ArchiveValue::Type::Quaternion){
-            *i.quaternionValue = node[i.name].as<Quaternion>();
-        }
-        if(i.type == ArchiveValue::Type::String){
-            *i.stringValue = node[i.name].as<std::string>();
-        }
-        if(i.type == ArchiveValue::Type::T){
-            YAML::Node children = node[i.name];
-            LoadSerializer(i.children[0], children);
-        }
-    }
-}
-
 void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
     auto& component = e.GetComponent<ScriptComponent>();
 
@@ -63,11 +11,12 @@ void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::BeginMap;
 
     for(auto i: component._instances){
-        Archive s;
+        ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, false);
         i.second->Serialize(s);
-        if(s.values().empty()) continue;
+        if(s.values.empty()) continue;
 
-        ApplySerializer(s, s.name(), out);
+        //ApplySerializer(s, s.name(), out);
+        ArchiveNode::SaveSerializer(s, s.name, out);
     }
     
     out << YAML::EndMap;
@@ -79,9 +28,10 @@ void ScriptComponent::Deserialize(YAML::Node& in, Entity& e){
         if(component){
             LogInfo("%s", func.first.c_str());
 
-            Archive s;
+            ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, true);
             func.second.serialize(e, s);
-            LoadSerializer(s, component);
+            //LoadSerializer(s, component);
+            ArchiveNode::LoadSerializer(s, component);
         }
     }
 }
@@ -103,9 +53,10 @@ void ScriptComponent::OnGui(Entity& e){
 
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first.c_str());
         if(open){
-            Archive ar;
+            ArchiveNode ar(ArchiveNode::Type::Object, i.first, nullptr, false);
             i.second.serialize(e, ar);
-            SceneManager::DrawArchive(ar);
+            //SceneManager::DrawArchive(ar);
+            ArchiveNode::DrawArchive(ar);
             
             ImGui::TreePop();
         }

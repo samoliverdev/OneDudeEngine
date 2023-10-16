@@ -88,63 +88,6 @@ void TransformComponent::rotation(Quaternion rotation){
 
 #pragma region Scene
 
-void Scene::ApplySerializer(Archive& s, std::string name, YAML::Emitter& out){
-    out << YAML::Key << name;
-    out << YAML::BeginMap;
-    for(auto i: s.values()){
-        if(i.type == ArchiveValue::Type::Float) out << YAML::Key << i.name << YAML::Value << (*i.floatValue);
-        if(i.type == ArchiveValue::Type::Int) out << YAML::Key << i.name << YAML::Value << (*i.intValue);
-        if(i.type == ArchiveValue::Type::String) out << YAML::Key << i.name << YAML::Value << (*i.stringValue);
-        if(i.type == ArchiveValue::Type::Vector3) out << YAML::Key << i.name << YAML::Value << (*i.vector3Value);
-        if(i.type == ArchiveValue::Type::Vector4) out << YAML::Key << i.name << YAML::Value << (*i.vector4Value);
-        if(i.type == ArchiveValue::Type::Quaternion) out << YAML::Key << i.name << YAML::Value << (*i.quaternionValue);
-        if(i.type == ArchiveValue::Type::T) ApplySerializer(i.children[0], i.name, out);
-        
-        /*if(i.type == ArchiveValue::Type::TList){
-            out << YAML::Key << i.name << YAML::BeginSeq;
-            for(auto j: i.children){
-                out << YAML::BeginMap;
-                ApplySerializer(j, j.name(), out);
-                out << YAML::EndMap;
-            }
-            out << YAML::EndSeq;
-        }*/
-    }
-    out << YAML::EndMap;
-}
-
-void Scene::LoadSerializer(Archive& s, YAML::Node& node){
-    for(auto i: s.values()){
-        if(i.type == ArchiveValue::Type::Float){
-            *i.floatValue = node[i.name].as<float>();
-        }
-        if(i.type == ArchiveValue::Type::Int){
-            *i.intValue = node[i.name].as<int>();
-        }
-        if(i.type == ArchiveValue::Type::Vector3){
-            *i.vector3Value = node[i.name].as<Vector3>();
-        }
-        if(i.type == ArchiveValue::Type::Vector4){
-            *i.vector4Value = node[i.name].as<Vector4>();
-        }
-        if(i.type == ArchiveValue::Type::Quaternion){
-            *i.quaternionValue = node[i.name].as<Quaternion>();
-        }
-        if(i.type == ArchiveValue::Type::String){
-            *i.stringValue = node[i.name].as<std::string>();
-        }
-        if(i.type == ArchiveValue::Type::T){
-            YAML::Node n = node[i.name];
-            LoadSerializer(i.children[0], n);
-        }
-        /*if(i.type == ArchiveValue::Type::TList){
-            for(auto j: node[i.name]){
-                LoadSerializer(i.children[index], j);
-            }
-        }*/
-    }
-}
-
 void Scene::TransformSerialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "TransformComponent";
     out << YAML::BeginMap;
@@ -207,6 +150,31 @@ Scene::~Scene(){
     for(auto i: _physicsSystems) delete i;
 }
 
+Scene* Scene::Copy(Scene* other){
+    Scene* scene = new Scene();
+
+    //scene->_registry.assign(other->_registry.data(), other->_registry.data() + other->_registry.size(), other->_registry.released());
+
+    for(int i = 0; i < scene->_registry.size(); i++){
+        entt::entity e = scene->_registry.create();
+    }
+
+    /*auto tv = other->_registry.view<TransformComponent>();
+    scene->_registry.insert(tv.begin(), tv.end(), tv.begin()+tv.size());
+
+    auto iv = other->_registry.view<InfoComponent>();
+    scene->_registry.insert(iv.begin(), iv.end(), iv.begin()+iv.size());
+
+    for(auto i: SceneManager::Get()._coreComponents){
+        i.second.copy(scene->_registry, other->_registry);
+    }
+    for(auto i: SceneManager::Get()._serializeFuncs){
+        i.second.copy(scene->_registry, other->_registry);
+    }*/
+
+    return scene;
+}
+
 Entity Scene::GetMainCamera2(){
     for(auto e: _registry.view<CameraComponent>()){
         return Entity(e, this);
@@ -230,12 +198,13 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     for(auto func: SceneManager::Get()._serializeFuncs){
         if(func.second.hasComponent(e) == false) continue;
         
-        Archive s;
+        ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr, false);
         func.second.serialize(e, s);
 
-        Assert(s.values().empty() == false);
+        Assert(s.values.empty() == false);
 
-        ApplySerializer(s, func.first, out);
+        //ApplySerializer(s, func.first, out);
+        ArchiveNode::SaveSerializer(s, func.first, out);
     }
 
     out << YAML::EndMap;
@@ -262,9 +231,10 @@ Entity Scene::DeserializeEntity(YAML::Node& e){
         if(component){
             LogInfo("%s", func.first.c_str());
 
-            Archive s;
+            ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, false);
             func.second.serialize(deserializedEntity, s);
-            LoadSerializer(s, component);
+            //LoadSerializer(s, component);
+            ArchiveNode::LoadSerializer(s, component);
         }
     }
 
@@ -336,52 +306,7 @@ void Scene::Load(const char* path){
 #pragma endregion
 
 #pragma region SceneManager
-void SceneManager::DrawArchive(Archive& ar){
-    const ImGuiTreeNodeFlags treeNodeFlags = 
-        //ImGuiTreeNodeFlags_DefaultOpen 
-        //| ImGuiTreeNodeFlags_Framed 
-            ImGuiTreeNodeFlags_AllowItemOverlap
-        | ImGuiTreeNodeFlags_SpanAvailWidth
-        | ImGuiTreeNodeFlags_FramePadding;
 
-    
-    std::hash<std::string> hasher;
-
-    for(auto i: ar.values()){
-        if(i.type == ArchiveValue::Type::Float){
-            ImGui::DragFloat(i.name.c_str(), i.floatValue);
-        }
-        if(i.type == ArchiveValue::Type::String){
-            char buffer[256];
-            memset(buffer, 0, sizeof(buffer));
-            strcpy_s(buffer, sizeof(buffer), i.stringValue->c_str());
-            if(ImGui::InputText(i.name.c_str(), buffer, sizeof(buffer))){
-                *i.stringValue = std::string(buffer);
-            }
-        }
-
-        if(i.type == ArchiveValue::Type::T){
-            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
-                DrawArchive(i.children[0]);
-                ImGui::TreePop();
-            }
-        }
-
-        if(i.type == ArchiveValue::Type::TList){
-            if(ImGui::TreeNodeEx((void*)hasher(i.name), treeNodeFlags, i.name.c_str())){
-                int index = 0;
-                for(auto j: i.children){
-                    if(ImGui::TreeNodeEx((void*)(hasher(i.name)+index), treeNodeFlags, std::to_string(index).c_str())){
-                        DrawArchive(j);
-                        ImGui::TreePop();
-                    }
-                    index += 1;
-                }
-                ImGui::TreePop();
-            }
-        }
-    }
-}
 #pragma endregion
 
 }

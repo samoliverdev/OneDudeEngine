@@ -146,6 +146,8 @@ struct Scene: public Asset {
     Scene();
     ~Scene();
 
+    static Scene* Copy(Scene* other);
+
     Entity AddEntity(std::string name = "Entity"){
         EntityId e = _registry.create();
         
@@ -311,9 +313,6 @@ private:
     void SerializeEntity(YAML::Emitter& out, Entity& e);
     Entity DeserializeEntity(YAML::Node& e);
 
-    void ApplySerializer(Archive& s, std::string name, YAML::Emitter& out);
-    void LoadSerializer(Archive& s, YAML::Node& node);
-
     void TransformSerialize(YAML::Emitter& out, Entity& e);
     void TransformDeserialize(YAML::Node& in, Entity& e);
     void InfoSerialize(YAML::Emitter& out, Entity& e);
@@ -352,6 +351,10 @@ struct SceneManager{
     inline Scene* activeScene(){ 
         if(_activeScene == nullptr) return NewScene();
         return _activeScene; 
+    }
+
+    inline void activeScene(Scene* s){ 
+        _activeScene = s; 
     }
 
     inline Scene* NewScene(){
@@ -393,6 +396,11 @@ struct SceneManager{
             e.AddOrGetComponent<T>();
             T::OnGui(e);
         };
+
+        funcs.copy = [](entt::registry& dst, entt::registry& src){
+            auto view = src.view<T>();
+            dst.insert(view.begin(), view.end(), view.begin()+view.size());
+        };
         
         _coreComponents[name] = funcs;
     }
@@ -415,9 +423,14 @@ struct SceneManager{
             e.RemoveComponent<T>();
         };
 
-        funcs.serialize = [](Entity& e, Archive& s){
+        funcs.serialize = [](Entity& e, ArchiveNode& s){
             auto& c = e.AddOrGetComponent<T>();
             c.Serialize(s);
+        };
+
+        funcs.copy = [](entt::registry& dst, entt::registry& src){
+            auto view = src.view<T>();
+            dst.insert(view.begin(), view.end(), view.begin()+view.size());
         };
         
         _serializeFuncs[name] = funcs;
@@ -436,7 +449,7 @@ struct SceneManager{
             return c.HasScript<T>();
         };
 
-        funcs.serialize = [](Entity& e, Archive& s){
+        funcs.serialize = [](Entity& e, ArchiveNode& s){
             auto& script = e.AddOrGetComponent<ScriptComponent>();
             auto* c = script.AddOrGetScript<T>();
 
@@ -455,14 +468,13 @@ struct SceneManager{
         };
     }   
 
-    static void DrawArchive(Archive& ar);
-
 private:
     struct SerializeFuncs{
         std::function<bool(Entity&)> hasComponent;
         std::function<void(Entity&)> addComponent;
         std::function<void(Entity&)> removeComponent;
-        std::function<void(Entity&,Archive&)> serialize;
+        std::function<void(Entity&,ArchiveNode&)> serialize;
+        std::function<void(entt::registry& dst, entt::registry& src)> copy;
     };
 
     struct CoreComponent{
@@ -472,6 +484,7 @@ private:
         std::function<void(YAML::Emitter&, Entity&)> serialize;
         std::function<void(YAML::Node&, Entity&)> deserialize;
         std::function<void(Entity&)> onGui;
+        std::function<void(entt::registry& dst, entt::registry& src)> copy;
     };
 
     SceneState _sceneState;
