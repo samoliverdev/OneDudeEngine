@@ -5,6 +5,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 #include <vector>
+#include <stdlib.h>
 
 namespace OD{
 
@@ -33,18 +34,38 @@ struct ScriptComponent{
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
 
+    ScriptComponent() = default;
+    ScriptComponent(const ScriptComponent& s){
+        LogInfo("Copping");
+        for(auto i: s._instances){
+            ScriptHolder holder = {i.second.InstantiateScript(i.second), i.second.InstantiateScript};
+            _instances[i.first] = holder;
+        }
+    }
+
     template<typename T>
     T* AddScript(){
         static_assert(std::is_base_of<OD::Script, T>::value);
+
         T* c = new T();
-        _instances[GetType<T>()] = c;
+
+        ScriptHolder holder = {
+            c,
+            [](ScriptHolder& s){ 
+                T* r = new T();
+                if(s.instance != nullptr) *r = *static_cast<T*>(s.instance);
+                return static_cast<Script*>(r);  
+            }
+        };
+        _instances[GetType<T>()] = holder;
+        
         return c;
     }
 
     template <typename T>
     T* GetScript(){
         static_assert(std::is_base_of<OD::Script, T>::value);
-        return static_cast<T*>(_instances[GetType<T>()]);
+        return static_cast<T*>(_instances[GetType<T>()].instance);
     }
 
     template<typename T>
@@ -59,27 +80,41 @@ struct ScriptComponent{
     }
 
     void RemoveAllScripts(){
-        for(auto it = _instances.begin(); it != _instances.end();) {
-            Assert(it->second != nullptr);
-            it->second->OnDestroy();
-            delete it->second;
+        /*for(auto it = _instances.begin(); it != _instances.end();) {
+            Assert(it->second.instance != nullptr);
+            it->second.instance->OnDestroy();
+            delete it->second.instance;
             it = _instances.erase(it);
+        }*/
+
+        for(auto i: _instances){
+            delete i.second.instance;
         }
+        _instances.clear();
     }
 
 private:
-    std::unordered_map<Type, Script*> _instances;
+    struct ScriptHolder{
+        Script* instance;
+        Script* (*InstantiateScript)(ScriptHolder&);
+    };
+
+    std::unordered_map<Type, ScriptHolder> _instances;
 
     void _Update(Entity e){
         for(auto i: _instances){
-            i.second->_entity = e;
-            Assert(i.second->_entity.IsValid() == true);
-
-            if(i.second->_hasStarted == false){
-                i.second->OnStart();
-                i.second->_hasStarted = true;
+            if(i.second.instance == nullptr){
+                i.second.instance = i.second.InstantiateScript(i.second);
             }
-            i.second->OnUpdate();
+
+            i.second.instance->_entity = e;
+            Assert(i.second.instance->_entity.IsValid() == true);
+
+            if(i.second.instance->_hasStarted == false){
+                i.second.instance->OnStart();
+                i.second.instance->_hasStarted = true;
+            }
+            i.second.instance->OnUpdate();
         }
     }
 };

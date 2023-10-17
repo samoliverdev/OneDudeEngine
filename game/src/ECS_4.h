@@ -28,7 +28,6 @@ struct RotateScript: public Script{
 };
 
 struct ECS_4: public OD::Module {
-    OD::Scene* scene;
     //CameraMovement camMove;
 
     Entity mainEntity;
@@ -44,7 +43,7 @@ struct ECS_4: public OD::Module {
     SoLoud::Wav sample;
 
     void AddCharacter(Vector3 pos){
-        Entity character = scene->AddEntity("Character");
+        Entity character = SceneManager::Get().activeScene()->AddEntity("Character");
         character.GetComponent<TransformComponent>().localPosition(pos);
         character.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
         MeshRendererComponent& charMesh = character.AddComponent<MeshRendererComponent>();
@@ -58,7 +57,7 @@ struct ECS_4: public OD::Module {
     }
 
     void AddTransparent(Vector3 pos){
-        Entity et = scene->AddEntity("Transparent");
+        Entity et = SceneManager::Get().activeScene()->AddEntity("Transparent");
         et.GetComponent<TransformComponent>().position(pos);
         et.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
         MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
@@ -86,7 +85,7 @@ struct ECS_4: public OD::Module {
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
-        scene = SceneManager::Get().NewScene();
+        OD::Scene* scene = SceneManager::Get().NewScene();
         //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
         //scene->Start();
 
@@ -214,14 +213,14 @@ struct ECS_4: public OD::Module {
         //mainEntity.GetComponent<TransformComponent>().localEulerAngles(Vector3(0, Platform::GetTime() * 40, 0));
         //otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
-        scene->Update();
+        SceneManager::Get().activeScene()->Update();
     }   
 
     void OnRender(float deltaTime) override {
         //Renderer::SetDepthTest(DepthTest::LESS);
         //Renderer::SetCullFace(CullFace::BACK);
 
-        scene->Draw();
+        SceneManager::Get().activeScene()->Draw();
 
         /*Vector3 pos = otherEntity.GetComponent<TransformComponent>().position();
 

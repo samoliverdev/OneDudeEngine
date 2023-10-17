@@ -92,7 +92,6 @@ struct PhysicsCubeS: public Script{
 };
 
 struct Physics_6: OD::Module {
-    Scene* scene;
     //CameraMovement camMove;
     Entity camera;
 
@@ -102,30 +101,6 @@ struct Physics_6: OD::Module {
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-        using namespace entt::literals;
-
-        entt::meta<TestC>()
-            .type(entt::type_hash<TestC>::value())
-            .data<&TestC::id>("id"_hs)
-            .data<&TestC::speed>("speed"_hs)
-            .data<&TestC::test1s>("test1s"_hs)
-            .data<&TestC::test1>("test1"_hs);
-
-        TestC t;
-        t.id = "lolo";
-
-        for(auto &&[id, type]: entt::resolve<TestC>().base()) {
-            std::cout << type.info().name() << std::endl;
-        }
-
-        auto _id = entt::resolve<TestC>().data("id"_hs);
-        LogInfo("Test: %s", _id.get(t).cast<std::string>().c_str());
-
-        /*Test2 t2;
-        Archive a;
-        t2.Serialize(a);
-        a.Show();*/
-        
         SceneManager::Get().RegisterComponent<TestC>("TestC");
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
@@ -134,7 +109,7 @@ struct Physics_6: OD::Module {
         SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
         SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
 
-        scene = SceneManager::Get().NewScene();
+        Scene* scene = SceneManager::Get().NewScene();
 
         //scene->AddSystem<PhysicsSystem>();
         //scene->AddSystem<StandRendererSystem>();
@@ -215,13 +190,12 @@ struct Physics_6: OD::Module {
 
         //scene->Save("res/scene1.scene");
         //scene->Start();
-
         Application::AddModule<Editor>();
     }
 
     void OnUpdate(float deltaTime) override {
-        scene->Update();
-        if(scene->running() == false) return;
+        SceneManager::Get().activeScene()->Update();
+        if(SceneManager::Get().activeScene()->running() == false) return;
 
         /*
         TransformComponent& camT = camera.GetComponent<TransformComponent>();
@@ -234,8 +208,8 @@ struct Physics_6: OD::Module {
         spawnInput = Input::IsKey(KeyCode::R);
 
         if(spawnInput == true && lastSpawnInput == false){
-            scene->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
-            scene->Save("res/scene1.scene");
+            SceneManager::Get().activeScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            SceneManager::Get().activeScene()->Save("res/scene1.scene");
             
             //scene = SceneManager::Get().NewScene();
             //scene->Load("res/scene1.scene");
@@ -244,7 +218,7 @@ struct Physics_6: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        scene->Draw();
+        SceneManager::Get().activeScene()->Draw();
         //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 

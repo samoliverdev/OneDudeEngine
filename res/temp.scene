@@ -42,8 +42,8 @@ Entities:
         []
     ScriptComponent:
       CameraMovementScript:
-        moveSpeed: 6000
-        rotSpeed: 500
+        moveSpeed: 60
+        rotSpeed: 50
     CameraComponent:
       type: 0
       orthographicSize: 5

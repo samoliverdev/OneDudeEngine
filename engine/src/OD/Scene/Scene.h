@@ -159,7 +159,7 @@ struct Scene: public Asset {
     
         return Entity(e, this);
     }
-
+    
     void DestroyEntity(EntityId entity){
         _toDestroy.push_back(entity);
     }
@@ -458,7 +458,6 @@ struct SceneManager{
         funcs.serialize = [](Entity& e, ArchiveNode& s){
             auto& script = e.AddOrGetComponent<ScriptComponent>();
             auto* c = script.AddOrGetScript<T>();
-
             c->Serialize(s);
         };
         
@@ -475,6 +474,8 @@ struct SceneManager{
     }   
 
 private:
+    SceneManager(){}
+
     struct SerializeFuncs{
         std::function<bool(Entity&)> hasComponent;
         std::function<void(Entity&)> addComponent;

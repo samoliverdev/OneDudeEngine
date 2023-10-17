@@ -78,41 +78,56 @@ void Editor::OnRender(float deltaTime){
 Scene* lastScene;
 
 void Editor::PlayScene(){
-    Scene* scene = SceneManager::Get().activeScene();
-    if(_curScenePath.empty()) scene->Save("res/temp.scene");
-    scene->Start();
+    Assert(SceneManager::Get().activeScene() != nullptr);
+    if(SceneManager::Get().activeScene()->running()) return;
 
-    /*lastScene = SceneManager::Get().activeScene();
+    /*Scene* scene = SceneManager::Get().activeScene();
+    if(_curScenePath.empty()) scene->Save("res/temp.scene");
+    scene->Start();*/
+
+    UnselectAll();
+    lastScene = SceneManager::Get().activeScene();
+    lastScene->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
     Scene* s = Scene::Copy(lastScene);
     SceneManager::Get().activeScene(s);
-    s->Start();*/
+    s->Start();
 }
 
 void Editor::StopScene(){
+    Assert(SceneManager::Get().activeScene() != nullptr);
+    if(SceneManager::Get().activeScene()->running() == false) return;
+
     //if(SceneManager::Get().activeScene() != nullptr && SceneManager::Get().activeScene()->running() == false) return;
-
-    Scene* scene = SceneManager::Get().NewScene();
+    
+    /*Scene* scene = SceneManager::Get().NewScene();
     scene->Load(_curScenePath.empty() ? "res/temp.scene" : _curScenePath.c_str());
-    UnselectAll();
+    UnselectAll();*/
 
-    /*delete SceneManager::Get().activeScene();
-    SceneManager::Get().activeScene(lastScene);*/
+    UnselectAll();
+    SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    delete SceneManager::Get().activeScene();
+    SceneManager::Get().activeScene(lastScene);
 }
 
 void Editor::NewScene(){
     if(SceneManager::Get().activeScene()->running()) return;
 
+    SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
     Scene* scene = SceneManager::Get().NewScene();
+
     UnselectAll();
     _curScenePath = "";
 }   
 
 void Editor::OpenScene(){
+    Assert(SceneManager::Get().activeScene() != nullptr);
     if(SceneManager::Get().activeScene()->running()) return;
 
     std::string path = FileDialogs::OpenFile(""); 
     if(path.empty() == false){
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
         Scene* scene = SceneManager::Get().NewScene();
+        
         scene->Load(path.c_str());
         _curScenePath = scene->path();
     }

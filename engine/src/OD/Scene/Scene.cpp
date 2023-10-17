@@ -158,7 +158,8 @@ Scene* Scene::Copy(Scene* other){
         entt::entity e = scene->_registry.create(i);
 
         auto& c = view.get<TransformComponent>(i);
-        scene->_registry.emplace_or_replace<TransformComponent>(e, c);
+        TransformComponent& nt = scene->_registry.emplace_or_replace<TransformComponent>(e, c);
+        nt._registry = &scene->_registry;
 
         auto& c2 = view.get<InfoComponent>(i);
         scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
