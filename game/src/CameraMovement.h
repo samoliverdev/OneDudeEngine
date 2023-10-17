@@ -33,7 +33,6 @@ public:
     void OnUpdate() override;
 
     void Serialize(ArchiveNode& s) override {
-        s.name = "CameraMovementScript";
         s.Add(&moveSpeed, "moveSpeed");
         s.Add(&rotSpeed, "rotSpeed");
     }

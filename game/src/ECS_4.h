@@ -18,7 +18,6 @@ struct RotateScript: public Script{
     float speed = 40;
 
     void Serialize(ArchiveNode& s) override {
-        s.name = "RotateScript";
         s.Add(&speed, "speed");
     }
 

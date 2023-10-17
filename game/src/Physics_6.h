@@ -12,7 +12,6 @@ struct Test1{
     float a;
 
     void Serialize(ArchiveNode& ar){
-        ar.name = "Test1";
         ar.Add(&a, "a");
     }
 };
@@ -21,12 +20,9 @@ struct Test2{
     std::vector<Test1> b;
 
     void Serialize(ArchiveNode& ar){
-        ar.name = "Test2";
-
         b.push_back({20});
         b.push_back({254});
-
-        ar.Add(b, "b");
+        ar.Add(&b, "b");
     }
 };
 
@@ -38,11 +34,9 @@ struct TestC{
     Test1 test1 = {55};
 
     void Serialize(ArchiveNode& s){
-        s.name = "TestC";
-
         s.Add(&id, "id");
         s.Add(&speed, "speed");
-        s.Add(test1s, "test1s");
+        s.Add(&test1s, "test1s");
         s.Add(test1, "test1");
 
         //LogInfo("OnSerialize TestC %zd", s.Values().size());
@@ -53,7 +47,6 @@ struct PhysicsCubeS: public Script{
     float t;
 
     void Serialize(ArchiveNode& s) override{
-        s.name = "PhysicsCubeS";
         s.Add(&t, "t");
     }
 

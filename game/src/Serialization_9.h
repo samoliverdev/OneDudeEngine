@@ -9,7 +9,6 @@ struct ObjectTest{
     int b;
 
     void Serialize(ArchiveNode& s){
-        s.name = "ObjectTest";
         s.Add(&a, "a");
         s.Add(&b, "b");
     }
@@ -21,10 +20,9 @@ struct ComponentTest_01{
     std::vector<ObjectTest> tests = {ObjectTest(), ObjectTest()};
 
     void Serialize(ArchiveNode& s){
-        s.name = "ComponentTest_01";
         s.Add(&speed, "speed");
         s.Add(test, "test");
-        s.Add(tests, "tests");
+        s.Add(&tests, "tests");
     }
 };
 

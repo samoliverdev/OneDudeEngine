@@ -399,7 +399,10 @@ struct SceneManager{
 
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
-            dst.insert(view.begin(), view.end(), view.begin()+view.size());
+            for(auto e: view){
+                auto& c = view.get<T>(e);
+                dst.emplace_or_replace<T>(e, c);
+            }
         };
         
         _coreComponents[name] = funcs;
@@ -430,7 +433,10 @@ struct SceneManager{
 
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
-            dst.insert(view.begin(), view.end(), view.begin()+view.size());
+            for(auto e: view){
+                auto& c = view.get<T>(e);
+                dst.emplace_or_replace<T>(e, c);
+            }
         };
         
         _serializeFuncs[name] = funcs;

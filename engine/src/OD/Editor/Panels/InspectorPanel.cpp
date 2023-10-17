@@ -199,7 +199,7 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         }
 
         if(open){
-            ArchiveNode ar(ArchiveNode::Type::Object, "", nullptr, false);
+            ArchiveNode ar(ArchiveNode::Type::Object, "", nullptr);
             sf.serialize(e, ar);
             ArchiveNode::DrawArchive(ar);
 

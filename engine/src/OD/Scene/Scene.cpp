@@ -153,24 +153,23 @@ Scene::~Scene(){
 Scene* Scene::Copy(Scene* other){
     Scene* scene = new Scene();
 
-    //scene->_registry.assign(other->_registry.data(), other->_registry.data() + other->_registry.size(), other->_registry.released());
+    auto view = other->_registry.view<InfoComponent, TransformComponent>();
+    for(auto i: view){
+        entt::entity e = scene->_registry.create(i);
 
-    for(int i = 0; i < scene->_registry.size(); i++){
-        entt::entity e = scene->_registry.create();
+        auto& c = view.get<TransformComponent>(i);
+        scene->_registry.emplace_or_replace<TransformComponent>(e, c);
+
+        auto& c2 = view.get<InfoComponent>(i);
+        scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
     }
-
-    /*auto tv = other->_registry.view<TransformComponent>();
-    scene->_registry.insert(tv.begin(), tv.end(), tv.begin()+tv.size());
-
-    auto iv = other->_registry.view<InfoComponent>();
-    scene->_registry.insert(iv.begin(), iv.end(), iv.begin()+iv.size());
 
     for(auto i: SceneManager::Get()._coreComponents){
         i.second.copy(scene->_registry, other->_registry);
     }
     for(auto i: SceneManager::Get()._serializeFuncs){
         i.second.copy(scene->_registry, other->_registry);
-    }*/
+    }
 
     return scene;
 }
@@ -198,12 +197,8 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     for(auto func: SceneManager::Get()._serializeFuncs){
         if(func.second.hasComponent(e) == false) continue;
         
-        ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr, false);
-        func.second.serialize(e, s);
-
-        Assert(s.values.empty() == false);
-
-        //ApplySerializer(s, func.first, out);
+        ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
+        func.second.serialize(e, s); Assert(s.values.empty() == false);
         ArchiveNode::SaveSerializer(s, func.first, out);
     }
 
@@ -231,7 +226,7 @@ Entity Scene::DeserializeEntity(YAML::Node& e){
         if(component){
             LogInfo("%s", func.first.c_str());
 
-            ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, false);
+            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
             func.second.serialize(deserializedEntity, s);
             //LoadSerializer(s, component);
             ArchiveNode::LoadSerializer(s, component);
@@ -247,23 +242,6 @@ void Scene::Save(const char* path){
     out << YAML::BeginMap;
     out << YAML::Key << "Scene" << YAML::Value << "Untitled";
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-
-    /*_registry.view<TransformComponent, InfoComponent>().each([&](auto entityId, auto& transform, auto& info){
-        Entity e(entityId, this);
-        if(e.IsValid() == false) return;
-        if(transform.hasParent()) return;
-
-        SerializeEntity(out, e);
-    });*/
-
-    /*_registry.each([&](auto entityId){
-        Entity e(entityId, this);
-        if(e.IsValid() == false) return;
-        TransformComponent& transform = e.GetComponent<TransformComponent>();
-        if(transform.hasParent()) return;
-
-        SerializeEntity(out, e);
-    });*/
 
     auto v = _registry.view<entt::entity>();
     for(auto it = v.rbegin(); it != v.rend(); ++it){

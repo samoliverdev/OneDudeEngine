@@ -10,15 +10,14 @@ void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "ScriptComponent";
     out << YAML::BeginMap;
 
-    for(auto i: component._instances){
-        ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, false);
-        i.second->Serialize(s);
-        if(s.values.empty()) continue;
-
-        //ApplySerializer(s, s.name(), out);
-        ArchiveNode::SaveSerializer(s, s.name, out);
+    for(auto func: SceneManager::Get()._serializeScriptFuncs){
+        if(func.second.hasComponent(e)){
+            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
+            func.second.serialize(e, s); Assert(s.values.empty() == false);
+            ArchiveNode::SaveSerializer(s, func.first, out);
+        }
     }
-    
+
     out << YAML::EndMap;
 }
 
@@ -26,11 +25,8 @@ void ScriptComponent::Deserialize(YAML::Node& in, Entity& e){
     for(auto func: SceneManager::Get()._serializeScriptFuncs){
         auto component = in[func.first];
         if(component){
-            LogInfo("%s", func.first.c_str());
-
-            ArchiveNode s(ArchiveNode::Type::Object, "", nullptr, true);
+            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
             func.second.serialize(e, s);
-            //LoadSerializer(s, component);
             ArchiveNode::LoadSerializer(s, component);
         }
     }
@@ -53,7 +49,7 @@ void ScriptComponent::OnGui(Entity& e){
 
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first.c_str());
         if(open){
-            ArchiveNode ar(ArchiveNode::Type::Object, i.first, nullptr, false);
+            ArchiveNode ar(ArchiveNode::Type::Object, i.first, nullptr);
             i.second.serialize(e, ar);
             //SceneManager::DrawArchive(ar);
             ArchiveNode::DrawArchive(ar);
