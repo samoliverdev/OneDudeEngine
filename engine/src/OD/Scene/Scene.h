@@ -63,6 +63,7 @@ struct InfoComponent{
 
 private:
     bool _active;
+    EntityId _id;
 };
 
 struct Entity{
@@ -153,6 +154,7 @@ struct Scene: public Asset {
         
         InfoComponent& info = _registry.emplace<InfoComponent>(e);
         info.name = name;
+        info._id = e;
         
         TransformComponent& transform = _registry.emplace<TransformComponent>(e);
         transform._registry = &_registry;
@@ -287,6 +289,19 @@ struct Scene: public Asset {
     void Load(const char* path);
 
 private:
+    Entity _AddEntity(EntityId targetId, std::string name = "Entity"){
+        EntityId e = _registry.create(targetId);
+        
+        InfoComponent& info = _registry.emplace<InfoComponent>(e);
+        info.name = name;
+        info._id = e;
+        
+        TransformComponent& transform = _registry.emplace<TransformComponent>(e);
+        transform._registry = &_registry;
+    
+        return Entity(e, this);
+    }
+
     void _DestroyEntity(EntityId entity){
         TransformComponent& transform = _registry.get<TransformComponent>(entity);
 

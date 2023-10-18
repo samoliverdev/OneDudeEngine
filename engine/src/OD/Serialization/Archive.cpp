@@ -29,43 +29,43 @@ void ArchiveNode::SaveSerializer(ArchiveNode& s, std::string name, YAML::Emitter
 }
 
 void ArchiveNode::LoadSerializer(ArchiveNode& s, YAML::Node& node){
-    LogInfo("Node Name: %s", s.name().c_str());
+    //LogInfo("Node Name: %s", s.name().c_str());
 
     for(auto i: s.values){
         if(i.second.type() == ArchiveNode::Type::Float){
-            LogInfo("Float Value Name: %s", i.second.name().c_str());
+            //LogInfo("Float Value Name: %s", i.second.name().c_str());
             *static_cast<float*>(i.second.value) = node[i.second.name()].as<float>();
             //*i.floatValue = node[i.name].as<float>();
         }
         if(i.second.type() == ArchiveNode::Type::Int){
-            LogInfo("Int Value Name: %s", i.second.name().c_str());
+            //LogInfo("Int Value Name: %s", i.second.name().c_str());
             *static_cast<int*>(i.second.value) = node[i.second.name()].as<int>();
         }
         if(i.second.type() == ArchiveNode::Type::Vector3){
-            LogInfo("Vector3 Value Name: %s", i.second.name().c_str());
+            //LogInfo("Vector3 Value Name: %s", i.second.name().c_str());
             *static_cast<Vector3*>(i.second.value) = node[i.second.name()].as<Vector3>();
         }
         if(i.second.type() == ArchiveNode::Type::Vector4){
-            LogInfo("Vector4 Value Name: %s", i.second.name().c_str());
+            //LogInfo("Vector4 Value Name: %s", i.second.name().c_str());
             *static_cast<Vector4*>(i.second.value) = node[i.second.name()].as<Vector4>();
         }
         if(i.second.type() == ArchiveNode::Type::Quaternion){
-            LogInfo("Quaternion Value Name: %s", i.second.name().c_str());
+            //LogInfo("Quaternion Value Name: %s", i.second.name().c_str());
             *static_cast<Quaternion*>(i.second.value) = node[i.second.name()].as<Quaternion>();
         }
         if(i.second.type() == ArchiveNode::Type::String){
-            LogInfo("String Value Name: %s", i.second.name().c_str());
+            //LogInfo("String Value Name: %s", i.second.name().c_str());
             Assert(node[i.second.name()]);
             *static_cast<std::string*>(i.second.value) = node[i.second.name()].as<std::string>();
         }
         if(i.second.type() == ArchiveNode::Type::Object){
-            LogInfo("Object Value Name: %s", i.second.name().c_str());
+            //LogInfo("Object Value Name: %s", i.second.name().c_str());
             YAML::Node n = node[i.first];
             LoadSerializer(i.second, n);
         }
         
         if(i.second.type() == ArchiveNode::Type::List){
-            LogInfo("List Value Name: %s", i.second.name().c_str());
+            //LogInfo("List Value Name: %s", i.second.name().c_str());
             Assert(node[i.second.name()]);
 
             i.second.listFunctions.clean(i.second);

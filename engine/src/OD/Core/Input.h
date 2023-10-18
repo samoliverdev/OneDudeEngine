@@ -90,14 +90,26 @@ enum class KeyCode {
     RAlt = 346,
     //6
 };
-#define KeyCodeMaxKeys 66
+#define KeyCodeMaxKeys 346
+
+class Application;
 
 class Input {
+    friend class Application;
 public:
     // keyboard input
     static bool IsKey(KeyCode key);
+    static bool IsKeyDown(KeyCode key);
+    static bool IsKeyUp(KeyCode key);
+
     static bool IsMouseButton(MouseButton button);
+    static bool IsMouseButtonDown(MouseButton button);
+    static bool IsMouseButtonUp(MouseButton button);
+
     static void GetMousePosition(double* x, double* y);
+
+private:
+    static void Update();
 };
 
 }

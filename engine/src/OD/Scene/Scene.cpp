@@ -96,11 +96,14 @@ void Scene::TransformSerialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "localPosition" << YAML::Value << transform.localPosition();
     out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
     out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
+    out << YAML::Key << "_parent" << YAML::Value << (unsigned int)transform._parent;
+    out << YAML::Key << "_hasParent" << YAML::Value << transform._hasParent;
 
-    out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+    out << YAML::Key << "Children" << YAML::Value << YAML::Flow << YAML::BeginSeq;
     for(auto i: transform._children){
-        Entity entity = Entity(i, this);
-        SerializeEntity(out, entity);
+        //Entity entity = Entity(i, this);
+        //SerializeEntity(out, entity);
+        out << (unsigned int)i;
     }
     out << YAML::EndSeq;
     
@@ -112,12 +115,15 @@ void Scene::TransformDeserialize(YAML::Node& in, Entity& e){
     tc.localPosition(in["localPosition"].as<Vector3>());
     tc.localRotation(in["localRotation"].as<Quaternion>());
     tc.localScale(in["localScale"].as<Vector3>());
+    tc._parent = (EntityId)in["_parent"].as<unsigned int>();
+    tc._hasParent = in["_hasParent"].as<bool>();
 
     auto entities = in["Children"];
     if(entities){
         for(auto _e: entities){
-            Entity children = DeserializeEntity(_e);
-            SetParent(e.id(), children.id());
+            //Entity children = DeserializeEntity(_e);
+            //SetParent(e.id(), children.id());
+            tc._children.push_back((EntityId)_e.as<unsigned int>());
         }
     }
 }
@@ -128,6 +134,7 @@ void Scene::InfoSerialize(YAML::Emitter& out, Entity& e){
 
     auto& info = e.GetComponent<InfoComponent>();
     out << YAML::Key << "name" << YAML::Value << info.name;
+    out << YAML::Key << "id" << YAML::Value << (unsigned int)info._id;
     
     out << YAML::EndMap;
 }
@@ -153,7 +160,20 @@ Scene::~Scene(){
 Scene* Scene::Copy(Scene* other){
     Scene* scene = new Scene();
 
-    auto view = other->_registry.view<InfoComponent, TransformComponent>();
+    auto view = other->_registry.view<entt::entity>();
+    for(auto it = view.rbegin(); it != view.rend(); ++it){
+        entt::entity e = scene->_registry.create(*it);
+
+        auto& c = other->_registry.get<TransformComponent>(*it);
+        TransformComponent& nt = scene->_registry.emplace_or_replace<TransformComponent>(e, c);
+        nt._registry = &scene->_registry;
+
+        auto& c2 = other->_registry.get<InfoComponent>(*it);
+        scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
+    }
+
+    /*auto view = other->_registry.view<InfoComponent, TransformComponent>();
+    view.use<InfoComponent>();
     for(auto i: view){
         entt::entity e = scene->_registry.create(i);
 
@@ -163,7 +183,7 @@ Scene* Scene::Copy(Scene* other){
 
         auto& c2 = view.get<InfoComponent>(i);
         scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
-    }
+    }*/
 
     for(auto i: SceneManager::Get()._coreComponents){
         i.second.copy(scene->_registry, other->_registry);
@@ -207,7 +227,9 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
 }
 
 Entity Scene::DeserializeEntity(YAML::Node& e){
-    Entity deserializedEntity = AddEntity();
+    EntityId id = (EntityId)e["InfoComponent"]["id"].as<unsigned int>();
+
+    Entity deserializedEntity = _AddEntity(id);
 
     auto infoComponent = e["InfoComponent"];
     if(infoComponent) InfoDeserialize(infoComponent, deserializedEntity);
@@ -248,8 +270,8 @@ void Scene::Save(const char* path){
     for(auto it = v.rbegin(); it != v.rend(); ++it){
         Entity e(*it, this);
         if(e.IsValid() == false) return;
-        TransformComponent& transform = e.GetComponent<TransformComponent>();
-        if(transform.hasParent()) return;
+        //TransformComponent& transform = e.GetComponent<TransformComponent>();
+        //if(transform.hasParent()) return;
 
         SerializeEntity(out, e);
     }

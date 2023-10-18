@@ -214,6 +214,18 @@ struct ECS_4: public OD::Module {
         //otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
         SceneManager::Get().activeScene()->Update();
+
+        if(Input::IsKeyDown(KeyCode::A)){
+            LogInfo("OnKeyDown A");
+        }
+
+        if(Input::IsKeyUp(KeyCode::A)){
+            LogInfo("OnKeyUp A");
+        }
+
+        if(Input::IsMouseButtonDown(MouseButton::Left)){
+            LogInfo("OMouseButtonDown Left");
+        }
     }   
 
     void OnRender(float deltaTime) override {

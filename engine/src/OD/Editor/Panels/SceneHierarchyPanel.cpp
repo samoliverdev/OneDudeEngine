@@ -19,7 +19,9 @@ void SceneHierarchyPanel::OnGui(){
     if(_scene == nullptr) return;
 
     if(ImGui::Begin("Scene Hierarchy")){
-        /*for(auto e: _scene->GetRegistry().view<TransformComponent, InfoComponent>()){
+        /*auto view = _scene->GetRegistry().view<TransformComponent, InfoComponent>();
+        view.use<InfoComponent>();
+        for(auto e: view){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
         }*/
@@ -30,16 +32,16 @@ void SceneHierarchyPanel::OnGui(){
             DrawEntityNode(_e, true);
         }*/
         
-        /*auto v = _scene->GetRegistry().view<entt::entity>();
+        auto v = _scene->GetRegistry().view<entt::entity>();
         std::for_each(v.rbegin(), v.rend(), [&](auto e){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
-        });*/
+        });
 
-        _scene->GetRegistry().view<entt::entity>().each([&](auto e){
+        /*_scene->GetRegistry().view<entt::entity>().each([&](auto e){
             Entity _e(e, _scene);
             DrawEntityNode(_e, true);
-        });
+        });*/
 
         /*if(toDestroy.IsValid()){
             _scene->DestroyEntity(toDestroy.id());

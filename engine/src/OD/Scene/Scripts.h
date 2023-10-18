@@ -36,7 +36,7 @@ struct ScriptComponent{
 
     ScriptComponent() = default;
     ScriptComponent(const ScriptComponent& s){
-        LogInfo("Copping");
+        //LogInfo("Copping");
         for(auto i: s._instances){
             ScriptHolder holder = {i.second.InstantiateScript(i.second), i.second.InstantiateScript};
             _instances[i.first] = holder;

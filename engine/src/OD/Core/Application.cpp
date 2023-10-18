@@ -51,9 +51,10 @@ bool Application::Run(){
         _deltaTime = currentFrame - _lastFrame;
         _lastFrame = currentFrame; 
 
-        //Input::_Update(0);
+        //Input::Update();
         Platform::PumpMessages();
         Platform::PreUpdate();
+        Input::Update();
 
         {
             OD_PROFILE_SCOPE("Application::Run::OnUpdate");

@@ -75,7 +75,6 @@ bool convert<Quaternion>::decode(const Node& node, Quaternion& v){
 
 }
 
-
 namespace OD{
 
 YAML::Emitter& operator<<(YAML::Emitter& out, const Vector2& v){

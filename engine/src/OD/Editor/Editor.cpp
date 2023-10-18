@@ -146,15 +146,15 @@ void Editor::SaveAsScene(){
 }
 
 void Editor::HandleShotcuts(){
-    if(Input::IsKey(KeyCode::F1)) PlayScene();
-    if(Input::IsKey(KeyCode::F2)) StopScene();
+    if(Input::IsKeyDown(KeyCode::F1)) PlayScene();
+    if(Input::IsKeyDown(KeyCode::F2)) StopScene();
 
     if(SceneManager::Get().activeScene()->running()) return;
 
-    if(Input::IsKey(KeyCode::Q)) _gizmoType = Editor::GizmosType::None;
-    if(Input::IsKey(KeyCode::W)) _gizmoType = Editor::GizmosType::Translation;
-    if(Input::IsKey(KeyCode::E)) _gizmoType = Editor::GizmosType::Rotation;
-    if(Input::IsKey(KeyCode::R)) _gizmoType = Editor::GizmosType::Scale;
+    if(Input::IsKeyDown(KeyCode::Q)) _gizmoType = Editor::GizmosType::None;
+    if(Input::IsKeyDown(KeyCode::W)) _gizmoType = Editor::GizmosType::Translation;
+    if(Input::IsKeyDown(KeyCode::E)) _gizmoType = Editor::GizmosType::Rotation;
+    if(Input::IsKeyDown(KeyCode::R)) _gizmoType = Editor::GizmosType::Scale;
 }
 
 void Editor::DrawMainWorkspace(){
