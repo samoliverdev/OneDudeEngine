@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 
 #pragma SupportInstancing true
 #pragma BlendMode Off
@@ -20,8 +20,6 @@ layout (location = 10) in mat4 _modelInstancing;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat4 lightSpaceMatrix;
-
 uniform float useInstancing = 0;
 
 out VsOut{
@@ -30,7 +28,6 @@ out VsOut{
     vec2 texCoord;
     vec3 worldPos;
     vec3 worldNormal;
-    vec4 fragPosLightSpace;
 } vsOut;
 
 void main(){
@@ -42,7 +39,6 @@ void main(){
     vsOut.worldPos = vec3(targetModelMatrix * vec4(_pos, 1.0));
     //worldNormal = vec3(model * vec4(normal, 1.01));
     vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * _normal; // for non-uniform scale objects
-    vsOut.fragPosLightSpace = lightSpaceMatrix * vec4(vsOut.worldPos, 1);
 
     gl_Position = projection * view * targetModelMatrix * vec4(_pos, 1.0);
 }
@@ -51,11 +47,21 @@ void main(){
 #if defined(FRAGMENT)
 uniform vec4 color = vec4(1, 1, 1, 1);
 uniform sampler2D mainTex;
-uniform sampler2D shadowMap;
-uniform float shadowBias = 0.001;
 
 uniform float shininess = 0;
 uniform vec3 viewPos;
+
+//////////////
+
+uniform float shadowBias = 0.001;
+
+uniform sampler2D shadowMap;
+uniform mat4 lightSpaceMatrix;
+
+#define MAX_SPOTLIGHT_SHADOWS 5
+uniform sampler2D spotlightShadowMaps[MAX_SPOTLIGHT_SHADOWS];
+uniform mat4 spotlightSpaceMatrixs[MAX_SPOTLIGHT_SHADOWS];
+uniform int spotlightShadowCount = 0;
 
 //Lights
 uniform vec3 ambientLight = vec3(0.1, 0.1, 0.1);
@@ -87,7 +93,6 @@ in VsOut{
     vec2 texCoord;
     vec3 worldPos;
     vec3 worldNormal;
-    vec4 fragPosLightSpace;
 } fsIn;
 
 layout (location = 0) out vec4 fragColor;
@@ -140,7 +145,7 @@ vec3 CalcPointLight(Light light, vec3 normal, vec3 fragPos){
     return diffuse + specular;
 } 
 
-vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos){
+vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, out float att){
     vec3 lightDir = normalize(light.pos - fragPos);
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -159,10 +164,12 @@ vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos){
     vec3 specular = light.color * spec;
     specular *= attenuation;
 
+    att = attenuation; 
+
     return diffuse + specular;
 } 
 
-float ShadowCalculation(vec4 fragPosLightSpace){
+float ShadowCalculation(sampler2D shadowMap, vec4 fragPosLightSpace){
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
@@ -177,8 +184,8 @@ float ShadowCalculation(vec4 fragPosLightSpace){
     //bias = 0;
     
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
-    shadow = 0;
     
+    shadow = 0;
     int sampleRadius = 2;
     vec2 pixelSize = 1.0 / textureSize(shadowMap, 0);
     for(int y = -sampleRadius; y <= sampleRadius; y++){
@@ -205,18 +212,27 @@ void main() {
 
     vec4 objectColor = texColor * color;
 
-    float shadow = ShadowCalculation(fsIn.fragPosLightSpace); 
+    float shadow = ShadowCalculation(shadowMap, lightSpaceMatrix * vec4(fsIn.worldPos, 1)); 
+    //for(int i = 0; i < spotlightShadowCount; i++){
+    //    shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)); 
+    //}
 
     vec3 lightResult = CalcDirectionalLight();
-    lightResult *= (1 - shadow);
+    //lightResult *= (1 - shadow);
 
     for(int i = 0; i < lightsCount; i++){
         if(lights[i].type <= 1){
             lightResult += CalcPointLight(lights[i], norm, fsIn.worldPos); 
         } else if(lights[i].type <= 2){
-            lightResult += CalcSpotLight(lights[i], norm, fsIn.worldPos); 
+            float att = 0;
+            lightResult += CalcSpotLight(lights[i], norm, fsIn.worldPos, att); 
+            if(i < spotlightShadowCount){
+                shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)) * clamp(att, 0, 1); 
+            }
         }
     }
+
+    lightResult *= (1 - shadow);
 
     vec3 ambient = ambientLight;
     vec3 result = (ambient + lightResult) * objectColor.rgb;

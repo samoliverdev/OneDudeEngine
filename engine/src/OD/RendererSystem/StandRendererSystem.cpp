@@ -92,7 +92,11 @@ StandRendererSystem::StandRendererSystem(){
     specification.width = 1024 * 4;
     specification.height = 1024 * 4;
     specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT, false};
-    _shadowMap = new Framebuffer(specification);
+
+    directinallightShadowPass._shadowMap = new Framebuffer(specification);
+    for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
+        spotlightShadowPass[i]._shadowMap = new Framebuffer(specification);
+    }
 
     _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
     _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
@@ -126,7 +130,11 @@ StandRendererSystem::~StandRendererSystem(){
         delete i;
     }
 
-    delete _shadowMap;
+    delete directinallightShadowPass._shadowMap;
+    for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
+        delete spotlightShadowPass[i]._shadowMap;
+    }
+
     delete _finalColor;
     delete _pp1;
     delete _pp2;
@@ -153,7 +161,10 @@ void StandRendererSystem::Update(){
 
         if(environmentComponent.settings.shadowQuality != environmentSettings.shadowQuality){
             int size = ShadowQualityLookup[(int)environmentComponent.settings.shadowQuality];
-            _shadowMap->Resize(size, size);
+            directinallightShadowPass._shadowMap->Resize(size, size);
+            for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
+                spotlightShadowPass[i]._shadowMap->Resize(size, size);
+            }
         }
 
         if(environmentComponent.settings.colorCorrection != environmentSettings.colorCorrection){
@@ -170,29 +181,30 @@ void StandRendererSystem::Update(){
     }
 
     // ---------- Render Shadows ---------- 
-    UpdateCurrentLight();
 
+    spotlightShadowPassCount = 0;
     bool hasShadow = false;
     auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
     for(auto entity: view){
         auto& light = view.get<LightComponent>(entity);
         auto& transform = view.get<TransformComponent>(entity);
 
-        if(light.type != LightComponent::Type::Directional) continue;
-        if(light.renderShadow == false) continue;
+        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+            //RenderSceneShadow(light, transform);
+            directinallightShadowPass.Render(light, transform, *this);
+            hasShadow = true;
+        }
 
-        _shadowMap->Bind();
-        Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
-        RenderSceneShadow(light, transform);
-        _shadowMap->Unbind();
-
-        hasShadow = true;
-        break;
+        if(light.type == LightComponent::Type::Spot && light.renderShadow == true && spotlightShadowPassCount < MAX_SPOTLIGHT_SHADOWS){
+            spotlightShadowPass[spotlightShadowPassCount].Render(light, transform, *this);
+            spotlightShadowPassCount += 1;
+        }
     }
     if(hasShadow == false){
-        _shadowMap->Bind();
+        directinallightShadowPass.Clean(*this);
+        /*_shadowMap->Bind();
         ClearSceneShadow();
-        _shadowMap->Unbind();
+        _shadowMap->Unbind();*/
     }
     
     // ---------- Render Cameras ---------- 
@@ -268,14 +280,27 @@ void StandRendererSystem::Update(){
 /////////////////////////////////////////////////
 
 void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
+    int baseShadowMapIndex = 2;
+
     shader.Bind();
 
     shader.SetVector3("viewPos", viewPos);
 
     shader.SetVector3("ambientLight", environmentSettings.ambient);
-    shader.SetFramebuffer("shadowMap", *_shadowMap, 2, -1);
+
     shader.SetFloat("shadowBias", environmentSettings.shadowBias);
-    shader.SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+    
+    shader.SetFramebuffer("shadowMap", *directinallightShadowPass._shadowMap, baseShadowMapIndex, -1);
+    shader.SetMatrix4("lightSpaceMatrix", directinallightShadowPass._lightSpaceMatrix);
+
+    shader.SetInt("spotlightShadowCount", spotlightShadowPassCount);
+    for(int i = 0; i < spotlightShadowPassCount; i++){
+        std::string setMat = "spotlightSpaceMatrixs[" + std::to_string(i) + "]";
+        shader.SetMatrix4(setMat.c_str(), spotlightShadowPass[i]._lightSpaceMatrix);
+
+        std::string setFram = "spotlightShadowMaps[" + std::to_string(i) + "]";
+        shader.SetFramebuffer(setFram.c_str(), *spotlightShadowPass[i]._shadowMap, baseShadowMapIndex+(i+1), -1);
+    }
 
     std::vector<EntityId> lights;
     bool hasDirectionalLight = false;
@@ -351,43 +376,6 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     }
 }
 
-void StandRendererSystem::UpdateCurrentLight(){}
-
-void StandRendererSystem::RenderSceneShadow(LightComponent& light, TransformComponent& transform){
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderSceneShadow");
-
-    float near_plane = 0.05f, far_plane = 1000;
-    float lightBoxHalfExtend = 50;
-    Matrix4 lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
-    
-    Vector3 lightCenter = transform.position();
-    Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
-    Matrix4 lightView = Matrix4::LookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));  
-    //lightView = directionalLight->entity->transform().globalModelMatrix().inverse();
-    _lightSpaceMatrix = lightProjection * lightView; 
-
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
-
-    auto view = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto _entity: view){
-        auto& c = view.get<MeshRendererComponent>(_entity);
-        auto& t = view.get<TransformComponent>(_entity);
-
-        for(Ref<Mesh> m: c.model()->meshs){
-            _shadowMapShader->Bind();
-            _shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
-            Renderer::DrawMesh(*m, t.globalModelMatrix(), *_shadowMapShader);
-        }
-    }
-}
-
-void StandRendererSystem::ClearSceneShadow(){
-    OD_PROFILE_SCOPE("StandRendererSystem::ClearSceneShadow");
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
-}
-
 void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
@@ -401,6 +389,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     // --------- Clean --------- 
     Renderer::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
 
+    #pragma region RenderSkyPass
     // --------- Render Sky --------- 
     if(environmentSettings.sky != nullptr){
         Assert(environmentSettings.sky->shader() != nullptr);
@@ -417,6 +406,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         Renderer::DrawMeshRaw(_skyboxMesh);
         Renderer::SetDepthMask(true);
     }
+    #pragma endregion 
 
     // --------- Render Targets --------- 
     std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 
@@ -512,4 +502,57 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         Renderer::DrawMesh(_spriteMesh, t.globalModelMatrix(), *_spriteShader);
     }
 }
+
+void StandRendererSystem::ShadowRenderPass::Clean(StandRendererSystem& root){
+    OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Clean");
+    _shadowMap->Bind();
+    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    _shadowMap->Unbind();
+}
+
+void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
+    OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Render");
+
+    _shadowMap->Bind();
+    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+
+    Matrix4 lightProjection = Matrix4::identity;
+    Matrix4 lightView = Matrix4::identity;
+
+    if(light.type == LightComponent::Type::Spot){
+        lightProjection = Matrix4::Perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1, 0.1f, light.radius);
+        lightView = Matrix4::LookAt(transform.position(), transform.position() - (-transform.forward()), Vector3::up);
+    }
+
+    if(light.type == LightComponent::Type::Directional){
+        float near_plane = 0.05f, far_plane = 1000;
+        float lightBoxHalfExtend = 50;
+        lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
+        Vector3 lightCenter = transform.position();
+        Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
+        lightView = Matrix4::LookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));
+    }
+
+    _lightSpaceMatrix = lightProjection * lightView; 
+
+    Renderer::SetDepthTest(DepthTest::LESS);
+    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+
+    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto _entity: view){
+        auto& c = view.get<MeshRendererComponent>(_entity);
+        auto& t = view.get<TransformComponent>(_entity);
+
+        for(Ref<Mesh> m: c.model()->meshs){
+            root._shadowMapShader->Bind();
+            root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+            Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
+        }
+    }
+
+    _shadowMap->Unbind();
+}
+
 }

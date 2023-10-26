@@ -43,7 +43,6 @@ private:
 
     Framebuffer* _objectsId;
 
-    Framebuffer* _shadowMap;
     Ref<Shader> _shadowMapShader;
     Ref<Shader> _postProcessingShader;
     Ref<Shader> _blitShader;
@@ -68,9 +67,20 @@ private:
 
     void SetStandUniforms(Vector3 viewPos, Shader& material);
     void RenderScene(Camera& camera, bool isMain, Vector3 camPOs);
-    void RenderSceneShadow(LightComponent& light, TransformComponent& transform);
-    void ClearSceneShadow();
-    void UpdateCurrentLight();
+
+    struct ShadowRenderPass{
+        Framebuffer* _shadowMap;
+        Matrix4 _lightSpaceMatrix;
+
+        void Clean(StandRendererSystem& root);
+        void Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
+    };
+
+    ShadowRenderPass directinallightShadowPass;
+
+    #define MAX_SPOTLIGHT_SHADOWS 5
+    ShadowRenderPass spotlightShadowPass[MAX_SPOTLIGHT_SHADOWS];
+    int spotlightShadowPassCount = 0;
 };
 
 };
