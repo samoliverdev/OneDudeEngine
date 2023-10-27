@@ -7,7 +7,7 @@
 #include "OD/RendererSystem/MeshRendererComponent.h"
 #include "OD/RendererSystem/EnvironmentComponent.h"
 #include "OD/PhysicsSystem/PhysicsSystem.h"
-#include "OD/AnimationSystem/Animator.h"
+//#include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <functional>
 #include <string>

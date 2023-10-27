@@ -2,7 +2,7 @@
 #include <iostream>
 #include "OD/Defines.h"
 
-GLenum glCheckError_(const char *file, int line){
+GLenum glCheckError_(const char *file, int line, std::function<void()> callback){
     GLenum errorCode;
     while ((errorCode = glGetError()) != GL_NO_ERROR){
         std::string error = "OTHER";
@@ -15,9 +15,12 @@ GLenum glCheckError_(const char *file, int line){
             case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
             case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
         }
+
         //std::cout << error << " | " << file << " (" << line << ")" << std::endl;
         LogError("OpenGL:ERROR: %s(%d) | %s (%d)\n", error.c_str(), errorCode, file, line);
         //Assert(false);
+        if(callback != nullptr) callback();
     }
+
     return errorCode;
 }

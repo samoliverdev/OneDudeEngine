@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/Culling.h"
 #include "OD/Renderer/Shader.h"
 #include "OD/Renderer/Mesh.h"
 #include "OD/Renderer/Framebuffer.h"
@@ -21,6 +22,11 @@ public:
     bool enable = true;
 };
 
+struct RenderCamera{
+    Camera cam;
+    Frustum frustum;
+};
+
 struct StandRendererSystem: public OD::System{
     StandRendererSystem();
     ~StandRendererSystem();
@@ -29,7 +35,7 @@ struct StandRendererSystem: public OD::System{
     void Update() override;
 
     inline void SetOutFrameBuffer(Framebuffer* out){ _outFramebuffer = out; }
-    inline void overrideCamera(Camera* cam, Transform trans){ _overrideCamera = cam; _overrideCameraTrans = trans;} 
+    inline void overrideCamera(RenderCamera* cam, Transform trans){ _overrideCamera = cam; _overrideCameraTrans = trans;} 
 
     inline Framebuffer* finalColor(){ return _finalColor; }
     inline Framebuffer* objectsId(){ return _objectsId; }
@@ -56,7 +62,7 @@ private:
     Framebuffer* _finalColor;
     Framebuffer* _finalColor2;
 
-    Camera* _overrideCamera = nullptr;
+    RenderCamera* _overrideCamera = nullptr;
     Transform _overrideCameraTrans;
 
     std::vector<PostProcessingPass*> _ppPass;
@@ -66,7 +72,7 @@ private:
     Ref<Cubemap> _skyboxCubemap;
 
     void SetStandUniforms(Vector3 viewPos, Shader& material);
-    void RenderScene(Camera& camera, bool isMain, Vector3 camPOs);
+    void RenderScene(RenderCamera& camera, bool isMain, Vector3 camPOs);
 
     struct ShadowRenderPass{
         Framebuffer* _shadowMap;

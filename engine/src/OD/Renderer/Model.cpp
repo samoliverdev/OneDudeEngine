@@ -1,5 +1,5 @@
 #include "Model.h"
-#include "Animations.h"
+//#include "Animations.h"
 #include "OD/Core/AssetManager.h"
 #include "AssimpGLMHelpers.h"
 
@@ -22,9 +22,9 @@ Ref<Model> Model::CreateFromFile(std::string const &path, Ref<Shader> customShad
     // process ASSIMP's root node recursively
     out->processNode(scene->mRootNode, scene, customShader);
 
-    for(int i = 0; i < scene->mNumAnimations; i++){
-        out->animations.push_back(CreateRef<Animation>(scene, scene->mAnimations[i], out.get()));
-    }
+    //for(int i = 0; i < scene->mNumAnimations; i++){
+    //    out->animations.push_back(CreateRef<Animation>(scene, scene->mAnimations[i], out.get()));
+    //}
 
     return out;
 }
@@ -41,49 +41,6 @@ void Model::processNode(aiNode *node, const aiScene *scene, Ref<Shader> customSh
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++){
         processNode(node->mChildren[i], scene, customShader);
-    }
-}
-
-void Model::AddBoneData(BoneData& boneData, unsigned int boneId, float weight){
-    for (int i = 0; i < MAX_BONE_INFLUENCE; ++i){
-        if (boneData.boneId[i] <= 0){
-            boneData.weight[i] = weight;
-            boneData.boneId[i] = boneId;
-            break;
-        }
-    }
-}
-
-void Model::ExtractBoneWeightForVertices(Ref<Mesh> _mesh, aiMesh* mesh, const aiScene* scene){
-    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex){
-        int boneID = -1;
-        std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
-
-        if (_boneInfoMap.find(boneName) == _boneInfoMap.end()){
-            BoneInfo newBoneInfo;
-            newBoneInfo.id = _boneCounter;
-            newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(mesh->mBones[boneIndex]->mOffsetMatrix);
-
-            _boneInfoMap[boneName] = newBoneInfo;
-            boneID = _boneCounter;
-            _boneCounter++;
-        } else {
-            boneID = _boneInfoMap[boneName].id;
-        }
-
-        assert(boneID != -1);
-        auto weights = mesh->mBones[boneIndex]->mWeights;
-        int numWeights = mesh->mBones[boneIndex]->mNumWeights;
-
-        //LogInfo("Bone -> Name: %s, Id: %d", boneName.c_str(), boneID);
-
-        for(int weightIndex = 0; weightIndex < numWeights; ++weightIndex){
-            int vertexId = weights[weightIndex].mVertexId;
-            float weight = weights[weightIndex].mWeight;
-            
-            assert(vertexId <= _mesh->vertices.size());
-            AddBoneData(_mesh->boneDatas[vertexId], boneID, weight);
-        }
     }
 }
 
@@ -131,11 +88,6 @@ Ref<Mesh> Model::processMesh(aiMesh *mesh, const aiScene *scene){
         // retrieve all indices of the face and store them in the indices vector
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             out->indices.push_back(face.mIndices[j]);        
-    }
-    
-    if(mesh->HasBones()){
-        out->boneDatas.resize(out->vertices.size());
-        ExtractBoneWeightForVertices(out, mesh, scene);
     }
 
     out->UpdateMesh();

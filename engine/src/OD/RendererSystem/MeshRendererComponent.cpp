@@ -103,9 +103,35 @@ void MeshRendererComponent::OnGui(Entity& e){
     if(mesh.model() != nullptr && ImGui::TreeNode("Info")){
         ImGui::Text("Mesh: %zd", mesh.model()->meshs.size());
         ImGui::Text("Materials: %zd", mesh.model()->materials.size());
-        ImGui::Text("Animations: %zd", mesh.model()->animations.size());
+        //ImGui::Text("Animations: %zd", mesh.model()->animations.size());
         ImGui::TreePop();
     }
+}
+
+AABB MeshRendererComponent::getGlobalAABB(TransformComponent& transform){
+    //Get global scale thanks to our transform
+    const Vector3 globalCenter{ transform.globalModelMatrix() * Vector4(_boundingVolume.center, 1) };
+
+    // Scaled orientation
+    const Vector3 right = transform.right() * _boundingVolume.extents.x;
+    const Vector3 up = transform.up() * _boundingVolume.extents.y;
+    const Vector3 forward = transform.forward() * _boundingVolume.extents.z;
+
+    const float newIi = math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, right)) +
+        math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, up)) +
+        math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, forward));
+
+    const float newIj = math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, right)) +
+        math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, up)) +
+        math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, forward));
+
+    const float newIk = math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, right)) +
+        math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, up)) +
+        math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
+
+    AABB result = AABB(globalCenter, newIi, newIj, newIk);
+    //result.Expand(transform.localScale());
+    return result;
 }
 
 }

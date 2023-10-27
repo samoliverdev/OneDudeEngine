@@ -1,19 +1,9 @@
 #include "Math.h"
 
-#include <string>
-
-#include "glm/geometric.hpp"
-#include "glm/gtx/norm.hpp"
-#include "glm/gtx/vector_angle.hpp"
-#include "glm/gtx/orthonormalize.hpp"
-
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/matrix_access.hpp"
-#include "glm/gtx/matrix_query.hpp"
-#include "glm/gtx/vector_angle.hpp"
-
 namespace OD{
 
+
+/*
 Vector2::Vector2(glm::vec2 v): glm::vec2(v){}
 Vector2::Vector2(float x, float y): glm::vec2(x, y){}
 
@@ -176,6 +166,10 @@ float Vector3::Dot(Vector3 lhs, Vector3 rhs){
     return result;
 }
 
+Vector3 Vector3::Cross(Vector3 lhs, Vector3 rhs){
+    return glm::cross(static_cast<glm::vec3>(lhs), static_cast<glm::vec3>(rhs));
+}
+
 Vector3 Vector3::Lerp(Vector3 a, Vector3 b, float t){
     t = glm::clamp(t, 0.0f, 1.0f);
     return LerpUnclamped(a, b, t);
@@ -209,15 +203,6 @@ void Vector3::OrthoNormalize(Vector3 *normal, Vector3 *tangent){
 }
 
 Vector3 Vector3::Project(Vector3 vector, Vector3 onNormal){
-    /*
-    float num = Vector3::Dot(onNormal, onNormal);
-    if (num < Mathf::Epsilon)
-    {
-        return Vector3::zero;
-    }
-    return onNormal * Vector3::Dot(vector, onNormal) / num;
-    */
-
     return Vector3::zero;
 }
 
@@ -470,16 +455,8 @@ Vector4 Matrix4::GetRow(int i) const{
 }
 
 Vector3 Matrix4::MultiplyPoint(Vector3 v) const{
-    Vector3 result;
-    result.x = (*this)[0][0] * v.x + (*this)[0][1] * v.y + (*this)[0][2] * v.z + (*this)[0][3];
-    result.y = (*this)[1][0] * v.x + (*this)[1][1] * v.y + (*this)[1][2] * v.z + (*this)[1][3];
-    result.z = (*this)[2][0] * v.x + (*this)[2][1] * v.y + (*this)[2][2] * v.z + (*this)[2][3];
-    float num = (*this)[3][0] * v.x + (*this)[3][1] * v.y + (*this)[3][2] * v.z + (*this)[3][3];
-    num = 1.0f / num;
-    result.x *= num;
-    result.y *= num;
-    result.z *= num;
-    return result;
+    glm::vec4 result = static_cast<glm::mat4>(*this) * glm::vec4(v.x, v.y, v.z, 1);
+    return glm::vec3(result.x, result.y, result.z);
 }
 
 Vector3 Matrix4::MultiplyPoint3x4(Vector3 v) const{
@@ -645,13 +622,13 @@ float Mathf::SmoothDampAngle(float current,
     float temp = (*currentVelocity + omega * deltaX) * deltaTime;
     float result = current - deltaX + (deltaX + temp) * exp;
     *currentVelocity = (*currentVelocity - omega * temp) * exp;
-
-    // ensure that we do not overshoot our target
+    
     if (target - current > 0.0f == result > target){
         result = target;
         *currentVelocity = 0.0f;
     }
     return result;
 }
+*/
 
 }

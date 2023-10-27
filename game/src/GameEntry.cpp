@@ -6,8 +6,6 @@
 #include "ECS_4.h"
 //#include "Framebuffer_5.h"
 #include "Physics_6.h"
-#include "SkinnedMesh_7.h"
-#include "SkinnedMesh_8.h"
 #include "Serialization_9.h"
 
 #include <string>
@@ -30,8 +28,6 @@ OD::Module* CreateMainModule(){
     if(i == 3) return new ECS_4();
     //if(i == 4) return new Framebuffer_5();
     if(i == 5) return new Physics_6();
-    if(i == 6) return new SkinnedMesh_7();
-    if(i == 7) return new SkinnedMesh_8();
     if(i == 8) return new Serialization_9();
 
     return new BaseMesh_1();

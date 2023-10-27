@@ -1,7 +1,7 @@
 #pragma once
 
 #include <OD/OD.h>
-#include <OD/AnimationSystem/Animator.h>
+//#include <OD/AnimationSystem/Animator.h>
 #include "CameraMovement.h"
 #include <assert.h>
 #include "Ultis.h"
@@ -42,20 +42,6 @@ struct ECS_4: public OD::Module {
     SoLoud::Soloud soloud;
     SoLoud::Wav sample;
 
-    void AddCharacter(Vector3 pos){
-        Entity character = SceneManager::Get().activeScene()->AddEntity("Character");
-        character.GetComponent<TransformComponent>().localPosition(pos);
-        character.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
-        MeshRendererComponent& charMesh = character.AddComponent<MeshRendererComponent>();
-        charMesh.model(AssetManager::Get().LoadModel(
-            "res/models/Skinned/VampireALusth.dae",
-            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkinnedModel.glsl")
-        ));
-        Ref<Model> anim = AssetManager::Get().LoadModel("res/models/Skinned/Capoeira.dae");
-        AnimatorComponent& charAnimator = character.AddComponent<AnimatorComponent>();
-        charAnimator.Play(anim->animations[0].get());
-    }
-
     void AddTransparent(Vector3 pos){
         Entity et = SceneManager::Get().activeScene()->AddEntity("Transparent");
         et.GetComponent<TransformComponent>().position(pos);
@@ -81,7 +67,6 @@ struct ECS_4: public OD::Module {
         SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
         SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
         SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
-        SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
@@ -196,11 +181,6 @@ struct ECS_4: public OD::Module {
             otherEntity = e;
 
             scene->SetParent(mainEntity.id(), e.id());
-        }
-
-        for(int i = 0; i < 0; i++){
-            float posRange = 50;
-            AddCharacter(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         }
 
         Application::AddModule<Editor>();

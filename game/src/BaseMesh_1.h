@@ -130,18 +130,18 @@ struct BaseMesh_1: OD::Module {
         Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
         Renderer::SetBlend(false);
 
-        Camera cam = {Matrix4::identity, Matrix4::identity};
+        Camera cam = {Matrix4Identity, Matrix4Identity};
         Renderer::SetCamera(cam);
 
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
-        Renderer::DrawMesh(mesh, Matrix4::identity, *meshShader);
+        Renderer::DrawMesh(mesh, Matrix4Identity, *meshShader);
 
         /////////// Render Text ///////////
 
         Renderer::SetBlend(true);
         Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
         
-        cam = {Matrix4::identity, Matrix4::Ortho(0.0f, Application::screenWidth(), 0.0f, Application::screenHeight(), -10, 10)};
+        cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::screenWidth(), 0.0f, (float)Application::screenHeight(), -10.0f, 10.0f)};
         Renderer::SetCamera(cam);
 
         Renderer::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Vector3(0.5f, 0.8f, 0.2f));

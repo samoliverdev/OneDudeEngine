@@ -169,17 +169,21 @@ void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
     tris += mesh._indiceCount;
     
     shader.Bind();
-    shader.SetFloat("useInstancing", 0);
+    shader.SetFloat("useInstancing", 0.0f); 
+    //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 0.0f);
     shader.SetMatrix4("model", modelMatrix);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
 
     glBindVertexArray(mesh._vao);
+    glCheckError();
 
     if(mesh._ebo != 0){
         glDrawElements(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
     } else {
         glDrawArrays(GL_TRIANGLES, 0, mesh._vertexCount);
+        glCheckError();
     }
 
     glBindVertexArray(0);
@@ -225,7 +229,8 @@ void Renderer::DrawMeshInstancing(Mesh& mesh, Shader& shader, int count){
     tris += mesh._indiceCount * count;
     
     shader.Bind();
-    shader.SetFloat("useInstancing", 1.0f);
+    shader.SetFloat("useInstancing", 1.0f); 
+    //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 1.0f);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
 
@@ -233,8 +238,10 @@ void Renderer::DrawMeshInstancing(Mesh& mesh, Shader& shader, int count){
 
     if(mesh._ebo != 0){
         glDrawElementsInstanced(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0, count);
+        glCheckError();
     } else {
         glDrawArraysInstanced(GL_TRIANGLES, 0, mesh._vertexCount, count);
+        glCheckError();
     }
 
     glBindVertexArray(0);
@@ -248,7 +255,30 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
 
     gismoShader->Bind();
     gismoShader->SetVector3("color", color);
-    gismoShader->SetMatrix4("model", Matrix4::identity);
+    gismoShader->SetMatrix4("model", Matrix4Identity);
+    gismoShader->SetMatrix4("view", camera.view);
+    gismoShader->SetMatrix4("projection", camera.projection);
+
+	glLineWidth(width);
+
+    float line[6] = {start.x, start.y, start.z, end.x, end.y, end.z};
+
+	glBindVertexArray(lineVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
+	glDrawArrays(GL_LINES, 0, 2);
+	glBindVertexArray(0);
+    glCheckError();
+}
+
+void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int width){
+    drawCalls += 1;
+    vertices += 2;
+    tris += 0;
+
+    gismoShader->Bind();
+    gismoShader->SetVector3("color", color);
+    gismoShader->SetMatrix4("model", model);
     gismoShader->SetMatrix4("view", camera.view);
     gismoShader->SetMatrix4("projection", camera.projection);
 

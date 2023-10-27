@@ -5,7 +5,7 @@ namespace OD{
 
 Matrix4 Transform::GetLocalModelMatrix(){
     if(_isDirt == false) return _localModelMatrix;
-    _localModelMatrix = Matrix4::TRS(_localPosition, _localRotation, _localScale);
+    _localModelMatrix = Mathf::TRS(_localPosition, _localRotation, _localScale);
     _isDirt = false;
     return _localModelMatrix;
 }

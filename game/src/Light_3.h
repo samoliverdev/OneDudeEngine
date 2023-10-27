@@ -44,7 +44,7 @@ struct Light_3: OD::Module {
 
         //camMove.transform = &camTransform;
 
-        modelTransform.localPosition(Vector3::zero);
+        modelTransform.localPosition(Vector3Zero);
         camTransform.localPosition(Vector3(0, 2, 4));
         camTransform.localEulerAngles(Vector3(-25, 0, 0));
 
@@ -75,7 +75,7 @@ struct Light_3: OD::Module {
 
     void OnRender(float deltaTime) override {
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
-        cam.view = camTransform.GetLocalModelMatrix().inverse();
+        cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
         model->materials[0]->SetVector3("viewPos", camTransform.localPosition());
 

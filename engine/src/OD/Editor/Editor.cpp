@@ -44,8 +44,9 @@ void Editor::OnUpdate(float deltaTime){
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr, Transform());
     } else {
         _cam.OnUpdate();
-        _cam.cam.SetPerspective(45, 0.1f, 10000.0f, _viewportSize.x, _viewportSize.y);
-        _cam.cam.view = _cam.transform.GetLocalModelMatrix().inverse();
+        _cam.cam.cam.SetPerspective(45, 0.1f, 10000.0f, _viewportSize.x, _viewportSize.y);
+        _cam.cam.cam.view = math::inverse(_cam.transform.GetLocalModelMatrix());
+        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, _viewportSize.x / _viewportSize.y, Mathf::Deg2Rad(45), 0.1f, 10000.0f);
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam, _cam.transform);
     }
 
@@ -394,7 +395,7 @@ void Editor::DrawGizmos(){
     if(_selectionEntity.IsValid() == false) return;
     if(_gizmoType == Editor::GizmosType::None) return;
 
-    Camera cam = _cam.cam;
+    Camera cam = _cam.cam.cam;
 
     if(SceneManager::Get().activeScene()->running()){
         Entity camE = SceneManager::Get().activeScene()->GetMainCamera2();
@@ -430,11 +431,11 @@ void Editor::DrawGizmos(){
     if(_gizmoType == Editor::GizmosType::Scale) gizmoType = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::Manipulate(
-        view.raw(),
-        projection.raw(),
+        Mathf::Raw(view),
+        Mathf::Raw(projection),
         gizmoType, 
         ImGuizmo::LOCAL,
-        trans.raw(),
+        Mathf::Raw(trans),
         nullptr,
         (snap ? snapValues : nullptr)
     );

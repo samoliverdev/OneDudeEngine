@@ -51,7 +51,7 @@ struct LoadModel_2: OD::Module {
         OD_PROFILE_SCOPE("LoadModel_2::OnRender");
 
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
-        cam.view = camTransform.GetLocalModelMatrix().inverse();
+        cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
         Renderer::Begin();
         Renderer::Clean(0.1f, 0.1f, 0.1f, 1);

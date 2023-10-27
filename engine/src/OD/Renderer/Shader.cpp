@@ -204,7 +204,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     Assert(shaderSources.size() <= 2 && "We only support 2 shaders for now");
     GLenum glShaderIDs[2];
     int glShaderIDIndex = 0;
-    for (auto& kv : shaderSources){
+    for(auto& kv : shaderSources){
         GLenum type = kv.first;
         const std::string& source = kv.second;
 
@@ -271,14 +271,19 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
 
 void Shader::Bind(){
     glUseProgram(_rendererId);
+    glCheckError();
 }
 
 void Shader::Unbind(){
     glUseProgram(0);
+    glCheckError();
 }
 
 void Shader::Destroy(){
-    if(_rendererId != 0) glDeleteProgram(_rendererId);
+    if(_rendererId != 0){
+        glDeleteProgram(_rendererId);
+        glCheckError();
+    }
     _rendererId = 0;
 }
 
@@ -296,7 +301,9 @@ GLint Shader::GetLocation(const char* name){
 
 void Shader::SetFloat(const char* name, float value){
     glUniform1f(GetLocation(name), value);
-    glCheckError();
+    glCheckError2([&](){ 
+        LogError("UniformName: %s ShaderPath: %s", name, _path.c_str()); 
+    });
 }
 
 void Shader::SetInt(const char* name, int value){
@@ -321,7 +328,10 @@ void Shader::SetVector4(const char* name, Vector4 value){
 
 void Shader::SetMatrix4(const char* name, Matrix4 value){
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
-    glCheckError();
+    //glCheckError();
+    glCheckError2([&](){ 
+        LogError("UniformName: %s ShaderPath: %s", name, _path.c_str()); 
+    });
 }
 
 void Shader::SetTexture2D(const char* name, Texture2D& value, int index){

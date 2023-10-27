@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/Culling.h"
 #include "OD/Renderer/Mesh.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
@@ -10,7 +11,11 @@
 
 namespace OD{
 
+class StandRendererSystem;
+
 struct MeshRendererComponent{
+    friend class StandRendererSystem;
+
     static void Serialize(YAML::Emitter& out, Entity& e);
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
@@ -34,6 +39,11 @@ private:
     Ref<Model> _model = nullptr;
     int _subMeshIndex = -1;
     std::vector<Ref<Material>> _materialsOverride;
+    AABB _boundingVolume;
+    Sphere _boundingVolumeSphere;
+    bool _boundingVolumeIsDirty = true;
+
+    AABB getGlobalAABB(TransformComponent& transform);
 };
 
 };

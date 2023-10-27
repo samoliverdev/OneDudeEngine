@@ -73,6 +73,7 @@ public:
     static void DrawMeshInstancing(Mesh& mesh, Shader& shader, int count);
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
+    static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
 
     static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color);

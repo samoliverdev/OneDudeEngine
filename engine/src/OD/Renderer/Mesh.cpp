@@ -152,11 +152,14 @@ void Mesh::UpdateMeshInstancingModelMatrixs(){
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, _instancingModelMatrixsVbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
+            //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
+            glCheckError();
         }
     }
 
     glBindVertexArray(0);
+    glCheckError();
 }
 
 bool Mesh::IsValid(){

@@ -28,13 +28,20 @@ class TransformComponent: public Transform{
     friend struct Scene;
 
 public:
+    inline Vector3 forward(){ return rotation() * Vector3Forward; }
+    inline Vector3 back(){ return rotation() * Vector3Back; }
+    inline Vector3 left(){ return rotation() * Vector3Left; }
+    inline Vector3 right(){ return rotation() * Vector3Right; }
+    inline Vector3 up(){ return rotation() * Vector3Up; }
+    inline Vector3 down(){ return rotation() * Vector3Down; }
+
     Matrix4 globalModelMatrix();
     
     Vector3 InverseTransformDirection(Vector3 dir); //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
-    Vector3 TransformDirection(Vector3 dir); //	Transforms position from local space to world space.
+    Vector3 TransformDirection(Vector3 dir); //Transforms direction from local space to world space.
 
     Vector3 InverseTransformPoint(Vector3 point); //Transforms position from world space to local space.
-    Vector3 TransformPoint(Vector3 point); //Transforms direction from local space to world space.
+    Vector3 TransformPoint(Vector3 point);  //Transforms position from local space to world space.
 
     Vector3 position();
     void position(Vector3 position);
@@ -415,7 +422,7 @@ struct SceneManager{
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
             for(auto e: view){
-                auto& c = view.get<T>(e);
+                T& c = view.get<T>(e);
                 dst.emplace_or_replace<T>(e, c);
             }
         };
@@ -449,7 +456,7 @@ struct SceneManager{
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
             for(auto e: view){
-                auto& c = view.get<T>(e);
+                T& c = view.get<T>(e);
                 dst.emplace_or_replace<T>(e, c);
             }
         };

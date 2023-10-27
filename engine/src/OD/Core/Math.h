@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLM_FORCE_QUAT_DATA_XYZW
+
 #include "OD/Core/Application.h"
 
 #include <math.h>
@@ -20,7 +22,85 @@
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 
+#include <string>
+
+#include "glm/geometric.hpp"
+#include "glm/gtx/norm.hpp"
+#include "glm/gtx/vector_angle.hpp"
+#include "glm/gtx/orthonormalize.hpp"
+
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/matrix_access.hpp"
+#include "glm/gtx/matrix_query.hpp"
+#include "glm/gtx/vector_angle.hpp"
+
+
+
 namespace OD {
+
+using Vector2 = glm::vec2;
+using Vector3 = glm::vec3;
+using Vector4 = glm::vec4;
+using Quaternion = glm::quat;
+using Matrix4 = glm::mat4;
+
+namespace math = glm;
+
+const Vector2 Vector2Left(-1.0f, 0.0f);
+const Vector2 Vector2Right(1.0f, 0.0f);
+const Vector2 Vector2Up(0.0f, 1.0f);
+const Vector2 Vector2Down(0.0f, -1.0f);
+const Vector2 Vector2One(1.0f, 1.0f);
+const Vector2 Vector2Zero(0.0f, 0.0f);
+
+const Vector3 Vector3Forward(0.0f, 0.0f, 1.0f);
+const Vector3 Vector3Back(0.0f, 0.0f, -1.0f);
+const Vector3 Vector3Left(-1.0f, 0.0f, 0.0f);
+const Vector3 Vector3Right(1.0f, 0.0f, 0.0f);
+const Vector3 Vector3Up(0.0f, 1.0f, 0.0f);
+const Vector3 Vector3Down(0.0f, -1.0f, 0.0f);
+const Vector3 Vector3One(1.0f, 1.0f, 1.0f);
+const Vector3 Vector3Zero(0.0f, 0.0f, 0.0f);
+
+const Vector4 Vector4One(0.0f, 0.0f, 0.0f, 0.0f);
+const Vector4 Vector4Zero(0.0f, 0.0f, 0.0f, 0.0f);
+
+const Quaternion QuaternionIdentity = Quaternion(0,0,0,1);
+
+const Matrix4 Matrix4Identity(1.0f);
+const Matrix4 Matrix4Zero(0.0f);
+
+namespace Mathf{
+    inline float Deg2Rad(float a){ return math::radians(a); }
+    inline float Rad2Deg(float a){ return math::degrees(a); }
+
+    inline Vector3 Deg2Rad(Vector3 a){ return Vector3(math::radians(a.x), math::radians(a.y), math::radians(a.z)); }
+    inline Vector3 Rad2Deg(Vector3 a){ return Vector3(math::degrees(a.x), math::degrees(a.y), math::degrees(a.z)); }
+
+    inline float* Raw(Matrix4& m){ return &(m[0].x); }
+
+    inline static Matrix4 TRS(Vector3 pos, Quaternion q, Vector3 s){
+        Matrix4 translate = math::translate(pos);
+        Matrix4 rotate = math::mat4_cast(q);
+        Matrix4 scale = math::scale(s);
+        return translate * rotate * scale;
+    }
+}
+
+/*
+using vec2 = glm::vec2;
+namespace math = glm;
+
+namespace mathf{
+
+inline vec2 normalized(vec2 v){
+    vec2 result = v;
+    return math::normalize(result);
+}
+
+inline float Test(){ return math::radians<float>(20); }
+
+}
 
 struct Vector2: glm::vec2{
     Vector2(glm::vec2 v);
@@ -77,6 +157,7 @@ struct Vector3: glm::vec3{
     static Vector3 ClampMagnitude(Vector3 vector, float maxLength);
     static float Distance(Vector3 a, Vector3 b);
     static float Dot(Vector3 lhs, Vector3 rhs);
+    static Vector3 Cross(Vector3 lhs, Vector3 rhs);
     static Vector3 Lerp(Vector3 a, Vector3 b, float t);
     static Vector3 LerpUnclamped(Vector3 a, Vector3 b, float t);
     static Vector3 Max(Vector3 lhs, Vector3 rhs);
@@ -150,7 +231,6 @@ struct Matrix4: glm::mat4{
     Matrix4(glm::mat4 m);
     Matrix4(float f = 1.0f);
 
-    //operator glm::mat4(){ return (glm::mat4)*this; }
     inline float* raw(){ return &((*this)[0].x); }
 
     static const Matrix4 identity;
@@ -334,5 +414,6 @@ struct Mathf{
         return glm::tan(f);
     }
 };
+*/
 
 }

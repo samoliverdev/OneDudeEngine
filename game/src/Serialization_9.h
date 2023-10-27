@@ -33,7 +33,6 @@ struct Serialization_9: public OD::Module{
         SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
         SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
         SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
-        SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
         SceneManager::Get().RegisterComponent<ComponentTest_01>("ComponentTest_01");

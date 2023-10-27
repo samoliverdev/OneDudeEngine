@@ -140,6 +140,38 @@ StandRendererSystem::~StandRendererSystem(){
     delete _pp2;
 }
 
+Vector3 Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
+    return ( ( -p1.distance * math::cross( p2.normal, p3.normal ) ) +
+            ( -p2.distance * math::cross( p3.normal, p1.normal ) ) +
+            ( -p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
+        ( math::dot( p1.normal, math::cross( p2.normal, p3.normal ) ) );
+}
+
+void DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
+    Vector3 nearCorners[4]; //Approx'd nearplane corners
+    Vector3 farCorners[4]; //Approx'd farplane corners
+    Plane camPlanes[6];
+    camPlanes[0] = frustum.leftFace;
+    camPlanes[1] = frustum.rightFace;
+    camPlanes[2] = frustum.bottomFace;
+    camPlanes[3] = frustum.topFace;
+    camPlanes[4] = frustum.nearFace;
+    camPlanes[5] = frustum.farFace;
+
+    Plane temp = camPlanes[1]; camPlanes[1] = camPlanes[2]; camPlanes[2] = temp; //swap [1] and [2] so the order is better for the loop
+
+    for(int i = 0; i < 4; i++){
+        nearCorners[i] = Plane3Intersect(camPlanes[4], camPlanes[i], camPlanes[(i + 1) % 4]); //near corners on the created projection matrix
+        farCorners[i] = Plane3Intersect(camPlanes[5], camPlanes[i], camPlanes[(i + 1) % 4]); //far corners on the created projection matrix
+    }
+
+    for(int i = 0; i < 4; i++){
+        Renderer::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
+        Renderer::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
+        Renderer::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
+    }
+}
+
 void StandRendererSystem::Update(){
     OD_PROFILE_SCOPE("StandRendererSystem::Update");
 
@@ -190,7 +222,6 @@ void StandRendererSystem::Update(){
         auto& transform = view.get<TransformComponent>(entity);
 
         if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
-            //RenderSceneShadow(light, transform);
             directinallightShadowPass.Render(light, transform, *this);
             hasShadow = true;
         }
@@ -231,12 +262,47 @@ void StandRendererSystem::Update(){
 
         c.UpdateCameraData(t, width, height);
         if(c.isMain){
-            Camera cam = c.camera();
-            RenderScene(cam, true, _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position());
+            //c.UpdateCameraData(t, width, height);
+            RenderCamera renderCam = {
+                c.camera(),
+                CreateFrustumFromCamera(t, (float)width / (float)height, Mathf::Deg2Rad(c.fieldOfView), c.nearClipPlane, c.farClipPlane)
+            };
+
+            RenderScene(
+                _overrideCamera != nullptr ? *_overrideCamera : renderCam, 
+                true, 
+                _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position()
+            );
             break;
         }
     }
     scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+
+    /*auto view3 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    int aabbGizmosCount = 0;
+    for(auto entity: view3){
+        auto& c = view3.get<MeshRendererComponent>(entity);
+        auto& t = view3.get<TransformComponent>(entity);
+
+        AABB aabb = c.getGlobalAABB(t);
+        Transform _t;
+        _t.localPosition(aabb.center);
+        _t.localScale(aabb.extents);
+
+        Renderer::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(0,1,0), 1);
+        aabbGizmosCount += 1;
+    }
+    Renderer::drawCalls -= aabbGizmosCount;*/
+
+    /*for(auto entity: view2){
+        auto& c = view2.get<CameraComponent>(entity);
+        auto& t = view2.get<TransformComponent>(entity);
+        DrawFrustum(
+            CreateFrustumFromCamera(t, (float)width / (float)height, Mathf::Deg2Rad(c.fieldOfView), c.nearClipPlane, c.farClipPlane)
+        );
+    }*/
+
+    //if(_overrideCamera != nullptr){ DrawFrustum(_overrideCamera->frustum); }
 
     //LogInfo("ReadPixel(1): %d", _finalColor->ReadPixel(1, 50, 50));
 
@@ -327,8 +393,8 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     }
 
     if(hasDirectionalLight == false){
-        shader.SetVector3("directionalLightDir", Vector3::zero);
-        shader.SetVector3("directionalLightColor", Vector3::zero);
+        shader.SetVector3("directionalLightDir", Vector3Zero);
+        shader.SetVector3("directionalLightColor", Vector3Zero);
     }
 
     shader.SetInt("lightsCount", lights.size());
@@ -368,22 +434,22 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
             if(l.coneAngleInner > l.coneAngleOuter) l.coneAngleInner = l.coneAngleOuter;
 
             sprintf(buff, "lights[%d].coneAngleOuter", i);
-            shader.SetFloat(buff, Mathf::Cos(Mathf::Deg2Rad(l.coneAngleOuter)));
+            shader.SetFloat(buff, math::cos(Mathf::Deg2Rad(l.coneAngleOuter)));
 
             sprintf(buff, "lights[%d].coneAngleInner", i);
-            shader.SetFloat(buff, Mathf::Cos(Mathf::Deg2Rad(l.coneAngleInner)));
+            shader.SetFloat(buff, math::cos(Mathf::Deg2Rad(l.coneAngleInner)));
         }
     }
 }
 
-void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPos){
+void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
     // --------- Set Camera --------- 
     if(isMain){
-        Renderer::SetCamera(_overrideCamera != nullptr ? *_overrideCamera : camera);
+        Renderer::SetCamera(_overrideCamera != nullptr ? _overrideCamera->cam : camera.cam);
     } else {
-        Renderer::SetCamera(camera);
+        Renderer::SetCamera(camera.cam);
     }
 
     // --------- Clean --------- 
@@ -422,13 +488,23 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         auto& c = view1.get<MeshRendererComponent>(_entity);
         auto& t = view1.get<TransformComponent>(_entity);
 
+        if(c.model() == nullptr) continue;
+        if(c._boundingVolumeIsDirty){
+            c._boundingVolume = generateAABB(*c.model());
+            c._boundingVolumeSphere = generateSphereBV(*c.model());
+            c._boundingVolumeIsDirty = false;
+        }
+        //c._boundingVolume.Expand(t.localScale());
+        if(c._boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;
+        //if(c._boundingVolumeSphere.isOnFrustum(camera.frustum, t) == false) continue;
+
         int index = 0;
         for(Ref<Material> i: c.model()->materials){
             Ref<Material> targetMaterial = i;
             if(c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
 
             if(targetMaterial->isBlend()){
-                float distance = Vector3::Distance(camPos, t.position());
+                float distance = math::distance(camPos, t.position());
                 renderTargetsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
             } else {
                 if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
@@ -436,14 +512,10 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
                 } else {
                     renderTargetsOpaques[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
                 }
-
-                //renderTargets[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
-                //renderTargetInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
             }
                 
             index += 1;
         }
-        //Renderer::DrawModel(*c.model(), t.globalModelMatrix(), c.subMeshIndex(), &c.materialsOverride());
     }
 
     // --------- Render Opaques Instancing --------- 
@@ -458,9 +530,7 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         i.first.mesh->UpdateMeshInstancingModelMatrixs();
 
         Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
-        //LogInfo("Instancing count: %zd ShaderPath: %s", i.second.size(), i.first.material->shader->path().c_str());
     }
-    //LogInfo("renderTargetOpaquesInstancing count: %zd", renderTargetOpaquesInstancing.size());
 
     // --------- Render Opaques --------- 
     for(auto i: renderTargetsOpaques){
@@ -470,7 +540,6 @@ void StandRendererSystem::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
         }
     }
-    //LogInfo("renderTargetsOpaques count: %zd", renderTargetsOpaques.size());
     
     // --------- Render Blends --------- 
     Renderer::SetCullFace(CullFace::NONE);
@@ -517,21 +586,21 @@ void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, Transf
     _shadowMap->Bind();
     Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
 
-    Matrix4 lightProjection = Matrix4::identity;
-    Matrix4 lightView = Matrix4::identity;
+    Matrix4 lightProjection = Matrix4Identity;
+    Matrix4 lightView = Matrix4Identity;
 
     if(light.type == LightComponent::Type::Spot){
-        lightProjection = Matrix4::Perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1, 0.1f, light.radius);
-        lightView = Matrix4::LookAt(transform.position(), transform.position() - (-transform.forward()), Vector3::up);
+        lightProjection = math::perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1.0f, 0.1f, light.radius);
+        lightView = math::lookAt(transform.position(), transform.position() - (-transform.forward()), Vector3Up);
     }
 
     if(light.type == LightComponent::Type::Directional){
         float near_plane = 0.05f, far_plane = 1000;
         float lightBoxHalfExtend = 50;
-        lightProjection = Matrix4::Ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
+        lightProjection = math::ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
         Vector3 lightCenter = transform.position();
         Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
-        lightView = Matrix4::LookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));
+        lightView = math::lookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));
     }
 
     _lightSpaceMatrix = lightProjection * lightView; 

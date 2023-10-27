@@ -25,7 +25,7 @@ void CoreModulesStartup(){
 
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
 
-    SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
+    //SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
 
     SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
 }

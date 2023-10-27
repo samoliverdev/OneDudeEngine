@@ -62,7 +62,7 @@ struct PhysicsCubeS: public Script{
         cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/mat1.material"); //Material::CreateFromFile("res/mat1.material");
 
         entity().GetComponent<TransformComponent>().position({2, 13, 0});
-        entity().GetComponent<TransformComponent>().rotation(Quaternion::identity);
+        entity().GetComponent<TransformComponent>().rotation(QuaternionIdentity);
 
         MeshRendererComponent& renderer = entity().AddOrGetComponent<MeshRendererComponent>();
         renderer.model(cubeModel);
@@ -180,7 +180,7 @@ struct Physics_6: OD::Module {
         physicObject.mass(1);
         //physicObject.neverSleep(true);
         character2Entity.GetComponent<TransformComponent>().position({2, 13, 0});
-        character2Entity.GetComponent<TransformComponent>().rotation(Quaternion::identity);
+        character2Entity.GetComponent<TransformComponent>().rotation(QuaternionIdentity);
 
         Entity trigger = scene->AddEntity("Trigger");
         RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();

@@ -2,6 +2,7 @@
 
 #include "OD/Core/Transform.h"
 #include "OD/Renderer/Camera.h"
+#include "OD/RendererSystem/StandRendererSystem.h"
 
 namespace OD{
 
@@ -16,7 +17,7 @@ public:
     float pitch;
 
     Transform transform;
-    Camera cam;
+    RenderCamera cam;
 
     void OnStart();
     void OnUpdate();

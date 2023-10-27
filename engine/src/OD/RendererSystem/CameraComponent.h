@@ -33,7 +33,7 @@ struct CameraComponent{
         else    
             _camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, width, height);
 
-        _camera.view = transform.globalModelMatrix().inverse();
+        _camera.view = math::inverse(transform.globalModelMatrix());
     }
 
 private:

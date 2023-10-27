@@ -168,7 +168,7 @@ void RigidbodyComponent::neverSleep(bool value){
 }
 
 Vector3 RigidbodyComponent::position(){
-    if(_data == nullptr) return Vector3::zero;
+    if(_data == nullptr) return Vector3Zero;
     btTransform trans = _data->_body->getWorldTransform();
     return FromBullet(trans.getOrigin());
 }
@@ -187,7 +187,7 @@ void RigidbodyComponent::position(Vector3 position){
 }
 
 Vector3 RigidbodyComponent::velocity(){
-    if(_data == nullptr) return Vector3::zero;
+    if(_data == nullptr) return Vector3Zero;
     return FromBullet(_data->_body->getLinearVelocity());
 }
 
@@ -363,7 +363,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 RigidbodyComponent& _r1 = e1.GetComponent<RigidbodyComponent>();
                 RigidbodyComponent& _r2 = e2.GetComponent<RigidbodyComponent>();
 
-                if(_r1.type() == RigidbodyComponent::Type::Trigger) _r2.ApplyImpulse(Vector3::up * 25.0f);
+                if(_r1.type() == RigidbodyComponent::Type::Trigger) _r2.ApplyImpulse(Vector3Up * 25.0f);
                 //if(_r2.type() == RigidbodyComponent::Type::Trigger) _r1.ApplyImpulse(Vector3::up * 20.0f);
 			}
 		}

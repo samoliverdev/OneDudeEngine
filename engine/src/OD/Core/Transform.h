@@ -9,25 +9,23 @@ class Transform{
 public:
     Matrix4 GetLocalModelMatrix();
 
-    inline Vector3 forward(){ return _localRotation * Vector3::forward; }
-    inline Vector3 back(){ return _localRotation * Vector3::back; }
-    inline Vector3 left(){ return _localRotation * Vector3::left; }
-    inline Vector3 right(){ return _localRotation * Vector3::right; }
+    inline Vector3 forward(){ return _localRotation * Vector3Forward; }
+    inline Vector3 back(){ return _localRotation * Vector3Back; }
+    inline Vector3 left(){ return _localRotation * Vector3Left; }
+    inline Vector3 right(){ return _localRotation * Vector3Right; }
+    inline Vector3 up(){ return _localRotation * Vector3Up; }
+    inline Vector3 down(){ return _localRotation * Vector3Down; }
 
     inline Vector3 localPosition(){ return _localPosition; }
     inline void localPosition(Vector3 pos){ _localPosition = pos; _isDirt = true; }
 
     inline Vector3 localEulerAngles(){ 
-        //Vector3 result = _localRotation.eulerAngles();
-        //return Vector3(Mathf::Rad2Deg(result.x), Mathf::Rad2Deg(result.y), Mathf::Rad2Deg(result.z));
         return _localEulerAngles;
     }
 
     inline void localEulerAngles(Vector3 euler){ 
-        //_localRotation.eulerAngles(Vector3(Mathf::Deg2Rad(euler.x), Mathf::Deg2Rad(euler.y), Mathf::Deg2Rad(euler.z)));
-        //_isDirt = true;
         _localEulerAngles = euler;
-        _localRotation.eulerAngles(Vector3(Mathf::Deg2Rad(_localEulerAngles.x), Mathf::Deg2Rad(_localEulerAngles.y), Mathf::Deg2Rad(_localEulerAngles.z)));
+        _localRotation = Quaternion(Mathf::Deg2Rad(_localEulerAngles));
         _isDirt = true;
     }
 
@@ -35,7 +33,7 @@ public:
     inline void localRotation(Quaternion rot){ 
         _localRotation = rot; 
         _isDirt = true; 
-        _localEulerAngles = _localRotation.eulerAngles();
+        _localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(_localRotation));
     }
 
     inline Vector3 localScale(){ return _localScale; }
@@ -45,11 +43,11 @@ public:
 
 protected:
     bool _isDirt = true;
-    Vector3 _localPosition = Vector3::zero;
-    Vector3 _localScale = Vector3::one;
-    Quaternion _localRotation = Quaternion::identity;
-    Vector3 _localEulerAngles = Vector3::zero;
-    Matrix4 _localModelMatrix = Matrix4::identity;
+    Vector3 _localPosition = Vector3Zero;
+    Vector3 _localScale = Vector3One;
+    Quaternion _localRotation = QuaternionIdentity;
+    Vector3 _localEulerAngles = Vector3Zero;
+    Matrix4 _localModelMatrix = Matrix4Identity;
 };
 
 }

@@ -19,26 +19,22 @@ Matrix4 TransformComponent::globalModelMatrix(){
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = globalModelMatrix();
-    //return matrix4.inverse() * Vector4(dir.x, dir.y, dir.z, 0);
-    return matrix4.inverse().MultiplyVector(dir);
+    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
 Vector3 TransformComponent::TransformDirection(Vector3 dir){
     Matrix4 matrix4 = globalModelMatrix();
-    //return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
-    return matrix4.MultiplyVector(dir);
+    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
 Vector3 TransformComponent::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = globalModelMatrix();
-    //return matrix4.inverse() * Vector4(point.x, point.y, point.z, 1);
-    return matrix4.inverse().MultiplyPoint(point);
+    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
 }
 
 Vector3 TransformComponent::TransformPoint(Vector3 point){
     Matrix4 matrix4 = globalModelMatrix();
-    //return matrix4 * Vector4(point.x, point.y, point.z, 1);
-    return matrix4.MultiplyPoint(point);
+    return matrix4 * Vector4(point.x, point.y, point.z, 1);
 }
 
 //Quaternion InverseTransformRot(Quaternion world, Quaternion rot){
@@ -76,7 +72,7 @@ void TransformComponent::rotation(Quaternion rotation){
         TransformComponent& parent = _registry->get<TransformComponent>(_parent);
         Quaternion world = parent.rotation();
         //localRotation(InverseTransformRot(world, rotation));
-        localRotation(Quaternion::Inverse(world) * rotation);
+        localRotation(math::inverse(world) * rotation);
     } else {
         localRotation(rotation);
     }
