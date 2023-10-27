@@ -285,14 +285,16 @@ void StandRendererSystem::Update(){
         auto& t = view3.get<TransformComponent>(entity);
 
         AABB aabb = c.getGlobalAABB(t);
+        aabb.Expand(Vector3One*2.0f);
         Transform _t;
         _t.localPosition(aabb.center);
         _t.localScale(aabb.extents);
 
-        Renderer::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(0,1,0), 1);
+        Renderer::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(0,1,0), 2);
         aabbGizmosCount += 1;
     }
-    Renderer::drawCalls -= aabbGizmosCount;*/
+    Renderer::drawCalls -= aabbGizmosCount;
+    */
 
     /*for(auto entity: view2){
         auto& c = view2.get<CameraComponent>(entity);
@@ -306,6 +308,7 @@ void StandRendererSystem::Update(){
 
     //LogInfo("ReadPixel(1): %d", _finalColor->ReadPixel(1, 50, 50));
 
+    {
     Renderer::BlitFramebuffer(_finalColor, _pp1);
     Renderer::BlitFramebuffer(_finalColor, _objectsId, 1);
     //Renderer::BlitQuadPostProcessing(_finalColor, _pp1, *_blitShader);
@@ -341,6 +344,7 @@ void StandRendererSystem::Update(){
     _pp1->Unbind();
     _pp2->Unbind();
     if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
+    }
 }
 
 /////////////////////////////////////////////////
@@ -494,8 +498,8 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
             c._boundingVolumeSphere = generateSphereBV(*c.model());
             c._boundingVolumeIsDirty = false;
         }
-        //c._boundingVolume.Expand(t.localScale());
-        if(c._boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;
+        AABB boundingVolume = c._boundingVolume.Scaled(t.localScale() * 2.0f);
+        if(boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;
         //if(c._boundingVolumeSphere.isOnFrustum(camera.frustum, t) == false) continue;
 
         int index = 0;

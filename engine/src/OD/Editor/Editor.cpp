@@ -40,21 +40,34 @@ void Editor::OnInit(){
 void Editor::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("Editor::OnUpdate");
 
+    if(Input::IsKeyDown(KeyCode::F5)) _open = !_open;
+
     if(SceneManager::Get().activeScene()->running()){
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr, Transform());
     } else {
+        float width = _viewportSize.x;
+        float height = _viewportSize.y;
+        if(_open == false){
+            width = Application::screenWidth();
+            height = Application::screenHeight();
+        }
+
         _cam.OnUpdate();
-        _cam.cam.cam.SetPerspective(45, 0.1f, 10000.0f, _viewportSize.x, _viewportSize.y);
+        _cam.cam.cam.SetPerspective(45, 0.1f, 10000.0f, width, height);
         _cam.cam.cam.view = math::inverse(_cam.transform.GetLocalModelMatrix());
-        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, _viewportSize.x / _viewportSize.y, Mathf::Deg2Rad(45), 0.1f, 10000.0f);
+        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 10000.0f);
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam, _cam.transform);
     }
 
-    SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
-    //if(_framebuffer->IsValid() && _viewportSize.x != 0 && _viewportSize.y != 0) _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
-    _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+    if(_open == false){
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+        ImGuiLayer::SetCleanAll(false);
+    } else{
+        ImGuiLayer::SetCleanAll(true);
+        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
+        _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+    }
 
-    
     /*if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
@@ -159,6 +172,8 @@ void Editor::HandleShotcuts(){
 }
 
 void Editor::DrawMainWorkspace(){
+    OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
+    
     _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     _sceneHierarchyPanel.SetEditor(this);
 
@@ -255,6 +270,8 @@ void Editor::DrawMainWorkspace(){
 }
 
 void Editor::DrawMainMenuBar(){
+    OD_PROFILE_SCOPE("Editor::DrawMainMenuBar");
+
     if(ImGui::BeginMainMenuBar()){
         if(ImGui::BeginMenu("File")){
             if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
@@ -277,6 +294,7 @@ void Editor::DrawMainMenuBar(){
 }
 
 void Editor::DrawMainPanel(){
+    OD_PROFILE_SCOPE("Editor::DrawMainPanel");
     //DrawGizmos();
 
     ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
@@ -455,6 +473,10 @@ void Editor::DrawGizmos(){
 }
 
 void Editor::OnGUI(){
+    OD_PROFILE_SCOPE("Editor::OnGUI");
+
+    if(_open == false) return;
+
     DrawMainPanel();
 }
 

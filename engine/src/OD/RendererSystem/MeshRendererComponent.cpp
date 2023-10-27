@@ -130,7 +130,7 @@ AABB MeshRendererComponent::getGlobalAABB(TransformComponent& transform){
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB result = AABB(globalCenter, newIi, newIj, newIk);
-    //result.Expand(transform.localScale());
+    result.Expand(transform.localScale());
     return result;
 }
 

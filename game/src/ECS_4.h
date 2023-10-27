@@ -64,9 +64,9 @@ struct ECS_4: public OD::Module {
 
         Application::vsync(false);
 
-        SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
-        SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
-        SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+        //SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+        //SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
+        //SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 

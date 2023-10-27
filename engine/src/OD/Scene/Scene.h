@@ -68,6 +68,8 @@ struct InfoComponent{
     std::string name = "Entity";
     std::string tag =  "";
 
+    inline EntityId id() const { return _id; }
+
 private:
     bool _active;
     EntityId _id;
@@ -170,6 +172,7 @@ struct Scene: public Asset {
     }
     
     void DestroyEntity(EntityId entity){
+        //_DestroyEntity(entity);
         _toDestroy.push_back(entity);
     }
 

@@ -85,6 +85,12 @@ struct AABB: public BoundingVolume{
 		extents.z *= amount.z; 
 	}
 
+	inline AABB Scaled(Vector3 s){
+		AABB result = *this;
+		result.Expand(s);
+		return result; 
+	}
+
 	std::array<Vector3, 8> getVertice() const;
 
 	//see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html

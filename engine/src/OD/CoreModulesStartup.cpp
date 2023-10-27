@@ -28,6 +28,11 @@ void CoreModulesStartup(){
     //SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
 
     SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
+
+    SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+    SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
+    SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+
 }
 
 }
