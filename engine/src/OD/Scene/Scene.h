@@ -389,8 +389,8 @@ struct SceneManager{
     }
 
     template<typename T>
-    void RegisterCoreComponent(std::string name){
-        Assert(_coreComponents.find(name) == _coreComponents.end());
+    void RegisterCoreComponent(const char* name){
+        Assert(_coreComponentsSerializer.find(name) == _coreComponentsSerializer.end());
         //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
         CoreComponent funcs;
@@ -425,17 +425,72 @@ struct SceneManager{
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
             for(auto e: view){
-                T& c = view.get<T>(e);
+                T& c = view.template get<T>(e);
                 dst.emplace_or_replace<T>(e, c);
             }
         };
         
-        _coreComponents[name] = funcs;
+        _coreComponentsSerializer[name] = funcs;
+    }
+
+        template<typename T>
+    void RegisterCoreComponentSimple(const char* name){
+        Assert(_coreComponentsSerializer.find(name) == _coreComponentsSerializer.end());
+        //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
+
+        CoreComponent funcs;
+
+        funcs.hasComponent = [](Entity& e){
+            return e.HasComponent<T>();
+        };
+
+        funcs.addComponent = [](Entity& e){
+            e.AddOrGetComponent<T>();
+        };
+
+        funcs.removeComponent = [](Entity& e){
+            e.RemoveComponent<T>();
+        };
+
+        funcs.serialize = [name](YAML::Emitter& out, Entity& e){
+            T& c = e.AddOrGetComponent<T>();
+
+            ArchiveNode root(ArchiveNode::Type::Object, std::string(name), nullptr);
+            c.Serialize(root);
+
+            ArchiveNode::SaveSerializer(root, out);
+        };
+
+        funcs.deserialize = [](YAML::Node& in, Entity& e){
+            T& c = e.AddOrGetComponent<T>();
+            
+            ArchiveNode root;
+            c.Serialize(root);
+            ArchiveNode::LoadSerializer(root, in);
+        };
+
+        funcs.onGui = [](Entity& e){
+            T& c = e.AddOrGetComponent<T>();
+
+            ArchiveNode root;
+            c.Serialize(root);
+            ArchiveNode::DrawArchive(root);
+        };
+
+        funcs.copy = [](entt::registry& dst, entt::registry& src){
+            auto view = src.view<T>();
+            for(auto e: view){
+                T& c = view.template get<T>(e);
+                dst.emplace_or_replace<T>(e, c);
+            }
+        };
+        
+        _coreComponentsSerializer[name] = funcs;
     }
 
     template<typename T>
-    void RegisterComponent(std::string name){
-        Assert(_serializeFuncs.find(name) == _serializeFuncs.end());
+    void RegisterComponent(const char* name){
+        Assert(_componentsSerializer.find(name) == _componentsSerializer.end());
 
         SerializeFuncs funcs;
 
@@ -459,17 +514,17 @@ struct SceneManager{
         funcs.copy = [](entt::registry& dst, entt::registry& src){
             auto view = src.view<T>();
             for(auto e: view){
-                T& c = view.get<T>(e);
+                T& c = view.template get<T>(e);
                 dst.emplace_or_replace<T>(e, c);
             }
         };
         
-        _serializeFuncs[name] = funcs;
+        _componentsSerializer[name] = funcs;
     }
 
     template<typename T>
-    void RegisterScript(std::string name){
-        Assert(_serializeScriptFuncs.find(name) == _serializeScriptFuncs.end());
+    void RegisterScript(const char* name){
+        Assert(_scriptsSerializer.find(name) == _scriptsSerializer.end());
 
         SerializeFuncs funcs;
 
@@ -486,11 +541,11 @@ struct SceneManager{
             c->Serialize(s);
         };
         
-        _serializeScriptFuncs[name] = funcs;
+        _scriptsSerializer[name] = funcs;
     }
 
     template<typename T>
-    void RegisterSystem(std::string name){
+    void RegisterSystem(const char* name){
         Assert(_addSystemFuncs.find(name) == _addSystemFuncs.end());
 
         _addSystemFuncs[name] = [&](Scene& e){
@@ -524,10 +579,10 @@ private:
 
     Scene* _activeScene;
 
-    std::unordered_map<std::string, CoreComponent> _coreComponents;
-    std::unordered_map<std::string, SerializeFuncs> _serializeFuncs;
-    std::unordered_map<std::string, SerializeFuncs> _serializeScriptFuncs;
-    std::unordered_map<std::string, std::function<void(Scene&)> > _addSystemFuncs;
+    std::unordered_map<const char*, CoreComponent> _coreComponentsSerializer;
+    std::unordered_map<const char*, SerializeFuncs> _componentsSerializer;
+    std::unordered_map<const char*, SerializeFuncs> _scriptsSerializer;
+    std::unordered_map<const char*, std::function<void(Scene&)> > _addSystemFuncs;
 };
 
 }

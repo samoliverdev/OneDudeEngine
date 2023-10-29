@@ -53,9 +53,9 @@ void Editor::OnUpdate(float deltaTime){
         }
 
         _cam.OnUpdate();
-        _cam.cam.cam.SetPerspective(45, 0.1f, 10000.0f, width, height);
+        _cam.cam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
         _cam.cam.cam.view = math::inverse(_cam.transform.GetLocalModelMatrix());
-        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 10000.0f);
+        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
         SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam, _cam.transform);
     }
 

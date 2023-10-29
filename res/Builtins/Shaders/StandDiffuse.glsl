@@ -51,12 +51,20 @@ uniform sampler2D mainTex;
 uniform float shininess = 0;
 uniform vec3 viewPos;
 
+uniform mat4 view;
+
 //////////////
 
 uniform float shadowBias = 0.001;
 
 uniform sampler2D shadowMap;
 uniform mat4 lightSpaceMatrix;
+
+#define MAX_SHADOW_CASCADES 4
+uniform sampler2D cascadeShadowMaps[MAX_SHADOW_CASCADES];
+uniform mat4 cascadeShadowMatrixs[MAX_SHADOW_CASCADES];
+uniform float cascadeShadowSplitDistances[MAX_SHADOW_CASCADES];
+uniform int cascadeShadowCount = 0;
 
 #define MAX_SPOTLIGHT_SHADOWS 5
 uniform sampler2D spotlightShadowMaps[MAX_SPOTLIGHT_SHADOWS];
@@ -178,8 +186,10 @@ float ShadowCalculation(sampler2D shadowMap, vec4 fragPosLightSpace){
     float closestDepth = texture(shadowMap, projCoords.xy).r; 
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
+    if(currentDepth > 1.0) return 0;
+
     // check whether current frag pos is in shadow
-    float bias = max((0.05/32) * (1.0 - dot(fsIn.worldNormal, directionalLightDir)), (0.005/16));
+    float bias = max((0.05/32) * (1.0 - dot(normalize(fsIn.worldNormal), directionalLightDir)), (0.005/16));
     bias = shadowBias;
     //bias = 0;
     
@@ -198,7 +208,43 @@ float ShadowCalculation(sampler2D shadowMap, vec4 fragPosLightSpace){
     }
     shadow /= pow((sampleRadius * 2 + 1), 2);
 
-    if(projCoords.z > 1.0) shadow = 0.0;
+    return shadow;
+}
+
+float ShadowCalculationCascade(sampler2D shadowMap, vec4 fragPosLightSpace, int cascadeIndex){
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    if(currentDepth > 1.0) return 0;
+
+    // check whether current frag pos is in shadow
+    float bias = max((0.05) * (1.0 - dot(normalize(fsIn.worldNormal), directionalLightDir)), (0.005));
+    bias = shadowBias;
+    //const float biasModifier = 0.5f;
+    //bias *= 1 / (cascadeShadowSplitDistances[cascadeShadowCount] * biasModifier);
+    
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
+    
+    shadow = 0;
+    int sampleRadius = 2;
+    vec2 pixelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+    for(int x = -sampleRadius; x <= sampleRadius; x++){
+        for(int y = -sampleRadius; y <= sampleRadius; y++){
+            float closestDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * pixelSize).r;
+            shadow += (currentDepth - bias) > closestDepth  ? 1.0 : 0.0;
+        }
+    }
+    shadow /= pow((sampleRadius * 2 + 1), 2);
+    //shadow /= 9.0;
+
+    if(projCoords.z > 1.0){
+        shadow = 0.0;
+    }
 
     return shadow;
 }
@@ -212,7 +258,32 @@ void main() {
 
     vec4 objectColor = texColor * color;
 
-    float shadow = ShadowCalculation(shadowMap, lightSpaceMatrix * vec4(fsIn.worldPos, 1)); 
+    //float shadow = ShadowCalculation(shadowMap, lightSpaceMatrix * vec4(fsIn.worldPos, 1)); 
+
+    float shadow = 0;
+
+    vec4 fragPosViewSpace = view * vec4(fsIn.worldPos, 1);
+    float depthValue = abs(fragPosViewSpace.z);
+    //float depthValue = (projection * view * model * vec4(fsIn.pos, 1)).z;
+
+    /*int cascadeIndex = 0;
+    for(int i = 0; i < cascadeShadowCount; i++){
+        if(depthValue < cascadeShadowSplitDistances[i]){
+            cascadeIndex = i;
+            break;
+        }
+    }
+    shadow += ShadowCalculationCascade(cascadeShadowMaps[cascadeIndex], cascadeShadowMatrixs[cascadeIndex] * vec4(fsIn.worldPos, 1), cascadeIndex);*/ 
+
+    int cascadeIndex = 0;
+    for(int i = 0; i < cascadeShadowCount; i++){
+        if(depthValue <= cascadeShadowSplitDistances[i]){
+            cascadeIndex = i;
+            shadow = ShadowCalculationCascade(cascadeShadowMaps[i], cascadeShadowMatrixs[i] * vec4(fsIn.worldPos, 1), i);
+            break;
+        }
+    }
+    
     //for(int i = 0; i < spotlightShadowCount; i++){
     //    shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)); 
     //}
@@ -245,6 +316,24 @@ void main() {
     //fragColor = objectColor;
     //float gamma = 2.2;
     //fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
+
+    int DEBUG_SHADOWS = 0;
+    if(DEBUG_SHADOWS == 1){
+        switch(cascadeIndex){
+            case 0:
+            fragColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+            break;
+            case 1:
+            fragColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+            break;
+            case 2:
+            fragColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+            break;
+            default :
+            fragColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+            break;
+        }
+    }
 
     fragColor2 = 50;
 }

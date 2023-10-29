@@ -1,10 +1,12 @@
 #include "Archive.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Utils/ImGuiCustomDraw.h"
+#include "OD/Core/AssetManager.h"
 
 namespace OD{
 
-void ArchiveNode::SaveSerializer(ArchiveNode& s, std::string name, YAML::Emitter& out){
-    out << YAML::Key << name;
+void ArchiveNode::SaveSerializer(ArchiveNode& s, YAML::Emitter& out){
+    out << YAML::Key << s.name();
     out << YAML::BeginMap;
     for(auto i: s.values){
         if(i.second.type() == ArchiveNode::Type::Float) out << YAML::Key << i.second.name() << YAML::Value << *static_cast<float*>(i.second.value);
@@ -13,16 +15,21 @@ void ArchiveNode::SaveSerializer(ArchiveNode& s, std::string name, YAML::Emitter
         if(i.second.type() == ArchiveNode::Type::Vector3) out << YAML::Key << i.second.name() << YAML::Value << *static_cast<Vector3*>(i.second.value);
         if(i.second.type() == ArchiveNode::Type::Vector4) out << YAML::Key << i.second.name() << YAML::Value << *static_cast<Vector4*>(i.second.value);
         if(i.second.type() == ArchiveNode::Type::Quaternion) out << YAML::Key << i.second.name() << YAML::Value << *static_cast<Quaternion*>(i.second.value);
-        if(i.second.type() == ArchiveNode::Type::Object) SaveSerializer(i.second, i.second.name(), out);
+        if(i.second.type() == ArchiveNode::Type::Object) SaveSerializer(i.second, out);
 
         if(i.second.type() == ArchiveNode::Type::List){
             out << YAML::Key << i.second.name() << YAML::BeginSeq;
             for(auto j: i.second.values){
                 out << YAML::BeginMap;
-                SaveSerializer(j.second, j.second.name(), out);
+                SaveSerializer(j.second, out);
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
+        }
+
+        if(i.second.type() == ArchiveNode::Type::MaterialRef){
+            Ref<Material>* m = static_cast<Ref<Material>*>(i.second.value);
+            out << YAML::Key << i.second.name() << YAML::Value << (*m == nullptr ? std::string("") :  (*m)->path());
         }
     }
     out << YAML::EndMap;
@@ -58,6 +65,19 @@ void ArchiveNode::LoadSerializer(ArchiveNode& s, YAML::Node& node){
             Assert(node[i.second.name()]);
             *static_cast<std::string*>(i.second.value) = node[i.second.name()].as<std::string>();
         }
+
+        if(i.second.type() == ArchiveNode::Type::MaterialRef){
+            YAML::Node n = node[i.first];
+            std::string materialPath = node[i.second.name()].as<std::string>();
+            Ref<Material>* m = static_cast<Ref<Material>*>(i.second.value);
+
+            if(materialPath.empty() == false){
+                *m = AssetManager::Get().LoadMaterial(materialPath);
+            } else {
+                *m = nullptr;
+            }
+        }
+
         if(i.second.type() == ArchiveNode::Type::Object){
             //LogInfo("Object Value Name: %s", i.second.name().c_str());
             YAML::Node n = node[i.first];
@@ -100,6 +120,22 @@ void ArchiveNode::DrawArchive(ArchiveNode& ar){
 
         if(i.second.type() == ArchiveNode::Type::Int){
             ImGui::DragInt(i.first.c_str(), static_cast<int*>(i.second.value));
+        }
+
+        if(i.second.type() == ArchiveNode::Type::Vector3){
+            ImGui::DragFloat3(i.first.c_str(), static_cast<float*>(i.second.value));
+        }
+
+        if(i.second.type() == ArchiveNode::Type::Vector4){
+            ImGui::DragFloat4(i.first.c_str(), static_cast<float*>(i.second.value));
+        }
+
+        if(i.second.type() == ArchiveNode::Type::Quaternion){
+            ImGui::DragFloat4(i.first.c_str(), static_cast<float*>(i.second.value));
+        }
+
+        if(i.second.type() == ArchiveNode::Type::MaterialRef){
+            ImGui::DrawMaterialAsset(i.first.c_str(), *static_cast<Ref<Material>*>(i.second.value));
         }
 
         if(i.second.type() == ArchiveNode::Type::String){

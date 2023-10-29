@@ -29,12 +29,12 @@
 //#if defined(_DEBUG)
 	#define _LOG(level, message, ...) \
         fprintf(stderr, "[%s] ", level); \
-        fprintf(stderr, message, ##__VA_ARGS__); \
+        fprintf(stderr, message, __VA_ARGS__); \
         fprintf(stderr, "\n");
 
-	#define LogWarning(message, ...) _LOG("warning", message, ##__VA_ARGS__)
-	#define LogError(message, ...) _LOG("error", message, ##__VA_ARGS__)
-	#define LogInfo(message, ...) _LOG("info", message, ##__VA_ARGS__)
+	#define LogWarning(message, ...) _LOG("warning", message, __VA_ARGS__)
+	#define LogError(message, ...) _LOG("error", message,__VA_ARGS__)
+	#define LogInfo(message, ...) _LOG("info", message, __VA_ARGS__)
 //#else
 //	#define LogWarning
 //	#define LogError	

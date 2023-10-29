@@ -18,6 +18,8 @@ struct RotateScript: public Script{
     float speed = 40;
 
     void Serialize(ArchiveNode& s) override {
+        s.typeName("RotateScript");
+        
         s.Add(&speed, "speed");
     }
 
@@ -195,7 +197,7 @@ struct ECS_4: public OD::Module {
 
         SceneManager::Get().activeScene()->Update();
 
-        if(Input::IsKeyDown(KeyCode::A)){
+        /*if(Input::IsKeyDown(KeyCode::A)){
             LogInfo("OnKeyDown A");
         }
 
@@ -205,7 +207,7 @@ struct ECS_4: public OD::Module {
 
         if(Input::IsMouseButtonDown(MouseButton::Left)){
             LogInfo("OMouseButtonDown Left");
-        }
+        }*/
     }   
 
     void OnRender(float deltaTime) override {

@@ -10,11 +10,11 @@ void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
     out << YAML::Key << "ScriptComponent";
     out << YAML::BeginMap;
 
-    for(auto func: SceneManager::Get()._serializeScriptFuncs){
+    for(auto func: SceneManager::Get()._scriptsSerializer){
         if(func.second.hasComponent(e)){
             ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
             func.second.serialize(e, s); Assert(s.values.empty() == false);
-            ArchiveNode::SaveSerializer(s, func.first, out);
+            ArchiveNode::SaveSerializer(s, out);
         }
     }
 
@@ -22,7 +22,7 @@ void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
 }
 
 void ScriptComponent::Deserialize(YAML::Node& in, Entity& e){
-    for(auto func: SceneManager::Get()._serializeScriptFuncs){
+    for(auto func: SceneManager::Get()._scriptsSerializer){
         auto component = in[func.first];
         if(component){
             ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
@@ -44,10 +44,10 @@ void ScriptComponent::OnGui(Entity& e){
     std::hash<std::string> hasher;
     ScriptComponent& script = e.GetComponent<ScriptComponent>();
 
-    for(auto i: SceneManager::Get()._serializeScriptFuncs){
+    for(auto i: SceneManager::Get()._scriptsSerializer){
         if(i.second.hasComponent(e) == false) continue;
 
-        bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first.c_str());
+        bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first);
         if(open){
             ArchiveNode ar(ArchiveNode::Type::Object, i.first, nullptr);
             i.second.serialize(e, ar);

@@ -142,7 +142,7 @@ void Scene::InfoDeserialize(YAML::Node& in, Entity& e){
 
 Scene::Scene(){
     for(auto i: SceneManager::Get()._addSystemFuncs){
-        LogInfo("Adding system: %s", i.first.c_str());
+        LogInfo("Adding system: %s", i.first);
         i.second(*this);
     }
 }
@@ -181,10 +181,10 @@ Scene* Scene::Copy(Scene* other){
         scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
     }*/
 
-    for(auto i: SceneManager::Get()._coreComponents){
+    for(auto i: SceneManager::Get()._coreComponentsSerializer){
         i.second.copy(scene->_registry, other->_registry);
     }
-    for(auto i: SceneManager::Get()._serializeFuncs){
+    for(auto i: SceneManager::Get()._componentsSerializer){
         i.second.copy(scene->_registry, other->_registry);
     }
 
@@ -206,17 +206,17 @@ void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
     if(e.HasComponent<InfoComponent>()) InfoSerialize(out, e);
     if(e.HasComponent<TransformComponent>()) TransformSerialize(out, e);
 
-    for(auto func: SceneManager::Get()._coreComponents){
+    for(auto func: SceneManager::Get()._coreComponentsSerializer){
         if(func.second.hasComponent(e) == false) continue;
         func.second.serialize(out, e);
     }
 
-    for(auto func: SceneManager::Get()._serializeFuncs){
+    for(auto func: SceneManager::Get()._componentsSerializer){
         if(func.second.hasComponent(e) == false) continue;
         
         ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
         func.second.serialize(e, s); Assert(s.values.empty() == false);
-        ArchiveNode::SaveSerializer(s, func.first, out);
+        ArchiveNode::SaveSerializer(s, out);
     }
 
     out << YAML::EndMap;
@@ -233,17 +233,17 @@ Entity Scene::DeserializeEntity(YAML::Node& e){
     auto transform = e["TransformComponent"];
     if(transform) TransformDeserialize(transform, deserializedEntity);
 
-    for(auto func: SceneManager::Get()._coreComponents){
+    for(auto func: SceneManager::Get()._coreComponentsSerializer){
         auto component = e[func.first];
         if(component){
             func.second.deserialize(component, deserializedEntity);
         }
     }
 
-    for(auto func: SceneManager::Get()._serializeFuncs){
+    for(auto func: SceneManager::Get()._componentsSerializer){
         auto component = e[func.first];
         if(component){
-            LogInfo("%s", func.first.c_str());
+            LogInfo("%s", func.first);
 
             ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
             func.second.serialize(deserializedEntity, s);

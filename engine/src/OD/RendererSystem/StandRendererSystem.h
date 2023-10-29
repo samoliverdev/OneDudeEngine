@@ -87,6 +87,21 @@ private:
     #define MAX_SPOTLIGHT_SHADOWS 5
     ShadowRenderPass spotlightShadowPass[MAX_SPOTLIGHT_SHADOWS];
     int spotlightShadowPassCount = 0;
+
+    #define SHADOW_MAP_CASCADE_COUNT 4
+    struct CascadeShadow{
+        Matrix4 projViewMatrix;
+        float splitDistance;
+
+        Framebuffer* _shadowMap;
+
+        void Clean(StandRendererSystem& root);
+        void Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
+
+        static void UpdateCascadeShadow(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light);
+        static void UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light);
+    };
+    CascadeShadow cascadeShadows[SHADOW_MAP_CASCADE_COUNT];
 };
 
 };

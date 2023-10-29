@@ -263,7 +263,7 @@ void InspectorPanel::DrawComponents(Entity entity){
     //ImGui::Separator();
     ImGui::Spacing();
     
-    for(auto& i: SceneManager::Get()._coreComponents){
+    for(auto& i: SceneManager::Get()._coreComponentsSerializer){
         //LogInfo("%s", i.first.c_str());
         DrawComponentFromCoreComponents(entity, i.first, i.second);
     }
@@ -272,7 +272,7 @@ void InspectorPanel::DrawComponents(Entity entity){
     //ImGui::Separator();
     ImGui::Spacing(); 
 
-    for(auto& i: SceneManager::Get()._serializeFuncs){
+    for(auto& i: SceneManager::Get()._componentsSerializer){
         DrawComponentFromSerializeFuncs(entity, i.first, i.second);
     }
 }
@@ -282,8 +282,8 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         ImGui::OpenPopup("AddComponent");
 
     if(ImGui::BeginPopup("AddComponent")){
-        for(auto& i: SceneManager::Get()._coreComponents){
-            if(ImGui::MenuItem(i.first.c_str())){
+        for(auto& i: SceneManager::Get()._coreComponentsSerializer){
+            if(ImGui::MenuItem(i.first)){
                 i.second.addComponent(_editor->_selectionEntity);
                 ImGui::CloseCurrentPopup();
             }
@@ -293,8 +293,8 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         ImGui::Separator();
         ImGui::Spacing(); 
 
-        for(auto& i: SceneManager::Get()._serializeFuncs){
-            if(ImGui::MenuItem(i.first.c_str())){
+        for(auto& i: SceneManager::Get()._componentsSerializer){
+            if(ImGui::MenuItem(i.first)){
                 i.second.addComponent(_editor->_selectionEntity);
                 ImGui::CloseCurrentPopup();
             }

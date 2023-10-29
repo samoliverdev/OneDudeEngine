@@ -5,6 +5,8 @@
 #include <vector>
 #include <functional>
 #include "Serialization.h"
+#include "OD/Renderer/Texture.h"
+#include "OD/Renderer/Material.h"
 
 namespace OD{
 
@@ -18,16 +20,16 @@ struct ArchiveListFunctions{
 };
 
 struct ArchiveNode{
-    enum class Type{None, Object, Float, Int, String, Vector3, Vector4, Quaternion, List};
+    enum class Type{None, Object, Float, Int, String, Vector3, Vector4, Quaternion, List, MaterialRef};
 
     ArchiveNode():_type(Type::None), _name(""), value(nullptr){}
     ArchiveNode(Type _type, std::string _name, void* _value):
         _type(_type), _name(_name), value(_value){}
-
-        
+  
 private:
     Type _type;
     std::string _name;
+    std::string _typeName;
 
 public:
     void* value;
@@ -35,14 +37,34 @@ public:
     std::map<std::string, ArchiveNode> values;
 
     inline const Type& type(){ return _type; }
-    inline const std::string name(){ return _name; }
 
-    inline void Add(float* value, std::string name){ values[name] = ArchiveNode(Type::Float, name, value); }
+    inline const std::string name(){ return _name; }
+    
+    inline const std::string typeName(){ return _typeName; }
+    inline const void typeName(std::string n){ 
+        if(_typeName.empty()){
+            _typeName = n;
+        } else {
+            Assert(false);
+        }
+    }
+
+    inline void Add(float* value, std::string name){ 
+        //Assert(values.find(name) == values.end());
+        values[name] = ArchiveNode(Type::Float, name, value);
+    }
+    
     inline void Add(int* value, std::string name){ values[name] = ArchiveNode(Type::Int, name, value); }
+    
     inline void Add(Vector3* value, std::string name){ values[name] = ArchiveNode(Type::Vector3, name, value); }
+    
     inline void Add(Vector4* value, std::string name){ values[name] = ArchiveNode(Type::Vector4, name, value); }
+    
     inline void Add(Quaternion* value, std::string name){ values[name] = ArchiveNode(Type::Quaternion, name, value); }
+    
     inline void Add(std::string* value, std::string name){ values[name] = ArchiveNode(Type::String, name, value); }
+
+    inline void Add(Ref<Material>* value, std::string name){ values[name] = ArchiveNode(Type::MaterialRef, name, value); }
 
     template<typename T>
     void Add(T& value, std::string name){
@@ -85,7 +107,7 @@ public:
         values.clear();
     }
 
-    static void SaveSerializer(ArchiveNode& s, std::string name, YAML::Emitter& out);
+    static void SaveSerializer(ArchiveNode& s, YAML::Emitter& out);
     static void LoadSerializer(ArchiveNode& s, YAML::Node& node);
     static void DrawArchive(ArchiveNode& ar);
 };

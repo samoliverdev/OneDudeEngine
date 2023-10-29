@@ -97,6 +97,9 @@ StandRendererSystem::StandRendererSystem(){
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
         spotlightShadowPass[i]._shadowMap = new Framebuffer(specification);
     }
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        cascadeShadows[i]._shadowMap = new Framebuffer(specification);
+    }
 
     _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
     _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
@@ -131,8 +134,13 @@ StandRendererSystem::~StandRendererSystem(){
     }
 
     delete directinallightShadowPass._shadowMap;
+
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
         delete spotlightShadowPass[i]._shadowMap;
+    }
+
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        delete cascadeShadows[i]._shadowMap;
     }
 
     delete _finalColor;
@@ -175,6 +183,14 @@ void DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
 void StandRendererSystem::Update(){
     OD_PROFILE_SCOPE("StandRendererSystem::Update");
 
+    int width = Application::screenWidth();
+    int height = Application::screenHeight();
+
+    if(_outFramebuffer != nullptr){
+        width = _outFramebuffer->width();
+        height = _outFramebuffer->height();
+    }
+
     // ---------- Setups ---------- 
     environmentSettings = EnvironmentSettings();
     auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
@@ -197,6 +213,9 @@ void StandRendererSystem::Update(){
             for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
                 spotlightShadowPass[i]._shadowMap->Resize(size, size);
             }
+            for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+                cascadeShadows[i]._shadowMap->Resize(size, size);
+            }
         }
 
         if(environmentComponent.settings.colorCorrection != environmentSettings.colorCorrection){
@@ -214,6 +233,25 @@ void StandRendererSystem::Update(){
 
     // ---------- Render Shadows ---------- 
 
+    bool hasMainCamera = false;
+    Camera mainCamera;
+    
+    auto cameraView = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
+    for(auto e: cameraView){
+        CameraComponent& c = cameraView.get<CameraComponent>(e);
+        TransformComponent& t = cameraView.get<TransformComponent>(e);
+        if(c.isMain){
+            c.UpdateCameraData(t, width, height);
+            mainCamera = c.camera();
+            hasMainCamera = true;
+            break;
+        }
+    }
+    if(_overrideCamera != nullptr){
+        mainCamera = _overrideCamera->cam;
+        hasMainCamera = true;
+    }
+
     spotlightShadowPassCount = 0;
     bool hasShadow = false;
     auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
@@ -221,32 +259,32 @@ void StandRendererSystem::Update(){
         auto& light = view.get<LightComponent>(entity);
         auto& transform = view.get<TransformComponent>(entity);
 
-        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+        /*if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
             directinallightShadowPass.Render(light, transform, *this);
             hasShadow = true;
+        }*/
+
+        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+            CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
+            for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+                cascadeShadows[i].Render(light, transform, *this);
+            }
         }
 
-        if(light.type == LightComponent::Type::Spot && light.renderShadow == true && spotlightShadowPassCount < MAX_SPOTLIGHT_SHADOWS){
+        /*if(light.type == LightComponent::Type::Spot && light.renderShadow == true && spotlightShadowPassCount < MAX_SPOTLIGHT_SHADOWS){
             spotlightShadowPass[spotlightShadowPassCount].Render(light, transform, *this);
             spotlightShadowPassCount += 1;
-        }
+        }*/
     }
-    if(hasShadow == false){
-        directinallightShadowPass.Clean(*this);
+
+    //if(hasShadow == false){
+    //    directinallightShadowPass.Clean(*this);
         /*_shadowMap->Bind();
         ClearSceneShadow();
         _shadowMap->Unbind();*/
-    }
+    //}
     
     // ---------- Render Cameras ---------- 
-
-    int width = Application::screenWidth();
-    int height = Application::screenHeight();
-
-    if(_outFramebuffer != nullptr){
-        width = _outFramebuffer->width();
-        height = _outFramebuffer->height();
-    }
 
     _finalColor->Resize(width, height);
     _pp1->Resize(width, height);
@@ -262,7 +300,6 @@ void StandRendererSystem::Update(){
 
         c.UpdateCameraData(t, width, height);
         if(c.isMain){
-            //c.UpdateCameraData(t, width, height);
             RenderCamera renderCam = {
                 c.camera(),
                 CreateFrustumFromCamera(t, (float)width / (float)height, Mathf::Deg2Rad(c.fieldOfView), c.nearClipPlane, c.farClipPlane)
@@ -362,15 +399,31 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     
     shader.SetFramebuffer("shadowMap", *directinallightShadowPass._shadowMap, baseShadowMapIndex, -1);
     shader.SetMatrix4("lightSpaceMatrix", directinallightShadowPass._lightSpaceMatrix);
+    
+    shader.SetInt("cascadeShadowCount", SHADOW_MAP_CASCADE_COUNT);
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        baseShadowMapIndex += 1;
 
-    shader.SetInt("spotlightShadowCount", spotlightShadowPassCount);
+        std::string setFlt = "cascadeShadowSplitDistances[" + std::to_string(i) + "]";
+        shader.SetFloat(setFlt.c_str(), cascadeShadows[i].splitDistance);
+
+        std::string setMat = "cascadeShadowMatrixs[" + std::to_string(i) + "]";
+        shader.SetMatrix4(setMat.c_str(), cascadeShadows[i].projViewMatrix);
+
+        std::string setFram = "cascadeShadowMaps[" + std::to_string(i) + "]";
+        shader.SetFramebuffer(setFram.c_str(), *cascadeShadows[i]._shadowMap, baseShadowMapIndex, -1);
+    }
+
+    /*shader.SetInt("spotlightShadowCount", spotlightShadowPassCount);
     for(int i = 0; i < spotlightShadowPassCount; i++){
+        baseShadowMapIndex += 1;
+
         std::string setMat = "spotlightSpaceMatrixs[" + std::to_string(i) + "]";
         shader.SetMatrix4(setMat.c_str(), spotlightShadowPass[i]._lightSpaceMatrix);
 
         std::string setFram = "spotlightShadowMaps[" + std::to_string(i) + "]";
-        shader.SetFramebuffer(setFram.c_str(), *spotlightShadowPass[i]._shadowMap, baseShadowMapIndex+(i+1), -1);
-    }
+        shader.SetFramebuffer(setFram.c_str(), *spotlightShadowPass[i]._shadowMap, baseShadowMapIndex, -1);
+    }*/
 
     std::vector<EntityId> lights;
     bool hasDirectionalLight = false;
@@ -626,6 +679,225 @@ void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, Transf
     }
 
     _shadowMap->Unbind();
+}
+
+void StandRendererSystem::CascadeShadow::Clean(StandRendererSystem& root){
+    OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Clean");
+    _shadowMap->Bind();
+    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    _shadowMap->Unbind();
+}
+
+void StandRendererSystem::CascadeShadow::Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
+    OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Render");
+
+    _shadowMap->Bind();
+    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Renderer::SetDepthTest(DepthTest::LESS);
+    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    //glEnable(GL_DEPTH_CLAMP);
+    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+
+    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto _entity: view){
+        auto& c = view.get<MeshRendererComponent>(_entity);
+        auto& t = view.get<TransformComponent>(_entity);
+
+        for(Ref<Mesh> m: c.model()->meshs){
+            root._shadowMapShader->Bind();
+            root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
+            root._shadowMapShader->SetMatrix4("model", t.globalModelMatrix());
+            Renderer::DrawMeshRaw(*m);
+            //Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
+        }
+    }
+
+    _shadowMap->Unbind();
+    //glDisable(GL_DEPTH_CLAMP);
+}
+
+void StandRendererSystem::CascadeShadow::UpdateCascadeShadow(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light){
+    Matrix4 view = cam.view;
+    Matrix4 proj = cam.projection;
+    Vector4 lightPos = Vector4(light.forward(), 0);
+
+    //LogInfo("Cam Near: %f Far: %f", cam.nearClip, cam.farClip);
+
+    float cascadeSplitLambda = 0.95f;
+
+    float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
+
+    float nearClip = cam.nearClip;
+    float farClip = cam.farClip;
+    float clipRange = farClip - nearClip;
+
+    float minZ = nearClip;
+    float maxZ = nearClip + clipRange;
+
+    float range = maxZ - minZ;
+    float ratio = maxZ / minZ;
+
+    // Calculate split depths based on view camera frustum
+    // Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        float p = (i + 1) / (float) (SHADOW_MAP_CASCADE_COUNT);
+        float log = (float) (minZ * math::pow(ratio, p));
+        float uniform = minZ + range * p;
+        float d = cascadeSplitLambda * (log - uniform) + uniform;
+        cascadeSplits[i] = (d - nearClip) / clipRange;
+    }
+
+    // Calculate orthographic projection matrix for each cascade
+    float lastSplitDist = 0;
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        float splitDist = cascadeSplits[i];
+
+        Vector3 frustumCorners[] = {
+            Vector3(-1.0f, 1.0f, -1.0f),
+            Vector3(1.0f, 1.0f, -1.0f),
+            Vector3(1.0f, -1.0f, -1.0f),
+            Vector3(-1.0f, -1.0f, -1.0f),
+            Vector3(-1.0f, 1.0f, 1.0f),
+            Vector3(1.0f, 1.0f, 1.0f),
+            Vector3(1.0f, -1.0f, 1.0f),
+            Vector3(-1.0f, -1.0f, 1.0f)
+        };
+
+        // Project frustum corners into world space
+        Matrix4 invCam = math::inverse(proj * view);
+        for(int j = 0; j < 8; j++){
+            Vector4 invCorner = Vector4(frustumCorners[j], 1) * invCam;
+            frustumCorners[j] = Vector3(invCorner.x / invCorner.w, invCorner.y / invCorner.w, invCorner.z / invCorner.w);
+        }
+
+        for(int j = 0; j < 4; j++){
+            Vector3 dist = frustumCorners[j+4] - frustumCorners[j];
+            frustumCorners[j+4] = (frustumCorners[j] + dist) * splitDist;
+            frustumCorners[j] = (frustumCorners[j] + dist) * lastSplitDist;
+        }
+        Vector3 frustumCenter = Vector3Zero;
+        for(int j = 0; j < 8; j++){
+            frustumCenter = frustumCenter + frustumCorners[j];
+        }
+        frustumCenter = frustumCenter / 8.0f;
+
+        float radius = 0;
+        for(int j = 0; j < 8; j++){
+            float distance = math::length(frustumCorners[j] - frustumCenter);
+            radius = math::max(radius, distance);
+        }
+        radius = math::ceil(radius * 16.0f) / 16.0f;
+
+        Vector3 maxExtents = Vector3(radius);
+        Vector3 minExtents = maxExtents * -1.0f;
+
+        Vector3 lightDir = math::normalize(lightPos * -1.0f);
+        Vector3 eye = (frustumCenter - lightDir) * -minExtents.z;
+        Vector3 up = Vector3Up;
+        Matrix4 lightViewMatrix = math::lookAt(eye, frustumCenter, up);
+        Matrix4 lightOrthMatrix = math::ortho(minExtents.x, maxExtents.x, minExtents.y, minExtents.y, 0.0f, maxExtents.z - minExtents.z);
+    
+        cascadeShadows[i].splitDistance = (nearClip + splitDist * clipRange) * -1.0f;
+        cascadeShadows[i].projViewMatrix = lightOrthMatrix * lightViewMatrix; 
+        
+        lastSplitDist = cascadeSplits[i];
+    }
+}
+
+std::vector<Vector4> getFrustumCornersWorldSpace(const Matrix4& proj, const Matrix4& view){
+    const auto inv = math::inverse(proj * view);
+    
+    std::vector<Vector4> frustumCorners;
+    for(unsigned int x = 0; x < 2; ++x){
+        for(unsigned int y = 0; y < 2; ++y){
+            for(unsigned int z = 0; z < 2; ++z){
+                const Vector4 pt = inv * Vector4(
+                    2.0f * x - 1.0f, 
+                    2.0f * y - 1.0f, 
+                    2.0f * z - 1.0f, 
+                    1.0f
+                );
+                frustumCorners.push_back(pt / pt.w);
+            }
+        }
+    }
+    
+    return frustumCorners;
+}
+
+glm::mat4 getLightSpaceMatrix(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane){
+    const auto proj = glm::perspective(cam.fov, (float)cam.width / (float)cam.height, nearPlane, farPlane);
+    const auto corners = getFrustumCornersWorldSpace(proj, cam.view);
+
+    glm::vec3 center = glm::vec3(0, 0, 0);
+    for(const auto& v : corners){
+        center += glm::vec3(v);
+    }
+    center /= corners.size();
+
+    const auto lightView = glm::lookAt(center + lightDir, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max();
+    float maxY = std::numeric_limits<float>::lowest();
+    float minZ = std::numeric_limits<float>::max();
+    float maxZ = std::numeric_limits<float>::lowest();
+    for(const auto& v : corners){
+        const auto trf = lightView * v;
+        minX = std::min(minX, trf.x);
+        maxX = std::max(maxX, trf.x);
+        minY = std::min(minY, trf.y);
+        maxY = std::max(maxY, trf.y);
+        minZ = std::min(minZ, trf.z);
+        maxZ = std::max(maxZ, trf.z);
+    }
+
+    // Tune this parameter according to the scene
+    constexpr float zMult = 10.0f;
+    if(minZ < 0){
+        minZ *= zMult;
+    } else {
+        minZ /= zMult;
+    }
+    if(maxZ < 0){
+        maxZ /= zMult;
+    } else {
+        maxZ *= zMult;
+    }
+
+    const glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+
+    return lightProjection * lightView;
+}
+
+void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light){
+    std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
+    //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f };
+    //std::vector<float> shadowCascadeLevels{ cam.farClip*0.1f, cam.farClip*0.25f, cam.farClip*0.5f, cam.farClip*1.0f };
+
+    Assert(shadowCascadeLevels.size() == SHADOW_MAP_CASCADE_COUNT);
+    
+    Vector3 lightDir = -light.forward();
+    float cameraNearPlane = cam.nearClip;
+    float cameraFarPlane = cam.farClip;
+
+    std::vector<glm::mat4> lightMatrixs;
+    for(size_t i = 0; i < shadowCascadeLevels.size(); ++i){
+        if(i == 0){
+            lightMatrixs.push_back(getLightSpaceMatrix(cam, lightDir, cameraNearPlane, shadowCascadeLevels[i]));
+        }else if (i < shadowCascadeLevels.size()){
+            lightMatrixs.push_back(getLightSpaceMatrix(cam, lightDir, shadowCascadeLevels[i - 1], shadowCascadeLevels[i]));
+        }
+    }
+
+    Assert(lightMatrixs.size() == SHADOW_MAP_CASCADE_COUNT);
+
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        cascadeShadows[i].projViewMatrix = lightMatrixs[i];
+        cascadeShadows[i].splitDistance = shadowCascadeLevels[i];
+    }
 }
 
 }
