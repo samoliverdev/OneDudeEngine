@@ -10,18 +10,24 @@ enum class FramebufferTextureFormat{
     None, RGB, RGBA8, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
 };
 
+enum class FramebufferAttachmentType{
+    TEXTURE_2D,
+    TEXTURE_2D_MULTISAMPLE,
+    TEXTURE_2D_ARRAY
+};
+
 struct FramebufferAttachment{
     FramebufferTextureFormat colorFormat;
-    bool writeOnly = false;
 };
 
 struct FrameBufferSpecification{
     int width;
     int height;
     unsigned int sample = 1;
+    FramebufferAttachmentType type = FramebufferAttachmentType::TEXTURE_2D;
 
     std::vector<FramebufferAttachment> colorAttachments;
-    FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
+    FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
 
     bool swapChainTarget = false;
 };

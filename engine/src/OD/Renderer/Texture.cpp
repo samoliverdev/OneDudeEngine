@@ -5,6 +5,16 @@
 
 namespace OD{
 
+const int TextureFilterLookup[] = {
+    GL_NEAREST,
+    GL_LINEAR
+};
+
+const int TextureFilterLookupMipmap[] = {
+    GL_NEAREST_MIPMAP_NEAREST,
+    GL_LINEAR_MIPMAP_LINEAR
+};
+
 bool Texture2D::IsValid(){
     return _id != 0;
 }
@@ -29,8 +39,11 @@ void Texture2D::Create(const char* path, Texture2DSetting settings){
     _imageFormat = GL_RGB;
     _wrapS = GL_REPEAT;
     _wrapT = GL_REPEAT;
-    _filterMin = settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    _filterMax = settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    _filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        _filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    _filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
     _mipmap = settings.mipmap;
 
     stbi_set_flip_vertically_on_load(1);
@@ -74,6 +87,7 @@ void Texture2D::texture2DGenerate(unsigned int width, unsigned int height, unsig
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, _wrapS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, _wrapT);
+
     //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _filterMin);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _filterMax);

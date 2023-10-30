@@ -7,6 +7,7 @@
 //#include "Framebuffer_5.h"
 #include "Physics_6.h"
 #include "Serialization_9.h"
+#include "SynthCity_10.h"
 
 #include <string>
 
@@ -29,6 +30,7 @@ OD::Module* CreateMainModule(){
     //if(i == 4) return new Framebuffer_5();
     if(i == 5) return new Physics_6();
     if(i == 8) return new Serialization_9();
+    if(i == 9) return new SynthCity_10();
 
     return new BaseMesh_1();
 }

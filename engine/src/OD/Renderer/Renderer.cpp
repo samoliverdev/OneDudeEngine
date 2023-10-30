@@ -190,6 +190,32 @@ void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
     glCheckError();
 }
 
+void Renderer::DrawMeshMVP(Mesh& mesh, Matrix4& modelMatrix, Shader& shader){
+    Assert(mesh.IsValid() && "Mesh is not vali!");
+    Assert(shader.IsValid()  && "Shader is not vali!");
+
+    drawCalls += 1;
+    vertices += mesh._vertexCount;
+    tris += mesh._indiceCount;
+    
+    shader.Bind();
+    shader.SetMatrix4("MVP", camera.projection * camera.view * modelMatrix);
+
+    glBindVertexArray(mesh._vao);
+    glCheckError();
+
+    if(mesh._ebo != 0){
+        glDrawElements(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, mesh._vertexCount);
+        glCheckError();
+    }
+
+    glBindVertexArray(0);
+    glCheckError();
+}
+
 void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& material){
     material.UpdateUniforms();
     Ref<Shader> shader = material.shader();

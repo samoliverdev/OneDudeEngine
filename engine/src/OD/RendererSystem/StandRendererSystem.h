@@ -102,6 +102,10 @@ private:
         static void UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light);
     };
     CascadeShadow cascadeShadows[SHADOW_MAP_CASCADE_COUNT];
+
+    Framebuffer* _cascadeShadowMap;
+    Ref<Shader> _cascadeShadowMapShader;
+    void RenderCascadeShadow(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
 };
 
 };

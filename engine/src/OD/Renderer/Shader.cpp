@@ -194,6 +194,12 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
         shaderSources[GL_FRAGMENT_SHADER] = ss;
     }   
 
+    if(source.find("GEOMETRY") != std::string::npos){
+        std::string ss = source;
+        ss.insert(pos, "\n#define GEOMETRY\n");
+        shaderSources[GL_GEOMETRY_SHADER] = ss;
+    }
+
     //LogInfo("%s", fs.c_str());
 
     return shaderSources;
@@ -201,7 +207,8 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
 
 void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources){
     GLuint program = glCreateProgram();
-    Assert(shaderSources.size() <= 2 && "We only support 2 shaders for now");
+    Assert(shaderSources.size() <= 3 && "We only support 3 shaders for now");
+   
     GLenum glShaderIDs[2];
     int glShaderIDIndex = 0;
     for(auto& kv : shaderSources){
@@ -345,12 +352,24 @@ void Shader::SetCubemap(const char* name, Cubemap& value, int index){
 }
 
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
+    Assert(framebuffer.specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
+    //Assert(framebuffer.specification().sample <= 1);
+
     glActiveTexture(GL_TEXTURE0 + index);
+    glCheckError();
+
+    unsigned int target = GL_TEXTURE_2D;
+    if(framebuffer.specification().type == FramebufferAttachmentType::TEXTURE_2D_ARRAY)
+        target = GL_TEXTURE_2D_ARRAY;
+
     if(colorAttachmentIndex == -1){
-        glBindTexture(GL_TEXTURE_2D, framebuffer.DepthAttachmentId());
+        glBindTexture(target, framebuffer.DepthAttachmentId());
+        glCheckError();
     } else {
-        glBindTexture(GL_TEXTURE_2D, framebuffer.ColorAttachmentId(colorAttachmentIndex));
+        glBindTexture(target, framebuffer.ColorAttachmentId(colorAttachmentIndex));
+        glCheckError();
     }
+
     glCheckError();
     SetInt(name, index);
 }

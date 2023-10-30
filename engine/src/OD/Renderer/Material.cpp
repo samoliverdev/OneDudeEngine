@@ -11,7 +11,7 @@ namespace OD{
 void Material::SetFloat(const char* name, float value){
     MaterialMap& map = _maps[name];
 
-    //if(map.value == value) return;
+    if(map.type == MaterialMap::Type::Float && map.value == value) return;
 
     map.type = MaterialMap::Type::Float;
     map.value = value;
@@ -22,7 +22,7 @@ void Material::SetFloat(const char* name, float value){
 void Material::SetVector2(const char* name, Vector2 value){
     MaterialMap& map = _maps[name];
 
-    //if(map.vector == Vector4(value.x, value.y, 0, 1)) return;
+    if(map.type == MaterialMap::Type::Vector2 && map.vector == Vector4(value.x, value.y, 0, 1)) return;
 
     map.type = MaterialMap::Type::Vector2;
     map.vector = Vector4(value.x, value.y, 0, 1);
@@ -33,7 +33,7 @@ void Material::SetVector2(const char* name, Vector2 value){
 void Material::SetVector3(const char* name, Vector3 value, bool isColor){
     MaterialMap& map = _maps[name];
 
-    //if(map.vector == Vector4(value.x, value.y, value.z, 1)) return;
+    if(map.type == MaterialMap::Type::Vector3 && map.vector == Vector4(value.x, value.y, value.z, 1)) return;
 
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
@@ -45,7 +45,7 @@ void Material::SetVector3(const char* name, Vector3 value, bool isColor){
 void Material::SetVector4(const char* name, Vector4 value, bool isColor){
     MaterialMap& map = _maps[name];
 
-    //if(map.vector == value) return;
+    if(map.type == MaterialMap::Type::Vector4 &&  map.vector == value) return;
 
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
@@ -57,7 +57,7 @@ void Material::SetVector4(const char* name, Vector4 value, bool isColor){
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     MaterialMap& map = _maps[name];
 
-    //if(map.texture == tex) return;
+    if(map.type == MaterialMap::Type::Texture && map.texture == tex) return;
 
     map.type = MaterialMap::Type::Texture;
     map.texture = tex;
@@ -67,6 +67,8 @@ void Material::SetTexture(const char* name, Ref<Texture2D> tex){
 
 void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
     MaterialMap& map = _maps[name];
+
+    if(map.type == MaterialMap::Type::Cubemap && map.cubemap == tex) return;
 
     map.type = MaterialMap::Type::Cubemap;
     map.cubemap = tex;
@@ -87,8 +89,8 @@ void Material::UpdateUniforms(){
     for(auto i: _maps){
         MaterialMap& map = i.second;
 
-        //if(map.isDirt == false) continue;
-        //map.isDirt = false;
+        if(map.isDirt != true) continue;
+        map.isDirt = false;
 
         if(map.type == MaterialMap::Type::Float){
             _shader->SetFloat(i.first.c_str(), map.value);

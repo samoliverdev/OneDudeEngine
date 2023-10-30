@@ -1,4 +1,4 @@
-#version 400 core
+#version 410 core
 
 #pragma SupportInstancing true
 #pragma BlendMode Off
@@ -57,8 +57,10 @@ uniform mat4 view;
 
 uniform float shadowBias = 0.001;
 
-uniform sampler2D shadowMap;
-uniform mat4 lightSpaceMatrix;
+//uniform sampler2D shadowMap;
+//uniform mat4 lightSpaceMatrix;
+
+uniform sampler2DArray cascadeShadowMapsA;
 
 #define MAX_SHADOW_CASCADES 4
 uniform sampler2D cascadeShadowMaps[MAX_SHADOW_CASCADES];
@@ -211,31 +213,31 @@ float ShadowCalculation(sampler2D shadowMap, vec4 fragPosLightSpace){
     return shadow;
 }
 
-float ShadowCalculationCascade(sampler2D shadowMap, vec4 fragPosLightSpace, int cascadeIndex){
+float ShadowCalculationCascade(in sampler2D _shadowMap, vec4 fragPosLightSpace, int cascadeIndex){
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float closestDepth = texture(_shadowMap, projCoords.xy).r; 
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     if(currentDepth > 1.0) return 0;
 
     // check whether current frag pos is in shadow
-    float bias = max((0.05) * (1.0 - dot(normalize(fsIn.worldNormal), directionalLightDir)), (0.005));
+    float bias = max((0.05/32) * (1.0 - dot(normalize(fsIn.worldNormal), directionalLightDir)), (0.005/32));
     bias = shadowBias;
     //const float biasModifier = 0.5f;
-    //bias *= 1 / (cascadeShadowSplitDistances[cascadeShadowCount] * biasModifier);
+    //bias *= 1 / cascadeShadowSplitDistances[cascadeShadowCount] * biasModifier;
     
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
     
     shadow = 0;
     int sampleRadius = 2;
-    vec2 pixelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+    vec2 pixelSize = 1.0 / vec2(textureSize(_shadowMap, 0));
     for(int x = -sampleRadius; x <= sampleRadius; x++){
         for(int y = -sampleRadius; y <= sampleRadius; y++){
-            float closestDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * pixelSize).r;
+            float closestDepth = texture(_shadowMap, projCoords.xy + vec2(x, y) * pixelSize).r;
             shadow += (currentDepth - bias) > closestDepth  ? 1.0 : 0.0;
         }
     }
@@ -246,6 +248,40 @@ float ShadowCalculationCascade(sampler2D shadowMap, vec4 fragPosLightSpace, int 
         shadow = 0.0;
     }
 
+    return shadow;
+}
+
+float ShadowCalculationCascade2(vec4 fragPosLightSpace, int cascadeIndex){
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(cascadeShadowMapsA, vec3(projCoords.xy, cascadeIndex)).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    if(currentDepth > 1.0) return 0;
+
+    // check whether current frag pos is in shadow
+    float bias = max((0.05/32) * (1.0 - dot(normalize(fsIn.worldNormal), directionalLightDir)), (0.005/32));
+    bias = shadowBias;
+    //const float biasModifier = 0.5f;
+    //bias *= 1 / cascadeShadowSplitDistances[cascadeShadowCount] * biasModifier;
+    
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
+    
+    shadow = 0;
+    int sampleRadius = 2;
+    vec2 pixelSize = 1.0 / vec2(textureSize(cascadeShadowMapsA, 0));
+    for(int x = -sampleRadius; x <= sampleRadius; x++){
+        for(int y = -sampleRadius; y <= sampleRadius; y++){
+            float closestDepth = texture(cascadeShadowMapsA, vec3(projCoords.xy + vec2(x, y) * pixelSize, cascadeIndex)).r;
+            shadow += (currentDepth - bias) > closestDepth  ? 1.0 : 0.0;
+        }
+    }
+    shadow /= pow((sampleRadius * 2 + 1), 2);
+    //shadow /= 9.0;
+    
     return shadow;
 }
 
@@ -279,11 +315,12 @@ void main() {
     for(int i = 0; i < cascadeShadowCount; i++){
         if(depthValue <= cascadeShadowSplitDistances[i]){
             cascadeIndex = i;
-            shadow = ShadowCalculationCascade(cascadeShadowMaps[i], cascadeShadowMatrixs[i] * vec4(fsIn.worldPos, 1), i);
+            //shadow = ShadowCalculationCascade(cascadeShadowMaps[i], cascadeShadowMatrixs[i] * vec4(fsIn.worldPos, 1), i);
+            shadow = ShadowCalculationCascade2(cascadeShadowMatrixs[i] * vec4(fsIn.worldPos, 1), i);
             break;
         }
     }
-    
+
     //for(int i = 0; i < spotlightShadowCount; i++){
     //    shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)); 
     //}
@@ -297,9 +334,9 @@ void main() {
         } else if(lights[i].type <= 2){
             float att = 0;
             lightResult += CalcSpotLight(lights[i], norm, fsIn.worldPos, att); 
-            if(i < spotlightShadowCount){
-                shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)) * clamp(att, 0, 1); 
-            }
+            //if(i < spotlightShadowCount){
+            //    shadow += ShadowCalculation(spotlightShadowMaps[i], spotlightSpaceMatrixs[i] * vec4(fsIn.worldPos, 1)) * clamp(att, 0, 1); 
+            //}
         }
     }
 

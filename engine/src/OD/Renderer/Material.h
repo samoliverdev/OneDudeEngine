@@ -16,8 +16,8 @@ struct MaterialMap{
 
     Ref<Texture2D> texture;
     Ref<Cubemap> cubemap;
-    
     Vector4 vector;
+    
     bool vectorIsColor = false;
 
     float value;

@@ -80,6 +80,7 @@ struct InstancingKeyHasher{
     }
 };
 
+
 EnvironmentSettings environmentSettings;
 
 StandRendererSystem::StandRendererSystem(){
@@ -91,7 +92,7 @@ StandRendererSystem::StandRendererSystem(){
     FrameBufferSpecification specification;
     specification.width = 1024 * 4;
     specification.height = 1024 * 4;
-    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT, false};
+    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
 
     directinallightShadowPass._shadowMap = new Framebuffer(specification);
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
@@ -101,21 +102,34 @@ StandRendererSystem::StandRendererSystem(){
         cascadeShadows[i]._shadowMap = new Framebuffer(specification);
     }
 
+    FrameBufferSpecification specificationC;
+    specificationC.width = 1024 * 4;
+    specificationC.height = 1024 * 4;
+    specificationC.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    specificationC.sample = SHADOW_MAP_CASCADE_COUNT;
+    specificationC.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    _cascadeShadowMap = new Framebuffer(specificationC);
+
     _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
+    _cascadeShadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMapCascade.glsl");
+
     _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
     _blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
 
     FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}, {FramebufferTextureFormat::RED_INTEGER}};
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
     framebufferSpecification.sample = 8;
     _finalColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RED_INTEGER}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::None};
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.sample = 1;
     _objectsId = new Framebuffer(framebufferSpecification);
 
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
     framebufferSpecification.sample = 1;
     _finalColor2 = new Framebuffer(framebufferSpecification);
@@ -134,6 +148,7 @@ StandRendererSystem::~StandRendererSystem(){
     }
 
     delete directinallightShadowPass._shadowMap;
+    delete _cascadeShadowMap;
 
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
         delete spotlightShadowPass[i]._shadowMap;
@@ -210,6 +225,7 @@ void StandRendererSystem::Update(){
         if(environmentComponent.settings.shadowQuality != environmentSettings.shadowQuality){
             int size = ShadowQualityLookup[(int)environmentComponent.settings.shadowQuality];
             directinallightShadowPass._shadowMap->Resize(size, size);
+            _cascadeShadowMap->Resize(size, size);
             for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
                 spotlightShadowPass[i]._shadowMap->Resize(size, size);
             }
@@ -264,11 +280,16 @@ void StandRendererSystem::Update(){
             hasShadow = true;
         }*/
 
-        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+        /*if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
             CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
             for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
                 cascadeShadows[i].Render(light, transform, *this);
             }
+        }*/
+
+        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+            CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
+            RenderCascadeShadow(light, transform, *this);
         }
 
         /*if(light.type == LightComponent::Type::Spot && light.renderShadow == true && spotlightShadowPassCount < MAX_SPOTLIGHT_SHADOWS){
@@ -387,23 +408,24 @@ void StandRendererSystem::Update(){
 /////////////////////////////////////////////////
 
 void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
-    int baseShadowMapIndex = 2;
+    int baseShadowMapIndex = 1;
 
     shader.Bind();
 
     shader.SetVector3("viewPos", viewPos);
 
     shader.SetVector3("ambientLight", environmentSettings.ambient);
-
     shader.SetFloat("shadowBias", environmentSettings.shadowBias);
-    
-    shader.SetFramebuffer("shadowMap", *directinallightShadowPass._shadowMap, baseShadowMapIndex, -1);
-    shader.SetMatrix4("lightSpaceMatrix", directinallightShadowPass._lightSpaceMatrix);
+
+    //shader.SetMatrix4("lightSpaceMatrix", directinallightShadowPass._lightSpaceMatrix);
+    //shader.SetFramebuffer("shadowMap", *directinallightShadowPass._shadowMap, baseShadowMapIndex, -1); 
+    //baseShadowMapIndex += 1;
+
+    shader.SetFramebuffer("cascadeShadowMapsA", *_cascadeShadowMap, baseShadowMapIndex, -1);
+    baseShadowMapIndex += 1;
     
     shader.SetInt("cascadeShadowCount", SHADOW_MAP_CASCADE_COUNT);
     for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
-        baseShadowMapIndex += 1;
-
         std::string setFlt = "cascadeShadowSplitDistances[" + std::to_string(i) + "]";
         shader.SetFloat(setFlt.c_str(), cascadeShadows[i].splitDistance);
 
@@ -412,6 +434,7 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
 
         std::string setFram = "cascadeShadowMaps[" + std::to_string(i) + "]";
         shader.SetFramebuffer(setFram.c_str(), *cascadeShadows[i]._shadowMap, baseShadowMapIndex, -1);
+        baseShadowMapIndex += 1;
     }
 
     /*shader.SetInt("spotlightShadowCount", spotlightShadowPassCount);
@@ -502,6 +525,13 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
 void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
+    // --------- Render Targets --------- 
+    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 
+    std::unordered_map< RenderTargetInstancing, std::vector<Matrix4>, InstancingKeyHasher > renderTargetOpaquesInstancing; 
+    std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderTarget>> >renderTargetsBlend; 
+    std::set<Ref<Shader>> shaderTargets;
+    //std::set<Ref<Material>> materialTargets;
+
     // --------- Set Camera --------- 
     if(isMain){
         Renderer::SetCamera(_overrideCamera != nullptr ? _overrideCamera->cam : camera.cam);
@@ -513,7 +543,9 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
     Renderer::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
 
     #pragma region RenderSkyPass
-    // --------- Render Sky --------- 
+    {
+    // --------- Render Sky ---------
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderSky"); 
     if(environmentSettings.sky != nullptr){
         Assert(environmentSettings.sky->shader() != nullptr);
 
@@ -529,14 +561,12 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
         Renderer::DrawMeshRaw(_skyboxMesh);
         Renderer::SetDepthMask(true);
     }
+    }
     #pragma endregion 
 
-    // --------- Render Targets --------- 
-    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 
-    std::unordered_map< RenderTargetInstancing, std::vector<Matrix4>, InstancingKeyHasher > renderTargetOpaquesInstancing; 
-    std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderTarget>> >renderTargetsBlend; 
-    
-    // --------- Setup Render Opaques --------- 
+    {
+    // --------- Setup Render --------- 
+    OD_PROFILE_SCOPE("StandRendererSystem::Setups");
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
 
@@ -545,14 +575,14 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
         auto& c = view1.get<MeshRendererComponent>(_entity);
         auto& t = view1.get<TransformComponent>(_entity);
 
-        if(c.model() == nullptr) continue;
+        /*if(c.model() == nullptr) continue;
         if(c._boundingVolumeIsDirty){
             c._boundingVolume = generateAABB(*c.model());
             c._boundingVolumeSphere = generateSphereBV(*c.model());
             c._boundingVolumeIsDirty = false;
         }
         AABB boundingVolume = c._boundingVolume.Scaled(t.localScale() * 2.0f);
-        if(boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;
+        if(boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;*/
         //if(c._boundingVolumeSphere.isOnFrustum(camera.frustum, t) == false) continue;
 
         int index = 0;
@@ -560,24 +590,38 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
             Ref<Material> targetMaterial = i;
             if(c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
 
+            shaderTargets.insert(targetMaterial->shader());
+            //materialTargets.insert(targetMaterial);
+
             if(targetMaterial->isBlend()){
                 float distance = math::distance(camPos, t.position());
-                renderTargetsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                renderTargetsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix() * c.model()->matrixs[index]});
             } else {
                 if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
-                    renderTargetOpaquesInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix());
+                    renderTargetOpaquesInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix() * c.model()->matrixs[index]);
                 } else {
-                    renderTargetsOpaques[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix()});
+                    renderTargetsOpaques[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix() * c.model()->matrixs[index]});
                 }
             }
                 
             index += 1;
         }
     }
+    }
 
+    for(auto i: shaderTargets){
+        SetStandUniforms(camPos, *i);
+    }
+
+    //for(auto i: materialTargets){
+    //    i->UpdateUniforms();
+    //
+
+    {
     // --------- Render Opaques Instancing --------- 
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderOpaquesInstancing");
     for(auto& i: renderTargetOpaquesInstancing){
-        SetStandUniforms(camPos, *i.first.material->shader());
+        //SetStandUniforms(camPos, *i.first.material->shader());
         i.first.material->UpdateUniforms();
 
         i.first.mesh->instancingModelMatrixs.clear();
@@ -588,24 +632,34 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
 
         Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
     }
+    }
 
+    {
     // --------- Render Opaques --------- 
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderOpaques");
+
     for(auto i: renderTargetsOpaques){
-        SetStandUniforms(camPos, *i.first->shader());
+        //SetStandUniforms(camPos, *i.first->shader());
         i.first->UpdateUniforms();
         for(auto j: i.second){
+            //Renderer::DrawMeshMVP(*j.mesh, j.trans, *i.first->shader());
             Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
+            //Renderer::DrawMeshRaw(*j.mesh);
         }
     }
+
+    }
     
+    {
     // --------- Render Blends --------- 
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderBlends");
     Renderer::SetCullFace(CullFace::NONE);
     Renderer::SetBlend(true);
     Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
 
     for(auto it = renderTargetsBlend.rbegin(); it != renderTargetsBlend.rend(); it++){
         for(auto i: it->second){
-            SetStandUniforms(camPos, *i.first->shader());
+            //SetStandUniforms(camPos, *i.first->shader(), *i.first);
             i.first->UpdateUniforms();
             for(auto j: i.second){
                 Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
@@ -614,8 +668,11 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
     }
 
     Renderer::SetBlend(false);
+    }
 
+    {
     // --------- Render Sprites --------- 
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderSprites");
     auto view2 = scene()->GetRegistry().view<SpriteComponent, TransformComponent>();
     for(auto _entity: view2){
         auto& c = view2.get<SpriteComponent>(_entity);
@@ -626,6 +683,7 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
         _spriteShader->Bind();
         _spriteShader->SetTexture2D("texture", *c.texture, 0); 
         Renderer::DrawMesh(_spriteMesh, t.globalModelMatrix(), *_spriteShader);
+    }
     }
 }
 
@@ -666,14 +724,17 @@ void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, Transf
     Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 
+    root._shadowMapShader->Bind();
+    root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+
     auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view){
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
         for(Ref<Mesh> m: c.model()->meshs){
-            root._shadowMapShader->Bind();
-            root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+            //root._shadowMapShader->Bind();
+            //root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
             Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
         }
     }
@@ -697,19 +758,24 @@ void StandRendererSystem::CascadeShadow::Render(LightComponent& light, Transform
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     //glEnable(GL_DEPTH_CLAMP);
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    Renderer::Clean(1, 1, 1, 1);
+
+    root._shadowMapShader->Bind();
+    root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
 
     auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view){
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
+        int index = 0;
         for(Ref<Mesh> m: c.model()->meshs){
-            root._shadowMapShader->Bind();
-            root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
-            root._shadowMapShader->SetMatrix4("model", t.globalModelMatrix());
+            //root._shadowMapShader->Bind();
+            //root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
+            root._shadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
             Renderer::DrawMeshRaw(*m);
             //Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
+            index += 1;
         }
     }
 
@@ -868,14 +934,16 @@ glm::mat4 getLightSpaceMatrix(Camera& cam, Vector3 lightDir, const float nearPla
     }
 
     const glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
-
     return lightProjection * lightView;
 }
 
 void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light){
-    std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
+    float shadowDistance = cam.farClip;
+    //shadowDistance = 500;
+
+    //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
     //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f };
-    //std::vector<float> shadowCascadeLevels{ cam.farClip*0.1f, cam.farClip*0.25f, cam.farClip*0.5f, cam.farClip*1.0f };
+    std::vector<float> shadowCascadeLevels{ shadowDistance*0.1f, shadowDistance*0.25f, shadowDistance*0.5f, shadowDistance*1.0f };
 
     Assert(shadowCascadeLevels.size() == SHADOW_MAP_CASCADE_COUNT);
     
@@ -898,6 +966,39 @@ void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cas
         cascadeShadows[i].projViewMatrix = lightMatrixs[i];
         cascadeShadows[i].splitDistance = shadowCascadeLevels[i];
     }
+}
+
+void StandRendererSystem::RenderCascadeShadow(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
+    OD_PROFILE_SCOPE("StandRendererSystem::RenderCascadeShadow");
+
+    _cascadeShadowMap->Bind();
+    Renderer::SetViewport(0, 0, _cascadeShadowMap->width(), _cascadeShadowMap->height());
+    Renderer::SetDepthTest(DepthTest::LESS);
+    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    //glEnable(GL_DEPTH_CLAMP);
+    Renderer::Clean(1, 1, 1, 1);
+
+    _cascadeShadowMapShader->Bind();
+    for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
+        std::string setMat = "lightSpaceMatrices[" + std::to_string(i) + "]";
+        _cascadeShadowMapShader->SetMatrix4(setMat.c_str(), cascadeShadows[i].projViewMatrix);
+    }
+
+    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto _entity: view){
+        auto& c = view.get<MeshRendererComponent>(_entity);
+        auto& t = view.get<TransformComponent>(_entity);
+
+        int index = 0;
+        for(Ref<Mesh> m: c.model()->meshs){
+            _cascadeShadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
+            Renderer::DrawMeshRaw(*m);
+            index += 1;
+        }
+    }
+
+    _cascadeShadowMap->Unbind();
+    //glDisable(GL_DEPTH_CLAMP);
 }
 
 }

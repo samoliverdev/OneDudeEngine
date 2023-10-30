@@ -102,3 +102,16 @@ add_executable(game ${GAME_SOURCE_FILES})
 target_include_directories(game PUBLIC engine/src/)
 target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
+
+project(test)
+
+file(GLOB_RECURSE TEST_SOURCE_FILES test/src/*.cpp)
+add_executable(test ${TEST_SOURCE_FILES})
+target_include_directories(test PUBLIC engine/src/)
+target_include_directories(test PUBLIC test/src/)
+target_include_directories(test PUBLIC 
+    engine/vendor/
+    engine/vendor/stb/
+    engine/vendor/glfw/include/
+)
+target_link_libraries(test engine)

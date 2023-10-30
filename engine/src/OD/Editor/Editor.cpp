@@ -20,7 +20,7 @@ void Editor::OnInit(){
 
     FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8, true};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     _framebuffer = new Framebuffer(framebufferSpecification);
     _framebuffer->Invalidate();
 

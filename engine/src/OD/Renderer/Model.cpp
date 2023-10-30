@@ -37,6 +37,11 @@ void Model::processNode(aiNode *node, const aiScene *scene, Ref<Shader> customSh
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         meshs.push_back(processMesh(mesh, scene));
         materials.push_back(processMaterial(mesh, scene, customShader));
+        
+        Matrix4 m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(node[i].mTransformation);
+        if(node[i].mParent != nullptr) m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(node[i].mParent->mTransformation) * m;
+
+        matrixs.push_back(m);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++){

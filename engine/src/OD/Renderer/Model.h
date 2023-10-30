@@ -21,6 +21,7 @@ class Model: public Asset{
 public:
     std::vector<Ref<Mesh>> meshs;
     std::vector<Ref<Material>> materials;
+    std::vector<Matrix4> matrixs;
     
     inline int& boneCounter(){ return _boneCounter; }
     inline std::map<std::string, BoneInfo>& boneInfoMap() { return _boneInfoMap; }

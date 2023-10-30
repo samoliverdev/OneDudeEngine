@@ -68,6 +68,7 @@ public:
     static void DrawMeshRaw(Mesh& mesh);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& shader);
+    static void DrawMeshMVP(Mesh& mesh, Matrix4& modelMatrix, Shader& shader);
     static void DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex = -1, std::vector<Ref<Material>>* materialsOverride = nullptr);
 
     static void DrawMeshInstancing(Mesh& mesh, Shader& shader, int count);
