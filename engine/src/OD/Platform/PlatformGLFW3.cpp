@@ -23,6 +23,8 @@ namespace OD{
 GLFWwindow* window;
 bool vSync;
 
+bool hidden = false;
+
 void UpdateFpsCounter(GLFWwindow* window) {
     static double previous_seconds;
     static int frame_count;
@@ -219,6 +221,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     #ifdef OPENGL_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     #endif
+    
+    if(hidden) glfwWindowHint(GLFW_VISIBLE , GL_FALSE);
 
     //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
 
@@ -310,6 +314,18 @@ void Platform::SetVSync(bool enabled){
 }
 
 bool Platform::IsVSync(){ return vSync; }
+
+void Platform::ShowWindow(bool show){
+    hidden = show == false;
+
+    if(window == nullptr) return;
+
+    if(show){
+        glfwShowWindow(window);
+    } else {
+        glfwHideWindow(window);
+    }
+}
 
 void* Platform::GetInternalData(){
     return window;

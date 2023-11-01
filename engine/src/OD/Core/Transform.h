@@ -7,6 +7,11 @@ namespace OD {
     
 class Transform{
 public:
+    Transform(){}
+    Transform(Vector3 pos, Quaternion rot, Vector3 scale):
+        _localPosition(pos), _localRotation(rot), _localScale(scale){}
+    Transform(const Matrix4& m);
+
     Matrix4 GetLocalModelMatrix();
 
     inline Vector3 forward(){ return _localRotation * Vector3Forward; }
@@ -40,6 +45,42 @@ public:
     inline void localScale(Vector3 scale){ _localScale = scale; _isDirt = true; }
 
     inline void SetModelMatrix(Matrix4 matrix){ _isDirt = false; _localModelMatrix = matrix; }
+
+    inline bool operator==(const Transform& b){
+        return 
+            this->_localPosition == b._localPosition &&
+            this->_localRotation == b._localRotation &&
+            this->_localScale == b._localScale;
+    }
+
+    inline bool operator!=(const Transform& b){
+        return !(*this == b);
+    }
+
+    inline static Transform Combine(const Transform& a, const Transform& b){
+        Transform out;
+
+        out._localScale = a._localScale * b._localScale;
+        out._localRotation = b._localRotation * a._localRotation;
+        
+        out._localPosition = a._localRotation * (a._localScale * b._localPosition);
+        out._localPosition = a._localPosition + out._localPosition;
+
+        return out;
+    }
+
+    inline static Transform Mix(const Transform& a, const Transform& b, float t){
+        Quaternion bRot = b._localRotation;
+        if(math::dot(a._localRotation, bRot) < 0.0f){
+            bRot = -bRot;
+        }
+
+        return Transform(
+            math::mix(a._localPosition, b._localPosition, t),
+            math::lerp(a._localRotation, bRot, t),
+            math::mix(a._localScale, b._localScale, t)
+        );
+    }
 
 protected:
     bool _isDirt = true;

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
+enable_testing()
+
 set(CMAKE_CXX_STANDARD 17)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -60,6 +62,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/tinyfiledialogs/*.c
     engine/vendor/glad/*.c 
     engine/vendor/stb/*.c 
+    engine/vendor/cgltf/*.c
     engine/vendor/glm/*.cpp
     engine/vendor/imgui/*.cpp 
     engine/vendor/ImGuizmo/*.cpp 
@@ -70,6 +73,7 @@ add_library(engine STATIC ${ENGINE_SOURCE_FILES})
 
 target_include_directories(engine PUBLIC 
     engine/vendor/
+    engine/vendor/cgltf/
     engine/vendor/imgui/
     engine/vendor/ImGuizmo/
     engine/vendor/glfw/include/
@@ -103,15 +107,16 @@ target_include_directories(game PUBLIC engine/src/)
 target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
 
-project(test)
+project(tests)
 
-file(GLOB_RECURSE TEST_SOURCE_FILES test/src/*.cpp)
-add_executable(test ${TEST_SOURCE_FILES})
-target_include_directories(test PUBLIC engine/src/)
-target_include_directories(test PUBLIC test/src/)
-target_include_directories(test PUBLIC 
-    engine/vendor/
-    engine/vendor/stb/
-    engine/vendor/glfw/include/
-)
-target_link_libraries(test engine)
+add_subdirectory(tests/googletest EXCLUDE_FROM_ALL)
+add_library(GTest::GTest INTERFACE IMPORTED)
+target_link_libraries(GTest::GTest INTERFACE gtest_main)
+
+file(GLOB_RECURSE TESTS_SOURCE_FILES tests/src/*.cpp)
+add_executable(tests ${TESTS_SOURCE_FILES})
+
+target_include_directories(tests PUBLIC engine/src/)
+target_link_libraries(tests GTest::GTest engine)
+
+add_test(tests_gtests tests)

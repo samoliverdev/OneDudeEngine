@@ -939,7 +939,7 @@ glm::mat4 getLightSpaceMatrix(Camera& cam, Vector3 lightDir, const float nearPla
 
 void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light){
     float shadowDistance = cam.farClip;
-    //shadowDistance = 500;
+    shadowDistance = 500;
 
     //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
     //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f };

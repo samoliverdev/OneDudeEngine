@@ -20,6 +20,7 @@ public:
     static bool Run();
     
     static void Quit();
+    static void Exit();
     static void GetFramebufferSize(int* width, int* height);
 
     static int screenWidth();

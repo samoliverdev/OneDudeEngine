@@ -105,9 +105,9 @@ struct Physics_6: OD::Module {
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-        SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
-        SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
-        SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+        //SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+        //SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
+        //SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
 
         Scene* scene = SceneManager::Get().NewScene();
 

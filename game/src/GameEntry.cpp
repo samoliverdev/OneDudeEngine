@@ -6,6 +6,7 @@
 #include "ECS_4.h"
 //#include "Framebuffer_5.h"
 #include "Physics_6.h"
+#include "Animation_7.h"
 #include "Serialization_9.h"
 #include "SynthCity_10.h"
 
@@ -20,7 +21,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 3;
+    int i = 6;
     if(OD::Application::args.size() > 1) i = atoi(OD::Application::args[1].c_str());
 
     if(i == 0) return new BaseMesh_1();
@@ -29,6 +30,7 @@ OD::Module* CreateMainModule(){
     if(i == 3) return new ECS_4();
     //if(i == 4) return new Framebuffer_5();
     if(i == 5) return new Physics_6();
+    if(i == 6) return new Animation_7();
     if(i == 8) return new Serialization_9();
     if(i == 9) return new SynthCity_10();
 

@@ -20,6 +20,8 @@ public:
 
     static void SetVSync(bool enabled);
 	static bool IsVSync();
+
+    static void ShowWindow(bool show);
     
     static void* GetInternalData();
 };

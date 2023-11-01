@@ -93,6 +93,14 @@ void Application::Quit(){
     _running = false;
 }
 
+void Application::Exit(){
+    Renderer::_Shutdown();
+    //Input::_Shutdown(0);
+    Platform::SystemShutdown(0);
+
+    exit(0);
+}
+
 void Application::GetFramebufferSize(int* width, int* height){}
 
 float Application::deltaTime(){ return _deltaTime; }

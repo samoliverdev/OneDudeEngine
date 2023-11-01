@@ -44,6 +44,12 @@ using Vector4 = glm::vec4;
 using Quaternion = glm::quat;
 using Matrix4 = glm::mat4;
 
+/*typedef glm::vec2 Vector2;
+typedef glm::vec3 Vector3;
+typedef glm::vec4 Vector4;
+typedef glm::quat Quaternion;
+typedef glm::mat4 Matrix4;*/
+
 namespace math = glm;
 
 const Vector2 Vector2Left(-1.0f, 0.0f);
