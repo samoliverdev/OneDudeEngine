@@ -164,14 +164,15 @@ protected:
 
 private:
     inline float Interpolate(float a, float b, float t){ return a + (b - a) * t; }
-    inline Vector3 Interpolate(Vector3 a, Vector3 b, float t){ return math::mix(a, b, t); }
+    inline Vector3 Interpolate(Vector3 a, Vector3 b, float t){ 
+        /*return math::mix(a, b, t);*/
+        return Mathf::lerp(a, b, t);
+    }
 
     inline Quaternion Interpolate(Quaternion a, Quaternion b, float t){
-        //return math::lerp(a, b, t);
-
-        Quaternion result = math::lerp(a, b, t);
+        Quaternion result = Mathf::mix(a, b, t);
         if(math::dot(a, b) < 0){
-            result = math::lerp(a, -b, t);
+            result = Mathf::mix(a, -b, t);
         }
         return math::normalize(result);
     }

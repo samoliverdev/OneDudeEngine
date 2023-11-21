@@ -10,6 +10,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_interpolation.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <glm/vec2.hpp>
@@ -34,8 +35,6 @@
 #include "glm/gtx/matrix_query.hpp"
 #include "glm/gtx/vector_angle.hpp"
 
-
-
 namespace OD {
 
 using Vector2 = glm::vec2;
@@ -43,6 +42,10 @@ using Vector3 = glm::vec3;
 using Vector4 = glm::vec4;
 using Quaternion = glm::quat;
 using Matrix4 = glm::mat4;
+
+using IVector2 = glm::ivec2;
+using IVector3 = glm::ivec3;
+using IVector4 = glm::ivec4;
 
 /*typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;
@@ -86,11 +89,30 @@ namespace Mathf{
     inline float* Raw(Matrix4& m){ return &(m[0].x); }
 
     inline static Matrix4 TRS(Vector3 pos, Quaternion q, Vector3 s){
-        Matrix4 translate = math::translate(pos);
+        return math::translate(pos) * math::mat4_cast(q) * math::scale(s);
+        /*Matrix4 translate = math::translate(pos);
         Matrix4 rotate = math::mat4_cast(q);
         Matrix4 scale = math::scale(s);
         return translate * rotate * scale;
+        */
     }
+
+    inline static Quaternion mix(const Quaternion& from, const Quaternion& to, float t) {
+        return from * (1.0f - t) + to * t;
+    }
+
+    inline static Quaternion nlerp(const Quaternion& from, const Quaternion& to, float t) {
+        return math::normalize(from + (to - from) * t);
+    }
+
+    inline static Vector3 lerp(const Vector3& s, const Vector3& e, float t) {
+        return Vector3(
+            s.x + (e.x - s.x) * t,
+            s.y + (e.y - s.y) * t,
+            s.z + (e.z - s.z) * t
+        );
+    }
+
 }
 
 /*

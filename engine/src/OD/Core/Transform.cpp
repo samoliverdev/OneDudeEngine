@@ -21,6 +21,8 @@ Matrix4 Transform::GetLocalModelMatrix(){
     _localModelMatrix = Mathf::TRS(_localPosition, _localRotation, _localScale);
     _isDirt = false;
     return _localModelMatrix;
+
+    //return Mathf::TRS(_localPosition, _localRotation, _localScale);
 }
 
 /*

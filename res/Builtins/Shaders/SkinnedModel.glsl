@@ -11,9 +11,12 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-const int MAX_BONES = 200;
+const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+//uniform mat4 finalBonesMatrices[MAX_BONES];
+
+uniform mat4 pose[MAX_BONES];
+uniform mat4 invBindPose[MAX_BONES];
 
 out vec3 pos;
 out vec3 normal;
@@ -22,14 +25,14 @@ out vec2 texCoord;
 flat out ivec4 boneIds;
 out vec4 weights;
 
-void main() {
+void main(){
     pos = _pos;
     normal = _normal;
     texCoord = _texCoord;
     boneIds = _boneIds;
     weights = _weights;
 
-    vec4 totalPosition = vec4(0.0f);
+    /*vec4 totalPosition = vec4(0.0f);
     for(int i = 0; i < MAX_BONE_INFLUENCE; i++){
         if(_boneIds[i] == -1) continue;
         if(_boneIds[i] >= MAX_BONES){
@@ -43,7 +46,13 @@ void main() {
     }
 
     mat4 viewModel = view * model;
-    gl_Position =  projection * viewModel * totalPosition;
+    gl_Position =  projection * viewModel * totalPosition;*/
+
+    mat4 skin = (pose[boneIds.x] * invBindPose[boneIds.x]) * weights.x;
+    skin += (pose[boneIds.y] * invBindPose[boneIds.y]) * weights.y;
+    skin += (pose[boneIds.z] * invBindPose[boneIds.z]) * weights.z;
+    skin += (pose[boneIds.w] * invBindPose[boneIds.w]) * weights.w;
+    gl_Position = projection * view * model * skin * vec4(pos, 1.0);
 
     //gl_Position = projection * view * model * vec4(pos, 1.0);
 }
@@ -53,7 +62,7 @@ void main() {
 uniform sampler2D mainTex;
 uniform vec4 color = vec4(1,1,1,1);
 
-uniform int selectedBoneIndex = 0;
+uniform int selectedBoneIndex = 36;
 
 in vec3 pos;
 in vec3 normal;
@@ -77,6 +86,7 @@ void main() {
     if(outColor.a < 0.1) discard;
 
     fragColor = outColor;
+    //fragColor = color;
     return;
 
     //outColor = vec4(normal, 1);

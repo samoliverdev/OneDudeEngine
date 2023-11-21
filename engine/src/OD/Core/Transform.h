@@ -57,28 +57,53 @@ public:
         return !(*this == b);
     }
 
-    inline static Transform Combine(const Transform& a, const Transform& b){
-        Transform out;
+    inline static Transform Inverse(Transform& t){
+        auto m = t.GetLocalModelMatrix();
+        return Transform(math::inverse(m));
 
-        out._localScale = a._localScale * b._localScale;
-        out._localRotation = b._localRotation * a._localRotation;
-        
-        out._localPosition = a._localRotation * (a._localScale * b._localPosition);
-        out._localPosition = a._localPosition + out._localPosition;
+        /*Transform inv;
 
-        return out;
+        inv._localRotation = math::inverse(t._localRotation);
+
+        inv._localScale.x = fabs(t._localScale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t._localScale.x;
+        inv._localScale.y = fabs(t._localScale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t._localScale.y;
+        inv._localScale.z = fabs(t._localScale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t._localScale.z;
+
+        Vector3 invTranslation = t._localPosition * -1.0f;
+        inv._localPosition = inv._localRotation * (inv._localScale * invTranslation);
+
+        return inv;*/
     }
 
-    inline static Transform Mix(const Transform& a, const Transform& b, float t){
+    inline static Transform Combine(Transform& a, Transform& b){
+        return Transform(a.GetLocalModelMatrix() * b.GetLocalModelMatrix());
+
+        /*Transform out;
+        out._localScale = a._localScale * b._localScale;
+        out._localRotation = b._localRotation * a._localRotation;
+        out._localPosition = a._localRotation * (a._localScale * b._localPosition);
+        out._localPosition = a._localPosition + out._localPosition;
+        return out;*/
+    }
+
+    inline static Transform Mix(Transform& a, Transform& b, float t){
+        //return Transform(math::interpolate(a.GetLocalModelMatrix(), b.GetLocalModelMatrix(), t));
+
         Quaternion bRot = b._localRotation;
-        if(math::dot(a._localRotation, bRot) < 0.0f){
+        if(math::dot(a._localRotation, bRot) < 0){
             bRot = -bRot;
         }
 
-        return Transform(
+        /*return Transform(
             math::mix(a._localPosition, b._localPosition, t),
-            math::lerp(a._localRotation, bRot, t),
+            math::lerp(a._localRotation, b._localRotation, t),
             math::mix(a._localScale, b._localScale, t)
+        );*/
+
+        return Transform(
+            Mathf::lerp(a._localPosition, b._localPosition, t),
+            Mathf::nlerp(a._localRotation, b._localRotation, t),
+            Mathf::lerp(a._localScale, b._localScale, t)
         );
     }
 

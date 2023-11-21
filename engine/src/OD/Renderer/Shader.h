@@ -33,6 +33,7 @@ public:
     void SetVector3(const char* name, Vector3 value);
     void SetVector4(const char* name, Vector4 value);
     void SetMatrix4(const char* name, Matrix4 value);
+    void SetMatrix4(const char* name, std::vector<Matrix4>& value);
     void SetTexture2D(const char* name, Texture2D& value, int index);
     void SetCubemap(const char* name, Cubemap& value, int index);
     void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);

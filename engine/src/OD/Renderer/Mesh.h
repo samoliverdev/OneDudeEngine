@@ -9,8 +9,8 @@ namespace OD {
 #define MAX_BONE_INFLUENCE 4
 
 struct BoneData{
-    int boneId[MAX_BONE_INFLUENCE] = {0};
-    float weight[MAX_BONE_INFLUENCE] = {0};
+    IVector4 boneId;
+    Vector4 weight;
 };
 
 class Renderer;
@@ -23,13 +23,12 @@ public:
     std::vector<Vector3> normals;
     std::vector<Vector4> colors;
     std::vector<Vector3> tangents;
-    
-    std::vector<BoneData> boneDatas;
-
+    std::vector<Vector4> weights;
+	std::vector<IVector4> influences;
     std::vector<unsigned int> indices;
 
     std::vector<Matrix4> instancingModelMatrixs;
-
+    
     Mesh();
     ~Mesh();
 
@@ -50,6 +49,10 @@ public:
     inline unsigned int rendererId(){ return _vao; }
 
 private:
+    //std::vector<Vector3> _skinnedPosition;
+    //std::vector<Vector3> _skinnedNormal;
+    //std::vector<Matrix4> _posePalette;
+
     bool _isReadable = false;
 
     unsigned int _vao = 0;
@@ -62,9 +65,9 @@ private:
 
     unsigned int _instancingModelMatrixsVbo = 0;
     
-    //unsigned int jointVbo; 
-    //unsigned int weightsVbo;  
-    unsigned int _boneDataVbo;  
+    unsigned int _jointVbo; 
+    unsigned int _weightsVbo;  
+    //unsigned int _boneDataVbo;  
     
     unsigned int _ebo = 0;
 

@@ -106,6 +106,37 @@ void Mesh::UpdateMesh(){
         //}
     }
 
+    if(influences.empty() == false) Assert(influences.size() == vertices.size());
+    if(influences.size() == vertices.size()){
+        //if(tangentVbo == 0){
+            glGenBuffers(1, &_jointVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, _jointVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences.size(), &influences[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(5);
+            glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
+            glCheckError();
+        //} else {
+        //    glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
+        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * tangents.size(), &tangents[0]);
+        //}
+    }
+
+    if(weights.empty() == false) Assert(weights.size() == vertices.size());
+    if(weights.size() == vertices.size()){
+        //if(tangentVbo == 0){
+            glGenBuffers(1, &_weightsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, _weightsVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(6);
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
+            glCheckError();
+        //} else {
+        //    glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
+        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * tangents.size(), &tangents[0]);
+        //}
+    }
+
+    /*LogInfo("Vertices: %zd BoneData: %zd", vertices.size(), boneDatas.size());
     if(boneDatas.empty() == false) Assert(boneDatas.size() == vertices.size());
     if(boneDatas.size() == vertices.size()){
         glGenBuffers(1, &_boneDataVbo);
@@ -116,7 +147,7 @@ void Mesh::UpdateMesh(){
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(BoneData), (void*)(MAX_BONE_INFLUENCE*sizeof(int)));
         glCheckError();
-    }
+    }*/
     
     glBindVertexArray(0);
 }

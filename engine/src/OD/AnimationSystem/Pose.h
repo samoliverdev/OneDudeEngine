@@ -18,6 +18,8 @@ public:
     Transform GetLocalTransform(unsigned int index);
     void SetLocalTransform(unsigned int index, const Transform& transform);
     Transform GetGlobalTransform(unsigned int index);
+    Matrix4 GetGlobalMatrix(unsigned int index);
+    Matrix4 GetLocalMatrix(unsigned int index);
     Transform operator[](unsigned int index);
     void GetMatrixPalette(std::vector<Matrix4>& out);
     bool operator==(const Pose& other);

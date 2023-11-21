@@ -302,6 +302,8 @@ GLint Shader::GetLocation(const char* name){
     if(_uniforms.count(name)) return _uniforms[name];
     
     GLint location = glGetUniformLocation(_rendererId, name);
+    glCheckError();
+    
     _uniforms[name] = location;
     return location;
 }
@@ -338,6 +340,19 @@ void Shader::SetMatrix4(const char* name, Matrix4 value){
     //glCheckError();
     glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, _path.c_str()); 
+    });
+}
+
+void Set(unsigned int slot, Matrix4* inputArray, unsigned int arrayLength) {
+	glUniformMatrix4fv(slot, (GLsizei)arrayLength, false, (float*)&inputArray[0]);
+}
+
+void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
+    glUniformMatrix4fv(GetLocation(name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
+    //Set(GetLocation(name), &value[0], (unsigned int)value.size());
+    //glCheckError();
+    glCheckError2([&](){ 
+        LogError("UniformName: %s ShaderPath: %s Cout: %zd", name, _path.c_str(), value.size()); 
     });
 }
 

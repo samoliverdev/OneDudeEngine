@@ -1,14 +1,14 @@
 #include <OD/Entry.h>
 
-#include "BaseMesh_1.h"
-#include "LoadModel_2.h"
-#include "Light_3.h"
-#include "ECS_4.h"
+#include "1_BaseMesh.h"
+#include "2_LoadModel.h"
+#include "3_Light.h"
+#include "4_ECS.h"
 //#include "Framebuffer_5.h"
-#include "Physics_6.h"
-#include "Animation_7.h"
-#include "Serialization_9.h"
-#include "SynthCity_10.h"
+#include "6_Physics.h"
+#include "7_Animation.h"
+#include "9_Serialization.h"
+#include "10_SynthCity.h"
 
 #include <string>
 

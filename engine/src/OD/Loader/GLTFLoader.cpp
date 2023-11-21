@@ -88,6 +88,71 @@ namespace GLTFHelpers {
 		}
 	} 
 
+	void MeshFromAttribute(Mesh& outMesh, cgltf_attribute& attribute, cgltf_skin* skin, cgltf_node* nodes, unsigned int nodeCount){
+		cgltf_attribute_type attribType = attribute.type;
+		cgltf_accessor& accessor = *attribute.data;
+
+		unsigned int componentCount = 0;
+		if(accessor.type == cgltf_type_vec2){
+			componentCount = 2;
+		} else if(accessor.type == cgltf_type_vec3){
+			componentCount = 3;
+		} else if(accessor.type == cgltf_type_vec4){
+			componentCount = 4;
+		}
+		std::vector<float> values;
+		GetScalarValues(values, componentCount, accessor);
+		unsigned int acessorCount = (unsigned int)accessor.count;
+
+		std::vector<Vector3>& positions = outMesh.vertices;
+		std::vector<Vector3>& normals = outMesh.normals;
+		std::vector<Vector3>& texCoords = outMesh.uv;
+		std::vector<IVector4>& influences = outMesh.influences;
+		std::vector<Vector4>& weights = outMesh.weights;
+
+		for(unsigned int i = 0; i < acessorCount; ++i){
+			int index = i * componentCount;
+			switch (attribType) {
+			case cgltf_attribute_type_position:
+				positions.push_back(Vector3(values[index + 0], values[index + 1], values[index + 2]));
+				break;
+			case cgltf_attribute_type_texcoord:
+				texCoords.push_back(Vector3(values[index + 0], values[index + 1], 0));
+				break;
+			case cgltf_attribute_type_weights:
+				weights.push_back(Vector4(values[index + 0], values[index + 1], values[index + 2], values[index + 3]));
+				break;
+			case cgltf_attribute_type_normal:
+			{
+				Vector3 normal = Vector3(values[index + 0], values[index + 1], values[index + 2]);
+				if(math::length2(normal) < 0.000001f){
+					normal = Vector3(0, 1, 0);
+				}
+				normals.push_back(math::normalize(normal));
+			}
+			break;
+			case cgltf_attribute_type_joints:
+			{
+				// These indices are skin relative. This function has no information about the
+				// skin that is being parsed. Add +0.5f to round, since we can't read ints
+				IVector4 joints(
+					(int)(values[index + 0] + 0.5f),
+					(int)(values[index + 1] + 0.5f),
+					(int)(values[index + 2] + 0.5f),
+					(int)(values[index + 3] + 0.5f)
+				);
+
+				joints.x = std::max(0, GetNodeIndex(skin->joints[joints.x], nodes, nodeCount));
+				joints.y = std::max(0, GetNodeIndex(skin->joints[joints.y], nodes, nodeCount));
+				joints.z = std::max(0, GetNodeIndex(skin->joints[joints.z], nodes, nodeCount));
+				joints.w = std::max(0, GetNodeIndex(skin->joints[joints.w], nodes, nodeCount));
+
+				influences.push_back(joints);
+			}
+			break;
+			} // End switch statement
+		}
+	}// End of MeshFromAttribute function
 
 } // End of GLTFHelpers
 
@@ -188,5 +253,96 @@ std::vector<Clip> LoadAnimationClips(cgltf_data* data){
 
 	return result;
 }
+
+Pose LoadBindPose(cgltf_data* data){
+	Pose restPose = LoadRestPose(data);
+	unsigned int numBones = restPose.Size();
+	std::vector<Transform> worldBindPose(numBones);
+	for(unsigned int i = 0; i < numBones; ++i){
+		worldBindPose[i] = restPose.GetGlobalTransform(i);
+	}
+
+	unsigned int numSkins = (unsigned int)data->skins_count;
+	for(unsigned int i = 0; i < numSkins; ++i){
+		cgltf_skin* skin = &(data->skins[i]);
+		std::vector<float> invBindAccessor;
+		GLTFHelpers::GetScalarValues(invBindAccessor, 16, *skin->inverse_bind_matrices);
+		
+		unsigned int numJoints = (unsigned int)skin->joints_count;
+		for(unsigned int j = 0; j < numJoints; ++j){
+			// Read the ivnerse bind matrix of the joint
+			float* matrix = &(invBindAccessor[j*16]);
+			Matrix4 invBindMatrix = math::make_mat4(matrix);
+			// invert, convert to transform
+			Matrix4 bindMatrix = math::inverse(invBindMatrix);
+			Transform bindTransform = Transform(bindMatrix);
+			// Set that transform in the worldBindPose.
+			cgltf_node* jointNode = skin->joints[j];
+			int jointIndex = GLTFHelpers::GetNodeIndex(jointNode, data->nodes, numBones);
+			worldBindPose[jointIndex] = bindTransform;
+		} // end for each joint
+	}// end for each skin
+
+	//Convert the world bind pose to a regular bind pose
+	Pose bindPose = restPose;
+	for(unsigned int i = 0; i < numBones; i++){
+		Transform current = worldBindPose[i];
+		int p = bindPose.GetParent(i);
+		if(p >= 0){// Bring into parent space
+			Transform parent = worldBindPose[p];
+			Transform temp = Transform::Inverse(parent);
+			current = Transform::Combine(temp, current);
+		}
+		bindPose.SetLocalTransform(i, current);
+	}
+
+	return bindPose;
+}
+
+Skeleton LoadSkeleton(cgltf_data* data){
+	return Skeleton(
+		LoadRestPose(data),
+		LoadBindPose(data),
+		LoadJointNames(data)
+	);
+}
+
+std::vector<Ref<Mesh>> LoadMeshes(cgltf_data* data){
+	std::vector<Ref<Mesh>> result;
+	cgltf_node* nodes = data->nodes;
+	unsigned int nodeCount = (unsigned int)data->nodes_count;
+
+	for(unsigned int i = 0; i < nodeCount; ++i){
+		cgltf_node* node = &nodes[i];
+		if(node->mesh == 0 || node->skin == 0) continue;
+		
+		unsigned int numPrims = (unsigned int)node->mesh->primitives_count;
+		for(unsigned int j = 0; j < numPrims; ++j){
+			result.push_back(CreateRef<Mesh>());
+			Ref<Mesh>& mesh = result[result.size() - 1];
+
+			cgltf_primitive* primitive = &node->mesh->primitives[j];
+
+			unsigned int numAttributes = (unsigned int)primitive->attributes_count;
+			for(unsigned int k = 0; k < numAttributes; ++k){
+				cgltf_attribute* attribute = &primitive->attributes[k];
+				GLTFHelpers::MeshFromAttribute(*mesh, *attribute, node->skin, nodes, nodeCount);
+			}
+			if(primitive->indices != 0){
+				unsigned int indexCount = (unsigned int)primitive->indices->count;
+				std::vector<unsigned int>& indices = mesh->indices;
+				indices.resize(indexCount);
+
+				for(unsigned int k = 0; k < indexCount; ++k){
+					indices[k] = (unsigned int)cgltf_accessor_read_index(primitive->indices, k);
+				}
+			}
+			//mesh.UpdateOpenGLBuffers();
+			mesh->UpdateMesh();
+		}
+	}
+
+	return result;
+} // End of the LoadMeshes function
 
 }
