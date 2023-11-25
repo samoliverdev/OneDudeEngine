@@ -2,6 +2,7 @@
 
 namespace OD{
 
+/*
 TransformTrack::TransformTrack(){
     _id = 0;
 }
@@ -94,6 +95,18 @@ Transform TransformTrack::Sample(const Transform& ref,
 	if(_scale.Size() > 1){ // Only assign if animated
 		result.localScale(_scale.Sample(time, looping));
 	}
+	return result;
+}
+*/
+
+FastTransformTrack OptimizeTransformTrack(TransformTrack& input) {
+	FastTransformTrack result;
+
+	result.SetId(input.GetId());
+	result.GetPositionTrack() = OptimizeTrack<Vector3, 3>(input.GetPositionTrack());
+	result.GetRotationTrack() = OptimizeTrack<Quaternion, 4>(input.GetRotationTrack());
+	result.GetScaleTrack() = OptimizeTrack<Vector3, 3>(input.GetScaleTrack());
+
 	return result;
 }
 

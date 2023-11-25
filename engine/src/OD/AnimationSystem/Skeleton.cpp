@@ -26,8 +26,10 @@ void Skeleton::UpdateInverseBindPose(){
     _invBindPose.resize(size);
 
     for(unsigned int i = 0; i < size; ++i){
-        Transform world = _bindPose.GetGlobalTransform(i);
-        _invBindPose[i] = math::inverse(world.GetLocalModelMatrix());
+        //Transform world = _bindPose.GetGlobalTransform(i);
+        //_invBindPose[i] = math::inverse(world.GetLocalModelMatrix());
+
+        _invBindPose[i] = math::inverse(_bindPose.GetGlobalMatrix(i));
     }
 }
 

@@ -2,6 +2,7 @@
 
 namespace OD{
 
+/*
 Clip::Clip(){
     _name = "No name given";
     _startTime = 0;
@@ -94,5 +95,21 @@ float Clip::GetStartTime(){ return _startTime; }
 float Clip::GetEndTime() {return _endTime; }
 bool Clip::GetLooping(){ return _looping; }
 void Clip::SetLooping(bool inLooping){ _looping = inLooping; }
+*/
+
+FastClip OptimizeClip(Clip& input) {
+	FastClip result;
+
+	result.SetName(input.GetName());
+	result.SetLooping(input.GetLooping());
+	unsigned int size = input.Size();
+	for(unsigned int i = 0; i < size; ++i) {
+		unsigned int joint = input.GetIdAtIndex(i);
+		result[joint] = OptimizeTransformTrack(input[joint]);
+	}
+	result.RecalculateDuration();
+
+	return result;
+}
 
 }

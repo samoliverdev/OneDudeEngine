@@ -16,10 +16,19 @@ struct ObjectTest{
     }
 };
 
+template<typename T>
+struct TestRegisterComponent{
+    TestRegisterComponent(const char* name){
+        SceneManager::Get().RegisterComponent<T>(name);
+    }
+};
+
 struct ComponentTest_01{
     float speed;
     ObjectTest test;
     std::vector<ObjectTest> tests = {ObjectTest(), ObjectTest()};
+
+    inline static TestRegisterComponent<ComponentTest_01> registerTest = TestRegisterComponent<ComponentTest_01>("ComponentTest_01");
 
     void Serialize(ArchiveNode& s){
         s.typeName("ComponentTest_01");
@@ -82,7 +91,7 @@ struct Serialization_9: public OD::Module{
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
-        SceneManager::Get().RegisterComponent<ComponentTest_01>("ComponentTest_01");
+        //SceneManager::Get().RegisterComponent<ComponentTest_01>("ComponentTest_01");
         SceneManager::Get().RegisterCoreComponentSimple<ComponentTest_02>("ComponentTest_02");
 
         scene = SceneManager::Get().NewScene();

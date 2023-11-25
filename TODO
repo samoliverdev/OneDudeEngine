@@ -1,7 +1,4 @@
 Curret
-    Text Render
-    UI Render
-
     Scene Clone
     Entity Clone
     Physis Fixs
@@ -15,7 +12,11 @@ Curret
     Shadow Cascat
     Mult Light Shadow
     Static Entities
+    Static Batch Like unity asset MeshCombine
     Render System Settings from EnviromentComponent
+
+    Text Render
+    UI Render
 
     RenderDevice
 

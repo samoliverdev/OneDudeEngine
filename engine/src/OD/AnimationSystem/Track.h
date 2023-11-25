@@ -18,7 +18,7 @@ public:
     void SetInterpolation(Interpolation interp){ _interpolation = interp; }
     float GetStartTime(){ return _frames[0].time; }
     float GetEndTime(){ return _frames[_frames.size()-1].time; }
-    
+
     T Sample(float time, bool looping){
         if(_interpolation == Interpolation::Constant){
             return SampleConstant(time, looping);
@@ -102,7 +102,7 @@ protected:
         return AdjustHermiteResult(result);
     }
 
-    int FrameIndex(float time, bool looping){
+    virtual int FrameIndex(float time, bool looping){
         unsigned int size = (unsigned int)_frames.size();
         if(size <= 1) return -1;
 
@@ -163,23 +163,31 @@ protected:
     T Cast(float* value); // Will be specialized
 
 private:
-    inline float Interpolate(float a, float b, float t){ return a + (b - a) * t; }
+    inline float Interpolate(float a, float b, float t){
+        t = math::clamp<float>(t, 0, 1);
+        //return a + (b - a) * t; 
+        return math::mix(a, b, t);
+    }
     inline Vector3 Interpolate(Vector3 a, Vector3 b, float t){ 
-        /*return math::mix(a, b, t);*/
-        return Mathf::lerp(a, b, t);
+        t = math::clamp<float>(t, 0, 1);
+        return math::mix(a, b, t);
+        //return Mathf::lerp(a, b, t);
     }
 
     inline Quaternion Interpolate(Quaternion a, Quaternion b, float t){
-        Quaternion result = Mathf::mix(a, b, t);
+        t = math::clamp<float>(t, 0, 1);
+        Quaternion result = math::lerp(a, b, t);
         if(math::dot(a, b) < 0){
-            result = Mathf::mix(a, -b, t);
+            result = math::lerp(a, -b, t);
         }
         return math::normalize(result);
     }
 
     inline float AdjustHermiteResult(float f){ return f; }
     inline Vector3 AdjustHermiteResult(const Vector3& v){ return v; }
-    inline Quaternion AdjustHermiteResult(const Quaternion& q){ return math::normalize(q); }
+    inline Quaternion AdjustHermiteResult(const Quaternion& q){ 
+        return math::normalize(q); 
+    }
 
     inline void Neighborhood(const float& a, float& b){}
     inline void Neighborhood(const Vector3& a, Vector3& b){}
@@ -193,5 +201,93 @@ private:
 typedef Track<float, 1> ScalarTrack;
 typedef Track<Vector3, 3> VectorTrack;
 typedef Track<Quaternion, 4> QuaternionTrack;
+
+template<typename T, int N>
+class FastTrack: public Track<T, N>{
+protected:
+    std::vector<unsigned int> _sampledFrames;
+
+    virtual int FrameIndex(float time, bool looping){
+        std::vector<Frame<N>>& frames = this->_frames;
+
+        unsigned int size = (unsigned int)frames.size();
+        if(size <= 1){ return -1; }
+
+        if(looping){
+            float startTime = frames[0].time;
+            float endTime = frames[size - 1].time;
+            float duration = endTime - startTime;
+            while(time < startTime){ time += duration; }
+            while(time > endTime){ time -= duration; }
+            if(time == endTime){ time = startTime; }
+        } else {
+            if(time <= frames[0].time){
+                return 0;
+            }
+            if(time >= frames[size - 2].time){
+                return (int)size - 2;
+            }
+        }
+        float duration = this->GetEndTime() - this->GetStartTime();
+        unsigned int numSamples = 60 + (unsigned int)(duration * 60.0f);
+        float t = time / duration;
+
+        unsigned int index = (unsigned int)(t * (float)numSamples);
+        if(index >= _sampledFrames.size()){
+            return -1;
+        }
+        return (int)_sampledFrames[index];
+    }
+public:
+    void UpdateIndexLookupTable(){
+        int numFrames = (int)this->_frames.size();
+        if(numFrames <= 1){
+            return;
+        }
+
+        float duration = this->GetEndTime() - this->GetStartTime();
+        unsigned int numSamples = 60 + (unsigned int)(duration * 60.0f);
+        _sampledFrames.resize(numSamples);
+        for(unsigned int i = 0; i < numSamples; ++i) {
+            float t = (float)i / (float)(numSamples - 1);
+            float time = t * duration + this->GetStartTime();
+
+            unsigned int frameIndex = 0;
+            for (int j = numFrames - 1; j >= 0; --j) {
+                if (time >= this->_frames[j].time) {
+                    frameIndex = (unsigned int)j;
+                    if ((int)frameIndex >= numFrames - 2) {
+                        frameIndex = numFrames - 2;
+                    }
+                    break;
+                }
+            }
+            _sampledFrames[i] = frameIndex;
+        }
+    }
+};
+
+typedef FastTrack<float, 1> FastScalarTrack;
+typedef FastTrack<Vector3, 3> FastVectorTrack;
+typedef FastTrack<Quaternion, 4> FastQuaternionTrack;
+
+template<typename T, int N>
+FastTrack<T, N> OptimizeTrack(Track<T, N>& input){
+    FastTrack<T, N> result;
+
+	result.SetInterpolation(input.GetInterpolation());
+	unsigned int size = input.Size();
+	result.Resize(size);
+	for(unsigned int i = 0; i < size; ++i){
+		result[i] = input[i];
+	}
+	result.UpdateIndexLookupTable();
+
+	return result;
+}
+
+template FastTrack<float, 1> OptimizeTrack(Track<float, 1>& input);
+template FastTrack<Vector3, 3> OptimizeTrack(Track<Vector3, 3>& input);
+template FastTrack<Quaternion, 4> OptimizeTrack(Track<Quaternion, 4>& input);
 
 }

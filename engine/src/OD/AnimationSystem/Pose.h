@@ -16,6 +16,7 @@ public:
     int GetParent(unsigned int index);
     void SetParent(unsigned int index, int parent);
     Transform GetLocalTransform(unsigned int index);
+    inline Transform& GetLocalTransform2(unsigned int index){ return _joints[index]; }
     void SetLocalTransform(unsigned int index, const Transform& transform);
     Transform GetGlobalTransform(unsigned int index);
     Matrix4 GetGlobalMatrix(unsigned int index);

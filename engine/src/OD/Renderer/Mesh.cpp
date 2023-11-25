@@ -18,137 +18,130 @@ Mesh::~Mesh(){
 void Mesh::UpdateMesh(){
     Assert(_isReadable == true && "Only can Update isReadable Mesh");
 
-    //if(vao == 0){
+    if(_vao == 0){
         glGenVertexArrays(1, &_vao);
         glBindVertexArray(_vao);
         glCheckError();
-    //} else {
-    //    glBindVertexArray(vao);
-    //}
+    } else {
+        glBindVertexArray(_vao);
+    }
     
-    //if(vertexVbo == 0){
+    if(_vertexVbo == 0){
         glGenBuffers(1, &_vertexVbo);
         glBindBuffer(GL_ARRAY_BUFFER, _vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
         glCheckError();
-    //} else {
-    //    glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
-    //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * vertices.size(), &vertices[0]);
-    //}
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, _vertexVbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
+    }
     _vertexCount = vertices.size();
 
-    //if(ebo == 0){
+    if(_ebo == 0){
         glGenBuffers(1, &_ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
         glCheckError();
-    //} else {
-    //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    //    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(unsigned int), &indices[0]);
-    //}
+    } else {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
+    }
     _indiceCount = indices.size();
 
     if(uv.size() == vertices.size()){
-        //if(uvVbo == 0){
+        if(_uvVbo == 0){
             glGenBuffers(1, &_uvVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _uvVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv.size(), &uv[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * uv.size(), &uv[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _uvVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv.size(), &uv[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
     if(normals.size() == vertices.size()){
-        //if(normalVbo == 0){
+        if(_normalVbo == 0){
             glGenBuffers(1, &_normalVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals.size(), &normals[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, normalVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * normals.size(), &normals[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals.size(), &normals[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
     if(colors.size() == vertices.size()){
-        //if(colorVbo == 0){
+        if(_colorVbo == 0){
             glGenBuffers(1, &_colorVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _colorVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors.size(), &colors[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(3);
             glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector4) * colors.size(), &colors[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _colorVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors.size(), &colors[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
     if(tangents.size() == vertices.size()){
-        //if(tangentVbo == 0){
+        if(_tangentVbo == 0){
             glGenBuffers(1, &_tangentVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _tangentVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents.size(), &tangents[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(4);
             glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * tangents.size(), &tangents[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _tangentVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents.size(), &tangents[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
     if(influences.empty() == false) Assert(influences.size() == vertices.size());
     if(influences.size() == vertices.size()){
-        //if(tangentVbo == 0){
+        if(_jointVbo == 0){
             glGenBuffers(1, &_jointVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _jointVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences.size(), &influences[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(5);
             glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * tangents.size(), &tangents[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _jointVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences.size(), &influences[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
     if(weights.empty() == false) Assert(weights.size() == vertices.size());
     if(weights.size() == vertices.size()){
-        //if(tangentVbo == 0){
+        if(_weightsVbo == 0){
             glGenBuffers(1, &_weightsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, _weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
-        //} else {
-        //    glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
-        //    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * tangents.size(), &tangents[0]);
-        //}
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _weightsVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
     }
 
-    /*LogInfo("Vertices: %zd BoneData: %zd", vertices.size(), boneDatas.size());
-    if(boneDatas.empty() == false) Assert(boneDatas.size() == vertices.size());
-    if(boneDatas.size() == vertices.size()){
-        glGenBuffers(1, &_boneDataVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, _boneDataVbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(BoneData) * boneDatas.size(), &boneDatas[0], GL_DYNAMIC_DRAW);
-        glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, MAX_BONE_INFLUENCE, GL_INT, sizeof(BoneData), (void*)0);
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(BoneData), (void*)(MAX_BONE_INFLUENCE*sizeof(int)));
-        glCheckError();
-    }*/
-    
     glBindVertexArray(0);
 }
 

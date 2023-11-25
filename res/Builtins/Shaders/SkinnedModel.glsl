@@ -15,8 +15,9 @@ const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
 //uniform mat4 finalBonesMatrices[MAX_BONES];
 
-uniform mat4 pose[MAX_BONES];
-uniform mat4 invBindPose[MAX_BONES];
+//uniform mat4 pose[MAX_BONES];
+//uniform mat4 invBindPose[MAX_BONES];
+uniform mat4 animated[MAX_BONES];
 
 out vec3 pos;
 out vec3 normal;
@@ -32,27 +33,38 @@ void main(){
     boneIds = _boneIds;
     weights = _weights;
 
-    /*vec4 totalPosition = vec4(0.0f);
+    /*
+    vec4 totalPosition = vec4(0.0f);
     for(int i = 0; i < MAX_BONE_INFLUENCE; i++){
         if(_boneIds[i] == -1) continue;
         if(_boneIds[i] >= MAX_BONES){
             totalPosition = vec4(_pos,1.0f);
             break;
         }
-        vec4 localPosition = finalBonesMatrices[_boneIds[i]] * vec4(_pos,1.0f);
+        vec4 localPosition = animated[_boneIds[i]] * vec4(_pos,1.0f);
         totalPosition += localPosition * _weights[i];
         //vec3 localNormal = mat3(finalBonesMatrices[_boneIds[i]]) * _normal;
         //normal = localNormal;
     }
 
     mat4 viewModel = view * model;
-    gl_Position =  projection * viewModel * totalPosition;*/
+    gl_Position =  projection * viewModel * totalPosition;
+    */
 
-    mat4 skin = (pose[boneIds.x] * invBindPose[boneIds.x]) * weights.x;
+
+    /*mat4 skin = (pose[boneIds.x] * invBindPose[boneIds.x]) * weights.x;
     skin += (pose[boneIds.y] * invBindPose[boneIds.y]) * weights.y;
     skin += (pose[boneIds.z] * invBindPose[boneIds.z]) * weights.z;
-    skin += (pose[boneIds.w] * invBindPose[boneIds.w]) * weights.w;
+    skin += (pose[boneIds.w] * invBindPose[boneIds.w]) * weights.w;*/
+
+    ///*
+    mat4 skin = animated[boneIds.x] * weights.x +
+    animated[boneIds.y] * weights.y +
+    animated[boneIds.z] * weights.z +
+    animated[boneIds.w] * weights.w;
+
     gl_Position = projection * view * model * skin * vec4(pos, 1.0);
+    //*/
 
     //gl_Position = projection * view * model * vec4(pos, 1.0);
 }

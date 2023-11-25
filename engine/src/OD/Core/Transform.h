@@ -44,8 +44,6 @@ public:
     inline Vector3 localScale(){ return _localScale; }
     inline void localScale(Vector3 scale){ _localScale = scale; _isDirt = true; }
 
-    inline void SetModelMatrix(Matrix4 matrix){ _isDirt = false; _localModelMatrix = matrix; }
-
     inline bool operator==(const Transform& b){
         return 
             this->_localPosition == b._localPosition &&
@@ -58,10 +56,9 @@ public:
     }
 
     inline static Transform Inverse(Transform& t){
-        auto m = t.GetLocalModelMatrix();
-        return Transform(math::inverse(m));
+        return Transform(math::inverse(t.GetLocalModelMatrix()));
 
-        /*Transform inv;
+        Transform inv;
 
         inv._localRotation = math::inverse(t._localRotation);
 
@@ -72,7 +69,7 @@ public:
         Vector3 invTranslation = t._localPosition * -1.0f;
         inv._localPosition = inv._localRotation * (inv._localScale * invTranslation);
 
-        return inv;*/
+        return inv;
     }
 
     inline static Transform Combine(Transform& a, Transform& b){
@@ -84,27 +81,6 @@ public:
         out._localPosition = a._localRotation * (a._localScale * b._localPosition);
         out._localPosition = a._localPosition + out._localPosition;
         return out;*/
-    }
-
-    inline static Transform Mix(Transform& a, Transform& b, float t){
-        //return Transform(math::interpolate(a.GetLocalModelMatrix(), b.GetLocalModelMatrix(), t));
-
-        Quaternion bRot = b._localRotation;
-        if(math::dot(a._localRotation, bRot) < 0){
-            bRot = -bRot;
-        }
-
-        /*return Transform(
-            math::mix(a._localPosition, b._localPosition, t),
-            math::lerp(a._localRotation, b._localRotation, t),
-            math::mix(a._localScale, b._localScale, t)
-        );*/
-
-        return Transform(
-            Mathf::lerp(a._localPosition, b._localPosition, t),
-            Mathf::nlerp(a._localRotation, b._localRotation, t),
-            Mathf::lerp(a._localScale, b._localScale, t)
-        );
     }
 
 protected:

@@ -85,11 +85,28 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
         out[i] = t.GetLocalModelMatrix();
     }*/
 
-    unsigned int size = Size();
+    /*unsigned int size = Size();
     if(out.size() != size){
         out.reserve(size);
     }
     for(unsigned int i = 0; i < size; ++i){
+        out[i] = GetGlobalMatrix(i);
+    }*/
+
+    int size = (int)Size();
+    if((int)out.size() != size){ out.resize(size); }
+    int i = 0;
+
+    for(; i < size; ++i){
+        int parent = _parents[i];
+        if(parent > i) { break; }
+        Matrix4 global = _joints[i].GetLocalModelMatrix();
+        if(parent >= 0){
+            global = out[parent] * global;
+        }
+        out[i] = global;
+    }
+    for(; i < size; ++i){
         out[i] = GetGlobalMatrix(i);
     }
 }

@@ -9,35 +9,18 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "OD/AnimationSystem/Skeleton.h"
 
 namespace OD{
-
-struct BoneInfo{
-    int id; //id is index in finalBoneMatrices
-    Matrix4 offset; //offset matrix transforms vertex from model space to bone space
-};
 
 class Model: public Asset{
 public:
     std::vector<Ref<Mesh>> meshs;
     std::vector<Ref<Material>> materials;
     std::vector<Matrix4> matrixs;
+    Skeleton skeleton;
     
-    inline int& boneCounter(){ return _boneCounter; }
-    inline std::map<std::string, BoneInfo>& boneInfoMap() { return _boneInfoMap; }
-
     static Ref<Model> CreateFromFile(std::string const &path, Ref<Shader> customShader = nullptr);
-
-private:
-    void processNode(aiNode *node, const aiScene *scene, Ref<Shader> customShader);
-    Ref<Mesh> processMesh(aiMesh *mesh, const aiScene *scene);
-    Ref<Material> processMaterial(aiMesh *mesh, const aiScene *scene, Ref<Shader> customShader);
-    std::vector<Ref<Texture2D>> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
-    
-    std::string _directory;
-    std::map<std::string, BoneInfo> _boneInfoMap;
-    int _boneCounter = 0;
 };
-
 
 }
