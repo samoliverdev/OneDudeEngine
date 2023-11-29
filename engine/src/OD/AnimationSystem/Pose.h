@@ -23,6 +23,7 @@ public:
     Matrix4 GetLocalMatrix(unsigned int index);
     Transform operator[](unsigned int index);
     void GetMatrixPalette(std::vector<Matrix4>& out);
+    void GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses);
     bool operator==(const Pose& other);
     bool operator!=(const Pose& other);
 protected:

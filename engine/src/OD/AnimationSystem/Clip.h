@@ -28,7 +28,7 @@ public:
 
         unsigned int size = _tracks.size();
         for(unsigned int i = 0; i < size; ++i){
-            unsigned int j = _tracks[i].GetId(); // Joint
+            unsigned int j = _tracks[i].GetId();
             Transform local = outPose.GetLocalTransform(j);
             Transform animated = _tracks[i].Sample(local, time, _looping);
             outPose.SetLocalTransform(j, animated);
@@ -38,6 +38,12 @@ public:
     }
 
     TRACK& operator[](unsigned int joint){
+        /*if(_tracks.size() < joint+1){
+            _tracks.resize(joint+1);
+        }
+        _tracks[joint].SetId(joint);
+        return _tracks[joint];*/
+
         for(unsigned int i = 0, size = (unsigned int)_tracks.size(); i < size; ++i) {
             if(_tracks[i].GetId() == joint){
                 return _tracks[i];

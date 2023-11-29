@@ -73,6 +73,7 @@ public:
 
     Transform Sample(const Transform& ref, float time, bool looping){
         Transform result = ref; // Assign default values
+        
         if(_position.Size() > 1){ // Only assign if animated
             result.localPosition(_position.Sample(time, looping));
         }

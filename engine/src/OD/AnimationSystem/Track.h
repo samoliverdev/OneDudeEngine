@@ -10,7 +10,7 @@ namespace OD{
 template<typename T, int N>
 class Track{
 public: 
-    Track(){ _interpolation =Interpolation::Linear; }
+    Track(){ _interpolation = Interpolation::Linear; }
     
     void Resize(unsigned int size){ _frames.resize(size); }
     unsigned int Size(){ return _frames.size(); }
@@ -165,36 +165,36 @@ protected:
 private:
     inline float Interpolate(float a, float b, float t){
         t = math::clamp<float>(t, 0, 1);
-        //return a + (b - a) * t; 
         return math::mix(a, b, t);
     }
     inline Vector3 Interpolate(Vector3 a, Vector3 b, float t){ 
         t = math::clamp<float>(t, 0, 1);
         return math::mix(a, b, t);
-        //return Mathf::lerp(a, b, t);
     }
 
     inline Quaternion Interpolate(Quaternion a, Quaternion b, float t){
         t = math::clamp<float>(t, 0, 1);
         Quaternion result = math::lerp(a, b, t);
-        if(math::dot(a, b) < 0){
-            result = math::lerp(a, -b, t);
-        }
+        /*if(math::dot(a, b) < 0){
+            result = math::slerp(a, -b, t);
+        }*/
         return math::normalize(result);
+        return result;
     }
 
     inline float AdjustHermiteResult(float f){ return f; }
     inline Vector3 AdjustHermiteResult(const Vector3& v){ return v; }
     inline Quaternion AdjustHermiteResult(const Quaternion& q){ 
         return math::normalize(q); 
+        //return q;
     }
 
     inline void Neighborhood(const float& a, float& b){}
     inline void Neighborhood(const Vector3& a, Vector3& b){}
     inline void Neighborhood(const Quaternion& a, Quaternion& b){
-        if(dot(a, b) < 0){
+        /*if(dot(a, b) < 0){
             b = -b;
-        }
+        }*/
     }
 };
 

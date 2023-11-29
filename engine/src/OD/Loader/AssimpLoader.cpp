@@ -45,26 +45,70 @@ void AddBoneData(Vector4& _weights, IVector4& _influences, unsigned int boneId, 
             _influences[i] = boneId;
             break;
         }
+
+        /*if(_weights[i] == 0){
+            _weights[i] = weight;
+            _influences[i] = boneId;
+            break;
+        }*/
     }
 }
 
-int GetNodeIndex(LoadData& loadData, aiNode* target){
-    if(target == nullptr) return -1;
-    
-    for(unsigned int i = 0; i < loadData.bones.size(); ++i){
-        if(target == loadData.bones[i]->mNode) return (int)i;
+int GetNodeIndex(LoadData& loadData, std::string name){
+    for(int i = 0; i < loadData.names.size(); i++){
+        if(name == loadData.names[i]) return i;
     }
-
     return -1;
 }
 
-int AddToBindPose(LoadData& loadData, aiBone* bone, aiMesh* mesh){
+void ReadSkeleton(LoadData& loadData, const aiNode* node, int parent = -1){
+    Transform t(AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation));
+
+    LogInfo("Skeleton Bones -> Name: %s, Id: %d: Parent: %d", node->mName.C_Str(), (int)loadData.bindPose.Size(), parent);
+
+    int boneId = loadData.names.size();
+
+    if(loadData.bindPose.Size() < boneId+1){
+        loadData.bindPose.Resize(boneId+1);
+    }
+
+    loadData.bindPose.SetLocalTransform(boneId, t);
+    loadData.bindPose.SetParent(boneId, parent);
+    loadData.names.push_back(node->mName.C_Str()); 
+
+    for(int i = 0; i < node->mNumChildren; i++){
+        ReadSkeleton(loadData, node->mChildren[i], boneId);
+    }
+}
+
+void UpdateSkeleton(LoadData& loadData){
+    Assert(loadData.names.size() == loadData.bones.size());
+    Assert(loadData.names.size() == loadData.bindPose.Size());
+
+    for(int i = 0; i < loadData.bones.size(); i++){
+        aiBone* bone = loadData.bones[i];
+        Assert(bone != nullptr);
+
+        int parentID = -1;
+        if(bone->mNode->mParent != nullptr){
+            parentID = GetNodeIndex(loadData, std::string(bone->mNode->mParent->mName.C_Str()));
+            loadData.bindPose.SetParent(i, parentID);
+        }
+
+        LogInfo("Bone -> Name: %s, Id: %d: Parent: %d", bone->mName.C_Str(), i, parentID);
+    }
+
+    loadData.model->skeleton.Set(loadData.bindPose, loadData.bindPose, loadData.names);    
+}
+
+int AddToBindPose(LoadData& loadData, aiBone* bone){
     int boneID = loadData.boneCounter;
+    loadData.boneCounter += 1;
  
-    if(loadData.names.size() < loadData.boneCounter+1){
-        loadData.names.resize(loadData.boneCounter+1);
-        loadData.bindPose.Resize(loadData.boneCounter+1);
-        loadData.bones.resize(loadData.boneCounter+1);
+    if(loadData.names.size() < loadData.boneCounter){
+        loadData.names.resize(loadData.boneCounter);
+        loadData.bindPose.Resize(loadData.boneCounter);
+        loadData.bones.resize(loadData.boneCounter);
     }
 
     auto m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(bone->mNode->mTransformation);
@@ -72,49 +116,36 @@ int AddToBindPose(LoadData& loadData, aiBone* bone, aiMesh* mesh){
     loadData.names[boneID] = std::string(bone->mName.C_Str());
     loadData.bones[boneID] = bone;
     loadData.bindPose.SetLocalTransform(boneID, Transform(m));
-    
-    int r = loadData.boneCounter;
-    loadData.boneCounter += 1;
-    return r;
-}
 
-void UpdateSkeleton(LoadData& loadData, const aiScene* scene){
-    for(int i = 0; i < loadData.bones.size(); i++){
-        aiBone* bone = loadData.bones[i];
-
-        int parentID = -1;
-        if(bone->mNode->mParent != nullptr){
-            parentID = GetNodeIndex(loadData, bone->mNode->mParent);
-            loadData.bindPose.SetParent(i, parentID);
-        }
-
-        LogInfo("Bone -> Name: %s, Id: %d: Parent: %d", bone->mName.C_Str(), i, parentID);
-    }
-
-    loadData.model->skeleton.Set(loadData.bindPose, loadData.bindPose, loadData.names);
-}
-
-int GetFromBindPose(LoadData& skeletonData, aiBone* bone){
-    for(int i = 0; i < skeletonData.names.size(); i++){
-        if(skeletonData.names[i] == std::string(bone->mName.C_Str())) return i;
-    }
-    return -1;
+    return boneID;
 }
 
 void ExtractBoneWeightForVertices(LoadData& skeletonData, Ref<Mesh> _mesh, aiMesh* mesh, const aiScene* scene){
     _mesh->weights.resize(_mesh->vertices.size());
+    std::fill(_mesh->weights.begin(), _mesh->weights.end(), Vector4(0,0,0,0));
     _mesh->influences.resize(_mesh->vertices.size());
+    std::fill(_mesh->influences.begin(), _mesh->influences.end(), Vector4(-1,-1,-1,-1));
 
     for(int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex){
         int boneID = -1;
         std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
 
-        //LogInfo("Bone -> Name: %s, Id: %d", boneName.c_str(), boneID);
+        boneID = GetNodeIndex(skeletonData, boneName);
 
-        boneID = GetFromBindPose(skeletonData, mesh->mBones[boneIndex]);
+        //if(skeletonData.bones.size() < boneID+1){
+        //    skeletonData.bones.resize(boneID+1);
+        //}
+        if(skeletonData.bones.size() < skeletonData.bindPose.Size()){
+            skeletonData.bones.resize(skeletonData.bindPose.Size());
+        }
+        skeletonData.bones[boneID] = mesh->mBones[boneIndex];
+
+        Assert(boneID != -1);
         if(boneID == -1){
-            boneID = AddToBindPose(skeletonData, mesh->mBones[boneIndex], mesh);
-        } 
+            boneID = AddToBindPose(skeletonData, mesh->mBones[boneIndex]);
+        }
+
+        LogInfo("Bone -> Name: %s, Id: %d", boneName.c_str(), boneID);
 
         assert(boneID != -1);
         auto weights = mesh->mBones[boneIndex]->mWeights;
@@ -173,8 +204,8 @@ Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *s
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex]; 
 
-    int meshIndex = getMaterialIndex(material, scene);
-    if(meshIndex != -1 && loadData.materialDb.count(meshIndex)) return loadData.materialDb[meshIndex];
+    //int meshIndex = getMaterialIndex(material, scene);
+    //if(meshIndex != -1 && loadData.materialDb.count(meshIndex)) return loadData.materialDb[meshIndex];
 
     Ref<Material> out = CreateRef<Material>();
 
@@ -210,7 +241,7 @@ Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *s
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
     */
 
-   if(meshIndex != -1) loadData.materialDb[meshIndex] = out;
+   //if(meshIndex != -1) loadData.materialDb[meshIndex] = out;
 
     return out;
 }
@@ -227,8 +258,8 @@ int getMeshIndex(aiMesh *mesh, const aiScene *scene){
 }
 
 Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
-    int meshIndex = getMeshIndex(mesh, scene);
-    if(meshIndex != -1 && loadData.meshDb.count(meshIndex)) return loadData.meshDb[meshIndex];
+    //int meshIndex = getMeshIndex(mesh, scene);
+    //if(meshIndex != -1 && loadData.meshDb.count(meshIndex)) return loadData.meshDb[meshIndex];
 
     Ref<Mesh> out = CreateRef<Mesh>();
 
@@ -284,7 +315,7 @@ Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
 
     out->UpdateMesh();
 
-    if(meshIndex != -1) loadData.meshDb[meshIndex] = out;
+    //if(meshIndex != -1) loadData.meshDb[meshIndex] = out;
 
     return out;
 }
@@ -299,8 +330,6 @@ void processNode(LoadData& loadData, aiNode *node, const aiScene *scene, Ref<Sha
         loadData.model->materials.push_back(processMaterial(loadData, mesh, scene, customShader));
         
         Matrix4 m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(node[i].mTransformation);
-        if(node[i].mParent != nullptr) m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(node[i].mParent->mTransformation) * m;
-
         loadData.model->matrixs.push_back(m);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
@@ -309,7 +338,96 @@ void processNode(LoadData& loadData, aiNode *node, const aiScene *scene, Ref<Sha
     }
 }
 
-Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader){
+void processAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
+    outClip.SetName(animation->mName.C_Str());
+    //outClip.SetDuration(animation->mDuration);
+    //outClip.SetTicksPerSecond(animation->mTicksPerSecond);
+    
+    
+    for(int i = 0; i < animation->mNumChannels; i++){
+        Interpolation interpolation = Interpolation::Linear;
+        bool isCubic = interpolation == Interpolation::Cubic;
+
+        aiNodeAnim* channel = animation->mChannels[i];
+        std::string boneName = channel->mNodeName.data;
+
+        int nodeId = GetNodeIndex(loadData, boneName);
+        LogInfo("Channel -> BoneName: %s BoneId: %d", channel->mNodeName.C_Str(), nodeId);
+        Assert(nodeId != -1);
+
+        VectorTrack& posTrack = outClip[nodeId].GetPositionTrack();
+        posTrack.Resize(channel->mNumPositionKeys);
+        posTrack.SetInterpolation(interpolation);
+        for(int j = 0; j < channel->mNumPositionKeys; j++){
+            Vector3 pos = AssimpGLMHelpers::GetGLMVec(channel->mPositionKeys[j].mValue);
+            //pos = loadData.bindPose.GetLocalTransform(nodeId).localPosition();
+
+            posTrack[j].time = channel->mPositionKeys[j].mTime / animation->mTicksPerSecond;
+            //posTrack[j].value = pos;
+            posTrack[j].value[0] = pos.x;
+            posTrack[j].value[1] = pos.y;
+            posTrack[j].value[2] = pos.z;
+
+            posTrack[j].in[0] = isCubic ? pos.x : 0.0f;
+            posTrack[j].in[1] = isCubic ? pos.y : 0.0f;
+            posTrack[j].in[2] = isCubic ? pos.z : 0.0f;
+
+            posTrack[j].out[0] = isCubic ? pos.x : 0.0f;
+            posTrack[j].out[1] = isCubic ? pos.y : 0.0f;
+            posTrack[j].out[2] = isCubic ? pos.z : 0.0f;
+        }
+
+        VectorTrack& scaleTrack = outClip[nodeId].GetScaleTrack();
+        scaleTrack.SetInterpolation(interpolation);
+        scaleTrack.Resize(channel->mNumScalingKeys);
+        for(int j = 0; j < channel->mNumScalingKeys; j++){
+            Vector3 scale = AssimpGLMHelpers::GetGLMVec(channel->mScalingKeys[j].mValue);
+            //scale = loadData.bindPose.GetLocalTransform(nodeId).localScale();
+
+            scaleTrack[j].time = channel->mScalingKeys[j].mTime / animation->mTicksPerSecond;
+            scaleTrack[j].value[0] = scale.x;
+            scaleTrack[j].value[1] = scale.y;
+            scaleTrack[j].value[2] = scale.z;
+
+            scaleTrack[j].in[0] = isCubic ? scale.x : 0.0f;
+            scaleTrack[j].in[1] = isCubic ? scale.y : 0.0f;
+            scaleTrack[j].in[2] = isCubic ? scale.z : 0.0f;
+
+            scaleTrack[j].out[0] = isCubic ? scale.x : 0.0f;
+            scaleTrack[j].out[1] = isCubic ? scale.y : 0.0f;
+            scaleTrack[j].out[2] = isCubic ? scale.z : 0.0f;
+        }
+
+        QuaternionTrack& rotTrack = outClip[nodeId].GetRotationTrack();
+        rotTrack.SetInterpolation(interpolation);
+        rotTrack.Resize(channel->mNumRotationKeys);
+        for(int j = 0; j < channel->mNumRotationKeys; j++){
+            Quaternion rot = AssimpGLMHelpers::GetGLMQuat(channel->mRotationKeys[j].mValue);
+            //rot = loadData.bindPose.GetLocalTransform(nodeId).localRotation();
+
+            rotTrack[j].time = channel->mRotationKeys[j].mTime / animation->mTicksPerSecond;
+            rotTrack[j].value[0] = rot.x;
+            rotTrack[j].value[1] = rot.y;
+            rotTrack[j].value[2] = rot.z;
+            rotTrack[j].value[3] = rot.w;
+
+            rotTrack[j].in[0] = isCubic ? rot.x : 0.0f;
+            rotTrack[j].in[1] = isCubic ? rot.y : 0.0f;
+            rotTrack[j].in[2] = isCubic ? rot.z : 0.0f;
+            rotTrack[j].in[3] = isCubic ? rot.w : 0.0f;
+
+            rotTrack[j].out[0] = isCubic ? rot.x : 0.0f;
+            rotTrack[j].out[1] = isCubic ? rot.y : 0.0f;
+            rotTrack[j].out[2] = isCubic ? rot.z : 0.0f;
+            rotTrack[j].out[3] = isCubic ? rot.w : 0.0f;
+        }
+        
+    }
+
+    outClip.RecalculateDuration();
+}
+
+Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(
         path, 
@@ -328,11 +446,40 @@ Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader){
     loadData.model = CreateRef<Model>();
     loadData.model->path(path);
     loadData.directory = path.substr(0, path.find_last_of('/'));
+
+    ///*
+    loadData.bindPose = Pose();
+    loadData.names.clear();
+    ReadSkeleton(loadData, scene->mRootNode);
+    loadData.model->skeleton.Set(loadData.bindPose, loadData.bindPose, loadData.names);
+    for(int i = 0; i < loadData.bindPose.Size(); i++){
+        LogInfo("Final Bones -> Name: %s, Id: %d", loadData.names[i].c_str(), i);
+    }
+    //*/
    
     processNode(loadData, scene->mRootNode, scene, customShader);
+    
+    Assert(loadData.model->skeleton.GetInvBindPose().size() == loadData.bones.size());
 
-    if(loadData.boneCounter > 0){
-        UpdateSkeleton(loadData, scene);
+    for(int i = 0; i < loadData.bones.size(); i++){
+        Matrix4 m = Matrix4Identity;
+        if(loadData.bones[i] != nullptr){
+            m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(loadData.bones[i]->mOffsetMatrix);
+        }
+
+        loadData.model->skeleton.GetInvBindPose()[i] = m;
+    }
+
+    /*if(loadData.boneCounter > 0){
+        UpdateSkeleton(loadData);
+    }*/
+
+    if(outClips != nullptr){
+        for(int i = 0; i < scene->mNumAnimations; i++){
+            Clip out;
+            processAnimation(loadData, scene->mAnimations[i], out);
+            outClips->push_back(out);
+        }
     }
 
     return loadData.model;
