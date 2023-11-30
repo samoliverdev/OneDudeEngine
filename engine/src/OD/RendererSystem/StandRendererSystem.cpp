@@ -574,6 +574,8 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
     for(auto _entity: view1){
         auto& c = view1.get<MeshRendererComponent>(_entity);
         auto& t = view1.get<TransformComponent>(_entity);
+        
+        if(c.model() == nullptr) continue;
 
         /*if(c.model() == nullptr) continue;
         if(c._boundingVolumeIsDirty){
@@ -585,7 +587,7 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
         if(boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;*/
         //if(c._boundingVolumeSphere.isOnFrustum(camera.frustum, t) == false) continue;
 
-        int index = 0;
+        /*int index = 0;
         for(Ref<Material> i: c.model()->materials){
             Ref<Material> targetMaterial = i;
             if(c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
@@ -605,6 +607,35 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
             }
                 
             index += 1;
+        }*/
+
+        //int index = 0;
+        for(auto i: c.model()->renderTargets){
+            Ref<Material> targetMaterial = c.model()->materials[i.materialIndex];
+            Ref<Mesh> targetMesh = c.model()->meshs[i.meshIndex];
+            Matrix4 targetMatrix =  t.globalModelMatrix() * 
+                                    c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            //if(index < c.materialsOverride().size() && c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
+            if(i.materialIndex < c.materialsOverride().size() && c.materialsOverride()[i.materialIndex] != nullptr){
+                targetMaterial = c.materialsOverride()[i.materialIndex];
+            }
+
+            shaderTargets.insert(targetMaterial->shader());
+            //materialTargets.insert(targetMaterial);
+
+            if(targetMaterial->isBlend()){
+                float distance = math::distance(camPos, t.position());
+                renderTargetsBlend[distance][targetMaterial].push_back({targetMesh, targetMatrix});
+            } else {
+                if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
+                    renderTargetOpaquesInstancing[{targetMaterial, targetMesh}].push_back(targetMatrix);
+                } else {
+                    renderTargetsOpaques[targetMaterial].push_back({targetMesh, targetMatrix});
+                }
+            }
+
+            //index += 1;
         }
     }
     }
@@ -732,10 +763,20 @@ void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, Transf
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
-        for(Ref<Mesh> m: c.model()->meshs){
+        if(c.model() == nullptr) continue;
+
+        /*for(Ref<Mesh> m: c.model()->meshs){
             //root._shadowMapShader->Bind();
             //root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
             Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
+        }*/
+
+        for(auto i: c.model()->renderTargets){
+            Matrix4 m = 
+                t.globalModelMatrix() * 
+                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            Renderer::DrawMesh(*c.model()->meshs[i.meshIndex], m, *root._shadowMapShader);
         }
     }
 
@@ -768,14 +809,25 @@ void StandRendererSystem::CascadeShadow::Render(LightComponent& light, Transform
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
+        if(c.model() == nullptr) continue;
+
         int index = 0;
-        for(Ref<Mesh> m: c.model()->meshs){
+        /*for(Ref<Mesh> m: c.model()->meshs){
             //root._shadowMapShader->Bind();
             //root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
             root._shadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
             Renderer::DrawMeshRaw(*m);
             //Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
             index += 1;
+        }*/
+
+        for(auto i: c.model()->renderTargets){
+            Matrix4 m = 
+                t.globalModelMatrix() * 
+                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            root._shadowMapShader->SetMatrix4("model", m);
+            Renderer::DrawMeshRaw(*c.model()->meshs[i.meshIndex]);
         }
     }
 
@@ -989,11 +1041,22 @@ void StandRendererSystem::RenderCascadeShadow(LightComponent& light, TransformCo
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
+        if(c.model() == nullptr) continue;
+
         int index = 0;
-        for(Ref<Mesh> m: c.model()->meshs){
+        /*for(Ref<Mesh> m: c.model()->meshs){
             _cascadeShadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
             Renderer::DrawMeshRaw(*m);
             index += 1;
+        }*/
+
+        for(auto i: c.model()->renderTargets){
+            Matrix4 m = 
+                t.globalModelMatrix() * 
+                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            _cascadeShadowMapShader->SetMatrix4("model", m);
+            Renderer::DrawMeshRaw(*c.model()->meshs[i.meshIndex]);
         }
     }
 

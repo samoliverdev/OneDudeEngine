@@ -17,18 +17,17 @@ namespace OD{
 void InspectorPanel::OnGui(){
     if(_scene == nullptr) return;
 
-    if(ImGui::Begin("Inspector")){
-        if(_editor->_selectionEntity.IsValid() && _editor->_selectionOnAsset == false){
-            DrawComponents(_editor->_selectionEntity);
-            ImGui::Separator();
-            ImGui::Spacing();
-            ShowAddComponent(_editor->_selectionEntity);
-        } else if(_editor->_selectionOnAsset == true && _editor->_selectionAsset != nullptr){
-            _editor->_selectionAsset->OnGui();
-        }
-
-        ImGui::End();
+    //if(ImGui::Begin("Inspector")){
+    ImGui::Begin("Inspector");
+    if(_editor->_selectionEntity.IsValid() && _editor->_selectionOnAsset == false){
+        DrawComponents(_editor->_selectionEntity);
+        ImGui::Separator();
+        ImGui::Spacing();
+        ShowAddComponent(_editor->_selectionEntity);
+    } else if(_editor->_selectionOnAsset == true && _editor->_selectionAsset != nullptr){
+        _editor->_selectionAsset->OnGui();
     }
+    ImGui::End();
 }
 
 template<typename T>

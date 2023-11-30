@@ -25,15 +25,19 @@ namespace AssimpGLMHelpers{
 
 struct LoadData{
     Ref<Model> model;
-    aiScene* scene;
+    const aiScene* scene;
     std::string directory;
 
-    std::map<int, Ref<Mesh>> meshDb;
-    std::map<int, Ref<Material>> materialDb;
+    //std::map<int, Ref<Mesh>> meshDb;
+    //std::map<int, Ref<Material>> materialDb;
 
     Pose bindPose;
     std::vector<std::string> names;
+
     std::vector<aiBone*> bones;
+    std::vector<aiNode*> nodes;
+    std::vector<aiMesh*> meshs;
+    std::vector<aiMaterial*> materials;
 
     int boneCounter = 0;
 };
@@ -45,12 +49,6 @@ void AddBoneData(Vector4& _weights, IVector4& _influences, unsigned int boneId, 
             _influences[i] = boneId;
             break;
         }
-
-        /*if(_weights[i] == 0){
-            _weights[i] = weight;
-            _influences[i] = boneId;
-            break;
-        }*/
     }
 }
 
@@ -61,7 +59,14 @@ int GetNodeIndex(LoadData& loadData, std::string name){
     return -1;
 }
 
-void ReadSkeleton(LoadData& loadData, const aiNode* node, int parent = -1){
+int GetNodeIndex(LoadData& loadData, aiNode* node){
+    for(int i = 0; i < loadData.nodes.size(); i++){
+        if(node == loadData.nodes[i]) return i;
+    }
+    return -1;
+}
+
+void ReadSkeleton(LoadData& loadData, aiNode* node, int parent = -1){
     Transform t(AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation));
 
     LogInfo("Skeleton Bones -> Name: %s, Id: %d: Parent: %d", node->mName.C_Str(), (int)loadData.bindPose.Size(), parent);
@@ -75,30 +80,31 @@ void ReadSkeleton(LoadData& loadData, const aiNode* node, int parent = -1){
     loadData.bindPose.SetLocalTransform(boneId, t);
     loadData.bindPose.SetParent(boneId, parent);
     loadData.names.push_back(node->mName.C_Str()); 
+    loadData.nodes.push_back(node);
 
     for(int i = 0; i < node->mNumChildren; i++){
         ReadSkeleton(loadData, node->mChildren[i], boneId);
     }
 }
 
-void UpdateSkeleton(LoadData& loadData){
-    Assert(loadData.names.size() == loadData.bones.size());
-    Assert(loadData.names.size() == loadData.bindPose.Size());
+void LoadSkeleton(LoadData& data, aiNode* root){
+    ReadSkeleton(data, root);
+    data.model->skeleton.Set(data.bindPose, data.bindPose, data.names);
+}
 
-    for(int i = 0; i < loadData.bones.size(); i++){
-        aiBone* bone = loadData.bones[i];
-        Assert(bone != nullptr);
+void LoadInvBindPose(LoadData& data){
+    if(data.model->skeleton.GetInvBindPose().size() != data.bones.size()) return;
 
-        int parentID = -1;
-        if(bone->mNode->mParent != nullptr){
-            parentID = GetNodeIndex(loadData, std::string(bone->mNode->mParent->mName.C_Str()));
-            loadData.bindPose.SetParent(i, parentID);
+    //Assert(data.model->skeleton.GetInvBindPose().size() == data.bones.size());
+
+    for(int i = 0; i < data.bones.size(); i++){
+        Matrix4 m = Matrix4Identity;
+        if(data.bones[i] != nullptr){
+            m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(data.bones[i]->mOffsetMatrix);
         }
 
-        LogInfo("Bone -> Name: %s, Id: %d: Parent: %d", bone->mName.C_Str(), i, parentID);
+        data.model->skeleton.GetInvBindPose()[i] = m;
     }
-
-    loadData.model->skeleton.Set(loadData.bindPose, loadData.bindPose, loadData.names);    
 }
 
 int AddToBindPose(LoadData& loadData, aiBone* bone){
@@ -120,7 +126,7 @@ int AddToBindPose(LoadData& loadData, aiBone* bone){
     return boneID;
 }
 
-void ExtractBoneWeightForVertices(LoadData& skeletonData, Ref<Mesh> _mesh, aiMesh* mesh, const aiScene* scene){
+void ExtractBoneWeightForVertices(LoadData& skeletonData, Ref<Mesh> _mesh, aiMesh* mesh){
     _mesh->weights.resize(_mesh->vertices.size());
     std::fill(_mesh->weights.begin(), _mesh->weights.end(), Vector4(0,0,0,0));
     _mesh->influences.resize(_mesh->vertices.size());
@@ -172,11 +178,16 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
         //LogInfo("Blende %f", (float)blend);
 
-        std::string filename = loadData.directory + '/' +std::string(str.C_Str());
-        
-        //Ref<Texture2D> texture = Texture2D::CreateFromFile(filename.c_str(), false, TextureFilter::Linear);
-        Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), {TextureFilter::Linear, true});
-        textures.push_back(texture);
+        const aiTexture* paiTexture = loadData.scene->GetEmbeddedTexture(str.C_Str());
+
+        if(paiTexture){
+            Ref<Texture2D> texture = Texture2D::CreateFromFileMemory(paiTexture->pcData, paiTexture->mWidth, {TextureFilter::Linear, true});
+            textures.push_back(texture);
+        } else {
+            std::string filename = loadData.directory + '/' +std::string(str.C_Str());
+            Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), {TextureFilter::Linear, true});
+            textures.push_back(texture);
+        }
     }
 
     if(textures.empty()){
@@ -200,7 +211,7 @@ int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
     return meshIndex;
 }
 
-Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *scene, Ref<Shader> customShader){
+/*Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *scene, Ref<Shader> customShader){
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex]; 
 
@@ -224,6 +235,46 @@ Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *s
 
     // 1. diffuse maps
     std::vector<Ref<Texture2D>> diffuseMaps = loadMaterialTextures(loadData, material, aiTextureType_DIFFUSE, "texture_diffuse");
+    if(diffuseMaps.size() > 0){
+        //MaterialMap map;
+        //map.texture = diffuseMaps[0];
+        //map.type = MaterialMap::Type::Texture;
+        //out.maps["texture1"] = map;
+        out->SetTexture("mainTex", diffuseMaps[0]);
+        out->SetVector4("color", Vector4(1, 1, 1, 1));
+    }
+
+    
+    //std::vector<Texture2D> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+    //textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+    /qstd::vector<Texture2D> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+    //textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+    
+
+   //if(meshIndex != -1) loadData.materialDb[meshIndex] = out;
+
+    return out;
+}*/
+
+Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> customShader){
+    Ref<Material> out = CreateRef<Material>();
+
+    if(customShader == nullptr){
+        out->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
+    } else {
+        out->shader(customShader);
+    }
+
+    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
+    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
+    // Same applies to other texture as the following list summarizes:
+    // diffuse: texture_diffuseN
+    // specular: texture_specularN
+    // normal: texture_normalN
+
+    // 1. diffuse maps
+    std::vector<Ref<Texture2D>> diffuseMaps = loadMaterialTextures(data, material, aiTextureType_DIFFUSE, "texture_diffuse");
     if(diffuseMaps.size() > 0){
         //MaterialMap map;
         //map.texture = diffuseMaps[0];
@@ -257,7 +308,7 @@ int getMeshIndex(aiMesh *mesh, const aiScene *scene){
     return meshIndex;
 }
 
-Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
+/*Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
     //int meshIndex = getMeshIndex(mesh, scene);
     //if(meshIndex != -1 && loadData.meshDb.count(meshIndex)) return loadData.meshDb[meshIndex];
 
@@ -284,12 +335,11 @@ Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
             aiVector3D& tangent = mesh->mTangents[i];
             out->tangents.push_back(Vector3(tangent.x, tangent.y, tangent.z));
             // bitangent
-            /*
-            vector.x = mesh->mBitangents[i].x;
-            vector.y = mesh->mBitangents[i].y;
-            vector.z = mesh->mBitangents[i].z;
-            vertex.Bitangent = vector;
-            */
+            
+            //vector.x = mesh->mBitangents[i].x;
+            //vector.y = mesh->mBitangents[i].y;
+            //vector.z = mesh->mBitangents[i].z;
+            //vertex.Bitangent = vector;
         }
 
         // texture coordinates
@@ -310,7 +360,7 @@ Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
     }
 
     if(mesh->HasBones()){
-        ExtractBoneWeightForVertices(loadData, out, mesh, scene);
+        ExtractBoneWeightForVertices(loadData, out, mesh);
     }
 
     out->UpdateMesh();
@@ -318,10 +368,10 @@ Ref<Mesh> processMesh(LoadData& loadData, aiMesh *mesh, const aiScene *scene){
     //if(meshIndex != -1) loadData.meshDb[meshIndex] = out;
 
     return out;
-}
+}*/
 
-void processNode(LoadData& loadData, aiNode *node, const aiScene *scene, Ref<Shader> customShader){
-    // process each mesh located at the current node
+/*void processNode(LoadData& loadData, aiNode *node, const aiScene *scene, Ref<Shader> customShader){
+
     for(unsigned int i = 0; i < node->mNumMeshes; i++){
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
@@ -336,9 +386,9 @@ void processNode(LoadData& loadData, aiNode *node, const aiScene *scene, Ref<Sha
     for(unsigned int i = 0; i < node->mNumChildren; i++){
         processNode(loadData, node->mChildren[i], scene, customShader);
     }
-}
+}*/
 
-void processAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
+void LoadAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
     outClip.SetName(animation->mName.C_Str());
     //outClip.SetDuration(animation->mDuration);
     //outClip.SetTicksPerSecond(animation->mTicksPerSecond);
@@ -427,6 +477,82 @@ void processAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip)
     outClip.RecalculateDuration();
 }
 
+Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
+    Ref<Mesh> out = CreateRef<Mesh>();
+
+    // walk through each of the mesh's vertices
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++){
+        aiVector3D& pos = mesh->mVertices[i];
+        out->vertices.push_back(Vector3(pos.x, pos.y, pos.z));
+        
+        // normals
+        if (mesh->HasNormals()){
+            aiVector3D& normal = mesh->mNormals[i];
+            out->normals.push_back(Vector3(normal.x, normal.y, normal.z));
+        }
+        if(mesh->HasVertexColors(0)){
+            aiColor4D& color = mesh->mColors[0][i];
+            out->colors.push_back(Vector4(color.r, color.g, color.b, color.a));
+        }
+
+        if(mesh->HasTangentsAndBitangents()){
+            aiVector3D& tangent = mesh->mTangents[i];
+            out->tangents.push_back(Vector3(tangent.x, tangent.y, tangent.z));
+            // bitangent
+            /*
+            vector.x = mesh->mBitangents[i].x;
+            vector.y = mesh->mBitangents[i].y;
+            vector.z = mesh->mBitangents[i].z;
+            vertex.Bitangent = vector;
+            */
+        }
+
+        // texture coordinates
+        if(mesh->mTextureCoords[0]){ // does the mesh contain texture coordinates?
+            aiVector3D& uv = mesh->mTextureCoords[0][i];
+            out->uv.push_back(Vector3(uv.x, uv.y, 0)); 
+        } else {
+            out->uv.push_back({0, 0, 0});
+        }
+    }
+
+    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++){
+        aiFace face = mesh->mFaces[i];
+        // retrieve all indices of the face and store them in the indices vector
+        for(unsigned int j = 0; j < face.mNumIndices; j++)
+            out->indices.push_back(face.mIndices[j]);        
+    }
+
+    if(mesh->HasBones()){
+        ExtractBoneWeightForVertices(data, out, mesh);
+    }
+
+    out->UpdateMesh();
+
+    return out;
+}
+
+void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
+    for(unsigned int i = 0; i < node->mNumMeshes; i++){
+        // the node object only contains indices to index the actual objects in the scene. 
+        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+        Model::RenderTarget renderTarget;
+        renderTarget.meshIndex = node->mMeshes[i];
+        renderTarget.materialIndex = mesh->mMaterialIndex;
+        renderTarget.bindPoseIndex = GetNodeIndex(data, node);
+
+        data.model->renderTargets.push_back(renderTarget);
+    }
+    // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+    for(unsigned int i = 0; i < node->mNumChildren; i++){
+        LoadRenderTargets(data, scene, node->mChildren[i]);
+    }
+}
+
 Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(
@@ -434,7 +560,7 @@ Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, st
         aiProcess_Triangulate | 
         aiProcess_GenSmoothNormals | /*| aiProcess_FlipUVs*/ 
         aiProcess_CalcTangentSpace |
-        aiProcess_PopulateArmatureData
+        aiProcess_PopulateArmatureData// |aiProcess_OptimizeGraph
     );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
@@ -446,40 +572,40 @@ Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, st
     loadData.model = CreateRef<Model>();
     loadData.model->path(path);
     loadData.directory = path.substr(0, path.find_last_of('/'));
+    loadData.scene = scene;
 
-    ///*
-    loadData.bindPose = Pose();
-    loadData.names.clear();
-    ReadSkeleton(loadData, scene->mRootNode);
-    loadData.model->skeleton.Set(loadData.bindPose, loadData.bindPose, loadData.names);
-    for(int i = 0; i < loadData.bindPose.Size(); i++){
-        LogInfo("Final Bones -> Name: %s, Id: %d", loadData.names[i].c_str(), i);
-    }
-    //*/
-   
-    processNode(loadData, scene->mRootNode, scene, customShader);
-    
-    Assert(loadData.model->skeleton.GetInvBindPose().size() == loadData.bones.size());
+    LoadSkeleton(loadData, scene->mRootNode);
 
-    for(int i = 0; i < loadData.bones.size(); i++){
-        Matrix4 m = Matrix4Identity;
-        if(loadData.bones[i] != nullptr){
-            m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(loadData.bones[i]->mOffsetMatrix);
-        }
-
-        loadData.model->skeleton.GetInvBindPose()[i] = m;
+    for(int i = 0; i < scene->mNumMeshes; i++){
+        Ref<Mesh> mesh = LoadMesh(loadData, scene->mMeshes[i]);
+        loadData.model->meshs.push_back(mesh);
+        loadData.meshs.push_back(scene->mMeshes[i]);
     }
 
-    /*if(loadData.boneCounter > 0){
-        UpdateSkeleton(loadData);
-    }*/
+    for(int i = 0; i < scene->mNumMaterials; i++){
+        Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], customShader);
+        loadData.model->materials.push_back(m);
+        loadData.materials.push_back(scene->mMaterials[i]);
+    }
 
-    if(outClips != nullptr){
-        for(int i = 0; i < scene->mNumAnimations; i++){
-            Clip out;
-            processAnimation(loadData, scene->mAnimations[i], out);
-            outClips->push_back(out);
-        }
+    for(int i = 0; i < scene->mNumAnimations; i++){
+        Ref<Clip> out = CreateRef<Clip>();
+        LoadAnimation(loadData, scene->mAnimations[i], *out);
+        loadData.model->animationClips.push_back(out);
+    }
+
+    LoadRenderTargets(loadData, scene, scene->mRootNode);
+    LoadInvBindPose(loadData);
+
+    for(auto i: loadData.model->renderTargets){
+        Assert(i.meshIndex != -1);
+        Assert(i.meshIndex < loadData.model->meshs.size());
+
+        Assert(i.materialIndex != -1);
+        Assert(i.materialIndex < loadData.model->materials.size());
+
+        Assert(i.bindPoseIndex != -1);
+        Assert(i.bindPoseIndex < loadData.model->skeleton.GetBindPose().Size());
     }
 
     return loadData.model;

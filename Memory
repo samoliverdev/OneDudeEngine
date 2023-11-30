@@ -1,9 +1,0 @@
-Shader: res/Builtins/Shaders/SkyboxGradient.glsl
-enableInstancing: false
-Maps:
-  - Name: mainTex
-    Type: 5
-    Texture: ""
-    Vector: [0, 0, 0, 0]
-    Value: 0
-    vectorIsColor: false

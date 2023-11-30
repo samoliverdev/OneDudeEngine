@@ -21,7 +21,8 @@ entt::entity _toDestroyEntity;
 void SceneHierarchyPanel::OnGui(){
     if(_scene == nullptr) return;
 
-    if(ImGui::Begin("Scene Hierarchy")){
+    //if(ImGui::Begin("Scene Hierarchy")){
+    ImGui::Begin("Scene Hierarchy");
         /*_scene->GetRegistry().sort<InfoComponent>([](const auto &lhs, const auto &rhs) {
             return lhs.id() < rhs.id();
         });*/
@@ -94,7 +95,7 @@ void SceneHierarchyPanel::OnGui(){
 
         if(ImGui::IsDragDropActive()){
 
-        ImGui::BeginChild("BottomBar", ImVec2(0,0), false, 0); // Use avail width/height
+            ImGui::BeginChild("BottomBar", ImVec2(0,0), false, 0); // Use avail width/height
             //ImGui::Text("Footer");
             ImGui::EndChild();
             if(ImGui::BeginDragDropTarget()){
@@ -111,8 +112,10 @@ void SceneHierarchyPanel::OnGui(){
 
         }
         
-        ImGui::End();
-    }
+        //ImGui::End();
+        //ImGui::EndChild();
+    //}
+    ImGui::End();
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){

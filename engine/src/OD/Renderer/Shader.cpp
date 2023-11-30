@@ -206,10 +206,12 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
 }
 
 void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources){
-    GLuint program = glCreateProgram();
     Assert(shaderSources.size() <= 3 && "We only support 3 shaders for now");
-   
-    GLenum glShaderIDs[2];
+
+    GLuint program = glCreateProgram();
+    glCheckError();
+    
+    GLenum glShaderIDs[3] = {0, 0, 0};
     int glShaderIDIndex = 0;
     for(auto& kv : shaderSources){
         GLenum type = kv.first;
@@ -227,11 +229,14 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
         if (isCompiled == GL_FALSE){
             GLint maxLength = 0;
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+            glCheckError();
 
             std::vector<GLchar> infoLog(maxLength);
             glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+            glCheckError();
 
             glDeleteShader(shader);
+            glCheckError();
 
             printf("%s", infoLog.data());
             Assert(false && "Shader compilation failure!");
@@ -239,6 +244,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
         }
 
         glAttachShader(program, shader);
+        glCheckError();
         glShaderIDs[glShaderIDIndex++] = shader;
     }
     
@@ -251,27 +257,37 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     // Note the different functions here: glGetProgram* instead of glGetShader*.
     GLint isLinked = 0;
     glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+    glCheckError();
+
     if (isLinked == GL_FALSE){
         GLint maxLength = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+        glCheckError();
 
         // The maxLength includes the NULL character
         std::vector<GLchar> infoLog(maxLength);
         glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+        glCheckError();
 
         // We don't need the program anymore.
         glDeleteProgram(program);
+        glCheckError();
         
-        for (auto id : glShaderIDs)
+        for(auto id : glShaderIDs){
             glDeleteShader(id);
+            glCheckError();
+        }
 
         printf("%s", infoLog.data());
         Assert(false && "Shader link failure!");
         return;
     }
 
-    for (auto id : glShaderIDs)
+    for(auto id: glShaderIDs){
+        if(id == 0) continue;
         glDetachShader(program, id);
+        glCheckError();
+    }
 
     glCheckError();
 }

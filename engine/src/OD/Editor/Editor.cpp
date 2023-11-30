@@ -278,14 +278,12 @@ void Editor::DrawMainMenuBar(){
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
-
             ImGui::EndMenu();
         }
 
         if(ImGui::BeginMenu("Runtime")){
             if(ImGui::MenuItem("Play", "F1")) PlayScene();
             if(ImGui::MenuItem("Stop", "F2")) StopScene();
-            
             ImGui::EndMenu();
         }
 

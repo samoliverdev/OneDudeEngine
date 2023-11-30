@@ -35,6 +35,7 @@ public:
 
     static Ref<Texture2D> CreateFromFile(const char* filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromFile(const char* filePath); 
+    static Ref<Texture2D> CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings); 
 
 private:
     unsigned int _id;
@@ -50,6 +51,7 @@ private:
     Texture2DSetting _settings;
 
     void Create(const char* path, Texture2DSetting settings);
+    void Create(void* data, size_t size, Texture2DSetting settings);
     void texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data);
 
     void SaveSettings();

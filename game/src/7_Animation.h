@@ -37,7 +37,6 @@ struct Animation_7: public OD::Module{
 
     //Character2
     Ref<Model> char2Model;
-    std::vector<Clip> char2Clips;
     AnimationInstance char2Anim;
 
     int curBone;
@@ -90,19 +89,20 @@ struct Animation_7: public OD::Module{
         }
         LogInfo("Mesh Count: %zd", char1Meshs.size());
 
-        //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader, &char2Clips);
-        char2Model = OD::AssimpLoadModel("res/animations/Walking.dae", shader, &char2Clips);
+        //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader);
+        char2Model = OD::AssimpLoadModel("res/animations/Walking.dae", shader);
         //char2Model = OD::AssimpLoadModel("res/gltf/Woman.gltf", shader, &char2Clips);
         
         char2Anim.mAnimatedPose = char2Model->skeleton.GetRestPose();
         char2Anim.mPosePalette.resize(char2Model->skeleton.GetRestPose().Size());
         char2Anim.mModel.localPosition(Vector3(3, 0, 0));
-        //char2Anim.mModel.localScale(Vector3(0.05f, 0.05f, 0.05f));
+        //char2Anim.mModel.localScale(Vector3(0.02f, 0.02f, 0.02f));
+        char2Anim.mModel.localScale(Vector3(200.0f, 200.0f, 200.0f));
         //char2Anim.mModel.localEulerAngles(Vector3(0, 180, 0));
 
-        LogInfo("Char2 Clip Count: %zd", char2Clips.size());
-        for(auto i: char2Clips){
-            LogInfo("Char2 Clip Name: %s", i.GetName().c_str());
+        LogInfo("Char2 Clip Count: %zd", char2Model->animationClips.size());
+        for(auto i: char2Model->animationClips){
+            LogInfo("Char2 Clip Name: %s", i->GetName().c_str());
         }
 
     };
@@ -119,7 +119,7 @@ struct Animation_7: public OD::Module{
         char1Anim.mPlayback = char1Clips[char1Anim.mClip].Sample(char1Anim.mAnimatedPose, char1T);
         char1Anim.mAnimatedPose.GetMatrixPalette(char1Anim.mPosePalette);
 
-        char2Anim.mPlayback = char2Clips[char2Anim.mClip].Sample(char2Anim.mAnimatedPose, char2T);
+        char2Anim.mPlayback = char2Model->animationClips[char2Anim.mClip]->Sample(char2Anim.mAnimatedPose, char2T);
         char2Anim.mAnimatedPose.GetMatrixPalette(char2Anim.mPosePalette, char2Model->skeleton.GetInvBindPose());
         //char2Model->skeleton.GetBindPose().GetMatrixPalette(char2Anim.mPosePalette);
 
@@ -149,31 +149,45 @@ struct Animation_7: public OD::Module{
 
         for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
             if(char1Anim.mAnimatedPose.GetParent(i) < 0) continue;
-		
             Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).localPosition();
             Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).localPosition();
-
             Renderer::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
         }
-        //*/
-
-        /*std::vector<Matrix4>& invBindPose2 = char2Model->skeleton.GetInvBindPose();
-        for(int i = 0; i < char2Anim.mPosePalette.size(); ++i){
-            char2Anim.mPosePalette[i] = char2Anim.mPosePalette[i] * invBindPose2[i];
-        }*/
 
         char2Model->materials[0]->UpdateUniforms();
         char2Model->materials[0]->shader()->Bind();
         char2Model->materials[0]->shader()->SetMatrix4("animated", char2Anim.mPosePalette);
 
-        for(auto i: char2Model->meshs){
+        /*for(auto i: char2Model->meshs){
             Renderer::DrawMesh(
                 *i, 
                 char2Anim.mModel.GetLocalModelMatrix(), 
                 *char2Model->materials[0]->shader()
             );
+        }*/
+
+        for(auto i: char2Model->renderTargets){
+            Matrix4 m = 
+                char2Anim.mModel.GetLocalModelMatrix() * 
+                char2Model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            //m = char2Anim.mModel.GetLocalModelMatrix();
+
+            //LogInfo("Bind Pose Index: %d", i.bindPoseIndex);
+
+            Renderer::DrawMesh(
+                *char2Model->meshs[i.meshIndex], 
+                m, 
+                *char2Model->materials[i.materialIndex]->shader()
+            );
         }
-        //*/
+
+        for(int i = 0; i < char2Anim.mAnimatedPose.Size(); i++){
+            if(char2Anim.mAnimatedPose.GetParent(i) < 0) continue;
+            Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).localPosition();
+            Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).localPosition();
+            Renderer::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
+        }
 
         Renderer::End();
     };
@@ -186,7 +200,7 @@ struct Animation_7: public OD::Module{
         ImGui::Begin("Animation");
         ImGui::Checkbox("Animated", &animate);
         ImGui::SliderFloat("Char1_T", &char1Anim.mPlayback, 0, char1Clips[char1Anim.mClip].GetEndTime());
-        ImGui::SliderFloat("Char2_T", &char2Anim.mPlayback, 0, char2Clips[char2Anim.mClip].GetEndTime());
+        ImGui::SliderFloat("Char2_T", &char2Anim.mPlayback, 0, char2Model->animationClips[char2Anim.mClip]->GetEndTime());
         ImGui::End();
 
         ImGuiIO& io = ImGui::GetIO();

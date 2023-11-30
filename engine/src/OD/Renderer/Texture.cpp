@@ -71,6 +71,46 @@ void Texture2D::Create(const char* path, Texture2DSetting settings){
     stbi_image_free(data);
 }
 
+void Texture2D::Create(void* _data, size_t size, Texture2DSetting settings){
+    _path = "Memory";
+    _settings = settings;
+
+    _internalFormat = GL_RGB;
+    _imageFormat = GL_RGB;
+    _wrapS = GL_REPEAT;
+    _wrapT = GL_REPEAT;
+    _filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        _filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    _filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    _mipmap = settings.mipmap;
+
+    stbi_set_flip_vertically_on_load(1);
+
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char* data = stbi_load_from_memory((const stbi_uc*)_data, size, &width, &height, &nrChannels, 0);
+
+    //LogInfo("Chennels %d", nrChannels);
+
+    if(!data){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", _path.c_str(), stbi_failure_reason());
+    }
+
+    bool alpha = false;
+    if(nrChannels > 3) alpha = true;
+
+    if(alpha){
+        _internalFormat = GL_RGBA;
+        _imageFormat = GL_RGBA;
+    }
+    
+    texture2DGenerate(width, height, data);
+    stbi_image_free(data);
+}
+
 void Texture2D::texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data){
     _width = width;
     _height = height;
@@ -178,6 +218,12 @@ Ref<Texture2D> Texture2D::CreateFromFile(const char* filePath){
     Texture2DSetting settings;
     LoadSettings(filePath, settings);
     return CreateFromFile(filePath, settings);
+}
+
+Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings){
+    Ref<Texture2D> texture = CreateRef<Texture2D>();
+    texture->Create(data, size, settings);
+    return texture;
 }
 
 }

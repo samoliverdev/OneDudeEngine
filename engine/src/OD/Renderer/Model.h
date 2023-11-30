@@ -10,6 +10,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "OD/AnimationSystem/Skeleton.h"
+#include "OD/AnimationSystem/Clip.h"
 
 namespace OD{
 
@@ -27,7 +28,10 @@ public:
     std::vector<Ref<Material>> materials;
     std::vector<Ref<Texture2D>> textures;
     std::vector<Matrix4> matrixs;
+    
     Skeleton skeleton;
+
+    std::vector<Ref<Clip>> animationClips;
     
     static Ref<Model> CreateFromFile(std::string const &path, Ref<Shader> customShader = nullptr);
 };
