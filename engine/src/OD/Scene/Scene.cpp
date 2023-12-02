@@ -256,6 +256,22 @@ Entity Scene::DeserializeEntity(YAML::Node& e){
 }
 
 void Scene::Save(const char* path){
+    std::ofstream os(path);
+    cereal::JSONOutputArchive output{os};
+
+    auto& snapshotOut = entt::snapshot{_registry};
+    snapshotOut.get<entt::entity>(output);
+    snapshotOut.get<TransformComponent>(output);
+    snapshotOut.get<InfoComponent>(output);
+    for(auto i: SceneManager::Get()._componentsSerializer){
+        i.second.snapshotOut(snapshotOut, output);
+    }
+    for(auto i: SceneManager::Get()._coreComponentsSerializer){
+        i.second.snapshotOut(snapshotOut, output);
+    }
+
+    return;
+
     YAML::Emitter out;
 
     out << YAML::BeginMap;
@@ -280,6 +296,31 @@ void Scene::Save(const char* path){
 }
 
 void Scene::Load(const char* path){
+    std::ifstream storage(path);
+    cereal::JSONInputArchive input{storage};
+
+    auto snapshot = entt::snapshot_loader{_registry};
+    snapshot.get<entt::entity>(input);
+    snapshot.get<TransformComponent>(input);
+    snapshot.get<InfoComponent>(input);
+
+    for(auto e: _registry.view<TransformComponent, InfoComponent>()){
+        TransformComponent& trans = _registry.get<TransformComponent>(e);
+        InfoComponent& info = _registry.get<InfoComponent>(e);
+
+        trans._registry = &_registry;
+        info._id = e;
+    }
+
+    for(auto i: SceneManager::Get()._componentsSerializer){
+        i.second.snapshotIn(snapshot, input);
+    }
+    for(auto i: SceneManager::Get()._coreComponentsSerializer){
+        i.second.snapshotIn(snapshot, input);
+    }
+    
+    return;
+
     std::ifstream stream(path);
     std::stringstream strStream;
     strStream << stream.rdbuf();

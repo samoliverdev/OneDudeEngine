@@ -26,6 +26,7 @@ struct Scene;
 
 class TransformComponent: public Transform{
     friend struct Scene;
+    friend class cereal::access;
 
 public:
     inline Vector3 forward(){ return rotation() * Vector3Forward; }
@@ -53,6 +54,19 @@ public:
     inline bool hasParent(){ return _hasParent; }
     inline std::vector<EntityId> children(){ return _children; }
 
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(_localPosition), 
+            CEREAL_NVP(_localRotation), 
+            CEREAL_NVP(_localScale), 
+            CEREAL_NVP(_isDirt),
+            CEREAL_NVP(_children),
+            CEREAL_NVP(_parent),
+            CEREAL_NVP(_hasParent)
+        );
+    }
+
 private:
     std::vector<EntityId> _children;
 
@@ -62,6 +76,7 @@ private:
     entt::registry* _registry;
 };
 
+
 struct InfoComponent{
     friend struct Scene;
 
@@ -69,6 +84,11 @@ struct InfoComponent{
     std::string tag =  "";
 
     inline EntityId id() const { return _id; }
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(CEREAL_NVP(name), CEREAL_NVP(tag), CEREAL_NVP(_active));
+    }
 
 private:
     bool _active;
@@ -429,6 +449,14 @@ struct SceneManager{
                 dst.emplace_or_replace<T>(e, c);
             }
         };
+
+        funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+            s.get<T>(out);
+        };
+
+        funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& out){
+            s.get<T>(out);
+        };
         
         _coreComponentsSerializer[name] = funcs;
     }
@@ -484,6 +512,14 @@ struct SceneManager{
                 dst.emplace_or_replace<T>(e, c);
             }
         };
+
+        funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+            s.get<T>(out);
+        };
+
+        funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& out){
+            s.get<T>(out);
+        };
         
         _coreComponentsSerializer[name] = funcs;
     }
@@ -517,6 +553,14 @@ struct SceneManager{
                 T& c = view.template get<T>(e);
                 dst.emplace_or_replace<T>(e, c);
             }
+        };
+
+        funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+            s.get<T>(out);
+        };
+
+        funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& out){
+            s.get<T>(out);
         };
         
         _componentsSerializer[name] = funcs;
@@ -562,6 +606,8 @@ private:
         std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&,ArchiveNode&)> serialize;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
+        std::function<void(entt::snapshot& s, cereal::JSONOutputArchive& out)> snapshotOut;
+        std::function<void(entt::snapshot_loader& s, cereal::JSONInputArchive& out)> snapshotIn;
     };
 
     struct CoreComponent{
@@ -572,6 +618,8 @@ private:
         std::function<void(YAML::Node&, Entity&)> deserialize;
         std::function<void(Entity&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
+        std::function<void(entt::snapshot& s, cereal::JSONOutputArchive& out)> snapshotOut;
+        std::function<void(entt::snapshot_loader& s, cereal::JSONInputArchive& out)> snapshotIn;
     };
 
     SceneState _sceneState;

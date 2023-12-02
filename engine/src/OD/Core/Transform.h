@@ -55,6 +55,18 @@ public:
         return !(*this == b);
     }
 
+    inline static Transform mix(const Transform& a, const Transform& b, float t) {
+        Quaternion bRot = b._localRotation;
+        /*if(math::dot(a._localRotation, bRot) < 0.0f) {
+            bRot = -bRot;
+        }*/
+        return Transform(
+            math::mix(a._localPosition, b._localPosition, t),
+            math::normalize( math::lerp(math::normalize(a._localRotation), math::normalize(bRot), t) ),
+            math::mix(a._localScale, b._localScale, t)
+        );
+    }
+
     inline static Transform Inverse(Transform& t){
         return Transform(math::inverse(t.GetLocalModelMatrix()));
 

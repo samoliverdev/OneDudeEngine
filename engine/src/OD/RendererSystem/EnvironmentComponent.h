@@ -34,6 +34,20 @@ struct EnvironmentSettings{
     MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
     ColorCorrection colorCorrection = ColorCorrection::None;
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(ambient),
+            CEREAL_NVP(cleanColor),
+            CEREAL_NVP(shadowQuality),
+            CEREAL_NVP(shadowBias),
+            CEREAL_NVP(shadowBackFaceRender),
+            CEREAL_NVP(antiAliasing),
+            CEREAL_NVP(msaaQuality),
+            CEREAL_NVP(colorCorrection)
+        );
+    }
 };
 
 struct EnvironmentComponent{
@@ -44,6 +58,11 @@ struct EnvironmentComponent{
     static void OnGui(Entity& e);
 
     EnvironmentSettings settings;
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(CEREAL_NVP(settings));
+    }
 
 private:
     bool _inited = false;

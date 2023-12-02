@@ -1,4 +1,5 @@
 #include "LightComponent.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
 
@@ -27,6 +28,12 @@ void LightComponent::Deserialize(YAML::Node& in, Entity& e){
 
 void LightComponent::OnGui(Entity& e){
     LightComponent& light = e.GetComponent<LightComponent>();
+
+    cereal::ImGuiArchive uiArchive;
+    uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
+    uiArchive(light);
+
+    return;
 
     const char* projectionTypeString[] = {"Directional", "Point", "Spot"};
     const char* curProjectionTypeString = projectionTypeString[(int)light.type];

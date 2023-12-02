@@ -34,7 +34,6 @@ struct SynthCity_10: OD::Module {
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
         camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 15, 15));
         camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<TestC>();
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         cam.farClipPlane = 1000;
 

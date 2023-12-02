@@ -8,6 +8,8 @@
 #include "OD/PhysicsSystem/PhysicsSystem.h"
 #include <unordered_map>
 #include <map>
+#include "OD/Core/JobSystem.h"
+#include "OD/Utils/FastMap.h"
 
 namespace OD{
 
@@ -79,7 +81,6 @@ struct InstancingKeyHasher{
         return k.material->shader()->rendererId() + k.mesh->rendererId();
     }
 };
-
 
 EnvironmentSettings environmentSettings;
 
@@ -522,11 +523,110 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     }
 }
 
+struct DrawCommandBuffer{
+    Ref<Material> material;
+    Ref<Mesh> meshs;
+    Matrix4 trans;
+
+    bool operator<(const DrawCommandBuffer& a) const{
+        return material->MaterialId() < a.material->MaterialId();
+    }
+};
+
+struct MaterialBind{
+    uint64_t big;
+    union{
+        float distance;
+        uint32_t materialId;
+    };
+};
+
+std::vector<std::pair<uint64_t, DrawCommandBuffer>> sceneCommandBuffers;
+int sceneCommandBuffersCount;
+
+std::vector<std::pair<uint64_t, DrawCommandBuffer>> pointShadowCommandBuffers;
+std::vector<std::pair<uint64_t, DrawCommandBuffer>> shadowCommandBuffers;
+std::vector<std::pair<uint64_t, DrawCommandBuffer>> probsCommandBuffers;
+
+/*
+std::unordered_map<uint64_t, std::vector<DrawCommandBuffer>> opaquesCommandBuffers2;
+std::vector<DrawCommandBuffer> opaquesCommandBuffers3;
+std::vector<std::pair<uint32_t, DrawCommandBuffer>> opaquesCommandBuffers4;
+*/
+
+void UpdateRenderTargets(Scene& scene, Vector3 camPos){
+    //sceneCommandBuffers.clear();
+    //pointShadowCommandBuffers.clear();
+    //shadowCommandBuffers.clear();
+    //probsCommandBuffers.clear();
+
+    sceneCommandBuffersCount = 0;
+
+    auto view1 = scene.GetRegistry().view<MeshRendererComponent, TransformComponent>();
+
+    for(auto _entity: view1){
+        auto& c = view1.get<MeshRendererComponent>(_entity);
+        auto& t = view1.get<TransformComponent>(_entity);
+        
+        if(c.model() == nullptr) continue;
+
+        for(auto i: c.model()->renderTargets){
+            Ref<Material> targetMaterial = c.model()->materials[i.materialIndex];
+            Ref<Mesh> targetMesh = c.model()->meshs[i.meshIndex];
+            Matrix4 targetMatrix =  t.globalModelMatrix() * c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            if(i.materialIndex < c.materialsOverride().size() && c.materialsOverride()[i.materialIndex] != nullptr){
+                targetMaterial = c.materialsOverride()[i.materialIndex];
+            }
+
+            float distance = math::distance(camPos, t.position());
+
+            MaterialBind key;
+            key.distance = distance;
+            key.materialId = targetMaterial->MaterialId();
+
+            DrawCommandBuffer cm = { targetMaterial, targetMesh, targetMatrix };
+
+            if(sceneCommandBuffers.size() <= sceneCommandBuffersCount){
+                sceneCommandBuffers.push_back(std::make_pair(key.big, cm));
+            } else {
+                sceneCommandBuffers[sceneCommandBuffersCount] = std::make_pair(key.big, cm);
+            }
+            sceneCommandBuffersCount += 1;
+            
+
+            //pointShadowCommandBuffers.push_back(std::make_pair(key.big, cm));
+            //shadowCommandBuffers.push_back(std::make_pair(key.big, cm));
+            //probsCommandBuffers.push_back(std::make_pair(key.big, cm));
+
+            //opaquesCommandBuffers2[targetMaterial->MaterialId()].push_back(cm);
+            //opaquesCommandBuffers3.push_back(cm);
+            //opaquesCommandBuffers4.push_back(std::make_pair(targetMaterial->MaterialId(), cm));
+        }
+    }
+
+    std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
+
+    /*JobSystem::Execute([&]{ std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end()); });
+    JobSystem::Execute([&]{ std::sort(pointShadowCommandBuffers.begin(), pointShadowCommandBuffers.end()); });
+    JobSystem::Execute([&]{ std::sort(shadowCommandBuffers.begin(), shadowCommandBuffers.end()); });
+    JobSystem::Execute([&]{ std::sort(probsCommandBuffers.begin(), probsCommandBuffers.end()); });
+	JobSystem::Wait();*/
+
+    /*std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
+    std::sort(pointShadowCommandBuffers.begin(), pointShadowCommandBuffers.end());
+    std::sort(shadowCommandBuffers.begin(), shadowCommandBuffers.end());
+    std::sort(probsCommandBuffers.begin(), probsCommandBuffers.end());*/
+
+    //std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
+    //std::sort(opaquesCommandBuffers3.begin(), opaquesCommandBuffers3.end());
+    //std::sort(opaquesCommandBuffers4.begin(), opaquesCommandBuffers4.end());
+}
+
 void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
     // --------- Render Targets --------- 
-    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques; 
+    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques;  
     std::unordered_map< RenderTargetInstancing, std::vector<Matrix4>, InstancingKeyHasher > renderTargetOpaquesInstancing; 
     std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderTarget>> >renderTargetsBlend; 
     std::set<Ref<Shader>> shaderTargets;
@@ -564,11 +664,25 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
     }
     #pragma endregion 
 
+
+    {
+    OD_PROFILE_SCOPE("StandRendererSystem::UpdateRenderTargets");
+    UpdateRenderTargets(*scene(), camPos);
+    }
+
     {
     // --------- Setup Render --------- 
     OD_PROFILE_SCOPE("StandRendererSystem::Setups");
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
+
+
+    //if(isDirt){ 
+
+    /*renderTargetsOpaques.clear();
+    renderTargetOpaquesInstancing.clear();
+    renderTargetsBlend.clear();
+    shaderTargets.clear();*/
 
     auto view1 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view1){
@@ -637,16 +751,20 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
 
             //index += 1;
         }
-    }
+    }   
+    
+    //isDirt = false;
+    //}
     }
 
     for(auto i: shaderTargets){
         SetStandUniforms(camPos, *i);
     }
 
-    //for(auto i: materialTargets){
-    //    i->UpdateUniforms();
-    //
+    /*for(auto i: materialTargets){
+        i->UpdateUniforms();
+        SetStandUniforms(camPos, *i->shader());
+    }*/
 
     {
     // --------- Render Opaques Instancing --------- 

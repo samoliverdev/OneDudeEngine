@@ -8,41 +8,6 @@
 
 using namespace OD;
 
-struct Test1{
-    float a;
-
-    void Serialize(ArchiveNode& ar){
-        ar.Add(&a, "a");
-    }
-};
-
-struct Test2{
-    std::vector<Test1> b;
-
-    void Serialize(ArchiveNode& ar){
-        b.push_back({20});
-        b.push_back({254});
-        ar.Add(&b, "b");
-    }
-};
-
-struct TestC{
-    std::string id = "TestId";
-    float speed = 20;
-    std::vector<Test1> test1s = {{20}, {245}};
-
-    Test1 test1 = {55};
-
-    void Serialize(ArchiveNode& s){
-        s.Add(&id, "id");
-        s.Add(&speed, "speed");
-        s.Add(&test1s, "test1s");
-        s.Add(test1, "test1");
-
-        //LogInfo("OnSerialize TestC %zd", s.Values().size());
-    }
-};
-
 struct PhysicsCubeS: public Script{
     float t;
 
@@ -101,7 +66,6 @@ struct Physics_6: OD::Module {
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-        SceneManager::Get().RegisterComponent<TestC>("TestC");
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
@@ -135,7 +99,6 @@ struct Physics_6: OD::Module {
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
         camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 15, 15));
         camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<TestC>();
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         //camMove.transform = &camera->transform();
         //camMove.moveSpeed = 60;

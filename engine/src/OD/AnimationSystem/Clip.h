@@ -31,6 +31,11 @@ public:
             unsigned int j = _tracks[i].GetId();
             Transform local = outPose.GetLocalTransform(j);
             Transform animated = _tracks[i].Sample(local, time, _looping);
+
+            if(i == 0){
+                animated.localPosition(Vector3Zero);
+            }
+
             outPose.SetLocalTransform(j, animated);
         }
 

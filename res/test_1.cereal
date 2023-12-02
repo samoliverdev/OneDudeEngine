@@ -1,0 +1,155 @@
+{
+    "value0": 2,
+    "value1": 2,
+    "value2": 0,
+    "value3": 1,
+    "value4": 2,
+    "value5": 0,
+    "value6": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": true,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value7": 1,
+    "value8": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": true,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value9": 2,
+    "value10": 1,
+    "value11": {
+        "name": "Test2",
+        "tag": "",
+        "_active": false
+    },
+    "value12": 0,
+    "value13": {
+        "name": "Test",
+        "tag": "",
+        "_active": false
+    },
+    "value14": 1,
+    "value15": 0,
+    "value16": {
+        "speed": 0.0,
+        "test": {
+            "a": "",
+            "b": 0
+        },
+        "tests": [
+            {
+                "a": "",
+                "b": 0
+            },
+            {
+                "a": "",
+                "b": 0
+            }
+        ]
+    },
+    "value17": 0,
+    "value18": 0,
+    "value19": 0,
+    "value20": 1,
+    "value21": 1,
+    "value22": {
+        "color": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "intensity": -6.5,
+        "falloff": 8.600000381469727,
+        "radius": 13.800000190734864,
+        "coneAngleInner": 33.900001525878909,
+        "coneAngleOuter": 53.599998474121097,
+        "renderShadow": true
+    },
+    "value23": 0,
+    "value24": 0,
+    "value25": 1,
+    "value26": 1,
+    "value27": {
+        "_float": 0.0,
+        "_int": 0,
+        "_string": "",
+        "_vector3": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_Vector4": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0,
+            "v.w": 0.0
+        },
+        "_quaternion": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 0.0
+        },
+        "_object": {
+            "center": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "radius": 0.0
+        },
+        "_list": [
+            {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "radius": 0.0
+            },
+            {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "radius": 0.0
+            }
+        ]
+    }
+}

@@ -12,6 +12,18 @@ struct CameraComponent{
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
 
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(type),
+            CEREAL_NVP(isMain),
+            CEREAL_NVP(orthographicSize),
+            CEREAL_NVP(fieldOfView),
+            CEREAL_NVP(nearClipPlane),
+            CEREAL_NVP(farClipPlane)
+        );
+    }
+
     enum class Type{
         Perspective, Orthographic 
     };

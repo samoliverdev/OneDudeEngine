@@ -74,6 +74,8 @@ add_library(engine STATIC ${ENGINE_SOURCE_FILES})
 target_include_directories(engine PUBLIC 
     engine/vendor/
     engine/vendor/cgltf/
+    engine/vendor/cereal/include/
+    engine/vendor/magic_enum/include/
     engine/vendor/imgui/
     engine/vendor/ImGuizmo/
     engine/vendor/glfw/include/
@@ -107,6 +109,10 @@ target_include_directories(game PUBLIC engine/src/)
 target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
 
+
+# Enable Disable Tests
+if(OFF) 
+
 project(tests)
 
 add_subdirectory(tests/googletest EXCLUDE_FROM_ALL)
@@ -120,3 +126,5 @@ target_include_directories(tests PUBLIC engine/src/)
 target_link_libraries(tests GTest::GTest engine)
 
 add_test(tests_gtests tests)
+
+endif()

@@ -1,0 +1,289 @@
+{
+    "value0": 6,
+    "value1": 6,
+    "value2": 0,
+    "value3": 1,
+    "value4": 2,
+    "value5": 3,
+    "value6": 4,
+    "value7": 5,
+    "value8": 6,
+    "value9": 0,
+    "value10": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": true,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value11": 1,
+    "value12": {
+        "_localPosition": {
+            "v.x": -2.0,
+            "v.y": 4.0,
+            "v.z": -1.0
+        },
+        "_localRotation": {
+            "q.x": 0.1767035573720932,
+            "q.y": -0.8194911479949951,
+            "q.z": 0.3394443988800049,
+            "q.w": 0.42660006880760195
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": true,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value13": 2,
+    "value14": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 15.0,
+            "v.z": 15.0
+        },
+        "_localRotation": {
+            "q.x": -0.2164396196603775,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 0.9762960076332092
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": false,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value15": 3,
+    "value16": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": false,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value17": 4,
+    "value18": {
+        "_localPosition": {
+            "v.x": 2.0,
+            "v.y": 13.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": false,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value19": 5,
+    "value20": {
+        "_localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "_localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_isDirt": true,
+        "_children": [],
+        "_parent": 0,
+        "_hasParent": false
+    },
+    "value21": 6,
+    "value22": 5,
+    "value23": {
+        "name": "Trigger",
+        "tag": "",
+        "_active": false
+    },
+    "value24": 4,
+    "value25": {
+        "name": "MainCube",
+        "tag": "",
+        "_active": false
+    },
+    "value26": 3,
+    "value27": {
+        "name": "Floor",
+        "tag": "",
+        "_active": false
+    },
+    "value28": 2,
+    "value29": {
+        "name": "Camera",
+        "tag": "",
+        "_active": false
+    },
+    "value30": 1,
+    "value31": {
+        "name": "Light",
+        "tag": "",
+        "_active": false
+    },
+    "value32": 0,
+    "value33": {
+        "name": "Env",
+        "tag": "",
+        "_active": false
+    },
+    "value34": 0,
+    "value35": 1,
+    "value36": 2,
+    "value37": {
+        "type": 0,
+        "isMain": true,
+        "orthographicSize": 5.0,
+        "fieldOfView": 45.0,
+        "nearClipPlane": 0.10000000149011612,
+        "farClipPlane": 1000.0
+    },
+    "value38": 1,
+    "value39": 0,
+    "value40": {
+        "settings": {
+            "ambient": {
+                "v.x": 0.10999999940395355,
+                "v.y": 0.1599999964237213,
+                "v.z": 0.25
+            },
+            "cleanColor": {
+                "v.x": 0.5,
+                "v.y": 0.10000000149011612,
+                "v.z": 0.800000011920929
+            },
+            "shadowQuality": 3,
+            "shadowBias": 0.00009999999747378752,
+            "shadowBackFaceRender": true,
+            "antiAliasing": 0,
+            "msaaQuality": 1,
+            "colorCorrection": 0
+        }
+    },
+    "value41": 1,
+    "value42": 2,
+    "value43": {},
+    "value44": 2,
+    "value45": 3,
+    "value46": {
+        "_subMeshIndex": -1,
+        "path": "res/models/plane.glb",
+        "materialsOverride": [
+            "res/textures/floor.material"
+        ]
+    },
+    "value47": 4,
+    "value48": {
+        "_subMeshIndex": -1,
+        "path": "res/models/Cube.glb",
+        "materialsOverride": [
+            "res/textures/rock.material",
+            ""
+        ]
+    },
+    "value49": 1,
+    "value50": 1,
+    "value51": {
+        "color": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "intensity": 1.0,
+        "falloff": 1.0,
+        "radius": 5.0,
+        "coneAngleInner": 45.0,
+        "coneAngleOuter": 45.0,
+        "renderShadow": true
+    },
+    "value52": 3,
+    "value53": 3,
+    "value54": {
+        "_type": 1,
+        "_boxShapeSize": {
+            "v.x": 25.0,
+            "v.y": 0.10000000149011612,
+            "v.z": 25.0
+        },
+        "_mass": 0.0,
+        "_neverSleep": false
+    },
+    "value55": 4,
+    "value56": {
+        "_type": 0,
+        "_boxShapeSize": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "_mass": 1.0,
+        "_neverSleep": false
+    },
+    "value57": 5,
+    "value58": {
+        "_type": 3,
+        "_boxShapeSize": {
+            "v.x": 4.0,
+            "v.y": 1.0,
+            "v.z": 4.0
+        },
+        "_mass": 1.0,
+        "_neverSleep": true
+    }
+}

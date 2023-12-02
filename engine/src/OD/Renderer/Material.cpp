@@ -8,6 +8,8 @@
 
 namespace OD{
 
+uint32_t Material::baseId = 0;
+
 void Material::SetFloat(const char* name, float value){
     MaterialMap& map = _maps[name];
 

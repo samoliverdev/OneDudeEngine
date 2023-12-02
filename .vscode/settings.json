@@ -93,7 +93,8 @@
         "codecvt": "cpp",
         "coroutine": "cpp",
         "resumable": "cpp",
-        "internal.h": "c"
+        "internal.h": "c",
+        "csignal": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "git.ignoreLimitWarning": true,

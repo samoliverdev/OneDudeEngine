@@ -40,6 +40,17 @@ struct RigidbodyComponent{
     void ApplyTorque(Vector3 v);
     void ApplyImpulse(Vector3 v);
 
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(_type),
+            CEREAL_NVP(_boxShapeSize),
+            CEREAL_NVP(_mass),
+            CEREAL_NVP(_neverSleep)
+        );
+    }
+
 private:
     Type _type = Type::Dynamic;
     Vector3 _boxShapeSize = {1,1,1};

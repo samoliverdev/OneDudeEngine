@@ -30,6 +30,10 @@ struct ScriptComponent{
     friend struct ScriptSystem;
     friend struct Scene;
 
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive & ar){}
+
     static void Serialize(YAML::Emitter& out, Entity& e);
     static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
@@ -94,6 +98,8 @@ struct ScriptComponent{
     }
 
 private:
+    int version = 10;
+
     struct ScriptHolder{
         Script* instance;
         Script* (*InstantiateScript)(ScriptHolder&);

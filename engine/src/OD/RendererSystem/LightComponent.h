@@ -29,6 +29,20 @@ struct LightComponent{
     float coneAngleOuter = 45;
     
     bool renderShadow = true;
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            //CEREAL_NVP(type),
+            CEREAL_NVP(color),
+            CEREAL_NVP(intensity),
+            CEREAL_NVP(falloff),
+            CEREAL_NVP(radius),
+            CEREAL_NVP(coneAngleInner),
+            CEREAL_NVP(coneAngleOuter),
+            CEREAL_NVP(renderShadow)
+        );
+    }
 };
 
 }

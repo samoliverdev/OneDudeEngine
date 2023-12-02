@@ -3,6 +3,7 @@
 #include <OD/OD.h>
 #include <OD/Loader/GLTFLoader.h>
 #include <OD/AnimationSystem/RearrangeBones.h>
+#include <OD/AnimationSystem/CrossFadeController.h>
 #include <ImGuizmo/ImGuizmo.h>
 #include "CameraMovement.h"
 #include "Ultis.h"
@@ -35,9 +36,13 @@ struct Animation_7: public OD::Module{
     std::vector<Clip> char1Clips;
     AnimationInstance char1Anim;
 
+    CrossFadeController char1Controller;
+
     //Character2
     Ref<Model> char2Model;
+    Ref<Model> char2Animations;
     AnimationInstance char2Anim;
+    CrossFadeController char2Controller;
 
     int curBone;
     bool animate = true;
@@ -59,7 +64,6 @@ struct Animation_7: public OD::Module{
         //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");
         char1Meshs = OD::LoadMeshes(char1);
         char1Skeleton = LoadSkeleton(char1);
-
         //OD::BoneMap bm = OD::RearrangeSkeleton(skeleton);
         //OD::RearrangeMesh(*meshs[0], bm);
         
@@ -72,6 +76,7 @@ struct Animation_7: public OD::Module{
 
         OD::FreeGLTFFile(char1);
 
+
         char1Anim.mAnimatedPose = char1Skeleton.GetRestPose();
         char1Anim.mPosePalette.resize(char1Skeleton.GetRestPose().Size());
         char1Anim.mModel.localPosition(Vector3(0, 0, 0));
@@ -83,6 +88,11 @@ struct Animation_7: public OD::Module{
             }
         }
 
+        char1Controller.SetSkeleton(char1Skeleton);
+        char1Controller.Play(&char1Clips[char1Anim.mClip]);
+        char1Controller.Update(0.0f);
+	    char1Controller.GetCurrentPose().GetMatrixPalette(char1Anim.mPosePalette);
+
         LogInfo("Clip Count: %zd", char1Clips.size());
         for(auto i: char1Clips){
             LogInfo("Clip Name: %s", i.GetName().c_str());
@@ -91,6 +101,7 @@ struct Animation_7: public OD::Module{
 
         //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader);
         char2Model = OD::AssimpLoadModel("res/animations/Walking.dae", shader);
+        char2Animations = OD::AssimpLoadModel("res/animations/FastRun.dae", shader);
         //char2Model = OD::AssimpLoadModel("res/gltf/Woman.gltf", shader, &char2Clips);
         
         char2Anim.mAnimatedPose = char2Model->skeleton.GetRestPose();
@@ -100,6 +111,11 @@ struct Animation_7: public OD::Module{
         char2Anim.mModel.localScale(Vector3(200.0f, 200.0f, 200.0f));
         //char2Anim.mModel.localEulerAngles(Vector3(0, 180, 0));
 
+        char2Controller.SetSkeleton(char2Model->skeleton);
+        char2Controller.Play(char2Model->animationClips[0].get());
+        char2Controller.Update(0.0f);
+	    char2Controller.GetCurrentPose().GetMatrixPalette(char2Anim.mPosePalette);
+
         LogInfo("Char2 Clip Count: %zd", char2Model->animationClips.size());
         for(auto i: char2Model->animationClips){
             LogInfo("Char2 Clip Name: %s", i->GetName().c_str());
@@ -108,6 +124,23 @@ struct Animation_7: public OD::Module{
     };
 
     void OnUpdate(float deltaTime) override {
+        if(Input::IsKeyDown(KeyCode::F)){
+            LogInfo("To Next Animation");
+
+            char1Anim.mClip += 1;
+            if(char1Anim.mClip >= char1Clips.size()){
+                char1Anim.mClip = 0;
+            }
+
+            char1Controller.FadeTo(&char1Clips[char1Anim.mClip], 0.5f);
+
+            if(char2Controller.GetCurrentClip() == char2Model->animationClips[0].get()){
+                char2Controller.FadeTo(char2Animations->animationClips[0].get(), 0.5f);
+            } else {
+                char2Controller.FadeTo(char2Model->animationClips[0].get(), 0.5f);
+            }
+        }
+
         float char1T = char1Anim.mPlayback;
         float char2T = char2Anim.mPlayback;
 
@@ -116,11 +149,17 @@ struct Animation_7: public OD::Module{
             char2T += Application::deltaTime(); 
         }
 
-        char1Anim.mPlayback = char1Clips[char1Anim.mClip].Sample(char1Anim.mAnimatedPose, char1T);
-        char1Anim.mAnimatedPose.GetMatrixPalette(char1Anim.mPosePalette);
+        //char1Anim.mPlayback = char1Clips[char1Anim.mClip].Sample(char1Anim.mAnimatedPose, char1T);
+        //char1Anim.mAnimatedPose.GetMatrixPalette(char1Anim.mPosePalette);
 
-        char2Anim.mPlayback = char2Model->animationClips[char2Anim.mClip]->Sample(char2Anim.mAnimatedPose, char2T);
-        char2Anim.mAnimatedPose.GetMatrixPalette(char2Anim.mPosePalette, char2Model->skeleton.GetInvBindPose());
+        char1Controller.Update(Application::deltaTime());
+        char1Controller.GetCurrentPose().GetMatrixPalette(char1Anim.mPosePalette);
+
+        char2Controller.Update(Application::deltaTime());
+        char2Controller.GetCurrentPose().GetMatrixPalette(char2Anim.mPosePalette, char2Model->skeleton.GetInvBindPose());
+
+        //char2Anim.mPlayback = char2Model->animationClips[char2Anim.mClip]->Sample(char2Anim.mAnimatedPose, char2T);
+        //char2Anim.mAnimatedPose.GetMatrixPalette(char2Anim.mPosePalette, char2Model->skeleton.GetInvBindPose());
         //char2Model->skeleton.GetBindPose().GetMatrixPalette(char2Anim.mPosePalette);
 
         camMove.OnUpdate();

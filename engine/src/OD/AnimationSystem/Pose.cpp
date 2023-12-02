@@ -86,7 +86,7 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
         out[i] = t.GetLocalModelMatrix();
     }*/
 
-    /*
+#if 0
     unsigned int size = Size();
     if(out.size() != size){
         out.reserve(size);
@@ -94,9 +94,8 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
     for(unsigned int i = 0; i < size; ++i){
         out[i] = GetGlobalMatrix(i);
     }
-    */
 
-    ///*
+#else
     int size = (int)Size();
     if((int)out.size() != size){ out.resize(size); }
     int i = 0;
@@ -113,7 +112,7 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
     for(; i < size; ++i){
         out[i] = GetGlobalMatrix(i);
     }
-    //*/
+#endif
 }
 
 void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses){

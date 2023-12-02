@@ -26,10 +26,16 @@ struct MaterialMap{
 
 class Material: public Asset{
 public:
-    Material(){}
+    Material(){
+        id = baseId;
+        baseId += 1;
+    }
     Material(Ref<Shader> s){
         _shader = s; 
         UpdateMaps();
+
+        id = baseId;
+        baseId += 1;
     }
 
     inline Ref<Shader> shader(){ return _shader; }
@@ -58,12 +64,17 @@ public:
 
     static Ref<Material> CreateFromFile(std::string const &path);
 
+    inline uint32_t MaterialId(){ return id; }
+
 private:
     bool _enableInstancing = false;
     bool _isDirt = true;
 
     Ref<Shader> _shader;
     std::unordered_map<std::string, MaterialMap> _maps;
+
+    uint32_t id;
+    static uint32_t baseId;
 
     void UpdateMaps();
 };
