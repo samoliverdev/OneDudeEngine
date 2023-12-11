@@ -8,7 +8,7 @@
 namespace OD{
 
 Mesh::Mesh(){
-    _isReadable = true;
+    isReadable = true;
 }
 
 Mesh::~Mesh(){
@@ -16,95 +16,95 @@ Mesh::~Mesh(){
 }
 
 void Mesh::UpdateMesh(){
-    Assert(_isReadable == true && "Only can Update isReadable Mesh");
+    Assert(isReadable == true && "Only can Update isReadable Mesh");
 
-    if(_vao == 0){
-        glGenVertexArrays(1, &_vao);
-        glBindVertexArray(_vao);
+    if(vao == 0){
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
         glCheckError();
     } else {
-        glBindVertexArray(_vao);
+        glBindVertexArray(vao);
     }
     
-    if(_vertexVbo == 0){
-        glGenBuffers(1, &_vertexVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, _vertexVbo);
+    if(vertexVbo == 0){
+        glGenBuffers(1, &vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
         glCheckError();
     } else {
-        glBindBuffer(GL_ARRAY_BUFFER, _vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
     }
-    _vertexCount = vertices.size();
+    vertexCount = vertices.size();
 
-    if(_ebo == 0){
-        glGenBuffers(1, &_ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+    if(ebo == 0){
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
         glCheckError();
     } else {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
     }
-    _indiceCount = indices.size();
+    indiceCount = indices.size();
 
     if(uv.size() == vertices.size()){
-        if(_uvVbo == 0){
-            glGenBuffers(1, &_uvVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _uvVbo);
+        if(uvVbo == 0){
+            glGenBuffers(1, &uvVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv.size(), &uv[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _uvVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv.size(), &uv[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
     }
 
     if(normals.size() == vertices.size()){
-        if(_normalVbo == 0){
-            glGenBuffers(1, &_normalVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
+        if(normalVbo == 0){
+            glGenBuffers(1, &normalVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, normalVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals.size(), &normals[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, normalVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals.size(), &normals[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
     }
 
     if(colors.size() == vertices.size()){
-        if(_colorVbo == 0){
-            glGenBuffers(1, &_colorVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _colorVbo);
+        if(colorVbo == 0){
+            glGenBuffers(1, &colorVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors.size(), &colors[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(3);
             glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _colorVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors.size(), &colors[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
     }
 
     if(tangents.size() == vertices.size()){
-        if(_tangentVbo == 0){
-            glGenBuffers(1, &_tangentVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _tangentVbo);
+        if(tangentVbo == 0){
+            glGenBuffers(1, &tangentVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents.size(), &tangents[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(4);
             glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _tangentVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents.size(), &tangents[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
@@ -112,15 +112,15 @@ void Mesh::UpdateMesh(){
 
     if(influences.empty() == false) Assert(influences.size() == vertices.size());
     if(influences.size() == vertices.size()){
-        if(_jointVbo == 0){
-            glGenBuffers(1, &_jointVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _jointVbo);
+        if(jointVbo == 0){
+            glGenBuffers(1, &jointVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, jointVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences.size(), &influences[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(5);
             glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _jointVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, jointVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences.size(), &influences[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
@@ -128,15 +128,15 @@ void Mesh::UpdateMesh(){
 
     if(weights.empty() == false) Assert(weights.size() == vertices.size());
     if(weights.size() == vertices.size()){
-        if(_weightsVbo == 0){
-            glGenBuffers(1, &_weightsVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _weightsVbo);
+        if(weightsVbo == 0){
+            glGenBuffers(1, &weightsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _weightsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
@@ -146,15 +146,15 @@ void Mesh::UpdateMesh(){
 }
 
 void Mesh::UpdateMeshInstancingModelMatrixs(){
-    Assert(_vao != 0);
+    Assert(vao != 0);
 
-    glBindVertexArray(_vao);
+    glBindVertexArray(vao);
     glCheckError();
 
     if(instancingModelMatrixs.empty() == false){
-        if(_instancingModelMatrixsVbo == 0){
-            glGenBuffers(1, &_instancingModelMatrixsVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, _instancingModelMatrixsVbo);
+        if(instancingModelMatrixsVbo == 0){
+            glGenBuffers(1, &instancingModelMatrixsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, instancingModelMatrixsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
             glCheckError();
 
@@ -175,7 +175,7 @@ void Mesh::UpdateMeshInstancingModelMatrixs(){
             glVertexAttribDivisor(13, 1);
             glCheckError();
         } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _instancingModelMatrixsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
             glCheckError();
@@ -187,23 +187,23 @@ void Mesh::UpdateMeshInstancingModelMatrixs(){
 }
 
 bool Mesh::IsValid(){
-    return _vao != 0;
+    return vao != 0;
 }
 
 void Mesh::Destroy(){
-    if(_vertexVbo != 0) glDeleteBuffers(1, &_vertexVbo);
-    if(_normalVbo != 0) glDeleteBuffers(1, &_normalVbo);
-    if(_uvVbo != 0) glDeleteBuffers(1, &_uvVbo);
-    if(_ebo != 0) glDeleteBuffers(1, &_ebo);
-    if(_vao != 0) glDeleteVertexArrays(1, &_vao);
+    if(vertexVbo != 0) glDeleteBuffers(1, &vertexVbo);
+    if(normalVbo != 0) glDeleteBuffers(1, &normalVbo);
+    if(uvVbo != 0) glDeleteBuffers(1, &uvVbo);
+    if(ebo != 0) glDeleteBuffers(1, &ebo);
+    if(vao != 0) glDeleteVertexArrays(1, &vao);
 
-    _vertexCount = 0;
-    _vertexVbo = 0;
-    _normalVbo = 0;
-    _uvVbo = 0;
-    _indiceCount = 0;
-    _ebo = 0;
-    _vao = 0;
+    vertexCount = 0;
+    vertexVbo = 0;
+    normalVbo = 0;
+    uvVbo = 0;
+    indiceCount = 0;
+    ebo = 0;
+    vao = 0;
 
     glCheckError();
 }
@@ -221,13 +221,13 @@ Mesh Mesh::FullScreenQuad(){
     };
 
     Mesh model;
-    model._isReadable = false;
+    model.isReadable = false;
     //model.ebo = 0;
 
-    glGenVertexArrays(1, &model._vao);
-    glGenBuffers(1, &model._vertexVbo);
-    glBindVertexArray(model._vao);
-    glBindBuffer(GL_ARRAY_BUFFER, model._vertexVbo);
+    glGenVertexArrays(1, &model.vao);
+    glGenBuffers(1, &model.vertexVbo);
+    glBindVertexArray(model.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -238,7 +238,7 @@ Mesh Mesh::FullScreenQuad(){
     glBindVertexArray(0);
     glCheckError();
 
-    model._vertexCount = 6;
+    model.vertexCount = 6;
 
     return model;
 }
@@ -290,18 +290,18 @@ Mesh Mesh::SkyboxCube(){
     };
 
     Mesh model;
-    model._isReadable = false;
+    model.isReadable = false;
 
-    glGenVertexArrays(1, &model._vao);
-    glGenBuffers(1, &model._vertexVbo);
-    glBindVertexArray(model._vao);
-    glBindBuffer(GL_ARRAY_BUFFER, model._vertexVbo);
+    glGenVertexArrays(1, &model.vao);
+    glGenBuffers(1, &model.vertexVbo);
+    glBindVertexArray(model.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glCheckError();
 
-    model._vertexCount = 36;
+    model.vertexCount = 36;
 
     return model;
 }
@@ -331,20 +331,20 @@ Mesh Mesh::CenterQuad(bool useIndices){
     };
 
     Mesh model;
-    model._isReadable = false;
+    model.isReadable = false;
 
-    glGenVertexArrays(1, &model._vao);
-    glBindVertexArray(model._vao);
+    glGenVertexArrays(1, &model.vao);
+    glBindVertexArray(model.vao);
     glCheckError();
 
     if(useIndices){
-        glGenBuffers(1, &model._vertexVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, model._vertexVbo);
+        glGenBuffers(1, &model.vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerticesIndices), quadVerticesIndices, GL_STATIC_DRAW);
         glCheckError();
 
-        glGenBuffers(1, &model._ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model._ebo);
+        glGenBuffers(1, &model.ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quadIndices), quadIndices, GL_STATIC_DRAW); 
         glCheckError();
 
@@ -354,11 +354,11 @@ Mesh Mesh::CenterQuad(bool useIndices){
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
         glCheckError();
 
-        model._vertexCount = 4;
-        model._indiceCount = 6;
+        model.vertexCount = 4;
+        model.indiceCount = 6;
     } else {
-        glGenBuffers(1, &model._vertexVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, model._vertexVbo);
+        glGenBuffers(1, &model.vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
         glCheckError();
 
@@ -368,8 +368,8 @@ Mesh Mesh::CenterQuad(bool useIndices){
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
         glCheckError();
 
-        model._vertexCount = 6;
-        model._indiceCount = 0;
+        model.vertexCount = 6;
+        model.indiceCount = 0;
     }
 
     glBindVertexArray(0);

@@ -22,7 +22,7 @@ public:
 
     template<typename T>
     void RegisterAssetType(std::string fileExtension){
-        Assert(_assetFuncs.find(fileExtension) == _assetFuncs.end());
+        Assert(assetFuncs.find(fileExtension) == assetFuncs.end());
 
         AssetFuncs funcs;
 
@@ -30,20 +30,20 @@ public:
             return T::CreateFromFile(path);
         };
         
-        _assetFuncs[fileExtension] = funcs;
+        assetFuncs[fileExtension] = funcs;
     }
 
     template<typename T>
     void RegisterAssetType(std::string fileExtension, std::function<Ref<Asset>(const std::string&)> createFromFile){
-        Assert(_assetFuncs.find(fileExtension) == _assetFuncs.end());
+        Assert(assetFuncs.find(fileExtension) == assetFuncs.end());
 
         AssetFuncs funcs;
         funcs.CreateFromFile = createFromFile;
-        _assetFuncs[fileExtension] = funcs;
+        assetFuncs[fileExtension] = funcs;
     }
 
     inline bool HasAssetByExtension(std::string fileExtension){
-        return _assetFuncs.find(fileExtension) != _assetFuncs.end();
+        return assetFuncs.find(fileExtension) != assetFuncs.end();
     }
 
     inline static AssetTypesDB& Get(){
@@ -51,7 +51,7 @@ public:
         return global;
     }
 
-    std::unordered_map<std::string, AssetFuncs> _assetFuncs;
+    std::unordered_map<std::string, AssetFuncs> assetFuncs;
 
 private:
     AssetTypesDB(){}
@@ -70,21 +70,21 @@ public:
     Ref<Shader> LoadErrorShader();
 
     inline void UnloadAll(){
-        _meshs.clear();
-        _models.clear();
-        _shaders.clear();
-        _textures.clear();
-        _materials.clear();
+        meshs.clear();
+        models.clear();
+        shaders.clear();
+        textures.clear();
+        materials.clear();
     }
 
     static AssetManager& Get();
 
 private:
-    std::unordered_map<std::string, Ref<Mesh>> _meshs;
-    std::unordered_map<std::string, Ref<Model>> _models;
-    std::unordered_map<std::string, Ref<Shader>> _shaders;
-    std::unordered_map<std::string, Ref<Texture2D>> _textures;
-    std::unordered_map<std::string, Ref<Material>> _materials;
+    std::unordered_map<std::string, Ref<Mesh>> meshs;
+    std::unordered_map<std::string, Ref<Model>> models;
+    std::unordered_map<std::string, Ref<Shader>> shaders;
+    std::unordered_map<std::string, Ref<Texture2D>> textures;
+    std::unordered_map<std::string, Ref<Material>> materials;
     
     //std::unordered_map<std::type_index, std::vector<Asset*>> _data;
 };

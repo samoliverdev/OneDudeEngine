@@ -11,19 +11,19 @@
 namespace OD{
 
 std::vector<std::string> Application::args;
-std::vector<Module*> Application::_modules;
+std::vector<Module*> Application::modules;
 
-Module* _mainModule;
-bool _running = true;
-int _width;
-int _heigth;
+Module* mainModule;
+bool running = true;
+int width;
+int heigth;
 
-float _deltaTime = 0.0f;	// Time between current frame and last frame
-float _lastFrame = 0.0f; 
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; 
 
-bool Application::Create(Module* mainModule, ApplicationConfig appConfig){
-    _width = appConfig.startWidth;
-    _heigth = appConfig.startHeight;
+bool Application::Create(Module* inMainModule, ApplicationConfig appConfig){
+    width = appConfig.startWidth;
+    heigth = appConfig.startHeight;
 
     if(Platform::SystemStartup(
         appConfig.name.c_str(), 
@@ -32,24 +32,24 @@ bool Application::Create(Module* mainModule, ApplicationConfig appConfig){
         appConfig.startWidth,
         appConfig.startHeight) == false) return false;
 
-    Renderer::_Initialize();
+    Renderer::Initialize();
     //Input::_Initialize(0, 0);
     JobSystem::Initialize();
     //AssetTypesDB::_Init();
     CoreModulesStartup();
 
-    _mainModule = mainModule;
-    AddModule(_mainModule);
+    mainModule = inMainModule;
+    AddModule(mainModule);
 
-    _running = true;
+    running = true;
     return true;
 }
 
 bool Application::Run(){
-    while (_running){
+    while (running){
         float currentFrame = Platform::GetTime();
-        _deltaTime = currentFrame - _lastFrame;
-        _lastFrame = currentFrame; 
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame; 
 
         //Input::Update();
         Platform::PumpMessages();
@@ -58,31 +58,22 @@ bool Application::Run(){
 
         {
             OD_PROFILE_SCOPE("Application::Run::OnUpdate");
-            for(auto i: _modules) i->OnUpdate(_deltaTime);
+            for(auto i: modules) i->OnUpdate(deltaTime);
         }
         {
             OD_PROFILE_SCOPE("Application::Run::OnRender");
-            for(auto i: _modules) i->OnRender(_deltaTime);
+            for(auto i: modules) i->OnRender(deltaTime);
         }
         {
             OD_PROFILE_SCOPE("Application::Run::OnGUI");
-            for(auto i: _modules) i->OnGUI();
+            for(auto i: modules) i->OnGUI();
         }
-
-        /*if(ImGui::Begin("Profile")){
-            for(auto i: Instrumentor::Get().results()){ 
-                float durration = (i.end - i.start) * 0.001f;
-                ImGui::Text("%s: %.3f.ms", i.name, durration);
-            }
-            Instrumentor::Get().results().clear();
-            ImGui::End();
-        }*/
 
         Platform::LateUpdate();
         Platform::SwapBuffers();
     }
 
-    Renderer::_Shutdown();
+    Renderer::Shutdown();
     //Input::_Shutdown(0);
     Platform::SystemShutdown(0);
 
@@ -90,11 +81,11 @@ bool Application::Run(){
 }
 
 void Application::Quit(){
-    _running = false;
+    running = false;
 }
 
 void Application::Exit(){
-    Renderer::_Shutdown();
+    Renderer::Shutdown();
     //Input::_Shutdown(0);
     Platform::SystemShutdown(0);
 
@@ -103,19 +94,19 @@ void Application::Exit(){
 
 void Application::GetFramebufferSize(int* width, int* height){}
 
-float Application::deltaTime(){ return _deltaTime; }
-int Application::screenWidth(){ return _width; }
-int Application::screenHeight(){ return _heigth; }
+float Application::DeltaTime(){ return deltaTime; }
+int Application::ScreenWidth(){ return width; }
+int Application::ScreenHeight(){ return heigth; }
 
-void Application::vsync(bool enabled){ Platform::SetVSync(enabled); }
-bool Application::vsync(){ return Platform::IsVSync(); }
+void Application::Vsync(bool enabled){ Platform::SetVSync(enabled); }
+bool Application::Vsync(){ return Platform::IsVSync(); }
 
-void Application::_OnResize(int width, int height){
-    _width = width;
-    _heigth = height;
+void Application::_OnResize(int inWidth, int inHeight){
+    width = inWidth;
+    heigth = inHeight;
 
     //mainModule->OnResize(_width, _height);
-    for(auto i: _modules) i->OnResize(_width, _heigth);
+    for(auto i: modules) i->OnResize(width, heigth);
 }
 
 }

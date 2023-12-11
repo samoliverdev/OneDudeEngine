@@ -9,27 +9,27 @@ Skeleton::Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::st
 }
 
 void Skeleton::Set(const Pose& rest, const Pose& bind, const std::vector<std::string>& names){
-    _restPose = rest;
-    _bindPose = bind;
-    _jointNames = names;
+    restPose = rest;
+    bindPose = bind;
+    jointNames = names;
     UpdateInverseBindPose();
 }
 
-Pose& Skeleton::GetBindPose(){ return _bindPose; }
-Pose& Skeleton::GetRestPose(){ return _restPose; }
-std::vector<Matrix4>& Skeleton::GetInvBindPose(){ return _invBindPose; }
-std::vector<std::string>& Skeleton::GetJointNames(){ return _jointNames; }
-std::string& Skeleton::GetJointName(unsigned int index){ return _jointNames[index]; }
+Pose& Skeleton::GetBindPose(){ return bindPose; }
+Pose& Skeleton::GetRestPose(){ return restPose; }
+std::vector<Matrix4>& Skeleton::GetInvBindPose(){ return invBindPose; }
+std::vector<std::string>& Skeleton::GetJointNames(){ return jointNames; }
+std::string& Skeleton::GetJointName(unsigned int index){ return jointNames[index]; }
 
 void Skeleton::UpdateInverseBindPose(){
-    unsigned int size = _bindPose.Size();
-    _invBindPose.resize(size);
+    unsigned int size = bindPose.Size();
+    invBindPose.resize(size);
 
     for(unsigned int i = 0; i < size; ++i){
         //Transform world = _bindPose.GetGlobalTransform(i);
         //_invBindPose[i] = math::inverse(world.GetLocalModelMatrix());
 
-        _invBindPose[i] = math::inverse(_bindPose.GetGlobalMatrix(i));
+        invBindPose[i] = math::inverse(bindPose.GetGlobalMatrix(i));
     }
 }
 

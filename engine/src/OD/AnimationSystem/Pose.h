@@ -16,7 +16,7 @@ public:
     int GetParent(unsigned int index);
     void SetParent(unsigned int index, int parent);
     Transform GetLocalTransform(unsigned int index);
-    inline Transform& GetLocalTransform2(unsigned int index){ return _joints[index]; }
+    inline Transform& GetLocalTransform2(unsigned int index){ return joints[index]; }
     void SetLocalTransform(unsigned int index, const Transform& transform);
     Transform GetGlobalTransform(unsigned int index);
     Matrix4 GetGlobalMatrix(unsigned int index);
@@ -27,8 +27,8 @@ public:
     bool operator==(const Pose& other);
     bool operator!=(const Pose& other);
 protected:
-    std::vector<Transform> _joints;
-    std::vector<int> _parents;
+    std::vector<Transform> joints;
+    std::vector<int> parents;
 };
 
 }

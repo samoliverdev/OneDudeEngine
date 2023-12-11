@@ -220,7 +220,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenglMinorVer);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    #ifdef OPENGL_DEBUG
+    #if OPENGL_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     #endif
     
@@ -241,7 +241,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwSwapInterval(1); //vsync on
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    #ifdef OPENGL_DEBUG
+    #if OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugCallback, NULL);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);

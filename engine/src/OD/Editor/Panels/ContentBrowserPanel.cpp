@@ -60,7 +60,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
                 std::replace(_pathString.begin(), _pathString.end(), '\\', '/'); // replace all 'x' to 'y'
 
                 if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
-                    _editor->SetSelectionAsset(AssetTypesDB::Get()._assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
+                    _editor->SetSelectionAsset(AssetTypesDB::Get().assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
                 }
             }
 

@@ -51,13 +51,12 @@ struct EnvironmentSettings{
 };
 
 struct EnvironmentComponent{
+    //OD_REGISTER_CORE_COMPONENT_TYPE(EnvironmentComponent)
     friend class StandRendererSystem;
 
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
-    static void OnGui(Entity& e);
-
     EnvironmentSettings settings;
+
+    static void OnGui(Entity& e);
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -65,12 +64,14 @@ struct EnvironmentComponent{
     }
 
 private:
-    bool _inited = false;
+    bool inited = false;
 
     inline void Init(){
-        _inited = true;
+        inited = true;
 
-        Ref<Cubemap> _skyboxCubemap = Cubemap::CreateFromFile(
+        Ref<Cubemap> skyboxCubemap = CreateRef<Cubemap>();
+        bool result = Cubemap::CreateFromFile(
+            *skyboxCubemap,
             "res/Builtins/Textures/Skybox/right.jpg",
             "res/Builtins/Textures/Skybox/left.jpg",
             "res/Builtins/Textures/Skybox/top.jpg",
@@ -78,10 +79,11 @@ private:
             "res/Builtins/Textures/Skybox/front.jpg",
             "res/Builtins/Textures/Skybox/back.jpg"
         );
+        Assert(result == true);
 
         settings.sky = CreateRef<Material>();
-        settings.sky->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
-        settings.sky->SetCubemap("mainTex", _skyboxCubemap);
+        settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
+        settings.sky->SetCubemap("mainTex", skyboxCubemap);
     }
 };
 

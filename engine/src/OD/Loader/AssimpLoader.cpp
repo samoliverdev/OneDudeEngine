@@ -24,7 +24,7 @@ namespace AssimpGLMHelpers{
 };
 
 struct LoadData{
-    Ref<Model> model;
+    Model* model;
     const aiScene* scene;
     std::string directory;
 
@@ -181,7 +181,10 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         const aiTexture* paiTexture = loadData.scene->GetEmbeddedTexture(str.C_Str());
 
         if(paiTexture){
-            Ref<Texture2D> texture = Texture2D::CreateFromFileMemory(paiTexture->pcData, paiTexture->mWidth, {TextureFilter::Linear, true});
+            Ref<Texture2D> texture = CreateRef<Texture2D>();
+            bool result = Texture2D::CreateFromFileMemory(*texture, paiTexture->pcData, paiTexture->mWidth, {TextureFilter::Linear, true});
+            Assert(result == true);
+            
             textures.push_back(texture);
         } else {
             std::string filename = loadData.directory + '/' +std::string(str.C_Str());
@@ -261,9 +264,9 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> cus
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
+        out->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
     } else {
-        out->shader(customShader);
+        out->SetShader(customShader);
     }
 
     // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
@@ -553,7 +556,7 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
     }
 }
 
-Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
+bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(
         path, 
@@ -565,12 +568,12 @@ Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, st
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         LogError("ERROR::ASSIMP:: %s", importer.GetErrorString());
-        return nullptr;
+        return false;
     }
     
     LoadData loadData;
-    loadData.model = CreateRef<Model>();
-    loadData.model->path(path);
+    loadData.model = &out;
+    loadData.model->Path(path);
     loadData.directory = path.substr(0, path.find_last_of('/'));
     loadData.scene = scene;
 
@@ -608,7 +611,7 @@ Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, st
         Assert(i.bindPoseIndex < loadData.model->skeleton.GetBindPose().Size());
     }
 
-    return loadData.model;
+    return true;
 }
 
 }

@@ -65,13 +65,10 @@ public:
     static void SetCamera(Camera& camera);
     static Camera GetCamera();
 
-    static void DrawMeshRaw(Mesh& mesh);
-    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader);
-    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& shader);
-    static void DrawMeshMVP(Mesh& mesh, Matrix4& modelMatrix, Shader& shader);
-    static void DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex = -1, std::vector<Ref<Material>>* materialsOverride = nullptr);
+    static void SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing = false);
 
-    static void DrawMeshInstancing(Mesh& mesh, Shader& shader, int count);
+    static void DrawMesh(Mesh& mesh);
+    static void DrawMeshInstancing(Mesh& mesh, int count);
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
@@ -94,8 +91,8 @@ public:
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
 private:
-    static void _Initialize();
-    static void _Shutdown();
+    static void Initialize();
+    static void Shutdown();
 };
 
 }

@@ -18,10 +18,10 @@ struct Character {
 struct Font: public Asset{
     friend class Renderer;
 
-    static Ref<Font> CreateFromFile(const char* path);
+    static bool CreateFromFile(Font& font, const char* path);
 
 private:
-    std::map<char, Character> _characters;
+    std::map<char, Character> characters;
 };
 
 

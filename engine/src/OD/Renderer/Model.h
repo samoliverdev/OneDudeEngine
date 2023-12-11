@@ -34,7 +34,7 @@ public:
 
     std::vector<Ref<Clip>> animationClips;
     
-    static Ref<Model> CreateFromFile(std::string const &path, Ref<Shader> customShader = nullptr);
+    static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
     
     /*
     friend class cereal::access;

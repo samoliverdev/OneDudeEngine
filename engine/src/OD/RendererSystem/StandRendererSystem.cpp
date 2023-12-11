@@ -10,17 +10,161 @@
 #include <map>
 #include "OD/Core/JobSystem.h"
 #include "OD/Utils/FastMap.h"
+#include <mutex>
 
 namespace OD{
+
+template<typename Key, typename Value>
+struct CommandBucket1{
+    std::vector<std::pair<Key, Value>> commands;
+    //int count;
+
+    inline void Clear(){
+        commands.clear();
+    }
+
+    inline void Add(Key k, Value v){
+        commands.push_back(std::make_pair(k, v));
+    }
+
+    inline void Sort(){
+        /*std::sort(commands.begin(), commands.end(), [](const auto& a, const auto& b){
+            return (a.first < b.first);
+        });*/
+
+        std::sort(commands.begin(), commands.end());
+    }
+
+    inline void Each(std::function<void(Value& value)> func){
+        for(auto i: commands){
+            func(i.second);
+        }
+    }
+};
+
+template<typename Key, typename Value>
+struct CommandBucket2{
+    std::vector<std::pair<Key, Value>> commands;
+    int count;
+
+    inline void Clear(){
+        count = 0;
+    }
+
+    inline void Add(Key k, Value v){
+        if(commands.size() <= count){
+            commands.push_back(std::make_pair(k, v));
+        } else {
+            commands[count] = std::make_pair(k, v);
+        }
+
+        count += 1;
+    }
+
+    inline void Sort(){
+        std::sort(commands.begin(), commands.end());
+    }
+
+    inline void Each(std::function<void(Value& value)> func){
+        int index = 0;
+        for(auto i: commands){
+            if(index >= count) break;
+            func(i.second);
+            index += 1;
+        }
+    }
+};
+
+template<typename Key, typename Value>
+struct CommandBucket3{
+    std::unordered_map<Key, std::vector<Value>> commands;
+    //int count;
+
+    inline void Clear(){
+        commands.clear();
+    }
+
+    inline void Add(Key k, Value v){
+        commands[k].push_back(v);
+    }
+
+    inline void Sort(){
+        //std::sort(commands.begin(), commands.end());
+    }
+
+    inline void Each(std::function<void(Value& value)> func){
+        for(auto i: commands){
+            for(auto j: i.second){
+                func(j);
+            }
+        }
+    }
+};
+
+template<typename Key, typename Key2, typename Value>
+struct CommandBucket4{
+    std::unordered_map<Key, std::unordered_map<Key2, Value> > commands;
+
+    inline void Clear(){
+        commands.clear();
+    }
+
+    inline Value& Get(Key k, Key2 k2){
+        return commands[k][k2];
+    }
+
+    inline void Sort(){
+        //std::sort(commands.begin(), commands.end());
+    }
+
+    inline void Each(std::function<void(Value& value)> func){
+        for(auto i: commands){
+            for(auto j: i.second){
+                func(j.second);
+            }
+        }
+    }
+};
+
+struct DrawCommand{
+    Ref<Material> material;
+    Ref<Mesh> meshs;
+    Matrix4 trans;
+
+    bool operator<(const DrawCommand& a) const{
+        return material->MaterialId() < a.material->MaterialId();
+    }
+};
+
+struct DrawInstancingCommand{
+    Ref<Material> material;
+    Ref<Mesh> meshs;
+    std::vector<Matrix4> trans;
+
+    bool operator<(const DrawCommand& a) const{
+        return material->MaterialId() < a.material->MaterialId();
+    }
+};
+
+union MaterialBind{
+    uint64_t big;
+    struct{
+        float distance;
+        uint32_t materialId;
+        //float distance;
+    };
+};
 
 class TestPP1: public PostProcessingPass{
 public:
     TestPP1(int option):_option(option){
-        _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
+        _ppShader = CreateRef<Shader>();
+        bool result = Shader::CreateFromFile(*_ppShader, "res/Builtins/Shaders/BasicPostProcessing.glsl");
+        Assert(result == true);
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
-        _ppShader->Bind();
+        Shader::Bind(*_ppShader);
         _ppShader->SetFloat("option", _option);
         Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
@@ -33,11 +177,13 @@ private:
 class GameCorrectionPP: public PostProcessingPass{
 public:
     GameCorrectionPP(){
-        _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/GamaCorrectionPP.glsl");
+        _ppShader = CreateRef<Shader>();
+        bool result = Shader::CreateFromFile(*_ppShader, "res/Builtins/Shaders/GamaCorrectionPP.glsl");
+        Assert(result == true);
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
-        _ppShader->Bind();
+        Shader::Bind(*_ppShader);
         Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
@@ -48,12 +194,15 @@ private:
 class ToneMappingPP: public PostProcessingPass{
 public:
     ToneMappingPP(){
-        _ppShader = Shader::CreateFromFile("res/Builtins/Shaders/ToneMappingPP.glsl");
+        _ppShader = CreateRef<Shader>();
+        bool result = Shader::CreateFromFile(*_ppShader, "res/Builtins/Shaders/ToneMappingPP.glsl");
+        Assert(result == true);
+
         enable = false;
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
-        _ppShader->Bind();
+        Shader::Bind(*_ppShader);
         Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
@@ -61,107 +210,86 @@ private:
     Ref<Shader> _ppShader;
 };
 
-struct RenderTarget{
-    Ref<Mesh> mesh;
-    Matrix4 trans;
-};
-
-struct RenderTargetInstancing{
-    Ref<Material> material;
-    Ref<Mesh> mesh;
-
-    bool operator==(const RenderTargetInstancing& p) const{
-        return material->shader()->rendererId() == p.material->shader()->rendererId() && 
-                mesh->rendererId() == p.mesh->rendererId();
-    }
-};
-
-struct InstancingKeyHasher{
-    std::size_t operator()(const RenderTargetInstancing& k) const{
-        return k.material->shader()->rendererId() + k.mesh->rendererId();
-    }
-};
-
 EnvironmentSettings environmentSettings;
 
 StandRendererSystem::StandRendererSystem(){
     //glEnable(GL_FRAMEBUFFER_SRGB); 
 
-    _spriteMesh = Mesh::CenterQuad(true);
-    _spriteShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Sprite.glsl");
+    spriteMesh = Mesh::CenterQuad(true);
+    spriteShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Sprite.glsl");
 
     FrameBufferSpecification specification;
     specification.width = 1024 * 4;
     specification.height = 1024 * 4;
     specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
 
-    directinallightShadowPass._shadowMap = new Framebuffer(specification);
+    directinallightShadowPass.shadowMap = new Framebuffer(specification);
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
-        spotlightShadowPass[i]._shadowMap = new Framebuffer(specification);
+        spotlightShadowPass[i].shadowMap = new Framebuffer(specification);
     }
     for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
-        cascadeShadows[i]._shadowMap = new Framebuffer(specification);
+        cascadeShadows[i].shadowMap = new Framebuffer(specification);
     }
 
     FrameBufferSpecification specificationC;
-    specificationC.width = 1024 * 4;
-    specificationC.height = 1024 * 4;
+    specificationC.width = 1024 * 2;
+    specificationC.height = 1024 * 2;
     specificationC.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
     specificationC.sample = SHADOW_MAP_CASCADE_COUNT;
     specificationC.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
-    _cascadeShadowMap = new Framebuffer(specificationC);
+    cascadeShadowMap = new Framebuffer(specificationC);
 
-    _shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
-    _cascadeShadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMapCascade.glsl");
+    shadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMap.glsl");
+    cascadeShadowMapShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/ShadowMapCascade.glsl");
 
-    _postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
-    _blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
+    postProcessingShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/BasicPostProcessing.glsl");
+    blitShader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Blit.glsl");
 
-    FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}, {FramebufferTextureFormat::RED_INTEGER}};
+    FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA8}, {FramebufferTextureFormat::RED_INTEGER}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
-    framebufferSpecification.sample = 8;
-    _finalColor = new Framebuffer(framebufferSpecification);
+    framebufferSpecification.sample = 2;
+    finalColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RED_INTEGER}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::None};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.sample = 1;
-    _objectsId = new Framebuffer(framebufferSpecification);
+    objectsId = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
     framebufferSpecification.sample = 1;
-    _finalColor2 = new Framebuffer(framebufferSpecification);
-    _pp1 = new Framebuffer(framebufferSpecification);
-    _pp2 = new Framebuffer(framebufferSpecification);
+    finalColor2 = new Framebuffer(framebufferSpecification);
+    pp1 = new Framebuffer(framebufferSpecification);
+    pp2 = new Framebuffer(framebufferSpecification);
 
-    _skyboxMesh = Mesh::SkyboxCube();
+    skyboxMesh = Mesh::SkyboxCube();
 
     //_ppPass.push_back(new GameCorrectionPP());
-    _ppPass.push_back(new ToneMappingPP());
+    ppPass.push_back(new ToneMappingPP());
 }
 
 StandRendererSystem::~StandRendererSystem(){
-    for(auto i: _ppPass){
+    for(auto i: ppPass){
         delete i;
     }
 
-    delete directinallightShadowPass._shadowMap;
-    delete _cascadeShadowMap;
+    delete directinallightShadowPass.shadowMap;
+    delete cascadeShadowMap;
 
     for(int i = 0; i < MAX_SPOTLIGHT_SHADOWS; i++){
-        delete spotlightShadowPass[i]._shadowMap;
+        delete spotlightShadowPass[i].shadowMap;
     }
 
     for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
-        delete cascadeShadows[i]._shadowMap;
+        delete cascadeShadows[i].shadowMap;
     }
 
-    delete _finalColor;
-    delete _pp1;
-    delete _pp2;
+    delete finalColor;
+    delete pp1;
+    delete pp2;
 }
 
 Vector3 Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
@@ -199,20 +327,20 @@ void DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
 void StandRendererSystem::Update(){
     OD_PROFILE_SCOPE("StandRendererSystem::Update");
 
-    int width = Application::screenWidth();
-    int height = Application::screenHeight();
+    int width = Application::ScreenWidth();
+    int height = Application::ScreenHeight();
 
-    if(_outFramebuffer != nullptr){
-        width = _outFramebuffer->width();
-        height = _outFramebuffer->height();
+    if(outFramebuffer != nullptr){
+        width = outFramebuffer->Width();
+        height = outFramebuffer->Height();
     }
 
     // ---------- Setups ---------- 
     environmentSettings = EnvironmentSettings();
-    auto _view = scene()->GetRegistry().view<EnvironmentComponent>();
+    auto _view = GetScene()->GetRegistry().view<EnvironmentComponent>();
     for(auto entity: _view){
         EnvironmentComponent& environmentComponent = _view.get<EnvironmentComponent>(entity);
-        if(environmentComponent._inited == false) environmentComponent.Init();
+        if(environmentComponent.inited == false) environmentComponent.Init();
 
         /*if(environmentComponent.settings.msaaQuality != environmentSettings.msaaQuality && environmentComponent.settings.antiAliasing != environmentSettings.antiAliasing){
             FrameBufferSpecification fs1 = _finalColor->specification();
@@ -223,6 +351,7 @@ void StandRendererSystem::Update(){
             _finalColor->Reload(fs1);
         }*/
 
+        /*
         if(environmentComponent.settings.shadowQuality != environmentSettings.shadowQuality){
             int size = ShadowQualityLookup[(int)environmentComponent.settings.shadowQuality];
             directinallightShadowPass._shadowMap->Resize(size, size);
@@ -234,12 +363,13 @@ void StandRendererSystem::Update(){
                 cascadeShadows[i]._shadowMap->Resize(size, size);
             }
         }
+        */
 
         if(environmentComponent.settings.colorCorrection != environmentSettings.colorCorrection){
             if(environmentComponent.settings.colorCorrection == ColorCorrection::ColorCorrection){
-                _ppPass[_ppPass.size()-1]->enable = true;
+                ppPass[ppPass.size()-1]->enable = true;
             } else {
-                _ppPass[_ppPass.size()-1]->enable = false;
+                ppPass[ppPass.size()-1]->enable = false;
             }
         }
 
@@ -253,165 +383,289 @@ void StandRendererSystem::Update(){
     bool hasMainCamera = false;
     Camera mainCamera;
     
-    auto cameraView = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
+    auto cameraView = GetScene()->GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto e: cameraView){
         CameraComponent& c = cameraView.get<CameraComponent>(e);
         TransformComponent& t = cameraView.get<TransformComponent>(e);
         if(c.isMain){
             c.UpdateCameraData(t, width, height);
-            mainCamera = c.camera();
+            mainCamera = c.GetCamera();
             hasMainCamera = true;
             break;
         }
     }
-    if(_overrideCamera != nullptr){
-        mainCamera = _overrideCamera->cam;
+    if(overrideCamera != nullptr){
+        mainCamera = overrideCamera->cam;
         hasMainCamera = true;
     }
 
-    spotlightShadowPassCount = 0;
-    bool hasShadow = false;
-    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
-    for(auto entity: view){
-        auto& light = view.get<LightComponent>(entity);
-        auto& transform = view.get<TransformComponent>(entity);
-
-        /*if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
-            directinallightShadowPass.Render(light, transform, *this);
-            hasShadow = true;
-        }*/
-
-        /*if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
-            CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
-            for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
-                cascadeShadows[i].Render(light, transform, *this);
-            }
-        }*/
-
-        if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
-            CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
-            RenderCascadeShadow(light, transform, *this);
-        }
-
-        /*if(light.type == LightComponent::Type::Spot && light.renderShadow == true && spotlightShadowPassCount < MAX_SPOTLIGHT_SHADOWS){
-            spotlightShadowPass[spotlightShadowPassCount].Render(light, transform, *this);
-            spotlightShadowPassCount += 1;
-        }*/
-    }
-
-    //if(hasShadow == false){
-    //    directinallightShadowPass.Clean(*this);
-        /*_shadowMap->Bind();
-        ClearSceneShadow();
-        _shadowMap->Unbind();*/
-    //}
-    
     // ---------- Render Cameras ---------- 
 
-    _finalColor->Resize(width, height);
-    _pp1->Resize(width, height);
-    _pp2->Resize(width, height);
+    finalColor->Resize(width, height);
+    pp1->Resize(width, height);
+    pp2->Resize(width, height);
     
-    _finalColor->Bind();
+    //_finalColor->Bind();
 
-    Renderer::SetViewport(0, 0, width, height);
-    auto view2 = scene()->GetRegistry().view<CameraComponent, TransformComponent>();
+    auto view2 = GetScene()->GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto entity: view2){
         auto& c = view2.get<CameraComponent>(entity);
         auto& t = view2.get<TransformComponent>(entity);
 
         c.UpdateCameraData(t, width, height);
+
         if(c.isMain){
             RenderCamera renderCam = {
-                c.camera(),
+                c.GetCamera(),
                 CreateFrustumFromCamera(t, (float)width / (float)height, Mathf::Deg2Rad(c.fieldOfView), c.nearClipPlane, c.farClipPlane)
             };
 
+            Vector3 camPos = overrideCamera != nullptr ? overrideCameraTrans.LocalPosition() : t.Position();
+            {
+                OD_PROFILE_SCOPE("StandRendererSystem::UpdateAllCommands");
+                UpdateAllCommands(camPos);
+            }
+
+            auto lightView = GetScene()->GetRegistry().view<LightComponent, TransformComponent>();
+            for(auto entity: lightView){
+                auto& light = lightView.get<LightComponent>(entity);
+                auto& transform = lightView.get<TransformComponent>(entity);
+
+                if(light.type == LightComponent::Type::Directional && light.renderShadow == true){
+                    CascadeShadow::UpdateCascadeShadow2(cascadeShadows, mainCamera, transform);
+                    RenderCascadeShadow(light, transform, *this);
+                    break;
+                }
+            }
+
+            Framebuffer::Bind(*finalColor);
+            Renderer::SetViewport(0, 0, width, height);
             RenderScene(
-                _overrideCamera != nullptr ? *_overrideCamera : renderCam, 
+                overrideCamera != nullptr ? *overrideCamera : renderCam, 
                 true, 
-                _overrideCamera != nullptr ? _overrideCameraTrans.localPosition() : t.position()
+                overrideCamera != nullptr ? overrideCameraTrans.LocalPosition() : t.Position()
             );
+
             break;
         }
     }
-    scene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
-
-    /*auto view3 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    int aabbGizmosCount = 0;
-    for(auto entity: view3){
-        auto& c = view3.get<MeshRendererComponent>(entity);
-        auto& t = view3.get<TransformComponent>(entity);
-
-        AABB aabb = c.getGlobalAABB(t);
-        aabb.Expand(Vector3One*2.0f);
-        Transform _t;
-        _t.localPosition(aabb.center);
-        _t.localScale(aabb.extents);
-
-        Renderer::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(0,1,0), 2);
-        aabbGizmosCount += 1;
-    }
-    Renderer::drawCalls -= aabbGizmosCount;
-    */
-
-    /*for(auto entity: view2){
-        auto& c = view2.get<CameraComponent>(entity);
-        auto& t = view2.get<TransformComponent>(entity);
-        DrawFrustum(
-            CreateFrustumFromCamera(t, (float)width / (float)height, Mathf::Deg2Rad(c.fieldOfView), c.nearClipPlane, c.farClipPlane)
-        );
-    }*/
-
-    //if(_overrideCamera != nullptr){ DrawFrustum(_overrideCamera->frustum); }
-
-    //LogInfo("ReadPixel(1): %d", _finalColor->ReadPixel(1, 50, 50));
+    GetScene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
     {
-    Renderer::BlitFramebuffer(_finalColor, _pp1);
-    Renderer::BlitFramebuffer(_finalColor, _objectsId, 1);
+    Renderer::BlitFramebuffer(finalColor, pp1);
+    Renderer::BlitFramebuffer(finalColor, objectsId, 1);
     //Renderer::BlitQuadPostProcessing(_finalColor, _pp1, *_blitShader);
 
     bool step = false;
-    Framebuffer* finalFramebuffer = _pp1;
+    Framebuffer* finalFramebuffer = pp1;
 
-    for(auto i: _ppPass){
-        finalFramebuffer = step == false ? _pp2 : _pp1;
+    for(auto i: ppPass){
+        finalFramebuffer = step == false ? pp2 : pp1;
 
         if(i->enable){
             i->OnRenderImage(
-                step == false ? _pp1 : _pp2, 
-                step == false ? _pp2 : _pp1
+                step == false ? pp1 : pp2, 
+                step == false ? pp2 : pp1
             );
         } else {
             Renderer::BlitFramebuffer(
-                step == false ? _pp1 : _pp2,
-                step == false ? _pp2 : _pp1
+                step == false ? pp1 : pp2,
+                step == false ? pp2 : pp1
             );
         }
 
         step = !step;
     }
 
-    if(_outFramebuffer != nullptr){
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, _outFramebuffer, *_blitShader);
+    if(outFramebuffer != nullptr){
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, outFramebuffer, *blitShader);
     } else {
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *_blitShader);
+        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *blitShader);
     }
 
-    _finalColor->Unbind();
-    _pp1->Unbind();
-    _pp2->Unbind();
-    if(_outFramebuffer != nullptr) _outFramebuffer->Unbind();
+    finalColor->Unbind();
+    pp1->Unbind();
+    pp2->Unbind();
+    if(outFramebuffer != nullptr) outFramebuffer->Unbind();
     }
 }
 
 /////////////////////////////////////////////////
 
+CommandBucket2<uint64_t, DrawCommand> opaquesDrawCommands;
+//CommandBucket3<Ref<Material>, DrawCommand> opaquesDrawCommands;
+
+CommandBucket4<Ref<Material>, Ref<Mesh>, DrawInstancingCommand> opaquesDrawIntancingCommands;
+CommandBucket1<uint64_t, DrawCommand> blendDrawCommands;
+CommandBucket2<uint64_t, DrawCommand> cascadeShadowDrawCommands;
+CommandBucket4<Ref<Material>, Ref<Mesh>, DrawInstancingCommand> cascadeShadowDrawIntancingCommands;
+std::set<Ref<Shader>> shaderTargets;
+
+void StandRendererSystem::UpdateAllCommands(Vector3 viewPos){
+    opaquesDrawCommands.Clear();
+    opaquesDrawIntancingCommands.Clear();
+    blendDrawCommands.Clear();
+    cascadeShadowDrawCommands.Clear();
+    cascadeShadowDrawIntancingCommands.Clear();
+
+    auto view1 = GetScene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+
+    /*
+    auto& dataSet = *view1.handle();
+    std::mutex mtx;
+    JobSystem::Dispatch(dataSet.size(), dataSet.size()/4, [&](JobDispatchArgs args){
+        //LogInfo("JobIndex: %d, Group Index: %d", args.jobIndex, args.groupIndex);
+        auto _entity = dataSet[args.jobIndex];
+
+        auto& c = view1.get<MeshRendererComponent>(_entity);
+        auto& t = view1.get<TransformComponent>(_entity);
+
+        for(auto i: c.model()->renderTargets){
+            CommandBaseData data;
+
+            data.targetMaterial = c.model()->materials[i.materialIndex];
+            data.targetMesh = c.model()->meshs[i.meshIndex];
+            data.targetMatrix =  t.globalModelMatrix() * c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            if(i.materialIndex < c.materialsOverride().size() && c.materialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.materialsOverride()[i.materialIndex];
+            }
+
+            data.distance = math::distance(viewPos, t.position());
+
+            shaderTargets.insert(data.targetMaterial->shader());
+
+            mtx.lock();
+
+            UpdateOpaquesCommands(data);
+            UpdateOpaquesIntancingCommands(data);
+            UpdateBlendCommands(data);
+            UpdateCascadeShadowCommands(data);
+            UpdateCascadeShadowIntancingCommands(data);
+
+            mtx.unlock();
+        }
+
+    });
+    JobSystem::Wait();
+    */
+
+    ///*
+    for(auto _entity: view1){
+        auto& c = view1.get<MeshRendererComponent>(_entity);
+        auto& t = view1.get<TransformComponent>(_entity);
+        
+        if(c.GetModel() == nullptr) continue;
+
+        for(auto i: c.GetModel()->renderTargets){
+            CommandBaseData data;
+
+            data.targetMaterial = c.GetModel()->materials[i.materialIndex];
+            data.targetMesh = c.GetModel()->meshs[i.meshIndex];
+            data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
+            }
+
+            data.distance = math::distance(viewPos, t.Position());
+
+            shaderTargets.insert(data.targetMaterial->GetShader());
+
+            UpdateOpaquesCommands(data);
+            UpdateOpaquesIntancingCommands(data);
+            UpdateBlendCommands(data);
+            UpdateCascadeShadowCommands(data);
+            UpdateCascadeShadowIntancingCommands(data);
+        }
+    }
+    //*/
+
+    /*opaquesDrawCommands.Sort();
+    opaquesDrawIntancingCommands.Sort();
+    blendDrawCommands.Sort();
+    cascadeShadowDrawCommands.Sort();
+    cascadeShadowDrawIntancingCommands.Sort();*/
+
+    JobSystem::Execute([&](){ opaquesDrawCommands.Sort(); });
+    JobSystem::Execute([&](){ opaquesDrawIntancingCommands.Sort(); });
+    JobSystem::Execute([&](){ blendDrawCommands.Sort(); });
+    JobSystem::Execute([&](){ cascadeShadowDrawCommands.Sort(); });
+    JobSystem::Execute([&](){ cascadeShadowDrawIntancingCommands.Sort(); });
+    JobSystem::Wait();
+}
+
+void StandRendererSystem::UpdateOpaquesCommands(CommandBaseData& data){
+    if(data.targetMaterial->IsBlend()) return;
+    if(data.targetMaterial->EnableInstancingValid() == true) return;
+
+    MaterialBind bind = {0};
+    bind.distance = data.distance;
+    bind.materialId = data.targetMaterial->MaterialId();
+    
+    //opaquesDrawCommands.Add(data.targetMaterial, DrawCommand{
+    opaquesDrawCommands.Add(bind.big, DrawCommand{
+    //opaquesDrawCommands.Add(data.targetMaterial->MaterialId(), DrawCommand{
+        data.targetMaterial,
+        data.targetMesh,
+        data.targetMatrix
+    });
+}
+
+void StandRendererSystem::UpdateOpaquesIntancingCommands(CommandBaseData& data){
+    if(data.targetMaterial->IsBlend()) return;
+    if(data.targetMaterial->EnableInstancingValid() == false) return;
+
+    DrawInstancingCommand& cm = opaquesDrawIntancingCommands.Get(data.targetMaterial, data.targetMesh);
+    cm.material = data.targetMaterial;
+    cm.meshs = data.targetMesh;
+    cm.trans.push_back(data.targetMatrix);
+}
+
+void StandRendererSystem::UpdateBlendCommands(CommandBaseData& data){
+    if(data.targetMaterial->IsBlend() == false) return;
+
+    MaterialBind bind = {0};
+    bind.distance = data.distance;
+    bind.materialId = data.targetMaterial->MaterialId();
+    
+    blendDrawCommands.Add(bind.big, DrawCommand{
+        data.targetMaterial,
+        data.targetMesh,
+        data.targetMatrix
+    });
+}
+
+void StandRendererSystem::UpdateCascadeShadowCommands(CommandBaseData& data){
+    //if(data.targetMaterial->enableInstancingValid() == true) return;
+
+    MaterialBind bind = {0};
+    bind.distance = data.distance;
+    bind.materialId = data.targetMaterial->MaterialId();
+    
+    cascadeShadowDrawCommands.Add(bind.big, DrawCommand{
+        data.targetMaterial,
+        data.targetMesh,
+        data.targetMatrix
+    });
+}
+
+void StandRendererSystem::UpdateCascadeShadowIntancingCommands(CommandBaseData& data){
+    return;
+
+    if(data.targetMaterial->IsBlend()) return;
+    if(data.targetMaterial->EnableInstancingValid() == false) return;
+
+    DrawInstancingCommand& cm = cascadeShadowDrawIntancingCommands.Get(data.targetMaterial, data.targetMesh);
+    cm.material = data.targetMaterial;
+    cm.meshs = data.targetMesh;
+    cm.trans.push_back(data.targetMatrix);
+}
+
+//////////////////////////////////////////////////
+
 void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     int baseShadowMapIndex = 1;
 
-    shader.Bind();
+    Shader::Bind(shader);
 
     shader.SetVector3("viewPos", viewPos);
 
@@ -422,7 +676,7 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     //shader.SetFramebuffer("shadowMap", *directinallightShadowPass._shadowMap, baseShadowMapIndex, -1); 
     //baseShadowMapIndex += 1;
 
-    shader.SetFramebuffer("cascadeShadowMapsA", *_cascadeShadowMap, baseShadowMapIndex, -1);
+    shader.SetFramebuffer("cascadeShadowMapsA", *cascadeShadowMap, baseShadowMapIndex, -1);
     baseShadowMapIndex += 1;
     
     shader.SetInt("cascadeShadowCount", SHADOW_MAP_CASCADE_COUNT);
@@ -434,7 +688,7 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
         shader.SetMatrix4(setMat.c_str(), cascadeShadows[i].projViewMatrix);
 
         std::string setFram = "cascadeShadowMaps[" + std::to_string(i) + "]";
-        shader.SetFramebuffer(setFram.c_str(), *cascadeShadows[i]._shadowMap, baseShadowMapIndex, -1);
+        shader.SetFramebuffer(setFram.c_str(), *cascadeShadows[i].shadowMap, baseShadowMapIndex, -1);
         baseShadowMapIndex += 1;
     }
 
@@ -454,14 +708,14 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
 
     const int maxLights = 12;
 
-    auto view = scene()->GetRegistry().view<LightComponent, TransformComponent>();
+    auto view = GetScene()->GetRegistry().view<LightComponent, TransformComponent>();
     for(auto e: view){
         auto& light = view.get<LightComponent>(e);
         auto& transform = view.get<TransformComponent>(e);
 
         if(light.type == LightComponent::Type::Directional){
             shader.SetVector3("directionalLightColor", light.color * light.intensity);
-            shader.SetVector3("directionalLightDir", -transform.forward());
+            shader.SetVector3("directionalLightDir", -transform.Forward());
             shader.SetFloat("directionalLightspecular", light.specular);
             hasDirectionalLight = true;
         }
@@ -482,17 +736,17 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
 
     char buff[200];
     for(int i = 0; i < lights.size(); i++){
-        LightComponent& l = scene()->GetRegistry().get<LightComponent>(lights[i]);
-        TransformComponent& t = scene()->GetRegistry().get<TransformComponent>(lights[i]);
+        LightComponent& l = GetScene()->GetRegistry().get<LightComponent>(lights[i]);
+        TransformComponent& t = GetScene()->GetRegistry().get<TransformComponent>(lights[i]);
 
         sprintf(buff, "lights[%d].type", i);
         shader.SetFloat(buff, (int)l.type);
 
         sprintf(buff, "lights[%d].pos", i);
-        shader.SetVector3(buff, t.position());
+        shader.SetVector3(buff, t.Position());
 
         sprintf(buff, "lights[%d].dir", i);
-        shader.SetVector3(buff, t.forward());
+        shader.SetVector3(buff, t.Forward());
 
         sprintf(buff, "lights[%d].color", i);
         shader.SetVector3(buff, l.color * l.intensity);
@@ -523,118 +777,12 @@ void StandRendererSystem::SetStandUniforms(Vector3 viewPos, Shader& shader){
     }
 }
 
-struct DrawCommandBuffer{
-    Ref<Material> material;
-    Ref<Mesh> meshs;
-    Matrix4 trans;
-
-    bool operator<(const DrawCommandBuffer& a) const{
-        return material->MaterialId() < a.material->MaterialId();
-    }
-};
-
-struct MaterialBind{
-    uint64_t big;
-    union{
-        float distance;
-        uint32_t materialId;
-    };
-};
-
-std::vector<std::pair<uint64_t, DrawCommandBuffer>> sceneCommandBuffers;
-int sceneCommandBuffersCount;
-
-std::vector<std::pair<uint64_t, DrawCommandBuffer>> pointShadowCommandBuffers;
-std::vector<std::pair<uint64_t, DrawCommandBuffer>> shadowCommandBuffers;
-std::vector<std::pair<uint64_t, DrawCommandBuffer>> probsCommandBuffers;
-
-/*
-std::unordered_map<uint64_t, std::vector<DrawCommandBuffer>> opaquesCommandBuffers2;
-std::vector<DrawCommandBuffer> opaquesCommandBuffers3;
-std::vector<std::pair<uint32_t, DrawCommandBuffer>> opaquesCommandBuffers4;
-*/
-
-void UpdateRenderTargets(Scene& scene, Vector3 camPos){
-    //sceneCommandBuffers.clear();
-    //pointShadowCommandBuffers.clear();
-    //shadowCommandBuffers.clear();
-    //probsCommandBuffers.clear();
-
-    sceneCommandBuffersCount = 0;
-
-    auto view1 = scene.GetRegistry().view<MeshRendererComponent, TransformComponent>();
-
-    for(auto _entity: view1){
-        auto& c = view1.get<MeshRendererComponent>(_entity);
-        auto& t = view1.get<TransformComponent>(_entity);
-        
-        if(c.model() == nullptr) continue;
-
-        for(auto i: c.model()->renderTargets){
-            Ref<Material> targetMaterial = c.model()->materials[i.materialIndex];
-            Ref<Mesh> targetMesh = c.model()->meshs[i.meshIndex];
-            Matrix4 targetMatrix =  t.globalModelMatrix() * c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            if(i.materialIndex < c.materialsOverride().size() && c.materialsOverride()[i.materialIndex] != nullptr){
-                targetMaterial = c.materialsOverride()[i.materialIndex];
-            }
-
-            float distance = math::distance(camPos, t.position());
-
-            MaterialBind key;
-            key.distance = distance;
-            key.materialId = targetMaterial->MaterialId();
-
-            DrawCommandBuffer cm = { targetMaterial, targetMesh, targetMatrix };
-
-            if(sceneCommandBuffers.size() <= sceneCommandBuffersCount){
-                sceneCommandBuffers.push_back(std::make_pair(key.big, cm));
-            } else {
-                sceneCommandBuffers[sceneCommandBuffersCount] = std::make_pair(key.big, cm);
-            }
-            sceneCommandBuffersCount += 1;
-            
-
-            //pointShadowCommandBuffers.push_back(std::make_pair(key.big, cm));
-            //shadowCommandBuffers.push_back(std::make_pair(key.big, cm));
-            //probsCommandBuffers.push_back(std::make_pair(key.big, cm));
-
-            //opaquesCommandBuffers2[targetMaterial->MaterialId()].push_back(cm);
-            //opaquesCommandBuffers3.push_back(cm);
-            //opaquesCommandBuffers4.push_back(std::make_pair(targetMaterial->MaterialId(), cm));
-        }
-    }
-
-    std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
-
-    /*JobSystem::Execute([&]{ std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end()); });
-    JobSystem::Execute([&]{ std::sort(pointShadowCommandBuffers.begin(), pointShadowCommandBuffers.end()); });
-    JobSystem::Execute([&]{ std::sort(shadowCommandBuffers.begin(), shadowCommandBuffers.end()); });
-    JobSystem::Execute([&]{ std::sort(probsCommandBuffers.begin(), probsCommandBuffers.end()); });
-	JobSystem::Wait();*/
-
-    /*std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
-    std::sort(pointShadowCommandBuffers.begin(), pointShadowCommandBuffers.end());
-    std::sort(shadowCommandBuffers.begin(), shadowCommandBuffers.end());
-    std::sort(probsCommandBuffers.begin(), probsCommandBuffers.end());*/
-
-    //std::sort(sceneCommandBuffers.begin(), sceneCommandBuffers.end());
-    //std::sort(opaquesCommandBuffers3.begin(), opaquesCommandBuffers3.end());
-    //std::sort(opaquesCommandBuffers4.begin(), opaquesCommandBuffers4.end());
-}
-
 void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3 camPos){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderScene");
 
-    // --------- Render Targets --------- 
-    std::unordered_map< Ref<Material>, std::vector<RenderTarget> > renderTargetsOpaques;  
-    std::unordered_map< RenderTargetInstancing, std::vector<Matrix4>, InstancingKeyHasher > renderTargetOpaquesInstancing; 
-    std::map<float, std::unordered_map<Ref<Material>,std::vector<RenderTarget>> >renderTargetsBlend; 
-    std::set<Ref<Shader>> shaderTargets;
-    //std::set<Ref<Material>> materialTargets;
-
     // --------- Set Camera --------- 
     if(isMain){
-        Renderer::SetCamera(_overrideCamera != nullptr ? _overrideCamera->cam : camera.cam);
+        Renderer::SetCamera(overrideCamera != nullptr ? overrideCamera->cam : camera.cam);
     } else {
         Renderer::SetCamera(camera.cam);
     }
@@ -642,246 +790,157 @@ void StandRendererSystem::RenderScene(RenderCamera& camera, bool isMain, Vector3
     // --------- Clean --------- 
     Renderer::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
 
-    #pragma region RenderSkyPass
     {
-    // --------- Render Sky ---------
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderSky"); 
-    if(environmentSettings.sky != nullptr){
-        Assert(environmentSettings.sky->shader() != nullptr);
+        // --------- Render Sky ---------
+        OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderSky"); 
+        if(environmentSettings.sky != nullptr){
+            Assert(environmentSettings.sky->GetShader() != nullptr);
 
-        environmentSettings.sky->UpdateUniforms();
+            environmentSettings.sky->UpdateUniforms();
 
-        Renderer::SetCullFace(CullFace::BACK);
-        Renderer::SetDepthMask(false);
-        environmentSettings.sky->shader()->Bind();
-        //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
-        environmentSettings.sky->shader()->SetMatrix4("projection", Renderer::GetCamera().projection);
-        Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
-        environmentSettings.sky->shader()->SetMatrix4("view", skyboxView);
-        Renderer::DrawMeshRaw(_skyboxMesh);
-        Renderer::SetDepthMask(true);
-    }
-    }
-    #pragma endregion 
-
-
-    {
-    OD_PROFILE_SCOPE("StandRendererSystem::UpdateRenderTargets");
-    UpdateRenderTargets(*scene(), camPos);
+            Renderer::SetCullFace(CullFace::BACK);
+            Renderer::SetDepthMask(false);
+            Shader::Bind(*environmentSettings.sky->GetShader());
+            //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
+            environmentSettings.sky->GetShader()->SetMatrix4("projection", Renderer::GetCamera().projection);
+            Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
+            environmentSettings.sky->GetShader()->SetMatrix4("view", skyboxView);
+            Renderer::DrawMesh(skyboxMesh);
+            Renderer::SetDepthMask(true);
+        }
     }
 
-    {
     // --------- Setup Render --------- 
-    OD_PROFILE_SCOPE("StandRendererSystem::Setups");
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(CullFace::BACK);
-
-
-    //if(isDirt){ 
-
-    /*renderTargetsOpaques.clear();
-    renderTargetOpaquesInstancing.clear();
-    renderTargetsBlend.clear();
-    shaderTargets.clear();*/
-
-    auto view1 = scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto _entity: view1){
-        auto& c = view1.get<MeshRendererComponent>(_entity);
-        auto& t = view1.get<TransformComponent>(_entity);
-        
-        if(c.model() == nullptr) continue;
-
-        /*if(c.model() == nullptr) continue;
-        if(c._boundingVolumeIsDirty){
-            c._boundingVolume = generateAABB(*c.model());
-            c._boundingVolumeSphere = generateSphereBV(*c.model());
-            c._boundingVolumeIsDirty = false;
-        }
-        AABB boundingVolume = c._boundingVolume.Scaled(t.localScale() * 2.0f);
-        if(boundingVolume.isOnFrustum(camera.frustum, t) == false) continue;*/
-        //if(c._boundingVolumeSphere.isOnFrustum(camera.frustum, t) == false) continue;
-
-        /*int index = 0;
-        for(Ref<Material> i: c.model()->materials){
-            Ref<Material> targetMaterial = i;
-            if(c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
-
-            shaderTargets.insert(targetMaterial->shader());
-            //materialTargets.insert(targetMaterial);
-
-            if(targetMaterial->isBlend()){
-                float distance = math::distance(camPos, t.position());
-                renderTargetsBlend[distance][targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix() * c.model()->matrixs[index]});
-            } else {
-                if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
-                    renderTargetOpaquesInstancing[{targetMaterial, c.model()->meshs[index]}].push_back(t.globalModelMatrix() * c.model()->matrixs[index]);
-                } else {
-                    renderTargetsOpaques[targetMaterial].push_back({c.model()->meshs[index], t.globalModelMatrix() * c.model()->matrixs[index]});
-                }
-            }
-                
-            index += 1;
-        }*/
-
-        //int index = 0;
-        for(auto i: c.model()->renderTargets){
-            Ref<Material> targetMaterial = c.model()->materials[i.materialIndex];
-            Ref<Mesh> targetMesh = c.model()->meshs[i.meshIndex];
-            Matrix4 targetMatrix =  t.globalModelMatrix() * 
-                                    c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-
-            //if(index < c.materialsOverride().size() && c.materialsOverride()[index] != nullptr) targetMaterial = c.materialsOverride()[index];
-            if(i.materialIndex < c.materialsOverride().size() && c.materialsOverride()[i.materialIndex] != nullptr){
-                targetMaterial = c.materialsOverride()[i.materialIndex];
-            }
-
-            shaderTargets.insert(targetMaterial->shader());
-            //materialTargets.insert(targetMaterial);
-
-            if(targetMaterial->isBlend()){
-                float distance = math::distance(camPos, t.position());
-                renderTargetsBlend[distance][targetMaterial].push_back({targetMesh, targetMatrix});
-            } else {
-                if(targetMaterial->enableInstancing() && targetMaterial->supportInstancing()){
-                    renderTargetOpaquesInstancing[{targetMaterial, targetMesh}].push_back(targetMatrix);
-                } else {
-                    renderTargetsOpaques[targetMaterial].push_back({targetMesh, targetMatrix});
-                }
-            }
-
-            //index += 1;
-        }
-    }   
-    
-    //isDirt = false;
-    //}
-    }
+    Ref<Material> lastMat = nullptr;
 
     for(auto i: shaderTargets){
         SetStandUniforms(camPos, *i);
-    }
-
-    /*for(auto i: materialTargets){
-        i->UpdateUniforms();
-        SetStandUniforms(camPos, *i->shader());
-    }*/
-
-    {
-    // --------- Render Opaques Instancing --------- 
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderOpaquesInstancing");
-    for(auto& i: renderTargetOpaquesInstancing){
-        //SetStandUniforms(camPos, *i.first.material->shader());
-        i.first.material->UpdateUniforms();
-
-        i.first.mesh->instancingModelMatrixs.clear();
-        for(auto j: i.second){
-            i.first.mesh->instancingModelMatrixs.push_back(j);
-        }
-        i.first.mesh->UpdateMeshInstancingModelMatrixs();
-
-        Renderer::DrawMeshInstancing(*i.first.mesh, *i.first.material->shader(), i.second.size());
-    }
+        i->SetMatrix4("view", camera.cam.view);
+        i->SetMatrix4("projection", camera.cam.projection);
     }
 
     {
-    // --------- Render Opaques --------- 
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderOpaques");
-
-    for(auto i: renderTargetsOpaques){
-        //SetStandUniforms(camPos, *i.first->shader());
-        i.first->UpdateUniforms();
-        for(auto j: i.second){
-            //Renderer::DrawMeshMVP(*j.mesh, j.trans, *i.first->shader());
-            Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
-            //Renderer::DrawMeshRaw(*j.mesh);
-        }
+        OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::OpaquesDrawCommands");
+        opaquesDrawCommands.Each([&](auto& cm){
+            if(cm.material != lastMat){
+                cm.material->UpdateUniforms();
+                cm.material->GetShader()->SetFloat("useInstancing", 0.0f); 
+                //SetStandUniforms(camPos, *cm.material->shader());
+            }
+        
+            lastMat = cm.material;
+            //cm.material->shader()->Bind();
+            cm.material->GetShader()->SetMatrix4("model", cm.trans);
+            Renderer::DrawMesh(*cm.meshs);
+        });
     }
 
+    {
+        OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::OpaquesDrawIntancingCommands");
+        opaquesDrawIntancingCommands.Each([&](auto& cm){
+            cm.material->UpdateUniforms();
+            cm.material->GetShader()->SetFloat("useInstancing", 1); 
+            //SetStandUniforms(camPos, *cm.material->shader());
+
+            cm.meshs->instancingModelMatrixs.clear();
+
+            for(auto j: cm.trans){
+                cm.meshs->instancingModelMatrixs.push_back(j);
+            }
+            cm.meshs->UpdateMeshInstancingModelMatrixs();
+            Renderer::DrawMeshInstancing(*cm.meshs, cm.trans.size());
+        });
     }
     
     {
-    // --------- Render Blends --------- 
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderBlends");
-    Renderer::SetCullFace(CullFace::NONE);
-    Renderer::SetBlend(true);
-    Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+        // --------- Render Blends --------- 
+        OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::BlendDrawCommands");
+        Renderer::SetCullFace(CullFace::NONE);
+        Renderer::SetBlend(true);
+        Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
 
-    for(auto it = renderTargetsBlend.rbegin(); it != renderTargetsBlend.rend(); it++){
-        for(auto i: it->second){
-            //SetStandUniforms(camPos, *i.first->shader(), *i.first);
-            i.first->UpdateUniforms();
-            for(auto j: i.second){
-                Renderer::DrawMesh(*j.mesh, j.trans, *i.first->shader());
+        lastMat = nullptr;
+        for(auto it = blendDrawCommands.commands.rbegin(); it != blendDrawCommands.commands.rend(); it++){
+            auto& cm = it->second;
+
+            if(cm.material != lastMat){
+                cm.material->UpdateUniforms();
+                cm.material->GetShader()->SetFloat("useInstancing", 0.0f); 
+                SetStandUniforms(camPos, *cm.material->GetShader());
             }
-        }
-    }
-
-    Renderer::SetBlend(false);
-    }
-
-    {
-    // --------- Render Sprites --------- 
-    OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::RenderSprites");
-    auto view2 = scene()->GetRegistry().view<SpriteComponent, TransformComponent>();
-    for(auto _entity: view2){
-        auto& c = view2.get<SpriteComponent>(_entity);
-        auto& t = view2.get<TransformComponent>(_entity);
-
-        if(c.texture->IsValid() == false) continue;
         
-        _spriteShader->Bind();
-        _spriteShader->SetTexture2D("texture", *c.texture, 0); 
-        Renderer::DrawMesh(_spriteMesh, t.globalModelMatrix(), *_spriteShader);
-    }
+            lastMat = cm.material;
+            Shader::Bind(*cm.material->GetShader());
+            cm.material->GetShader()->SetMatrix4("model", cm.trans);
+            Renderer::DrawMesh(*cm.meshs);
+        }
+
+        /*lastMat = nullptr;
+        blendDrawCommands.Each([&](auto& cm){
+            if(cm.material != lastMat){
+                cm.material->UpdateUniforms();
+                cm.material->shader()->SetFloat("useInstancing", 0.0f); 
+                SetStandUniforms(camPos, *cm.material->shader());
+            }
+        
+            lastMat = cm.material;
+            cm.material->shader()->Bind();
+            cm.material->shader()->SetMatrix4("model", cm.trans);
+            Renderer::DrawMesh(*cm.meshs);
+        });*/
+
+        Renderer::SetBlend(false);
     }
 }
 
 void StandRendererSystem::ShadowRenderPass::Clean(StandRendererSystem& root){
     OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Clean");
-    _shadowMap->Bind();
-    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Framebuffer::Bind(*shadowMap);
+    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
-    _shadowMap->Unbind();
+    Framebuffer::Unbind();
 }
 
 void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
     OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Render");
 
-    _shadowMap->Bind();
-    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Framebuffer::Bind(*shadowMap);
+    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
 
     Matrix4 lightProjection = Matrix4Identity;
     Matrix4 lightView = Matrix4Identity;
 
     if(light.type == LightComponent::Type::Spot){
         lightProjection = math::perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1.0f, 0.1f, light.radius);
-        lightView = math::lookAt(transform.position(), transform.position() - (-transform.forward()), Vector3Up);
+        lightView = math::lookAt(transform.Position(), transform.Position() - (-transform.Forward()), Vector3Up);
     }
 
     if(light.type == LightComponent::Type::Directional){
         float near_plane = 0.05f, far_plane = 1000;
         float lightBoxHalfExtend = 50;
         lightProjection = math::ortho(-lightBoxHalfExtend, lightBoxHalfExtend, -lightBoxHalfExtend, lightBoxHalfExtend, near_plane, far_plane);
-        Vector3 lightCenter = transform.position();
-        Vector3 lightEye = lightCenter + (-(transform.forward() * lightBoxHalfExtend));
+        Vector3 lightCenter = transform.Position();
+        Vector3 lightEye = lightCenter + (-(transform.Forward() * lightBoxHalfExtend));
         lightView = math::lookAt(lightEye, lightCenter, Vector3(0.0f, 1.0f,  0.0f));
     }
 
-    _lightSpaceMatrix = lightProjection * lightView; 
+    lightSpaceMatrix = lightProjection * lightView; 
 
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
 
-    root._shadowMapShader->Bind();
-    root._shadowMapShader->SetMatrix4("lightSpaceMatrix", _lightSpaceMatrix);
+    Shader::Bind(*root.shadowMapShader);
+    root.shadowMapShader->SetMatrix4("lightSpaceMatrix", lightSpaceMatrix);
 
-    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    auto view = root.GetScene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto _entity: view){
         auto& c = view.get<MeshRendererComponent>(_entity);
         auto& t = view.get<TransformComponent>(_entity);
 
-        if(c.model() == nullptr) continue;
+        if(c.GetModel() == nullptr) continue;
 
         /*for(Ref<Mesh> m: c.model()->meshs){
             //root._shadowMapShader->Bind();
@@ -889,74 +948,54 @@ void StandRendererSystem::ShadowRenderPass::Render(LightComponent& light, Transf
             Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
         }*/
 
-        for(auto i: c.model()->renderTargets){
+        for(auto i: c.GetModel()->renderTargets){
             Matrix4 m = 
-                t.globalModelMatrix() * 
-                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+                t.GlobalModelMatrix() * 
+                c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 
-            Renderer::DrawMesh(*c.model()->meshs[i.meshIndex], m, *root._shadowMapShader);
+            Shader::Bind(*root.shadowMapShader);
+            root.shadowMapShader->SetMatrix4("model", m);
+            Renderer::DrawMesh(*c.GetModel()->meshs[i.meshIndex]);
         }
     }
 
-    _shadowMap->Unbind();
+    shadowMap->Unbind();
 }
 
 void StandRendererSystem::CascadeShadow::Clean(StandRendererSystem& root){
     OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Clean");
-    _shadowMap->Bind();
-    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Framebuffer::Bind(*shadowMap);
+    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
-    _shadowMap->Unbind();
+    Framebuffer::Unbind();
 }
 
 void StandRendererSystem::CascadeShadow::Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
     OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Render");
 
-    _shadowMap->Bind();
-    Renderer::SetViewport(0, 0, _shadowMap->width(), _shadowMap->height());
+    Framebuffer::Bind(*shadowMap);
+    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     //glEnable(GL_DEPTH_CLAMP);
     Renderer::Clean(1, 1, 1, 1);
 
-    root._shadowMapShader->Bind();
-    root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
+    Shader::Bind(*root.shadowMapShader);
+    root.shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
 
-    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto _entity: view){
-        auto& c = view.get<MeshRendererComponent>(_entity);
-        auto& t = view.get<TransformComponent>(_entity);
+    cascadeShadowDrawCommands.Each([&](auto& cm){
+        root.shadowMapShader->SetMatrix4("model", cm.trans);
+        Renderer::DrawMesh(*cm.meshs);
+    });
 
-        if(c.model() == nullptr) continue;
-
-        int index = 0;
-        /*for(Ref<Mesh> m: c.model()->meshs){
-            //root._shadowMapShader->Bind();
-            //root._shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
-            root._shadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
-            Renderer::DrawMeshRaw(*m);
-            //Renderer::DrawMesh(*m, t.globalModelMatrix(), *root._shadowMapShader);
-            index += 1;
-        }*/
-
-        for(auto i: c.model()->renderTargets){
-            Matrix4 m = 
-                t.globalModelMatrix() * 
-                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-
-            root._shadowMapShader->SetMatrix4("model", m);
-            Renderer::DrawMeshRaw(*c.model()->meshs[i.meshIndex]);
-        }
-    }
-
-    _shadowMap->Unbind();
+    shadowMap->Unbind();
     //glDisable(GL_DEPTH_CLAMP);
 }
 
 void StandRendererSystem::CascadeShadow::UpdateCascadeShadow(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light){
     Matrix4 view = cam.view;
     Matrix4 proj = cam.projection;
-    Vector4 lightPos = Vector4(light.forward(), 0);
+    Vector4 lightPos = Vector4(light.Forward(), 0);
 
     //LogInfo("Cam Near: %f Far: %f", cam.nearClip, cam.farClip);
 
@@ -1117,7 +1156,7 @@ void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cas
 
     Assert(shadowCascadeLevels.size() == SHADOW_MAP_CASCADE_COUNT);
     
-    Vector3 lightDir = -light.forward();
+    Vector3 lightDir = -light.Forward();
     float cameraNearPlane = cam.nearClip;
     float cameraFarPlane = cam.farClip;
 
@@ -1141,44 +1180,26 @@ void StandRendererSystem::CascadeShadow::UpdateCascadeShadow2(CascadeShadow* cas
 void StandRendererSystem::RenderCascadeShadow(LightComponent& light, TransformComponent& transform, StandRendererSystem& root){
     OD_PROFILE_SCOPE("StandRendererSystem::RenderCascadeShadow");
 
-    _cascadeShadowMap->Bind();
-    Renderer::SetViewport(0, 0, _cascadeShadowMap->width(), _cascadeShadowMap->height());
+    Framebuffer::Bind(*cascadeShadowMap);
+    Renderer::SetViewport(0, 0, cascadeShadowMap->Width(), cascadeShadowMap->Height());
     Renderer::SetDepthTest(DepthTest::LESS);
     Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     //glEnable(GL_DEPTH_CLAMP);
     Renderer::Clean(1, 1, 1, 1);
 
-    _cascadeShadowMapShader->Bind();
+    Shader::Bind(*cascadeShadowMapShader);
     for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
         std::string setMat = "lightSpaceMatrices[" + std::to_string(i) + "]";
-        _cascadeShadowMapShader->SetMatrix4(setMat.c_str(), cascadeShadows[i].projViewMatrix);
+        cascadeShadowMapShader->SetMatrix4(setMat.c_str(), cascadeShadows[i].projViewMatrix);
     }
 
-    auto view = root.scene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto _entity: view){
-        auto& c = view.get<MeshRendererComponent>(_entity);
-        auto& t = view.get<TransformComponent>(_entity);
+    cascadeShadowDrawCommands.Each([&](auto& cm){
+        cascadeShadowMapShader->SetMatrix4("model", cm.trans);
+        Renderer::DrawMesh(*cm.meshs);
+    });
 
-        if(c.model() == nullptr) continue;
-
-        int index = 0;
-        /*for(Ref<Mesh> m: c.model()->meshs){
-            _cascadeShadowMapShader->SetMatrix4("model", t.globalModelMatrix() * c.model()->matrixs[index]);
-            Renderer::DrawMeshRaw(*m);
-            index += 1;
-        }*/
-
-        for(auto i: c.model()->renderTargets){
-            Matrix4 m = 
-                t.globalModelMatrix() * 
-                c.model()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-
-            _cascadeShadowMapShader->SetMatrix4("model", m);
-            Renderer::DrawMeshRaw(*c.model()->meshs[i.meshIndex]);
-        }
-    }
-
-    _cascadeShadowMap->Unbind();
+    cascadeShadowMapShader->Unbind();
+    cascadeShadowMap->Unbind();
     //glDisable(GL_DEPTH_CLAMP);
 }
 

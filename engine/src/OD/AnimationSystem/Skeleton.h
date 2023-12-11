@@ -20,10 +20,10 @@ public:
     std::string& GetJointName(unsigned int index);
 
 protected:
-    Pose _restPose;
-    Pose _bindPose;
-    std::vector<Matrix4> _invBindPose;
-    std::vector<std::string> _jointNames;
+    Pose restPose;
+    Pose bindPose;
+    std::vector<Matrix4> invBindPose;
+    std::vector<std::string> jointNames;
 
     void UpdateInverseBindPose();
 };

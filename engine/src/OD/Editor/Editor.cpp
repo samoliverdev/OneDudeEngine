@@ -18,54 +18,54 @@ Editor* Editor::instance;
 void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);
 
-    FrameBufferSpecification framebufferSpecification = {Application::screenWidth(), Application::screenHeight()};
+    FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
-    _framebuffer = new Framebuffer(framebufferSpecification);
-    _framebuffer->Invalidate();
+    framebuffer = new Framebuffer(framebufferSpecification);
+    framebuffer->Invalidate();
 
-    _viewportSize.x = _framebuffer->width();
-    _viewportSize.y = _framebuffer->height();
+    viewportSize.x = framebuffer->Width();
+    viewportSize.y = framebuffer->Height();
 
     instance = this;
 
-    _cam.OnStart();
-    _cam.moveSpeed = 60;
+    editorCam.OnStart();
+    editorCam.moveSpeed = 60;
 
-    _sceneHierarchyPanel.SetEditor(this);
-    _inspectorPanel.SetEditor(this);
-    _contentBrowserPanel.SetEditor(this);
+    sceneHierarchyPanel.SetEditor(this);
+    inspectorPanel.SetEditor(this);
+    contentBrowserPanel.SetEditor(this);
 }
 
 void Editor::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("Editor::OnUpdate");
 
-    if(Input::IsKeyDown(KeyCode::F5)) _open = !_open;
+    if(Input::IsKeyDown(KeyCode::F5)) open = !open;
 
-    if(SceneManager::Get().activeScene()->running()){
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(nullptr, Transform());
+    if(SceneManager::Get().ActiveScene()->Running()){
+        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->GetOverrideCamera(nullptr, Transform());
     } else {
-        float width = _viewportSize.x;
-        float height = _viewportSize.y;
-        if(_open == false){
-            width = Application::screenWidth();
-            height = Application::screenHeight();
+        float width = viewportSize.x;
+        float height = viewportSize.y;
+        if(open == false){
+            width = Application::ScreenWidth();
+            height = Application::ScreenHeight();
         }
 
-        _cam.OnUpdate();
-        _cam.cam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
-        _cam.cam.cam.view = math::inverse(_cam.transform.GetLocalModelMatrix());
-        _cam.cam.frustum = CreateFrustumFromCamera(_cam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->overrideCamera(&_cam.cam, _cam.transform);
+        editorCam.OnUpdate();
+        editorCam.cam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
+        editorCam.cam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
+        editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
+        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->GetOverrideCamera(&editorCam.cam, editorCam.transform);
     }
 
-    if(_open == false){
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    if(open == false){
+        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
         ImGuiLayer::SetCleanAll(false);
     } else{
         ImGuiLayer::SetCleanAll(true);
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(_framebuffer);
-        _framebuffer->Resize(_viewportSize.x, _viewportSize.y);
+        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(framebuffer);
+        framebuffer->Resize(viewportSize.x, viewportSize.y);
     }
 
     /*if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
@@ -92,24 +92,24 @@ void Editor::OnRender(float deltaTime){
 Scene* lastScene;
 
 void Editor::PlayScene(){
-    Assert(SceneManager::Get().activeScene() != nullptr);
-    if(SceneManager::Get().activeScene()->running()) return;
+    Assert(SceneManager::Get().ActiveScene() != nullptr);
+    if(SceneManager::Get().ActiveScene()->Running()) return;
 
     /*Scene* scene = SceneManager::Get().activeScene();
     if(_curScenePath.empty()) scene->Save("res/temp.scene");
     scene->Start();*/
 
     UnselectAll();
-    lastScene = SceneManager::Get().activeScene();
+    lastScene = SceneManager::Get().ActiveScene();
     lastScene->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
     Scene* s = Scene::Copy(lastScene);
-    SceneManager::Get().activeScene(s);
+    SceneManager::Get().ActiveScene(s);
     s->Start();
 }
 
 void Editor::StopScene(){
-    Assert(SceneManager::Get().activeScene() != nullptr);
-    if(SceneManager::Get().activeScene()->running() == false) return;
+    Assert(SceneManager::Get().ActiveScene() != nullptr);
+    if(SceneManager::Get().ActiveScene()->Running() == false) return;
 
     //if(SceneManager::Get().activeScene() != nullptr && SceneManager::Get().activeScene()->running() == false) return;
     
@@ -118,44 +118,44 @@ void Editor::StopScene(){
     UnselectAll();*/
 
     UnselectAll();
-    SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
-    delete SceneManager::Get().activeScene();
-    SceneManager::Get().activeScene(lastScene);
+    SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    delete SceneManager::Get().ActiveScene();
+    SceneManager::Get().ActiveScene(lastScene);
 }
 
 void Editor::NewScene(){
-    if(SceneManager::Get().activeScene()->running()) return;
+    if(SceneManager::Get().ActiveScene()->Running()) return;
 
-    SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
     Scene* scene = SceneManager::Get().NewScene();
 
     UnselectAll();
-    _curScenePath = "";
+    curScenePath = "";
 }   
 
 void Editor::OpenScene(){
-    Assert(SceneManager::Get().activeScene() != nullptr);
-    if(SceneManager::Get().activeScene()->running()) return;
+    Assert(SceneManager::Get().ActiveScene() != nullptr);
+    if(SceneManager::Get().ActiveScene()->Running()) return;
 
     std::string path = FileDialogs::OpenFile(""); 
     if(path.empty() == false){
-        SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
         Scene* scene = SceneManager::Get().NewScene();
         
         scene->Load(path.c_str());
-        _curScenePath = scene->path();
+        curScenePath = scene->Path();
     }
     UnselectAll();
 }
 
 void Editor::SaveAsScene(){
-    if(SceneManager::Get().activeScene()->running()) return;
+    if(SceneManager::Get().ActiveScene()->Running()) return;
 
     std::string path = FileDialogs::SaveFile("");
     if(path.empty() == false){
-        Scene* scene = SceneManager::Get().activeScene();
+        Scene* scene = SceneManager::Get().ActiveScene();
         scene->Save(path.c_str());
-        _curScenePath = path;
+        curScenePath = path;
     } 
 }
 
@@ -163,26 +163,26 @@ void Editor::HandleShotcuts(){
     if(Input::IsKeyDown(KeyCode::F1)) PlayScene();
     if(Input::IsKeyDown(KeyCode::F2)) StopScene();
 
-    if(SceneManager::Get().activeScene()->running()) return;
+    if(SceneManager::Get().ActiveScene()->Running()) return;
 
-    if(Input::IsKeyDown(KeyCode::Q)) _gizmoType = Editor::GizmosType::None;
-    if(Input::IsKeyDown(KeyCode::W)) _gizmoType = Editor::GizmosType::Translation;
-    if(Input::IsKeyDown(KeyCode::E)) _gizmoType = Editor::GizmosType::Rotation;
-    if(Input::IsKeyDown(KeyCode::R)) _gizmoType = Editor::GizmosType::Scale;
+    if(Input::IsKeyDown(KeyCode::Q)) gizmoType = Editor::GizmosType::None;
+    if(Input::IsKeyDown(KeyCode::W)) gizmoType = Editor::GizmosType::Translation;
+    if(Input::IsKeyDown(KeyCode::E)) gizmoType = Editor::GizmosType::Rotation;
+    if(Input::IsKeyDown(KeyCode::R)) gizmoType = Editor::GizmosType::Scale;
 }
 
 void Editor::DrawMainWorkspace(){
     OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
     
-    _sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
-    _sceneHierarchyPanel.SetEditor(this);
+    sceneHierarchyPanel.SetScene(SceneManager::Get().ActiveScene());
+    sceneHierarchyPanel.SetEditor(this);
 
-    _inspectorPanel.SetScene(SceneManager::Get().activeScene());
-    _inspectorPanel.SetEditor(this);
+    inspectorPanel.SetScene(SceneManager::Get().ActiveScene());
+    inspectorPanel.SetEditor(this);
     
-    _sceneHierarchyPanel.OnGui();
-    _contentBrowserPanel.OnGui();
-    _inspectorPanel.OnGui();
+    sceneHierarchyPanel.OnGui();
+    contentBrowserPanel.OnGui();
+    inspectorPanel.OnGui();
 
     //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::Begin("Renderer Stats");
@@ -206,29 +206,29 @@ void Editor::DrawMainWorkspace(){
     auto& io = ImGui::GetIO();
     io.ConfigWindowsMoveFromTitleBarOnly = true;
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    _viewportSize.x = viewportPanelSize.x;
-    _viewportSize.y = viewportPanelSize.y;
+    viewportSize.x = viewportPanelSize.x;
+    viewportSize.y = viewportPanelSize.y;
 
     auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
     auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
     auto viewportOffset = ImGui::GetWindowPos();
     //ImVec2 m_ViewportBounds[2];
-    m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-    m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+    viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
-    uint32_t textureId = _framebuffer->ColorAttachmentId(0);
+    uint32_t textureId = framebuffer->ColorAttachmentId(0);
 
     auto[mx, my] = ImGui::GetMousePos();
-    mx -= m_ViewportBounds[0].x;
-    my -= m_ViewportBounds[0].y;
-    Vector2 viewportSize = Vector2(m_ViewportBounds[1].x, m_ViewportBounds[1].y) - Vector2(m_ViewportBounds[0].x, m_ViewportBounds[0].y);
+    mx -= viewportBounds[0].x;
+    my -= viewportBounds[0].y;
+    Vector2 viewportSize = Vector2(viewportBounds[1].x, viewportBounds[1].y) - Vector2(viewportBounds[0].x, viewportBounds[0].y);
     my = viewportSize.y - my;
     int mouseX = (int)mx;
     int mouseY = (int)my;
 
     //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
     
-    if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
+    if(SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->FinalColor()->IsValid()){
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Bind();
         //LogInfo("ReadPixel(1): %d",SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->ReadPixel(0, mouseX, mouseY));
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Unbind();
@@ -332,7 +332,7 @@ void Editor::DrawMainPanel(){
     float height = ImGui::GetFrameHeight();
     if(ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)){
         if(ImGui::BeginMenuBar()){
-            bool sceneRunning = SceneManager::Get().activeScene()->running();
+            bool sceneRunning = SceneManager::Get().ActiveScene()->Running();
             ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
             ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
             ImGui::Button("Test", ImVec2(0, height-1));
@@ -408,17 +408,17 @@ void Editor::DrawMainPanel(){
 }
 
 void Editor::DrawGizmos(){
-    if(_selectionEntity.IsValid() == false) return;
-    if(_gizmoType == Editor::GizmosType::None) return;
+    if(selectionEntity.IsValid() == false) return;
+    if(gizmoType == Editor::GizmosType::None) return;
 
-    Camera cam = _cam.cam.cam;
+    Camera cam = editorCam.cam.cam;
 
-    if(SceneManager::Get().activeScene()->running()){
-        Entity camE = SceneManager::Get().activeScene()->GetMainCamera2();
+    if(SceneManager::Get().ActiveScene()->Running()){
+        Entity camE = SceneManager::Get().ActiveScene()->GetMainCamera2();
         if(camE.IsValid() == false) return;
 
         CameraComponent& cameraComponent = camE.GetComponent<CameraComponent>();
-        cam = cameraComponent.camera();
+        cam = cameraComponent.GetCamera();
     }
     
     ImGuizmo::Enable(true);
@@ -426,30 +426,30 @@ void Editor::DrawGizmos(){
     ImGuizmo::SetDrawlist();
     //ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
-    ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
+    ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
     //ImGuiIO& io = ImGui::GetIO();
     //ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
     Matrix4 view = cam.view;
     Matrix4 projection = cam.projection;
 
-    TransformComponent& tc = _selectionEntity.GetComponent<TransformComponent>();
-    Matrix4 trans = tc.globalModelMatrix();
+    TransformComponent& tc = selectionEntity.GetComponent<TransformComponent>();
+    Matrix4 trans = tc.GlobalModelMatrix();
 
     bool snap = Input::IsKey(KeyCode::Control);
     float snapValue = 1;
-    if(_gizmoType == Editor::GizmosType::Rotation) snapValue = 45;
+    if(gizmoType == Editor::GizmosType::Rotation) snapValue = 45;
 
     float snapValues[3] = {snapValue, snapValue, snapValue};
 
-    ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;
-    if(_gizmoType == Editor::GizmosType::Rotation) gizmoType = ImGuizmo::OPERATION::ROTATE;
-    if(_gizmoType == Editor::GizmosType::Scale) gizmoType = ImGuizmo::OPERATION::SCALE;
+    ImGuizmo::OPERATION _gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+    if(gizmoType == Editor::GizmosType::Rotation) _gizmoType = ImGuizmo::OPERATION::ROTATE;
+    if(gizmoType == Editor::GizmosType::Scale) _gizmoType = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::Manipulate(
         Mathf::Raw(view),
         Mathf::Raw(projection),
-        gizmoType, 
+        _gizmoType, 
         ImGuizmo::LOCAL,
         Mathf::Raw(trans),
         nullptr,
@@ -464,16 +464,16 @@ void Editor::DrawGizmos(){
         glm::vec4 p;
         glm::decompose((glm::mat4)trans, s, r, t, sk, p);
 
-        if(_gizmoType == Editor::GizmosType::Translation) tc.position(t);
-        if(_gizmoType == Editor::GizmosType::Rotation) tc.rotation(r);
-        if(_gizmoType == Editor::GizmosType::Scale) tc.localScale(s);
+        if(gizmoType == Editor::GizmosType::Translation) tc.Position(t);
+        if(gizmoType == Editor::GizmosType::Rotation) tc.Rotation(r);
+        if(gizmoType == Editor::GizmosType::Scale) tc.LocalScale(s);
     }
 }
 
 void Editor::OnGUI(){
     OD_PROFILE_SCOPE("Editor::OnGUI");
 
-    if(_open == false) return;
+    if(open == false) return;
 
     DrawMainPanel();
 }

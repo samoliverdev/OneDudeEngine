@@ -22,19 +22,17 @@ void InitFreeFont(){
     freeFontHasInited = true;
 }
 
-Ref<Font> Font::CreateFromFile(const char* path){
+bool Font::CreateFromFile(Font& font, const char* path){
     InitFreeFont();
 
     FT_Face face;
     if(FT_New_Face(ft, path, 0, &face)){
         LogError("ERROR::FREETYPE: Failed to load font");  
         Application::Quit();
-        return nullptr;
+        return false;
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48); 
-
-    Ref<Font> font = CreateRef<Font>();
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
     glCheckError();
@@ -76,15 +74,15 @@ Ref<Font> Font::CreateFromFile(const char* path){
             (unsigned int)face->glyph->advance.x
         };
 
-        font->_characters.insert(std::pair<char, Character>(c, character));
+        font.characters.insert(std::pair<char, Character>(c, character));
     }
 
     FT_Done_Face(face);
     //FT_Done_FreeType(ft);
 
-    font->_path = std::string(path);
+    font.path = std::string(path);
 
-    return font;
+    return true;
 }
 
 }

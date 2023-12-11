@@ -26,7 +26,7 @@ void Blend(Pose& output, Pose& a, Pose& b, float t, int root){
             }
         }
 
-        output.SetLocalTransform(i, Transform::mix(a.GetLocalTransform(i), b.GetLocalTransform(i), t));
+        output.SetLocalTransform(i, Transform::Mix(a.GetLocalTransform(i), b.GetLocalTransform(i), t));
     }
 }
 
@@ -49,9 +49,9 @@ void Add(Pose& output, Pose& inPose, Pose& addPose, Pose& basePose, int blendroo
 
 		// outPose = inPose + (addPose - basePose)
 		Transform result(
-			input.localPosition() + (additive.localPosition() - additiveBase.localPosition()),
-			math::normalize(input.localRotation() * (math::inverse(additiveBase.localRotation()) * additive.localRotation())),
-			input.localScale() + (additive.localScale() - additiveBase.localScale())
+			input.LocalPosition() + (additive.LocalPosition() - additiveBase.LocalPosition()),
+			math::normalize(input.LocalRotation() * (math::inverse(additiveBase.LocalRotation()) * additive.LocalRotation())),
+			input.LocalScale() + (additive.LocalScale() - additiveBase.LocalScale())
 		);
 		output.SetLocalTransform(i, result);
 	}

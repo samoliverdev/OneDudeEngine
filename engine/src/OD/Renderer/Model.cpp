@@ -3,9 +3,8 @@
 
 namespace OD{
 
-Ref<Model> Model::CreateFromFile(std::string const &path, Ref<Shader> customShader){
-    return AssimpLoadModel(path, customShader);
-
+bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
+    return AssimpLoadModel(model, path, customShader);
 }
 
 }

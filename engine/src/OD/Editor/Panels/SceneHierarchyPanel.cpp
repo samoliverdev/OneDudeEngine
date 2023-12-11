@@ -104,7 +104,7 @@ void SceneHierarchyPanel::OnGui(){
                     Entity* targetEntity = (Entity*)payload->Data;
                     LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
                     if(targetEntity->IsValid()){
-                        _scene->CleanParent(targetEntity->id());
+                        _scene->CleanParent(targetEntity->Id());
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -126,16 +126,16 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     Entity children;
 
-    if(root && transform.hasParent()) return;
+    if(root && transform.HasParent()) return;
 
     //ImGui::Text(info.name.c_str());
 
     ImGuiTreeNodeFlags flags = 
-        ((entity == _editor->_selectionEntity) ? ImGuiTreeNodeFlags_Selected : 0) 
-        | (transform.children().empty() == false ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
+        ((entity == _editor->selectionEntity) ? ImGuiTreeNodeFlags_Selected : 0) 
+        | (transform.Children().empty() == false ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.id(), flags, info.name.c_str());
+    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.Id(), flags, info.name.c_str());
     
     if(entity.IsValid() && ImGui::BeginDragDropSource()){
         ImGui::SetDragDropPayload("EntityMoveDragDrop", &entity, sizeof(Entity), ImGuiCond_Once);
@@ -152,7 +152,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         if(payload != nullptr){
             Entity* targetEntity = (Entity*)payload->Data;
             LogInfo("this: %s to: %s", entity.GetComponent<InfoComponent>().name.c_str(), targetEntity->GetComponent<InfoComponent>().name.c_str());
-            if(entity.IsValid() && targetEntity->IsValid() && entity.id() != targetEntity->id()){
+            if(entity.IsValid() && targetEntity->IsValid() && entity.Id() != targetEntity->Id()){
                 children = *targetEntity;
             }
         }
@@ -171,22 +171,22 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(opened){
-        for(auto i: transform.children()){
-            DrawEntityNode(Entity(i, entity.scene()), false);
+        for(auto i: transform.Children()){
+            DrawEntityNode(Entity(i, entity.GetScene()), false);
         }
 
         ImGui::TreePop();
     }
 
     if(entityDeleted){
-        LogInfo("To Destroy Entity: %d", entity.id());
+        LogInfo("To Destroy Entity: %d", entity.Id());
 
-        _scene->DestroyEntity(entity.id());
+        _scene->DestroyEntity(entity.Id());
         _editor->SetSelectionEntity(Entity());
 
         //toDestroy = entity;
     } else if(children.IsValid()){
-        _scene->SetParent(entity.id(), children.id());
+        _scene->SetParent(entity.Id(), children.Id());
     }
 }
 }

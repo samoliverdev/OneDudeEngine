@@ -5,69 +5,23 @@
 
 namespace OD{
 
-void MeshRendererComponent::Serialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "MeshRendererComponent";
-    out << YAML::BeginMap;
-
-    auto& mesh = e.GetComponent<MeshRendererComponent>();
-    out << YAML::Key << "_model" << YAML::Value << (mesh.model() == nullptr ? std::string("") : mesh.model()->path());
-    out << YAML::Key << "_subMeshIndex" << YAML::Value << mesh._subMeshIndex;
-
-    out << YAML::Key << "_materialsOverride" << YAML::Value << YAML::BeginSeq;
-    for(auto i: mesh._materialsOverride){
-        out << YAML::BeginMap;
-        out << YAML::Key << "path" << YAML::Value << (i == nullptr ? std::string("") :  i->path());
-        out << YAML::EndMap;
-    }
-    out << YAML::EndSeq;
-
-
-    out << YAML::EndMap;
-}
-
-void MeshRendererComponent::Deserialize(YAML::Node& in, Entity& e){
-    auto& mc = e.AddOrGetComponent<MeshRendererComponent>();
-
-    std::string modelPath = in["_model"].as<std::string>();
-    //LogInfo("Model %s", modelPath.c_str());
-
-    if(modelPath.empty() == false){
-        Ref<Model> model = AssetManager::Get().LoadModel(modelPath);
-        mc.model(model);
-    }
-
-    mc._subMeshIndex = in["_subMeshIndex"].as<int>();
-
-    int index = 0;
-    for(auto i: in["_materialsOverride"]){
-        std::string materialPath = i["path"].as<std::string>();
-        if(materialPath.empty() == false){
-            mc._materialsOverride[index] = AssetManager::Get().LoadMaterial(materialPath);
-        } 
-        index += 1;
-    }
-
-    LogInfo("Model %s", mc.model()->path().c_str());
-    LogInfo("Shader %s", mc.model()->materials[0]->shader()->path().c_str());
-}
-
 void MeshRendererComponent::OnGui(Entity& e){
     MeshRendererComponent& mesh = e.GetComponent<MeshRendererComponent>();
 
-    if(mesh.model() == nullptr){
+    if(mesh.model == nullptr){
         ImGui::Text("Path: None");
     } else {
-        ImGui::Text("Path: %s", mesh.model()->path().c_str());
+        ImGui::Text("Path: %s", mesh.model->Path().c_str());
     }
 
-    int subMeshIndex = mesh.subMeshIndex();
+    int subMeshIndex = mesh.subMeshIndex;
     if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){
-        mesh.subMeshIndex(subMeshIndex);
+        mesh.SetSubMeshIndex(subMeshIndex);
     }
 
     if(ImGui::TreeNode("materialsOverride")){
         int index = 0;
-        for(auto i: mesh._materialsOverride){
+        for(auto i: mesh.materialsOverride){
             if(ImGui::TreeNode(std::to_string(index).c_str())){
                 /*ImGui::BeginGroup();
                 if(i == nullptr)
@@ -81,7 +35,7 @@ void MeshRendererComponent::OnGui(Entity& e){
                 }
                 ImGui::EndGroup();*/
 
-                ImGui::DrawMaterialAsset("override", mesh._materialsOverride[index]);
+                ImGui::DrawMaterialAsset("override", mesh.materialsOverride[index]);
     
                 ImGui::TreePop();
             }
@@ -100,9 +54,9 @@ void MeshRendererComponent::OnGui(Entity& e){
 
     ImGui::Spacing(); ImGui::Spacing(); 
 
-    if(mesh.model() != nullptr && ImGui::TreeNode("Info")){
-        ImGui::Text("Mesh: %zd", mesh.model()->meshs.size());
-        ImGui::Text("Materials: %zd", mesh.model()->materials.size());
+    if(mesh.model != nullptr && ImGui::TreeNode("Info")){
+        ImGui::Text("Mesh: %zd", mesh.model->meshs.size());
+        ImGui::Text("Materials: %zd", mesh.model->materials.size());
         //ImGui::Text("Animations: %zd", mesh.model()->animations.size());
         ImGui::TreePop();
     }
@@ -110,12 +64,12 @@ void MeshRendererComponent::OnGui(Entity& e){
 
 AABB MeshRendererComponent::getGlobalAABB(TransformComponent& transform){
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.globalModelMatrix() * Vector4(_boundingVolume.center, 1) };
+    const Vector3 globalCenter{ transform.GlobalModelMatrix() * Vector4(boundingVolume.center, 1) };
 
     // Scaled orientation
-    const Vector3 right = transform.right() * _boundingVolume.extents.x;
-    const Vector3 up = transform.up() * _boundingVolume.extents.y;
-    const Vector3 forward = transform.forward() * _boundingVolume.extents.z;
+    const Vector3 right = transform.Right() * boundingVolume.extents.x;
+    const Vector3 up = transform.Up() * boundingVolume.extents.y;
+    const Vector3 forward = transform.Forward() * boundingVolume.extents.z;
 
     const float newIi = math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, right)) +
         math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, up)) +
@@ -130,7 +84,7 @@ AABB MeshRendererComponent::getGlobalAABB(TransformComponent& transform){
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB result = AABB(globalCenter, newIi, newIj, newIk);
-    result.Expand(transform.localScale());
+    result.Expand(transform.LocalScale());
     return result;
 }
 

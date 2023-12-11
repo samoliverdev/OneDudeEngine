@@ -75,8 +75,9 @@ void CreateWiredCubeVAO(){
 	glEnableVertexAttribArray(0);
     glCheckError();
 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+    glCheckError();
 }
 
 void CreateTextQuadVAO(){
@@ -102,18 +103,21 @@ void CreateTextQuadVAO(){
     glCheckError();
 }
 
-void Renderer::_Initialize(){
+void Renderer::Initialize(){
     glEnable(GL_DEPTH_TEST); 
 
     fullScreenQuad = Mesh::FullScreenQuad();
     //gismoShader = Shader::CreateFromFiles("res/shaders/gizmos.vert", "res/shaders/gizmos.frag");
-    gismoShader = Shader::CreateFromFile("res/Builtins/Shaders/Gizmos.glsl");
+    gismoShader = CreateRef<Shader>();
+    bool result = Shader::CreateFromFile(*gismoShader, "res/Builtins/Shaders/Gizmos.glsl");
+    Assert(result == true);
+
     CreateLineVAO();
     CreateWiredCubeVAO();
     CreateTextQuadVAO();
 }
 
-void Renderer::_Shutdown(){
+void Renderer::Shutdown(){
 
 }
 
@@ -138,7 +142,21 @@ Camera Renderer::GetCamera(){
     return camera;
 }
 
-void Renderer::DrawMeshRaw(Mesh& mesh){
+void Renderer::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing){
+    Shader::Bind(shader);
+
+    shader.SetMatrix4("view", camera.view);
+    shader.SetMatrix4("projection", camera.projection);
+
+    if(instancing){
+        shader.SetFloat("useInstancing", 1);
+    } else {
+        shader.SetFloat("useInstancing", 0.0f); 
+        shader.SetMatrix4("model", modelMatrix);
+    }
+}
+
+/*void Renderer::DrawMeshRaw(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
 
     drawCalls += 1;
@@ -158,120 +176,67 @@ void Renderer::DrawMeshRaw(Mesh& mesh){
 
     glBindVertexArray(0);
     glCheckError();
-}
+}*/
 
-void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Shader& shader){
+void Renderer::DrawMesh(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
-    Assert(shader.IsValid()  && "Shader is not vali!");
+    //Assert(shader.IsValid()  && "Shader is not vali!");
 
     drawCalls += 1;
-    vertices += mesh._vertexCount;
-    tris += mesh._indiceCount;
+    vertices += mesh.vertexCount;
+    tris += mesh.indiceCount;
     
+    /*
     shader.Bind();
     shader.SetFloat("useInstancing", 0.0f); 
     //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 0.0f);
     shader.SetMatrix4("model", modelMatrix);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
+    */
 
-    glBindVertexArray(mesh._vao);
+    glBindVertexArray(mesh.vao);
     glCheckError();
 
-    if(mesh._ebo != 0){
-        glDrawElements(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0);
+    if(mesh.ebo != 0){
+        glDrawElements(GL_TRIANGLES, mesh.indiceCount, GL_UNSIGNED_INT, 0);
         glCheckError();
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh._vertexCount);
+        glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
         glCheckError();
     }
 
-    glBindVertexArray(0);
-    glCheckError();
+    //glBindVertexArray(0);
+    //glCheckError();
 }
 
-void Renderer::DrawMeshMVP(Mesh& mesh, Matrix4& modelMatrix, Shader& shader){
+void Renderer::DrawMeshInstancing(Mesh& mesh, int count){
     Assert(mesh.IsValid() && "Mesh is not vali!");
-    Assert(shader.IsValid()  && "Shader is not vali!");
 
     drawCalls += 1;
-    vertices += mesh._vertexCount;
-    tris += mesh._indiceCount;
+    vertices += mesh.vertexCount * count;
+    tris += mesh.indiceCount * count;
     
-    shader.Bind();
-    shader.SetMatrix4("MVP", camera.projection * camera.view * modelMatrix);
-
-    glBindVertexArray(mesh._vao);
-    glCheckError();
-
-    if(mesh._ebo != 0){
-        glDrawElements(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0);
-        glCheckError();
-    } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh._vertexCount);
-        glCheckError();
-    }
-
-    glBindVertexArray(0);
-    glCheckError();
-}
-
-void Renderer::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Material& material){
-    material.UpdateUniforms();
-    Ref<Shader> shader = material.shader();
-    DrawMesh(mesh, modelMatrix, *shader);
-}
-
-void Renderer::DrawModel(Model& model, Matrix4 modelMatrix, int subMeshIndex, std::vector<Ref<Material>>* materialsOverride){
-    Assert(model.meshs.size() == model.materials.size());
-    Assert(subMeshIndex < (int)model.meshs.size());
-    if(materialsOverride != nullptr) Assert(model.meshs.size() == materialsOverride->size());
-
-    if(subMeshIndex > -1){
-        Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[subMeshIndex] : nullptr;
-        if(materialsOverride != nullptr && (*materialsOverride)[subMeshIndex] != nullptr) targetMaterial = (*materialsOverride)[subMeshIndex];
-        Assert(targetMaterial != nullptr);
-
-        targetMaterial->UpdateUniforms();
-        DrawMesh(*model.meshs[subMeshIndex], modelMatrix, *targetMaterial->shader());
-    } else {
-        for(int i = 0; i < model.meshs.size(); i++){
-            Ref<Material> targetMaterial = subMeshIndex < (int)model.materials.size() ? model.materials[i] : nullptr;
-            if(materialsOverride != nullptr && (*materialsOverride)[i] != nullptr) targetMaterial = (*materialsOverride)[i];
-            Assert(targetMaterial != nullptr);
-
-            targetMaterial->UpdateUniforms();
-            DrawMesh(*model.meshs[i], modelMatrix, *targetMaterial->shader());
-        }
-    }
-}
-
-void Renderer::DrawMeshInstancing(Mesh& mesh, Shader& shader, int count){
-    Assert(mesh.IsValid() && "Mesh is not vali!");
-    Assert(shader.IsValid()  && "Shader is not vali!");
-
-    drawCalls += 1;
-    vertices += mesh._vertexCount * count;
-    tris += mesh._indiceCount * count;
-    
+    /*
     shader.Bind();
     shader.SetFloat("useInstancing", 1.0f); 
     //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 1.0f);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
+    */
 
-    glBindVertexArray(mesh._vao);
+    glBindVertexArray(mesh.vao);
 
-    if(mesh._ebo != 0){
-        glDrawElementsInstanced(GL_TRIANGLES, mesh._indiceCount, GL_UNSIGNED_INT, 0, count);
+    if(mesh.ebo != 0){
+        glDrawElementsInstanced(GL_TRIANGLES, mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
         glCheckError();
     } else {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh._vertexCount, count);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.vertexCount, count);
         glCheckError();
     }
 
-    glBindVertexArray(0);
-    glCheckError();
+    //glBindVertexArray(0);
+    //glCheckError();
 }
 
 void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
@@ -279,7 +244,7 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
     vertices += 2;
     tris += 0;
 
-    gismoShader->Bind();
+    Shader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity);
     gismoShader->SetMatrix4("view", camera.view);
@@ -293,8 +258,10 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
 	glDrawArrays(GL_LINES, 0, 2);
-	glBindVertexArray(0);
     glCheckError();
+
+	//glBindVertexArray(0);
+    //glCheckError();
 }
 
 void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int width){
@@ -302,7 +269,7 @@ void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
     vertices += 2;
     tris += 0;
 
-    gismoShader->Bind();
+    Shader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", model);
     gismoShader->SetMatrix4("view", camera.view);
@@ -316,8 +283,10 @@ void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
 	glDrawArrays(GL_LINES, 0, 2);
-	glBindVertexArray(0);
     glCheckError();
+	
+    //glBindVertexArray(0);
+    //glCheckError();
 }
 
 void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
@@ -325,7 +294,7 @@ void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     vertices += 8;
     tris += 24;
 
-    gismoShader->Bind();
+    Shader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", modelMatrix);
     gismoShader->SetMatrix4("view", camera.view);
@@ -334,12 +303,14 @@ void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     glLineWidth(lineWidth);
     glBindVertexArray(wiredCubeVAO);
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
     glCheckError();
+
+    //glBindVertexArray(0);
+    //glCheckError();
 }
 
 void Renderer::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color){
-    s.Bind();
+    Shader::Bind(s);
     s.SetVector3("color", color);
     s.SetMatrix4("projection", camera.projection);
 
@@ -353,7 +324,7 @@ void Renderer::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
     // iterate through all characters
     std::string::const_iterator c;
     for(c = text.begin(); c != text.end(); c++){
-        Character ch = f._characters[*c];
+        Character ch = f.characters[*c];
 
         float xpos = x + ch.bearing.x * scale;
         float ypos = y - (ch.size.y - ch.bearing.y) * scale;
@@ -519,7 +490,7 @@ void Renderer::SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
 }
 
 void Renderer::BeginFramebuffer(Framebuffer* framebuffer){
-    framebuffer->Bind();
+    Framebuffer::Bind(*framebuffer);
 }
 
 void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
@@ -528,7 +499,7 @@ void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     if(dst == nullptr){
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     } else {
-        dst->Bind();
+        Framebuffer::Bind(*dst);
     }
     glCheckError();
     
@@ -536,24 +507,24 @@ void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     Renderer::SetDepthTest(DepthTest::DISABLE); 
     glCheckError();
 
-    shader.Bind();
+    Shader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
-    Renderer::DrawMeshRaw(fullScreenQuad);
+    Renderer::DrawMesh(fullScreenQuad);
     glCheckError();
 }
 
 void Renderer::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     Assert(src != nullptr);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, src->renderId());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst == nullptr ? 0 : dst->renderId());
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, src->RenderId());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst == nullptr ? 0 : dst->RenderId());
     glCheckError();
 
     glReadBuffer(GL_COLOR_ATTACHMENT0 + srcPass); 
     glCheckError();
 
-    glBlitFramebuffer(0, 0, src->width(), src->height(), 0, 0, src->width(), src->height(), GL_COLOR_BUFFER_BIT, GL_NEAREST); 
+    glBlitFramebuffer(0, 0, src->Width(), src->Height(), 0, 0, src->Width(), src->Height(), GL_COLOR_BUFFER_BIT, GL_NEAREST); 
     glCheckError();
 }
 

@@ -5,23 +5,7 @@
 
 namespace OD{
 
-bool Cubemap::IsValid(){
-    return _id != 0;
-}
-
-void Cubemap::Destroy(){
-    if(_id != 0) glDeleteTextures(1, &_id);
-    _id = 0;
-    glCheckError();
-}
-
-void Cubemap::Bind(int index){
-    //glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, _id);
-    glCheckError();
-}
-
-Ref<Cubemap> Cubemap::CreateFromFile( const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
+bool Cubemap::CreateFromFile(Cubemap& out, const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
     std::vector<const char*> faces;
     faces.push_back(right);
     faces.push_back(left);
@@ -30,10 +14,8 @@ Ref<Cubemap> Cubemap::CreateFromFile( const char* right, const char* left, const
     faces.push_back(front);
     faces.push_back(back);
 
-    Ref<Cubemap> out = CreateRef<Cubemap>();
-
-    glGenTextures(1, &out->_id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, out->_id);
+    glGenTextures(1, &out.renderId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, out.renderId);
     glCheckError();
 
     int width, height, nrChannels;
@@ -60,7 +42,23 @@ Ref<Cubemap> Cubemap::CreateFromFile( const char* right, const char* left, const
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glCheckError();
 
-    return out;
+    return true;
+}
+
+void Cubemap::Destroy(Cubemap& cubemap){
+    if(cubemap.renderId != 0) glDeleteTextures(1, &cubemap.renderId);
+    cubemap.renderId = 0;
+    glCheckError();
+}
+
+void Cubemap::Bind(Cubemap& cubemap, int index){
+    //glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.renderId);
+    glCheckError();
+}
+
+bool Cubemap::IsValid(){
+    return renderId != 0;
 }
 
 }

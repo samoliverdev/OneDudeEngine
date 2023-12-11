@@ -34,6 +34,9 @@ struct FrameBufferSpecification{
 
 class Framebuffer{
 public:
+    static void Bind(Framebuffer& framebuffer);
+    static void Unbind();
+
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
 
@@ -42,27 +45,26 @@ public:
     bool IsValid();
     void Destroy();
     void Invalidate();
-    void Bind();
-    void Unbind();
+    
     //void BindColorAttachmentTexture(Shader& shader, int index);
     unsigned int ColorAttachmentId(int index);
     unsigned int DepthAttachmentId();
 
     int ReadPixel(int attachmentIndex, int x, int y);
 
-    inline int width(){ return _specification.width; }
-    inline int height(){ return _specification.height; }
+    inline int Width(){ return specification.width; }
+    inline int Height(){ return specification.height; }
 
-    inline unsigned int renderId(){ return _framebuffer; }
-    inline FrameBufferSpecification specification(){ return _specification; }
+    inline unsigned int RenderId(){ return renderId; }
+    inline FrameBufferSpecification Specification(){ return specification; }
 
 private:
-    FrameBufferSpecification _specification;
-    unsigned int _framebuffer = 0;
+    FrameBufferSpecification specification;
+    unsigned int renderId = 0;
 
     //unsigned int colorAttachment;
-    unsigned int _depthAttachment;
-    std::vector<unsigned int> _colorAttachments;
+    unsigned int depthAttachment;
+    std::vector<unsigned int> colorAttachments;
 
     void GenColorAttachment(int index);
     void GenDepthAttachment();

@@ -1,29 +1,28 @@
 #pragma once
 
 #include "OD/Defines.h"
+#include "OD/Core/Asset.h"
 
 namespace OD{
 
 class Renderer;
 
-class Cubemap{
+class Cubemap: public Asset{
     friend class Renderer;
 public:
-    bool IsValid();
-    void Destroy();
-    void Bind(int index);
-
-    static Ref<Cubemap> CreateFromFile(
-        const char* right,
-        const char* left,
-        const char* top,
-        const char* bottom,
-        const char* front,
-        const char* back
+    static bool CreateFromFile(
+        Cubemap& cubemap,
+        const char* right, const char* left, const char* top,
+        const char* bottom, const char* front, const char* back
     ); 
 
+    static void Destroy(Cubemap& cubemap);
+    static void Bind(Cubemap& cubemap, int index);
+
+    bool IsValid();
+    
 private:
-    unsigned int _id;
+    unsigned int renderId;
 };
 
 }

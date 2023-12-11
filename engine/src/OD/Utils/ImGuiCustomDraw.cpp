@@ -11,7 +11,7 @@ void DrawMaterialAsset(const char* name, OD::Ref<OD::Material>& asset){
 
     ImGui::BeginGroup();
 
-    ImGui::Text("%s: %s", name, asset == nullptr ? "None" : asset->path().c_str());
+    ImGui::Text("%s: %s", name, asset == nullptr ? "None" : asset->Path().c_str());
 
     if (asset != nullptr && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
         if(Editor::Get() != nullptr){

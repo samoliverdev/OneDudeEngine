@@ -23,30 +23,30 @@ public:
     static void Exit();
     static void GetFramebufferSize(int* width, int* height);
 
-    static int screenWidth();
-    static int screenHeight();
-    static float deltaTime();
-    static void vsync(bool enabled);
-	static bool vsync();
+    static int ScreenWidth();
+    static int ScreenHeight();
+    static float DeltaTime();
+    static void Vsync(bool enabled);
+	static bool Vsync();
 
     static void _OnResize(int width, int height);
 
     template<typename T>
     inline static void AddModule(){
-        _modules.push_back(new T());
-        _modules.back()->OnInit();
+        modules.push_back(new T());
+        modules.back()->OnInit();
     }
 
     inline static void AddModule(Module* module){
-        _modules.push_back(module);
-        _modules.back()->OnInit();
+        modules.push_back(module);
+        modules.back()->OnInit();
     }
 
     static std::vector<std::string> args;
 
 private:
 
-    static std::vector<Module*> _modules;
+    static std::vector<Module*> modules;
 };
 
 }

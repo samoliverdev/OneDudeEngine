@@ -18,15 +18,15 @@ struct LoadModel_2: OD::Module {
     void OnInit() override {
         LogInfo("Game Init");
 
-        Application::vsync(false);
+        Application::Vsync(false);
 
-        camTransform.localPosition(Vector3(0, 2, 4));
-        camTransform.localEulerAngles(Vector3(-25, 0, 0));
+        camTransform.LocalPosition(Vector3(0, 2, 4));
+        camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
 
         camMove.transform = &camTransform;
 
         model = AssetManager::Get().LoadModel("res/models/cube.glb");
-        model->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
+        model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", {OD::TextureFilter::Linear, false}));
 
         for(int i = 0; i < 100000; i++){
@@ -35,8 +35,8 @@ struct LoadModel_2: OD::Module {
             Transform t;
 
             float angle = 20.0f * i; 
-            t.localPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
-            t.localEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+            t.LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
+            t.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
 
             transforms.push_back(t.GetLocalModelMatrix());
         }
@@ -50,7 +50,7 @@ struct LoadModel_2: OD::Module {
     void OnRender(float deltaTime) override {
         OD_PROFILE_SCOPE("LoadModel_2::OnRender");
 
-        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
         Renderer::Begin();
@@ -71,10 +71,13 @@ struct LoadModel_2: OD::Module {
             }
             model->meshs[0]->UpdateMeshInstancingModelMatrixs();
 
-            Renderer::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->shader(), transforms.size());
+            Renderer::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
+            Renderer::DrawMeshInstancing(*model->meshs[0], transforms.size());
         } else {
             for(auto i: transforms){
-                Renderer::DrawModel(*model, i);
+                Renderer::SetDefaultShaderData(*model->materials[0]->GetShader(), i, false);
+                Renderer::DrawMesh(*model->meshs[0]);
+                //Renderer::DrawModel(*model, i);
             }
         }
         

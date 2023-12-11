@@ -49,7 +49,6 @@ set(ozz_build_tests  OFF CACHE BOOL "" FORCE)
 add_subdirectory(engine/vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(engine/vendor/assimp EXCLUDE_FROM_ALL)
 add_subdirectory(engine/vendor/bullet3 EXCLUDE_FROM_ALL)
-add_subdirectory(engine/vendor/yaml-cpp EXCLUDE_FROM_ALL)
 add_subdirectory(engine/vendor/soloud EXCLUDE_FROM_ALL)
 add_subdirectory(engine/vendor/freetype EXCLUDE_FROM_ALL)
 #add_subdirectory(engine/vendor/ozz-animation)
@@ -83,20 +82,15 @@ target_include_directories(engine PUBLIC
     engine/vendor/bullet3/src
     engine/vendor/entt/
     engine/vendor/soloud/include/
-    engine/vendor/yaml-cpp/include/
     engine/vendor/freetype/include/
-    #engine/vendor/ozz-animation/include/
     engine/src/
 )
 
 target_link_libraries(engine PUBLIC 
     glfw 
     assimp
-    yaml-cpp
     soloud
     freetype
-    #ozz_animation ozz_base
-    #ozz_geometry ozz_animation_offline ozz_options
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
 )
 

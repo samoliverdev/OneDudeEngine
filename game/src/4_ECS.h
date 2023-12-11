@@ -11,21 +11,23 @@
 #include <soloud_thread.h>
 #include <thread>
 #include <future>
+#include <fstream>
 
 using namespace OD;
 
 struct RotateScript: public Script{
     float speed = 40;
-
-    void Serialize(ArchiveNode& s) override {
-        s.typeName("RotateScript");
-        
-        s.Add(&speed, "speed");
+    
+    void OnUpdate() override {
+        TransformComponent& transform = Entity().GetComponent<TransformComponent>();
+        transform.LocalEulerAngles(Vector3(transform.LocalEulerAngles().x, Platform::GetTime() * speed, transform.LocalEulerAngles().z));
     }
 
-    void OnUpdate() override {
-        TransformComponent& transform = entity().GetComponent<TransformComponent>();
-        transform.localEulerAngles(Vector3(transform.localEulerAngles().x, Platform::GetTime() * speed, transform.localEulerAngles().z));
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(speed)
+        );
     }
 };
 
@@ -45,13 +47,40 @@ struct ECS_4: public OD::Module {
     SoLoud::Wav sample;
 
     void AddTransparent(Vector3 pos){
-        Entity et = SceneManager::Get().activeScene()->AddEntity("Transparent");
-        et.GetComponent<TransformComponent>().position(pos);
-        et.GetComponent<TransformComponent>().localScale(Vector3(10, 10, 10));
+        Entity et = SceneManager::Get().ActiveScene()->AddEntity("Transparent");
+        et.GetComponent<TransformComponent>().Position(pos);
+        et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
         MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
-        _meshRenderer3.model(AssetManager::Get().LoadModel("res/Builtins/Models/plane.obj"));
-        _meshRenderer3.model()->materials[0]->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/UnlitBlend.glsl"));
-        _meshRenderer3.model()->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
+        _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Builtins/Models/plane.obj"));
+
+        for(auto i: _meshRenderer3.GetModel()->materials){
+            i->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/UnlitBlend.glsl"));
+            i->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
+        }
+    }
+
+    bool FileExist(const std::string& path){
+        std::ifstream file;
+        file.open(path);
+
+        if(file) return true;
+        return false;
+    }
+
+    Ref<Material> GetFloorMaterial(){
+        std::string path = "res/Game/Textures/floor.material";
+
+        if(FileExist(path) == false){
+            Ref<Material> m = CreateRef<Material>();
+
+            m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl"));
+            m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/floor.jpg"));
+            m->SetVector4("color", Vector4(1, 1, 1, 1));
+
+            m->Save(path);
+        }
+
+        return AssetManager::Get().LoadMaterial(path);
     }
 
     void OnInit() override {
@@ -64,7 +93,7 @@ struct ECS_4: public OD::Module {
         /*sample.load("res/sounds/2ne1_2.mp3");
         soloud.play(sample);*/
 
-        Application::vsync(false);
+        Application::Vsync(false);
 
         //SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
         //SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
@@ -77,7 +106,7 @@ struct ECS_4: public OD::Module {
         //scene->Start();
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
-            "res/models/plane.glb",
+            "res/Game/Models/plane.glb",
             AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
         );
         //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
@@ -85,7 +114,7 @@ struct ECS_4: public OD::Module {
         //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
         Ref<Model> cubeModel = AssetManager::Get().LoadModel(
-            "res/models/Cube.glb",
+            "res/Game/models/Cube.glb",
             AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
         );
         //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
@@ -96,19 +125,18 @@ struct ECS_4: public OD::Module {
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
 
         Entity e = scene->AddEntity("Floor");
-        e.GetComponent<TransformComponent>().position(Vector3(0,-2, 0));
-        e.GetComponent<TransformComponent>().localScale(Vector3(10, 1, 10));
+        e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
+        e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
         MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
-        _meshRenderer.model(floorModel);
-        _meshRenderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial(std::string("res/textures/floor.material"));
-        LogInfo("LoadMaterial: %s Hash: %zd", std::string("res/textures/floor.material").c_str(), std::hash<std::string>{}(std::string("res/textures/floor.material")));
-
+        _meshRenderer.SetModel(floorModel);
+        _meshRenderer.GetMaterialsOverride()[0] = GetFloorMaterial();
+   
         Entity e2 = scene->AddEntity("Cube");
-        e2.GetComponent<TransformComponent>().position(Vector3(-8, 0, -4));
-        e2.GetComponent<TransformComponent>().localScale(Vector3(4*1, 4*1, 4*1));
+        e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
+        e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
         MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
-        _meshRenderer2.model(cubeModel);
-        _meshRenderer2.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+        _meshRenderer2.SetModel(cubeModel);
+        _meshRenderer2.GetMaterialsOverride()[0] = GetFloorMaterial();
 
         /*Entity sponza = scene->AddEntity("Sponza");
         sponza.GetComponent<TransformComponent>().position(Vector3(0,0,0));
@@ -125,15 +153,15 @@ struct ECS_4: public OD::Module {
 
         Entity camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 2, 4));
-        camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
+        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 2, 4));
+        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         //camMove.transform = &camera->GetComponent<TransformComponent>()();
         //camMove.moveSpeed = 60;
         cam.farClipPlane = 1000;
 
         mainEntity = scene->AddEntity("Main");
-        mainEntity.GetComponent<TransformComponent>().localPosition(Vector3(2, 0, 0));
+        mainEntity.GetComponent<TransformComponent>().LocalPosition(Vector3(2, 0, 0));
         /*MeshRendererComponent& meshRenderer = mainEntity.AddComponent<MeshRendererComponent>();
         meshRenderer.model(AssetManager::Get().LoadModel(
             "res/models/backpack/backpack.obj",
@@ -147,8 +175,8 @@ struct ECS_4: public OD::Module {
         lightComponent.color = Vector3(1,1,1);
         lightComponent.intensity = 1;
         lightComponent.renderShadow = false;
-        light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));
+        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
+        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
         
         ///*
         Entity pointLight = scene->AddEntity("Point Light");
@@ -157,7 +185,7 @@ struct ECS_4: public OD::Module {
         _pointLight.color = Vector3(1,1,1);
         _pointLight.intensity = 5;
         _pointLight.radius = 10;
-        pointLight.GetComponent<TransformComponent>().position(Vector3(4, 4, 0));
+        pointLight.GetComponent<TransformComponent>().Position(Vector3(4, 4, 0));
 
         Entity pointLight2 = scene->AddEntity("Point Light 2");
         LightComponent& _pointLight2 = pointLight2.AddComponent<LightComponent>();
@@ -165,7 +193,7 @@ struct ECS_4: public OD::Module {
         _pointLight2.color = Vector3(0,0,1);
         _pointLight2.intensity = 5;
         _pointLight2.radius = 20;
-        pointLight2.GetComponent<TransformComponent>().position(Vector3(-3, 0.5f, 0));
+        pointLight2.GetComponent<TransformComponent>().Position(Vector3(-3, 0.5f, 0));
         //*/
 
         for(int i = 0; i < 10000; i++){
@@ -174,15 +202,15 @@ struct ECS_4: public OD::Module {
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
             e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
-            mr.model(cubeModel);
-            mr.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+            mr.SetModel(cubeModel);
+            mr.GetMaterialsOverride()[0] = GetFloorMaterial();
         
             float angle = 20.0f * i; 
-            e.GetComponent<TransformComponent>().localPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
-            e.GetComponent<TransformComponent>().localEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+            e.GetComponent<TransformComponent>().LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
+            e.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
             otherEntity = e;
 
-            scene->SetParent(mainEntity.id(), e.id());
+            scene->SetParent(mainEntity.Id(), e.Id());
         }
 
         Application::AddModule<Editor>();
@@ -195,7 +223,7 @@ struct ECS_4: public OD::Module {
         //mainEntity.GetComponent<TransformComponent>().localEulerAngles(Vector3(0, Platform::GetTime() * 40, 0));
         //otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
-        SceneManager::Get().activeScene()->Update();
+        SceneManager::Get().ActiveScene()->Update();
 
         /*if(Input::IsKeyDown(KeyCode::A)){
             LogInfo("OnKeyDown A");
@@ -214,7 +242,7 @@ struct ECS_4: public OD::Module {
         //Renderer::SetDepthTest(DepthTest::LESS);
         //Renderer::SetCullFace(CullFace::BACK);
 
-        SceneManager::Get().activeScene()->Draw();
+        SceneManager::Get().ActiveScene()->Draw();
 
         /*Vector3 pos = otherEntity.GetComponent<TransformComponent>().position();
 

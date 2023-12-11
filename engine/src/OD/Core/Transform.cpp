@@ -11,16 +11,16 @@ Transform::Transform(const Matrix4& m){
     Vector4 p;
     math::decompose(m, s, r, t, sk, p);
 
-    _localPosition = t;
-    _localRotation = r;
-    _localScale = s;
+    localPosition = t;
+    localRotation = r;
+    localScale = s;
 }
 
 Matrix4 Transform::GetLocalModelMatrix(){
-    if(_isDirt == false) return _localModelMatrix;
-    _localModelMatrix = Mathf::TRS(_localPosition, _localRotation, _localScale);
-    _isDirt = false;
-    return _localModelMatrix;
+    if(isDirt == false) return localModelMatrix;
+    localModelMatrix = Mathf::TRS(localPosition, localRotation, localScale);
+    isDirt = false;
+    return localModelMatrix;
 
     //return Mathf::TRS(_localPosition, _localRotation, _localScale);
 }

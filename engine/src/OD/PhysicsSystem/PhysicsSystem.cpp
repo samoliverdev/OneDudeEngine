@@ -8,10 +8,11 @@ namespace OD{
 
 #pragma region Core
 struct Rigidbody{
-    btBoxShape* _shape = nullptr;
-    btRigidBody* _body = nullptr;
-    btDynamicsWorld* _world = nullptr;
-    btDefaultMotionState* _motionState = nullptr;
+    bool updating = false;
+    btCollisionShape* shape = nullptr;
+    btRigidBody* body = nullptr;
+    btDynamicsWorld* world = nullptr;
+    btDefaultMotionState* motionState = nullptr;
 
     EntityId entityId;
 };
@@ -29,8 +30,8 @@ public:
 
     void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override {
         Transform transform;
-        transform.localPosition(Vector3(PointOnB.x(), PointOnB.y(), PointOnB.z()));
-        transform.localScale(Vector3(0.25f, 0.25f, 0.25f));
+        transform.LocalPosition(Vector3(PointOnB.x(), PointOnB.y(), PointOnB.z()));
+        transform.LocalScale(Vector3(0.25f, 0.25f, 0.25f));
 
         Renderer::DrawWireCube(
             transform.GetLocalModelMatrix(), 
@@ -39,8 +40,8 @@ public:
         );
 
         Renderer::DrawLine(
-            transform.localPosition(), 
-            transform.localPosition() + Vector3(normalOnB.x(), normalOnB.y(), normalOnB.z()), 
+            transform.LocalPosition(), 
+            transform.LocalPosition() + Vector3(normalOnB.x(), normalOnB.y(), normalOnB.z()), 
             Vector3(color.x(), color.y(), color.z()),
             2
         );
@@ -55,39 +56,27 @@ public:
 Debuger debuger;
 #pragma endregion
 
+void JointComponent::OnGui(Entity& e){
+    JointComponent& light = e.GetComponent<JointComponent>();
+
+    cereal::ImGuiArchive uiArchive;
+    //uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
+    uiArchive(light);
+}
+
 #pragma region RigidbodyComponent
-void RigidbodyComponent::Serialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "RigidbodyComponent";
-    out << YAML::BeginMap;
-
-    auto& c = e.GetComponent<RigidbodyComponent>();
-    out << YAML::Key << "type" << YAML::Value << (int)c.type();
-    out << YAML::Key << "boxShapeSize" << YAML::Value << c.shape();
-    out << YAML::Key << "mass" << YAML::Value << c.mass();
-    out << YAML::Key << "neverSleep" << YAML::Value << c.neverSleep();
-    
-    out << YAML::EndMap;
-}
-
-void RigidbodyComponent::Deserialize(YAML::Node& in, Entity& e){
-    auto& c = e.AddOrGetComponent<RigidbodyComponent>();
-    c.type((Type)in["type"].as<int>());
-    c.shape(in["boxShapeSize"].as<Vector3>());
-    c.mass(in["mass"].as<float>());
-    c.neverSleep(in["neverSleep"].as<bool>());
-}
 
 void RigidbodyComponent::OnGui(Entity& e){
     RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
 
     const char* optionsString[] = {"Dynamic", "Static", "Kinematic", "Trigger"};
-    const char* curOptionString = optionsString[(int)rb.type()];
+    const char* curOptionString = optionsString[(int)rb.GetType()];
     if(ImGui::BeginCombo("Type", curOptionString)){
         for(int i = 0; i < 4; i++){
             bool isSelected = curOptionString == optionsString[i];
             if(ImGui::Selectable(optionsString[i], isSelected)){
                 curOptionString = optionsString[i];
-                rb.type((RigidbodyComponent::Type)i);
+                rb.SetType((RigidbodyComponent::Type)i);
             }
 
             if(isSelected) ImGui::SetItemDefaultFocus();
@@ -96,119 +85,162 @@ void RigidbodyComponent::OnGui(Entity& e){
         ImGui::EndCombo();
     }
 
-    float shape[] = {rb.shape().x, rb.shape().y, rb.shape().z};
-    if(ImGui::DragFloat3("shape", shape)){
-        rb.shape(Vector3(shape[0], shape[1], shape[2]));
-    }
-
-    float mass = rb.mass();
+    float mass = rb.Mass();
     if(ImGui::DragFloat("mass", &mass)){
-        rb.mass(mass);
+        rb.Mass(mass);
     }
 
-    bool neverSleep = rb.neverSleep();
+    bool neverSleep = rb.NeverSleep();
     if(ImGui::Checkbox("neverSleep", &neverSleep)){
-        rb.neverSleep(neverSleep);
+        rb.NeverSleep(neverSleep);
+    }
+
+    CollisionShape shape = rb.GetShape();
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("CollisionShape");
+
+    const char* shapeTypeString[] = {"Box", "Sphere"};
+    const char* curShapeTypeString = shapeTypeString[(int)rb.GetShape().type];
+    if(ImGui::BeginCombo("CollisionShape", curShapeTypeString)){
+        for(int i = 0; i < 2; i++){
+            bool isSelected = curShapeTypeString == shapeTypeString[i];
+            if(ImGui::Selectable(shapeTypeString[i], isSelected)){
+                curShapeTypeString = shapeTypeString[i];
+                shape.type = (CollisionShape::Type)i;
+                rb.SetShape(shape);
+            }
+
+            if(isSelected) ImGui::SetItemDefaultFocus();
+        }
+
+        ImGui::EndCombo();
+    }
+
+    shape = rb.GetShape();
+
+    if(rb.shape.type == CollisionShape::Type::Box){
+        float _shape[] = {shape.boxShapeSize.x, shape.boxShapeSize.y, shape.boxShapeSize.z};
+        if(ImGui::DragFloat3("size", _shape)){
+            shape.boxShapeSize = Vector3(_shape[0], _shape[1], _shape[2]);
+            rb.SetShape(shape);
+        }
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Sphere){
+        float _radius = shape.sphereRadius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.sphereRadius = _radius;
+            rb.SetShape(shape);
+        }
     }
 }
 
-void RigidbodyComponent::shape(Vector3 boxShapeSize){
-    _boxShapeSize = boxShapeSize;
-    _shapeIsDity = false;
+void RigidbodyComponent::SetShape(CollisionShape inShape){
+    shape = inShape;
 
-    if(_data == nullptr) return;
+    if(data == nullptr) return;
 
-    if(_data->_shape != nullptr) delete _data->_shape;
-    _data->_shape = new btBoxShape(btVector3(_boxShapeSize.x/2, _boxShapeSize.y/2, _boxShapeSize.z/2));
-    _data->_body->setCollisionShape(_data->_shape);
+    if(data->shape != nullptr) delete data->shape;
 
-    mass(_mass);
+    if(shape.type == CollisionShape::Type::Box){
+        data->shape = new btBoxShape(btVector3(shape.boxShapeSize.x/2, shape.boxShapeSize.y/2, shape.boxShapeSize.z/2));
+        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+    }
 
-    _data->_body->activate(true);
+    if(shape.type == CollisionShape::Type::Sphere){
+        data->shape = new btSphereShape(shape.sphereRadius);
+        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+    }
+
+    if(data->updating == false) UpdateSettings();
+    //data->body->activate(true);
 }
 
-void RigidbodyComponent::mass(float m){
-    _mass = m;
-    _massIsDirty = true;
+void RigidbodyComponent::UpdateSettings(){
+    if(data->updating == false) data->world->removeRigidBody(data->body);
 
-    //return;
-    if(_data == nullptr) return;
+    if(mass > 0 && type == RigidbodyComponent::Type::Static) type = RigidbodyComponent::Type::Dynamic;
+    if(mass <= 0 && type == RigidbodyComponent::Type::Dynamic) type = RigidbodyComponent::Type::Static;
 
-    _massIsDirty = false;
-
+    if(type == RigidbodyComponent::Type::Dynamic) data->body->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Static) data->body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Kinematic) data->body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Trigger) data->body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
+    
     btVector3 localInertia(0,0,0);
-    if (_mass != 0.0f) _data->_shape->calculateLocalInertia(_mass, localInertia);
-    _data->_body->setMassProps(_mass, localInertia);
-    _data->_body->activate(true);
+    if (mass != 0.0f) data->shape->calculateLocalInertia(mass, localInertia);
+    data->body->setMassProps(mass, localInertia);
+    
+    if(data->updating == false) data->world->addRigidBody(data->body);
 }
 
-void RigidbodyComponent::type(RigidbodyComponent::Type value){
-    _type = value;
-
-    if(_data == nullptr) return;
-
-    if(_type == Type::Dynamic) _data->_body->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
-    if(_type == Type::Static) _data->_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-    if(_type == Type::Kinematic) _data->_body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
-    if(_type == Type::Trigger) _data->_body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
-
-    _data->_body->activate(true);
+void RigidbodyComponent::Mass(float m){
+    mass = m;
+    if(data == nullptr) return;
+    UpdateSettings();
 }
 
-void RigidbodyComponent::neverSleep(bool value){
-    _neverSleep = value;
+void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
+    type = value;
+    if(data == nullptr) return;
+    UpdateSettings();
+}
 
-    if(_data == nullptr) return;
+void RigidbodyComponent::NeverSleep(bool value){
+    neverSleep = value;
+
+    if(data == nullptr) return;
 
     if(value){
-        _data->_body->setActivationState(DISABLE_DEACTIVATION);
+        data->body->setActivationState(DISABLE_DEACTIVATION);
     } else {
-        _data->_body->setActivationState(ACTIVE_TAG);
+        data->body->setActivationState(ACTIVE_TAG);
     }
 }
 
-Vector3 RigidbodyComponent::position(){
-    if(_data == nullptr) return Vector3Zero;
-    btTransform trans = _data->_body->getWorldTransform();
+Vector3 RigidbodyComponent::Position(){
+    if(data == nullptr) return Vector3Zero;
+    btTransform trans = data->body->getWorldTransform();
     return FromBullet(trans.getOrigin());
 }
 
-void RigidbodyComponent::position(Vector3 position){
-    if(_data == nullptr) return;
+void RigidbodyComponent::Position(Vector3 position){
+    if(data == nullptr) return;
     btTransform trans;
     trans.setIdentity();
     trans.setOrigin(ToBullet(position));
-    _data->_body->setWorldTransform(trans);
-    _data->_motionState->setWorldTransform(trans);
+    data->body->setWorldTransform(trans);
+    data->motionState->setWorldTransform(trans);
 
-    _data->_body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
-    _data->_body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
-    _data->_body->clearForces();
+    data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    data->body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    data->body->clearForces();
 }
 
-Vector3 RigidbodyComponent::velocity(){
-    if(_data == nullptr) return Vector3Zero;
-    return FromBullet(_data->_body->getLinearVelocity());
+Vector3 RigidbodyComponent::Velocity(){
+    if(data == nullptr) return Vector3Zero;
+    return FromBullet(data->body->getLinearVelocity());
 }
 
-void RigidbodyComponent::velocity(Vector3 v){
-    if(_data == nullptr) return;
-    return _data->_body->setLinearVelocity(ToBullet(v));
+void RigidbodyComponent::Velocity(Vector3 v){
+    if(data == nullptr) return;
+    return data->body->setLinearVelocity(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyForce(Vector3 v){
-    if(_data == nullptr) return;
-    _data->_body->applyCentralForce(ToBullet(v));
+    if(data == nullptr) return;
+    data->body->applyCentralForce(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyTorque(Vector3 v){
-    if(_data == nullptr) return;
-    _data->_body->applyTorque(ToBullet(v));
+    if(data == nullptr) return;
+    data->body->applyTorque(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyImpulse(Vector3 v){
-    if(_data == nullptr) return;
-    _data->_body->applyCentralImpulse(ToBullet(v));
+    if(data == nullptr) return;
+    data->body->applyCentralImpulse(ToBullet(v));
 }
 
 #pragma endregion
@@ -218,22 +250,22 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 PhysicsSystem* PhysicsSystem::instance;
 
 PhysicsSystem::PhysicsSystem(){
-    _collisionConfiguration = new btDefaultCollisionConfiguration();
-    _dispatcher = new btCollisionDispatcher(_collisionConfiguration);
-    _broadphase = new btDbvtBroadphase();
-    _solver = new btSequentialImpulseConstraintSolver();
-    _world = new btDiscreteDynamicsWorld(_dispatcher, _broadphase, _solver, _collisionConfiguration);
-    _world->setGravity(btVector3(0.0f, -9.80665f, 0.0f));
+    collisionConfiguration = new btDefaultCollisionConfiguration();
+    dispatcher = new btCollisionDispatcher(collisionConfiguration);
+    broadphase = new btDbvtBroadphase();
+    solver = new btSequentialImpulseConstraintSolver();
+    world = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+    world->setGravity(btVector3(0.0f, -9.80665f, 0.0f));
 
-    _world->setDebugDrawer(&debuger);
+    world->setDebugDrawer(&debuger);
 }
 
 PhysicsSystem::~PhysicsSystem(){
-    delete _collisionConfiguration;
-    delete _dispatcher;
-    delete _broadphase;
-    delete _solver;
-    delete _world;
+    delete collisionConfiguration;
+    delete dispatcher;
+    delete broadphase;
+    delete solver;
+    delete world;
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
@@ -241,68 +273,103 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
 
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
 
-    if(rb._data == nullptr) return;
+    if(rb.data == nullptr) return;
 
-    Rigidbody* data = rb._data;
-    data->_world->removeRigidBody(data->_body);
+    Rigidbody* data = rb.data;
+    data->world->removeRigidBody(data->body);
 
     Assert(PhysicsSystem::Get() != nullptr);
-    auto& _pairsLastUpdate = PhysicsSystem::Get()->_pairsLastUpdate;
+    auto& _pairsLastUpdate = PhysicsSystem::Get()->pairsLastUpdate;
     for(auto i = _pairsLastUpdate.begin(); i != _pairsLastUpdate.end(); ){
-        if(i->first == data->_body || i->second == data->_body){
+        if(i->first == data->body || i->second == data->body){
             _pairsLastUpdate.erase(i++);
         } else {
             ++i;
         }
     }
 
-    delete data->_shape;
-    delete data->_motionState;
-    delete data->_body;
+    delete data->shape;
+    delete data->motionState;
+    delete data->body;
     delete data;
 }
 
 void PhysicsSystem::Init(Scene* scene){
-    _scene = scene;
-    _scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
-
+    this->scene = scene;
+    this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     instance = this;
 }
 
 void PhysicsSystem::Update(){
-    if(scene()->running() == false) return;
+    if(GetScene()->Running() == false) return;
 
-    if(scene()->running())
-        _world->stepSimulation(Application::deltaTime());
+    if(GetScene()->Running())
+        world->stepSimulation(Application::DeltaTime());
     
-    auto view = scene()->GetRegistry().view<RigidbodyComponent, TransformComponent>();
+    auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent>();
 
     for(auto e: view){
         RigidbodyComponent& rb = view.get<RigidbodyComponent>(e);
         TransformComponent& transform = view.get<TransformComponent>(e);
 
-        if(rb._data == nullptr){
+        if(rb.data == nullptr){
             AddRigidbody(e, rb, transform);
         }
 
-        Assert(rb._data != nullptr);
+        Assert(rb.data != nullptr);
 
-        Rigidbody* data = rb._data;
+        Rigidbody* data = rb.data;
 
         btTransform trans;
-		data->_motionState->getWorldTransform(trans);
-        //trans = rb->m_pBody->getWorldTransform();
+		//data->motionState->getWorldTransform(trans);
+        trans = data->body->getWorldTransform();
 
         btVector3 pos = trans.getOrigin();
         btQuaternion rot = trans.getRotation();
         
-        transform.position(Vector3(pos.getX(), pos.getY(), pos.getZ()));
-        transform.rotation(Quaternion(rot.getX(), rot.getY(), rot.getZ(), rot.getW()));
+        transform.Position(Vector3(pos.getX(), pos.getY(), pos.getZ()));
+        transform.Rotation(Quaternion(rot.getX(), rot.getY(), rot.getZ(), rot.getW()));
 
-        if(rb._massIsDirty) SetMass(rb);
-        if(rb._shapeIsDity) SetShape(rb);
-        
-        data->_shape->setLocalScaling(ToBullet(transform.localScale()));
+        data->shape->setLocalScaling(ToBullet(transform.LocalScale()));
+    }
+
+    auto view2 = GetScene()->GetRegistry().view<JointComponent, TransformComponent>();
+    for(auto e: view2){
+        JointComponent& joint = view2.get<JointComponent>(e);
+        TransformComponent& transform = view2.get<TransformComponent>(e);
+
+        if(joint.joint == nullptr){
+            Entity ent(joint.rb, GetScene());
+            if(ent.HasComponent<RigidbodyComponent>() == false) continue;
+
+            RigidbodyComponent& rb = ent.GetComponent<RigidbodyComponent>();
+            if(rb.data == nullptr) continue;
+
+            btTransform pivot;
+            pivot.setOrigin(ToBullet(joint.pivot));
+            joint.joint = new btGeneric6DofConstraint(*rb.data->body, pivot, true);
+
+            joint.joint->setAngularLowerLimit(btVector3(0,0,0));
+            joint.joint->setAngularUpperLimit(btVector3(0,0,0));
+
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 0);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 1);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 2);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 3);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 4);
+
+            joint.joint->setParam(BT_CONSTRAINT_STOP_CFM, joint.strength, 5);
+            // define the 'error reduction' of our constraint (each axis)
+            float erp = 0.5f;
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 0);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 1);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 2);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 3);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 4);
+            joint.joint->setParam(BT_CONSTRAINT_STOP_ERP, erp, 5);
+
+            world->addConstraint(joint.joint);
+        }
     }
 
     CheckForCollisionEvents();
@@ -314,10 +381,10 @@ void PhysicsSystem::CheckForCollisionEvents(){
 	CollisionPairs pairsThisUpdate;
 
 	// iterate through all of the manifolds in the dispatcher
-	for(int i = 0; i < _dispatcher->getNumManifolds(); ++i){
+	for(int i = 0; i < dispatcher->getNumManifolds(); ++i){
 		
 		// get the manifold
-		btPersistentManifold* pManifold = _dispatcher->getManifoldByIndexInternal(i);
+		btPersistentManifold* pManifold = dispatcher->getManifoldByIndexInternal(i);
 		
 		// ignore manifolds that have 
 		// no contact points.
@@ -341,7 +408,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
 			// if this pair doesn't exist in the list
 			// from the previous update, it is a new
 			// pair and we must send a collision event
-			if(_pairsLastUpdate.find(thisPair) == _pairsLastUpdate.end()) {
+			if(pairsLastUpdate.find(thisPair) == pairsLastUpdate.end()) {
                 Assert(pBody0 != nullptr);
                 Assert(pBody0->getUserPointer() != nullptr);
                 Assert(pBody1 != nullptr);
@@ -353,8 +420,8 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 Assert(r1 != nullptr);
                 Assert(r2 != nullptr);
                 
-                Entity e1 = Entity(r1->entityId, _scene);
-                Entity e2 = Entity(r2->entityId, _scene);
+                Entity e1 = Entity(r1->entityId, scene);
+                Entity e2 = Entity(r2->entityId, scene);
                 Assert(e1.HasComponent<InfoComponent>());
                 Assert(e2.HasComponent<InfoComponent>());
 
@@ -363,7 +430,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 RigidbodyComponent& _r1 = e1.GetComponent<RigidbodyComponent>();
                 RigidbodyComponent& _r2 = e2.GetComponent<RigidbodyComponent>();
 
-                if(_r1.type() == RigidbodyComponent::Type::Trigger) _r2.ApplyImpulse(Vector3Up * 25.0f);
+                if(_r1.GetType() == RigidbodyComponent::Type::Trigger) _r2.ApplyImpulse(Vector3Up * 25.0f);
                 //if(_r2.type() == RigidbodyComponent::Type::Trigger) _r1.ApplyImpulse(Vector3::up * 20.0f);
 			}
 		}
@@ -377,7 +444,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
 	// two sets. It takes the difference between
 	// collision pairs from the last update, and this 
 	// update and pushes them into the removed pairs list
-	std::set_difference(_pairsLastUpdate.begin(), _pairsLastUpdate.end(),
+	std::set_difference(pairsLastUpdate.begin(), pairsLastUpdate.end(),
 	pairsThisUpdate.begin(), pairsThisUpdate.end(),
 	std::inserter(removedPairs, removedPairs.begin()));
 	
@@ -395,8 +462,8 @@ void PhysicsSystem::CheckForCollisionEvents(){
         Assert(r1 != nullptr);
         Assert(r2 != nullptr);
 
-        Entity e1 = Entity(r1->entityId, _scene);
-        Entity e2 = Entity(r2->entityId, _scene);
+        Entity e1 = Entity(r1->entityId, scene);
+        Entity e2 = Entity(r2->entityId, scene);
         Assert(e1.HasComponent<InfoComponent>());
         Assert(e2.HasComponent<InfoComponent>());
 
@@ -406,13 +473,13 @@ void PhysicsSystem::CheckForCollisionEvents(){
 	// in the next iteration we'll want to
 	// compare against the pairs we found
 	// in this iteration
-	_pairsLastUpdate = pairsThisUpdate;
+	pairsLastUpdate = pairsThisUpdate;
 }
 
 void PhysicsSystem::ShowDebugGizmos(){
     //if(scene()->running()) return;
 
-    _world->debugDrawWorld();
+    world->debugDrawWorld();
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
@@ -420,7 +487,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
     btVector3 _dir = btVector3(dir.x, dir.y, dir.z);
 
     btCollisionWorld::ClosestRayResultCallback rayCallback(_pos, _dir);
-    _world->rayTest(_pos, _dir, rayCallback);
+    world->rayTest(_pos, _dir, rayCallback);
 
     if(rayCallback.hasHit()){
         // if so, get the rigid body we hit
@@ -435,7 +502,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
         // set the result data
         //hit.pBody = pBody;
-        hit.entity = Entity(entityId, _scene);
+        hit.entity = Entity(entityId, scene);
         hit.hitPoint = FromBullet(rayCallback.m_hitPointWorld);
         hit.hitNormal = FromBullet(rayCallback.m_hitNormalWorld);
         return true;
@@ -447,70 +514,41 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t){
     LogInfo("Add Rigidbody");
     Rigidbody* data = new Rigidbody();
+    data->updating = true;
+    data->world = world;
+    
+    c.data = data;
+    c.data->entityId = entityId;
 
-    c._data = data;
-    c._data->entityId = entityId;
+    Vector3 pos = t.Position();
+    Quaternion rot = t.Rotation();
 
-    Vector3 pos = t.position();
-    Quaternion rot = t.rotation();
-
-    if(data->_shape == nullptr)
-        data->_shape = new btBoxShape(btVector3(c._boxShapeSize.x/2, c._boxShapeSize.y/2, c._boxShapeSize.z/2));
-
-    data->_world = _world;
+    c.SetShape(c.GetShape());
 
     btTransform transform;
     transform.setIdentity();
     transform.setOrigin(btVector3(pos.x, pos.y, pos.z));
     transform.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
 
-    data->_motionState = new btDefaultMotionState(transform);
+    data->motionState = new btDefaultMotionState(transform);
 
-    btVector3 localInertia(0,0,0);
-    if (c._mass != 0.0f) data->_shape->calculateLocalInertia(c._mass, localInertia);
+    //btVector3 localInertia(0,0,0);
+    //if (c.mass != 0.0f) data->shape->calculateLocalInertia(c.mass, localInertia);
+    
+    //data->body = new btRigidBody(c.mass, data->motionState, data->shape, localInertia);
+    data->body = new btRigidBody(c.mass, data->motionState, data->shape);
+    data->body->setUserPointer(data);
 
-    data->_body = new btRigidBody(c._mass, data->_motionState, data->_shape, localInertia);
-    data->_body->setUserPointer(data);
+    //Update Rigidbody
+    //c.SetType(c.GetType());
+    c.UpdateSettings();
+    c.NeverSleep(c.NeverSleep());
 
-    c.type(c.type());
-    c.neverSleep(c.neverSleep());
+    world->addRigidBody(data->body);
 
-    _world->addRigidBody(data->_body);
+    data->updating = false;
 }
 
-void PhysicsSystem::SetShape(RigidbodyComponent& rb){
-    return;
-    Assert(rb._data != nullptr);
-    Rigidbody* data = rb._data;
-
-    rb._shapeIsDity = false;
-
-    if(data->_shape != nullptr) delete data->_shape;
-    data->_shape = new btBoxShape(btVector3(rb._boxShapeSize.x/2, rb._boxShapeSize.y/2, rb._boxShapeSize.z/2));
-    data->_body->setCollisionShape(data->_shape);
-
-    SetMass(rb);
-
-    data->_body->activate(true);
-
-    //_shape->setLocalScaling(btVector3(boxShapeSize.x, boxShapeSize.y, boxShapeSize.z));
-    //data->_shape->setSafeMargin(btVector3(rb._boxShapeSize.x/2, rb._boxShapeSize.y/2, rb._boxShapeSize.z/2));
-}
-
-void PhysicsSystem::SetMass(RigidbodyComponent& rb){
-    return;
-
-    Assert(rb._data != nullptr);
-    Rigidbody* data = rb._data;
-
-    rb._massIsDirty = false;
-
-    btVector3 localInertia(0,0,0);
-    if (rb._mass != 0.0f) data->_shape->calculateLocalInertia(rb._mass, localInertia);
-    data->_body->setMassProps(rb._mass, localInertia);
-
-    data->_body->activate(true);
-}
 #pragma endregion
 
 }

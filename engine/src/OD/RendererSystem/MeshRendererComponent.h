@@ -20,84 +20,74 @@ void serialize(Archive& ar, Ref<Model>& model){
 
 struct MeshRendererComponent{
     friend class StandRendererSystem;
-
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
+    
     static void OnGui(Entity& e);
 
-    inline Ref<Model> model(){ return _model; }
-    inline void model(Ref<Model> m){
-        _model = m;
-        _materialsOverride.resize(_model->materials.size());
+    inline Ref<Model> GetModel(){ return model; }
+    inline void SetModel(Ref<Model> m){
+        model = m;
+        materialsOverride.resize(model->materials.size());
     }
 
-    inline int subMeshIndex(){ return _subMeshIndex; }
-    inline void subMeshIndex(int v){
-        _subMeshIndex = v;
-        if(v < -1) _subMeshIndex = -1;
-        if(_model != nullptr && v >= static_cast<int>(_model->meshs.size())) _subMeshIndex = _model->meshs.size()-1;
+    inline int GetSubMeshIndex(){ return subMeshIndex; }
+    inline void SetSubMeshIndex(int v){
+        subMeshIndex = v;
+        if(v < -1) subMeshIndex = -1;
+        if(model != nullptr && v >= static_cast<int>(model->meshs.size())) subMeshIndex = model->meshs.size()-1;
     }
 
-    inline std::vector<Ref<Material>>& materialsOverride(){ return _materialsOverride; }
-
-    /*template <class Archive>
-    void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(_subMeshIndex),
-            CEREAL_NVP(_model == nullptr ? "None" : _model->path());
-        );
-    }*/
+    inline std::vector<Ref<Material>>& GetMaterialsOverride(){ return materialsOverride; }
 
     template<class Archive>
     void save(Archive & ar) const{
-        std::string path = _model == nullptr ? "" : _model->path();
-        std::vector<std::string> materialsOverride;
+        std::string path = model == nullptr ? "" : model->Path();
+        std::vector<std::string> materialsOverridePaths;
 
-        for(auto i: _materialsOverride){
-            materialsOverride.push_back(i == nullptr ? "" : i->path());
+        for(auto i: materialsOverride){
+            materialsOverridePaths.push_back(i == nullptr ? "" : i->Path());
         }
 
         ar(
-            CEREAL_NVP(_subMeshIndex),
+            CEREAL_NVP(subMeshIndex),
             CEREAL_NVP(path),
-            CEREAL_NVP(materialsOverride)
+            CEREAL_NVP(materialsOverridePaths)
         );
     }
 
     template<class Archive>
     void load(Archive & ar){
         std::string path;
-        std::vector<std::string> materialsOverride;
+        std::vector<std::string> materialsOverridePaths;
 
         ar(
-            CEREAL_NVP(_subMeshIndex),
+            CEREAL_NVP(subMeshIndex),
             CEREAL_NVP(path),
-            CEREAL_NVP(materialsOverride)
+            CEREAL_NVP(materialsOverridePaths)
         );
 
 
         if(path.empty() == false){
-            model(AssetManager::Get().LoadModel(path));
+            SetModel(AssetManager::Get().LoadModel(path));
         }
 
-        if(_model != nullptr) Assert(_materialsOverride.size() == materialsOverride.size()); 
+        if(model != nullptr) Assert(materialsOverride.size() == materialsOverride.size()); 
 
         //if(_materialsOverride.size() != materialsOverride.size()) _materialsOverride.resize(materialsOverride.size());
 
         int index = 0;
-        for(auto i: materialsOverride){
-            if(i.empty() == false) _materialsOverride[index] = AssetManager::Get().LoadMaterial(i);
+        for(auto i: materialsOverridePaths){
+            if(i.empty() == false) materialsOverride[index] = AssetManager::Get().LoadMaterial(i);
             index += 1;
         }
     }
 
 private:
-    Ref<Model> _model = nullptr;
-    int _subMeshIndex = -1;
-    std::vector<Ref<Material>> _materialsOverride;
-    AABB _boundingVolume;
-    Sphere _boundingVolumeSphere;
-    bool _boundingVolumeIsDirty = true;
+    Ref<Model> model = nullptr;
+    int subMeshIndex = -1;
+    std::vector<Ref<Material>> materialsOverride;
+    AABB boundingVolume;
+    Sphere boundingVolumeSphere;
+    bool boundingVolumeIsDirty = true;
 
     AABB getGlobalAABB(TransformComponent& transform);
 };

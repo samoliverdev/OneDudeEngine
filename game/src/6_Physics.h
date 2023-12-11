@@ -11,41 +11,39 @@ using namespace OD;
 struct PhysicsCubeS: public Script{
     float t;
 
-    void Serialize(ArchiveNode& s) override{
-        s.Add(&t, "t");
-    }
-
     void OnStart() override{
         LogInfo("PhysicsCubeS OnStart");
         
-        Assert(entity().IsValid() == true);
+        Assert(GetEntity().IsValid() == true);
 
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/models/Cube.glb");
+        Entity& entity = GetEntity();
+
+        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
         //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
         //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
-        cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/mat1.material"); //Material::CreateFromFile("res/mat1.material");
+        cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/Game/Materials/mat1.material"); //Material::CreateFromFile("res/mat1.material");
 
-        entity().GetComponent<TransformComponent>().position({2, 13, 0});
-        entity().GetComponent<TransformComponent>().rotation(QuaternionIdentity);
+        entity.GetComponent<TransformComponent>().Position({2, 13, 0});
+        entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
 
-        MeshRendererComponent& renderer = entity().AddOrGetComponent<MeshRendererComponent>();
-        renderer.model(cubeModel);
+        MeshRendererComponent& renderer = entity.AddOrGetComponent<MeshRendererComponent>();
+        renderer.SetModel(cubeModel);
 
-        RigidbodyComponent& physicObject = entity().AddOrGetComponent<RigidbodyComponent>();
+        RigidbodyComponent& physicObject = entity.AddOrGetComponent<RigidbodyComponent>();
         
         //physicObject->boxShapeSize = {1,1,1};
         //physicObject->mass = 1;
 
-        physicObject.shape({1,1,1});
+        physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
         //physicObject->SetMass(1);
     }
 
     void OnUpdate() override{
         ///*
-        t += Application::deltaTime();
+        t += Application::DeltaTime();
         if(t > 5){
-            entity().scene()->DestroyEntity(entity().id());
+            GetEntity().GetScene()->DestroyEntity(GetEntity().Id());
             //LogInfo("ToDestroy");
         }
         //*/
@@ -54,14 +52,14 @@ struct PhysicsCubeS: public Script{
     void OnDestroy() override{
         LogInfo("PhysicsCubeS OnDestroy");
     }
+
+    template <class Archive>
+    void serialize(Archive & ar){}
 };
 
 struct Physics_6: OD::Module {
     //CameraMovement camMove;
     Entity camera;
-
-    bool spawnInput;
-    bool lastSpawnInput;
 
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
@@ -69,22 +67,7 @@ struct Physics_6: OD::Module {
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-        //SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
-        //SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
-        //SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
-
         Scene* scene = SceneManager::Get().NewScene();
-
-        //scene->AddSystem<PhysicsSystem>();
-        //scene->AddSystem<StandRendererSystem>();
-        //scene->AddSystem<ScriptSystem>();
-
-        //scene.Load("res/scene1.scene");
-        //return true;
-
-        //Application::SetVSync(false);
-
-        //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
 
         Entity env = scene->AddEntity("Env");
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
@@ -92,64 +75,63 @@ struct Physics_6: OD::Module {
         Entity light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
         lightComponent.color = Vector3(1,1,1);
-        light.GetComponent<TransformComponent>().position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().localEulerAngles(Vector3(45, -125, 0));
+        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
+        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
 
         camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().localPosition(Vector3(0, 15, 15));
-        camera.GetComponent<TransformComponent>().localEulerAngles(Vector3(-25, 0, 0));
+        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
+        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         //camMove.transform = &camera->transform();
         //camMove.moveSpeed = 60;
         //camMove.OnInit();
         cam.farClipPlane = 1000;
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel("res/models/plane.glb");
-        //floorModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
-        //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
-        //floorModel->materials[0]->shader = AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
-        //floorModel->materials[0]->SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/floor.jpg", false, OD::TextureFilter::Linear, false));
-        //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
-
-        //floorModel->materials[0]->Save(std::string("res/mat1.material"));
-
-        Ref<Model> cubeModel = Model::CreateFromFile("res/models/Cube.glb");
-        //cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/textures/rock.material");
-        //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
-        //cubeModel->materials[0]->shader = AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl");
-        //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
-        //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
+        Ref<Model> floorModel = AssetManager::Get().LoadModel("res/Game/Models/plane.glb");
+        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
         MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
-        floorRenderer.model(floorModel);
-        floorRenderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/floor.material");
+        floorRenderer.SetModel(floorModel);
+        floorRenderer.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
-        floorEntityP.shape({25,0.1f,25});
-        floorEntityP.mass(0);
-        floorEntityP.type(RigidbodyComponent::Type::Static);
-        //floorEntityP.neverSleep(true);
+        floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
+        floorEntityP.Mass(0);
+        floorEntityP.SetType(RigidbodyComponent::Type::Static);
+        floorEntityP.NeverSleep(true);
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Entity character2Entity = scene->AddEntity("MainCube");
-        //scene->SetParent(floorEntity.id(), character2Entity.id());
-
         MeshRendererComponent& character2Renderer = character2Entity.AddComponent<MeshRendererComponent>();
-        character2Renderer.model(cubeModel);
-        character2Renderer.materialsOverride()[0] = AssetManager::Get().LoadMaterial("res/textures/rock.material");
+        character2Renderer.SetModel(cubeModel);
+        character2Renderer.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
         RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
-        physicObject.shape({1,1,1});
-        physicObject.mass(1);
-        //physicObject.neverSleep(true);
-        character2Entity.GetComponent<TransformComponent>().position({2, 13, 0});
-        character2Entity.GetComponent<TransformComponent>().rotation(QuaternionIdentity);
+        physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
+        physicObject.Mass(1);
+        physicObject.NeverSleep(true);
+        character2Entity.GetComponent<TransformComponent>().Position({2, 13, 0});
+        character2Entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+
+        Entity character2Entity2 = scene->AddEntity("MainCube2");
+        MeshRendererComponent& character2Renderer2 = character2Entity2.AddComponent<MeshRendererComponent>();
+        character2Renderer2.SetModel(cubeModel);
+        character2Renderer2.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
+        RigidbodyComponent& physicObject2 = character2Entity2.AddComponent<RigidbodyComponent>();
+        physicObject2.SetShape(CollisionShape::BoxShape({1,1,1}));
+        physicObject2.Mass(1);
+        physicObject2.NeverSleep(true);
+        character2Entity2.GetComponent<TransformComponent>().Position({-3, 13, 0});
+        character2Entity2.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+        JointComponent& joint = character2Entity2.AddComponent<JointComponent>();
+        joint.pivot = Vector3{-3, 13, 0};
+        joint.rb = character2Entity2.Id();
 
         Entity trigger = scene->AddEntity("Trigger");
         RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();
-        _trigger.shape({4,1,4});
-        _trigger.type(RigidbodyComponent::Type::Trigger);
-        _trigger.neverSleep(true);
+        _trigger.SetShape(CollisionShape::BoxShape({4,1,4}));
+        _trigger.SetType(RigidbodyComponent::Type::Trigger);
+        _trigger.NeverSleep(true);
 
         //scene->Save("res/scene1.scene");
         //scene->Start();
@@ -157,22 +139,20 @@ struct Physics_6: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        SceneManager::Get().activeScene()->Update();
-        if(SceneManager::Get().activeScene()->running() == false) return;
+        Scene* scene = SceneManager::Get().ActiveScene();
 
-        /*
+        scene->Update();
+        if(scene->Running() == false) return;
+
         TransformComponent& camT = camera.GetComponent<TransformComponent>();
         RayResult hit;
-        if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.position(), camT.back() * 1000.0f, hit)){
+        if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
-        }*/
+        }
 
-        lastSpawnInput = spawnInput;
-        spawnInput = Input::IsKey(KeyCode::R);
-
-        if(spawnInput == true && lastSpawnInput == false){
-            SceneManager::Get().activeScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
-            SceneManager::Get().activeScene()->Save("res/scene1.scene");
+        if(Input::IsKeyDown(KeyCode::R)){
+            SceneManager::Get().ActiveScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            //SceneManager::Get().ActiveScene()->Save("res/Game/Scenes/scene1.scene");
             
             //scene = SceneManager::Get().NewScene();
             //scene->Load("res/scene1.scene");
@@ -181,7 +161,7 @@ struct Physics_6: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().activeScene()->Draw();
+        SceneManager::Get().ActiveScene()->Draw();
         //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 

@@ -1,17 +1,17 @@
 #include "CameraMovement.h"
 
 void CameraMovement::OnStart(){
-    pitch = transform->localEulerAngles().x;
-    yaw = transform->localEulerAngles().y;
+    pitch = transform->LocalEulerAngles().x;
+    yaw = transform->LocalEulerAngles().y;
 }
 
 void CameraMovement::OnUpdate(){
-    Vector3 pos = transform->localPosition();
+    Vector3 pos = transform->LocalPosition();
 
-    if(Input::IsKey(KeyCode::W)) pos += transform->back() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::S)) pos += transform->forward() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::A)) pos += transform->left() * moveSpeed * Application::deltaTime();
-    if(Input::IsKey(KeyCode::D)) pos += transform->right() * moveSpeed * Application::deltaTime();
+    if(Input::IsKey(KeyCode::W)) pos += transform->Back() * moveSpeed * Application::DeltaTime();
+    if(Input::IsKey(KeyCode::S)) pos += transform->Forward() * moveSpeed * Application::DeltaTime();
+    if(Input::IsKey(KeyCode::A)) pos += transform->Left() * moveSpeed * Application::DeltaTime();
+    if(Input::IsKey(KeyCode::D)) pos += transform->Right() * moveSpeed * Application::DeltaTime();
 
     double xpos;
     double ypos;
@@ -33,29 +33,29 @@ void CameraMovement::OnUpdate(){
         float newRotationY = pitch;
 
         //LogInfo("%f", newRotationX);
-        transform->localEulerAngles(Vector3(newRotationY, newRotationX, 0));
+        transform->LocalEulerAngles(Vector3(newRotationY, newRotationX, 0));
     }
     
-    transform->localPosition(pos);
+    transform->LocalPosition(pos);
 }
 
 void CameraMovementScript::OnStart(){
-    TransformComponent& transform = entity().GetComponent<TransformComponent>();
+    TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
 
-    pitch = transform.localEulerAngles().x;
-    yaw = transform.localEulerAngles().y;
+    pitch = transform.LocalEulerAngles().x;
+    yaw = transform.LocalEulerAngles().y;
 }
 
 void CameraMovementScript::OnUpdate(){
-    TransformComponent& transform = entity().GetComponent<TransformComponent>();
+    TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
 
-    Vector3 pos = transform.localPosition();
+    Vector3 pos = transform.LocalPosition();
 
     if(Input::IsMouseButton(MouseButton::Right)){
-        if(Input::IsKey(KeyCode::W)) pos += transform.back() * moveSpeed * Application::deltaTime();
-        if(Input::IsKey(KeyCode::S)) pos += transform.forward() * moveSpeed * Application::deltaTime();
-        if(Input::IsKey(KeyCode::A)) pos += transform.left() * moveSpeed * Application::deltaTime();
-        if(Input::IsKey(KeyCode::D)) pos += transform.right() * moveSpeed * Application::deltaTime();
+        if(Input::IsKey(KeyCode::W)) pos += transform.Back() * moveSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::S)) pos += transform.Forward() * moveSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::A)) pos += transform.Left() * moveSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::D)) pos += transform.Right() * moveSpeed * Application::DeltaTime();
     }
 
     double xpos;
@@ -78,8 +78,8 @@ void CameraMovementScript::OnUpdate(){
         float newRotationY = pitch;
 
         //LogInfo("%f", newRotationX);
-        transform.localEulerAngles(Vector3(newRotationY, newRotationX, 0));
+        transform.LocalEulerAngles(Vector3(newRotationY, newRotationX, 0));
     }
     
-    transform.localPosition(pos);
+    transform.LocalPosition(pos);
 }

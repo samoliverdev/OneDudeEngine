@@ -8,30 +8,30 @@ namespace OD{
 template <typename VTRACK, typename QTRACK>
 class TTransformTrack{
 public:
-    TTransformTrack(){ _id = 0; }
-    unsigned int GetId(){ return _id; }
-    void SetId(unsigned int id){ _id = id; }
-    VTRACK& GetPositionTrack(){ return _position; }
-    QTRACK& GetRotationTrack(){ return _rotation; }
-    VTRACK& GetScaleTrack(){ return _scale; }
+    TTransformTrack(){ id = 0; }
+    unsigned int GetId(){ return id; }
+    void SetId(unsigned int newId){ id = newId; }
+    VTRACK& GetPositionTrack(){ return position; }
+    QTRACK& GetRotationTrack(){ return rotation; }
+    VTRACK& GetScaleTrack(){ return scale; }
     
     float GetStartTime(){
         float result = 0.0f;
         bool isSet = false;
 
-        if(_position.Size() > 1){
-            result = _position.GetStartTime();
+        if(position.Size() > 1){
+            result = position.GetStartTime();
             isSet = true;
         }
-        if(_rotation.Size() > 1){
-            float rotationStart = _rotation.GetStartTime();
+        if(rotation.Size() > 1){
+            float rotationStart = rotation.GetStartTime();
             if(rotationStart < result || !isSet){
                 result = rotationStart;
                 isSet = true;
             }
         }
-        if(_scale.Size() > 1){
-            float scaleStart = _scale.GetStartTime();
+        if(scale.Size() > 1){
+            float scaleStart = scale.GetStartTime();
             if(scaleStart < result || !isSet){
                 result = scaleStart;
                 isSet = true;
@@ -45,19 +45,19 @@ public:
         float result = 0.0f;
         bool isSet = false;
 
-        if(_position.Size() > 1){
-            result = _position.GetEndTime();
+        if(position.Size() > 1){
+            result = position.GetEndTime();
             isSet = true;
         }
-        if (_rotation.Size() > 1){
-            float rotationEnd = _rotation.GetEndTime();
+        if (rotation.Size() > 1){
+            float rotationEnd = rotation.GetEndTime();
             if (rotationEnd > result || !isSet) {
                 result = rotationEnd;
                 isSet = true;
             }
         }
-        if(_scale.Size() > 1){
-            float scaleEnd = _scale.GetEndTime();
+        if(scale.Size() > 1){
+            float scaleEnd = scale.GetEndTime();
             if (scaleEnd > result || !isSet) {
                 result = scaleEnd;
                 isSet = true;
@@ -68,29 +68,29 @@ public:
     }
 
     bool IsValid(){
-        return _position.Size() > 1 || _rotation.Size() > 1 || _scale.Size() > 1;
+        return position.Size() > 1 || rotation.Size() > 1 || scale.Size() > 1;
     }
 
     Transform Sample(const Transform& ref, float time, bool looping){
         Transform result = ref; // Assign default values
         
-        if(_position.Size() > 1){ // Only assign if animated
-            result.localPosition(_position.Sample(time, looping));
+        if(position.Size() > 1){ // Only assign if animated
+            result.LocalPosition(position.Sample(time, looping));
         }
-        if(_rotation.Size() > 1){ // Only assign if animated
-            result.localRotation(_rotation.Sample(time, looping));
+        if(rotation.Size() > 1){ // Only assign if animated
+            result.LocalRotation(rotation.Sample(time, looping));
         }
-        if(_scale.Size() > 1){ // Only assign if animated
-            result.localScale(_scale.Sample(time, looping));
+        if(scale.Size() > 1){ // Only assign if animated
+            result.LocalScale(scale.Sample(time, looping));
         }
         return result;
     }
     
 protected:
-    unsigned int _id;
-    VTRACK _position;
-    QTRACK _rotation;
-    VTRACK _scale;
+    unsigned int id;
+    VTRACK position;
+    QTRACK rotation;
+    VTRACK scale;
 };
 
 typedef TTransformTrack<VectorTrack, QuaternionTrack> TransformTrack;

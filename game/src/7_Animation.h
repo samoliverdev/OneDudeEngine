@@ -50,17 +50,17 @@ struct Animation_7: public OD::Module{
     void OnInit() override {
         LogInfo("Game Init");
 
-        Application::vsync(false);
+        Application::Vsync(false);
 
-        camTransform.localPosition(Vector3(0, 2, 4));
-        camTransform.localEulerAngles(Vector3(-25, 0, 0));
+        camTransform.LocalPosition(Vector3(0, 2, 4));
+        camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
         camMove.transform = & camTransform;
         camMove.OnStart();
 
-        texture = AssetManager::Get().LoadTexture2D("res/gltf/Woman.png");
+        texture = AssetManager::Get().LoadTexture2D("res/Game/Models/gltf/Woman.png");
         shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkinnedModel.glsl");
         
-        cgltf_data* char1 = OD::LoadGLTFFile("res/gltf/Woman.gltf");
+        cgltf_data* char1 = OD::LoadGLTFFile("res/Game/Models/gltf/Woman.gltf");
         //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");
         char1Meshs = OD::LoadMeshes(char1);
         char1Skeleton = LoadSkeleton(char1);
@@ -79,7 +79,7 @@ struct Animation_7: public OD::Module{
 
         char1Anim.mAnimatedPose = char1Skeleton.GetRestPose();
         char1Anim.mPosePalette.resize(char1Skeleton.GetRestPose().Size());
-        char1Anim.mModel.localPosition(Vector3(0, 0, 0));
+        char1Anim.mModel.LocalPosition(Vector3(0, 0, 0));
         //anim.mModel.localEulerAngles(Vector3(0, -90, 0));
 
         for(unsigned int i = 0; i < char1Clips.size(); ++i){
@@ -100,15 +100,18 @@ struct Animation_7: public OD::Module{
         LogInfo("Mesh Count: %zd", char1Meshs.size());
 
         //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader);
-        char2Model = OD::AssimpLoadModel("res/animations/Walking.dae", shader);
-        char2Animations = OD::AssimpLoadModel("res/animations/FastRun.dae", shader);
+        char2Model = CreateRef<Model>();
+        OD::AssimpLoadModel(*char2Model, "res/Game/Animations/Walking.dae", shader);
+
+        char2Animations = CreateRef<Model>();
+        OD::AssimpLoadModel(*char2Animations, "res/Game/Animations/FastRun.dae", shader);
         //char2Model = OD::AssimpLoadModel("res/gltf/Woman.gltf", shader, &char2Clips);
         
         char2Anim.mAnimatedPose = char2Model->skeleton.GetRestPose();
         char2Anim.mPosePalette.resize(char2Model->skeleton.GetRestPose().Size());
-        char2Anim.mModel.localPosition(Vector3(3, 0, 0));
+        char2Anim.mModel.LocalPosition(Vector3(3, 0, 0));
         //char2Anim.mModel.localScale(Vector3(0.02f, 0.02f, 0.02f));
-        char2Anim.mModel.localScale(Vector3(200.0f, 200.0f, 200.0f));
+        char2Anim.mModel.LocalScale(Vector3(200.0f, 200.0f, 200.0f));
         //char2Anim.mModel.localEulerAngles(Vector3(0, 180, 0));
 
         char2Controller.SetSkeleton(char2Model->skeleton);
@@ -144,18 +147,18 @@ struct Animation_7: public OD::Module{
         float char1T = char1Anim.mPlayback;
         float char2T = char2Anim.mPlayback;
 
-        if(animate && Application::deltaTime() > 0){
-            char1T += Application::deltaTime();  
-            char2T += Application::deltaTime(); 
+        if(animate && Application::DeltaTime() > 0){
+            char1T += Application::DeltaTime();  
+            char2T += Application::DeltaTime(); 
         }
 
         //char1Anim.mPlayback = char1Clips[char1Anim.mClip].Sample(char1Anim.mAnimatedPose, char1T);
         //char1Anim.mAnimatedPose.GetMatrixPalette(char1Anim.mPosePalette);
 
-        char1Controller.Update(Application::deltaTime());
+        char1Controller.Update(Application::DeltaTime());
         char1Controller.GetCurrentPose().GetMatrixPalette(char1Anim.mPosePalette);
 
-        char2Controller.Update(Application::deltaTime());
+        char2Controller.Update(Application::DeltaTime());
         char2Controller.GetCurrentPose().GetMatrixPalette(char2Anim.mPosePalette, char2Model->skeleton.GetInvBindPose());
 
         //char2Anim.mPlayback = char2Model->animationClips[char2Anim.mClip]->Sample(char2Anim.mAnimatedPose, char2T);
@@ -166,7 +169,7 @@ struct Animation_7: public OD::Module{
     };
 
     void OnRender(float deltaTime) override {
-        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
         Renderer::Begin();
@@ -178,24 +181,25 @@ struct Animation_7: public OD::Module{
             char1Anim.mPosePalette[i] = char1Anim.mPosePalette[i] * invBindPose[i];
         }
 
-        shader->Bind();
+        Shader::Bind(*shader);
         shader->SetMatrix4("animated", char1Anim.mPosePalette);
         shader->SetTexture2D("mainTex", *texture, 0);
 
         for(auto i: char1Meshs){
-            Renderer::DrawMesh(*i, char1Anim.mModel.GetLocalModelMatrix(), *shader);
+            Renderer::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
+            Renderer::DrawMesh(*i);
         }
 
         for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
             if(char1Anim.mAnimatedPose.GetParent(i) < 0) continue;
-            Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).localPosition();
-            Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).localPosition();
+            Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
+            Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).LocalPosition();
             Renderer::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
         }
 
         char2Model->materials[0]->UpdateUniforms();
-        char2Model->materials[0]->shader()->Bind();
-        char2Model->materials[0]->shader()->SetMatrix4("animated", char2Anim.mPosePalette);
+        Shader::Bind(*char2Model->materials[0]->GetShader());
+        char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);
 
         /*for(auto i: char2Model->meshs){
             Renderer::DrawMesh(
@@ -214,17 +218,14 @@ struct Animation_7: public OD::Module{
 
             //LogInfo("Bind Pose Index: %d", i.bindPoseIndex);
 
-            Renderer::DrawMesh(
-                *char2Model->meshs[i.meshIndex], 
-                m, 
-                *char2Model->materials[i.materialIndex]->shader()
-            );
+            Renderer::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
+            Renderer::DrawMesh(*char2Model->meshs[i.meshIndex]);
         }
 
         for(int i = 0; i < char2Anim.mAnimatedPose.Size(); i++){
             if(char2Anim.mAnimatedPose.GetParent(i) < 0) continue;
-            Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).localPosition();
-            Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).localPosition();
+            Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
+            Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).LocalPosition();
             Renderer::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
         }
 
@@ -245,7 +246,7 @@ struct Animation_7: public OD::Module{
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-        cam.SetPerspective(60, 0.1f, 1000.0f, Application::screenWidth(), Application::screenHeight());
+        cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
         if(Input::IsKeyDown(KeyCode::N)){

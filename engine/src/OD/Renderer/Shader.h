@@ -17,15 +17,14 @@ class Shader: public Asset{
 public:
     enum class BlendMode{ OFF, Blend};
 
+    static bool CreateFromFile(Shader& shader, const std::string& filepath);
+    static void Destroy(Shader& shader);
+    static void Bind(Shader& shader);
+    static void Unbind();
+
     virtual ~Shader();
 
-    static Ref<Shader> CreateFromFile(const std::string& filepath);
-
-    void Destroy();
     bool IsValid();
-
-    void Bind();
-    void Unbind();
 
     void SetFloat(const char* name, float value);
     void SetInt(const char* name, int value);
@@ -38,19 +37,19 @@ public:
     void SetCubemap(const char* name, Cubemap& value, int index);
     void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
 
-    inline unsigned int rendererId(){ return _rendererId; }
+    inline unsigned int RendererId(){ return rendererId; }
 
-    inline BlendMode blendMode(){ return _blendMode; }
-    inline bool supportInstancing(){ return _supportInstancing; }
-    inline std::vector<std::vector<std::string>>& properties(){ return _properties; }
+    inline BlendMode GetBlendMode(){ return blendMode; }
+    inline bool SupportInstancing(){ return supportInstancing; }
+    inline std::vector<std::vector<std::string>>& Properties(){ return properties; }
 
 private:
-    BlendMode _blendMode = BlendMode::OFF;
-    bool _supportInstancing = false;
+    BlendMode blendMode = BlendMode::OFF;
+    bool supportInstancing = false;
 
-    unsigned int _rendererId;
-    std::unordered_map<std::string, GLint> _uniforms;
-    std::vector<std::vector<std::string>> _properties;
+    unsigned int rendererId;
+    std::unordered_map<std::string, GLint> uniforms;
+    std::vector<std::vector<std::string>> properties;
     
     std::string load(std::string path);
     GLint GetLocation(const char* name);

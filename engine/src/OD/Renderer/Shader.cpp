@@ -55,11 +55,11 @@ std::string Shader::load(std::string path){
         }
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "SupportInstancing" && pragmaLine[1] == "true"){
-            _supportInstancing = true;
+            supportInstancing = true;
         }
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "BlendMode" && pragmaLine[1] == "Blend"){
-            _blendMode = BlendMode::Blend;
+            blendMode = BlendMode::Blend;
         }
 
         if(beginProperties){
@@ -68,7 +68,7 @@ std::string Shader::load(std::string path){
                 pragmaLine.push_back(_out);
                 index += 1;
             }
-            _properties.push_back(pragmaLine);
+            properties.push_back(pragmaLine);
 
             //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
 
@@ -153,13 +153,11 @@ GLenum ShaderTypeFromString(const std::string& type){
     return 0;
 }
 
-Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
-    Ref<Shader> out = CreateRef<Shader>();
+bool Shader::CreateFromFile(Shader& out, const std::string& filepath){
+    std::string source = out.load(filepath);
 
-    std::string source = out->load(filepath);
-
-    auto shaderSources = out->PreProcess(source);
-    out->Compile(shaderSources);
+    auto shaderSources = out.PreProcess(source);
+    out.Compile(shaderSources);
 
     // Extract name from filepath
     auto lastSlash = filepath.find_last_of("/\\");
@@ -168,12 +166,30 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
     //out->name = filepath.substr(lastSlash, count);
 
-    out->_path = filepath;
-    return out;
+    out.path = filepath;
+    return true;
+}
+
+void Shader::Bind(Shader& shader){
+    glUseProgram(shader.rendererId);
+    glCheckError();
+}
+
+void Shader::Unbind(){
+    glUseProgram(0);
+    glCheckError();
+}
+
+void Shader::Destroy(Shader& shader){
+    if(shader.rendererId != 0){
+        glDeleteProgram(shader.rendererId);
+        glCheckError();
+    }
+    shader.rendererId = 0;
 }
 
 Shader::~Shader(){
-    glDeleteProgram(_rendererId);
+    Destroy(*this);
 }
 
 std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& source){
@@ -248,7 +264,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
         glShaderIDs[glShaderIDIndex++] = shader;
     }
     
-    _rendererId = program;
+    rendererId = program;
 
     // Link our program
     glLinkProgram(program);
@@ -292,42 +308,24 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     glCheckError();
 }
 
-void Shader::Bind(){
-    glUseProgram(_rendererId);
-    glCheckError();
-}
-
-void Shader::Unbind(){
-    glUseProgram(0);
-    glCheckError();
-}
-
-void Shader::Destroy(){
-    if(_rendererId != 0){
-        glDeleteProgram(_rendererId);
-        glCheckError();
-    }
-    _rendererId = 0;
-}
-
 bool Shader::IsValid(){
-    return _rendererId != 0;
+    return rendererId != 0;
 }
 
 GLint Shader::GetLocation(const char* name){
-    if(_uniforms.count(name)) return _uniforms[name];
+    if(uniforms.count(name)) return uniforms[name];
     
-    GLint location = glGetUniformLocation(_rendererId, name);
+    GLint location = glGetUniformLocation(rendererId, name);
     glCheckError();
     
-    _uniforms[name] = location;
+    uniforms[name] = location;
     return location;
 }
 
 void Shader::SetFloat(const char* name, float value){
     glUniform1f(GetLocation(name), value);
     glCheckError2([&](){ 
-        LogError("UniformName: %s ShaderPath: %s", name, _path.c_str()); 
+        LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
     });
 }
 
@@ -355,7 +353,7 @@ void Shader::SetMatrix4(const char* name, Matrix4 value){
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
     //glCheckError();
     glCheckError2([&](){ 
-        LogError("UniformName: %s ShaderPath: %s", name, _path.c_str()); 
+        LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
     });
 }
 
@@ -368,29 +366,29 @@ void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
     //Set(GetLocation(name), &value[0], (unsigned int)value.size());
     //glCheckError();
     glCheckError2([&](){ 
-        LogError("UniformName: %s ShaderPath: %s Cout: %zd", name, _path.c_str(), value.size()); 
+        LogError("UniformName: %s ShaderPath: %s Cout: %zd", name, path.c_str(), value.size()); 
     });
 }
 
 void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
-    value.Bind(index);
+    Texture2D::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetCubemap(const char* name, Cubemap& value, int index){
-    value.Bind(index);
+    Cubemap::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
-    Assert(framebuffer.specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
+    Assert(framebuffer.Specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
     //Assert(framebuffer.specification().sample <= 1);
 
     glActiveTexture(GL_TEXTURE0 + index);
     glCheckError();
 
     unsigned int target = GL_TEXTURE_2D;
-    if(framebuffer.specification().type == FramebufferAttachmentType::TEXTURE_2D_ARRAY)
+    if(framebuffer.Specification().type == FramebufferAttachmentType::TEXTURE_2D_ARRAY)
         target = GL_TEXTURE_2D_ARRAY;
 
     if(colorAttachmentIndex == -1){

@@ -9,32 +9,87 @@ namespace OD{
 
 struct Rigidbody;
 
+struct JointComponent{
+    OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);
+
+    friend struct PhysicsSystem;
+
+    Vector3 pivot;
+    float strength = 0.5f;
+    EntityId rb;
+
+    static void OnGui(Entity& e);
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        ar(
+            CEREAL_NVP(pivot),
+            CEREAL_NVP(strength),
+            CEREAL_NVP(rb)
+        );
+    }
+
+private:
+    btGeneric6DofConstraint* joint;
+};
+
+struct CollisionShape{
+    enum class Type{Box, Sphere};
+
+    Type type;
+    Vector3 boxShapeSize = {1,1,1};
+    float sphereRadius = 1;
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(type),
+            CEREAL_NVP(boxShapeSize),
+            CEREAL_NVP(sphereRadius)
+        );
+    }
+
+    inline static CollisionShape BoxShape(Vector3 size){
+        return CollisionShape{
+            Type::Box,
+            size,
+            1
+        };
+    }
+
+    inline static CollisionShape SphereShape(float radius){
+        return CollisionShape{
+            Type::Sphere,
+            Vector3One,
+            radius
+        };
+    }
+};
+
 struct RigidbodyComponent{
     friend struct PhysicsSystem;
 
     enum class Type{Dynamic, Static, Kinematic, Trigger};
 
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
     static void OnGui(Entity& e);
 
-    inline RigidbodyComponent::Type type(){ return _type; }
-    void type(RigidbodyComponent::Type t);
+    inline RigidbodyComponent::Type GetType(){ return type; }
+    void SetType(RigidbodyComponent::Type t);
     
-    inline Vector3 shape(){ return _boxShapeSize; }
-    void shape(Vector3 boxShapeSize);
+    inline CollisionShape GetShape(){ return shape; }
+    void SetShape(CollisionShape shape);
     
-    inline float mass(){ return _mass; }
-    void mass(float mass);
+    inline float Mass(){ return mass; }
+    void Mass(float mass);
 
-    inline bool neverSleep(){ return _neverSleep; }
-    void neverSleep(bool value);
+    inline bool NeverSleep(){ return neverSleep; }
+    void NeverSleep(bool value);
 
-    Vector3 position();
-    void position(Vector3 position);
+    Vector3 Position();
+    void Position(Vector3 position);
 
-    Vector3 velocity();
-    void velocity(Vector3 v);
+    Vector3 Velocity();
+    void Velocity(Vector3 v);
 
     void ApplyForce(Vector3 v);
     void ApplyTorque(Vector3 v);
@@ -44,22 +99,23 @@ struct RigidbodyComponent{
     template <class Archive>
     void serialize(Archive & ar){
         ar(
-            CEREAL_NVP(_type),
-            CEREAL_NVP(_boxShapeSize),
-            CEREAL_NVP(_mass),
-            CEREAL_NVP(_neverSleep)
+            CEREAL_NVP(type),
+            CEREAL_NVP(shape),
+            CEREAL_NVP(mass),
+            CEREAL_NVP(neverSleep)
         );
     }
 
 private:
-    Type _type = Type::Dynamic;
-    Vector3 _boxShapeSize = {1,1,1};
-    bool _shapeIsDity = false;
-    float _mass = 1;
-    bool _massIsDirty = false;
-    bool _neverSleep = false;
+    Type type = Type::Dynamic;
+    
+    CollisionShape shape;
 
-    Rigidbody* _data = nullptr; 
+    float mass = 1;
+    bool neverSleep = false;
+    Rigidbody* data = nullptr; 
+
+    void UpdateSettings();
 };
 
 struct RayResult{
@@ -92,19 +148,15 @@ private:
     static void OnRemoveRigidbody(entt::registry & r, entt::entity e);
 
     void CheckForCollisionEvents();
-
     void AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t);
     
-    void SetShape(RigidbodyComponent& rb);
-    void SetMass(RigidbodyComponent& rb);
+    btBroadphaseInterface* broadphase;
+    btCollisionConfiguration* collisionConfiguration;
+    btCollisionDispatcher* dispatcher;
+    btConstraintSolver* solver;
+    btDynamicsWorld* world;
 
-    btBroadphaseInterface* _broadphase;
-    btCollisionConfiguration* _collisionConfiguration;
-    btCollisionDispatcher* _dispatcher;
-    btConstraintSolver* _solver;
-    btDynamicsWorld* _world;
-
-    CollisionPairs _pairsLastUpdate;
+    CollisionPairs pairsLastUpdate;
 
     static PhysicsSystem* instance;
 };

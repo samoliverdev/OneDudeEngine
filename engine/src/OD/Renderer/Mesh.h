@@ -38,36 +38,36 @@ public:
     bool IsValid();
     void Destroy();
 
-    inline bool IsReadable(){ return _isReadable; }
-    inline int VertexCount(){ return _vertexCount; }
-    inline int IndiceCount(){ return _indiceCount; }
+    inline bool IsReadable(){ return isReadable; }
+    inline int VertexCount(){ return vertexCount; }
+    inline int IndiceCount(){ return indiceCount; }
 
     static Mesh FullScreenQuad();
     static Mesh SkyboxCube();
     static Mesh CenterQuad(bool useIndices);
 
-    inline unsigned int rendererId(){ return _vao; }
+    inline unsigned int RendererId(){ return vao; }
 
 private:
-    bool _isReadable = false;
+    bool isReadable = false;
 
-    unsigned int _vao = 0;
+    unsigned int vao = 0;
 
-    unsigned int _vertexVbo = 0;
-    unsigned int _uvVbo = 0;
-    unsigned int _normalVbo = 0;
-    unsigned int _colorVbo = 0;
-    unsigned int _tangentVbo = 0;
+    unsigned int vertexVbo = 0;
+    unsigned int uvVbo = 0;
+    unsigned int normalVbo = 0;
+    unsigned int colorVbo = 0;
+    unsigned int tangentVbo = 0;
 
-    unsigned int _instancingModelMatrixsVbo = 0;
+    unsigned int instancingModelMatrixsVbo = 0;
     
-    unsigned int _jointVbo = 0; 
-    unsigned int _weightsVbo = 0;  
+    unsigned int jointVbo = 0; 
+    unsigned int weightsVbo = 0;  
     
-    unsigned int _ebo = 0;
+    unsigned int ebo = 0;
 
-    unsigned int _vertexCount = 0;
-    unsigned int _indiceCount = 0;
+    unsigned int vertexCount = 0;
+    unsigned int indiceCount = 0;
 };
 
 }

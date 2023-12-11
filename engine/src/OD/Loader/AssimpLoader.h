@@ -9,6 +9,6 @@
 
 namespace OD{
 
-Ref<Model> AssimpLoadModel(std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips = nullptr);
+bool AssimpLoadModel(Model& model, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips = nullptr);
 
 }

@@ -4,34 +4,6 @@
 
 namespace OD{
 
-void ScriptComponent::Serialize(YAML::Emitter& out, Entity& e){
-    auto& component = e.GetComponent<ScriptComponent>();
-
-    out << YAML::Key << "ScriptComponent";
-    out << YAML::BeginMap;
-
-    for(auto func: SceneManager::Get()._scriptsSerializer){
-        if(func.second.hasComponent(e)){
-            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
-            func.second.serialize(e, s); Assert(s.values.empty() == false);
-            ArchiveNode::SaveSerializer(s, out);
-        }
-    }
-
-    out << YAML::EndMap;
-}
-
-void ScriptComponent::Deserialize(YAML::Node& in, Entity& e){
-    for(auto func: SceneManager::Get()._scriptsSerializer){
-        auto component = in[func.first];
-        if(component){
-            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
-            func.second.serialize(e, s);
-            ArchiveNode::LoadSerializer(s, component);
-        }
-    }
-}
-
 void ScriptComponent::OnGui(Entity& e){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 
@@ -44,19 +16,76 @@ void ScriptComponent::OnGui(Entity& e){
     std::hash<std::string> hasher;
     ScriptComponent& script = e.GetComponent<ScriptComponent>();
 
-    for(auto i: SceneManager::Get()._scriptsSerializer){
+    for(auto i: SceneManager::Get().scriptsSerializer){
         if(i.second.hasComponent(e) == false) continue;
 
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first);
         if(open){
-            ArchiveNode ar(ArchiveNode::Type::Object, i.first, nullptr);
-            i.second.serialize(e, ar);
-            //SceneManager::DrawArchive(ar);
-            ArchiveNode::DrawArchive(ar);
-            
-            ImGui::TreePop();
+            i.second.onGui(e);
         }
+        ImGui::TreePop();
     }
 }
+
+ScriptComponent::ScriptComponent(const ScriptComponent& s){
+    //LogInfo("Copping");
+    for(auto i: s.instances){
+        ScriptHolder holder = {i.second.InstantiateScript(i.second), i.second.InstantiateScript};
+        instances[i.first] = holder;
+    }
+}
+
+void ScriptComponent::RemoveAllScripts(){
+    /*for(auto it = _instances.begin(); it != _instances.end();) {
+        Assert(it->second.instance != nullptr);
+        it->second.instance->OnDestroy();
+        delete it->second.instance;
+        it = _instances.erase(it);
+    }*/
+
+    for(auto i: instances){
+        delete i.second.instance;
+    }
+    instances.clear();
+}
     
+void ScriptComponent::_Update(Entity e){
+    for(auto i: instances){
+        if(i.second.instance == nullptr){
+            i.second.instance = i.second.InstantiateScript(i.second);
+        }
+
+        i.second.instance->entity = e;
+        Assert(i.second.instance->entity.IsValid() == true);
+
+        if(i.second.instance->hasStarted == false){
+            i.second.instance->OnStart();
+            i.second.instance->hasStarted = true;
+        }
+        i.second.instance->OnUpdate();
+    }
+}
+
+//////////////////////////////////////
+
+void ScriptSystem::Init(Scene* scene){
+    this->scene = scene;
+    this->scene->GetRegistry().on_destroy<ScriptComponent>().connect<&OnDestroyScript>();
+}
+
+void ScriptSystem::Update(){
+    auto view = GetScene()->GetRegistry().view<ScriptComponent>();
+
+    for(auto entity: view){
+        auto& c = view.get<ScriptComponent>(entity);
+        c._Update(Entity(entity, GetScene()));
+    }
+}
+
+void ScriptSystem::OnDestroyScript(entt::registry & r, entt::entity e){
+    ScriptComponent& s = r.get<ScriptComponent>(e);
+    s.RemoveAllScripts();
+    LogInfo("On Destry ScriptComponent ___");
+}
+
 }

@@ -1,5 +1,4 @@
 #include "Scene.h"
-#include <yaml-cpp/yaml.h>
 #include <fstream>
 #include "Scripts.h"
 #include "OD/OD.h"
@@ -9,31 +8,31 @@
 namespace OD{
 
 #pragma region TransformComponent
-Matrix4 TransformComponent::globalModelMatrix(){
-    if(_hasParent){
-        TransformComponent& parent = _registry->get<TransformComponent>(_parent);
-        return parent.GetLocalModelMatrix() * GetLocalModelMatrix();
+Matrix4 TransformComponent::GlobalModelMatrix(){
+    if(hasParent){
+        TransformComponent& p = registry->get<TransformComponent>(parent);
+        return p.GetLocalModelMatrix() * GetLocalModelMatrix();
     }
     return GetLocalModelMatrix();
 }
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
-    Matrix4 matrix4 = globalModelMatrix();
+    Matrix4 matrix4 = GlobalModelMatrix();
     return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
 Vector3 TransformComponent::TransformDirection(Vector3 dir){
-    Matrix4 matrix4 = globalModelMatrix();
+    Matrix4 matrix4 = GlobalModelMatrix();
     return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
 Vector3 TransformComponent::InverseTransformPoint(Vector3 point){
-    Matrix4 matrix4 = globalModelMatrix();
+    Matrix4 matrix4 = GlobalModelMatrix();
     return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
 }
 
 Vector3 TransformComponent::TransformPoint(Vector3 point){
-    Matrix4 matrix4 = globalModelMatrix();
+    Matrix4 matrix4 = GlobalModelMatrix();
     return matrix4 * Vector4(point.x, point.y, point.z, 1);
 }
 
@@ -41,40 +40,40 @@ Vector3 TransformComponent::TransformPoint(Vector3 point){
 //    return Quaternion::Inverse(world) * rot;
 //}
 
-Vector3 TransformComponent::position(){ 
-    if(_hasParent){
-        TransformComponent& parent = _registry->get<TransformComponent>(_parent);
-        return parent.TransformPoint(localPosition());
+Vector3 TransformComponent::Position(){ 
+    if(hasParent){
+        TransformComponent& p = registry->get<TransformComponent>(parent);
+        return p.TransformPoint(LocalPosition());
     }
-    return localPosition();
+    return LocalPosition();
 }
 
-void TransformComponent::position(Vector3 position){
-    if(_hasParent){
-        TransformComponent& parent = _registry->get<TransformComponent>(_parent);
-        localPosition(parent.InverseTransformPoint(position));
+void TransformComponent::Position(Vector3 position){
+    if(hasParent){
+        TransformComponent& p = registry->get<TransformComponent>(parent);
+        LocalPosition(p.InverseTransformPoint(position));
     } else {
-        localPosition(position);
+        LocalPosition(position);
     }
 }
 
-Quaternion TransformComponent::rotation(){
-    if(_hasParent){
-        TransformComponent& parent = _registry->get<TransformComponent>(_parent);
-        return parent.rotation() * localRotation();
+Quaternion TransformComponent::Rotation(){
+    if(hasParent){
+        TransformComponent& p = registry->get<TransformComponent>(parent);
+        return p.Rotation() * LocalRotation();
     } 
-    return localRotation();
+    return LocalRotation();
 }
 
-void TransformComponent::rotation(Quaternion rotation){
+void TransformComponent::Rotation(Quaternion rotation){
     //Assert(false);
-    if(_hasParent){
-        TransformComponent& parent = _registry->get<TransformComponent>(_parent);
-        Quaternion world = parent.rotation();
+    if(hasParent){
+        TransformComponent& p = registry->get<TransformComponent>(parent);
+        Quaternion world = p.Rotation();
         //localRotation(InverseTransformRot(world, rotation));
-        localRotation(math::inverse(world) * rotation);
+        LocalRotation(math::inverse(world) * rotation);
     } else {
-        localRotation(rotation);
+        LocalRotation(rotation);
     }
 }
 #pragma endregion
@@ -84,88 +83,32 @@ void TransformComponent::rotation(Quaternion rotation){
 
 #pragma region Scene
 
-void Scene::TransformSerialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "TransformComponent";
-    out << YAML::BeginMap;
-
-    auto& transform = e.GetComponent<TransformComponent>();
-    out << YAML::Key << "localPosition" << YAML::Value << transform.localPosition();
-    out << YAML::Key << "localRotation" << YAML::Value << transform.localRotation();
-    out << YAML::Key << "localScale" << YAML::Value << transform.localScale();
-    out << YAML::Key << "_parent" << YAML::Value << (unsigned int)transform._parent;
-    out << YAML::Key << "_hasParent" << YAML::Value << transform._hasParent;
-
-    out << YAML::Key << "Children" << YAML::Value << YAML::Flow << YAML::BeginSeq;
-    for(auto i: transform._children){
-        //Entity entity = Entity(i, this);
-        //SerializeEntity(out, entity);
-        out << (unsigned int)i;
-    }
-    out << YAML::EndSeq;
-    
-    out << YAML::EndMap;
-}
-
-void Scene::TransformDeserialize(YAML::Node& in, Entity& e){
-    auto& tc = e.GetComponent<TransformComponent>();
-    tc.localPosition(in["localPosition"].as<Vector3>());
-    tc.localRotation(in["localRotation"].as<Quaternion>());
-    tc.localScale(in["localScale"].as<Vector3>());
-    tc._parent = (EntityId)in["_parent"].as<unsigned int>();
-    tc._hasParent = in["_hasParent"].as<bool>();
-
-    auto entities = in["Children"];
-    if(entities){
-        for(auto _e: entities){
-            //Entity children = DeserializeEntity(_e);
-            //SetParent(e.id(), children.id());
-            tc._children.push_back((EntityId)_e.as<unsigned int>());
-        }
-    }
-}
-
-void Scene::InfoSerialize(YAML::Emitter& out, Entity& e){
-    out << YAML::Key << "InfoComponent";
-    out << YAML::BeginMap;
-
-    auto& info = e.GetComponent<InfoComponent>();
-    out << YAML::Key << "name" << YAML::Value << info.name;
-    out << YAML::Key << "id" << YAML::Value << (unsigned int)info._id;
-    
-    out << YAML::EndMap;
-}
-
-void Scene::InfoDeserialize(YAML::Node& in, Entity& e){
-    auto& tc = e.GetComponent<InfoComponent>();
-    tc.name = in["name"].as<std::string>();
-}
-
 Scene::Scene(){
-    for(auto i: SceneManager::Get()._addSystemFuncs){
+    for(auto i: SceneManager::Get().addSystemFuncs){
         LogInfo("Adding system: %s", i.first);
         i.second(*this);
     }
 }
 
 Scene::~Scene(){
-    for(auto i: _standSystems) delete i;
-    for(auto i: _rendererSystems) delete i;
-    for(auto i: _physicsSystems) delete i;
+    for(auto i: standSystems) delete i;
+    for(auto i: rendererSystems) delete i;
+    for(auto i: physicsSystems) delete i;
 }
 
 Scene* Scene::Copy(Scene* other){
     Scene* scene = new Scene();
 
-    auto view = other->_registry.view<entt::entity>();
+    auto view = other->registry.view<entt::entity>();
     for(auto it = view.rbegin(); it != view.rend(); ++it){
-        entt::entity e = scene->_registry.create(*it);
+        entt::entity e = scene->registry.create(*it);
 
-        auto& c = other->_registry.get<TransformComponent>(*it);
-        TransformComponent& nt = scene->_registry.emplace_or_replace<TransformComponent>(e, c);
-        nt._registry = &scene->_registry;
+        auto& c = other->registry.get<TransformComponent>(*it);
+        TransformComponent& nt = scene->registry.emplace_or_replace<TransformComponent>(e, c);
+        nt.registry = &scene->registry;
 
-        auto& c2 = other->_registry.get<InfoComponent>(*it);
-        scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
+        auto& c2 = other->registry.get<InfoComponent>(*it);
+        scene->registry.emplace_or_replace<InfoComponent>(e, c2);
     }
 
     /*auto view = other->_registry.view<InfoComponent, TransformComponent>();
@@ -181,169 +124,224 @@ Scene* Scene::Copy(Scene* other){
         scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
     }*/
 
-    for(auto i: SceneManager::Get()._coreComponentsSerializer){
-        i.second.copy(scene->_registry, other->_registry);
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        i.second.copy(scene->registry, other->registry);
     }
-    for(auto i: SceneManager::Get()._componentsSerializer){
-        i.second.copy(scene->_registry, other->_registry);
+    for(auto i: SceneManager::Get().componentsSerializer){
+        i.second.copy(scene->registry, other->registry);
     }
 
     return scene;
 }
 
+Entity Scene::AddEntity(std::string name){
+    EntityId e = registry.create();
+    
+    InfoComponent& info = registry.emplace<InfoComponent>(e);
+    info.name = name;
+    info.id = e;
+    
+    TransformComponent& transform = registry.emplace<TransformComponent>(e);
+    transform.registry = &registry;
+
+    return Entity(e, this);
+}
+
+void Scene::DestroyEntity(EntityId entity){
+    //_DestroyEntity(entity);
+    toDestroy.push_back(entity);
+}
+
+bool Scene::IsChildOf(EntityId parent, EntityId child){
+    TransformComponent& _parent = registry.get<TransformComponent>(parent);
+
+    for(auto i: _parent.children){
+        if(i == child) return true;
+        bool r = IsChildOf(i, child);
+        if(r == true) return true;
+    }
+
+    return false;
+}
+
+void Scene::CleanParent(EntityId e){
+    TransformComponent& entity = registry.get<TransformComponent>(e);
+
+    if(entity.HasParent()){
+        TransformComponent& p = registry.get<TransformComponent>(entity.Parent());
+        p.children.erase(
+            std::remove(p.children.begin(), p.children.end(), e),
+            p.children.end()
+        );
+    }
+
+    entity.hasParent = false;
+}
+
+void Scene::SetParent(EntityId parent, EntityId child){
+    if(parent == child){
+        LogWarning("ERROR: Trying set parent with itself");
+        return;
+    }
+
+    TransformComponent& _parent = registry.get<TransformComponent>(parent);
+    TransformComponent& _child = registry.get<TransformComponent>(child);
+
+    if(IsChildOf(child, parent)){
+        LogWarning("ERROR: Trying set parent with one of your childrens");
+        return;
+    }
+
+    if(_child.HasParent()){
+        TransformComponent& p = registry.get<TransformComponent>(_child.Parent());
+        p.children.erase(
+            std::remove(p.children.begin(), p.children.end(), child),
+            p.children.end()
+        );
+    }
+
+    _parent.children.emplace_back(child);
+    _child.parent = parent;
+    _child.hasParent = true;
+}
+
+Camera& Scene::GetMainCamera(){ 
+    return mainCamera; 
+}   
+
 Entity Scene::GetMainCamera2(){
-    for(auto e: _registry.view<CameraComponent>()){
+    for(auto e: registry.view<CameraComponent>()){
         return Entity(e, this);
     }
 
     return Entity();
 }
 
-void Scene::SerializeEntity(YAML::Emitter& out, Entity& e){
-    out << YAML::BeginMap;
-    //out << YAML::Key << "Entity" << YAML::Value << "10";
-
-    if(e.HasComponent<InfoComponent>()) InfoSerialize(out, e);
-    if(e.HasComponent<TransformComponent>()) TransformSerialize(out, e);
-
-    for(auto func: SceneManager::Get()._coreComponentsSerializer){
-        if(func.second.hasComponent(e) == false) continue;
-        func.second.serialize(out, e);
-    }
-
-    for(auto func: SceneManager::Get()._componentsSerializer){
-        if(func.second.hasComponent(e) == false) continue;
-        
-        ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
-        func.second.serialize(e, s); Assert(s.values.empty() == false);
-        ArchiveNode::SaveSerializer(s, out);
-    }
-
-    out << YAML::EndMap;
+void Scene::Start(){
+    running = true;
 }
 
-Entity Scene::DeserializeEntity(YAML::Node& e){
-    EntityId id = (EntityId)e["InfoComponent"]["id"].as<unsigned int>();
+void Scene::Update(){ 
+    OD_PROFILE_SCOPE("Scene::Update");
 
-    Entity deserializedEntity = _AddEntity(id);
-
-    auto infoComponent = e["InfoComponent"];
-    if(infoComponent) InfoDeserialize(infoComponent, deserializedEntity);
-
-    auto transform = e["TransformComponent"];
-    if(transform) TransformDeserialize(transform, deserializedEntity);
-
-    for(auto func: SceneManager::Get()._coreComponentsSerializer){
-        auto component = e[func.first];
-        if(component){
-            func.second.deserialize(component, deserializedEntity);
-        }
+    for(auto e: toDestroy){
+        _DestroyEntity(e);
     }
+    toDestroy.clear();
 
-    for(auto func: SceneManager::Get()._componentsSerializer){
-        auto component = e[func.first];
-        if(component){
-            LogInfo("%s", func.first);
+    //if(_running == false) return;
 
-            ArchiveNode s(ArchiveNode::Type::Object, func.first, nullptr);
-            func.second.serialize(deserializedEntity, s);
-            //LoadSerializer(s, component);
-            ArchiveNode::LoadSerializer(s, component);
-        }
-    }
+    for(auto s: physicsSystems) s->Update();
+    if(running == false) return;
+    for(auto s: standSystems) s->Update();
+}
 
-    return deserializedEntity;
+void Scene::Draw(){
+    OD_PROFILE_SCOPE("Scene::Draw");
+
+    Renderer::Begin();
+    for(auto& s: rendererSystems) s->Update();        
+    Renderer::End();
 }
 
 void Scene::Save(const char* path){
     std::ofstream os(path);
     cereal::JSONOutputArchive output{os};
 
-    auto& snapshotOut = entt::snapshot{_registry};
+    entt::snapshot snapshotOut(registry);
+    //CerealSnapshot snapshotOut(registry);
+
     snapshotOut.get<entt::entity>(output);
     snapshotOut.get<TransformComponent>(output);
     snapshotOut.get<InfoComponent>(output);
-    for(auto i: SceneManager::Get()._componentsSerializer){
+    for(auto i: SceneManager::Get().componentsSerializer){
         i.second.snapshotOut(snapshotOut, output);
     }
-    for(auto i: SceneManager::Get()._coreComponentsSerializer){
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
         i.second.snapshotOut(snapshotOut, output);
     }
-
-    return;
-
-    YAML::Emitter out;
-
-    out << YAML::BeginMap;
-    out << YAML::Key << "Scene" << YAML::Value << "Untitled";
-    out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-
-    auto v = _registry.view<entt::entity>();
-    for(auto it = v.rbegin(); it != v.rend(); ++it){
-        Entity e(*it, this);
-        if(e.IsValid() == false) return;
-        //TransformComponent& transform = e.GetComponent<TransformComponent>();
-        //if(transform.hasParent()) return;
-
-        SerializeEntity(out, e);
-    }
-
-    out << YAML::EndSeq;
-    out << YAML::EndMap;
-
-    std::ofstream fout(path);
-    fout << out.c_str();
 }
 
 void Scene::Load(const char* path){
     std::ifstream storage(path);
     cereal::JSONInputArchive input{storage};
 
-    auto snapshot = entt::snapshot_loader{_registry};
+    entt::snapshot_loader snapshot(registry);
+
     snapshot.get<entt::entity>(input);
     snapshot.get<TransformComponent>(input);
     snapshot.get<InfoComponent>(input);
 
-    for(auto e: _registry.view<TransformComponent, InfoComponent>()){
-        TransformComponent& trans = _registry.get<TransformComponent>(e);
-        InfoComponent& info = _registry.get<InfoComponent>(e);
+    for(auto e: registry.view<TransformComponent, InfoComponent>()){
+        TransformComponent& trans = registry.get<TransformComponent>(e);
+        InfoComponent& info = registry.get<InfoComponent>(e);
 
-        trans._registry = &_registry;
-        info._id = e;
+        trans.registry = &registry;
+        info.id = e;
     }
 
-    for(auto i: SceneManager::Get()._componentsSerializer){
+    for(auto i: SceneManager::Get().componentsSerializer){
         i.second.snapshotIn(snapshot, input);
     }
-    for(auto i: SceneManager::Get()._coreComponentsSerializer){
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
         i.second.snapshotIn(snapshot, input);
-    }
-    
-    return;
-
-    std::ifstream stream(path);
-    std::stringstream strStream;
-    strStream << stream.rdbuf();
-
-    YAML::Node data = YAML::Load(strStream.str());
-    if(!data["Scene"]){
-        LogInfo("Coud not load Scene: %s", path);
-        return;
-    }
-
-    std::string sceneName = data["Scene"].as<std::string>();
-    LogInfo("Deserialing scene %s", sceneName.c_str());
-
-    auto entities = data["Entities"];
-    if(entities){
-        for(auto e: entities){
-            DeserializeEntity(e);
-        }
     }
 }
+
+void Scene::_DestroyEntity(EntityId entity){
+    TransformComponent& transform = registry.get<TransformComponent>(entity);
+
+    for(auto i: transform.children){
+        _DestroyEntity(i);
+    }
+
+    if(transform.hasParent){
+        TransformComponent& parent = registry.get<TransformComponent>(transform.parent);
+        //parent._children.clear();
+        parent.children.erase(
+            std::remove(
+                parent.children.begin(), 
+                parent.children.end(), 
+                entity
+            ), 
+            parent.children.end()
+        );
+    }
+
+    registry.destroy(entity);
+}
+
 #pragma endregion
 
 #pragma region SceneManager
+
+SceneManager& SceneManager::Get(){
+    static SceneManager sceneManager;
+    return sceneManager;
+}
+
+SceneManager::SceneState SceneManager::GetSceneState(){ 
+    return sceneState; 
+}
+
+bool SceneManager::InEditor(){ 
+    return inEditor; 
+}
+
+Scene* SceneManager::ActiveScene(){ 
+    if(activeScene == nullptr) return NewScene();
+    return activeScene; 
+}
+
+void SceneManager::ActiveScene(Scene* s){ 
+    activeScene = s; 
+}
+
+Scene* SceneManager::NewScene(){
+    delete activeScene;
+    activeScene = new Scene();
+    return activeScene;
+}
 
 #pragma endregion
 

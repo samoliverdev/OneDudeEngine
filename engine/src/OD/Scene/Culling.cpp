@@ -3,10 +3,10 @@
 namespace OD{
 
 Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar){
-    Vector3 forward = -cam.forward();
-    Vector3 right = -cam.right();
-    Vector3 up = -cam.up();
-    Vector3 position = cam.localPosition();
+    Vector3 forward = -cam.Forward();
+    Vector3 right = -cam.Right();
+    Vector3 up = -cam.Up();
+    Vector3 position = cam.LocalPosition();
 
     Frustum frustum;
     float halfVSide = zFar * tanf(fovY * .5f);
@@ -24,10 +24,10 @@ Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float 
 }
 
 Frustum CreateFrustumFromCamera(TransformComponent& cam, float aspect, float fovY, float zNear, float zFar){
-    Vector3 forward = -cam.forward();
-    Vector3 right = -cam.right();
-    Vector3 up = -cam.up();
-    Vector3 position = cam.position();
+    Vector3 forward = -cam.Forward();
+    Vector3 right = -cam.Right();
+    Vector3 up = -cam.Up();
+    Vector3 position = cam.Position();
 
     Frustum frustum;
     float halfVSide = zFar * tanf(fovY * .5f);
@@ -59,10 +59,10 @@ bool Sphere::isOnOrForwardPlane(Plane& plane) const{
 
 bool Sphere::isOnFrustum(Frustum& camFrustum, TransformComponent& transform) const{
     //Get global scale thanks to our transform
-    Vector3 globalScale = transform.localScale();
+    Vector3 globalScale = transform.LocalScale();
 
     //Get our global center with process it with the global model matrix of our transform
-    Vector3 globalCenter{ transform.globalModelMatrix() * glm::vec4(center, 1.f) };
+    Vector3 globalCenter{ transform.GlobalModelMatrix() * glm::vec4(center, 1.f) };
 
     //To wrap correctly our shape, we need the maximum scale scalar.
     const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
@@ -87,12 +87,12 @@ bool SquareAABB::isOnOrForwardPlane(Plane& plane) const{
 
 bool SquareAABB::isOnFrustum(Frustum& camFrustum, TransformComponent& transform) const{
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.globalModelMatrix() * glm::vec4(center, 1.f) };
+    const Vector3 globalCenter{ transform.GlobalModelMatrix() * glm::vec4(center, 1.f) };
 
     // Scaled orientation
-    const Vector3 right = transform.right() * extent;
-    const Vector3 up = transform.up() * extent;
-    const Vector3 forward = transform.forward() * extent;
+    const Vector3 right = transform.Right() * extent;
+    const Vector3 up = transform.Up() * extent;
+    const Vector3 forward = transform.Forward() * extent;
 
     const float newIi = math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, right)) +
         math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, up)) +
@@ -140,12 +140,12 @@ bool AABB::isOnOrForwardPlane(Plane& plane) const{
 
 bool AABB::isOnFrustum(Frustum& camFrustum, TransformComponent& transform) const{
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.globalModelMatrix() * Vector4(center, 1.f) };
+    const Vector3 globalCenter{ transform.GlobalModelMatrix() * Vector4(center, 1.f) };
 
     // Scaled orientation
-    const Vector3 right = transform.right() * extents.x;
-    const Vector3 up = transform.up() * extents.y;
-    const Vector3 forward = transform.forward() * extents.z;
+    const Vector3 right = transform.Right() * extents.x;
+    const Vector3 up = transform.Up() * extents.y;
+    const Vector3 forward = transform.Forward() * extents.z;
 
     const float newIi = math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, right)) +
         math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, up)) +

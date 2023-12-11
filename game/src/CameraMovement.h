@@ -32,9 +32,11 @@ public:
     void OnStart() override;
     void OnUpdate() override;
 
-    void Serialize(ArchiveNode& s) override {
-        s.typeName("CameraMovementScript");
-        s.Add(&moveSpeed, "moveSpeed");
-        s.Add(&rotSpeed, "rotSpeed");
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(moveSpeed), 
+            CEREAL_NVP(rotSpeed)
+        );
     }
 };

@@ -34,49 +34,63 @@ struct StandRendererSystem: public OD::System{
     SystemType Type() override { return SystemType::Renderer; }
     void Update() override;
 
-    inline void SetOutFrameBuffer(Framebuffer* out){ _outFramebuffer = out; }
-    inline void overrideCamera(RenderCamera* cam, Transform trans){ _overrideCamera = cam; _overrideCameraTrans = trans;} 
+    inline void SetOutFrameBuffer(Framebuffer* out){ outFramebuffer = out; }
+    inline void GetOverrideCamera(RenderCamera* cam, Transform trans){ overrideCamera = cam; overrideCameraTrans = trans;} 
 
-    inline Framebuffer* finalColor(){ return _finalColor; }
-    inline Framebuffer* objectsId(){ return _objectsId; }
+    inline Framebuffer* FinalColor(){ return finalColor; }
+    inline Framebuffer* ObjectsId(){ return objectsId; }
     //inline Framebuffer* finalColor2(){ return _finalColor2; }
 
-    inline void AddPostProcessingPass(PostProcessingPass* pass){ _ppPass.push_back(pass); }
+    inline void AddPostProcessingPass(PostProcessingPass* pass){ ppPass.push_back(pass); }
 
 private:
-    Ref<Shader> _spriteShader;
-    Mesh _spriteMesh;
+    Ref<Shader> spriteShader;
+    Mesh spriteMesh;
 
-    Framebuffer* _objectsId;
+    Framebuffer* objectsId;
 
-    Ref<Shader> _shadowMapShader;
-    Ref<Shader> _postProcessingShader;
-    Ref<Shader> _blitShader;
+    Ref<Shader> shadowMapShader;
+    Ref<Shader> postProcessingShader;
+    Ref<Shader> blitShader;
 
-    Matrix4 _lightSpaceMatrix;
+    Matrix4 lightSpaceMatrix;
 
-    Framebuffer* _outFramebuffer = nullptr;
+    Framebuffer* outFramebuffer = nullptr;
     
-    Framebuffer* _pp1;
-    Framebuffer* _pp2;
-    Framebuffer* _finalColor;
-    Framebuffer* _finalColor2;
+    Framebuffer* pp1;
+    Framebuffer* pp2;
+    Framebuffer* finalColor;
+    Framebuffer* finalColor2;
 
-    RenderCamera* _overrideCamera = nullptr;
-    Transform _overrideCameraTrans;
+    RenderCamera* overrideCamera = nullptr;
+    Transform overrideCameraTrans;
 
-    std::vector<PostProcessingPass*> _ppPass;
+    std::vector<PostProcessingPass*> ppPass;
 
     //Ref<Shader> _skyboxShader;
-    Mesh _skyboxMesh;
-    Ref<Cubemap> _skyboxCubemap;
+    Mesh skyboxMesh;
+    Ref<Cubemap> skyboxCubemap;
 
+    struct CommandBaseData{
+        Ref<Material> targetMaterial;
+        Ref<Mesh> targetMesh;
+        Matrix4 targetMatrix;
+        float distance;
+    };
+
+    void UpdateAllCommands(Vector3 viewPos);
+    void UpdateOpaquesCommands(CommandBaseData& data);
+    void UpdateOpaquesIntancingCommands(CommandBaseData& data);
+    void UpdateBlendCommands(CommandBaseData& data);
+    void UpdateCascadeShadowCommands(CommandBaseData& data);
+    void UpdateCascadeShadowIntancingCommands(CommandBaseData& data);
+    
     void SetStandUniforms(Vector3 viewPos, Shader& material);
     void RenderScene(RenderCamera& camera, bool isMain, Vector3 camPOs);
 
     struct ShadowRenderPass{
-        Framebuffer* _shadowMap;
-        Matrix4 _lightSpaceMatrix;
+        Framebuffer* shadowMap;
+        Matrix4 lightSpaceMatrix;
 
         void Clean(StandRendererSystem& root);
         void Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
@@ -93,7 +107,7 @@ private:
         Matrix4 projViewMatrix;
         float splitDistance;
 
-        Framebuffer* _shadowMap;
+        Framebuffer* shadowMap;
 
         void Clean(StandRendererSystem& root);
         void Render(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
@@ -103,8 +117,8 @@ private:
     };
     CascadeShadow cascadeShadows[SHADOW_MAP_CASCADE_COUNT];
 
-    Framebuffer* _cascadeShadowMap;
-    Ref<Shader> _cascadeShadowMapShader;
+    Framebuffer* cascadeShadowMap;
+    Ref<Shader> cascadeShadowMapShader;
     void RenderCascadeShadow(LightComponent& light, TransformComponent& transform, StandRendererSystem& root);
 };
 

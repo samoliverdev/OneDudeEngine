@@ -8,13 +8,13 @@ extern OD::ApplicationConfig GetStartAppConfig();
 extern OD::Module* CreateMainModule();
 
 int main(int argc, char *argv[]){
-    std::filesystem::current_path("../../");
+    std::filesystem::current_path("../");
 
     for(int i = 0; i < argc; i++){
         OD::Application::args.push_back(std::string(argv[i]));
     }
 
-    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig())) {
+    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig())){
         printf("Application failed to create!.\n");
         return 1;
     }

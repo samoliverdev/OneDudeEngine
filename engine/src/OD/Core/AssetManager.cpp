@@ -9,55 +9,67 @@ AssetManager& AssetManager::Get(){
 }
 
 Ref<Texture2D> AssetManager::LoadTexture2D(const std::string& filePath, Texture2DSetting settings){
-    if(_textures.count(filePath)) return _textures[filePath];
+    if(textures.count(filePath)) return textures[filePath];
 
     LogInfo("LoadTexture2D: %s", filePath.c_str());
 
-    Ref<Texture2D> tex = Texture2D::CreateFromFile(filePath.c_str(), settings);
-    _textures[filePath] = tex;
+
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    bool result = Texture2D::CreateFromFile(*tex, filePath.c_str(), settings);
+    Assert(result == true);
+
+    textures[filePath] = tex;
     
     return tex;
 }
 
 Ref<Texture2D> AssetManager::LoadTexture2D(const std::string& filePath){
-    if(_textures.count(filePath)) return _textures[filePath];
+    if(textures.count(filePath)) return textures[filePath];
 
     LogInfo("LoadTexture2D: %s", filePath.c_str());
 
-    Ref<Texture2D> tex = Texture2D::CreateFromFile(filePath.c_str());
-    _textures[filePath] = tex;
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    bool result = Texture2D::CreateFromFile(*tex, filePath.c_str(), Texture2DSetting());
+    Assert(result == true);
+
+    textures[filePath] = tex;
     
     return tex;
 }
 
 Ref<Shader> AssetManager::LoadShaderFromFile(const std::string& filePath){
-    if(_shaders.count(filePath)) return _shaders[filePath];
+    if(shaders.count(filePath)) return shaders[filePath];
 
     LogInfo("LoadShaderFromFile: %s", filePath.c_str());
 
-    Ref<Shader> shader = Shader::CreateFromFile(filePath);
-    _shaders[filePath] = shader;
+    Ref<Shader> shader = CreateRef<Shader>();
+    bool result = Shader::CreateFromFile(*shader, filePath);
+    Assert(result == true);
+
+    shaders[filePath] = shader;
     return shader;
 }
 
 Ref<Material> AssetManager::LoadMaterial(const std::string &path){
-    if(_materials.count(path)) return _materials[path];
+    if(materials.count(path)) return materials[path];
 
     //LogInfo("LoadMaterial: %s Hash: %zd Size: %zd", path.c_str(), std::hash<std::string>{}(path), path.size());
     LogInfo("LoadMaterial: %s", path.c_str());
 
     Ref<Material> material = Material::CreateFromFile(path);
-    _materials[path] = material;
+    materials[path] = material;
     return material;
 }
 
 Ref<Model> AssetManager::LoadModel(const std::string &path, Ref<Shader> customShader){
-    if(_models.count(path)) return _models[path];
+    if(models.count(path)) return models[path];
 
     LogInfo("LoadModel: %s", path.c_str());
 
-    Ref<Model> model = Model::CreateFromFile(path, customShader);
-    _models[path] = model;
+    Ref<Model> model = CreateRef<Model>();
+    Model::CreateFromFile(*model, path, customShader);
+
+    models[path] = model;
     return model;
 }   
 

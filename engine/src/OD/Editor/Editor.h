@@ -28,42 +28,42 @@ public:
     static inline Editor* Get(){ return instance; }
 
     inline void SetSelectionAsset(Ref<Asset> asset){
-        _selectionAsset = asset;
-        _selectionOnAsset = true;
+        selectionAsset = asset;
+        selectionOnAsset = true;
     }
 
 private:
     static Editor* instance;
 
-    SceneHierarchyPanel _sceneHierarchyPanel;
-    ContentBrowserPanel _contentBrowserPanel;
-    InspectorPanel _inspectorPanel;
+    SceneHierarchyPanel sceneHierarchyPanel;
+    ContentBrowserPanel contentBrowserPanel;
+    InspectorPanel inspectorPanel;
 
-    Entity _selectionEntity;
-    Ref<Asset> _selectionAsset;
-    bool _selectionOnAsset;
+    Entity selectionEntity;
+    Ref<Asset> selectionAsset;
+    bool selectionOnAsset;
 
-    bool _showSceneHierarchy = true;
-    bool _showInspector = true;
-    bool _open = true;
+    bool showSceneHierarchy = true;
+    bool showInspector = true;
+    bool open = true;
 
-    Vector2 _viewportSize;
-    GizmosType _gizmoType;
-    Framebuffer* _framebuffer;
-    std::string _curScenePath;
-    EditorCamera _cam;
+    Vector2 viewportSize;
+    GizmosType gizmoType;
+    Framebuffer* framebuffer;
+    std::string curScenePath;
+    EditorCamera editorCam;
 
-    ImVec2 m_ViewportBounds[2];
+    ImVec2 viewportBounds[2];
 
     inline void SetSelectionEntity(Entity entity){
-        _selectionEntity = entity;
-        _selectionOnAsset = false;
+        selectionEntity = entity;
+        selectionOnAsset = false;
     }
 
     inline void UnselectAll(){
-        _selectionEntity = Entity();
-        _selectionAsset = nullptr;
-        _selectionOnAsset = false;;
+        selectionEntity = Entity();
+        selectionAsset = nullptr;
+        selectionOnAsset = false;;
     }
 
     void HandleShotcuts();

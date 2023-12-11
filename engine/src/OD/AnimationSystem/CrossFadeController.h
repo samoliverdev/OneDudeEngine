@@ -17,12 +17,12 @@ public:
     Pose& GetCurrentPose();
     Clip* GetCurrentClip();
 protected:
-    std::vector<CrossFadeTarget> _targets;
-    Clip* _clip;
-    float _time;
-    Pose _pose;
-    Skeleton _skeleton;
-    bool _wasSkeletonSet;   
+    std::vector<CrossFadeTarget> targets;
+    Clip* clip;
+    float time;
+    Pose pose;
+    Skeleton skeleton;
+    bool wasSkeletonSet;   
 };
 
 }

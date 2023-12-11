@@ -15,44 +15,44 @@ Pose::Pose(const Pose& p){
 Pose& Pose::operator=(const Pose& p){
     if(&p == this) return *this;
 
-    if(_parents.size() != p._parents.size()){
-        _parents.resize(p._parents.size());
+    if(parents.size() != p.parents.size()){
+        parents.resize(p.parents.size());
     }
-    if(_joints.size() != p._joints.size()){
-        _joints.resize(p._joints.size());
+    if(joints.size() != p.joints.size()){
+        joints.resize(p.joints.size());
     }
 
-    if(_parents.size() != 0){
-        memcpy(&_parents[0], &p._parents[0], sizeof(int) * _parents.size());
+    if(parents.size() != 0){
+        memcpy(&parents[0], &p.parents[0], sizeof(int) * parents.size());
     }
-    if(_joints.size() != 0){
-        memcpy(&_joints[0], &p._joints[0], sizeof(Transform) * _joints.size());
+    if(joints.size() != 0){
+        memcpy(&joints[0], &p.joints[0], sizeof(Transform) * joints.size());
     }
 
     return *this;
 }
 
 void Pose::Resize(unsigned int size){
-    _parents.resize(size);
-    _joints.resize(size);
+    parents.resize(size);
+    joints.resize(size);
 }
 
 unsigned int Pose::Size(){
-    return _joints.size();
+    return joints.size();
 }
 
 Transform Pose::GetLocalTransform(unsigned int index){
-    return _joints[index];
+    return joints[index];
 }
 
 void Pose::SetLocalTransform(unsigned int index, const Transform& transform){
-    _joints[index] = transform;
+    joints[index] = transform;
 }
 
 Transform Pose::GetGlobalTransform(unsigned int i){
-    Transform result = _joints[i];
-    for(int p = _parents[i]; p >= 0; p = _parents[p]){
-        result = Transform::Combine(_joints[p], result);
+    Transform result = joints[i];
+    for(int p = parents[i]; p >= 0; p = parents[p]){
+        result = Transform::Combine(joints[p], result);
         //result = _joints[p].GetLocalModelMatrix() * result.GetLocalModelMatrix();
     }
 
@@ -60,15 +60,15 @@ Transform Pose::GetGlobalTransform(unsigned int i){
 }
 
 Matrix4 Pose::GetGlobalMatrix(unsigned int i){
-    Matrix4 result = _joints[i].GetLocalModelMatrix();
-    for(int p = _parents[i]; p >= 0; p = _parents[p]){
-        result = _joints[p].GetLocalModelMatrix() * result;
+    Matrix4 result = joints[i].GetLocalModelMatrix();
+    for(int p = parents[i]; p >= 0; p = parents[p]){
+        result = joints[p].GetLocalModelMatrix() * result;
     }
     return result;
 }
 
 Matrix4 Pose::GetLocalMatrix(unsigned int index){
-    return _joints[index].GetLocalModelMatrix();
+    return joints[index].GetLocalModelMatrix();
 }
 
 Transform Pose::operator[](unsigned int index){
@@ -101,9 +101,9 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
     int i = 0;
 
     for(; i < size; ++i){
-        int parent = _parents[i];
+        int parent = parents[i];
         if(parent > i) { break; }
-        Matrix4 global = _joints[i].GetLocalModelMatrix();
+        Matrix4 global = joints[i].GetLocalModelMatrix();
         if(parent >= 0){
             global = out[parent] * global;
         }
@@ -126,24 +126,24 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4
 }
 
 int Pose::GetParent(unsigned int index){
-    return _parents[index];
+    return parents[index];
 }
 
 void Pose::SetParent(unsigned int index, int parent){
-    _parents[index] = parent;
+    parents[index] = parent;
 }
 
 bool Pose::operator==(const Pose& other) {
-	if(_joints.size() != other._joints.size()) return false;
-	if(_parents.size() != other._parents.size()) return false;
+	if(joints.size() != other.joints.size()) return false;
+	if(parents.size() != other.parents.size()) return false;
 	
-	unsigned int size = (unsigned int)_joints.size();
+	unsigned int size = (unsigned int)joints.size();
 	for(unsigned int i = 0; i < size; ++i){
-		Transform thisLocal = _joints[i];
-		Transform otherLocal = other._joints[i];
+		Transform thisLocal = joints[i];
+		Transform otherLocal = other.joints[i];
 
-		int thisParent = _parents[i];
-		int otherParent = other._parents[i];
+		int thisParent = parents[i];
+		int otherParent = other.parents[i];
 
 		if(thisParent != otherParent) return false;
 		if(thisLocal != otherLocal) return false;

@@ -12,11 +12,9 @@
 namespace OD{
 
 struct SpriteComponent{
-    static void Serialize(YAML::Emitter& out, Entity& e);
-    static void Deserialize(YAML::Node& in, Entity& e);
-    static void OnGui(Entity& e);
-
     Ref<Texture2D> texture = nullptr;
+
+    static void OnGui(Entity& e);
 };
 
 };
