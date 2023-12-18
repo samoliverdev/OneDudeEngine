@@ -68,8 +68,7 @@ void ScriptComponent::_Update(Entity e){
 
 //////////////////////////////////////
 
-void ScriptSystem::Init(Scene* scene){
-    this->scene = scene;
+ScriptSystem::ScriptSystem(Scene* inScene):System(inScene){
     this->scene->GetRegistry().on_destroy<ScriptComponent>().connect<&OnDestroyScript>();
 }
 

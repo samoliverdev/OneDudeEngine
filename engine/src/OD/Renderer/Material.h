@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Defines.h"
+#include "OD/Core/Asset.h"
 #include "OD/Renderer/Shader.h"
 #include "OD/Renderer/Texture.h"
 #include "OD/Renderer/Cubemap.h"
@@ -22,73 +23,39 @@ struct MaterialMap{
     bool vectorIsColor = false;
 
     float value;
+    float valueMin;
+    float valueMax;
+
     bool isDirt = true;
 
-    template<class Archive>
-    void save(Archive& ar) const{
-        std::string texPath = texture == nullptr ? "" : texture->Path();
-        ar(
-            CEREAL_NVP(type),
-            CEREAL_NVP(texPath),
-            CEREAL_NVP(vector),
-            CEREAL_NVP(vectorIsColor),
-            CEREAL_NVP(value),
-            CEREAL_NVP(isDirt)
-        );
-    }
-
-    template<class Archive>
-    void load(Archive& ar){
-        std::string texPath;
-        ar(
-            CEREAL_NVP(type),
-            CEREAL_NVP(texPath),
-            CEREAL_NVP(vector),
-            CEREAL_NVP(vectorIsColor),
-            CEREAL_NVP(value),
-            CEREAL_NVP(isDirt)
-        );
-
-        if(texPath.empty() == false){
-            texture = AssetManager::Get().LoadTexture2D(texPath);
-        }
-    }
+    template<class Archive> void save(Archive& ar) const;
+    template<class Archive> void load(Archive& ar);
 };
 
 class Material: public Asset{
 public:
-    Material(){
-        id = baseId;
-        baseId += 1;
-    }
-    Material(Ref<Shader> s){
-        shader = s; 
-        UpdateMaps();
+    Material();
+    Material(Ref<Shader> s);
 
-        id = baseId;
-        baseId += 1;
-    }
+    Ref<Shader> GetShader();
+    void SetShader(Ref<Shader> s);
 
-    inline Ref<Shader> GetShader(){ return shader; }
-    inline void SetShader(Ref<Shader> s){ shader = s; UpdateMaps(); }
+    uint32_t MaterialId();
     
-    inline bool IsBlend(){
-        if(shader == nullptr) return false;
-        return shader->GetBlendMode() == Shader::BlendMode::Blend;
-    }
+    bool IsBlend();
+    bool EnableInstancingValid();
+    bool EnableInstancing();
+    bool SupportInstancing();
 
-    inline bool EnableInstancingValid(){ return enableInstancing && SupportInstancing(); }
-    inline bool EnableInstancing(){ return enableInstancing; }
-    inline bool SupportInstancing(){ return shader != nullptr && shader->SupportInstancing(); }
+    void SetFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
 
-    void SetFloat(const char* name, float value);
     void SetVector2(const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value, bool isColor = false);
     void SetVector4(const char* name, Vector4 value, bool isColor = false);
     void SetTexture(const char* name, Ref<Texture2D> tex);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 
-    void UpdateUniforms();
+    void UpdateDatas();
 
     void Save(std::string& path);
 
@@ -96,34 +63,16 @@ public:
 
     static Ref<Material> CreateFromFile(std::string const &path);
 
-    inline uint32_t MaterialId(){ return id; }
-
     friend class cereal::access;
-    template<class Archive>
-    void save(Archive& ar) const{
-        std::string shaderPath = shader == nullptr ? "" : shader->Path();
-        ar(
-            CEREAL_NVP(enableInstancing),
-            CEREAL_NVP(isDirt),
-            CEREAL_NVP(shaderPath),
-            CEREAL_NVP(maps)
-        );
-    }
+    template<class Archive> void save(Archive& ar) const;
+    template<class Archive> void load(Archive& ar);
 
-    template<class Archive>
-    void load(Archive& ar){
-        std::string shaderPath;
-        ar(
-            CEREAL_NVP(enableInstancing),
-            CEREAL_NVP(isDirt),
-            CEREAL_NVP(shaderPath),
-            CEREAL_NVP(maps)
-        );
-
-        if(shaderPath.empty() == false){
-            shader = AssetManager::Get().LoadShaderFromFile(shaderPath);
-        }
-    }
+    /*
+    CullFace cullFace;
+    DepthTest depthTest;
+    BlendMode srcBlend;
+    BlendMode dstBlend;
+    */ 
 
 private:
     bool enableInstancing = false;
@@ -137,5 +86,67 @@ private:
 
     void UpdateMaps();
 };
+
+////////////////////////////////////////
+
+template<class Archive>
+void MaterialMap::save(Archive& ar) const{
+    std::string texPath = texture == nullptr ? "" : texture->Path();
+    ar(
+        CEREAL_NVP(type),
+        CEREAL_NVP(texPath),
+        CEREAL_NVP(vector),
+        CEREAL_NVP(vectorIsColor),
+        CEREAL_NVP(value),
+        CEREAL_NVP(valueMin),
+        CEREAL_NVP(valueMax),
+        CEREAL_NVP(isDirt)
+    );
+}
+
+template<class Archive>
+void MaterialMap::load(Archive& ar){
+    std::string texPath;
+    ar(
+        CEREAL_NVP(type),
+        CEREAL_NVP(texPath),
+        CEREAL_NVP(vector),
+        CEREAL_NVP(vectorIsColor),
+        CEREAL_NVP(value),
+        CEREAL_NVP(valueMin),
+        CEREAL_NVP(valueMax),
+        CEREAL_NVP(isDirt)
+    );
+
+    if(texPath.empty() == false){
+        texture = AssetManager::Get().LoadTexture2D(texPath);
+    }
+}
+
+template<class Archive>
+void Material::save(Archive& ar) const{
+    std::string shaderPath = shader == nullptr ? "" : shader->Path();
+    ar(
+        CEREAL_NVP(enableInstancing),
+        CEREAL_NVP(isDirt),
+        CEREAL_NVP(shaderPath),
+        CEREAL_NVP(maps)
+    );
+}
+
+template<class Archive>
+void Material::load(Archive& ar){
+    std::string shaderPath;
+    ar(
+        CEREAL_NVP(enableInstancing),
+        CEREAL_NVP(isDirt),
+        CEREAL_NVP(shaderPath),
+        CEREAL_NVP(maps)
+    );
+
+    if(shaderPath.empty() == false){
+        shader = AssetManager::Get().LoadShaderFromFile(shaderPath);
+    }
+}
 
 }

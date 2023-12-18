@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Platform/GL.h"
 #include <string.h>
+#include <magic_enum/magic_enum.hpp>
 
 namespace OD{
 
@@ -58,8 +59,44 @@ std::string Shader::load(std::string path){
             supportInstancing = true;
         }
 
-        if(pragmaLine.size() > 1 && pragmaLine[0] == "BlendMode" && pragmaLine[1] == "Blend"){
-            blendMode = BlendMode::Blend;
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "Blend" && pragmaLine[1] != "Off"){
+            Assert(pragmaLine.size() == 3);
+
+            auto value1 = magic_enum::enum_cast<BlendMode>(pragmaLine[1]);
+            auto value2 = magic_enum::enum_cast<BlendMode>(pragmaLine[2]);
+
+            if(value1.has_value() && value2.has_value()){
+                blend = true;
+                srcBlend = value1.value();
+                dstBlend = value2.value();
+            }
+        }
+
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "CullFace"){
+            Assert(pragmaLine.size() == 2);
+            auto value1 = magic_enum::enum_cast<CullFace>(pragmaLine[1]);
+            if(value1.has_value()){
+                cullFace = value1.value();
+            }
+        }
+
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "DepthTest"){
+            Assert(pragmaLine.size() == 2);
+
+            auto value1 = magic_enum::enum_cast<DepthTest>(pragmaLine[1]);
+            if(value1.has_value()){
+                depthTest = value1.value(); 
+            }
+        }
+
+        if(pragmaLine.size() > 1 && pragmaLine[0] == "DepthMask"){
+            Assert(pragmaLine.size() == 2);
+            if(pragmaLine[1] == "true"){
+                depthMask = true;
+            }
+            if(pragmaLine[1] == "false"){
+                depthMask = false;
+            }
         }
 
         if(beginProperties){
@@ -349,6 +386,11 @@ void Shader::SetVector4(const char* name, Vector4 value){
     glCheckError();
 }
 
+void Shader::SetVector4(const char* name, Vector4* value, int count){
+    glUniform4fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
+    glCheckError();
+}
+
 void Shader::SetMatrix4(const char* name, Matrix4 value){
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
     //glCheckError();
@@ -378,6 +420,13 @@ void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
 void Shader::SetCubemap(const char* name, Cubemap& value, int index){
     Cubemap::Bind(value, index);
     SetInt(name, index);
+}
+
+void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
+    UniformBuffer::Bind(buffer, index);
+    unsigned int bufferIndex = glGetUniformBlockIndex(rendererId, name);   
+    glUniformBlockBinding(rendererId, bufferIndex, index);
+    glCheckError();
 }
 
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){

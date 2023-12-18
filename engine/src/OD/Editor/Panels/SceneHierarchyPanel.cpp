@@ -2,11 +2,11 @@
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scripts.h"
-#include "OD/RendererSystem/CameraComponent.h"
-#include "OD/RendererSystem/LightComponent.h"
-#include "OD/RendererSystem/MeshRendererComponent.h"
-#include "OD/RendererSystem/EnvironmentComponent.h"
-#include "OD/PhysicsSystem/PhysicsSystem.h"
+#include "OD/RenderPipeline/CameraComponent.h"
+#include "OD/RenderPipeline/LightComponent.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/EnvironmentComponent.h"
+#include "OD/Physics/PhysicsSystem.h"
 //#include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <functional>

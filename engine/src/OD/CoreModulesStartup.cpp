@@ -1,4 +1,10 @@
 #include "CoreModulesStartup.h"
+#include "OD/Core/AssetManager.h"
+#include "OD/Scene/Scene.h"
+#include "OD/Scene/Scripts.h"
+#include "OD/Animation/Animator.h"
+#include "OD/Physics/PhysicsSystem.h"
+#include "OD/RenderPipeline/StandRenderPipeline.h"
 #include <filesystem>
 
 namespace OD{
@@ -22,17 +28,17 @@ void CoreModulesStartup(){
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
     SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
     SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent");
+    SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
-
-    //SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
+    SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 
     SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
-
-    SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
-    SceneManager::Get().RegisterSystem<StandRendererSystem>("StandRendererSystem");
     SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
 
+    SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
+    SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
 }
 
 }

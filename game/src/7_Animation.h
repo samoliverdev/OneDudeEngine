@@ -2,8 +2,8 @@
 
 #include <OD/OD.h>
 #include <OD/Loader/GLTFLoader.h>
-#include <OD/AnimationSystem/RearrangeBones.h>
-#include <OD/AnimationSystem/CrossFadeController.h>
+#include <OD/Animation/RearrangeBones.h>
+#include <OD/Animation/CrossFadeController.h>
 #include <ImGuizmo/ImGuizmo.h>
 #include "CameraMovement.h"
 #include "Ultis.h"
@@ -18,7 +18,7 @@ struct AnimationInstance{
 	float mPlayback;
 	Transform mModel;
 
-	inline AnimationInstance() : mClip(0), mPlayback(0.0f) { }
+	inline AnimationInstance(): mClip(0), mPlayback(0.0f){}
 };
 
 struct Animation_7: public OD::Module{
@@ -58,7 +58,7 @@ struct Animation_7: public OD::Module{
         camMove.OnStart();
 
         texture = AssetManager::Get().LoadTexture2D("res/Game/Models/gltf/Woman.png");
-        shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkinnedModel.glsl");
+        shader = AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl");
         
         cgltf_data* char1 = OD::LoadGLTFFile("res/Game/Models/gltf/Woman.gltf");
         //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");
@@ -197,7 +197,7 @@ struct Animation_7: public OD::Module{
             Renderer::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
         }
 
-        char2Model->materials[0]->UpdateUniforms();
+        char2Model->materials[0]->UpdateDatas();
         Shader::Bind(*char2Model->materials[0]->GetShader());
         char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);
 

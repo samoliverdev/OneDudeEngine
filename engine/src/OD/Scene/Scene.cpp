@@ -3,7 +3,7 @@
 #include "Scripts.h"
 #include "OD/OD.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/RendererSystem/CameraComponent.h"
+#include "OD/RenderPipeline/CameraComponent.h"
 
 namespace OD{
 

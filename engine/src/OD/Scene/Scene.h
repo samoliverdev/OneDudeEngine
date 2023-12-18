@@ -56,6 +56,8 @@ public:
     template <class Archive>
     void serialize(Archive & ar);
 
+    inline operator Transform(){ return Transform(Position(), Rotation(), LocalScale()); } 
+
 private:
     std::vector<EntityId> children;
 
@@ -112,9 +114,9 @@ enum class SystemType{
 };
 
 struct System{
-    virtual SystemType Type(){ return SystemType::Stand; }
+    System(Scene* inScene):scene(inScene){}
 
-    inline virtual void Init(Scene* _scene){ scene = _scene; }
+    virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
     
     Scene* GetScene(){ return scene; }
@@ -142,8 +144,10 @@ struct Scene: public Asset {
     Entity GetMainCamera2();
     Camera& GetMainCamera();
 
-    template <typename T> void AddSystem();
+    template<typename T> void AddSystem();
+    template<typename T> void RemoveSystem();
     template<typename T> T* GetSystem();
+    template<typename T> T* GetSystemDynamic();
 
     inline entt::registry& GetRegistry(){ return registry; }
 

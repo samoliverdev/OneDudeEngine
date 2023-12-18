@@ -1,8 +1,9 @@
 #include "Editor.h"
+#include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Utils/PlatformUtils.h"
-#include "OD/RendererSystem/CameraComponent.h"
-#include "OD/RendererSystem/StandRendererSystem.h"
+#include "OD/RenderPipeline/CameraComponent.h"
+#include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
@@ -42,8 +43,11 @@ void Editor::OnUpdate(float deltaTime){
 
     if(Input::IsKeyDown(KeyCode::F5)) open = !open;
 
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
     if(SceneManager::Get().ActiveScene()->Running()){
-        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->GetOverrideCamera(nullptr, Transform());
+        renderPipeline->SetOverrideCamera(nullptr, Transform());
     } else {
         float width = viewportSize.x;
         float height = viewportSize.y;
@@ -53,18 +57,19 @@ void Editor::OnUpdate(float deltaTime){
         }
 
         editorCam.OnUpdate();
-        editorCam.cam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
-        editorCam.cam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
+        editorCam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
+        editorCam.cam.viewPos = editorCam.transform.LocalPosition();
+        editorCam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
         editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
-        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->GetOverrideCamera(&editorCam.cam, editorCam.transform);
+        renderPipeline->SetOverrideCamera(&editorCam.cam, editorCam.transform);
     }
 
     if(open == false){
-        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+        renderPipeline->SetOverrideFrameBuffer(nullptr);
         ImGuiLayer::SetCleanAll(false);
     } else{
         ImGuiLayer::SetCleanAll(true);
-        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(framebuffer);
+        renderPipeline->SetOverrideFrameBuffer(framebuffer);
         framebuffer->Resize(viewportSize.x, viewportSize.y);
     }
 
@@ -95,13 +100,16 @@ void Editor::PlayScene(){
     Assert(SceneManager::Get().ActiveScene() != nullptr);
     if(SceneManager::Get().ActiveScene()->Running()) return;
 
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
     /*Scene* scene = SceneManager::Get().activeScene();
     if(_curScenePath.empty()) scene->Save("res/temp.scene");
     scene->Start();*/
 
     UnselectAll();
     lastScene = SceneManager::Get().ActiveScene();
-    lastScene->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    renderPipeline->SetOverrideFrameBuffer(nullptr);
     Scene* s = Scene::Copy(lastScene);
     SceneManager::Get().ActiveScene(s);
     s->Start();
@@ -111,6 +119,9 @@ void Editor::StopScene(){
     Assert(SceneManager::Get().ActiveScene() != nullptr);
     if(SceneManager::Get().ActiveScene()->Running() == false) return;
 
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
     //if(SceneManager::Get().activeScene() != nullptr && SceneManager::Get().activeScene()->running() == false) return;
     
     /*Scene* scene = SceneManager::Get().NewScene();
@@ -118,7 +129,7 @@ void Editor::StopScene(){
     UnselectAll();*/
 
     UnselectAll();
-    SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    renderPipeline->SetOverrideFrameBuffer(nullptr);
     delete SceneManager::Get().ActiveScene();
     SceneManager::Get().ActiveScene(lastScene);
 }
@@ -126,7 +137,10 @@ void Editor::StopScene(){
 void Editor::NewScene(){
     if(SceneManager::Get().ActiveScene()->Running()) return;
 
-    SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
+    renderPipeline->SetOverrideFrameBuffer(nullptr);
     Scene* scene = SceneManager::Get().NewScene();
 
     UnselectAll();
@@ -137,9 +151,12 @@ void Editor::OpenScene(){
     Assert(SceneManager::Get().ActiveScene() != nullptr);
     if(SceneManager::Get().ActiveScene()->Running()) return;
 
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
     std::string path = FileDialogs::OpenFile(""); 
     if(path.empty() == false){
-        SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->SetOutFrameBuffer(nullptr);
+        renderPipeline->SetOverrideFrameBuffer(nullptr);
         Scene* scene = SceneManager::Get().NewScene();
         
         scene->Load(path.c_str());
@@ -226,9 +243,12 @@ void Editor::DrawMainWorkspace(){
     int mouseX = (int)mx;
     int mouseY = (int)my;
 
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    Assert(renderPipeline != nullptr);
+
     //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
     
-    if(SceneManager::Get().ActiveScene()->GetSystem<StandRendererSystem>()->FinalColor()->IsValid()){
+    if(renderPipeline->FinalColor()->IsValid()){
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Bind();
         //LogInfo("ReadPixel(1): %d",SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->ReadPixel(0, mouseX, mouseY));
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->objectsId()->Unbind();
@@ -411,7 +431,7 @@ void Editor::DrawGizmos(){
     if(selectionEntity.IsValid() == false) return;
     if(gizmoType == Editor::GizmosType::None) return;
 
-    Camera cam = editorCam.cam.cam;
+    Camera cam = editorCam.cam;
 
     if(SceneManager::Get().ActiveScene()->Running()){
         Entity camE = SceneManager::Get().ActiveScene()->GetMainCamera2();
@@ -478,8 +498,6 @@ void Editor::OnGUI(){
     DrawMainPanel();
 }
 
-void Editor::OnResize(int width, int height){
-
-}
+void Editor::OnResize(int width, int height){}
 
 }

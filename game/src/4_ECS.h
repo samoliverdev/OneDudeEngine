@@ -12,24 +12,9 @@
 #include <thread>
 #include <future>
 #include <fstream>
+#include <OD/RenderPipeline/StandRenderPipeline2.h>
 
 using namespace OD;
-
-struct RotateScript: public Script{
-    float speed = 40;
-    
-    void OnUpdate() override {
-        TransformComponent& transform = Entity().GetComponent<TransformComponent>();
-        transform.LocalEulerAngles(Vector3(transform.LocalEulerAngles().x, Platform::GetTime() * speed, transform.LocalEulerAngles().z));
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(speed)
-        );
-    }
-};
 
 struct ECS_4: public OD::Module {
     //CameraMovement camMove;
@@ -51,36 +36,12 @@ struct ECS_4: public OD::Module {
         et.GetComponent<TransformComponent>().Position(pos);
         et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
         MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
-        _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Builtins/Models/plane.obj"));
+        _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Engine/Models/plane.obj"));
 
         for(auto i: _meshRenderer3.GetModel()->materials){
-            i->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/UnlitBlend.glsl"));
-            i->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Builtins/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
+            i->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/UnlitBlend.glsl"));
+            i->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Engine/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
         }
-    }
-
-    bool FileExist(const std::string& path){
-        std::ifstream file;
-        file.open(path);
-
-        if(file) return true;
-        return false;
-    }
-
-    Ref<Material> GetFloorMaterial(){
-        std::string path = "res/Game/Textures/floor.material";
-
-        if(FileExist(path) == false){
-            Ref<Material> m = CreateRef<Material>();
-
-            m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl"));
-            m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/floor.jpg"));
-            m->SetVector4("color", Vector4(1, 1, 1, 1));
-
-            m->Save(path);
-        }
-
-        return AssetManager::Get().LoadMaterial(path);
     }
 
     void OnInit() override {
@@ -102,12 +63,15 @@ struct ECS_4: public OD::Module {
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
         OD::Scene* scene = SceneManager::Get().NewScene();
+        //scene->RemoveSystem<StandRenderPipeline>();
+        //scene->AddSystem<StandRenderPipeline2>();
+
         //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
         //scene->Start();
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
             "res/Game/Models/plane.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
         );
         //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -115,7 +79,7 @@ struct ECS_4: public OD::Module {
 
         Ref<Model> cubeModel = AssetManager::Get().LoadModel(
             "res/Game/models/Cube.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
         );
         //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -129,14 +93,14 @@ struct ECS_4: public OD::Module {
         e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
         MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
         _meshRenderer.SetModel(floorModel);
-        _meshRenderer.GetMaterialsOverride()[0] = GetFloorMaterial();
+        _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
    
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
         e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
         MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
         _meshRenderer2.SetModel(cubeModel);
-        _meshRenderer2.GetMaterialsOverride()[0] = GetFloorMaterial();
+        _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
 
         /*Entity sponza = scene->AddEntity("Sponza");
         sponza.GetComponent<TransformComponent>().position(Vector3(0,0,0));
@@ -203,7 +167,7 @@ struct ECS_4: public OD::Module {
             e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
             mr.SetModel(cubeModel);
-            mr.GetMaterialsOverride()[0] = GetFloorMaterial();
+            mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
         
             float angle = 20.0f * i; 
             e.GetComponent<TransformComponent>().LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
@@ -212,6 +176,8 @@ struct ECS_4: public OD::Module {
 
             scene->SetParent(mainEntity.Id(), e.Id());
         }
+
+
 
         Application::AddModule<Editor>();
         //scene->Start();

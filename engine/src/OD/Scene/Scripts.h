@@ -88,7 +88,7 @@ private:
 };
 
 struct ScriptSystem: public System{
-    virtual void Init(Scene* scene) override;
+    ScriptSystem(Scene* scene);
     virtual void Update() override;
 private:
     static void OnDestroyScript(entt::registry & r, entt::entity e);

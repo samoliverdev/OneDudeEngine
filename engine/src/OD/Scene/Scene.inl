@@ -58,13 +58,26 @@ void Scene::AddSystem(){
     static_assert(std::is_base_of<OD::System, T>::value);
     Assert(systems.find(GetType<T>()) == systems.end() && "System Already has been added");
 
-    auto newSystem = new T();
-    newSystem->Init(this);
+    auto newSystem = new T(this);
+    //newSystem->Init(this);
 
     systems[GetType<T>()] = newSystem;
     if(newSystem->Type() == SystemType::Stand) standSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Renderer) rendererSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Physics) physicsSystems.push_back(newSystem);
+}
+
+template<typename T> 
+void Scene::RemoveSystem(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+    Assert(systems.find(GetType<T>()) != systems.end() && "System Already has not been added");
+
+    System* s = systems[GetType<T>()];
+
+    systems.erase(GetType<T>());
+    standSystems.erase(std::remove(standSystems.begin(), standSystems.end(), s), standSystems.end());
+    rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
+    physicsSystems.erase(std::remove(physicsSystems.begin(), physicsSystems.end(), s), physicsSystems.end());
 }
 
 template<typename T>
@@ -73,6 +86,16 @@ T* Scene::GetSystem(){
 
     if(systems.find(GetType<T>()) == systems.end()) return nullptr;
     return static_cast<T*>(systems[GetType<T>()]);
+}
+
+template<typename T>
+T* Scene::GetSystemDynamic(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+
+    for(auto c: systems){
+        if(dynamic_cast<T*>(c.second)) return (T*)c.second;
+    }
+    return nullptr;
 }
 
 //-----------SceneManager---------

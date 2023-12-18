@@ -7,13 +7,16 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "Material.h"
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include "OD/AnimationSystem/Skeleton.h"
-#include "OD/AnimationSystem/Clip.h"
+#include "Culling.h"
+#include "OD/Animation/Skeleton.h"
+#include "OD/Animation/Clip.h"
 
 namespace OD{
+
+/*
+struct AABB;
+struct Sphere;
+*/
 
 class Model: public Asset{
 public:
@@ -35,21 +38,8 @@ public:
     std::vector<Ref<Clip>> animationClips;
     
     static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
-    
-    /*
-    friend class cereal::access;
-    template <class Archive>
-    void serialize(Archive & ar){
-        ar(CEREAL_NVP(_path));
-    }
-
-    // We could define load_and_construct internally:
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<Model> & construct){
-      int x;
-      ar(x);
-      construct(x);
-    }*/
+    static AABB GenerateAABB(Model& model);
+    static Sphere GenerateSphereBV(Model& model);
 };
 
 }

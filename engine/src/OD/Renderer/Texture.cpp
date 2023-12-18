@@ -212,8 +212,6 @@ void LoadSettings(const char* filePath, Texture2DSetting& settings){
     std::ifstream stream(std::string(filePath) + ".meta");
     if(stream.fail()) return;
 
-    LogInfo("tttdss");
-
     cereal::JSONInputArchive archive{stream};
     archive(CEREAL_NVP(settings));
 }

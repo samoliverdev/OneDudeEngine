@@ -109,7 +109,7 @@ void Renderer::Initialize(){
     fullScreenQuad = Mesh::FullScreenQuad();
     //gismoShader = Shader::CreateFromFiles("res/shaders/gizmos.vert", "res/shaders/gizmos.frag");
     gismoShader = CreateRef<Shader>();
-    bool result = Shader::CreateFromFile(*gismoShader, "res/Builtins/Shaders/Gizmos.glsl");
+    bool result = Shader::CreateFromFile(*gismoShader, "res/Engine/Shaders/Gizmos.glsl");
     Assert(result == true);
 
     CreateLineVAO();

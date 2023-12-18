@@ -2,7 +2,7 @@
     "Material": {
         "enableInstancing": false,
         "isDirt": true,
-        "shaderPath": "res/Builtins/Shaders/StandDiffuse.glsl",
+        "shaderPath": "res/Engine/Shaders/StandDiffuse.glsl",
         "maps": [
             {
                 "key": "mainTex",
@@ -17,6 +17,8 @@
                     },
                     "vectorIsColor": false,
                     "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0,
                     "isDirt": true
                 }
             },
@@ -24,7 +26,7 @@
                 "key": "normal",
                 "value": {
                     "type": 0,
-                    "texPath": "res/Builtins/Textures/White.jpg",
+                    "texPath": "res/Engine/Textures/White.jpg",
                     "vector": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -33,6 +35,8 @@
                     },
                     "vectorIsColor": false,
                     "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0,
                     "isDirt": true
                 }
             },
@@ -49,6 +53,8 @@
                     },
                     "vectorIsColor": true,
                     "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0,
                     "isDirt": true
                 }
             },
@@ -65,6 +71,8 @@
                     },
                     "vectorIsColor": false,
                     "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0,
                     "isDirt": true
                 }
             }

@@ -25,9 +25,9 @@ struct LoadModel_2: OD::Module {
 
         camMove.transform = &camTransform;
 
-        model = AssetManager::Get().LoadModel("res/models/cube.glb");
-        model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
-        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/rock.jpg", {OD::TextureFilter::Linear, false}));
+        model = AssetManager::Get().LoadModel("res/Game/Models/cube.glb");
+        model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Unlit.glsl"));
+        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/rock.jpg", {OD::TextureFilter::Linear, false}));
 
         for(int i = 0; i < 100000; i++){
             float posRange = 25;
@@ -63,7 +63,7 @@ struct LoadModel_2: OD::Module {
         bool useInstancing = true;
 
         if(useInstancing){  
-            model->materials[0]->UpdateUniforms();
+            model->materials[0]->UpdateDatas();
 
             model->meshs[0]->instancingModelMatrixs.clear();
             for(auto i: transforms){

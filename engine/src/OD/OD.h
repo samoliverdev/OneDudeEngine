@@ -27,18 +27,20 @@
 #include "OD/Renderer/Framebuffer.h"
 #include "OD/Renderer/Font.h"
 
+#include "OD/Animation/Animator.h"
+
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/Scripts.h"
 
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
 
-#include "OD/RendererSystem/StandRendererSystem.h"
-#include "OD/RendererSystem/MeshRendererComponent.h"
-#include "OD/RendererSystem/SpriteComponent.h"
-#include "OD/RendererSystem/CameraComponent.h"
-#include "OD/RendererSystem/LightComponent.h"
-#include "OD/RendererSystem/EnvironmentComponent.h"
+#include "OD/RenderPipeline/StandRenderPipeline.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/SpriteComponent.h"
+#include "OD/RenderPipeline/CameraComponent.h"
+#include "OD/RenderPipeline/LightComponent.h"
+#include "OD/RenderPipeline/EnvironmentComponent.h"
 
-#include "OD/PhysicsSystem/PhysicsSystem.h"
+#include "OD/Physics/PhysicsSystem.h"
 

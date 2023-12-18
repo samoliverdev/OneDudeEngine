@@ -115,13 +115,13 @@ struct BaseMesh_1: OD::Module {
         JobSystem::Wait();*/
 
         meshShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*meshShader, "res/shaders/test.glsl");
+        Shader::CreateFromFile(*meshShader, "res/Engine/test.glsl");
 
         fontShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*fontShader, "res/Builtins/Shaders/Font.glsl");
+        Shader::CreateFromFile(*fontShader, "res/Engine/Shaders/Font.glsl");
 
         font = CreateRef<Font>();
-        Font::CreateFromFile(*font, "res/Builtins/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        Font::CreateFromFile(*font, "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     }
 
     void OnUpdate(float deltaTime) override {

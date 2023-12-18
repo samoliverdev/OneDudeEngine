@@ -9,6 +9,9 @@
 #include "7_Animation.h"
 #include "9_Serialization.h"
 #include "10_SynthCity.h"
+#include "11_Animator.h"
+#include "12_UniformBuffer.h"
+#include "13_NewRenderPipeline.h"
 
 #include <string>
 
@@ -21,7 +24,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 5;
+    int i = 12;
     if(OD::Application::args.size() > 1) i = atoi(OD::Application::args[1].c_str());
 
     if(i == 0) return new BaseMesh_1();
@@ -33,6 +36,9 @@ OD::Module* CreateMainModule(){
     if(i == 6) return new Animation_7();
     if(i == 8) return new Serialization_9();
     if(i == 9) return new SynthCity_10();
+    if(i == 10) return new Animator_11();
+    if(i == 11) return new UniformBuffer_12();
+    if(i == 12) return new NewRenderPipeline_13();
 
     return new BaseMesh_1();
 }

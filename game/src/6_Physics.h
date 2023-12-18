@@ -22,7 +22,7 @@ struct PhysicsCubeS: public Script{
         //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
         //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
-        cubeModel->materials[0] = AssetManager::Get().LoadMaterial("res/Game/Materials/mat1.material"); //Material::CreateFromFile("res/mat1.material");
+        cubeModel->materials[0] = LoadMaterial1();
 
         entity.GetComponent<TransformComponent>().Position({2, 13, 0});
         entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
@@ -94,7 +94,7 @@ struct Physics_6: OD::Module {
         Entity floorEntity = scene->AddEntity("Floor");
         MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
         floorRenderer.SetModel(floorModel);
-        floorRenderer.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
+        floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
         floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
         floorEntityP.Mass(0);
@@ -105,7 +105,7 @@ struct Physics_6: OD::Module {
         Entity character2Entity = scene->AddEntity("MainCube");
         MeshRendererComponent& character2Renderer = character2Entity.AddComponent<MeshRendererComponent>();
         character2Renderer.SetModel(cubeModel);
-        character2Renderer.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
+        character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
         RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
         physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
         physicObject.Mass(1);
@@ -116,7 +116,7 @@ struct Physics_6: OD::Module {
         Entity character2Entity2 = scene->AddEntity("MainCube2");
         MeshRendererComponent& character2Renderer2 = character2Entity2.AddComponent<MeshRendererComponent>();
         character2Renderer2.SetModel(cubeModel);
-        character2Renderer2.GetMaterialsOverride()[0] = AssetManager::Get().LoadMaterial("res/Game/Textures/floor.material");
+        character2Renderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
         RigidbodyComponent& physicObject2 = character2Entity2.AddComponent<RigidbodyComponent>();
         physicObject2.SetShape(CollisionShape::BoxShape({1,1,1}));
         physicObject2.Mass(1);

@@ -195,7 +195,7 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
     if(textures.empty()){
         textures.push_back(AssetManager::Get().LoadTexture2D(
-            "res/Builtins/Textures/White.jpg", 
+            "res/Engine/Textures/White.jpg", 
             {OD::TextureFilter::Linear, false}
         ));
     }
@@ -264,7 +264,7 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> cus
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
+        out->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Model.glsl"));
     } else {
         out->SetShader(customShader);
     }

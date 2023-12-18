@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cgltf.h>
-#include "OD/AnimationSystem/Pose.h"
-#include "OD/AnimationSystem/Clip.h"
-#include "OD/AnimationSystem/Skeleton.h"
+#include "OD/Animation/Pose.h"
+#include "OD/Animation/Clip.h"
+#include "OD/Animation/Skeleton.h"
 #include "OD/Renderer/Mesh.h"
 #include <vector>
 #include <string>

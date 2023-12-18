@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Core/Math.h"
+#include "Culling.h"
 
 namespace OD {
 
@@ -12,6 +13,10 @@ struct Camera {
     float fov;
     int width;
     int height;
+    Vector3 cleanColor;
+    Vector3 viewPos;
+    Frustum frustum;
+    Vector4 viewportRect = Vector4(0, 0, 1, 1);
 
     void LookAt(Vector3 eye, Vector3 center,Vector3 up);
     void SetOrtho(float scale, float near, float far, int width, int height);

@@ -40,7 +40,7 @@ struct SynthCity_10: OD::Module {
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
             "res/Game/Models/PolygonCity/FBX_SCENE/City.fbx",
             //"res/PolygonCity/City.fbx",
-            AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
         );
   
         Entity floorEntity = scene->AddEntity("City");

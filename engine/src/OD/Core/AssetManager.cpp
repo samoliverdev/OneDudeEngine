@@ -74,11 +74,11 @@ Ref<Model> AssetManager::LoadModel(const std::string &path, Ref<Shader> customSh
 }   
 
 Ref<Texture2D> AssetManager::LoadDefautlTexture2D(){
-    return LoadTexture2D("res/Builtins/Textures/White.jpg", {TextureFilter::Linear, true});
+    return LoadTexture2D("res/Engine/Textures/White.jpg", {TextureFilter::Linear, true});
 }
 
 Ref<Shader> AssetManager::LoadErrorShader(){
-    return LoadShaderFromFile("res/Builtins/Shaders/Error.glsl");
+    return LoadShaderFromFile("res/Engine/Shaders/Error.glsl");
 }
 
 }

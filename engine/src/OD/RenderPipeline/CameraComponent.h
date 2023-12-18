@@ -1,0 +1,59 @@
+#pragma once
+
+#include "OD/Scene/Scene.h"
+#include "OD/Renderer/Mesh.h"
+#include "OD/Serialization/Serialization.h"
+#include "OD/Core/ImGui.h"
+
+namespace OD{
+
+struct CameraComponent{
+    enum class Type{
+        Perspective, Orthographic 
+    };
+
+    Type type = Type::Perspective;
+
+    bool isMain = true;
+
+    float orthographicSize = 5;
+    float fieldOfView = 45;
+    float nearClipPlane = 0.1f;
+    float farClipPlane = 100;
+    Vector4 viewportRect = Vector4(0, 0, 1, 1);
+
+    inline Camera GetCamera(){ return camera; }
+    
+    inline void UpdateCameraData(TransformComponent& transform, int width, int height){
+        if(type == Type::Perspective)
+            camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane, width, height);
+        else    
+            camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, width, height);
+
+        camera.width = width;
+        camera.height = height;
+        camera.viewportRect = viewportRect;
+        camera.view = math::inverse(transform.GlobalModelMatrix());
+        camera.frustum = CreateFrustumFromCamera(transform, (float)width / (float)height, Mathf::Deg2Rad(fieldOfView), nearClipPlane, farClipPlane);
+        camera.viewPos = transform.Position();
+    }
+
+    static void OnGui(Entity& e);
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(type),
+            CEREAL_NVP(isMain),
+            CEREAL_NVP(orthographicSize),
+            CEREAL_NVP(fieldOfView),
+            CEREAL_NVP(nearClipPlane),
+            CEREAL_NVP(farClipPlane)
+        );
+    }
+
+private:
+    Camera camera;
+};
+
+}

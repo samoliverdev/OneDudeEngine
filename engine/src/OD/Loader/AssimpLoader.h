@@ -4,8 +4,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "OD/Renderer/Model.h"
-#include "OD/AnimationSystem/Skeleton.h"
-#include "OD/AnimationSystem/Clip.h"
+#include "OD/Animation/Skeleton.h"
+#include "OD/Animation/Clip.h"
 
 namespace OD{
 

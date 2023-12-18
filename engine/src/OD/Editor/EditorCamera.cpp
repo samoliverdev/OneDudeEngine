@@ -1,5 +1,6 @@
 #include "EditorCamera.h"
 #include "OD/Core/Input.h"
+#include "OD/Core/Application.h"
 
 namespace OD{
 
