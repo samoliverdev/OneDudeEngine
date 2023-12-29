@@ -1,8 +1,10 @@
 #pragma once
 
 #include <OD/OD.h>
+#include <OD/RenderPipeline/CommandBuffer.h>
 #include <chrono>
 #include <functional>
+#include <atomic>
 
 using namespace OD;
 
@@ -114,8 +116,39 @@ struct BaseMesh_1: OD::Module {
         });
         JobSystem::Wait();*/
 
+        clock_t start, end;
+        start = clock();
+
+        const int SIZE = 100000000;
+        std::vector<int> arr;
+        arr.resize(SIZE);
+
+        #if 1 // This is Very more fast
+        for(int i = 0; i < SIZE; i++){
+            arr[i] += 20;
+        }
+        #else
+        std::atomic<int> counter(0);
+        JobSystem::Dispatch(SIZE, SIZE/4, [&](JobDispatchArgs args){
+            //LogInfo("JobIndex: %d, Group Index: %d", args.jobIndex, args.groupIndex);
+
+            //unsigned int unique = counter.fetch_add(1, std::memory_order_relaxed); //This is more slow then use a loop without JobSystem
+            //arr[counter] += 20;
+            //counter.fetch_add(1); // Slow Too
+
+            arr[args.jobIndex] += 20; //Without add is more fast then using atomic
+        });
+        JobSystem::Wait();
+        #endif
+
+        end = clock();
+
+        double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+        std::cout << "Time taken by program is : " << std::fixed << time_taken << std::setprecision(5);
+        std::cout << " sec " << std::endl;
+
         meshShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*meshShader, "res/Engine/test.glsl");
+        Shader::CreateFromFile(*meshShader, "res/Game/Shaders/test.glsl");
 
         fontShader = CreateRef<Shader>();
         Shader::CreateFromFile(*fontShader, "res/Engine/Shaders/Font.glsl");

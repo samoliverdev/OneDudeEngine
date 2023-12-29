@@ -4,6 +4,7 @@
 #include "OD/Utils/PlatformUtils.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
+#include "OD/RenderPipeline/StandRenderPipeline2.h"
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
@@ -43,10 +44,11 @@ void Editor::OnUpdate(float deltaTime){
 
     if(Input::IsKeyDown(KeyCode::F5)) open = !open;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
+    Assert(dynamic_cast<StandRenderPipeline2*>(renderPipeline));
 
-    if(SceneManager::Get().ActiveScene()->Running()){
+    if(SceneManager::Get().GetActiveScene()->Running()){
         renderPipeline->SetOverrideCamera(nullptr, Transform());
     } else {
         float width = viewportSize.x;
@@ -97,29 +99,30 @@ void Editor::OnRender(float deltaTime){
 Scene* lastScene;
 
 void Editor::PlayScene(){
-    Assert(SceneManager::Get().ActiveScene() != nullptr);
-    if(SceneManager::Get().ActiveScene()->Running()) return;
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
+    Assert(dynamic_cast<StandRenderPipeline2*>(renderPipeline));
 
     /*Scene* scene = SceneManager::Get().activeScene();
     if(_curScenePath.empty()) scene->Save("res/temp.scene");
     scene->Start();*/
 
     UnselectAll();
-    lastScene = SceneManager::Get().ActiveScene();
+    lastScene = SceneManager::Get().GetActiveScene();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
     Scene* s = Scene::Copy(lastScene);
-    SceneManager::Get().ActiveScene(s);
+    SceneManager::Get().SetActiveScene(s);
     s->Start();
 }
 
 void Editor::StopScene(){
-    Assert(SceneManager::Get().ActiveScene() != nullptr);
-    if(SceneManager::Get().ActiveScene()->Running() == false) return;
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    if(SceneManager::Get().GetActiveScene()->Running() == false) return;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
     //if(SceneManager::Get().activeScene() != nullptr && SceneManager::Get().activeScene()->running() == false) return;
@@ -130,14 +133,14 @@ void Editor::StopScene(){
 
     UnselectAll();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
-    delete SceneManager::Get().ActiveScene();
-    SceneManager::Get().ActiveScene(lastScene);
+    delete SceneManager::Get().GetActiveScene();
+    SceneManager::Get().SetActiveScene(lastScene);
 }
 
 void Editor::NewScene(){
-    if(SceneManager::Get().ActiveScene()->Running()) return;
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
     renderPipeline->SetOverrideFrameBuffer(nullptr);
@@ -148,10 +151,10 @@ void Editor::NewScene(){
 }   
 
 void Editor::OpenScene(){
-    Assert(SceneManager::Get().ActiveScene() != nullptr);
-    if(SceneManager::Get().ActiveScene()->Running()) return;
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
     std::string path = FileDialogs::OpenFile(""); 
@@ -166,11 +169,11 @@ void Editor::OpenScene(){
 }
 
 void Editor::SaveAsScene(){
-    if(SceneManager::Get().ActiveScene()->Running()) return;
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
 
     std::string path = FileDialogs::SaveFile("");
     if(path.empty() == false){
-        Scene* scene = SceneManager::Get().ActiveScene();
+        Scene* scene = SceneManager::Get().GetActiveScene();
         scene->Save(path.c_str());
         curScenePath = path;
     } 
@@ -180,7 +183,7 @@ void Editor::HandleShotcuts(){
     if(Input::IsKeyDown(KeyCode::F1)) PlayScene();
     if(Input::IsKeyDown(KeyCode::F2)) StopScene();
 
-    if(SceneManager::Get().ActiveScene()->Running()) return;
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
 
     if(Input::IsKeyDown(KeyCode::Q)) gizmoType = Editor::GizmosType::None;
     if(Input::IsKeyDown(KeyCode::W)) gizmoType = Editor::GizmosType::Translation;
@@ -191,10 +194,10 @@ void Editor::HandleShotcuts(){
 void Editor::DrawMainWorkspace(){
     OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
     
-    sceneHierarchyPanel.SetScene(SceneManager::Get().ActiveScene());
+    sceneHierarchyPanel.SetScene(SceneManager::Get().GetActiveScene());
     sceneHierarchyPanel.SetEditor(this);
 
-    inspectorPanel.SetScene(SceneManager::Get().ActiveScene());
+    inspectorPanel.SetScene(SceneManager::Get().GetActiveScene());
     inspectorPanel.SetEditor(this);
     
     sceneHierarchyPanel.OnGui();
@@ -243,7 +246,7 @@ void Editor::DrawMainWorkspace(){
     int mouseX = (int)mx;
     int mouseY = (int)my;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().ActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
+    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
     //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
@@ -352,7 +355,7 @@ void Editor::DrawMainPanel(){
     float height = ImGui::GetFrameHeight();
     if(ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)){
         if(ImGui::BeginMenuBar()){
-            bool sceneRunning = SceneManager::Get().ActiveScene()->Running();
+            bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
             ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
             ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
             ImGui::Button("Test", ImVec2(0, height-1));
@@ -433,8 +436,8 @@ void Editor::DrawGizmos(){
 
     Camera cam = editorCam.cam;
 
-    if(SceneManager::Get().ActiveScene()->Running()){
-        Entity camE = SceneManager::Get().ActiveScene()->GetMainCamera2();
+    if(SceneManager::Get().GetActiveScene()->Running()){
+        Entity camE = SceneManager::Get().GetActiveScene()->GetMainCamera2();
         if(camE.IsValid() == false) return;
 
         CameraComponent& cameraComponent = camE.GetComponent<CameraComponent>();

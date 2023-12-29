@@ -70,6 +70,10 @@ void MeshRendererComponent::SetModel(Ref<Model> m){
     boundingVolumeSphere = Model::GenerateSphereBV(*model);
 }
 
+AABB MeshRendererComponent::GetAABB(){
+    return boundingVolume;
+}
+
 AABB MeshRendererComponent::GetGlobalAABB(TransformComponent& transform){
     //Get global scale thanks to our transform
     const Vector3 globalCenter{ transform.GlobalModelMatrix() * Vector4(boundingVolume.center, 1) };
@@ -92,7 +96,7 @@ AABB MeshRendererComponent::GetGlobalAABB(TransformComponent& transform){
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB result = AABB(globalCenter, newIi, newIj, newIk);
-    result.Expand(transform.LocalScale());
+    result.Expand(transform.LocalScale() * 2.0f);
     return result;
 }
 

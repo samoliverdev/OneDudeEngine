@@ -366,6 +366,12 @@ void Shader::SetFloat(const char* name, float value){
     });
 }
 
+void Shader::SetFloat(const char* name, float* value, int count){
+    //glUniform1f(GetLocation(name), value);
+    glUniform1fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
+    glCheckError();
+}
+
 void Shader::SetInt(const char* name, int value){
     glUniform1i(GetLocation(name), value);
     glCheckError();
@@ -410,6 +416,11 @@ void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
     glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s Cout: %zd", name, path.c_str(), value.size()); 
     });
+}
+
+void Shader::SetMatrix4(const char* name, Matrix4* value, int count){
+    glUniformMatrix4fv(GetLocation(name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
+    glCheckError();
 }
 
 void Shader::SetTexture2D(const char* name, Texture2D& value, int index){

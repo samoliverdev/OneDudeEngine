@@ -61,9 +61,6 @@ void Material::SetFloat(const char* name, float value, float min, float max){
 
     map.type = MaterialMap::Type::Float;
     map.value = value;
-    map.isDirt = true;
-    isDirt = true;
-
     map.valueMin = min;
     map.valueMax = max;
 }
@@ -75,8 +72,6 @@ void Material::SetVector2(const char* name, Vector2 value){
 
     map.type = MaterialMap::Type::Vector2;
     map.vector = Vector4(value.x, value.y, 0, 1);
-    map.isDirt = true;
-    isDirt = true;
 }
 
 void Material::SetVector3(const char* name, Vector3 value, bool isColor){
@@ -86,9 +81,7 @@ void Material::SetVector3(const char* name, Vector3 value, bool isColor){
 
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
-    map.isDirt = true;
     map.vectorIsColor = isColor;
-    isDirt = true;
 }
 
 void Material::SetVector4(const char* name, Vector4 value, bool isColor){
@@ -98,10 +91,17 @@ void Material::SetVector4(const char* name, Vector4 value, bool isColor){
 
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
-    map.isDirt = true;
     map.vectorIsColor = isColor;
-    isDirt = true;
 }
+
+void Material::SetMatrix4(const char* name, Matrix4 value){
+    MaterialMap& map = maps[name];
+
+    if(map.type == MaterialMap::Type::Matrix4) return;
+
+    map.type = MaterialMap::Type::Matrix4;
+    map.matrix = value;
+}   
 
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     MaterialMap& map = maps[name];
@@ -110,8 +110,15 @@ void Material::SetTexture(const char* name, Ref<Texture2D> tex){
 
     map.type = MaterialMap::Type::Texture;
     map.texture = tex;
-    map.isDirt = true;
-    isDirt = true;
+}
+
+void Material::SetTexture(const char* name, Framebuffer* tex){
+    MaterialMap& map = maps[name];
+
+    if(map.type == MaterialMap::Type::Framebuffer && map.framebuffer == tex) return;
+
+    map.type = MaterialMap::Type::Framebuffer;
+    map.framebuffer = tex;
 }
 
 void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
@@ -121,8 +128,10 @@ void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
 
     map.type = MaterialMap::Type::Cubemap;
     map.cubemap = tex;
-    map.isDirt = true;
-    isDirt = true;
+}
+
+void Material::CleanData(){
+    maps.clear();
 }
 
 void Material::UpdateDatas(){
@@ -142,35 +151,43 @@ void Material::UpdateDatas(){
         Renderer::SetBlend(false);
     }
 
-    Shader::Bind(*shader);
+    ApplyUniformTo(*shader);
+}
+
+void Material::ApplyUniformTo(Shader& shader){
+    Shader::Bind(shader);
 
     int curTex = 0;
 
     for(auto i: maps){
         MaterialMap& map = i.second;
 
-        if(map.isDirt != true) continue;
-        map.isDirt = false;
-
         if(map.type == MaterialMap::Type::Float){
-            shader->SetFloat(i.first.c_str(), map.value);
+            shader.SetFloat(i.first.c_str(), map.value);
         }
         if(map.type == MaterialMap::Type::Vector2){
-            shader->SetVector2(i.first.c_str(), Vector2(map.vector.x, map.vector.y));
+            shader.SetVector2(i.first.c_str(), Vector2(map.vector.x, map.vector.y));
         }
         if(map.type == MaterialMap::Type::Vector3){
-            shader->SetVector3(i.first.c_str(), Vector3(map.vector.x, map.vector.y, map.vector.z));
+            shader.SetVector3(i.first.c_str(), Vector3(map.vector.x, map.vector.y, map.vector.z));
         }
         if(map.type == MaterialMap::Type::Vector4){
-            shader->SetVector4(i.first.c_str(), map.vector);
+            shader.SetVector4(i.first.c_str(), map.vector);
+        }
+        if(map.type == MaterialMap::Type::Matrix4){
+            shader.SetMatrix4(i.first.c_str(), i.second.matrix);
         }
         if(map.type == MaterialMap::Type::Texture){
-            shader->SetTexture2D(i.first.c_str(), *i.second.texture, curTex);
+            shader.SetTexture2D(i.first.c_str(), *i.second.texture, curTex);
             //i.second.texture->Bind(curTex, i.first.c_str(), *shader);
             curTex += 1;
         }
+        if(map.type == MaterialMap::Type::Framebuffer){
+            shader.SetFramebuffer(i.first.c_str(), *i.second.framebuffer, curTex, 0);
+            curTex += 1;
+        }
         if(map.type == MaterialMap::Type::Cubemap){
-            shader->SetCubemap(i.first.c_str(), *i.second.cubemap, curTex);
+            shader.SetCubemap(i.first.c_str(), *i.second.cubemap, curTex);
             curTex += 1;
         }
     }

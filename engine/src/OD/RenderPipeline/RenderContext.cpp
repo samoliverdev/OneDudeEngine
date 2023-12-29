@@ -1,4 +1,5 @@
 #include "RenderContext.h"
+#include "CameraComponent.h"
 #include "MeshRendererComponent.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/AssetManager.h"
@@ -33,7 +34,7 @@ RenderContext::~RenderContext(){
     delete finalColor;
 }
 
-void RenderContext::Begin(){
+void RenderContext::BeginDrawToScreen(){
     int width = Application::ScreenWidth();
     int height = Application::ScreenHeight();
 
@@ -48,7 +49,7 @@ void RenderContext::Begin(){
     Framebuffer::Bind(*outColor);
 }
 
-void RenderContext::End(){
+void RenderContext::EndDrawToScreen(){
     Renderer::BlitFramebuffer(outColor, finalColor);
     //Renderer::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
 
@@ -58,9 +59,12 @@ void RenderContext::End(){
         Renderer::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
     }
 
-    finalColor->Unbind();
+    Framebuffer::Unbind();
+
+    /*finalColor->Unbind();
     outColor->Unbind();
     if(overrideFramebuffer != nullptr) overrideFramebuffer->Unbind();
+    */
 }
 
 void RenderContext::SetupCameraProperties(Camera inCam){
@@ -75,85 +79,100 @@ void RenderContext::SetupCameraProperties(Camera inCam){
     );
 }
 
-void RenderContext::SetupRenderers(DrawingTarget* targets, int count){
-    for(int j = 0; j < count; j++){
-        DrawingTarget* target = &targets[j];
-        target->commandBuffer.Clean();
-    }
-
+void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderData){
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        //if(c.GetGlobalAABB(t).isOnFrustum(cam.frustum, t) == false) continue;
+        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
         for(auto i: c.GetModel()->renderTargets){
-            CommandBaseData data;
+            RenderData data;
+            data.transform = t;
             data.distance = math::distance(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex];
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
             data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.posePalette = nullptr;
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
 
             globalShaders.insert(data.targetMaterial->GetShader());
 
-            for(int j = 0; j < count; j++){
-                SetupDrawTarget(data, targets[j]);
+            onReciveRenderData(data);
+        }
+    }
+
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent>();
+    for(auto e: skinnedView){
+        SkinnedMeshRendererComponent& c = skinnedView.get<SkinnedMeshRendererComponent>(e);
+        TransformComponent& t = skinnedView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
+
+        for(auto i: c.GetModel()->renderTargets){
+            RenderData data;
+            data.transform = t;
+            data.distance = math::distance(cam.viewPos, t.Position());
+            data.targetMaterial = c.GetModel()->materials[i.materialIndex];
+            data.targetMesh = c.GetModel()->meshs[i.meshIndex];
+            data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.posePalette = &c.posePalette;
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
+
+            globalShaders.insert(data.targetMaterial->GetShader());
+
+            onReciveRenderData(data);
         }
     }
 }
 
-void RenderContext::SetupDrawTarget(CommandBaseData& data, DrawingTarget& target){
-    MaterialBind2 bind = {
-        data.distance,
-        data.targetMaterial->MaterialId()
-    };
+void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, CommandBuffer& target){
+    //TODO: Check Culling
+    //if(data.aabb.isOnFrustum(cam.frustum, data.transform) == false) return;
 
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
-    if(target.settings.enableIntancing == false){
+    if(settings.enableIntancing == false){
         isInstancing = false;
     }
 
-    if(target.settings.sortType == SortType::None){
-        target.commandBuffer.drawCommands.sortFunction = nullptr;
-    }
-    if(target.settings.sortType == SortType::CommonOpaque){
-        target.commandBuffer.drawCommands.sortFunction = [](auto& a, auto& b){
-            if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
-            return a.first.distance < b.first.distance;
-        };
-    }
-    if(target.settings.sortType == SortType::CommonTransparent){
-        target.commandBuffer.drawCommands.sortFunction = [](auto& a, auto& b){
-            if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
-            return a.first.distance > b.first.distance;
-        };
-    }
-
-    if(target.settings.renderQueueRange == RenderQueueRange::Transparent){
+    if(settings.renderQueueRange == RenderQueueRange::Transparent){
         if(isBlend == false) return;
         isInstancing = false;
     }
-    if(target.settings.renderQueueRange == RenderQueueRange::Opaue){
+    if(settings.renderQueueRange == RenderQueueRange::Opaue){
         if(isBlend == true) return;
     }
 
+    if(data.posePalette != nullptr){
+        target.AddSkinnedDrawCommand({
+            data.targetMaterial,
+            data.targetMesh,
+            data.targetMatrix,
+            data.posePalette
+        }, data.distance);
+        return;
+    }
+
     if(isInstancing){
-        DrawInstancingCommand& cm = target.commandBuffer.drawIntancingCommands.Get(data.targetMaterial, data.targetMesh);
-        cm.material = data.targetMaterial;
-        cm.meshs = data.targetMesh;
-        cm.trans.push_back(data.targetMatrix);
-    } else {
-        target.commandBuffer.drawCommands.Add(bind, DrawCommand{
+        target.AddDrawInstancingCommand({
             data.targetMaterial,
             data.targetMesh,
             data.targetMatrix
         });
+
+    } else {
+        target.AddDrawCommand({
+            data.targetMaterial,
+            data.targetMesh,
+            data.targetMatrix,
+            data.distance
+        }, data.distance);
     } 
 }
 
@@ -162,77 +181,6 @@ void RenderContext::SetStandUniforms(Camera& cam, Shader& shader){
     shader.SetMatrix4("view", cam.view);
     shader.SetMatrix4("projection", cam.projection);
     shader.SetVector3("viewPos", cam.viewPos);
-}
-
-void RenderContext::DrawRenderers(DrawingTarget* targets, int count){
-    for(int j = 0; j < count; j++){
-        DrawingTarget* target = &targets[j];
-        target->commandBuffer.Sort();
-    }
-
-    Ref<Material> lastMat = nullptr;
-
-    for(int j = 0; j < count; j++){
-        DrawingTarget* target = &targets[j];
-
-        if(target->settings.renderQueueRange == RenderQueueRange::Opaue){
-            /*Renderer::SetDepthTest(DepthTest::LESS);
-            Renderer::SetCullFace(CullFace::BACK);
-            Renderer::SetBlend(false);*/
-        }
-
-        if(target->settings.renderQueueRange == RenderQueueRange::Transparent){
-            //Renderer::SetDepthTest(DepthTest::DISABLE);
-            /*Renderer::SetCullFace(CullFace::NONE);
-            Renderer::SetBlend(true);
-            Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);*/
-        }
-
-        target->commandBuffer.drawCommands.Each([&](auto& cm){
-            if(cm.material != lastMat){
-                cm.material->UpdateDatas();
-                cm.material->GetShader()->SetFloat("useInstancing", 0.0f); 
-                SetStandUniforms(cam, *cm.material->GetShader());
-            }
-        
-            lastMat = cm.material;
-            cm.material->GetShader()->SetMatrix4("model", cm.trans);
-            Renderer::DrawMesh(*cm.meshs);
-        });
-
-        target->commandBuffer.drawIntancingCommands.Each([&](auto& cm){
-            cm.material->UpdateDatas();
-            cm.material->GetShader()->SetFloat("useInstancing", 1); 
-            SetStandUniforms(cam, *cm.material->GetShader());
-
-            cm.meshs->instancingModelMatrixs.clear();
-
-            for(auto j: cm.trans){
-                cm.meshs->instancingModelMatrixs.push_back(j);
-            }
-            cm.meshs->UpdateMeshInstancingModelMatrixs();
-            Renderer::DrawMeshInstancing(*cm.meshs, cm.trans.size());
-        });
-    }
-}
-
-void RenderContext::DrawGizmos(){
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(CullFace::BACK);
-    Renderer::SetBlend(false);
-
-    scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
-
-    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto e: meshRenderView){
-        auto& c = meshRenderView.get<MeshRendererComponent>(e);
-        auto& t = meshRenderView.get<TransformComponent>(e);
-        if(c.GetModel() == nullptr) continue;
-
-        AABB aabb = c.GetGlobalAABB(t);
-        Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,0,1), 1);
-        //Renderer::DrawWireCube(t.GlobalModelMatrix(), Vector3(0,1,0), 1);
-    }
 }
 
 void RenderContext::Clean(){
@@ -263,9 +211,256 @@ void RenderContext::RenderSkybox(){
     }
 }
 
-void RenderContext::Submit(){
-    
+void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
+    commandBuffer.Sort();
+    commandBuffer.onUpdateMaterial = [&](Material& material){ SetStandUniforms(cam, *material.GetShader()); };
+    commandBuffer.Submit();
+    commandBuffer.onUpdateMaterial = nullptr;
 }
 
+void RenderContext::DrawGizmos(){
+    //Renderer::SetCamera(cam);
+    Renderer::SetDepthTest(DepthTest::LESS);
+    Renderer::SetCullFace(CullFace::BACK);
+    Renderer::SetBlend(false);
+
+    scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+
+    /*auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
+    for(auto e: cameraView){
+        auto& c = cameraView.get<CameraComponent>(e);
+        auto& t = cameraView.get<TransformComponent>(e);
+
+        c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
+        Camera cm = c.GetCamera();
+        _DrawFrustum(cm.frustum);
+    }*/
+
+    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto e: meshRenderView){
+        auto& c = meshRenderView.get<MeshRendererComponent>(e);
+        auto& t = meshRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+
+        AABB aabb = c.GetGlobalAABB(t);
+        Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,0,1), 1);
+        //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
+    }
+
+    auto skinnedMeshRenderView = scene->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent>();
+    for(auto e: skinnedMeshRenderView){
+        auto& c = skinnedMeshRenderView.get<SkinnedMeshRendererComponent>(e);
+        auto& t = skinnedMeshRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+
+        //LogInfo("Ifdfdfd22222222");
+
+        AABB aabb = c.GetGlobalAABB(t);
+        Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
+        //Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, Vector3One), Vector3(0,1,0), 1);
+    }
+}
+
+void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
+    Assert(shadowMap != nullptr);
+
+    Framebuffer::Bind(*shadowMap, layer);
+
+    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Renderer::Clean(1, 1, 1, 1);
+}
+
+void RenderContext::EndDrawShadow(){
+    Framebuffer::Unbind();
+}
+
+void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, CommandBuffer& commandBuffer){
+    //TODO: Check Split data Culling
+
+    bool isBlend = data.targetMaterial->IsBlend();
+    bool isInstancing = data.targetMaterial->EnableInstancingValid();
+    if(settings.enableIntancing == false){
+        isInstancing = false;
+    }
+
+    if(settings.renderQueueRange == RenderQueueRange::Transparent){
+        if(isBlend == false) return;
+        isInstancing = false;
+    }
+    if(settings.renderQueueRange == RenderQueueRange::Opaue){
+        if(isBlend == true) return;
+    }
+
+    if(data.posePalette != nullptr){
+        commandBuffer.AddSkinnedDrawCommand({
+            data.targetMaterial,
+            data.targetMesh,
+            data.targetMatrix,
+            data.posePalette
+        }, data.distance);
+        return;
+    }
+
+    if(isInstancing){
+        commandBuffer.AddDrawInstancingCommand({
+            data.targetMaterial,
+            data.targetMesh,
+            data.targetMatrix
+        });
+
+    } else {
+        commandBuffer.AddDrawCommand({
+            data.targetMaterial,
+            data.targetMesh,
+            data.targetMatrix,
+            data.distance
+        }, data.distance);
+    } 
+}
+
+void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
+    commandBuffer.Sort();
+
+    commandBuffer.SetOverrideMaterial(shadowPass);
+
+    commandBuffer.AddGlobalShader(shadowPass->GetShader());
+    commandBuffer.SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
+
+    commandBuffer.onUpdateMaterial = [&](Material& material){ 
+        //material.SetMatrix4("lightSpaceMatrix", splitData.projection * splitData.view);
+    };
+    commandBuffer.Submit();
+    commandBuffer.onUpdateMaterial = nullptr;
+    commandBuffer.SetOverrideMaterial(nullptr);
+}
+
+Vector3 _Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
+    return ( ( -p1.distance * math::cross( p2.normal, p3.normal ) ) +
+            ( -p2.distance * math::cross( p3.normal, p1.normal ) ) +
+            ( -p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
+        ( math::dot( p1.normal, math::cross( p2.normal, p3.normal ) ) );
+}
+
+void _DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
+    Vector3 nearCorners[4]; //Approx'd nearplane corners
+    Vector3 farCorners[4]; //Approx'd farplane corners
+    Plane camPlanes[6];
+    camPlanes[0] = frustum.leftFace;
+    camPlanes[1] = frustum.rightFace;
+    camPlanes[2] = frustum.bottomFace;
+    camPlanes[3] = frustum.topFace;
+    camPlanes[4] = frustum.nearFace;
+    camPlanes[5] = frustum.farFace;
+
+    Plane temp = camPlanes[1]; camPlanes[1] = camPlanes[2]; camPlanes[2] = temp; //swap [1] and [2] so the order is better for the loop
+
+    for(int i = 0; i < 4; i++){
+        nearCorners[i] = _Plane3Intersect(camPlanes[4], camPlanes[i], camPlanes[(i + 1) % 4]); //near corners on the created projection matrix
+        farCorners[i] = _Plane3Intersect(camPlanes[5], camPlanes[i], camPlanes[(i + 1) % 4]); //far corners on the created projection matrix
+    }
+
+    for(int i = 0; i < 4; i++){
+        Renderer::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
+        Renderer::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
+        Renderer::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
+    }
+}
+
+std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Matrix4& view){
+    const auto inv = math::inverse(proj * view);
+    
+    std::vector<Vector4> frustumCorners;
+    for(unsigned int x = 0; x < 2; ++x){
+        for(unsigned int y = 0; y < 2; ++y){
+            for(unsigned int z = 0; z < 2; ++z){
+                const Vector4 pt = inv * Vector4(
+                    2.0f * x - 1.0f, 
+                    2.0f * y - 1.0f, 
+                    2.0f * z - 1.0f, 
+                    1.0f
+                );
+                frustumCorners.push_back(pt / pt.w);
+            }
+        }
+    }
+    
+    return frustumCorners;
+}
+
+glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane){
+    const auto proj = glm::perspective(cam.fov, (float)cam.width / (float)cam.height, nearPlane, farPlane);
+    const auto corners = getFrustumCornersWorldSpace2(proj, cam.view);
+
+    glm::vec3 center = glm::vec3(0, 0, 0);
+    for(const auto& v : corners){
+        center += glm::vec3(v);
+    }
+    center /= corners.size();
+
+    const auto lightView = glm::lookAt(center + lightDir, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max();
+    float maxY = std::numeric_limits<float>::lowest();
+    float minZ = std::numeric_limits<float>::max();
+    float maxZ = std::numeric_limits<float>::lowest();
+    for(const auto& v : corners){
+        const auto trf = lightView * v;
+        minX = std::min(minX, trf.x);
+        maxX = std::max(maxX, trf.x);
+        minY = std::min(minY, trf.y);
+        maxY = std::max(maxY, trf.y);
+        minZ = std::min(minZ, trf.z);
+        maxZ = std::max(maxZ, trf.z);
+    }
+
+    // Tune this parameter according to the scene
+    constexpr float zMult = 10.0f;
+    if(minZ < 0){
+        minZ *= zMult;
+    } else {
+        minZ /= zMult;
+    }
+    if(maxZ < 0){
+        maxZ /= zMult;
+    } else {
+        maxZ *= zMult;
+    }
+
+    const glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+    return lightProjection * lightView;
+}
+
+void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light){
+    float shadowDistance = cam.farClip;
+    shadowDistance = 500;
+
+    //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
+    //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f };
+    std::vector<float> shadowCascadeLevels{ shadowDistance*0.1f, shadowDistance*0.25f, shadowDistance*0.5f, shadowDistance*1.0f };
+
+    Assert(shadowCascadeLevels.size() == count);
+    
+    Vector3 lightDir = -light.Forward();
+    float cameraNearPlane = cam.nearClip;
+    float cameraFarPlane = cam.farClip;
+
+    std::vector<glm::mat4> lightMatrixs;
+    for(size_t i = 0; i < shadowCascadeLevels.size(); ++i){
+        if(i == 0){
+            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, cameraNearPlane, shadowCascadeLevels[i]));
+        }else if (i < shadowCascadeLevels.size()){
+            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, shadowCascadeLevels[i - 1], shadowCascadeLevels[i]));
+        }
+    }
+
+    Assert(lightMatrixs.size() == count);
+
+    for(int i = 0; i < count; i++){
+        splitData[i].projViewMatrix = lightMatrixs[i];
+        splitData[i].splitDistance = shadowCascadeLevels[i];
+    }
+}
 
 }

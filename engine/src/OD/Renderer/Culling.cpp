@@ -16,7 +16,7 @@ Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float 
     frustum.nearFace = { position + zNear * forward, forward };
     frustum.farFace = { position + frontMultFar, -forward };
     frustum.rightFace = { position, math::cross(frontMultFar - right * halfHSide, up) };
-    frustum.leftFace = { position, math::cross(up,frontMultFar + right * halfHSide) };
+    frustum.leftFace = { position, math::cross(up, frontMultFar + right * halfHSide) };
     frustum.topFace = { position, math::cross(right, frontMultFar - up * halfVSide) };
     frustum.bottomFace = { position, math::cross(frontMultFar + up * halfVSide, right) };
 
@@ -150,7 +150,8 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, up)) +
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
-    const AABB globalAABB(globalCenter, newIi, newIj, newIk);
+    AABB globalAABB(globalCenter, newIi, newIj, newIk);
+    globalAABB.Expand(transform.LocalScale() * 2.0f);
 
     return (globalAABB.isOnOrForwardPlane(camFrustum.leftFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.rightFace) &&

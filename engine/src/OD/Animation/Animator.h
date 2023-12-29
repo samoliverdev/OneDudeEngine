@@ -23,6 +23,7 @@ private:
 
 struct AnimatorSystem: public System{
     AnimatorSystem(Scene* scene);
+    inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 
     virtual SystemType Type() override;
     virtual void Update() override;

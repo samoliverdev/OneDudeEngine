@@ -32,7 +32,7 @@ struct ECS_4: public OD::Module {
     SoLoud::Wav sample;
 
     void AddTransparent(Vector3 pos){
-        Entity et = SceneManager::Get().ActiveScene()->AddEntity("Transparent");
+        Entity et = SceneManager::Get().GetActiveScene()->AddEntity("Transparent");
         et.GetComponent<TransformComponent>().Position(pos);
         et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
         MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
@@ -189,7 +189,7 @@ struct ECS_4: public OD::Module {
         //mainEntity.GetComponent<TransformComponent>().localEulerAngles(Vector3(0, Platform::GetTime() * 40, 0));
         //otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
-        SceneManager::Get().ActiveScene()->Update();
+        SceneManager::Get().GetActiveScene()->Update();
 
         /*if(Input::IsKeyDown(KeyCode::A)){
             LogInfo("OnKeyDown A");
@@ -208,7 +208,7 @@ struct ECS_4: public OD::Module {
         //Renderer::SetDepthTest(DepthTest::LESS);
         //Renderer::SetCullFace(CullFace::BACK);
 
-        SceneManager::Get().ActiveScene()->Draw();
+        SceneManager::Get().GetActiveScene()->Draw();
 
         /*Vector3 pos = otherEntity.GetComponent<TransformComponent>().position();
 

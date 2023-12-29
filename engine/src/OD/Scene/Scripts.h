@@ -89,6 +89,8 @@ private:
 
 struct ScriptSystem: public System{
     ScriptSystem(Scene* scene);
+    System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }
+
     virtual void Update() override;
 private:
     static void OnDestroyScript(entt::registry & r, entt::entity e);

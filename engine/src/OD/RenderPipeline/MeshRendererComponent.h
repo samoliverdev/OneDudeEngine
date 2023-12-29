@@ -28,6 +28,10 @@ struct MeshRendererComponent{
     inline Ref<Model> GetModel(){ return model; }
     void SetModel(Ref<Model> m);
 
+    inline void SetDefaultAABB(){
+        boundingVolume = AABB(Vector3Zero, 1, 1, 1);
+    }
+
     inline int GetSubMeshIndex(){ return subMeshIndex; }
     inline void SetSubMeshIndex(int v){
         subMeshIndex = v;
@@ -79,7 +83,8 @@ struct MeshRendererComponent{
             index += 1;
         }
     }
-    
+
+    AABB GetAABB();
     AABB GetGlobalAABB(TransformComponent& transform);
 
 protected:

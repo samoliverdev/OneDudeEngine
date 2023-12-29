@@ -2,6 +2,39 @@
 
 namespace OD{
 
+template<typename Value>
+struct CommandBucket0{
+    std::vector<Value> commands;
+    std::function<bool(Value&,Value&)> sortFunction = nullptr;
+
+    inline void Clear(){
+        commands.clear();
+    }
+
+    inline void Add(Value v){
+        commands.push_back(v);
+    }
+
+    inline void Sort(){
+        if(sortFunction == nullptr){
+            //Assert(false && "No SortFunction");
+            return;
+        }
+
+        if(sortFunction != nullptr){
+            std::sort(commands.begin(), commands.end(), sortFunction);
+        } else {
+            std::sort(commands.begin(), commands.end());
+        }
+    }
+
+    inline void Each(std::function<void(Value& value)> func){
+        for(auto i: commands){
+            func(i);
+        }
+    }
+};
+
 template<typename Key, typename Value>
 struct CommandBucket1{
     std::vector<std::pair<Key, Value>> commands;
@@ -17,7 +50,7 @@ struct CommandBucket1{
 
     inline void Sort(){
         if(sortFunction == nullptr){
-            Assert(false && "No SortFunction");
+            //Assert(false && "No SortFunction");
             return;
         }
 

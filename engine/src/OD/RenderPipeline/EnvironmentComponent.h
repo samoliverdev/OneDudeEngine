@@ -27,7 +27,7 @@ struct EnvironmentSettings{
     Ref<Material> sky = nullptr;
 
     ShadowQuality shadowQuality = ShadowQuality::Ultra;
-    float shadowBias = 0.0001f;
+    float shadowBias = 0.00001f;
     bool shadowBackFaceRender = true;
 
     AntiAliasing antiAliasing;

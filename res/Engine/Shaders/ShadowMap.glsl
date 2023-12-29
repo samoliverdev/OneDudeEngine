@@ -1,5 +1,9 @@
 #version 330 core
 
+#pragma CullFace BACK
+#pragma DepthTest LESS
+#pragma Blend Off
+
 #if defined(VERTEX)
 layout (location = 0) in vec3 aPos;
 

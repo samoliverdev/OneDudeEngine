@@ -1,21 +1,19 @@
 #version 330 core
 
-#pragma BeginProperties
-    Texture2D mainTex White
-    Texture2D normal White
-    Color4 color
-    Float metallic 0 0 1
-    Float smoothness 0.5 0.0 1.0
-    Float cutoff 0.5 0 1
-#pragma EndProperties
-
-#pragma BeginPass 
-
 #pragma SupportInstancing true
 
 #pragma CullFace BACK
 #pragma DepthTest LESS
 #pragma Blend Off
+
+#pragma BeginProperties
+Texture2D mainTex White
+Texture2D normal White
+Color4 color
+Float metallic 0 0 1
+Float smoothness 0.5 0.0 1.0
+Float cutoff 0.5 0 1
+#pragma EndProperties
 
 #ifdef VERTEX
 /*
@@ -30,6 +28,7 @@ uniform mat4 projection;
 uniform float useInstancing = 0;
 */
 
+#define SKINNED
 #include ../ShaderLibrary/Vertex.glsl
 
 out VsOut{
@@ -57,11 +56,8 @@ void main(){
 
 #ifdef FRAGMENT
 
-uniform mat4 view;
-
 #include ../ShaderLibrary/Common.glsl
 #include ../ShaderLibrary/Surface.glsl
-#include ../ShaderLibrary/Shadows.glsl
 #include ../ShaderLibrary/Light.glsl
 #include ../ShaderLibrary/BRDF.glsl
 #include ../ShaderLibrary/Lighting.glsl
@@ -89,21 +85,17 @@ void main(){
     base = base * color;
 
     Surface surface;
-    surface.position = fsIn.worldPos;
-    surface.normal = normalize(fsIn.worldNormal);
+	surface.normal = normalize(fsIn.worldNormal);
     surface.viewDirection = normalize(viewPos - fsIn.worldPos);
-    surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
-    surface.color = base.rgb;
-    surface.alpha = base.a;
+	surface.color = base.rgb;
+	surface.alpha = base.a;
     surface.metallic = metallic;
     surface.smoothness = smoothness;
     
     BRDF brdf = GetBRDF(surface);
-    vec3 color = GetLightingFinal2(surface, brdf);
-    fragColor = vec4(color, surface.alpha);
+    vec3 color = GetLightingFinal(surface, brdf);
+	fragColor = vec4(color, surface.alpha);
 
     if(base.a < cutoff) discard;
 }
 #endif
-
-#pragma EndPass 

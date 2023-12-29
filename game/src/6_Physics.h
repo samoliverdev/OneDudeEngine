@@ -139,7 +139,7 @@ struct Physics_6: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        Scene* scene = SceneManager::Get().ActiveScene();
+        Scene* scene = SceneManager::Get().GetActiveScene();
 
         scene->Update();
         if(scene->Running() == false) return;
@@ -151,7 +151,7 @@ struct Physics_6: OD::Module {
         }
 
         if(Input::IsKeyDown(KeyCode::R)){
-            SceneManager::Get().ActiveScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
             //SceneManager::Get().ActiveScene()->Save("res/Game/Scenes/scene1.scene");
             
             //scene = SceneManager::Get().NewScene();
@@ -161,7 +161,7 @@ struct Physics_6: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().ActiveScene()->Draw();
+        SceneManager::Get().GetActiveScene()->Draw();
         //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 

@@ -33,9 +33,16 @@ struct CameraComponent{
         camera.width = width;
         camera.height = height;
         camera.viewportRect = viewportRect;
-        camera.view = math::inverse(transform.GlobalModelMatrix());
-        camera.frustum = CreateFrustumFromCamera(transform, (float)width / (float)height, Mathf::Deg2Rad(fieldOfView), nearClipPlane, farClipPlane);
         camera.viewPos = transform.Position();
+        camera.view = math::inverse(transform.GlobalModelMatrix());
+        Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
+        camera.frustum = CreateFrustumFromCamera(
+            _trans, 
+            (float)width / (float)height, 
+            Mathf::Deg2Rad(fieldOfView), 
+            nearClipPlane, 
+            farClipPlane
+        );
     }
 
     static void OnGui(Entity& e);

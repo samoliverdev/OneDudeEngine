@@ -27,6 +27,10 @@ struct StandRenderPipeline: public OD::BaseRenderPipeline{
     StandRenderPipeline(Scene* inScene);
     ~StandRenderPipeline();
 
+    System* Clone(Scene* inScene) const override { 
+        return new StandRenderPipeline(inScene); 
+    }
+
     SystemType Type() override { return SystemType::Renderer; }
     void Update() override;
 

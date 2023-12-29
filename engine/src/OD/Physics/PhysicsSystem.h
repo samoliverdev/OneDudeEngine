@@ -131,6 +131,7 @@ struct PhysicsSystem: public System{
     friend struct RigidbodyComponent;
 
     PhysicsSystem(Scene* scene);
+    System* Clone(Scene* inScene) const override{ return new PhysicsSystem(inScene); }
     
     virtual SystemType Type() override { return SystemType::Physics; }
     virtual void Update() override;

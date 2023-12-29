@@ -24,6 +24,7 @@ public:
     bool IsValid();
 
     void SetFloat(const char* name, float value);
+    void SetFloat(const char* name, float* value, int count);
     void SetInt(const char* name, int value);
     void SetVector2( const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value);
@@ -31,6 +32,7 @@ public:
     void SetVector4(const char* name, Vector4* value, int count);
     void SetMatrix4(const char* name, Matrix4 value);
     void SetMatrix4(const char* name, std::vector<Matrix4>& value);
+    void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture2D(const char* name, Texture2D& value, int index);
     void SetCubemap(const char* name, Cubemap& value, int index);
     void SetUniforBuffer(const char* name, UniformBuffer& buffer, int index);
@@ -51,8 +53,8 @@ public:
 private:
     bool supportInstancing = false;
     
-    CullFace cullFace;
-    DepthTest depthTest;
+    CullFace cullFace = CullFace::BACK;
+    DepthTest depthTest = DepthTest::LESS;
     bool depthMask = true;
     bool blend = false;
     BlendMode srcBlend;

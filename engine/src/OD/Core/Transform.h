@@ -9,7 +9,7 @@ class Transform{
 public:
     Transform(){}
     Transform(Vector3 pos, Quaternion rot, Vector3 scale):
-        localPosition(pos), localRotation(rot), localScale(scale){}
+        localPosition(pos), localRotation(rot), localScale(scale), isDirt(true){}
     Transform(const Matrix4& m);
 
     Matrix4 GetLocalModelMatrix();

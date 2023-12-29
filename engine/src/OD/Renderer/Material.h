@@ -11,22 +11,24 @@ namespace OD{
 
 struct MaterialMap{
     enum class Type{
-        Texture, Float, Vector2, Vector3, Vector4, Cubemap 
+        Float, Vector2, Vector3, Vector4, Matrix4, Texture, Cubemap, Framebuffer
     };
 
     Type type;
 
     Ref<Texture2D> texture;
     Ref<Cubemap> cubemap;
+    Framebuffer* framebuffer;
     Vector4 vector;
     
+    bool hidden = false;
     bool vectorIsColor = false;
 
     float value;
     float valueMin;
     float valueMax;
 
-    bool isDirt = true;
+    Matrix4 matrix;
 
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);
@@ -41,7 +43,7 @@ public:
     void SetShader(Ref<Shader> s);
 
     uint32_t MaterialId();
-    
+
     bool IsBlend();
     bool EnableInstancingValid();
     bool EnableInstancing();
@@ -52,10 +54,14 @@ public:
     void SetVector2(const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value, bool isColor = false);
     void SetVector4(const char* name, Vector4 value, bool isColor = false);
+    void SetMatrix4(const char* name, Matrix4 value);
     void SetTexture(const char* name, Ref<Texture2D> tex);
+    void SetTexture(const char* name, Framebuffer* tex);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 
+    void CleanData();
     void UpdateDatas();
+    void ApplyUniformTo(Shader& shader);
 
     void Save(std::string& path);
 
@@ -67,16 +73,8 @@ public:
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);
 
-    /*
-    CullFace cullFace;
-    DepthTest depthTest;
-    BlendMode srcBlend;
-    BlendMode dstBlend;
-    */ 
-
 private:
     bool enableInstancing = false;
-    bool isDirt = true;
 
     Ref<Shader> shader;
     std::unordered_map<std::string, MaterialMap> maps;
@@ -99,8 +97,7 @@ void MaterialMap::save(Archive& ar) const{
         CEREAL_NVP(vectorIsColor),
         CEREAL_NVP(value),
         CEREAL_NVP(valueMin),
-        CEREAL_NVP(valueMax),
-        CEREAL_NVP(isDirt)
+        CEREAL_NVP(valueMax)
     );
 }
 
@@ -114,8 +111,7 @@ void MaterialMap::load(Archive& ar){
         CEREAL_NVP(vectorIsColor),
         CEREAL_NVP(value),
         CEREAL_NVP(valueMin),
-        CEREAL_NVP(valueMax),
-        CEREAL_NVP(isDirt)
+        CEREAL_NVP(valueMax)
     );
 
     if(texPath.empty() == false){
@@ -128,7 +124,6 @@ void Material::save(Archive& ar) const{
     std::string shaderPath = shader == nullptr ? "" : shader->Path();
     ar(
         CEREAL_NVP(enableInstancing),
-        CEREAL_NVP(isDirt),
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
     );
@@ -139,7 +134,6 @@ void Material::load(Archive& ar){
     std::string shaderPath;
     ar(
         CEREAL_NVP(enableInstancing),
-        CEREAL_NVP(isDirt),
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
     );

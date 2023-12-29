@@ -69,14 +69,14 @@ struct Animator_11: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        Scene* scene = SceneManager::Get().ActiveScene();
+        Scene* scene = SceneManager::Get().GetActiveScene();
 
         scene->Update();
         if(scene->Running() == false) return;
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().ActiveScene()->Draw();
+        SceneManager::Get().GetActiveScene()->Draw();
     }
 
     void OnGUI() override {}

@@ -134,8 +134,8 @@ void Renderer::Clean(float r, float g, float b, float a){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
 }
 
-void Renderer::SetCamera(Camera& _camera){
-    camera = _camera;
+void Renderer::SetCamera(Camera& inCamera){
+    camera = inCamera;
 }
 
 Camera Renderer::GetCamera(){

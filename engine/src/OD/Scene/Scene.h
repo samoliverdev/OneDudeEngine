@@ -116,6 +116,8 @@ enum class SystemType{
 struct System{
     System(Scene* inScene):scene(inScene){}
 
+    virtual System* Clone(Scene* inScene) const = 0;
+
     virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
     
@@ -131,6 +133,7 @@ struct Scene: public Asset {
     inline bool Running(){ return running; }
 
     Scene();
+    Scene(Scene& other);
     ~Scene();
 
     static Scene* Copy(Scene* other);
@@ -187,8 +190,8 @@ struct SceneManager{
 
     SceneState GetSceneState();
     inline bool InEditor();
-    Scene* ActiveScene();
-    void ActiveScene(Scene* s);
+    Scene* GetActiveScene();
+    void SetActiveScene(Scene* s);
     Scene* NewScene();
 
     template<typename T> void RegisterCoreComponent(const char* name);

@@ -18,6 +18,8 @@ bool Cubemap::CreateFromFile(Cubemap& out, const char* right, const char* left, 
     glBindTexture(GL_TEXTURE_CUBE_MAP, out.renderId);
     glCheckError();
 
+    stbi_set_flip_vertically_on_load(0);
+
     int width, height, nrChannels;
     for(unsigned int i = 0; i < faces.size(); i++){
         unsigned char* data = stbi_load(faces[i], &width, &height, &nrChannels, 0);

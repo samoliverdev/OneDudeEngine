@@ -1,14 +1,13 @@
 {
     "Material": {
         "enableInstancing": false,
-        "isDirt": true,
-        "shaderPath": "res/Engine/Shaders/StandDiffuse.glsl",
+        "shaderPath": "res/Engine/Shaders/Lit.glsl",
         "maps": [
             {
                 "key": "mainTex",
                 "value": {
-                    "type": 0,
-                    "texPath": "res/Game/Textures/floor.jpg",
+                    "type": 5,
+                    "texPath": "res/Game\\Textures\\floor.jpg",
                     "vector": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -18,14 +17,13 @@
                     "vectorIsColor": false,
                     "value": 0.0,
                     "valueMin": 0.0,
-                    "valueMax": 0.0,
-                    "isDirt": true
+                    "valueMax": 0.0
                 }
             },
             {
                 "key": "normal",
                 "value": {
-                    "type": 0,
+                    "type": 5,
                     "texPath": "res/Engine/Textures/White.jpg",
                     "vector": {
                         "v.x": 0.0,
@@ -36,32 +34,47 @@
                     "vectorIsColor": false,
                     "value": 0.0,
                     "valueMin": 0.0,
-                    "valueMax": 0.0,
-                    "isDirt": true
+                    "valueMax": 0.0
                 }
             },
             {
-                "key": "color",
+                "key": "cutoff",
                 "value": {
-                    "type": 4,
+                    "type": 0,
                     "texPath": "",
                     "vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 1.0,
-                        "v.w": 1.0
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
                     },
-                    "vectorIsColor": true,
-                    "value": 0.0,
+                    "vectorIsColor": false,
+                    "value": 0.5,
                     "valueMin": 0.0,
-                    "valueMax": 0.0,
-                    "isDirt": true
+                    "valueMax": 1.0
                 }
             },
             {
-                "key": "shininess",
+                "key": "smoothness",
                 "value": {
-                    "type": 1,
+                    "type": 0,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.5,
+                    "valueMin": 0.0,
+                    "valueMax": 1.0
+                }
+            },
+            {
+                "key": "metallic",
+                "value": {
+                    "type": 0,
                     "texPath": "",
                     "vector": {
                         "v.x": 0.0,
@@ -72,8 +85,41 @@
                     "vectorIsColor": false,
                     "value": 0.0,
                     "valueMin": 0.0,
-                    "valueMax": 0.0,
-                    "isDirt": true
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "color",
+                "value": {
+                    "type": 3,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vectorIsColor": true,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "shininess",
+                "value": {
+                    "type": 0,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
                 }
             }
         ]

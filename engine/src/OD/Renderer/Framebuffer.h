@@ -34,7 +34,7 @@ struct FrameBufferSpecification{
 
 class Framebuffer{
 public:
-    static void Bind(Framebuffer& framebuffer);
+    static void Bind(Framebuffer& framebuffer, int layer = 0);
     static void Unbind();
 
     Framebuffer(FrameBufferSpecification specification);

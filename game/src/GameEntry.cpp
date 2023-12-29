@@ -12,6 +12,7 @@
 #include "11_Animator.h"
 #include "12_UniformBuffer.h"
 #include "13_NewRenderPipeline.h"
+#include "14_CommandBuffer.h"
 
 #include <string>
 
@@ -39,6 +40,7 @@ OD::Module* CreateMainModule(){
     if(i == 10) return new Animator_11();
     if(i == 11) return new UniformBuffer_12();
     if(i == 12) return new NewRenderPipeline_13();
+    if(i == 13) return new CommandBuffer_14();
 
     return new BaseMesh_1();
 }

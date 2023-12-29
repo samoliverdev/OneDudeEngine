@@ -129,9 +129,17 @@ void Framebuffer::GenDepthAttachment(){
     }
 }
 
-void Framebuffer::Bind(Framebuffer& framebuffer){
+void Framebuffer::Bind(Framebuffer& framebuffer, int layer){
     Assert(framebuffer.renderId > 0);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.renderId);
+    glCheckError();
+
+    if(framebuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.depthAttachment, 0, layer);
+        glCheckError();
+    }
+
+    // Set Attachment glFramebufferTexture2D
     glCheckError();
     //glViewport(0, 0, _specification.width, _specification.height);
 }
