@@ -2,9 +2,9 @@
 
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-#include "OD/Renderer/Shader.h"
-#include "OD/Renderer/Texture.h"
-#include "OD/Renderer/Cubemap.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Cubemap.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace OD{

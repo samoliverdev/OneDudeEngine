@@ -172,9 +172,9 @@ struct Animation_7: public OD::Module{
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
-        Renderer::Begin();
-        Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
-        Renderer::SetCamera(cam);
+        Graphics::Begin();
+        Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+        Graphics::SetCamera(cam);
 
         std::vector<Matrix4>& invBindPose = char1Skeleton.GetInvBindPose();
         for(int i = 0; i < char1Anim.mPosePalette.size(); ++i){
@@ -186,15 +186,15 @@ struct Animation_7: public OD::Module{
         shader->SetTexture2D("mainTex", *texture, 0);
 
         for(auto i: char1Meshs){
-            Renderer::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
-            Renderer::DrawMesh(*i);
+            Graphics::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
+            Graphics::DrawMesh(*i);
         }
 
         for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
             if(char1Anim.mAnimatedPose.GetParent(i) < 0) continue;
             Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
             Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).LocalPosition();
-            Renderer::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
+            Graphics::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
         }
 
         char2Model->materials[0]->UpdateDatas();
@@ -218,18 +218,18 @@ struct Animation_7: public OD::Module{
 
             //LogInfo("Bind Pose Index: %d", i.bindPoseIndex);
 
-            Renderer::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
-            Renderer::DrawMesh(*char2Model->meshs[i.meshIndex]);
+            Graphics::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
+            Graphics::DrawMesh(*char2Model->meshs[i.meshIndex]);
         }
 
         for(int i = 0; i < char2Anim.mAnimatedPose.Size(); i++){
             if(char2Anim.mAnimatedPose.GetParent(i) < 0) continue;
             Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
             Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).LocalPosition();
-            Renderer::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
+            Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
         }
 
-        Renderer::End();
+        Graphics::End();
     };
 
     void OnGUI() override {
@@ -282,4 +282,5 @@ struct Animation_7: public OD::Module{
     };
 
     void OnResize(int width, int height) override {};
+    void OnExit() override {}
 };

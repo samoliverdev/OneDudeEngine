@@ -181,9 +181,8 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         const aiTexture* paiTexture = loadData.scene->GetEmbeddedTexture(str.C_Str());
 
         if(paiTexture){
-            Ref<Texture2D> texture = CreateRef<Texture2D>();
-            bool result = Texture2D::CreateFromFileMemory(*texture, paiTexture->pcData, paiTexture->mWidth, {TextureFilter::Linear, true});
-            Assert(result == true);
+            Ref<Texture2D> texture = Texture2D::CreateFromFileMemory(paiTexture->pcData, paiTexture->mWidth, {TextureFilter::Linear, true});
+            Assert(texture != nullptr);
             
             textures.push_back(texture);
         } else {

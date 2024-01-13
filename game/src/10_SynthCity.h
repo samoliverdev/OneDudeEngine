@@ -79,5 +79,7 @@ struct SynthCity_10: OD::Module {
         */
 
     }
+    
     void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

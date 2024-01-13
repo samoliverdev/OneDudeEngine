@@ -79,9 +79,9 @@ struct Light_3: OD::Module {
 
         model->materials[0]->SetVector3("viewPos", camTransform.LocalPosition());
 
-        Renderer::Begin();
-        Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
-        Renderer::SetCamera(cam);
+        Graphics::Begin();
+        Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+        Graphics::SetCamera(cam);
 
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
         Assert(false && "To Implement Draw Model");
@@ -100,7 +100,7 @@ struct Light_3: OD::Module {
         //*/
         
 
-        Renderer::End();
+        Graphics::End();
     }
 
     void OnGUI() override {
@@ -119,6 +119,6 @@ struct Light_3: OD::Module {
         ImGui::End();
     }
 
-    void OnResize(int width, int height) override {;
-    }
+    void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

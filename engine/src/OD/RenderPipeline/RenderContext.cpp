@@ -50,13 +50,13 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Renderer::BlitFramebuffer(outColor, finalColor);
+    Graphics::BlitFramebuffer(outColor, finalColor);
     //Renderer::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
 
     if(overrideFramebuffer != nullptr){
-        Renderer::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
+        Graphics::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
     } else {
-        Renderer::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
+        Graphics::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
     }
 
     Framebuffer::Unbind();
@@ -70,8 +70,8 @@ void RenderContext::EndDrawToScreen(){
 void RenderContext::SetupCameraProperties(Camera inCam){
     cam = inCam;
 
-    Renderer::SetCamera(cam);
-    Renderer::SetViewport(
+    Graphics::SetCamera(cam);
+    Graphics::SetViewport(
         0, 
         0, 
         cam.width, 
@@ -185,7 +185,7 @@ void RenderContext::SetStandUniforms(Camera& cam, Shader& shader){
 
 void RenderContext::Clean(){
     //Renderer::Clean(cam.cleanColor.x, cam.cleanColor.y, cam.cleanColor.z, 1);
-    Renderer::Clean(0, 0, 1, 1);
+    Graphics::Clean(0, 0, 1, 1);
 }
 
 void RenderContext::RenderSkybox(){
@@ -196,18 +196,18 @@ void RenderContext::RenderSkybox(){
 
         skyMaterial->UpdateDatas();
 
-        Renderer::SetCullFace(CullFace::BACK);
-        Renderer::SetDepthMask(false);
-        Renderer::SetBlend(false);
+        Graphics::SetCullFace(CullFace::BACK);
+        Graphics::SetDepthMask(false);
+        Graphics::SetBlend(false);
         Shader::Bind(*skyMaterial->GetShader());
         
         //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
         Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
         skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Renderer::DrawMesh(skyboxMesh);
+        Graphics::DrawMesh(skyboxMesh);
 
-        Renderer::SetDepthMask(true);
+        Graphics::SetDepthMask(true);
     }
 }
 
@@ -220,9 +220,9 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
 
 void RenderContext::DrawGizmos(){
     //Renderer::SetCamera(cam);
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(CullFace::BACK);
-    Renderer::SetBlend(false);
+    Graphics::SetDepthTest(DepthTest::LESS);
+    Graphics::SetCullFace(CullFace::BACK);
+    Graphics::SetBlend(false);
 
     scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
@@ -243,7 +243,7 @@ void RenderContext::DrawGizmos(){
         if(c.GetModel() == nullptr) continue;
 
         AABB aabb = c.GetGlobalAABB(t);
-        Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,0,1), 1);
+        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,0,1), 1);
         //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
@@ -256,7 +256,7 @@ void RenderContext::DrawGizmos(){
         //LogInfo("Ifdfdfd22222222");
 
         AABB aabb = c.GetGlobalAABB(t);
-        Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
+        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
         //Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, Vector3One), Vector3(0,1,0), 1);
     }
 }
@@ -266,8 +266,8 @@ void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
 
     Framebuffer::Bind(*shadowMap, layer);
 
-    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
-    Renderer::Clean(1, 1, 1, 1);
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::Clean(1, 1, 1, 1);
 }
 
 void RenderContext::EndDrawShadow(){
@@ -360,9 +360,9 @@ void _DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
     }
 
     for(int i = 0; i < 4; i++){
-        Renderer::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
-        Renderer::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
-        Renderer::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
+        Graphics::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
     }
 }
 

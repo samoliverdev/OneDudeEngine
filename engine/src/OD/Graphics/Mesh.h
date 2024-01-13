@@ -13,10 +13,10 @@ struct BoneData{
     Vector4 weight;
 };
 
-class Renderer;
+class Graphics;
 
 class Mesh: public Asset{
-    friend class Renderer;
+    friend class Graphics;
 public:
     std::vector<Vector3> vertices;
     std::vector<Vector3> uv;

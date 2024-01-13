@@ -1,5 +1,5 @@
 #include "Material.h"
-#include "Renderer.h"
+#include "Graphics.h"
 #include <fstream>
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/AssetManager.h"
@@ -140,15 +140,15 @@ void Material::UpdateDatas(){
     //if(_isDirt == false) return;
     //_isDirt = false;
 
-    Renderer::SetCullFace(shader->GetCullFace());
-    Renderer::SetDepthTest(shader->GetDepthTest());
-    Renderer::SetDepthMask(shader->IsDepthMask());
+    Graphics::SetCullFace(shader->GetCullFace());
+    Graphics::SetDepthTest(shader->GetDepthTest());
+    Graphics::SetDepthMask(shader->IsDepthMask());
 
     if(shader->IsBlend()){
-        Renderer::SetBlend(true);
-        Renderer::SetBlendFunc(shader->GetSrcBlend(), shader->GetDstBlend());
+        Graphics::SetBlend(true);
+        Graphics::SetBlendFunc(shader->GetSrcBlend(), shader->GetDstBlend());
     } else {
-        Renderer::SetBlend(false);
+        Graphics::SetBlend(false);
     }
 
     ApplyUniformTo(*shader);

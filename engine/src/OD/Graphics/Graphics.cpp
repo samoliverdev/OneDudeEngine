@@ -1,9 +1,8 @@
-#include "Renderer.h"
-
+#include "Graphics.h"
 #include "OD/Defines.h"
 #include "OD/Platform/GL.h"
-#include "OD/Renderer/Shader.h"
-#include "OD/Renderer/Camera.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Camera.h"
 
 namespace OD{
 
@@ -19,9 +18,9 @@ Ref<Shader> gismoShader;
 Mesh fullScreenQuad;
 Camera camera;
 
-int Renderer::drawCalls;
-int Renderer::vertices;
-int Renderer::tris;
+int Graphics::drawCalls;
+int Graphics::vertices;
+int Graphics::tris;
 
 void CreateLineVAO(){
     glGenVertexArrays(1, &lineVAO);
@@ -103,46 +102,45 @@ void CreateTextQuadVAO(){
     glCheckError();
 }
 
-void Renderer::Initialize(){
+void Graphics::Initialize(){
     glEnable(GL_DEPTH_TEST); 
 
     fullScreenQuad = Mesh::FullScreenQuad();
     //gismoShader = Shader::CreateFromFiles("res/shaders/gizmos.vert", "res/shaders/gizmos.frag");
-    gismoShader = CreateRef<Shader>();
-    bool result = Shader::CreateFromFile(*gismoShader, "res/Engine/Shaders/Gizmos.glsl");
-    Assert(result == true);
+    gismoShader = Shader::CreateFromFile("res/Engine/Shaders/Gizmos.glsl");
+    Assert(gismoShader != nullptr);
 
     CreateLineVAO();
     CreateWiredCubeVAO();
     CreateTextQuadVAO();
 }
 
-void Renderer::Shutdown(){
+void Graphics::Shutdown(){
 
 }
 
-void Renderer::Begin(){
+void Graphics::Begin(){
     drawCalls = 0;
     vertices = 0;
     tris = 0;
 }
 
-void Renderer::End(){}
+void Graphics::End(){}
 
-void Renderer::Clean(float r, float g, float b, float a){
+void Graphics::Clean(float r, float g, float b, float a){
     glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
 }
 
-void Renderer::SetCamera(Camera& inCamera){
+void Graphics::SetCamera(Camera& inCamera){
     camera = inCamera;
 }
 
-Camera Renderer::GetCamera(){
+Camera Graphics::GetCamera(){
     return camera;
 }
 
-void Renderer::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing){
+void Graphics::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing){
     Shader::Bind(shader);
 
     shader.SetMatrix4("view", camera.view);
@@ -178,7 +176,7 @@ void Renderer::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool in
     glCheckError();
 }*/
 
-void Renderer::DrawMesh(Mesh& mesh){
+void Graphics::DrawMesh(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
     //Assert(shader.IsValid()  && "Shader is not vali!");
 
@@ -210,7 +208,7 @@ void Renderer::DrawMesh(Mesh& mesh){
     //glCheckError();
 }
 
-void Renderer::DrawMeshInstancing(Mesh& mesh, int count){
+void Graphics::DrawMeshInstancing(Mesh& mesh, int count){
     Assert(mesh.IsValid() && "Mesh is not vali!");
 
     drawCalls += 1;
@@ -239,7 +237,7 @@ void Renderer::DrawMeshInstancing(Mesh& mesh, int count){
     //glCheckError();
 }
 
-void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
+void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
     drawCalls += 1;
     vertices += 2;
     tris += 0;
@@ -264,7 +262,7 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
     //glCheckError();
 }
 
-void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int width){
+void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int width){
     drawCalls += 1;
     vertices += 2;
     tris += 0;
@@ -289,7 +287,7 @@ void Renderer::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
     //glCheckError();
 }
 
-void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
+void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     drawCalls += 1;
     vertices += 8;
     tris += 24;
@@ -309,7 +307,7 @@ void Renderer::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     //glCheckError();
 }
 
-void Renderer::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color){
+void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color){
     Shader::Bind(s);
     s.SetVector3("color", color);
     s.SetMatrix4("projection", camera.projection);
@@ -364,11 +362,11 @@ void Renderer::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
     glCheckError();
 }
 
-void Renderer::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
+void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
     glViewport(x, y, w, h);
 }
 
-void Renderer::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){
+void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){
     GLint value[4];
     glGetIntegerv(GL_VIEWPORT, value);
     *x = value[0]; 
@@ -377,13 +375,13 @@ void Renderer::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
     *h = value[3];
 }
 
-void Renderer::SetRenderMode(RenderMode mode){
+void Graphics::SetRenderMode(RenderMode mode){
     if(mode == RenderMode::SHADED) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if(mode == RenderMode::WIREFRAME) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glCheckError();
 }
 
-void Renderer::SetDepthMask(bool value){
+void Graphics::SetDepthMask(bool value){
     if(value){
         glDepthMask(GL_TRUE);
     } else {
@@ -392,7 +390,7 @@ void Renderer::SetDepthMask(bool value){
     glCheckError();
 }
 
-void Renderer::SetDepthTest(DepthTest depthTest){
+void Graphics::SetDepthTest(DepthTest depthTest){
     switch(depthTest){
       case DepthTest::DISABLE:
         glDisable(GL_DEPTH_TEST);
@@ -432,7 +430,7 @@ void Renderer::SetDepthTest(DepthTest depthTest){
     }
 }
 
-void Renderer::SetCullFace(CullFace cullFace){
+void Graphics::SetCullFace(CullFace cullFace){
     switch(cullFace){
       case CullFace::BACK:
         glEnable(GL_CULL_FACE); 
@@ -455,7 +453,7 @@ void Renderer::SetCullFace(CullFace cullFace){
     }
 }
 
-void Renderer::SetBlend(bool b){
+void Graphics::SetBlend(bool b){
     if(b){
         glEnable(GL_BLEND);
     } else {
@@ -484,16 +482,16 @@ int BlendModeToGL(BlendMode blendMode){
     return 0;
 }
 
-void Renderer::SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
+void Graphics::SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
     glBlendFunc(BlendModeToGL(sfactor), BlendModeToGL(dfactor));
     glCheckError();
 }
 
-void Renderer::BeginFramebuffer(Framebuffer* framebuffer){
+void Graphics::BeginFramebuffer(Framebuffer* framebuffer){
     Framebuffer::Bind(*framebuffer);
 }
 
-void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
+void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
     Assert(src != nullptr);
 
     if(dst == nullptr){
@@ -503,18 +501,18 @@ void Renderer::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     }
     glCheckError();
     
-    Renderer::Clean(1,1,1,1);
-    Renderer::SetDepthTest(DepthTest::DISABLE); 
+    Graphics::Clean(1,1,1,1);
+    Graphics::SetDepthTest(DepthTest::DISABLE); 
     glCheckError();
 
     Shader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
-    Renderer::DrawMesh(fullScreenQuad);
+    Graphics::DrawMesh(fullScreenQuad);
     glCheckError();
 }
 
-void Renderer::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
+void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     Assert(src != nullptr);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src->RenderId());

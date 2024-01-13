@@ -246,7 +246,7 @@ struct ECS_4: public OD::Module {
         */
     }
 
-    void OnResize(int width, int height) override{
-    }
+    void OnResize(int width, int height) override{}
+    void OnExit() override {}
 
 };

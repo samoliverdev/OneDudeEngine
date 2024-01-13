@@ -1,6 +1,6 @@
 #pragma once
-#include "OD/Renderer/Framebuffer.h"
-#include "OD/Renderer/Camera.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Camera.h"
 #include "OD/Core/Transform.h"
 
 namespace OD{

@@ -162,10 +162,10 @@ void CommandBuffer::Submit(){
         Framebuffer::Unbind();
     }
 
-    if(setCamera) Renderer::SetCamera(camera);
+    if(setCamera) Graphics::SetCamera(camera);
 
-    if(setViewport) Renderer::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
-    if(clearRenderTarget) Renderer::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
+    if(setViewport) Graphics::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
+    if(clearRenderTarget) Graphics::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
 
     for(auto i: globalShaders){
         globalMaterial.ApplyUniformTo(*i);
@@ -186,7 +186,7 @@ void CommandBuffer::Submit(){
     
         lastMat = _mat;
         _mat->GetShader()->SetMatrix4("model", cm.trans);
-        Renderer::DrawMesh(*cm.meshs);
+        Graphics::DrawMesh(*cm.meshs);
     });
 
     drawIntancingCommands.Each([&](auto& cm){
@@ -204,7 +204,7 @@ void CommandBuffer::Submit(){
             cm.meshs->instancingModelMatrixs.push_back(j);
         }
         cm.meshs->UpdateMeshInstancingModelMatrixs();
-        Renderer::DrawMeshInstancing(*cm.meshs, cm.trans.size());
+        Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
     });
 
     skinnedDrawCommands.Each([&](auto& cm){
@@ -221,7 +221,7 @@ void CommandBuffer::Submit(){
         lastMat = _mat;
         _mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
         _mat->GetShader()->SetMatrix4("model", cm.trans);
-        Renderer::DrawMesh(*cm.meshs);
+        Graphics::DrawMesh(*cm.meshs);
     });
 }
 

@@ -131,11 +131,11 @@ void SceneManager::RegisterCoreComponent(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
         s.get<T>(out);
     };
 
-    funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& in){
+    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& in){
         s.get<T>(in);
     };
     
@@ -176,11 +176,11 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
         s.get<T>(out);
     };
 
-    funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& out){
+    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& out){
         s.get<T>(out);
     };
     
@@ -213,11 +213,11 @@ void SceneManager::RegisterComponent(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](entt::snapshot& s, cereal::JSONOutputArchive& out){
+    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
         s.get<T>(out);
     };
 
-    funcs.snapshotIn = [](entt::snapshot_loader& s, cereal::JSONInputArchive& out){
+    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& out){
         s.get<T>(out);
     };
     

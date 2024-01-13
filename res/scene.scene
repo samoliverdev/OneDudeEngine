@@ -1,0 +1,837 @@
+{
+    "value0": 20,
+    "value1": 20,
+    "value2": 0,
+    "value3": 1,
+    "value4": 2,
+    "value5": 3,
+    "value6": 4,
+    "value7": 5,
+    "value8": 6,
+    "value9": 7,
+    "value10": 8,
+    "value11": 9,
+    "value12": 10,
+    "value13": 11,
+    "value14": 12,
+    "value15": 13,
+    "value16": 14,
+    "value17": 15,
+    "value18": 16,
+    "value19": 17,
+    "value20": 18,
+    "value21": 19,
+    "value22": 20,
+    "value23": 0,
+    "value24": {
+        "localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": true,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value25": 1,
+    "value26": {
+        "localPosition": {
+            "v.x": 0.0,
+            "v.y": -2.0,
+            "v.z": 0.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 10.0,
+            "v.y": 1.0,
+            "v.z": 10.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value27": 2,
+    "value28": {
+        "localPosition": {
+            "v.x": -8.0,
+            "v.y": 0.0,
+            "v.z": -4.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 4.0,
+            "v.y": 4.0,
+            "v.z": 4.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value29": 3,
+    "value30": {
+        "localPosition": {
+            "v.x": 8.0,
+            "v.y": 2.0,
+            "v.z": 8.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 4.0,
+            "v.y": 4.0,
+            "v.z": 4.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value31": 4,
+    "value32": {
+        "localPosition": {
+            "v.x": 5.0,
+            "v.y": 3.0,
+            "v.z": -8.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 10.0,
+            "v.y": 10.0,
+            "v.z": 10.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value33": 5,
+    "value34": {
+        "localPosition": {
+            "v.x": 6.0,
+            "v.y": 3.0,
+            "v.z": -12.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 10.0,
+            "v.y": 10.0,
+            "v.z": 10.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value35": 6,
+    "value36": {
+        "localPosition": {
+            "v.x": 8.0,
+            "v.y": 3.0,
+            "v.z": -20.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 10.0,
+            "v.y": 10.0,
+            "v.z": 10.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value37": 7,
+    "value38": {
+        "localPosition": {
+            "v.x": 0.0,
+            "v.y": 2.0,
+            "v.z": 4.0
+        },
+        "localRotation": {
+            "q.x": -0.2164396196603775,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 0.9762960076332092
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": true,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value39": 8,
+    "value40": {
+        "localPosition": {
+            "v.x": 2.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+        ],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value41": 9,
+    "value42": {
+        "localPosition": {
+            "v.x": -2.0,
+            "v.y": 4.0,
+            "v.z": -1.0
+        },
+        "localRotation": {
+            "q.x": 0.1767035573720932,
+            "q.y": -0.8194911479949951,
+            "q.z": 0.3394443988800049,
+            "q.w": 0.42660006880760195
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": true,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value43": 10,
+    "value44": {
+        "localPosition": {
+            "v.x": -87.0,
+            "v.y": 115.0,
+            "v.z": -189.0
+        },
+        "localRotation": {
+            "q.x": 0.5929092168807983,
+            "q.y": -0.18987274169921876,
+            "q.z": -0.21182189881801606,
+            "q.w": 0.7533515095710754
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value45": 11,
+    "value46": {
+        "localPosition": {
+            "v.x": -71.0,
+            "v.y": 58.0,
+            "v.z": 78.0
+        },
+        "localRotation": {
+            "q.x": 0.4454967975616455,
+            "q.y": -0.02070534974336624,
+            "q.z": 0.19272500276565553,
+            "q.w": 0.87404865026474
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value47": 12,
+    "value48": {
+        "localPosition": {
+            "v.x": 139.0,
+            "v.y": 128.0,
+            "v.z": 93.0
+        },
+        "localRotation": {
+            "q.x": -0.6770566701889038,
+            "q.y": -0.3752998411655426,
+            "q.z": -0.4243006408214569,
+            "q.w": 0.4698013961315155
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value49": 13,
+    "value50": {
+        "localPosition": {
+            "v.x": 185.0,
+            "v.y": 186.0,
+            "v.z": -151.0
+        },
+        "localRotation": {
+            "q.x": -0.1349223405122757,
+            "q.y": -0.6941152811050415,
+            "q.z": -0.1349223405122757,
+            "q.w": 0.6941152811050415
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value51": 14,
+    "value52": {
+        "localPosition": {
+            "v.x": -94.0,
+            "v.y": 170.0,
+            "v.z": 123.0
+        },
+        "localRotation": {
+            "q.x": -0.3460553288459778,
+            "q.y": 0.8301353454589844,
+            "q.z": 0.22785742580890656,
+            "q.w": 0.37309786677360537
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value53": 15,
+    "value54": {
+        "localPosition": {
+            "v.x": 105.0,
+            "v.y": 156.0,
+            "v.z": 157.0
+        },
+        "localRotation": {
+            "q.x": 0.022828787565231324,
+            "q.y": -0.3093796372413635,
+            "q.z": -0.5514234304428101,
+            "q.w": 0.7743999361991882
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value55": 16,
+    "value56": {
+        "localPosition": {
+            "v.x": -20.0,
+            "v.y": 19.0,
+            "v.z": 116.0
+        },
+        "localRotation": {
+            "q.x": 0.64192795753479,
+            "q.y": -0.31719857454299929,
+            "q.z": -0.639345645904541,
+            "q.w": -0.28026896715164187
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value57": 17,
+    "value58": {
+        "localPosition": {
+            "v.x": -51.0,
+            "v.y": 197.0,
+            "v.z": -130.0
+        },
+        "localRotation": {
+            "q.x": -0.5463120341300964,
+            "q.y": -0.7727353572845459,
+            "q.z": 0.3211168348789215,
+            "q.w": -0.036155104637145999
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value59": 18,
+    "value60": {
+        "localPosition": {
+            "v.x": -125.0,
+            "v.y": 75.0,
+            "v.z": -5.0
+        },
+        "localRotation": {
+            "q.x": -0.819027304649353,
+            "q.y": 0.010010253638029099,
+            "q.z": 0.5734891295433044,
+            "q.w": 0.014296148903667927
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value61": 19,
+    "value62": {
+        "localPosition": {
+            "v.x": 152.0,
+            "v.y": 182.0,
+            "v.z": -115.0
+        },
+        "localRotation": {
+            "q.x": -0.013136401772499085,
+            "q.y": 0.4678739905357361,
+            "q.z": 0.2542424201965332,
+            "q.w": 0.8463345766067505
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": false,
+        "children": [],
+        "parent": 8,
+        "hasParent": true
+    },
+    "value63": 20,
+    "value64": 19,
+    "value65": {
+        "name": "Entity51",
+        "tag": "",
+        "active": false
+    },
+    "value66": 18,
+    "value67": {
+        "name": "Entity170",
+        "tag": "",
+        "active": false
+    },
+    "value68": 17,
+    "value69": {
+        "name": "Entity47",
+        "tag": "",
+        "active": false
+    },
+    "value70": 16,
+    "value71": {
+        "name": "Entity162",
+        "tag": "",
+        "active": false
+    },
+    "value72": 15,
+    "value73": {
+        "name": "Entity118",
+        "tag": "",
+        "active": false
+    },
+    "value74": 14,
+    "value75": {
+        "name": "Entity66",
+        "tag": "",
+        "active": false
+    },
+    "value76": 13,
+    "value77": {
+        "name": "Entity73",
+        "tag": "",
+        "active": false
+    },
+    "value78": 12,
+    "value79": {
+        "name": "Entity160",
+        "tag": "",
+        "active": false
+    },
+    "value80": 11,
+    "value81": {
+        "name": "Entity161",
+        "tag": "",
+        "active": false
+    },
+    "value82": 10,
+    "value83": {
+        "name": "Entity182",
+        "tag": "",
+        "active": false
+    },
+    "value84": 9,
+    "value85": {
+        "name": "Directional Light",
+        "tag": "",
+        "active": false
+    },
+    "value86": 8,
+    "value87": {
+        "name": "Main",
+        "tag": "",
+        "active": false
+    },
+    "value88": 7,
+    "value89": {
+        "name": "Camera",
+        "tag": "",
+        "active": false
+    },
+    "value90": 6,
+    "value91": {
+        "name": "Transparent",
+        "tag": "",
+        "active": false
+    },
+    "value92": 5,
+    "value93": {
+        "name": "Transparent",
+        "tag": "",
+        "active": false
+    },
+    "value94": 4,
+    "value95": {
+        "name": "Transparent",
+        "tag": "",
+        "active": false
+    },
+    "value96": 3,
+    "value97": {
+        "name": "Sphere",
+        "tag": "",
+        "active": false
+    },
+    "value98": 2,
+    "value99": {
+        "name": "Cube",
+        "tag": "",
+        "active": false
+    },
+    "value100": 1,
+    "value101": {
+        "name": "Floor",
+        "tag": "",
+        "active": false
+    },
+    "value102": 0,
+    "value103": {
+        "name": "Env",
+        "tag": "",
+        "active": false
+    },
+    "value104": 0,
+    "value105": 0,
+    "value106": 16,
+    "value107": 1,
+    "value108": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/plane.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material"
+        ]
+    },
+    "value109": 2,
+    "value110": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value111": 3,
+    "value112": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Sphere.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material"
+        ]
+    },
+    "value113": 4,
+    "value114": {
+        "subMeshIndex": -1,
+        "path": "res/Engine/Models/plane.obj",
+        "materialsOverridePaths": [
+            "",
+            ""
+        ]
+    },
+    "value115": 5,
+    "value116": {
+        "subMeshIndex": -1,
+        "path": "res/Engine/Models/plane.obj",
+        "materialsOverridePaths": [
+            "",
+            ""
+        ]
+    },
+    "value117": 6,
+    "value118": {
+        "subMeshIndex": -1,
+        "path": "res/Engine/Models/plane.obj",
+        "materialsOverridePaths": [
+            "",
+            ""
+        ]
+    },
+    "value119": 10,
+    "value120": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value121": 11,
+    "value122": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value123": 12,
+    "value124": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value125": 13,
+    "value126": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value127": 14,
+    "value128": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value129": 15,
+    "value130": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value131": 16,
+    "value132": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value133": 17,
+    "value134": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value135": 18,
+    "value136": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value137": 19,
+    "value138": {
+        "subMeshIndex": -1,
+        "path": "res/Game/Models/Cube.glb",
+        "materialsOverridePaths": [
+            "res/Game/Textures/floor.material",
+            ""
+        ]
+    },
+    "value139": 1,
+    "value140": 9,
+    "value141": {
+        "color": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "intensity": 1.5,
+        "falloff": 1.0,
+        "radius": 5.0,
+        "coneAngleInner": 45.0,
+        "coneAngleOuter": 45.0,
+        "renderShadow": true
+    },
+    "value142": 1,
+    "value143": 7,
+    "value144": {
+        "type": 0,
+        "isMain": true,
+        "orthographicSize": 5.0,
+        "fieldOfView": 45.0,
+        "nearClipPlane": 0.10000000149011612,
+        "farClipPlane": 1000.0
+    },
+    "value145": 1,
+    "value146": 0,
+    "value147": {
+        "settings": {
+            "ambient": {
+                "v.x": 0.10999999940395355,
+                "v.y": 0.1599999964237213,
+                "v.z": 0.25
+            },
+            "cleanColor": {
+                "v.x": 0.5,
+                "v.y": 0.10000000149011612,
+                "v.z": 0.800000011920929
+            },
+            "shadowQuality": 3,
+            "shadowBias": 0.000009999999747378752,
+            "shadowBackFaceRender": true,
+            "antiAliasing": 0,
+            "msaaQuality": 1,
+            "colorCorrection": 0
+        }
+    },
+    "value148": 12,
+    "value149": 7,
+    "value150": {},
+    "value151": 8,
+    "value152": {},
+    "value153": 10,
+    "value154": {},
+    "value155": 11,
+    "value156": {},
+    "value157": 12,
+    "value158": {},
+    "value159": 13,
+    "value160": {},
+    "value161": 14,
+    "value162": {},
+    "value163": 15,
+    "value164": {},
+    "value165": 16,
+    "value166": {},
+    "value167": 17,
+    "value168": {},
+    "value169": 18,
+    "value170": {},
+    "value171": 19,
+    "value172": {},
+    "value173": 0,
+    "value174": 0,
+    "value175": 0
+}

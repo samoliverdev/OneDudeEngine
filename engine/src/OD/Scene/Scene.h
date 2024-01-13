@@ -6,8 +6,8 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Core/ImGui.h"
-#include "OD/Renderer/Renderer.h"
-#include "OD/Renderer/Camera.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Camera.h"
 #include "OD/Core/Instrumentor.h"
 #include <unordered_map>
 #include <string>
@@ -113,7 +113,8 @@ enum class SystemType{
     Stand, Renderer, Physics
 };
 
-struct System{
+class System{
+public:
     System(Scene* inScene):scene(inScene){}
 
     virtual System* Clone(Scene* inScene) const = 0;
@@ -127,7 +128,8 @@ protected:
     Scene* scene;
 };
 
-struct Scene: public Asset {
+class Scene: public Asset {
+public:
     friend struct Entity;
 
     inline bool Running(){ return running; }
@@ -177,11 +179,12 @@ private:
     entt::registry registry;
 };
 
-struct SceneManager{
+class SceneManager{
+public:
     friend class Editor;
     friend class SceneHierarchyPanel;
     friend class InspectorPanel;
-    friend struct Scene;
+    friend class Scene;
     friend struct ScriptComponent;
 
     enum class SceneState {Playing, Paused, Editor};
@@ -209,8 +212,8 @@ private:
         std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
-        std::function<void(entt::snapshot& s, cereal::JSONOutputArchive& out)> snapshotOut;
-        std::function<void(entt::snapshot_loader& s, cereal::JSONInputArchive& out)> snapshotIn;
+        std::function<void(ODSnapshot& s, ODOutputArchive& out)> snapshotOut;
+        std::function<void(ODSnapshotLoader& s, ODInputArchive& out)> snapshotIn;
     };
 
     struct CoreComponent{
@@ -219,8 +222,8 @@ private:
         std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
-        std::function<void(entt::snapshot& s, cereal::JSONOutputArchive& out)> snapshotOut;
-        std::function<void(entt::snapshot_loader& s, cereal::JSONInputArchive& out)> snapshotIn;
+        std::function<void(ODSnapshot& s, ODOutputArchive& out)> snapshotOut;
+        std::function<void(ODSnapshotLoader& s, ODInputArchive& out)> snapshotIn;
     };
 
     SceneState sceneState;

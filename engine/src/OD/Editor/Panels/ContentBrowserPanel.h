@@ -1,21 +1,18 @@
 #pragma once
 
 #include <filesystem>
+#include "OD/Editor/EditorPanel.h"
 
 namespace OD{
 
 class Editor;
 
-class ContentBrowserPanel{
+class ContentBrowserPanel: public EditorPanel{
 public:
     ContentBrowserPanel();
-    
-    inline void SetEditor(Editor* editor){ _editor = editor; }
-    void OnGui();
+    void OnGui() override;
 
 private:
-    Editor* _editor;
-    
     std::filesystem::path _curDirectory;
     std::filesystem::path _selectedFile;
 

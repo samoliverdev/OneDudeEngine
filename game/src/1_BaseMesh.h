@@ -147,14 +147,10 @@ struct BaseMesh_1: OD::Module {
         std::cout << "Time taken by program is : " << std::fixed << time_taken << std::setprecision(5);
         std::cout << " sec " << std::endl;
 
-        meshShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*meshShader, "res/Game/Shaders/test.glsl");
+        meshShader = Shader::CreateFromFile("res/Game/Shaders/test.glsl");
+        fontShader = Shader::CreateFromFile("res/Engine/Shaders/Font.glsl");
 
-        fontShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*fontShader, "res/Engine/Shaders/Font.glsl");
-
-        font = CreateRef<Font>();
-        Font::CreateFromFile(*font, "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     }
 
     void OnUpdate(float deltaTime) override {
@@ -162,31 +158,31 @@ struct BaseMesh_1: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        Renderer::Begin();
+        Graphics::Begin();
 
-        Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
-        Renderer::SetBlend(false);
+        Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+        Graphics::SetBlend(false);
 
         Camera cam = {Matrix4Identity, Matrix4Identity};
-        Renderer::SetCamera(cam);
+        Graphics::SetCamera(cam);
 
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
 
-        Renderer::SetDefaultShaderData(*meshShader, Matrix4Identity);
-        Renderer::DrawMesh(mesh);
+        Graphics::SetDefaultShaderData(*meshShader, Matrix4Identity);
+        Graphics::DrawMesh(mesh);
 
         /////////// Render Text ///////////
 
-        Renderer::SetBlend(true);
-        Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+        Graphics::SetBlend(true);
+        Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
         
         cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
-        Renderer::SetCamera(cam);
+        Graphics::SetCamera(cam);
 
-        Renderer::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Vector3(0.5f, 0.8f, 0.2f));
-        Renderer::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f, Vector3(0.3, 0.7f, 0.9f));
+        Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Vector3(0.5f, 0.8f, 0.2f));
+        Graphics::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f, Vector3(0.3, 0.7f, 0.9f));
 
-        Renderer::End();
+        Graphics::End();
     }
 
     void OnGUI() override {
@@ -195,4 +191,5 @@ struct BaseMesh_1: OD::Module {
     }
 
     void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

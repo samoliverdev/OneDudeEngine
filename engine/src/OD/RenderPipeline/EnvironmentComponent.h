@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
-#include "OD/Renderer/Material.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 
@@ -70,9 +70,7 @@ private:
     inline void Init(){
         inited = true;
 
-        Ref<Cubemap> skyboxCubemap = CreateRef<Cubemap>();
-        bool result = Cubemap::CreateFromFile(
-            *skyboxCubemap,
+        Ref<Cubemap> skyboxCubemap = Cubemap::CreateFromFile(
             "res/Engine/Textures/Skybox/right.jpg",
             "res/Engine/Textures/Skybox/left.jpg",
             "res/Engine/Textures/Skybox/top.jpg",
@@ -80,7 +78,7 @@ private:
             "res/Engine/Textures/Skybox/front.jpg",
             "res/Engine/Textures/Skybox/back.jpg"
         );
-        Assert(result == true);
+        Assert(skyboxCubemap != nullptr);
 
         settings.sky = CreateRef<Material>();
         settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkyboxCubemap.glsl"));

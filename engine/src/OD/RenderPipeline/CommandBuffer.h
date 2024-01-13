@@ -1,10 +1,10 @@
 #pragma once
 
-#include "OD/Renderer/Material.h"
-#include "OD/Renderer/Mesh.h"
-#include "OD/Renderer/Framebuffer.h"
-#include "OD/Renderer/Renderer.h"
-#include "OD/Renderer/Culling.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"

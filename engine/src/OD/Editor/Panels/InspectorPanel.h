@@ -2,22 +2,18 @@
 
 #include "OD/Scene/Scene.h"
 #include "OD/Core/Asset.h"
+#include "OD/Editor/EditorPanel.h"
 
 namespace OD{
 
 class Editor;
 
-class InspectorPanel{
+class InspectorPanel: public EditorPanel{
 public:
-    inline void SetEditor(Editor* editor){ _editor = editor; }
-    inline void SetScene(Scene* scene){ _scene = scene; }
-
-    void OnGui();
+    InspectorPanel();
+    void OnGui() override;
     
 private:
-    Scene* _scene;
-    Editor* _editor;
-
     void DrawComponents(Entity entity);  
     void ShowAddComponent(Entity entity);
     void DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::CoreComponent &f);

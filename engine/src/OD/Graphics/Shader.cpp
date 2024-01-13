@@ -12,6 +12,25 @@ void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName
     pathWithoutFileName = fullPath.substr(0, found + 1);
 }
 
+bool Shader::Create(const std::string& filepath){
+    Destroy(*this);
+
+    std::string source = this->load(filepath);
+
+    auto shaderSources = this->PreProcess(source);
+    this->Compile(shaderSources);
+
+    // Extract name from filepath
+    auto lastSlash = filepath.find_last_of("/\\");
+    lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
+    auto lastDot = filepath.rfind('.');
+    auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
+    //out->name = filepath.substr(lastSlash, count);
+
+    this->path = filepath;
+    return true;
+}
+
 std::string Shader::load(std::string path){
     std::string includeIndentifier = "#include ";
     //includeIndentifier += ' ';
@@ -190,11 +209,20 @@ GLenum ShaderTypeFromString(const std::string& type){
     return 0;
 }
 
-bool Shader::CreateFromFile(Shader& out, const std::string& filepath){
-    std::string source = out.load(filepath);
+Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
+    Ref<Shader> out = CreateRef<Shader>();
+    if(out->Create(filepath) == false){
+        return nullptr;
+    }
+    return out;
 
-    auto shaderSources = out.PreProcess(source);
-    out.Compile(shaderSources);
+    /*
+    Ref<Shader> out = CreateRef<Shader>();
+
+    std::string source = out->load(filepath);
+
+    auto shaderSources = out->PreProcess(source);
+    out->Compile(shaderSources);
 
     // Extract name from filepath
     auto lastSlash = filepath.find_last_of("/\\");
@@ -203,8 +231,9 @@ bool Shader::CreateFromFile(Shader& out, const std::string& filepath){
     auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
     //out->name = filepath.substr(lastSlash, count);
 
-    out.path = filepath;
-    return true;
+    out->path = filepath;
+    return out;
+    */
 }
 
 void Shader::Bind(Shader& shader){

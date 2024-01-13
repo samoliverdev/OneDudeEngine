@@ -13,7 +13,7 @@ enum class TextureFilter {
     Linear
 };
 
-class Renderer;
+class Graphics;
 
 struct Texture2DSetting{
     TextureFilter filter = TextureFilter::Linear;
@@ -29,10 +29,10 @@ struct Texture2DSetting{
 };
 
 class Texture2D: public Asset{
-    friend class Renderer;
+    friend class Graphics;
 public:
-    static bool CreateFromFile(Texture2D& tex, const std::string& filePath, Texture2DSetting settings); 
-    static bool CreateFromFileMemory(Texture2D& tex, void* data, size_t size, Texture2DSetting settings); 
+    static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
+    static Ref<Texture2D> CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings); 
     static void Destroy(Texture2D& tex);
     static void Bind(Texture2D& tex, int index);
 
@@ -44,6 +44,8 @@ public:
     inline unsigned int RenderId(){ return id; }
 
     void OnGui() override;
+    void Reload() override;
+    void Save() override;
 
 private:
     unsigned int id = 0;
@@ -58,11 +60,11 @@ private:
     bool mipmap;
     Texture2DSetting settings;
 
-    void Create(const std::string path, Texture2DSetting settings);
-    void Create(void* data, size_t size, Texture2DSetting settings);
+    bool Create(const std::string path, Texture2DSetting settings);
+    bool Create(void* data, size_t size, Texture2DSetting settings);
     void texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data);
 
-    void SaveSettings();
+    //void SaveSettings();
 };
 
 }

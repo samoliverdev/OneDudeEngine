@@ -45,7 +45,8 @@ public:
     static std::vector<std::string> args;
 
 private:
-
+    static void OnExit();
+    
     static std::vector<Module*> modules;
 };
 

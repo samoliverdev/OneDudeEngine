@@ -1,6 +1,6 @@
 #include "Application.h"
 #include "OD/Platform/Platform.h"
-#include "OD/Renderer/Renderer.h"
+#include "OD/Graphics/Graphics.h"
 #include "ImGui.h"
 #include "Input.h"
 #include "Instrumentor.h"
@@ -32,7 +32,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig){
         appConfig.startWidth,
         appConfig.startHeight) == false) return false;
 
-    Renderer::Initialize();
+    Graphics::Initialize();
     //Input::_Initialize(0, 0);
     JobSystem::Initialize();
     //AssetTypesDB::_Init();
@@ -46,7 +46,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig){
 }
 
 bool Application::Run(){
-    while (running){
+    while(running){
         float currentFrame = Platform::GetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame; 
@@ -73,9 +73,7 @@ bool Application::Run(){
         Platform::SwapBuffers();
     }
 
-    Renderer::Shutdown();
-    //Input::_Shutdown(0);
-    Platform::SystemShutdown(0);
+    OnExit();
 
     return true;
 }
@@ -85,10 +83,7 @@ void Application::Quit(){
 }
 
 void Application::Exit(){
-    Renderer::Shutdown();
-    //Input::_Shutdown(0);
-    Platform::SystemShutdown(0);
-
+    OnExit();
     exit(0);
 }
 
@@ -107,6 +102,19 @@ void Application::_OnResize(int inWidth, int inHeight){
 
     //mainModule->OnResize(_width, _height);
     for(auto i: modules) i->OnResize(width, heigth);
+}
+
+void Application::OnExit(){
+    LogInfo("Application::OnExit");
+
+    for(auto i: modules){
+        i->OnExit();
+        delete i;
+    }
+
+    Graphics::Shutdown();
+    //Input::_Shutdown(0);
+    Platform::SystemShutdown(0);
 }
 
 }

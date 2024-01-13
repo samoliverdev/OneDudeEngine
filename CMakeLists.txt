@@ -103,6 +103,9 @@ target_include_directories(game PUBLIC engine/src/)
 target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
 
+target_compile_definitions(game PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+#target_compile_definitions(game PUBLIC RESOURCES_PATH="../../res/")
+
 
 # Enable Disable Tests
 if(OFF) 

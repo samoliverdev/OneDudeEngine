@@ -174,4 +174,6 @@ struct Framebuffer_5: OD::Module {
         framebuffer->Resize(Application::ScreenWidth(), Application::ScreenHeight());
         framebuffer->Invalidate();
     }
+
+    void OnExit() override {}
 };

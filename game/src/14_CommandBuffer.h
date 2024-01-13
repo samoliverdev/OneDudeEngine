@@ -41,21 +41,16 @@ struct CommandBuffer_14: OD::Module {
 
         cubeModel = AssetManager::Get().LoadModel("res/Game/Models/cube.glb");
 
-        meshShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*meshShader, "res/Engine/Shaders/Unlit.glsl");
-
-        texture = CreateRef<Texture2D>();
-        Texture2D::CreateFromFile(*texture, "res/Game/Textures/image.jpg", Texture2DSetting());
+        meshShader = Shader::CreateFromFile("res/Engine/Shaders/Unlit.glsl");
+        texture = Texture2D::CreateFromFile("res/Game/Textures/image.jpg", Texture2DSetting());
 
         mat = CreateRef<Material>();
         mat->SetShader(meshShader);
         //mat->SetTexture("mainTex", texture);
 
-        fontShader = CreateRef<Shader>();
-        Shader::CreateFromFile(*fontShader, "res/Engine/Shaders/Font.glsl");
+        fontShader = Shader::CreateFromFile("res/Engine/Shaders/Font.glsl");
 
-        font = CreateRef<Font>();
-        Font::CreateFromFile(*font, "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     }
 
     void OnUpdate(float deltaTime) override {
@@ -67,7 +62,7 @@ struct CommandBuffer_14: OD::Module {
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
-        Renderer::Begin();
+        Graphics::Begin();
 
         cmd1.SetRenderTarget(renderTarget);
         cmd1.SetCamera(cam);
@@ -101,7 +96,7 @@ struct CommandBuffer_14: OD::Module {
         cmd1.Clean();
         cmd2.Clean();
 
-        Renderer::End();
+        Graphics::End();
     }
 
     void OnGUI() override {
@@ -110,4 +105,5 @@ struct CommandBuffer_14: OD::Module {
     }
 
     void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

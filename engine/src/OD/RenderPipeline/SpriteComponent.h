@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
-#include "OD/Renderer/Texture.h"
+#include "OD/Graphics/Texture.h"
 #include "StandRenderPipeline.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"

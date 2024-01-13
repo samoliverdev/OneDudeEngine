@@ -46,6 +46,7 @@ struct NewRenderPipeline_13: public OD::Module {
 
     void OnInit() override {
         LogInfo("Game Init");
+        LogInfo(RESOURCES_PATH "/");
 
         Application::Vsync(false);
 
@@ -53,8 +54,8 @@ struct NewRenderPipeline_13: public OD::Module {
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
         OD::Scene* scene = SceneManager::Get().NewScene();
-        scene->RemoveSystem<StandRenderPipeline>();
-        scene->AddSystem<StandRenderPipeline2>();
+        //scene->RemoveSystem<StandRenderPipeline>();
+        //scene->AddSystem<StandRenderPipeline2>();
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
             "res/Game/Models/plane.glb",
@@ -133,7 +134,7 @@ struct NewRenderPipeline_13: public OD::Module {
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
         //*/
 
-        ///*
+        /*
         Entity light3 = scene->AddEntity("Directional Light");
         LightComponent& lightComponent3 = light3.AddComponent<LightComponent>();
         lightComponent3.color = Vector3(1,1,1);
@@ -141,7 +142,7 @@ struct NewRenderPipeline_13: public OD::Module {
         lightComponent3.renderShadow = false;
         light3.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light3.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(65, -135, 0));
-        //*/
+        */
 
         /*
         Entity light2 = scene->AddEntity("Directional Light 2");
@@ -221,5 +222,6 @@ struct NewRenderPipeline_13: public OD::Module {
 
     void OnGUI() override {}
     void OnResize(int width, int height) override{}
+    void OnExit() override {}
 
 };

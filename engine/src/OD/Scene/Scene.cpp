@@ -5,74 +5,6 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 
-namespace entt{
-
-template<typename Registry>
-class Snapshot {
-    static_assert(!std::is_const_v<Registry>, "Non-const registry type required");
-    using traits_type = typename Registry::traits_type;
-
-public:
-    using registry_type = Registry;
-    using entity_type = typename registry_type::entity_type;
-
-    Snapshot(const registry_type &source) noexcept
-        : reg{&source} {}
-
-    Snapshot(Snapshot &&) noexcept = default;
-    Snapshot &operator=(Snapshot &&) noexcept = default;
-
-    template<typename Type, typename Archive>
-    const Snapshot &get(Archive &archive, const id_type id = type_hash<Type>::value()) const {
-        if(const auto *storage = reg->template storage<Type>(id); storage) {
-            archive(static_cast<typename traits_type::entity_type>(storage->size()));
-
-            if constexpr(std::is_same_v<Type, entity_type>) {
-                archive(static_cast<typename traits_type::entity_type>(storage->in_use()));
-
-                for(auto first = storage->data(), last = first + storage->size(); first != last; ++first) {
-                    archive(*first);
-                }
-            } else {
-                for(auto elem: storage->reach()) {
-                    std::apply([&archive](auto &&...args) { (archive(std::forward<decltype(args)>(args)), ...); }, elem);
-                }
-            }
-        } else {
-            archive(typename traits_type::entity_type{});
-        }
-
-        return *this;
-    }
-
-    template<typename Type, typename Archive, typename It>
-    const Snapshot &get(Archive &archive, It first, It last, const id_type id = type_hash<Type>::value()) const {
-        static_assert(!std::is_same_v<Type, entity_type>, "Entity types not supported");
-
-        if(const auto *storage = reg->template storage<Type>(id); storage && !storage->empty()) {
-            archive(static_cast<typename traits_type::entity_type>(std::distance(first, last)));
-
-            for(; first != last; ++first) {
-                if(const auto entt = *first; storage->contains(entt)) {
-                    archive(entt);
-                    std::apply([&archive](auto &&...args) { (archive(std::forward<decltype(args)>(args)), ...); }, storage->get_as_tuple(entt));
-                } else {
-                    archive(static_cast<entity_type>(null));
-                }
-            }
-        } else {
-            archive(typename traits_type::entity_type{});
-        }
-
-        return *this;
-    }
-
-private:
-    const registry_type *reg;
-};
-
-}
-
 namespace OD{
 
 #pragma region TransformComponent
@@ -339,17 +271,15 @@ void Scene::Update(){
 void Scene::Draw(){
     OD_PROFILE_SCOPE("Scene::Draw");
 
-    Renderer::Begin();
+    Graphics::Begin();
     for(auto& s: rendererSystems) s->Update();        
-    Renderer::End();
+    Graphics::End();
 }
 
 void Scene::Save(const char* path){
     std::ofstream os(path);
-    cereal::JSONOutputArchive output{os};
-
-    entt::snapshot snapshotOut(registry);
-    entt::Snapshot<entt::registry> snapshotOut2(registry);
+    ODOutputArchive output{os};
+    ODSnapshot snapshotOut(registry);
 
     snapshotOut.get<entt::entity>(output);
     snapshotOut.get<TransformComponent>(output);
@@ -364,9 +294,8 @@ void Scene::Save(const char* path){
 
 void Scene::Load(const char* path){
     std::ifstream storage(path);
-    cereal::JSONInputArchive input{storage};
-
-    entt::snapshot_loader snapshot(registry);
+    ODInputArchive input{storage};
+    ODSnapshotLoader snapshot(registry);
 
     snapshot.get<entt::entity>(input);
     snapshot.get<TransformComponent>(input);

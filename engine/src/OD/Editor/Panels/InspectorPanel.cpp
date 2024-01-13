@@ -14,18 +14,23 @@
 
 namespace OD{
 
+InspectorPanel::InspectorPanel(){
+    name = "InspectorPanel";
+    show = true;
+}
+
 void InspectorPanel::OnGui(){
-    if(_scene == nullptr) return;
+    if(scene == nullptr) return;
 
     //if(ImGui::Begin("Inspector")){
     ImGui::Begin("Inspector");
-    if(_editor->selectionEntity.IsValid() && _editor->selectionOnAsset == false){
-        DrawComponents(_editor->selectionEntity);
+    if(editor->selectionEntity.IsValid() && editor->selectionOnAsset == false){
+        DrawComponents(editor->selectionEntity);
         ImGui::Separator();
         ImGui::Spacing();
-        ShowAddComponent(_editor->selectionEntity);
-    } else if(_editor->selectionOnAsset == true && _editor->selectionAsset != nullptr){
-        _editor->selectionAsset->OnGui();
+        ShowAddComponent(editor->selectionEntity);
+    } else if(editor->selectionOnAsset == true && editor->selectionAsset != nullptr){
+        editor->selectionAsset->OnGui();
     }
     ImGui::End();
 }
@@ -236,7 +241,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
     if(ImGui::BeginPopup("AddComponent")){
         for(auto& i: SceneManager::Get().coreComponentsSerializer){
             if(ImGui::MenuItem(i.first)){
-                i.second.addComponent(_editor->selectionEntity);
+                i.second.addComponent(editor->selectionEntity);
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -247,7 +252,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
 
         for(auto& i: SceneManager::Get().componentsSerializer){
             if(ImGui::MenuItem(i.first)){
-                i.second.addComponent(_editor->selectionEntity);
+                i.second.addComponent(editor->selectionEntity);
                 ImGui::CloseCurrentPopup();
             }
         }

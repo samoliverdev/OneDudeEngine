@@ -3,7 +3,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "OD/Renderer/Model.h"
+#include "OD/Graphics/Model.h"
 #include "OD/Animation/Skeleton.h"
 #include "OD/Animation/Clip.h"
 

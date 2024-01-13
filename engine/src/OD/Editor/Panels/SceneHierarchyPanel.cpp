@@ -18,8 +18,13 @@ namespace OD{
 bool _toDestroy = false;
 entt::entity _toDestroyEntity;
 
+SceneHierarchyPanel::SceneHierarchyPanel(){
+    name = "SceneHierarchyPanel";
+    show = true;
+}
+
 void SceneHierarchyPanel::OnGui(){
-    if(_scene == nullptr) return;
+    if(scene == nullptr) return;
 
     //if(ImGui::Begin("Scene Hierarchy")){
     ImGui::Begin("Scene Hierarchy");
@@ -27,14 +32,14 @@ void SceneHierarchyPanel::OnGui(){
             return lhs.id() < rhs.id();
         });*/
 
-        _scene->GetRegistry().sort<InfoComponent>([](const entt::entity lhs, const entt::entity rhs) {
+        scene->GetRegistry().sort<InfoComponent>([](const entt::entity lhs, const entt::entity rhs) {
             return lhs < rhs;
         });
 
-        auto view = _scene->GetRegistry().view<TransformComponent, InfoComponent>();
+        auto view = scene->GetRegistry().view<TransformComponent, InfoComponent>();
         view.use<InfoComponent>();
         for(auto e: view){
-            Entity _e(e, _scene);
+            Entity _e(e, scene);
             DrawEntityNode(_e, true);
         }
 
@@ -64,20 +69,20 @@ void SceneHierarchyPanel::OnGui(){
         
         if(_toDestroy){
             LogInfo("To Destroy Entity2: %d", _toDestroyEntity);
-            _editor->SetSelectionEntity(Entity());
-            _scene->DestroyEntity(_toDestroyEntity);
+            editor->SetSelectionEntity(Entity());
+            scene->DestroyEntity(_toDestroyEntity);
             _toDestroy = false;
             return;
         }
 
         if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
             //_editor->_selectionEntity = Entity();
-            _editor->SetSelectionEntity(Entity());
+            editor->SetSelectionEntity(Entity());
         }
 
         if(ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)){
             if(ImGui::MenuItem("Create Empty Entity")){
-                _scene->AddEntity("Empty Entity");
+                scene->AddEntity("Empty Entity");
             }
             ImGui::EndPopup();
         }
@@ -104,7 +109,7 @@ void SceneHierarchyPanel::OnGui(){
                     Entity* targetEntity = (Entity*)payload->Data;
                     LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
                     if(targetEntity->IsValid()){
-                        _scene->CleanParent(targetEntity->Id());
+                        scene->CleanParent(targetEntity->Id());
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -131,7 +136,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     //ImGui::Text(info.name.c_str());
 
     ImGuiTreeNodeFlags flags = 
-        ((entity == _editor->selectionEntity) ? ImGuiTreeNodeFlags_Selected : 0) 
+        ((entity == editor->selectionEntity) ? ImGuiTreeNodeFlags_Selected : 0) 
         | (transform.Children().empty() == false ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -143,7 +148,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(ImGui::IsItemClicked()){
-        _editor->SetSelectionEntity(entity);
+        editor->SetSelectionEntity(entity);
     }
 
     if(ImGui::BeginDragDropTarget()){
@@ -181,12 +186,12 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     if(entityDeleted){
         LogInfo("To Destroy Entity: %d", entity.Id());
 
-        _scene->DestroyEntity(entity.Id());
-        _editor->SetSelectionEntity(Entity());
+        scene->DestroyEntity(entity.Id());
+        editor->SetSelectionEntity(Entity());
 
         //toDestroy = entity;
     } else if(children.IsValid()){
-        _scene->SetParent(entity.Id(), children.Id());
+        scene->SetParent(entity.Id(), children.Id());
     }
 }
 }

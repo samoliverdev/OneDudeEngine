@@ -6,8 +6,13 @@
 #include "OD/Editor/Panels/SceneHierarchyPanel.h"
 #include "OD/Editor/Panels/ContentBrowserPanel.h"
 #include "OD/Editor/Panels/InspectorPanel.h"
-#include "OD/Renderer/Framebuffer.h"
+#include "OD/Editor/Panels/ViewportPanel.h"
+#include "OD/Editor/Panels/ProfilePanel.h"
+#include "OD/Editor/Panels/RendererStatsPanel.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Serialization/Serialization.h"
 #include "EditorCamera.h"
+#include "Workspace.h"
 
 namespace OD{
 
@@ -15,9 +20,11 @@ class Editor: public Module{
     friend class SceneHierarchyPanel;
     friend class ContentBrowserPanel;
     friend class InspectorPanel;
+    friend class ViewportPanel;
 
 public:
     void OnInit() override;
+    void OnExit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;
     void OnGUI() override;
@@ -32,12 +39,28 @@ public:
         selectionOnAsset = true;
     }
 
+    template <class Archive>
+    void serialize(Archive & ar){
+        ar(
+            CEREAL_NVP(sceneHierarchyPanel.show),
+            CEREAL_NVP(contentBrowserPanel.show),
+            CEREAL_NVP(inspectorPanel.show),
+            CEREAL_NVP(viewportPanel.show),
+            CEREAL_NVP(profilePanel.show),
+            CEREAL_NVP(rendererStatsPanel.show)
+        );
+    }
+
 private:
     static Editor* instance;
 
     SceneHierarchyPanel sceneHierarchyPanel;
     ContentBrowserPanel contentBrowserPanel;
     InspectorPanel inspectorPanel;
+    ViewportPanel viewportPanel;
+    ProfilePanel profilePanel;
+    RendererStatsPanel rendererStatsPanel;
+    MainWorkspace mainWorkspace;
 
     Entity selectionEntity;
     Ref<Asset> selectionAsset;
@@ -77,7 +100,7 @@ private:
 
     void DrawMainPanel();
     void DrawMainWorkspace();
-    
+
     void DrawGizmos();
 };
 

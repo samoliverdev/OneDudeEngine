@@ -10,6 +10,8 @@ public:
     inline void Path(const std::string& inPath){ path = inPath; }
 
     virtual void OnGui(){}
+    virtual void Reload(){}
+    virtual void Save(){}
 
 protected:
     std::string path = "Memory";

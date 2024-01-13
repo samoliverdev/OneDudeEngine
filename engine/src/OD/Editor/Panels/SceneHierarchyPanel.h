@@ -1,22 +1,17 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
+#include "OD/Editor/EditorPanel.h"
 
 namespace OD{
 
-class SceneHierarchyPanel{
+class SceneHierarchyPanel: public EditorPanel{
 public:
-    inline void SetEditor(Editor* editor){ _editor = editor; }
-    inline void SetScene(Scene* scene){ _scene = scene; }
-
-    void OnGui();
+    SceneHierarchyPanel();
+    void OnGui() override;
 
 private:
-    Scene* _scene;
-    Editor* _editor;
-
     Entity toDestroy;
-
     void DrawEntityNode(Entity entity, bool root);
 };
 

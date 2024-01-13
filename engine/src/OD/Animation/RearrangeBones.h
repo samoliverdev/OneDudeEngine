@@ -3,7 +3,7 @@
 #include <map>
 #include "Skeleton.h"
 #include "Clip.h"
-#include "OD/Renderer/Mesh.h"
+#include "OD/Graphics/Mesh.h"
 
 namespace OD{
 

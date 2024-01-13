@@ -1,4 +1,4 @@
-#include "OD/Renderer/Renderer.h"
+#include "OD/Graphics/Graphics.h"
 #include "StandRenderPipeline.h"
 #include "SpriteComponent.h"
 #include "MeshRendererComponent.h"
@@ -29,15 +29,14 @@ union MaterialBind{
 class TestPP1: public PostProcessingPass{
 public:
     TestPP1(int option):_option(option){
-        _ppShader = CreateRef<Shader>();
-        bool result = Shader::CreateFromFile(*_ppShader, "res/Engine/Shaders/BasicPostProcessing.glsl");
-        Assert(result == true);
+        _ppShader = Shader::CreateFromFile("res/Engine/Shaders/BasicPostProcessing.glsl");
+        Assert(_ppShader != nullptr);
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
         Shader::Bind(*_ppShader);
         _ppShader->SetFloat("option", _option);
-        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
+        Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
@@ -48,14 +47,13 @@ private:
 class GameCorrectionPP: public PostProcessingPass{
 public:
     GameCorrectionPP(){
-        _ppShader = CreateRef<Shader>();
-        bool result = Shader::CreateFromFile(*_ppShader, "res/Engine/Shaders/GamaCorrectionPP.glsl");
-        Assert(result == true);
+        _ppShader = Shader::CreateFromFile("res/Engine/Shaders/GamaCorrectionPP.glsl");
+        Assert(_ppShader != nullptr);
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
         Shader::Bind(*_ppShader);
-        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
+        Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
@@ -65,16 +63,15 @@ private:
 class ToneMappingPP: public PostProcessingPass{
 public:
     ToneMappingPP(){
-        _ppShader = CreateRef<Shader>();
-        bool result = Shader::CreateFromFile(*_ppShader, "res/Engine/Shaders/ToneMappingPP.glsl");
-        Assert(result == true);
+        _ppShader = Shader::CreateFromFile("res/Engine/Shaders/ToneMappingPP.glsl");
+        Assert(_ppShader != nullptr);
 
         enable = false;
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
         Shader::Bind(*_ppShader);
-        Renderer::BlitQuadPostProcessing(src, dst, *_ppShader);
+        Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
@@ -189,9 +186,9 @@ void DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
     }
 
     for(int i = 0; i < 4; i++){
-        Renderer::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
-        Renderer::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
-        Renderer::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
+        Graphics::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
     }
 }
 
@@ -307,7 +304,7 @@ void StandRenderPipeline::Update(){
             }
 
             Framebuffer::Bind(*finalColor);
-            Renderer::SetViewport(0, 0, width, height);
+            Graphics::SetViewport(0, 0, width, height);
             RenderScene(
                 overrideCamera != nullptr ? *overrideCamera : renderCam, 
                 true, 
@@ -320,8 +317,8 @@ void StandRenderPipeline::Update(){
     GetScene()->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
     {
-    Renderer::BlitFramebuffer(finalColor, pp1);
-    Renderer::BlitFramebuffer(finalColor, objectsId, 1);
+    Graphics::BlitFramebuffer(finalColor, pp1);
+    Graphics::BlitFramebuffer(finalColor, objectsId, 1);
     //Renderer::BlitQuadPostProcessing(_finalColor, _pp1, *_blitShader);
 
     bool step = false;
@@ -336,7 +333,7 @@ void StandRenderPipeline::Update(){
                 step == false ? pp2 : pp1
             );
         } else {
-            Renderer::BlitFramebuffer(
+            Graphics::BlitFramebuffer(
                 step == false ? pp1 : pp2,
                 step == false ? pp2 : pp1
             );
@@ -346,9 +343,9 @@ void StandRenderPipeline::Update(){
     }
 
     if(outFramebuffer != nullptr){
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, outFramebuffer, *blitShader);
+        Graphics::BlitQuadPostProcessing(finalFramebuffer, outFramebuffer, *blitShader);
     } else {
-        Renderer::BlitQuadPostProcessing(finalFramebuffer, nullptr, *blitShader);
+        Graphics::BlitQuadPostProcessing(finalFramebuffer, nullptr, *blitShader);
     }
 
     finalColor->Unbind();
@@ -657,13 +654,13 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
     // --------- Set Camera --------- 
     if(isMain){
-        Renderer::SetCamera(overrideCamera != nullptr ? *overrideCamera : camera);
+        Graphics::SetCamera(overrideCamera != nullptr ? *overrideCamera : camera);
     } else {
-        Renderer::SetCamera(camera);
+        Graphics::SetCamera(camera);
     }
 
     // --------- Clean --------- 
-    Renderer::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
+    Graphics::Clean(environmentSettings.cleanColor.x, environmentSettings.cleanColor.y, environmentSettings.cleanColor.z, 1);
 
     {
         // --------- Render Sky ---------
@@ -673,21 +670,21 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
 
             environmentSettings.sky->UpdateDatas();
 
-            Renderer::SetCullFace(CullFace::BACK);
-            Renderer::SetDepthMask(false);
+            Graphics::SetCullFace(CullFace::BACK);
+            Graphics::SetDepthMask(false);
             Shader::Bind(*environmentSettings.sky->GetShader());
             //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
-            environmentSettings.sky->GetShader()->SetMatrix4("projection", Renderer::GetCamera().projection);
-            Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Renderer::GetCamera().view)));
+            environmentSettings.sky->GetShader()->SetMatrix4("projection", Graphics::GetCamera().projection);
+            Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(Graphics::GetCamera().view)));
             environmentSettings.sky->GetShader()->SetMatrix4("view", skyboxView);
-            Renderer::DrawMesh(skyboxMesh);
-            Renderer::SetDepthMask(true);
+            Graphics::DrawMesh(skyboxMesh);
+            Graphics::SetDepthMask(true);
         }
     }
 
     // --------- Setup Render --------- 
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(CullFace::BACK);
+    Graphics::SetDepthTest(DepthTest::LESS);
+    Graphics::SetCullFace(CullFace::BACK);
     Ref<Material> lastMat = nullptr;
 
     for(auto i: shaderTargets){
@@ -708,7 +705,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             lastMat = cm.material;
             //cm.material->shader()->Bind();
             cm.material->GetShader()->SetMatrix4("model", cm.trans);
-            Renderer::DrawMesh(*cm.meshs);
+            Graphics::DrawMesh(*cm.meshs);
         });
     }
 
@@ -725,7 +722,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
                 cm.meshs->instancingModelMatrixs.push_back(j);
             }
             cm.meshs->UpdateMeshInstancingModelMatrixs();
-            Renderer::DrawMeshInstancing(*cm.meshs, cm.trans.size());
+            Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
         });
     }
 
@@ -762,16 +759,16 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             //Shader::Bind(*data.targetMaterial->GetShader());
             data.targetMaterial->GetShader()->SetMatrix4("animated", c.posePalette);
             data.targetMaterial->GetShader()->SetMatrix4("model", data.targetMatrix);
-            Renderer::DrawMesh(*data.targetMesh);            
+            Graphics::DrawMesh(*data.targetMesh);            
         } 
     }
     
     {
         // --------- Render Blends --------- 
         OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::BlendDrawCommands");
-        Renderer::SetCullFace(CullFace::NONE);
-        Renderer::SetBlend(true);
-        Renderer::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+        Graphics::SetCullFace(CullFace::NONE);
+        Graphics::SetBlend(true);
+        Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
 
         lastMat = nullptr;
         for(auto it = blendDrawCommands.commands.rbegin(); it != blendDrawCommands.commands.rend(); it++){
@@ -787,7 +784,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             lastMat = cm.material;
             Shader::Bind(*cm.material->GetShader());
             cm.material->GetShader()->SetMatrix4("model", cm.trans);
-            Renderer::DrawMesh(*cm.meshs);
+            Graphics::DrawMesh(*cm.meshs);
         }
 
         /*lastMat = nullptr;
@@ -804,15 +801,15 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             Renderer::DrawMesh(*cm.meshs);
         });*/
 
-        Renderer::SetBlend(false);
+        Graphics::SetBlend(false);
     }
 }
 
 void StandRenderPipeline::ShadowRenderPass::Clean(StandRenderPipeline& root){
     OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Clean");
     Framebuffer::Bind(*shadowMap);
-    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::Clean(0.5f, 0.1f, 0.8f, 1);
     Framebuffer::Unbind();
 }
 
@@ -820,7 +817,7 @@ void StandRenderPipeline::ShadowRenderPass::Render(LightComponent& light, Transf
     OD_PROFILE_SCOPE("StandRendererSystem::ShadowRenderPass::Render");
 
     Framebuffer::Bind(*shadowMap);
-    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
 
     Matrix4 lightProjection = Matrix4Identity;
     Matrix4 lightView = Matrix4Identity;
@@ -841,9 +838,9 @@ void StandRenderPipeline::ShadowRenderPass::Render(LightComponent& light, Transf
 
     lightSpaceMatrix = lightProjection * lightView; 
 
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    Graphics::SetDepthTest(DepthTest::LESS);
+    Graphics::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    Graphics::Clean(0.5f, 0.1f, 0.8f, 1);
 
     Shader::Bind(*root.shadowMapShader);
     root.shadowMapShader->SetMatrix4("lightSpaceMatrix", lightSpaceMatrix);
@@ -868,7 +865,7 @@ void StandRenderPipeline::ShadowRenderPass::Render(LightComponent& light, Transf
 
             Shader::Bind(*root.shadowMapShader);
             root.shadowMapShader->SetMatrix4("model", m);
-            Renderer::DrawMesh(*c.GetModel()->meshs[i.meshIndex]);
+            Graphics::DrawMesh(*c.GetModel()->meshs[i.meshIndex]);
         }
     }
 
@@ -878,8 +875,8 @@ void StandRenderPipeline::ShadowRenderPass::Render(LightComponent& light, Transf
 void StandRenderPipeline::CascadeShadow::Clean(StandRenderPipeline& root){
     OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Clean");
     Framebuffer::Bind(*shadowMap);
-    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
-    Renderer::Clean(0.5f, 0.1f, 0.8f, 1);
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::Clean(0.5f, 0.1f, 0.8f, 1);
     Framebuffer::Unbind();
 }
 
@@ -887,18 +884,18 @@ void StandRenderPipeline::CascadeShadow::Render(LightComponent& light, Transform
     OD_PROFILE_SCOPE("StandRendererSystem::CascadeShadow::Render");
 
     Framebuffer::Bind(*shadowMap);
-    Renderer::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::SetDepthTest(DepthTest::LESS);
+    Graphics::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     //glEnable(GL_DEPTH_CLAMP);
-    Renderer::Clean(1, 1, 1, 1);
+    Graphics::Clean(1, 1, 1, 1);
 
     Shader::Bind(*root.shadowMapShader);
     root.shadowMapShader->SetMatrix4("lightSpaceMatrix", projViewMatrix);
 
     cascadeShadowDrawCommands.Each([&](auto& cm){
         root.shadowMapShader->SetMatrix4("model", cm.trans);
-        Renderer::DrawMesh(*cm.meshs);
+        Graphics::DrawMesh(*cm.meshs);
     });
 
     shadowMap->Unbind();
@@ -1094,11 +1091,11 @@ void StandRenderPipeline::RenderCascadeShadow(LightComponent& light, TransformCo
     OD_PROFILE_SCOPE("StandRendererSystem::RenderCascadeShadow");
 
     Framebuffer::Bind(*cascadeShadowMap);
-    Renderer::SetViewport(0, 0, cascadeShadowMap->Width(), cascadeShadowMap->Height());
-    Renderer::SetDepthTest(DepthTest::LESS);
-    Renderer::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
+    Graphics::SetViewport(0, 0, cascadeShadowMap->Width(), cascadeShadowMap->Height());
+    Graphics::SetDepthTest(DepthTest::LESS);
+    Graphics::SetCullFace(environmentSettings.shadowBackFaceRender == false ? CullFace::FRONT : CullFace::BACK);
     //glEnable(GL_DEPTH_CLAMP);
-    Renderer::Clean(1, 1, 1, 1);
+    Graphics::Clean(1, 1, 1, 1);
 
     Shader::Bind(*cascadeShadowMapShader);
     for(int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++){
@@ -1108,7 +1105,7 @@ void StandRenderPipeline::RenderCascadeShadow(LightComponent& light, TransformCo
 
     cascadeShadowDrawCommands.Each([&](auto& cm){
         cascadeShadowMapShader->SetMatrix4("model", cm.trans);
-        Renderer::DrawMesh(*cm.meshs);
+        Graphics::DrawMesh(*cm.meshs);
     });
 
     cascadeShadowMapShader->Unbind();

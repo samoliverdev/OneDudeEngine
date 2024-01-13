@@ -5,7 +5,9 @@
 
 namespace OD{
 
-bool Cubemap::CreateFromFile(Cubemap& out, const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
+Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
+    Ref<Cubemap> out = CreateRef<Cubemap>();
+
     std::vector<const char*> faces;
     faces.push_back(right);
     faces.push_back(left);
@@ -14,8 +16,8 @@ bool Cubemap::CreateFromFile(Cubemap& out, const char* right, const char* left, 
     faces.push_back(front);
     faces.push_back(back);
 
-    glGenTextures(1, &out.renderId);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, out.renderId);
+    glGenTextures(1, &out->renderId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, out->renderId);
     glCheckError();
 
     stbi_set_flip_vertically_on_load(0);
@@ -44,7 +46,7 @@ bool Cubemap::CreateFromFile(Cubemap& out, const char* right, const char* left, 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glCheckError();
 
-    return true;
+    return out;
 }
 
 void Cubemap::Destroy(Cubemap& cubemap){

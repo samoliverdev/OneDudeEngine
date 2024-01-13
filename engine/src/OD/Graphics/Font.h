@@ -6,7 +6,7 @@
 
 namespace OD{
 
-class Renderer;
+class Graphics;
 
 struct Character {
     unsigned int textureID;  // ID handle of the glyph texture
@@ -16,9 +16,9 @@ struct Character {
 };
     
 struct Font: public Asset{
-    friend class Renderer;
+    friend class Graphics;
 
-    static bool CreateFromFile(Font& font, const char* path);
+    static Ref<Font> CreateFromFile(const char* path);
 
 private:
     std::map<char, Character> characters;

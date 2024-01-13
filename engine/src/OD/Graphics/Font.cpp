@@ -22,7 +22,9 @@ void InitFreeFont(){
     freeFontHasInited = true;
 }
 
-bool Font::CreateFromFile(Font& font, const char* path){
+Ref<Font> Font::CreateFromFile(const char* path){
+    Ref<Font> font = CreateRef<Font>();
+
     InitFreeFont();
 
     FT_Face face;
@@ -74,15 +76,15 @@ bool Font::CreateFromFile(Font& font, const char* path){
             (unsigned int)face->glyph->advance.x
         };
 
-        font.characters.insert(std::pair<char, Character>(c, character));
+        font->characters.insert(std::pair<char, Character>(c, character));
     }
 
     FT_Done_Face(face);
     //FT_Done_FreeType(ft);
 
-    font.path = std::string(path);
+    font->path = std::string(path);
 
-    return true;
+    return font;
 }
 
 }

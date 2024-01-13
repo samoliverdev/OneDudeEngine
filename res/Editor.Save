@@ -1,0 +1,10 @@
+{
+    "Editor": {
+        "sceneHierarchyPanel.show": true,
+        "contentBrowserPanel.show": true,
+        "inspectorPanel.show": true,
+        "viewportPanel.show": true,
+        "profilePanel.show": false,
+        "rendererStatsPanel.show": true
+    }
+}

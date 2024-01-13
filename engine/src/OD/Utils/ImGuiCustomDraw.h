@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OD/Core/ImGui.h"
-#include "OD/Renderer/Material.h"
+#include "OD/Graphics/Material.h"
 
 namespace ImGui{
     void DrawMaterialAsset(const char* name, OD::Ref<OD::Material>& asset);

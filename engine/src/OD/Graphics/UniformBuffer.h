@@ -1,10 +1,11 @@
 #pragma once
+#include "OD/Defines.h"
 
 namespace OD{
 
 class UniformBuffer{
 public:
-    static bool Create(UniformBuffer& buffer); 
+    static Ref<UniformBuffer> Create();
     static void Destroy(UniformBuffer& buffer);
     static void Bind(UniformBuffer& buffer, int bind);
 

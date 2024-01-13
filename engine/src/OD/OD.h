@@ -16,16 +16,16 @@
 
 #include "OD/Editor/Editor.h"
 
-#include "OD/Renderer/Renderer.h"
-#include "OD/Renderer/Mesh.h"
-#include "OD/Renderer/Shader.h"
-#include "OD/Renderer/Texture.h"
-#include "OD/Renderer/Cubemap.h"
-#include "OD/Renderer/Camera.h"
-#include "OD/Renderer/Model.h"
-#include "OD/Renderer/Material.h"
-#include "OD/Renderer/Framebuffer.h"
-#include "OD/Renderer/Font.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Cubemap.h"
+#include "OD/Graphics/Camera.h"
+#include "OD/Graphics/Model.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Font.h"
 
 #include "OD/Animation/Animator.h"
 

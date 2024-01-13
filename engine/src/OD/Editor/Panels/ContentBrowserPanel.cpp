@@ -11,6 +11,9 @@ std::filesystem::path _assetsDirectory = "res/";
 std::filesystem::path _curDragDrop;
 
 ContentBrowserPanel::ContentBrowserPanel(){
+    name = "ContentBrowserPanel";
+    show = true;
+
     _curDirectory = _assetsDirectory;
 }
 
@@ -60,7 +63,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
                 std::replace(_pathString.begin(), _pathString.end(), '\\', '/'); // replace all 'x' to 'y'
 
                 if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
-                    _editor->SetSelectionAsset(AssetTypesDB::Get().assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
+                    editor->SetSelectionAsset(AssetTypesDB::Get().assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
                 }
             }
 

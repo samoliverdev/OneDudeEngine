@@ -13,10 +13,8 @@ Ref<Texture2D> AssetManager::LoadTexture2D(const std::string& filePath, Texture2
 
     LogInfo("LoadTexture2D: %s", filePath.c_str());
 
-
-    Ref<Texture2D> tex = CreateRef<Texture2D>();
-    bool result = Texture2D::CreateFromFile(*tex, filePath.c_str(), settings);
-    Assert(result == true);
+    Ref<Texture2D> tex = Texture2D::CreateFromFile(filePath.c_str(), settings);
+    Assert(tex != nullptr);
 
     textures[filePath] = tex;
     
@@ -28,9 +26,8 @@ Ref<Texture2D> AssetManager::LoadTexture2D(const std::string& filePath){
 
     LogInfo("LoadTexture2D: %s", filePath.c_str());
 
-    Ref<Texture2D> tex = CreateRef<Texture2D>();
-    bool result = Texture2D::CreateFromFile(*tex, filePath.c_str(), Texture2DSetting());
-    Assert(result == true);
+    Ref<Texture2D> tex = Texture2D::CreateFromFile(filePath.c_str(), Texture2DSetting());
+    Assert(tex != nullptr);
 
     textures[filePath] = tex;
     
@@ -42,9 +39,8 @@ Ref<Shader> AssetManager::LoadShaderFromFile(const std::string& filePath){
 
     LogInfo("LoadShaderFromFile: %s", filePath.c_str());
 
-    Ref<Shader> shader = CreateRef<Shader>();
-    bool result = Shader::CreateFromFile(*shader, filePath);
-    Assert(result == true);
+    Ref<Shader> shader = Shader::CreateFromFile(filePath);
+    Assert(shader != nullptr);
 
     shaders[filePath] = shader;
     return shader;

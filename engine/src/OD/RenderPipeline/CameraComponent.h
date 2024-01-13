@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
-#include "OD/Renderer/Mesh.h"
+#include "OD/Graphics/Mesh.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 

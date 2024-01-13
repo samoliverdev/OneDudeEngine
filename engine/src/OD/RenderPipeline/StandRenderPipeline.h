@@ -3,12 +3,12 @@
 #include <vector>
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/BaseRenderPipeline.h"
-#include "OD/Renderer/Culling.h"
-#include "OD/Renderer/Shader.h"
-#include "OD/Renderer/Mesh.h"
-#include "OD/Renderer/Framebuffer.h"
-#include "OD/Renderer/Material.h"
-#include "OD/Renderer/Cubemap.h"
+#include "OD/Graphics/Culling.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Cubemap.h"
 
 #include "CameraComponent.h"
 #include "MeshRendererComponent.h"

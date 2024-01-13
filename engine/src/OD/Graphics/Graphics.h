@@ -10,7 +10,7 @@
 
 namespace OD {
 
-class Renderer {
+class Graphics {
     friend class Application;
 public:
     enum class RenderMode{SHADED, WIREFRAME};

@@ -81,4 +81,5 @@ struct Animator_11: OD::Module {
 
     void OnGUI() override {}
     void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

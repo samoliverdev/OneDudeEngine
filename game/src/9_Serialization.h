@@ -163,5 +163,6 @@ struct Serialization_9: public OD::Module{
 
     void OnGUI() override {}
     void OnResize(int width, int height) override{}
+    void OnExit() override {}
 
 };

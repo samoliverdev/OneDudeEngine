@@ -192,4 +192,5 @@ struct Physics_6: OD::Module {
     }
 
     void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

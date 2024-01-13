@@ -37,6 +37,28 @@ void Editor::OnInit(){
     sceneHierarchyPanel.SetEditor(this);
     inspectorPanel.SetEditor(this);
     contentBrowserPanel.SetEditor(this);
+
+    mainWorkspace.SetEditor(this);
+    mainWorkspace.AddPanel(&sceneHierarchyPanel);
+    mainWorkspace.AddPanel(&inspectorPanel);
+    mainWorkspace.AddPanel(&contentBrowserPanel);
+    mainWorkspace.AddPanel(&viewportPanel);
+    mainWorkspace.AddPanel(&profilePanel);
+    mainWorkspace.AddPanel(&rendererStatsPanel);
+
+    std::ifstream is("res/Editor.Save");
+    if(is.fail() == false){
+        cereal::JSONInputArchive archive{is};
+        archive(cereal::make_nvp("Editor", *this));
+    }
+}
+
+void Editor::OnExit(){
+    LogInfo("Edito::OnExit");
+
+    std::ofstream os("res/Editor.Save");
+    cereal::JSONOutputArchive archive{os};
+    archive(cereal::make_nvp("Editor", *this));
 }
 
 void Editor::OnUpdate(float deltaTime){
@@ -46,7 +68,7 @@ void Editor::OnUpdate(float deltaTime){
 
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
-    Assert(dynamic_cast<StandRenderPipeline2*>(renderPipeline));
+    //Assert(dynamic_cast<StandRenderPipeline2*>(renderPipeline));
 
     if(SceneManager::Get().GetActiveScene()->Running()){
         renderPipeline->SetOverrideCamera(nullptr, Transform());
@@ -95,6 +117,16 @@ void Editor::OnUpdate(float deltaTime){
 void Editor::OnRender(float deltaTime){
 
 }
+
+void Editor::OnGUI(){
+    OD_PROFILE_SCOPE("Editor::OnGUI");
+
+    if(open == false) return;
+
+    DrawMainPanel();
+}
+
+void Editor::OnResize(int width, int height){}
 
 Scene* lastScene;
 
@@ -193,6 +225,11 @@ void Editor::HandleShotcuts(){
 
 void Editor::DrawMainWorkspace(){
     OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
+
+    mainWorkspace.SetScene(SceneManager::Get().GetActiveScene());
+    mainWorkspace.SetEditor(this);
+    mainWorkspace.OnGui();
+    return;
     
     sceneHierarchyPanel.SetScene(SceneManager::Get().GetActiveScene());
     sceneHierarchyPanel.SetEditor(this);
@@ -206,9 +243,9 @@ void Editor::DrawMainWorkspace(){
 
     //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::Begin("Renderer Stats");
-    ImGui::Text("DrawCalls: %d", Renderer::drawCalls);
-    ImGui::Text("Vertices: %dk", Renderer::vertices / 1000);
-    ImGui::Text("Tris: %dk", Renderer::tris / 1000);
+    ImGui::Text("DrawCalls: %d", Graphics::drawCalls);
+    ImGui::Text("Vertices: %dk", Graphics::vertices / 1000);
+    ImGui::Text("Tris: %dk", Graphics::tris / 1000);
     ImGui::End();
 
     if(ImGui::Begin("Profile")){
@@ -310,6 +347,14 @@ void Editor::DrawMainMenuBar(){
             ImGui::EndMenu();
         }
 
+        if(ImGui::BeginMenu("MainWorkspace")){
+            for(auto i: mainWorkspace.panels){
+                ImGui::MenuItem(i->name.c_str(), "", &i->show);
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
     }
 }
@@ -392,7 +437,6 @@ void Editor::DrawMainPanel(){
         }
     }
     ImGui::End();
-
     
     //_sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
     //_sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
@@ -492,15 +536,5 @@ void Editor::DrawGizmos(){
         if(gizmoType == Editor::GizmosType::Scale) tc.LocalScale(s);
     }
 }
-
-void Editor::OnGUI(){
-    OD_PROFILE_SCOPE("Editor::OnGUI");
-
-    if(open == false) return;
-
-    DrawMainPanel();
-}
-
-void Editor::OnResize(int width, int height){}
 
 }

@@ -2,11 +2,11 @@
 
 #include "OD/Defines.h"
 #include "Asset.h"
-#include "OD/Renderer/Mesh.h"
-#include "OD/Renderer/Model.h"
-#include "OD/Renderer/Shader.h"
-#include "OD/Renderer/Texture.h"
-#include "OD/Renderer/Material.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Material.h"
 #include <typeinfo>
 #include <typeindex>
 #include <functional>

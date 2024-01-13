@@ -12,9 +12,9 @@
 namespace OD {
 
 class Shader: public Asset{
-    friend class Renderer;
+    friend class Graphics;
 public:
-    static bool CreateFromFile(Shader& shader, const std::string& filepath);
+    static Ref<Shader> CreateFromFile(const std::string& filepath);
     static void Destroy(Shader& shader);
     static void Bind(Shader& shader);
     static void Unbind();
@@ -64,6 +64,7 @@ private:
     std::unordered_map<std::string, GLint> uniforms;
     std::vector<std::vector<std::string>> properties;
     
+    bool Create(const std::string& filepath);
     std::string load(std::string path);
     GLint GetLocation(const char* name);
 	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);

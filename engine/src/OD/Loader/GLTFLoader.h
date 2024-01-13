@@ -4,7 +4,7 @@
 #include "OD/Animation/Pose.h"
 #include "OD/Animation/Clip.h"
 #include "OD/Animation/Skeleton.h"
-#include "OD/Renderer/Mesh.h"
+#include "OD/Graphics/Mesh.h"
 #include <vector>
 #include <string>
 

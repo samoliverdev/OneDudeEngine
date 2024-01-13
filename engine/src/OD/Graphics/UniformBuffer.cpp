@@ -4,15 +4,17 @@
 
 namespace OD{
 
-bool UniformBuffer::Create(UniformBuffer& buffer){
-    glGenBuffers(1, &buffer.rendererId);
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer.rendererId);
+Ref<UniformBuffer> UniformBuffer::Create(){
+    Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();
+
+    glGenBuffers(1, &buffer->rendererId);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer->rendererId);
     glCheckError();
     
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glCheckError();
     
-    return true;
+    return buffer;
 }
 
 void UniformBuffer::Destroy(UniformBuffer& buffer){

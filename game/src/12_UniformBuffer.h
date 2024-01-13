@@ -1,7 +1,7 @@
 #pragma once
 
 #include <OD/OD.h>
-#include <OD/Renderer/UniformBuffer.h>
+#include <OD/Graphics/UniformBuffer.h>
 #include "CameraMovement.h"
 #include "Ultis.h"
 
@@ -10,7 +10,7 @@ using namespace OD;
 struct UniformBuffer_12: OD::Module {
     Ref<Model> model;
     Ref<Shader> shader;
-    UniformBuffer cBuffer;
+    Ref<UniformBuffer> cBuffer;
 
     Transform camTransform;
     Camera cam;
@@ -28,7 +28,7 @@ struct UniformBuffer_12: OD::Module {
 
         camMove.transform = &camTransform;
 
-        UniformBuffer::Create(cBuffer);
+        cBuffer = UniformBuffer::Create();
 
         model = AssetManager::Get().LoadModel("res/Game/Models/cube.glb");
         model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Game/Shaders/UniformBufferInstancing.glsl"));
@@ -58,9 +58,9 @@ struct UniformBuffer_12: OD::Module {
         cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
         cam.view = math::inverse(camTransform.GetLocalModelMatrix());
 
-        Renderer::Begin();
-        Renderer::Clean(0.1f, 0.1f, 0.1f, 1);
-        Renderer::SetCamera(cam);
+        Graphics::Begin();
+        Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+        Graphics::SetCamera(cam);
 
         model->materials[0]->UpdateDatas();
 
@@ -70,23 +70,23 @@ struct UniformBuffer_12: OD::Module {
         }
         model->meshs[0]->UpdateMeshInstancingModelMatrixs();
 
-        cBuffer.SetData(&transforms[0], sizeof(Matrix4) * transforms.size(), 0);
-        model->materials[0]->GetShader()->SetUniforBuffer("Model", cBuffer, 0);
+        cBuffer->SetData(&transforms[0], sizeof(Matrix4) * transforms.size(), 0);
+        model->materials[0]->GetShader()->SetUniforBuffer("Model", *cBuffer, 0);
         
-        Renderer::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
-        Renderer::DrawMeshInstancing(*model->meshs[0], transforms.size());
+        Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
+        Graphics::DrawMeshInstancing(*model->meshs[0], transforms.size());
         
-        Renderer::End();
+        Graphics::End();
     }
 
     void OnGUI() override {
         ImGui::Begin("Renderer Stats");
-        ImGui::Text("DrawCalls: %d", Renderer::drawCalls);
-        ImGui::Text("Vertices: %dk", Renderer::vertices / 1000);
-        ImGui::Text("Tris: %dk", Renderer::tris / 1000);
+        ImGui::Text("DrawCalls: %d", Graphics::drawCalls);
+        ImGui::Text("Vertices: %dk", Graphics::vertices / 1000);
+        ImGui::Text("Tris: %dk", Graphics::tris / 1000);
         ImGui::End();
     }
 
-    void OnResize(int width, int height) override {;
-    }
+    void OnResize(int width, int height) override {}
+    void OnExit() override {}
 };

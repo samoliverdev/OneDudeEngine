@@ -20,7 +20,7 @@ struct Rigidbody{
 class Debuger: public btIDebugDraw{
 public:
     void drawLine(const btVector3 &from,const btVector3&to, const btVector3 &color) override{
-        Renderer::DrawLine(
+        Graphics::DrawLine(
             Vector3(from.x(), from.y(), from.z()), 
             Vector3(to.x(), to.y(), to.z()), 
             Vector3(color.x(), color.y(), color.z()),
@@ -33,13 +33,13 @@ public:
         transform.LocalPosition(Vector3(PointOnB.x(), PointOnB.y(), PointOnB.z()));
         transform.LocalScale(Vector3(0.25f, 0.25f, 0.25f));
 
-        Renderer::DrawWireCube(
+        Graphics::DrawWireCube(
             transform.GetLocalModelMatrix(), 
             Vector3(color.x(), color.y(), color.z()), 
             2
         );
 
-        Renderer::DrawLine(
+        Graphics::DrawLine(
             transform.LocalPosition(), 
             transform.LocalPosition() + Vector3(normalOnB.x(), normalOnB.y(), normalOnB.z()), 
             Vector3(color.x(), color.y(), color.z()),

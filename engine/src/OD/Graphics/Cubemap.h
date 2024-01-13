@@ -5,13 +5,12 @@
 
 namespace OD{
 
-class Renderer;
+class Graphics;
 
 class Cubemap: public Asset{
-    friend class Renderer;
+    friend class Graphics;
 public:
-    static bool CreateFromFile(
-        Cubemap& cubemap,
+    static Ref<Cubemap> CreateFromFile(
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back
     ); 
