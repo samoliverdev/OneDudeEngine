@@ -79,6 +79,7 @@ target_include_directories(engine PUBLIC
     engine/vendor/ImGuizmo/
     engine/vendor/glfw/include/
     engine/vendor/assimp/include/
+    #engine/vendor/assimp/code/
     engine/vendor/bullet3/src
     engine/vendor/entt/
     engine/vendor/soloud/include/

@@ -50,12 +50,14 @@ struct Animator_11: OD::Module {
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Ref<Model> charModel = AssetManager::Get().LoadModel(
-            "res/Game/Animations/Walking.dae",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl")
+            //"res/Game/Animations/Walking.dae",
+            "res/Game/Animations/RumbaDancing.glb",
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/LitSkinned.glsl")
+            //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl")
         );
         Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
-        charTrans.LocalScale(Vector3(200.0f, 200.0f, 200.0f));
+        charTrans.LocalScale(Vector3(0.01f, 0.01f, 0.01f));
         SkinnedMeshRendererComponent& charRenderer = charEntity.AddComponent<SkinnedMeshRendererComponent>();
         charRenderer.SetModel(charModel);
         charRenderer.UpdatePosePalette();
@@ -69,14 +71,13 @@ struct Animator_11: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        Scene* scene = SceneManager::Get().GetActiveScene();
-
-        scene->Update();
-        if(scene->Running() == false) return;
+        //Scene* scene = SceneManager::Get().GetActiveScene();
+        //scene->Update();
+        //if(scene->Running() == false) return;
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Draw();
+        //SceneManager::Get().GetActiveScene()->Draw();
     }
 
     void OnGUI() override {}

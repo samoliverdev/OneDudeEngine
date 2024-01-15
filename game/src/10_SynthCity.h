@@ -20,8 +20,8 @@ struct SynthCity_10: OD::Module {
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
         Scene* scene = SceneManager::Get().NewScene();
-        scene->RemoveSystem<StandRenderPipeline>();
-        scene->AddSystem<StandRenderPipeline2>();
+        //scene->RemoveSystem<StandRenderPipeline>();
+        //scene->AddSystem<StandRenderPipeline2>();
 
         Entity env = scene->AddEntity("Env");
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
@@ -58,11 +58,11 @@ struct SynthCity_10: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Update();
+        //SceneManager::Get().GetActiveScene()->Update();
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Draw();
+        //SceneManager::Get().GetActiveScene()->Draw();
     }
 
     void OnGUI() override {

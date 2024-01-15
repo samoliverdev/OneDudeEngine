@@ -7,15 +7,22 @@ namespace ImGui{
 
 using namespace OD;
 
-void DrawMaterialAsset(const char* name, OD::Ref<OD::Material>& asset){
-
+void DrawMaterialAsset(const char* name, OD::Ref<OD::Material>& asset, OD::Ref<OD::Material> preview){
     ImGui::BeginGroup();
 
-    ImGui::Text("%s: %s", name, asset == nullptr ? "None" : asset->Path().c_str());
-
-    if (asset != nullptr && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
-        if(Editor::Get() != nullptr){
-            Editor::Get()->SetSelectionAsset(asset);
+    if(preview != nullptr){
+        ImGui::Text("%s: %s", name, asset == nullptr ? preview->Path().c_str() : asset->Path().c_str());
+        if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+            if(Editor::Get() != nullptr){
+                Editor::Get()->SetSelectionAsset(asset == nullptr ? preview : asset);
+            }
+        }
+    } else {
+        ImGui::Text("%s: %s", name, asset == nullptr ? "None" : asset->Path().c_str());
+        if(asset != nullptr && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+            if(Editor::Get() != nullptr){
+                Editor::Get()->SetSelectionAsset(asset);
+            }
         }
     }
 

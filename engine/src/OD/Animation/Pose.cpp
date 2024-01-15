@@ -87,6 +87,7 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
     }*/
 
 #if 0
+    // Less Otimized
     unsigned int size = Size();
     if(out.size() != size){
         out.reserve(size);
@@ -96,13 +97,15 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
     }
 
 #else
+    // More Otmized
     int size = (int)Size();
     if((int)out.size() != size){ out.resize(size); }
-    int i = 0;
 
+    int i = 0;
     for(; i < size; ++i){
         int parent = parents[i];
-        if(parent > i) { break; }
+        if(parent > i) break;
+
         Matrix4 global = joints[i].GetLocalModelMatrix();
         if(parent >= 0){
             global = out[parent] * global;
@@ -115,7 +118,10 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
 #endif
 }
 
+//TODO: To Revise this function
 void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses){
+#if 1
+    // Less Otimized
     unsigned int size = Size();
     if(out.size() != size){
         out.resize(size);
@@ -123,6 +129,22 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4
     for(unsigned int i = 0; i < size; ++i){
         out[i] = GetGlobalMatrix(i) * invBindPoses[i];
     }
+#else 
+    GetMatrixPalette(out);
+    for(int i = 0; i < out.size(); ++i){
+        out[i] = out[i] * invBindPoses[i];
+    }
+#endif
+}
+
+std::vector<int> Pose::GetChildrens(unsigned int index){
+    std::vector<int> out;
+    
+    for(int i = 0; i < joints.size(); i++){
+        if(parents[i] == index) out.push_back(i);
+    }
+
+    return out;
 }
 
 int Pose::GetParent(unsigned int index){

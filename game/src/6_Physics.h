@@ -140,8 +140,7 @@ struct Physics_6: OD::Module {
 
     void OnUpdate(float deltaTime) override {
         Scene* scene = SceneManager::Get().GetActiveScene();
-
-        scene->Update();
+        //scene->Update();
         if(scene->Running() == false) return;
 
         TransformComponent& camT = camera.GetComponent<TransformComponent>();
@@ -161,7 +160,7 @@ struct Physics_6: OD::Module {
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Draw();
+        //SceneManager::Get().GetActiveScene()->Draw();
         //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
     }
 

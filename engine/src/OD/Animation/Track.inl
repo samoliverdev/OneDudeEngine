@@ -121,6 +121,7 @@ T Track<T,N>::Hermite(float t, const T& p1, const T& s1, const T& _p2, const T& 
     float h2 = -2.0f * ttt + 3.0f * tt;
     float h3 = ttt - 2.0f * tt + t;
     float h4 = ttt - tt;
+
     T result = p1 * h1 + p2 * h2 + s1 * h3 + s2 * h4;
     return AdjustHermiteResult(result);
 }
@@ -152,7 +153,7 @@ int Track<T,N>::FrameIndex(float time, bool looping){
     for(int i = (int)size -1; i >= 0; --i){
         if(time >= frames[i].time) return i;
     }
-
+    
     return -1;
 }
 

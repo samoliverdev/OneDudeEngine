@@ -109,7 +109,7 @@ void Application::OnExit(){
 
     for(auto i: modules){
         i->OnExit();
-        delete i;
+        //delete i;
     }
 
     Graphics::Shutdown();

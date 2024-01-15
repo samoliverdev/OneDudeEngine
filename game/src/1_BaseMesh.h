@@ -151,6 +151,35 @@ struct BaseMesh_1: OD::Module {
         fontShader = Shader::CreateFromFile("res/Engine/Shaders/Font.glsl");
 
         font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+
+        LogInfo("-------------ShaderVariantCreateTest------------");
+        std::vector<std::vector<std::string>> multCompile{
+            std::vector<std::string>{ "Default", "Skinned", "Instancing" },
+            std::vector<std::string>{ "Opaque", "Fade"},
+            std::vector<std::string>{ "White", "Black"}
+        };
+
+        for(int j = 0; j < multCompile[0].size(); j++){
+            std::string other = GetNext(multCompile, 0, j);
+            if(other == "None") continue;
+            LogInfo("%s", other.c_str());
+        }
+    }
+
+    std::string GetNext(std::vector<std::vector<std::string>>& multCompile, int x, int y){
+        if(x >= multCompile.size()) return "None";
+        if(y >= multCompile[x].size()) return "None";
+
+        for(int j = 0; j < multCompile[x].size(); j++){
+            if(j == y){
+                std::string next = GetNext(multCompile, x+1, j);
+                if(next == "None") return "None";
+
+                return multCompile[x][j] + "-" + next;
+            }
+        }
+
+        return "None";
     }
 
     void OnUpdate(float deltaTime) override {

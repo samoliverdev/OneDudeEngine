@@ -12,6 +12,7 @@
 #pragma BeginPass 
 
 #pragma SupportInstancing true
+#pragma DrawType Stand
 
 #pragma CullFace BACK
 #pragma DepthTest LESS

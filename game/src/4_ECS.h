@@ -189,7 +189,7 @@ struct ECS_4: public OD::Module {
         //mainEntity.GetComponent<TransformComponent>().localEulerAngles(Vector3(0, Platform::GetTime() * 40, 0));
         //otherEntity.GetComponent<TransformComponent>().position(Vector3(-5, 2, -1.5f));
 
-        SceneManager::Get().GetActiveScene()->Update();
+        //SceneManager::Get().GetActiveScene()->Update();
 
         /*if(Input::IsKeyDown(KeyCode::A)){
             LogInfo("OnKeyDown A");
@@ -208,7 +208,7 @@ struct ECS_4: public OD::Module {
         //Renderer::SetDepthTest(DepthTest::LESS);
         //Renderer::SetCullFace(CullFace::BACK);
 
-        SceneManager::Get().GetActiveScene()->Draw();
+        //SceneManager::Get().GetActiveScene()->Draw();
 
         /*Vector3 pos = otherEntity.GetComponent<TransformComponent>().position();
 

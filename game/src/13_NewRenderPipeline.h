@@ -213,11 +213,11 @@ struct NewRenderPipeline_13: public OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Update();
+        //SceneManager::Get().GetActiveScene()->Update();
     }   
 
     void OnRender(float deltaTime) override {
-        SceneManager::Get().GetActiveScene()->Draw();
+        //SceneManager::Get().GetActiveScene()->Draw();
     }
 
     void OnGUI() override {}

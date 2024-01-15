@@ -38,8 +38,9 @@ float TClip<TRACK>::Sample(Pose& outPose, float time){
         Transform local = outPose.GetLocalTransform(j);
         Transform animated = tracks[i].Sample(local, time, looping);
 
+        //INFO: Used to ignore RootMotion 
         if(i == 0){
-            animated.LocalPosition(Vector3Zero);
+        //    animated.LocalPosition(Vector3Zero);
         }
 
         outPose.SetLocalTransform(j, animated);

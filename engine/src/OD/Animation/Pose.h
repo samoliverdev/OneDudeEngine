@@ -13,6 +13,7 @@ public:
     Pose(unsigned int numJoints);
     void Resize(unsigned int size);
     unsigned int Size();
+    std::vector<int> GetChildrens(unsigned int index);
     int GetParent(unsigned int index);
     void SetParent(unsigned int index, int parent);
     Transform GetLocalTransform(unsigned int index);

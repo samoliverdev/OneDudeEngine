@@ -349,6 +349,22 @@ SceneManager& SceneManager::Get(){
     return sceneManager;
 }
 
+void SceneManager::OnInit(){}
+void SceneManager::OnExit(){}
+
+void SceneManager::OnUpdate(float deltaTime){
+    if(GetActiveScene() == nullptr) return;
+    GetActiveScene()->Update();
+}
+
+void SceneManager::OnRender(float deltaTime){
+    if(GetActiveScene() == nullptr) return;
+    GetActiveScene()->Draw();
+}
+
+void SceneManager::OnGUI(){}
+void SceneManager::OnResize(int width, int height){}
+
 SceneManager::SceneState SceneManager::GetSceneState(){ 
     return sceneState; 
 }
@@ -358,7 +374,7 @@ bool SceneManager::InEditor(){
 }
 
 Scene* SceneManager::GetActiveScene(){ 
-    if(activeScene == nullptr) return NewScene();
+    //if(activeScene == nullptr) return NewScene();
     return activeScene; 
 }
 

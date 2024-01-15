@@ -100,6 +100,21 @@ AABB MeshRendererComponent::GetGlobalAABB(TransformComponent& transform){
     return result;
 }
 
+void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
+    std::string name = skeleton.GetJointName(index) + "_" + std::to_string(index);
+    std::vector<int> ch = pose.GetChildrens(index);
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+    if(ch.size() == 0) flags |= ImGuiTreeNodeFlags_Leaf;
+
+    if(ImGui::TreeNodeEx(name.c_str(), flags)){
+        for(auto i: ch){
+            DrawPoseNode(skeleton, pose, i);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void SkinnedMeshRendererComponent::OnGui(Entity& e){
     SkinnedMeshRendererComponent& mesh = e.GetComponent<SkinnedMeshRendererComponent>();
 
@@ -130,7 +145,7 @@ void SkinnedMeshRendererComponent::OnGui(Entity& e){
                 }
                 ImGui::EndGroup();*/
 
-                ImGui::DrawMaterialAsset("override", mesh.materialsOverride[index]);
+                ImGui::DrawMaterialAsset("override", mesh.materialsOverride[index], mesh.model->materials[index]);
     
                 ImGui::TreePop();
             }
@@ -153,6 +168,19 @@ void SkinnedMeshRendererComponent::OnGui(Entity& e){
         ImGui::Text("Mesh: %zd", mesh.model->meshs.size());
         ImGui::Text("Materials: %zd", mesh.model->materials.size());
         //ImGui::Text("Animations: %zd", mesh.model()->animations.size());
+        ImGui::TreePop();
+    }
+
+    if(mesh.model == nullptr) return;
+
+    if(ImGui::TreeNode("Debug")){
+        Pose& pose = mesh.model->skeleton.GetBindPose();
+        for(int i = 0; i < pose.Size(); i++){
+            if(pose.GetParent(i) >= 0) continue;
+
+            DrawPoseNode(mesh.model->skeleton, pose, i);
+        }
+
         ImGui::TreePop();
     }
 }

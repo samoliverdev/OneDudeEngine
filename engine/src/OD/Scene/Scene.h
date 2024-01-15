@@ -9,6 +9,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/Module.h"
 #include <unordered_map>
 #include <string>
 #include <entt/entt.hpp>
@@ -179,7 +180,7 @@ private:
     entt::registry registry;
 };
 
-class SceneManager{
+class SceneManager: public Module{
 public:
     friend class Editor;
     friend class SceneHierarchyPanel;
@@ -190,6 +191,13 @@ public:
     enum class SceneState {Playing, Paused, Editor};
 
     static SceneManager& Get();
+    
+    void OnInit() override;
+    void OnExit() override;
+    void OnUpdate(float deltaTime) override;
+    void OnRender(float deltaTime) override;
+    void OnGUI() override;
+    void OnResize(int width, int height) override;
 
     SceneState GetSceneState();
     inline bool InEditor();

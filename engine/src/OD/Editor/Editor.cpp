@@ -178,6 +178,9 @@ void Editor::NewScene(){
     renderPipeline->SetOverrideFrameBuffer(nullptr);
     Scene* scene = SceneManager::Get().NewScene();
 
+    Entity e = scene->AddEntity("Enviroment");
+    e.AddComponent<EnvironmentComponent>();
+
     UnselectAll();
     curScenePath = "";
 }   
@@ -223,14 +226,103 @@ void Editor::HandleShotcuts(){
     if(Input::IsKeyDown(KeyCode::R)) gizmoType = Editor::GizmosType::Scale;
 }
 
+void Editor::DrawMainPanel(){
+    OD_PROFILE_SCOPE("Editor::DrawMainPanel");
+
+    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    DrawMainMenuBar();
+
+    static bool workspace = true;
+    static bool code = true;
+    bool isCode;
+
+    ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
+    float height = ImGui::GetFrameHeight();
+    if(ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)){
+        if(ImGui::BeginMenuBar()){
+            bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
+            ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
+            ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+            ImGui::Button("Test", ImVec2(0, height-1));
+
+            static int e = 0;
+            ImGui::RadioButton("radio a", &e, 0); ImGui::SameLine();
+            ImGui::RadioButton("radio b", &e, 1); ImGui::SameLine();
+            ImGui::RadioButton("radio c", &e, 2);
+            
+            ImGui::BeginTabBar("BeginTabBar");
+            
+            if(ImGui::BeginTabItem("Workspace", &workspace, ImGuiTabItemFlags_NoCloseButton)){
+                //DrawMainWorkspace();
+                isCode = false;
+                ImGui::EndTabItem();
+            }
+
+            if(ImGui::BeginTabItem("Workspace2", &code)){
+                isCode = true;
+                ImGui::EndTabItem();  
+            }
+            
+            ImGui::EndTabBar();
+            
+            ImGui::EndMenuBar();
+        }
+    }
+    ImGui::End();
+
+    if(ImGui::BeginViewportSideBar("##MainStatusBar", NULL, ImGuiDir_Down, height, window_flags)){
+        if(ImGui::BeginMenuBar()){
+            ImGui::Text("Happy status bar");
+            ImGui::EndMenuBar();
+        }
+    }
+    ImGui::End();
+    
+    if(isCode == false){
+        DrawMainWorkspace();
+    }
+}
+
+void Editor::DrawMainMenuBar(){
+    OD_PROFILE_SCOPE("Editor::DrawMainMenuBar");
+
+    if(ImGui::BeginMainMenuBar()){
+        if(ImGui::BeginMenu("File")){
+            if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
+            if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
+            if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
+            if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("Runtime")){
+            if(ImGui::MenuItem("Play", "F1")) PlayScene();
+            if(ImGui::MenuItem("Stop", "F2")) StopScene();
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("MainWorkspace")){
+            for(auto i: mainWorkspace.panels){
+                ImGui::MenuItem(i->name.c_str(), "", &i->show);
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+}
+
 void Editor::DrawMainWorkspace(){
     OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
 
     mainWorkspace.SetScene(SceneManager::Get().GetActiveScene());
     mainWorkspace.SetEditor(this);
     mainWorkspace.OnGui();
-    return;
     
+    /*
     sceneHierarchyPanel.SetScene(SceneManager::Get().GetActiveScene());
     sceneHierarchyPanel.SetEditor(this);
 
@@ -327,151 +419,7 @@ void Editor::DrawMainWorkspace(){
     ImGui::End();
     ImGui::PopStyleVar();
     //io.ConfigWindowsMoveFromTitleBarOnly = false;
-}
-
-void Editor::DrawMainMenuBar(){
-    OD_PROFILE_SCOPE("Editor::DrawMainMenuBar");
-
-    if(ImGui::BeginMainMenuBar()){
-        if(ImGui::BeginMenu("File")){
-            if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
-            if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
-            if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
-            if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
-            ImGui::EndMenu();
-        }
-
-        if(ImGui::BeginMenu("Runtime")){
-            if(ImGui::MenuItem("Play", "F1")) PlayScene();
-            if(ImGui::MenuItem("Stop", "F2")) StopScene();
-            ImGui::EndMenu();
-        }
-
-        if(ImGui::BeginMenu("MainWorkspace")){
-            for(auto i: mainWorkspace.panels){
-                ImGui::MenuItem(i->name.c_str(), "", &i->show);
-            }
-
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
-    }
-}
-
-void Editor::DrawMainPanel(){
-    OD_PROFILE_SCOPE("Editor::DrawMainPanel");
-    //DrawGizmos();
-
-    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
-
-    /*static bool open = true;
-    if (open){
-    ImGuiWindowFlags dockspace_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    dockspace_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    dockspace_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    ImGui::SetNextWindowBgAlpha(0); // Transparent background
-    ImGui::Begin("DockSpace", &open, dockspace_flags);
-    ImGui::PopStyleVar(3);
-
-    // Dockspace layout
-    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable){
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-    }*/
-
-    DrawMainMenuBar();
-
-    static bool workspace = true;
-    static bool code = true;
-    bool isCode;
-
-    ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
-    float height = ImGui::GetFrameHeight();
-    if(ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)){
-        if(ImGui::BeginMenuBar()){
-            bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
-            ImGui::Text("Scene Status: %s", sceneRunning ? "Running" : "Idle");
-            ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
-            ImGui::Button("Test", ImVec2(0, height-1));
-
-            static int e = 0;
-            ImGui::RadioButton("radio a", &e, 0); ImGui::SameLine();
-            ImGui::RadioButton("radio b", &e, 1); ImGui::SameLine();
-            ImGui::RadioButton("radio c", &e, 2);
-            
-            ImGui::BeginTabBar("BeginTabBar");
-            
-            if(ImGui::BeginTabItem("Workspace", &workspace, ImGuiTabItemFlags_NoCloseButton)){
-                //DrawMainWorkspace();
-                isCode = false;
-                ImGui::EndTabItem();
-            }
-
-            if(ImGui::BeginTabItem("Workspace2", &code)){
-                isCode = true;
-                ImGui::EndTabItem();  
-            }
-            
-            ImGui::EndTabBar();
-            
-            ImGui::EndMenuBar();
-        }
-    }
-    ImGui::End();
-
-    if(ImGui::BeginViewportSideBar("##MainStatusBar", NULL, ImGuiDir_Down, height, window_flags)){
-        if(ImGui::BeginMenuBar()){
-            ImGui::Text("Happy status bar");
-            ImGui::EndMenuBar();
-        }
-    }
-    ImGui::End();
-    
-    //_sceneHierarchyPanel.SetScene(SceneManager::Get().activeScene());
-    //_sceneHierarchyPanel.OnGui(&_showSceneHierarchy, &_showInspector);
-
-    /*
-    if(workspace){
-        DrawMainWorkspace();
-    }
-    if(code){
-        ImGui::Begin("Code");
-        ImGui::End();
-    }*/
-
-    if(isCode == false){
-        DrawMainWorkspace();
-    }
-
-    /*if(isCode == true){
-        static bool test1 = true;
-        if(test1 && ImGui::Begin("Test1__", &test1)){
-            ImGui::Text("Scene Status");
-            ImGui::End();
-        }
-
-        static bool test2 = true;
-        if(test2 && ImGui::Begin("Test2__", &test2)){
-            ImGui::Text("Scene Status");
-            ImGui::End();
-        }
-    }*/
-
-    //DrawGizmos();
-
-    //}
-    //if(open) ImGui::End();
+    */
 }
 
 void Editor::DrawGizmos(){
