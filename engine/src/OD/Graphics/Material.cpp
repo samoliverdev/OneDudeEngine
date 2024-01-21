@@ -10,6 +10,7 @@
 namespace OD{
 
 uint32_t Material::baseId = 0;
+std::unordered_map<std::string, MaterialMap> Material::globalMaps;
 
 Material::Material(){
     id = baseId;
@@ -17,19 +18,19 @@ Material::Material(){
 }
 
 Material::Material(Ref<Shader> s){
-    shader = s; 
-    UpdateMaps();
-
+    SetShader(s);
     id = baseId;
     baseId += 1;
 }
 
 Ref<Shader> Material::GetShader(){ 
-    return shader; 
+    //return shader;
+    return uberShader->GetCurrentShader(); 
 }
 
 void Material::SetShader(Ref<Shader> s){ 
-    shader = s; 
+    //shader = s; 
+    uberShader = CreateRef<UberShader>(s);
     UpdateMaps(); 
 }
 
@@ -38,8 +39,8 @@ uint32_t Material::MaterialId(){
 }
 
 bool Material::IsBlend(){
-    if(shader == nullptr) return false;
-    return shader->IsBlend();
+    if(GetShader() == nullptr) return false;
+    return GetShader()->IsBlend();
 }
 
 bool Material::EnableInstancingValid(){ 
@@ -51,34 +52,38 @@ bool Material::EnableInstancing(){
 }
 
 bool Material::SupportInstancing(){ 
-    return shader != nullptr && shader->SupportInstancing(); 
+    return GetShader() != nullptr && GetShader()->SupportInstancing(); 
+}
+
+void Material::SetInt(const char* name, int value){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Int;
+    map.valueInt = value;
 }
 
 void Material::SetFloat(const char* name, float value, float min, float max){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Float && map.value == value) return;
-
     map.type = MaterialMap::Type::Float;
     map.value = value;
     map.valueMin = min;
     map.valueMax = max;
 }
 
+void Material::SetFloat(const char* name, float* value, int count){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::FloatList;
+    map.list = value;
+    map.listCount = count;
+}
+
 void Material::SetVector2(const char* name, Vector2 value){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Vector2 && map.vector == Vector4(value.x, value.y, 0, 1)) return;
-
     map.type = MaterialMap::Type::Vector2;
     map.vector = Vector4(value.x, value.y, 0, 1);
 }
 
 void Material::SetVector3(const char* name, Vector3 value, bool isColor){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Vector3 && map.vector == Vector4(value.x, value.y, value.z, 1)) return;
-
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
     map.vectorIsColor = isColor;
@@ -86,55 +91,148 @@ void Material::SetVector3(const char* name, Vector3 value, bool isColor){
 
 void Material::SetVector4(const char* name, Vector4 value, bool isColor){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Vector4 &&  map.vector == value) return;
-
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
     map.vectorIsColor = isColor;
 }
 
+void Material::SetVector4(const char* name, Vector4* value, int count){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Vector4List;
+    map.list = value;
+    map.listCount = count;
+}
+
 void Material::SetMatrix4(const char* name, Matrix4 value){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Matrix4) return;
-
     map.type = MaterialMap::Type::Matrix4;
     map.matrix = value;
 }   
 
+void Material::SetMatrix4(const char* name, Matrix4* value, int count){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Matrix4List;
+    map.list = value;
+    map.listCount = count;
+}
+
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Texture && map.texture == tex) return;
-
     map.type = MaterialMap::Type::Texture;
     map.texture = tex;
 }
 
-void Material::SetTexture(const char* name, Framebuffer* tex){
+void Material::SetTexture(const char* name, Framebuffer* tex, int bind, int attachment){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Framebuffer && map.framebuffer == tex) return;
-
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;
+    map.framebufferBind = bind;
+    map.framebufferAttachment = attachment;
 }
 
 void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
     MaterialMap& map = maps[name];
-
-    if(map.type == MaterialMap::Type::Cubemap && map.cubemap == tex) return;
-
     map.type = MaterialMap::Type::Cubemap;
     map.cubemap = tex;
+}
+
+void Material::SetGlobalInt(const char* name, int value){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Int;
+    map.valueInt = value;
+}
+
+void Material::SetGlobalFloat(const char* name, float value, float min, float max){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Float;
+    map.value = value;
+    map.valueMin = min;
+    map.valueMax = max;
+}
+
+void Material::SetGlobalFloat(const char* name, float* value, int count){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::FloatList;
+    map.list = value;
+    map.listCount = count;
+}
+
+void Material::SetGlobalVector2(const char* name, Vector2 value){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Vector2;
+    map.vector = Vector4(value.x, value.y, 0, 1);
+}
+
+void Material::SetGlobalVector3(const char* name, Vector3 value, bool isColor){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Vector3;
+    map.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vectorIsColor = isColor;
+}
+
+void Material::SetGlobalVector4(const char* name, Vector4 value, bool isColor){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Vector4;
+    map.vector = value;
+    map.vectorIsColor = isColor;
+}
+
+void Material::SetGlobalVector4(const char* name, Vector4* value, int count){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Vector4List;
+    map.list = value;
+    map.listCount = count;
+}
+
+void Material::SetGlobalMatrix4(const char* name, Matrix4 value){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Matrix4;
+    map.matrix = value;
+}   
+
+void Material::SetGlobalMatrix4(const char* name, Matrix4* value, int count){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Matrix4List;
+    map.list = value;
+    map.listCount = count;
+}
+
+void Material::SetGlobalTexture(const char* name, Ref<Texture2D> tex){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Texture;
+    map.texture = tex;
+}
+
+void Material::SetGlobalTexture(const char* name, Framebuffer* tex, int bind, int attachment){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Framebuffer;
+    map.framebuffer = tex;
+    map.framebufferBind = bind;
+    map.framebufferAttachment = attachment;
+}
+
+void Material::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Cubemap;
+    map.cubemap = tex;
+}
+
+void Material::DisableKeyword(std::string keyword){
+    uberShader->DisableKeyword(keyword);
+}
+
+void Material::EnableKeyword(std::string keyword){
+    uberShader->EnableKeyword(keyword);
 }
 
 void Material::CleanData(){
     maps.clear();
 }
 
+/*
 void Material::UpdateDatas(){
+    Ref<Shader> shader = GetShader();
+
     Assert(shader != nullptr);
 
     //if(_isDirt == false) return;
@@ -153,51 +251,41 @@ void Material::UpdateDatas(){
 
     ApplyUniformTo(*shader);
 }
+*/
 
-void Material::ApplyUniformTo(Shader& shader){
-    Shader::Bind(shader);
+void Material::SubmitGraphicDatas(Material& material){
+    material.currentTextureSlot = 0;
+    material.uberShader->SetCurrentShader();
 
-    int curTex = 0;
+    Assert(material.GetShader() != nullptr);
+    if(material.GetShader() == nullptr) return;
 
-    for(auto i: maps){
-        MaterialMap& map = i.second;
+    Graphics::SetCullFace(material.GetShader()->GetCullFace());
+    Graphics::SetDepthTest(material.GetShader()->GetDepthTest());
+    Graphics::SetDepthMask(material.GetShader()->IsDepthMask());
 
-        if(map.type == MaterialMap::Type::Float){
-            shader.SetFloat(i.first.c_str(), map.value);
-        }
-        if(map.type == MaterialMap::Type::Vector2){
-            shader.SetVector2(i.first.c_str(), Vector2(map.vector.x, map.vector.y));
-        }
-        if(map.type == MaterialMap::Type::Vector3){
-            shader.SetVector3(i.first.c_str(), Vector3(map.vector.x, map.vector.y, map.vector.z));
-        }
-        if(map.type == MaterialMap::Type::Vector4){
-            shader.SetVector4(i.first.c_str(), map.vector);
-        }
-        if(map.type == MaterialMap::Type::Matrix4){
-            shader.SetMatrix4(i.first.c_str(), i.second.matrix);
-        }
-        if(map.type == MaterialMap::Type::Texture){
-            shader.SetTexture2D(i.first.c_str(), *i.second.texture, curTex);
-            //i.second.texture->Bind(curTex, i.first.c_str(), *shader);
-            curTex += 1;
-        }
-        if(map.type == MaterialMap::Type::Framebuffer){
-            shader.SetFramebuffer(i.first.c_str(), *i.second.framebuffer, curTex, 0);
-            curTex += 1;
-        }
-        if(map.type == MaterialMap::Type::Cubemap){
-            shader.SetCubemap(i.first.c_str(), *i.second.cubemap, curTex);
-            curTex += 1;
-        }
+    if(material.GetShader()->IsBlend()){
+        Graphics::SetBlend(true);
+        Graphics::SetBlendFunc(material.GetShader()->GetSrcBlend(), material.GetShader()->GetDstBlend());
+    } else {
+        Graphics::SetBlend(false);
     }
+
+    Assert(material.currentTextureSlot < 50);
+    ApplyUniformTo(material, *material.GetShader(), material.maps);
+    ApplyUniformTo(material, *material.GetShader(), globalMaps);
+
+}
+
+void Material::CleanGlobalUniformsData(){
+    globalMaps.clear();
 }
 
 void Material::OnGui(){
     bool toSave = false;
 
     ImGui::BeginGroup();
-    ImGui::Text("Shader: %s", (shader == nullptr ? "" : shader->Path().c_str()));
+    ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));
     ImGui::EndGroup();
     ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
         if(path->string().empty() == false && path->extension() == ".glsl"){
@@ -283,27 +371,27 @@ void Material::OnGui(){
         }
     }
 
-    if(shader != nullptr && shader->SupportInstancing() && ImGui::Checkbox("enableInstancing", &enableInstancing)){
+    if(GetShader() != nullptr && GetShader()->SupportInstancing() && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
     }
 
     ImGui::Spacing();ImGui::Spacing();
 
-    if(shader != nullptr && ImGui::TreeNode("Info")){
+    if(GetShader() != nullptr && ImGui::TreeNode("Info")){
 
         std::string supportInstancing = "false";
-        if(shader != nullptr && shader->SupportInstancing() == true) supportInstancing = "true";
+        if(GetShader() != nullptr && GetShader()->SupportInstancing() == true) supportInstancing = "true";
         ImGui::Text("SupportInstancing: %s", supportInstancing.c_str());
 
-        std::string cullFace(magic_enum::enum_name(shader->GetCullFace()));
+        std::string cullFace(magic_enum::enum_name(GetShader()->GetCullFace()));
         ImGui::Text("CullFace: %s", cullFace.c_str());
 
-        std::string depthTest(magic_enum::enum_name(shader->GetDepthTest()));
+        std::string depthTest(magic_enum::enum_name(GetShader()->GetDepthTest()));
         ImGui::Text("DepthTest: %s", depthTest.c_str());
 
-        if(shader->IsBlend()){
-            std::string srcBlend(magic_enum::enum_name(shader->GetSrcBlend()));
-            std::string dstBlend(magic_enum::enum_name(shader->GetDstBlend()));
+        if(GetShader()->IsBlend()){
+            std::string srcBlend(magic_enum::enum_name(GetShader()->GetSrcBlend()));
+            std::string dstBlend(magic_enum::enum_name(GetShader()->GetDstBlend()));
             ImGui::Text("Blend: %s %s", srcBlend.c_str(), dstBlend.c_str());
         } else {
             ImGui::Text("Blend: Off");
@@ -316,6 +404,8 @@ void Material::OnGui(){
 }
 
 void Material::Save(std::string& path){
+    Assert(false && "Not Implemented");
+
     LogInfo("Saving: %s", path.c_str());
 
     std::ofstream os(path);
@@ -325,6 +415,8 @@ void Material::Save(std::string& path){
 }
 
 Ref<Material> Material::CreateFromFile(std::string const &path){
+    Assert(false && "Not Implemented");
+
     Ref<Material> m = CreateRef<Material>();
     m->Path(path);
 
@@ -336,20 +428,20 @@ Ref<Material> Material::CreateFromFile(std::string const &path){
 }
 
 void Material::UpdateMaps(){
-    if(shader == nullptr) return;
+    if(GetShader() == nullptr) return;
 
     ///*
     //maps.clear();
 
     //Remove Unused Maps
-    for(auto i: shader->Properties()){
+    for(auto i: GetShader()->Properties()){
         if(maps.count(i[1].c_str())) continue;
 
         maps.erase(i[1].c_str());
     }
 
     // Add If Not Contains
-    for(auto i: shader->Properties()){
+    for(auto i: GetShader()->Properties()){
         if(i.size() < 2) continue;
         
         if(!maps.count(i[1].c_str()) && i[0] == "Float"){
@@ -395,6 +487,54 @@ void Material::UpdateMaps(){
     }
     //*/
 
+}
+
+void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered_map<std::string, MaterialMap>& maps){
+    Shader::Bind(shader);
+
+    for(auto i: maps){
+        MaterialMap& map = i.second;
+
+        if(map.type == MaterialMap::Type::Int){
+            shader.SetInt(i.first.c_str(), map.valueInt);
+        }
+        if(map.type == MaterialMap::Type::Float){
+            shader.SetFloat(i.first.c_str(), map.value);
+        }
+        if(map.type == MaterialMap::Type::Vector2){
+            shader.SetVector2(i.first.c_str(), Vector2(map.vector.x, map.vector.y));
+        }
+        if(map.type == MaterialMap::Type::Vector3){
+            shader.SetVector3(i.first.c_str(), Vector3(map.vector.x, map.vector.y, map.vector.z));
+        }
+        if(map.type == MaterialMap::Type::Vector4){
+            shader.SetVector4(i.first.c_str(), map.vector);
+        }
+        if(map.type == MaterialMap::Type::Matrix4){
+            shader.SetMatrix4(i.first.c_str(), i.second.matrix);
+        }
+        if(map.type == MaterialMap::Type::Texture){
+            shader.SetTexture2D(i.first.c_str(), *i.second.texture, material.currentTextureSlot);
+            material.currentTextureSlot += 1;
+        }
+        if(map.type == MaterialMap::Type::Framebuffer){
+            shader.SetFramebuffer(i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
+            material.currentTextureSlot += 1;
+        }
+        if(map.type == MaterialMap::Type::Cubemap){
+            shader.SetCubemap(i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
+            material.currentTextureSlot += 1;
+        }
+        if(map.type == MaterialMap::Type::FloatList){
+            shader.SetFloat(i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+        }
+        if(map.type == MaterialMap::Type::Vector4List){
+            shader.SetVector4(i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+        }
+        if(map.type == MaterialMap::Type::Matrix4List){
+            shader.SetMatrix4(i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+        }
+    }
 }
 
 }

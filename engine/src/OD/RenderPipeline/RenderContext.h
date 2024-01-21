@@ -55,13 +55,16 @@ public:
     RenderContext(Scene* scene);
     ~RenderContext();
 
+    void Begin();
+    void End();
+
     //void SetupRenderers(const std::vector<DrawingTarget*>& targets, const std::vector<ShadowDrawingTarget*>& shadowTargets);
     void SetupCameraProperties(Camera cam);
     void SetupLoop(std::function<void(RenderData&)> onReciveRenderData);
     
     void BeginDrawToScreen();
     void EndDrawToScreen();
-    void Clean();
+    void ScreenClean();
 
     void RenderSkybox();
     //void DrawRenderers(const std::vector<DrawingTarget*>& targets);
@@ -78,8 +81,6 @@ public:
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
     inline Camera GetCamera(){ return cam; }
-
-    std::set<Ref<Shader>> globalShaders;
 
     //-------Settings---------
     Ref<Material> skyMaterial;

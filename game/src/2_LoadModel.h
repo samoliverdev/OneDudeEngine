@@ -63,7 +63,8 @@ struct LoadModel_2: OD::Module {
         bool useInstancing = true;
 
         if(useInstancing){  
-            model->materials[0]->UpdateDatas();
+            //model->materials[0]->UpdateDatas();
+            Material::SubmitGraphicDatas(*model->materials[0]);
 
             model->meshs[0]->instancingModelMatrixs.clear();
             for(auto i: transforms){

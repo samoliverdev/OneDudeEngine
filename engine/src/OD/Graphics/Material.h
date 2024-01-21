@@ -3,6 +3,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Shader.h"
+#include "OD/Graphics/UberShader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Serialization/Serialization.h"
@@ -11,7 +12,7 @@ namespace OD{
 
 struct MaterialMap{
     enum class Type{
-        Float, Vector2, Vector3, Vector4, Matrix4, Texture, Cubemap, Framebuffer
+        Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
     };
 
     Type type;
@@ -19,14 +20,20 @@ struct MaterialMap{
     Ref<Texture2D> texture;
     Ref<Cubemap> cubemap;
     Framebuffer* framebuffer;
+    int framebufferBind;
+    int framebufferAttachment;
     Vector4 vector;
     
     bool hidden = false;
     bool vectorIsColor = false;
 
+    int valueInt;
     float value;
     float valueMin;
     float valueMax;
+
+    void* list;
+    int listCount;
 
     Matrix4 matrix;
 
@@ -49,19 +56,40 @@ public:
     bool EnableInstancing();
     bool SupportInstancing();
 
+    void SetInt(const char* name, int value);
     void SetFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
-
+    void SetFloat(const char* name, float* value, int count);
     void SetVector2(const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value, bool isColor = false);
     void SetVector4(const char* name, Vector4 value, bool isColor = false);
+    void SetVector4(const char* name, Vector4* value, int count);
     void SetMatrix4(const char* name, Matrix4 value);
+    void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture(const char* name, Ref<Texture2D> tex);
-    void SetTexture(const char* name, Framebuffer* tex);
+    void SetTexture(const char* name, Framebuffer* tex, int bind, int attachment);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 
+    static void SetGlobalInt(const char* name, int value);
+    static void SetGlobalFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
+    static void SetGlobalFloat(const char* name, float* value, int count);
+    static void SetGlobalVector2(const char* name, Vector2 value);
+    static void SetGlobalVector3(const char* name, Vector3 value, bool isColor = false);
+    static void SetGlobalVector4(const char* name, Vector4 value, bool isColor = false);
+    static void SetGlobalVector4(const char* name, Vector4* value, int count);
+    static void SetGlobalMatrix4(const char* name, Matrix4 value);
+    static void SetGlobalMatrix4(const char* name, Matrix4* value, int count);
+    static void SetGlobalTexture(const char* name, Ref<Texture2D> tex);
+    static void SetGlobalTexture(const char* name, Framebuffer* tex, int bind, int attachment);
+    static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
+
+    void DisableKeyword(std::string keyword);
+    void EnableKeyword(std::string keyword);
+
     void CleanData();
-    void UpdateDatas();
-    void ApplyUniformTo(Shader& shader);
+    //void UpdateDatas();
+
+    static void SubmitGraphicDatas(Material& material);
+    static void CleanGlobalUniformsData();
 
     void Save(std::string& path);
 
@@ -75,14 +103,18 @@ public:
 
 private:
     bool enableInstancing = false;
+    int currentTextureSlot = 0;
 
-    Ref<Shader> shader;
+    //Ref<Shader> shader;
+    Ref<UberShader> uberShader;
     std::unordered_map<std::string, MaterialMap> maps;
+    static std::unordered_map<std::string, MaterialMap> globalMaps;
 
     uint32_t id;
     static uint32_t baseId;
 
     void UpdateMaps();
+    static void ApplyUniformTo(Material& material, Shader& shader, std::unordered_map<std::string, MaterialMap>& maps);
 };
 
 ////////////////////////////////////////
@@ -121,17 +153,17 @@ void MaterialMap::load(Archive& ar){
 
 template<class Archive>
 void Material::save(Archive& ar) const{
-    std::string shaderPath = shader == nullptr ? "" : shader->Path();
+    /*std::string shaderPath = uberShader->GetCurrentShader() == nullptr ? "" : uberShader->GetCurrentShader()->Path();
     ar(
         CEREAL_NVP(enableInstancing),
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
-    );
+    );*/
 }
 
 template<class Archive>
 void Material::load(Archive& ar){
-    std::string shaderPath;
+    /*std::string shaderPath;
     ar(
         CEREAL_NVP(enableInstancing),
         CEREAL_NVP(shaderPath),
@@ -139,8 +171,9 @@ void Material::load(Archive& ar){
     );
 
     if(shaderPath.empty() == false){
-        shader = AssetManager::Get().LoadShaderFromFile(shaderPath);
+        SetShader(AssetManager::Get().LoadShaderFromFile(shaderPath));
     }
+    */
 }
 
 }

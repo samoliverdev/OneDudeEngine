@@ -15,6 +15,8 @@ class Shader: public Asset{
     friend class Graphics;
 public:
     static Ref<Shader> CreateFromFile(const std::string& filepath);
+    static Ref<Shader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
+
     static void Destroy(Shader& shader);
     static void Bind(Shader& shader);
     static void Unbind();
@@ -64,10 +66,10 @@ private:
     std::unordered_map<std::string, GLint> uniforms;
     std::vector<std::vector<std::string>> properties;
     
-    bool Create(const std::string& filepath);
+    bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
     std::string load(std::string path);
     GLint GetLocation(const char* name);
-	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
+	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source, std::vector<std::string>& keyworlds);
 	void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);
 };
 

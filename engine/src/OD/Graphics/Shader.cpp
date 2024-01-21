@@ -12,12 +12,12 @@ void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName
     pathWithoutFileName = fullPath.substr(0, found + 1);
 }
 
-bool Shader::Create(const std::string& filepath){
+bool Shader::Create(const std::string& filepath, std::vector<std::string>& keyworlds){
     Destroy(*this);
 
     std::string source = this->load(filepath);
 
-    auto shaderSources = this->PreProcess(source);
+    auto shaderSources = this->PreProcess(source, keyworlds);
     this->Compile(shaderSources);
 
     // Extract name from filepath
@@ -210,8 +210,10 @@ GLenum ShaderTypeFromString(const std::string& type){
 }
 
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
+    std::vector<std::string> keyworlds;
+
     Ref<Shader> out = CreateRef<Shader>();
-    if(out->Create(filepath) == false){
+    if(out->Create(filepath, keyworlds) == false){
         return nullptr;
     }
     return out;
@@ -236,6 +238,14 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     */
 }
 
+Ref<Shader> Shader::CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds){
+    Ref<Shader> out = CreateRef<Shader>();
+    if(out->Create(filepath, keyworlds) == false){
+        return nullptr;
+    }
+    return out;
+}
+
 void Shader::Bind(Shader& shader){
     glUseProgram(shader.rendererId);
     glCheckError();
@@ -258,31 +268,38 @@ Shader::~Shader(){
     Destroy(*this);
 }
 
-std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& source){
+std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& source, std::vector<std::string>& keyworlds){
     std::unordered_map<GLenum, std::string> shaderSources;
+
+    std::string _source = source;
     
     std::string toSeach = "#version 330 core\n";
-    size_t pos = source.find(toSeach) + toSeach.size();
+    size_t pos = _source.find(toSeach) + toSeach.size();
 
-    if(source.find("VERTEX") != std::string::npos){
-        std::string ss = source;
+    for(auto i: keyworlds){
+        std::string keyworld = "#define " + i + "\n";
+        _source.insert(pos, keyworld);
+    }
+
+    if(_source.find("VERTEX") != std::string::npos){
+        std::string ss = _source;
         ss.insert(pos, "\n#define VERTEX\n");
         shaderSources[GL_VERTEX_SHADER] = ss;
     }  
 
-    if(source.find("FRAGMENT") != std::string::npos){
-        std::string ss = source;
+    if(_source.find("FRAGMENT") != std::string::npos){
+        std::string ss = _source;
         ss.insert(pos, "\n#define FRAGMENT\n");
         shaderSources[GL_FRAGMENT_SHADER] = ss;
     }   
 
-    if(source.find("GEOMETRY") != std::string::npos){
-        std::string ss = source;
+    if(_source.find("GEOMETRY") != std::string::npos){
+        std::string ss = _source;
         ss.insert(pos, "\n#define GEOMETRY\n");
         shaderSources[GL_GEOMETRY_SHADER] = ss;
     }
 
-    //LogInfo("%s", fs.c_str());
+    //LogInfo("%s", _source.c_str());
 
     return shaderSources;
 }
@@ -403,7 +420,10 @@ void Shader::SetFloat(const char* name, float* value, int count){
 
 void Shader::SetInt(const char* name, int value){
     glUniform1i(GetLocation(name), value);
-    glCheckError();
+    //glCheckError();
+    glCheckError2([&](){ 
+        LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
+    });
 }
 
 void Shader::SetVector2(const char* name, Vector2 value){

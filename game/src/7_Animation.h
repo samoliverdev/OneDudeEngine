@@ -197,7 +197,9 @@ struct Animation_7: public OD::Module{
             Graphics::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
         }
 
-        char2Model->materials[0]->UpdateDatas();
+        //char2Model->materials[0]->UpdateDatas();
+        Material::SubmitGraphicDatas(*char2Model->materials[0]);
+
         Shader::Bind(*char2Model->materials[0]->GetShader());
         char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);
 

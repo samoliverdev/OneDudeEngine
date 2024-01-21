@@ -20,6 +20,8 @@ GLenum glCheckError_(const char *file, int line, std::function<void()> callback)
         LogError("OpenGL:ERROR: %s(%d) | %s (%d)\n", error.c_str(), errorCode, file, line);
         //Assert(false);
         if(callback != nullptr) callback();
+
+        //Assert(false);
     }
 
     return errorCode;

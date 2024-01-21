@@ -62,7 +62,8 @@ struct UniformBuffer_12: OD::Module {
         Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
         Graphics::SetCamera(cam);
 
-        model->materials[0]->UpdateDatas();
+        //model->materials[0]->UpdateDatas();
+        Material::SubmitGraphicDatas(*model->materials[0]);
 
         model->meshs[0]->instancingModelMatrixs.clear();
         for(auto i: transforms){

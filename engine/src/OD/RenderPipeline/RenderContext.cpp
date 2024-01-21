@@ -34,6 +34,14 @@ RenderContext::~RenderContext(){
     delete finalColor;
 }
 
+void RenderContext::Begin(){
+
+}
+
+void RenderContext::End(){
+    Material::CleanGlobalUniformsData();
+}
+
 void RenderContext::BeginDrawToScreen(){
     int width = Application::ScreenWidth();
     int height = Application::ScreenHeight();
@@ -79,7 +87,14 @@ void RenderContext::SetupCameraProperties(Camera inCam){
     );
 }
 
+void RenderContext::ScreenClean(){
+    //Renderer::Clean(cam.cleanColor.x, cam.cleanColor.y, cam.cleanColor.z, 1);
+    Graphics::Clean(0, 0, 1, 1);
+}
+
 void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderData){
+    //globalUniformBuffer->CleanData();
+
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
@@ -98,8 +113,6 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
-
-            globalShaders.insert(data.targetMaterial->GetShader());
 
             onReciveRenderData(data);
         }
@@ -123,8 +136,6 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
-
-            globalShaders.insert(data.targetMaterial->GetShader());
 
             onReciveRenderData(data);
         }
@@ -183,18 +194,14 @@ void RenderContext::SetStandUniforms(Camera& cam, Shader& shader){
     shader.SetVector3("viewPos", cam.viewPos);
 }
 
-void RenderContext::Clean(){
-    //Renderer::Clean(cam.cleanColor.x, cam.cleanColor.y, cam.cleanColor.z, 1);
-    Graphics::Clean(0, 0, 1, 1);
-}
-
 void RenderContext::RenderSkybox(){
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     
     if(skyMaterial != nullptr){
         Assert(skyMaterial->GetShader() != nullptr);
 
-        skyMaterial->UpdateDatas();
+        //skyMaterial->UpdateDatas();
+        Material::SubmitGraphicDatas(*skyMaterial);
 
         Graphics::SetCullFace(CullFace::BACK);
         Graphics::SetDepthMask(false);
@@ -213,7 +220,10 @@ void RenderContext::RenderSkybox(){
 
 void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
     commandBuffer.Sort();
-    commandBuffer.onUpdateMaterial = [&](Material& material){ SetStandUniforms(cam, *material.GetShader()); };
+    commandBuffer.onUpdateMaterial = [&](Material& material){ 
+        if(material.GetShader() == nullptr) return;
+        SetStandUniforms(cam, *material.GetShader()); 
+    };
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;
 }
@@ -323,11 +333,10 @@ void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& s
 
     commandBuffer.SetOverrideMaterial(shadowPass);
 
-    commandBuffer.AddGlobalShader(shadowPass->GetShader());
-    commandBuffer.SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
-
+    Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
+ 
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
-        //material.SetMatrix4("lightSpaceMatrix", splitData.projection * splitData.view);
+        //Shader::SetMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
     };
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;

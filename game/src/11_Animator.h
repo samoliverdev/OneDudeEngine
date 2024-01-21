@@ -52,7 +52,7 @@ struct Animator_11: OD::Module {
         Ref<Model> charModel = AssetManager::Get().LoadModel(
             //"res/Game/Animations/Walking.dae",
             "res/Game/Animations/RumbaDancing.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/LitSkinned.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
             //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl")
         );
         Entity charEntity = scene->AddEntity("Character");
@@ -68,6 +68,8 @@ struct Animator_11: OD::Module {
         
         //scene->Start();
         Application::AddModule<Editor>();
+
+        //LogInfo("BonesCount: %zd", charModel->skeleton.GetRestPose().Size());
     }
 
     void OnUpdate(float deltaTime) override {

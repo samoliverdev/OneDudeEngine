@@ -18,9 +18,11 @@ const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 animated[MAX_BONES];
 
+/*
 #ifdef SKINNED
 #undef INSTANCING
 #endif
+*/
 
 mat4 GetModelMatrix(){
 #ifdef INSTANCING
@@ -31,44 +33,15 @@ mat4 GetModelMatrix(){
 }
 
 vec4 GetLocalPos(){
-///*
 #ifdef SKINNED
-    /*
-    vec4 totalPosition = vec4(0.0f);
-    for(int i = 0; i < MAX_BONE_INFLUENCE; i++){
-        if(boneIds[i] == -1) continue;
-        if(boneIds[i] >= MAX_BONES){
-            totalPosition = vec4(pos,1.0f);
-            break;
-        }
-        vec4 localPosition = animated[boneIds[i]] * vec4(pos,1.0f);
-        totalPosition += localPosition * weights[i];
-    }
-    return totalPosition;
-    */
-
-    ///*
     mat4 skin = animated[boneIds.x] * weights.x +
     animated[boneIds.y] * weights.y +
     animated[boneIds.z] * weights.z +
     animated[boneIds.w] * weights.w;
     return skin * vec4(pos, 1.0);
-    //*/
 #else
     return vec4(pos, 1.0);
 #endif
-//*/
-
-    /*
-    if(isSkinned > 0){
-        mat4 skin = animated[boneIds.x] * weights.x +
-        animated[boneIds.y] * weights.y +
-        animated[boneIds.z] * weights.z +
-        animated[boneIds.w] * weights.w;
-        return skin * vec4(pos, 1.0);
-    }
-    return vec4(pos, 1.0);
-    */
 }
 
 #endif

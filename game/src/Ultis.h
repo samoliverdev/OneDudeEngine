@@ -21,51 +21,53 @@ bool FileExist(const std::string& path){
    }
 
 Ref<Material> LoadFloorMaterial(){
-   std::string path = "res/Game/Textures/floor.material";
+   //std::string path = "res/Game/Textures/floor.material";
 
-   if(FileExist(path) == false){
+   //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
       m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/floor.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
+      return m;
 
-      m->Save(path);
-   }
+      //m->Save(path);
+   //}
 
-   return AssetManager::Get().LoadMaterial(path);
+   //return AssetManager::Get().LoadMaterial(path);
 }
 
 Ref<Material> LoadRockMaterial(){
-   std::string path = "res/Game/Textures/rock.material";
+   //std::string path = "res/Game/Textures/rock.material";
 
-   if(FileExist(path) == false){
+   //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
       m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/rock.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
+      return m;
 
-      m->Save(path);
-   }
+      //m->Save(path);
+   //}
 
-   return AssetManager::Get().LoadMaterial(path);
+   //return AssetManager::Get().LoadMaterial(path);
 }
 
 Ref<Material> LoadMaterial1(){
-   std::string path = "res/Game/Materials/mat1.material";
+   //std::string path = "res/Game/Materials/mat1.material";
 
-   if(FileExist(path) == false){
+   //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
       m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/image.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
+      return m;
+   //   m->Save(path);
+   //}
 
-      m->Save(path);
-   }
-
-   return AssetManager::Get().LoadMaterial(path);
+   //return AssetManager::Get().LoadMaterial(path);
 }
 
 struct RotateScript: public Script{

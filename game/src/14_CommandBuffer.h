@@ -28,6 +28,7 @@ struct CommandBuffer_14: OD::Module {
 
     void OnInit() override {
         LogInfo("Game Init");
+        Assert(false && "Outdate");
 
         camTransform.LocalPosition(Vector3(0, 2, 4));
         camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
@@ -67,10 +68,10 @@ struct CommandBuffer_14: OD::Module {
         cmd1.SetRenderTarget(renderTarget);
         cmd1.SetCamera(cam);
         cmd1.CleanRenderTarget({0.1f, 0.1f, 1.0f});
-        cmd1.AddGlobalShader(meshShader);
-        cmd1.SetGlobalMatrix4("view", cam.view);
-        cmd1.SetGlobalMatrix4("projection", cam.projection);
-        cmd1.SetGlobalTexture("mainTex", texture);
+        //cmd1.AddGlobalShader(meshShader);
+        //cmd1.SetGlobalMatrix4("view", cam.view);
+        //cmd1.SetGlobalMatrix4("projection", cam.projection);
+        //cmd1.SetGlobalTexture("mainTex", texture);
         cmd1.AddDrawCommand({
             mat,
             cubeModel->meshs[0],
@@ -80,10 +81,10 @@ struct CommandBuffer_14: OD::Module {
         cmd2.SetRenderTarget(nullptr);
         cmd2.SetCamera(cam);
         cmd2.CleanRenderTarget({0.1f, 0.1f, 0.1f});
-        cmd2.AddGlobalShader(meshShader);
-        cmd2.SetGlobalMatrix4("view", cam.view);
-        cmd2.SetGlobalMatrix4("projection", cam.projection);
-        cmd2.SetGlobalTexture("mainTex", renderTarget);
+        //cmd2.AddGlobalShader(meshShader);
+        //cmd2.SetGlobalMatrix4("view", cam.view);
+        //cmd2.SetGlobalMatrix4("projection", cam.projection);
+        //cmd2.SetGlobalTexture("mainTex", renderTarget);
         cmd2.AddDrawCommand({
             mat,
             cubeModel->meshs[0],

@@ -147,7 +147,10 @@ struct BaseMesh_1: OD::Module {
         std::cout << "Time taken by program is : " << std::fixed << time_taken << std::setprecision(5);
         std::cout << " sec " << std::endl;
 
-        meshShader = Shader::CreateFromFile("res/Game/Shaders/test.glsl");
+        std::vector<std::string> keywords{
+            "Fade", "Skinned"
+        };
+        meshShader = Shader::CreateFromFile("res/Game/Shaders/test.glsl", keywords);
         fontShader = Shader::CreateFromFile("res/Engine/Shaders/Font.glsl");
 
         font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");

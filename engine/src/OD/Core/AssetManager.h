@@ -5,6 +5,7 @@
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Graphics/Shader.h"
+#include "OD/Graphics/UberShader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Material.h"
 #include <typeinfo>
@@ -61,8 +62,8 @@ class AssetManager{
 public:
     Ref<Texture2D> LoadTexture2D(const std::string& filePath, Texture2DSetting settings); 
     Ref<Texture2D> LoadTexture2D(const std::string& filePath); 
-
     Ref<Shader> LoadShaderFromFile(const std::string& filepath);
+    Ref<UberShader> LoadUberShader(const std::string& path);
     Ref<Model> LoadModel(const std::string &path, Ref<Shader> customShader = nullptr);
     Ref<Material> LoadMaterial(const std::string &path);
 
@@ -83,6 +84,7 @@ private:
     std::unordered_map<std::string, Ref<Mesh>> meshs;
     std::unordered_map<std::string, Ref<Model>> models;
     std::unordered_map<std::string, Ref<Shader>> shaders;
+    std::unordered_map<std::string, Ref<UberShader>> uberShaders;
     std::unordered_map<std::string, Ref<Texture2D>> textures;
     std::unordered_map<std::string, Ref<Material>> materials;
     

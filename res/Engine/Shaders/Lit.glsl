@@ -42,7 +42,8 @@ out VsOut{
 } vsOut;
 
 void main(){
-    mat4 targetModelMatrix = (useInstancing >= 1.0 ? modelInstancing : model);
+    //mat4 targetModelMatrix = (useInstancing >= 1.0 ? modelInstancing : model);
+    mat4 targetModelMatrix = GetModelMatrix();
 
     vsOut.pos = pos;
     vsOut.normal = normal;

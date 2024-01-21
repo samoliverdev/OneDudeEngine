@@ -26,44 +26,8 @@ void CommandBuffer::SetViewport(IVector4 inViewport){
     viewport = inViewport;
 }
 
-void CommandBuffer::AddGlobalShader(Ref<Shader> shader){
-    globalShaders.insert(shader);
-}
-
-void CommandBuffer::SetGlobalFloat(const char* name, float value){
-    globalMaterial.SetFloat(name, value);
-}
-
-void CommandBuffer::SetGlobalVector2(const char* name, Vector2 value){
-    globalMaterial.SetVector2(name, value);
-}
-
-void CommandBuffer::SetGlobalVector3(const char* name, Vector3 value){
-    globalMaterial.SetVector3(name, value);
-}
-
-void CommandBuffer::SetGlobalVector4(const char* name, Vector4 value){
-    globalMaterial.SetVector4(name, value);
-}
-
-void CommandBuffer::SetGlobalMatrix4(const char* name, Matrix4 value){
-    globalMaterial.SetMatrix4(name, value);
-}
-
-void CommandBuffer::SetGlobalTexture(const char* name, Ref<Texture2D> tex){
-    globalMaterial.SetTexture(name, tex);
-}
-
-void CommandBuffer::SetGlobalTexture(const char* name, Framebuffer* tex){
-    globalMaterial.SetTexture(name, tex);
-}
-
-void CommandBuffer::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
-    globalMaterial.SetCubemap(name, tex);
-}
-
-void CommandBuffer::SetOverrideMaterial(Ref<Material> shader){
-    overrideMaterial = shader;
+void CommandBuffer::SetOverrideMaterial(Ref<Material> material){
+    overrideMaterial = material;
 }
 
 void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
@@ -106,8 +70,7 @@ void CommandBuffer::Clean(){
     setViewport = false;
     setCamera = false;
     camera = Camera();
-    globalMaterial.CleanData();
-    globalShaders.clear();
+
     drawCommands.Clear();
     drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
@@ -167,37 +130,35 @@ void CommandBuffer::Submit(){
     if(setViewport) Graphics::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
     if(clearRenderTarget) Graphics::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
 
-    for(auto i: globalShaders){
-        globalMaterial.ApplyUniformTo(*i);
-    }
-
     Ref<Material> lastMat = nullptr;
 
+    // ---------------Submiting DrawCommands-----------------
     drawCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
 
         if(_mat != lastMat){
-            _mat->UpdateDatas();
-            _mat->GetShader()->SetFloat("useInstancing", 0.0f); 
-            _mat->GetShader()->SetFloat("isSkinned", 0.0f);  
+            _mat->DisableKeyword("INSTANCING");
+            _mat->DisableKeyword("SKINNED");
+            Material::SubmitGraphicDatas(*_mat);
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
         }
-    
+
         lastMat = _mat;
         _mat->GetShader()->SetMatrix4("model", cm.trans);
         Graphics::DrawMesh(*cm.meshs);
     });
 
+    // ---------------Submiting DrawIntancingCommands-----------------
     drawIntancingCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
 
-        _mat->UpdateDatas();
-        _mat->GetShader()->SetFloat("useInstancing", 1); 
-        _mat->GetShader()->SetFloat("isSkinned", 0.0f);  
+        _mat->EnableKeyword("INSTANCING");
+        _mat->DisableKeyword("SKINNED");
+        Material::SubmitGraphicDatas(*_mat);
         if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
-
+        
         cm.meshs->instancingModelMatrixs.clear();
 
         for(auto j: cm.trans){
@@ -207,14 +168,15 @@ void CommandBuffer::Submit(){
         Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
     });
 
+    // ---------------Submiting SkinnedDrawCommands-----------------
     skinnedDrawCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
 
         if(_mat != lastMat){
-            _mat->UpdateDatas();
-            _mat->GetShader()->SetFloat("useInstancing", 0.0f);
-            _mat->GetShader()->SetFloat("isSkinned", 1.0f);  
+            _mat->DisableKeyword("INSTANCING");
+            _mat->EnableKeyword("SKINNED");
+            Material::SubmitGraphicDatas(*_mat);
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
         }
 

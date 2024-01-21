@@ -12,7 +12,6 @@
 #include <thread>
 #include <future>
 #include <fstream>
-#include <OD/RenderPipeline/StandRenderPipeline2.h>
 
 using namespace OD;
 
@@ -173,7 +172,7 @@ struct NewRenderPipeline_13: public OD::Module {
         */
 
         ///*
-        for(int i = 0; i < 10; i++){
+        for(int i = 0; i < 1; i++){
             float posRange = 200;
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));

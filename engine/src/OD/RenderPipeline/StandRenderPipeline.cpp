@@ -81,6 +81,8 @@ private:
 EnvironmentSettings environmentSettings;
 
 StandRenderPipeline::StandRenderPipeline(Scene* inScene):BaseRenderPipeline(inScene){
+    Assert(false && "Outdate");
+
     //glEnable(GL_FRAMEBUFFER_SRGB); 
 
     spriteMesh = Mesh::CenterQuad(true);
@@ -668,7 +670,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         if(environmentSettings.sky != nullptr){
             Assert(environmentSettings.sky->GetShader() != nullptr);
 
-            environmentSettings.sky->UpdateDatas();
+            //environmentSettings.sky->UpdateDatas();
 
             Graphics::SetCullFace(CullFace::BACK);
             Graphics::SetDepthMask(false);
@@ -697,7 +699,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
         OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::OpaquesDrawCommands");
         opaquesDrawCommands.Each([&](auto& cm){
             if(cm.material != lastMat){
-                cm.material->UpdateDatas();
+                //cm.material->UpdateDatas();
                 cm.material->GetShader()->SetFloat("useInstancing", 0.0f); 
                 //SetStandUniforms(camPos, *cm.material->shader());
             }
@@ -712,7 +714,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
     {
         OD_PROFILE_SCOPE("StandRendererSystem::RenderScene::OpaquesDrawIntancingCommands");
         opaquesDrawIntancingCommands.Each([&](auto& cm){
-            cm.material->UpdateDatas();
+            //cm.material->UpdateDatas();
             cm.material->GetShader()->SetFloat("useInstancing", 1); 
             //SetStandUniforms(camPos, *cm.material->shader());
 
@@ -746,7 +748,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             }
 
             if(data.targetMaterial != lastMat){
-                data.targetMaterial->UpdateDatas();
+                //data.targetMaterial->UpdateDatas();
                 data.targetMaterial->GetShader()->SetMatrix4("view", camera.view);
                 data.targetMaterial->GetShader()->SetMatrix4("projection", camera.projection);
                 data.targetMaterial->GetShader()->SetFloat("useInstancing", 0.0f); 
@@ -775,7 +777,7 @@ void StandRenderPipeline::RenderScene(Camera& camera, bool isMain, Vector3 camPo
             auto& cm = it->second;
 
             if(cm.material != lastMat){
-                cm.material->UpdateDatas();
+                //cm.material->UpdateDatas();
                 cm.material->GetShader()->SetFloat("useInstancing", 0.0f); 
                 SetStandUniforms(camPos, *cm.material->GetShader());
                 

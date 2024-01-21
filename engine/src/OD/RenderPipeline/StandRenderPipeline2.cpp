@@ -122,42 +122,34 @@ void Lighting::SetupDirectionalLight(){
 }
 
 void Lighting::UpdateGlobalShaders(){
-    for(auto i: context->globalShaders){
-        Shader::Bind(*i);
-        i->SetInt(dirLightCountId, currentLightsCount);
-        i->SetVector4(dirLightColorsId, dirLightColors, maxDirLightCount);
-        i->SetVector4(dirLightDirectionsId, dirLightDirections, maxDirLightCount);
-        i->SetVector4(dirLightShadowDataId, dirLightShadowData, maxDirLightCount);
+    //return;
 
-        i->SetInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
-        i->SetMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 8); //FIXME: Revise this 8 propety calculate shadowData size
-        i->SetFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, 8); //FIXME: Revise this 8 propety calculate shadowData size
-        i->SetFramebuffer(Shadows::dirShadowAtlasId, *shadows->directionalShadowAtlas, 12, -1);
+    Material::SetGlobalInt(dirLightCountId, currentLightsCount);
+    Material::SetGlobalVector4(dirLightColorsId, dirLightColors, maxDirLightCount);
+    Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, maxDirLightCount);
+    Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, maxDirLightCount);
 
-        //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
+    Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 8); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, 8); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
 
-        i->SetFloat("_ShadowBias", shadows->settings.directional.shadowBias);
+    //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
 
-        i->SetFloat(Shadows::shadowDistanceId, shadows->settings.maxDistance);
+    Material::SetGlobalFloat("_ShadowBias", shadows->settings.directional.shadowBias);
 
-        float f = 1.0f - shadows->settings.directional.cascadeFade;
-        i->SetVector4(
-			Shadows::shadowDistanceFadeId,
-			Vector4(
-                1.0f / shadows->settings.maxDistance, 
-                1.0f / shadows->settings.distanceFade, 
-                0, //1.0f / (1.0f - f * f), 
-                1.0f
-            )
-		);
+    Material::SetGlobalFloat(Shadows::shadowDistanceId, shadows->settings.maxDistance);
 
-        /*
-        i->SetMatrix4("_DirectionalShadowMatrices[0]", shadows->dirShadowMatrices[0]);
-        i->SetMatrix4("_DirectionalShadowMatrices[1]", shadows->dirShadowMatrices[1]);
-        i->SetMatrix4("_DirectionalShadowMatrices[2]", shadows->dirShadowMatrices[2]);
-        i->SetMatrix4("_DirectionalShadowMatrices[3]", shadows->dirShadowMatrices[3]);
-        */
-    }
+    float f = 1.0f - shadows->settings.directional.cascadeFade;
+    Material::SetGlobalVector4(
+        Shadows::shadowDistanceFadeId,
+        Vector4(
+            1.0f / shadows->settings.maxDistance, 
+            1.0f / shadows->settings.distanceFade, 
+            0, //1.0f / (1.0f - f * f), 
+            1.0f
+        )
+    );
 }
 
 void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings){
@@ -213,7 +205,7 @@ void CameraRenderer::DrawShadows(){
 
 void CameraRenderer::DrawVisibleGeometry(){
     context->BeginDrawToScreen();
-    context->Clean();
+    context->ScreenClean();
 
     context->SetupCameraProperties(camera);
     context->RenderSkybox();
@@ -254,6 +246,8 @@ Framebuffer* StandRenderPipeline2::FinalColor(){
 void StandRenderPipeline2::Update(){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
+    
+
     //----------Setup Envroment Settings-------------
     ///*
     environmentSettings = EnvironmentSettings();
@@ -268,7 +262,7 @@ void StandRenderPipeline2::Update(){
     //*/
 
     //----------Scene Render-------------
-    //renderContext->Begin();
+    renderContext->Begin();
     //renderContext->Clean();
 
     renderContext->skyMaterial = environmentSettings.sky;
@@ -291,7 +285,7 @@ void StandRenderPipeline2::Update(){
         }
     }
 
-    //renderContext->End();
+    renderContext->End();
 }
 
 }

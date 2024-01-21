@@ -11,13 +11,11 @@ cmake --build build --config Release
 
 # Lean References
 
-<https://learnopengl.com/>
-
-<https://catlikecoding.com/unity/tutorials/custom-srp/>
-
-<https://www.youtube.com/@TheCherno>
-
-[Book: Hands-On C++ Game Animation Programming](https://subscription.packtpub.com/search?query=hands%20on%20game%20animation%20programming)
+* [Unity Engine](https://unity.com/)
+* <https://learnopengl.com/>
+* <https://catlikecoding.com/unity/tutorials/custom-srp/>
+* <https://www.youtube.com/@TheCherno>
+* [Book: Hands-On C++ Game Animation Programming](https://subscription.packtpub.com/search?query=hands%20on%20game%20animation%20programming)
 
 ## Roadmap
 
@@ -77,3 +75,7 @@ cmake --build build --config Release
 * Game Engine Name
 * Site
 * Documentation
+
+### Version 1.1
+
+* Sdf Global Illuminations
