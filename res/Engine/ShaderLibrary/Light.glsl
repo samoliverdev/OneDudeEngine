@@ -24,6 +24,10 @@ int GetDirectionalLightCount(){
 	return _DirectionalLightCount;
 }
 
+int GetDirectionalLightBaseTileIndex(int lightIndex){
+	return int(_DirectionalLightShadowData[lightIndex].y);
+}
+
 /*Light GetDirectionalLight(int index){
 	Light light;
 	light.color = _DirectionalLightColors[index].rgb;

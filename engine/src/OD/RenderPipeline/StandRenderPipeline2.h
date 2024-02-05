@@ -128,12 +128,10 @@ private:
 
     CommandBuffer blendDrawTarget;
     DrawingSettings blendDrawSettings;
-    //std::vector<DrawingTarget*> drawTargets{&opaqueDrawTarget, &blendDrawTarget};
 
-    void Setup();
-    void DrawShadows();
-    void DrawVisibleGeometry();
+    void RunSetupLoop();
     void OnSetupLoop(RenderData& data);
+    void RenderVisibleGeometry();
 };
 
 class StandRenderPipeline2: public BaseRenderPipeline{

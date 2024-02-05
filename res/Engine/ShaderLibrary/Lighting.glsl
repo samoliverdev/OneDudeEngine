@@ -21,6 +21,7 @@ vec3 GetLightingFinal2(Surface surfaceWS, BRDF brdf){
 	vec3 color = vec3(0.0);
 	for(int i = 0; i < GetDirectionalLightCount(); i++){
 		ShadowData shadowData = GetShadowData(surfaceWS, i);
+		//ShadowData shadowData = GetShadowData(surfaceWS, GetDirectionalLightBaseTileIndex(i));
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
 
 		color += GetLighting(surfaceWS, brdf, light);

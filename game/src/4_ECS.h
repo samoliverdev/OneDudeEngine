@@ -160,7 +160,7 @@ struct ECS_4: public OD::Module {
         pointLight2.GetComponent<TransformComponent>().Position(Vector3(-3, 0.5f, 0));
         //*/
 
-        for(int i = 0; i < 100/*00*/; i++){
+        for(int i = 0; i < 10000; i++){
             float posRange = 200;
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));

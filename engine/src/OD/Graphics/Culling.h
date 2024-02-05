@@ -16,8 +16,17 @@ struct Plane{
         normal(math::normalize(norm)),
 		distance(math::dot(normal, p1)){}
 
+	Plane(const Vector4& abcd): 
+		normal(abcd.x, abcd.y, abcd.z), distance(abcd.w){}
+
 	inline float getSignedDistanceToPlane(const Vector3& point) const{
 		return math::dot(normal, point) - distance;
+	}
+
+	inline void normalize(){
+		float mag = glm::length(normal);
+		normal /= mag;
+		distance /= mag;
 	}
 };
 
@@ -33,6 +42,8 @@ struct Frustum{
 };
 
 Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
+Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);
+Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalize_planes = true);
 
 struct BoundingVolume{
     virtual bool isOnFrustum(Frustum& camFrustum, Transform& transform) const = 0;

@@ -133,7 +133,7 @@ struct NewRenderPipeline_13: public OD::Module {
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
         //*/
 
-        /*
+        ///*
         Entity light3 = scene->AddEntity("Directional Light");
         LightComponent& lightComponent3 = light3.AddComponent<LightComponent>();
         lightComponent3.color = Vector3(1,1,1);
@@ -141,9 +141,9 @@ struct NewRenderPipeline_13: public OD::Module {
         lightComponent3.renderShadow = false;
         light3.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light3.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(65, -135, 0));
-        */
+        //*/
 
-        /*
+        ///*
         Entity light2 = scene->AddEntity("Directional Light 2");
         LightComponent& lightComponent2 = light2.AddComponent<LightComponent>();
         lightComponent2.color = Vector3(0.25f, 0.25f, 1);
@@ -151,7 +151,7 @@ struct NewRenderPipeline_13: public OD::Module {
         lightComponent2.renderShadow = false;
         light2.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light2.GetComponent<TransformComponent>().LocalEulerAngles(-Vector3(45, -125, 0));
-        */
+        //*/
         
         /*
         Entity pointLight = scene->AddEntity("Point Light");

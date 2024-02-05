@@ -100,7 +100,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
+        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
@@ -110,7 +110,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
             data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
-            //data.aabb = c.GetAABB();
+            data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
@@ -134,6 +134,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
             data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = &c.posePalette;
+            data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
@@ -144,9 +145,6 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 }
 
 void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, CommandBuffer& target){
-    //TODO: Check Culling
-    //if(data.aabb.isOnFrustum(cam.frustum, data.transform) == false) return;
-
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
@@ -291,8 +289,6 @@ void RenderContext::EndDrawShadow(){
 }
 
 void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, CommandBuffer& commandBuffer){
-    //TODO: Check Split data Culling
-
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
@@ -403,7 +399,7 @@ std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Mat
     return frustumCorners;
 }
 
-glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane){
+glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane, Frustum* outFrustom = nullptr){
     const auto proj = glm::perspective(cam.fov, (float)cam.width / (float)cam.height, nearPlane, farPlane);
     const auto corners = getFrustumCornersWorldSpace2(proj, cam.view);
 
@@ -414,6 +410,12 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     center /= corners.size();
 
     const auto lightView = glm::lookAt(center + lightDir, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    if(outFrustom != nullptr){
+        //*outFrustom = CreateFrustumFromMatrix(lightView,proj);
+        Matrix4 viewProj = lightView * proj;
+        *outFrustom = CreateFrustumFromMatrix2(viewProj);
+    }
 
     float minX = std::numeric_limits<float>::max();
     float maxX = std::numeric_limits<float>::lowest();
@@ -463,11 +465,17 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
     float cameraFarPlane = cam.farClip;
 
     std::vector<glm::mat4> lightMatrixs;
+    std::vector<Frustum> frustums;
+
     for(size_t i = 0; i < shadowCascadeLevels.size(); ++i){
+        Frustum frustum;
+
         if(i == 0){
-            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, cameraNearPlane, shadowCascadeLevels[i]));
+            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, cameraNearPlane, shadowCascadeLevels[i], &frustum));
+            frustums.push_back(frustum);
         }else if (i < shadowCascadeLevels.size()){
-            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, shadowCascadeLevels[i - 1], shadowCascadeLevels[i]));
+            lightMatrixs.push_back(getLightSpaceMatrix2(cam, lightDir, shadowCascadeLevels[i - 1], shadowCascadeLevels[i], &frustum));
+            frustums.push_back(frustum);
         }
     }
 
@@ -476,6 +484,7 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
     for(int i = 0; i < count; i++){
         splitData[i].projViewMatrix = lightMatrixs[i];
         splitData[i].splitDistance = shadowCascadeLevels[i];
+        splitData[i].frustum = frustums[i];
     }
 }
 

@@ -28,6 +28,7 @@ struct ShadowDrawingSettings{
 struct ShadowSplitData{
     Matrix4 projViewMatrix;
     float splitDistance;
+    Frustum frustum;
     
     static void SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light);
 };

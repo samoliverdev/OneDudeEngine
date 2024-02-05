@@ -3,6 +3,7 @@
 
 namespace OD{
 
+#pragma region Shadows
 Shadows::Shadows(){
     FrameBufferSpecification specification;
     specification.width = 1024 * 2;
@@ -30,13 +31,17 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
 }
 
 void Shadows::OnSetupLoop(RenderData& data){
+    //TODO: Check Split data Culling
+
     ShadowDrawingSettings s;
 
-    int index = 0;
+    int index = -1;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
-            context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
             index += 1;
+
+            //if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum, data.transform) == false) continue;
+            context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
 }
@@ -85,7 +90,9 @@ Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans
 
     return Vector2Zero;
 }
+#pragma endregion
 
+#pragma region Lighting
 struct Light{
 	Vector3 color;
 	Vector3 direction;
@@ -130,8 +137,8 @@ void Lighting::UpdateGlobalShaders(){
     Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, maxDirLightCount);
 
     Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
-    Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 8); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, 8); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, 16); //FIXME: Revise this 8 propety calculate shadowData size
     Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
 
     //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
@@ -151,23 +158,25 @@ void Lighting::UpdateGlobalShaders(){
         )
     );
 }
+#pragma endregion
 
+#pragma region CameraRenderer
 void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings){
     camera = inCam;
     context = inRenderContext;
 
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings);
-    Setup();
     
-    //DrawShadows();
+    //Get All RenderData and Building CommandsBuffer to Post Renderer
+    RunSetupLoop();
+    
     shadows.Render();
-
     lighting.UpdateGlobalShaders();
-    DrawVisibleGeometry();
+    RenderVisibleGeometry();
 }
 
-void CameraRenderer::Setup(){
+void CameraRenderer::RunSetupLoop(){
     opaqueDrawTarget.Clean();
     blendDrawTarget.Clean();
 
@@ -183,40 +192,35 @@ void CameraRenderer::Setup(){
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = CommandBuffer::SortType::CommonTransparent;
 
-    context->SetupCameraProperties(camera);
-    //context->SetupRenderers(drawTargets, lighting.GetShadows().GetShadowDrawTargets());
-    //context->Clean();
-
     context->SetupLoop([&](RenderData& data){
         OnSetupLoop(data);
+        shadows.OnSetupLoop(data);
     });
 }
 
 void CameraRenderer::OnSetupLoop(RenderData& data){
+    //TODO: Check Culling
+    if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
+
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
-
-    shadows.OnSetupLoop(data);
 }
 
-void CameraRenderer::DrawShadows(){
-    //lighting.GetShadows().Render();
-}
-
-void CameraRenderer::DrawVisibleGeometry(){
+void CameraRenderer::RenderVisibleGeometry(){
     context->BeginDrawToScreen();
     context->ScreenClean();
 
-    //context->SetupCameraProperties(camera);
+    context->SetupCameraProperties(camera);
     context->RenderSkybox();
-    //context->DrawRenderers(drawTargets);
     context->DrawRenderersBuffer(opaqueDrawTarget);
     context->DrawRenderersBuffer(blendDrawTarget);
-    context->DrawGizmos();
+    //context->DrawGizmos();
 
     context->EndDrawToScreen();
 }
+#pragma endregion
 
+#pragma region StandRenderPipeline2
 StandRenderPipeline2::StandRenderPipeline2(Scene* inScene):BaseRenderPipeline(inScene){
     renderContext = new RenderContext(scene);
 }
@@ -246,8 +250,6 @@ Framebuffer* StandRenderPipeline2::FinalColor(){
 void StandRenderPipeline2::Update(){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
-    
-
     //----------Setup Envroment Settings-------------
     ///*
     environmentSettings = EnvironmentSettings();
@@ -263,7 +265,6 @@ void StandRenderPipeline2::Update(){
 
     //----------Scene Render-------------
     renderContext->Begin();
-    //renderContext->Clean();
 
     renderContext->skyMaterial = environmentSettings.sky;
     shadow.directional.shadowBias = environmentSettings.shadowBias;
@@ -287,5 +288,6 @@ void StandRenderPipeline2::Update(){
 
     renderContext->End();
 }
+#pragma endregion
 
 }
