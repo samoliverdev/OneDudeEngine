@@ -389,6 +389,27 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     }
 
     glCheckError();
+
+    GLint count;
+    GLint size; // size of the variable
+    GLenum type; // type of the variable (float, vec3 or mat4, etc)
+    const GLsizei bufSize = 64; // maximum name length
+    GLchar name[bufSize]; // variable name in GLSL
+    GLsizei length; // name length
+    glGetProgramiv(rendererId, GL_ACTIVE_UNIFORMS, &count);
+    printf("Active Uniforms: %d\n", count);
+    for(int i = 0; i < count; i++){
+        glGetActiveUniform(rendererId, (GLuint)i, bufSize, &length, &size, &type, name);
+        
+        std::string t = std::string(name);
+        std::string s = "[0]";
+        std::string::size_type _i = t.find(s);
+        if (_i != std::string::npos)
+        t.erase(_i, s.length());
+
+        _uniforms.push_back(std::string(t));
+        printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+    }
 }
 
 bool Shader::IsValid(){

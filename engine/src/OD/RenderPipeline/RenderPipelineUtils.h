@@ -135,6 +135,10 @@ template<typename Key, typename Key2, typename Value>
 struct CommandBucket4{
     std::unordered_map<Key, std::unordered_map<Key2, Value> > commands;
 
+    inline int Size(){
+        return commands.size();
+    }
+
     inline void Clear(){
         commands.clear();
     }

@@ -31,7 +31,7 @@ struct SynthCity_10: OD::Module {
         lightComponent.color = Vector3(1,1,1);
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
-        lightComponent.renderShadow = false;
+        lightComponent.renderShadow = true;
 
         camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();

@@ -100,7 +100,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
+        if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
@@ -110,6 +110,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
             data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
+            //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
             }
@@ -228,6 +229,8 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
     commandBuffer.onUpdateMaterial = nullptr;
 }
 
+void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
+
 void RenderContext::DrawGizmos(){
     //Renderer::SetCamera(cam);
     Graphics::SetDepthTest(DepthTest::LESS);
@@ -236,15 +239,18 @@ void RenderContext::DrawGizmos(){
 
     scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
-    /*auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
+    Camera cm = cam;
+    _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
+
+    auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto e: cameraView){
         auto& c = cameraView.get<CameraComponent>(e);
         auto& t = cameraView.get<TransformComponent>(e);
 
         c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
         Camera cm = c.GetCamera();
-        _DrawFrustum(cm.frustum);
-    }*/
+        _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+    }
 
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
@@ -344,13 +350,14 @@ void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& s
 }
 
 Vector3 _Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
-    return ( ( -p1.distance * math::cross( p2.normal, p3.normal ) ) +
-            ( -p2.distance * math::cross( p3.normal, p1.normal ) ) +
-            ( -p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
+    return ( ( p1.distance * math::cross( p2.normal, p3.normal ) ) +
+            ( p2.distance * math::cross( p3.normal, p1.normal ) ) +
+            ( p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
         ( math::dot( p1.normal, math::cross( p2.normal, p3.normal ) ) );
 }
 
-void _DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
+// Source: https://forum.unity.com/threads/drawfrustum-is-drawing-incorrectly.208081/
+void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color = Vector3(1,1,1)){
     Vector3 nearCorners[4]; //Approx'd nearplane corners
     Vector3 farCorners[4]; //Approx'd farplane corners
     Plane camPlanes[6];
@@ -369,9 +376,9 @@ void _DrawFrustum(Frustum frustum, Matrix4 model = Matrix4Identity){
     }
 
     for(int i = 0; i < 4; i++){
-        Graphics::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //near corners on the created projection matrix
-        Graphics::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], Vector3(1,1,1), 1); //far corners on the created projection matrix
-        Graphics::DrawLine(model, nearCorners[i], farCorners[i], Vector3(1,1,1), 1); //sides of the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], nearCorners[( i + 1 ) % 4], color, 1); //near corners on the created projection matrix
+        Graphics::DrawLine(model, farCorners[i], farCorners[( i + 1 ) % 4], color, 1); //far corners on the created projection matrix
+        Graphics::DrawLine(model, nearCorners[i], farCorners[i], color, 1); //sides of the created projection matrix
     }
 }
 

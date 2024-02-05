@@ -84,10 +84,6 @@ private:
     CommandBucket4<Ref<Material>, Ref<Mesh>, DrawInstancingCommand> drawIntancingCommands;
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
 
-    //std::set<Ref<Material>> drawCommandsMaterials;
-    //std::set<Ref<Material>> drawIntancingCommandsMaterials;
-    //std::set<Ref<Material>> skinnedDrawCommandsMaterials;
-
     bool setRenderTarget = false;
     Framebuffer* renderTarget = nullptr;
     bool clearRenderTarget = false;

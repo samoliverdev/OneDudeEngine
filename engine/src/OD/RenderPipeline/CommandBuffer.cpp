@@ -87,11 +87,13 @@ void CommandBuffer::Sort(){
         };*/
 
         drawCommands.sortFunction = [](auto& a, auto& b){
+            //return a.material->MaterialId() < b.material->MaterialId();
             if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId();
             return a.distance < b.distance;
         };
 
         skinnedDrawCommands.sortFunction = [](auto& a, auto& b){
+            //return a.first.materialId < b.first.materialId;
             if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
             return a.first.distance < b.first.distance;
         };
@@ -160,11 +162,11 @@ void CommandBuffer::Submit(){
         if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
         
         cm.meshs->instancingModelMatrixs.clear();
-
         for(auto j: cm.trans){
             cm.meshs->instancingModelMatrixs.push_back(j);
         }
         cm.meshs->UpdateMeshInstancingModelMatrixs();
+        
         Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
     });
 

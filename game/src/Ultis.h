@@ -13,22 +13,28 @@ int random(int min, int max){
 }
 
 bool FileExist(const std::string& path){
-      std::ifstream file;
-      file.open(path);
+   std::ifstream file;
+   file.open(path);
 
-      if(file) return true;
-      return false;
-   }
+   if(file) return true;
+   return false;
+}
+
+Ref<Material> _mat = nullptr;
 
 Ref<Material> LoadFloorMaterial(){
+   if(_mat != nullptr) return _mat;
+
    //std::string path = "res/Game/Textures/floor.material";
 
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
-      m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl"));
+      //m->SetEnableInstancing(true);
+      m->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/floor.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
+      _mat = m;
       return m;
 
       //m->Save(path);

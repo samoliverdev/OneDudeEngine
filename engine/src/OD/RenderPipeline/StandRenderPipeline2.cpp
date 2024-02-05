@@ -183,7 +183,7 @@ void CameraRenderer::Setup(){
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = CommandBuffer::SortType::CommonTransparent;
 
-    //context->SetupCameraProperties(camera);
+    context->SetupCameraProperties(camera);
     //context->SetupRenderers(drawTargets, lighting.GetShadows().GetShadowDrawTargets());
     //context->Clean();
 
@@ -207,7 +207,7 @@ void CameraRenderer::DrawVisibleGeometry(){
     context->BeginDrawToScreen();
     context->ScreenClean();
 
-    context->SetupCameraProperties(camera);
+    //context->SetupCameraProperties(camera);
     context->RenderSkybox();
     //context->DrawRenderers(drawTargets);
     context->DrawRenderersBuffer(opaqueDrawTarget);

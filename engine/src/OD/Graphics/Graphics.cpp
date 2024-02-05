@@ -267,9 +267,12 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
     vertices += 2;
     tris += 0;
 
+    start = Vector3(model * Vector4(start.x, start.y, start.z, 1));
+    end = Vector3(model * Vector4(end.x, end.y, end.z, 1));
+
     Shader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
-    gismoShader->SetMatrix4("model", model);
+    gismoShader->SetMatrix4("model", Matrix4Identity); //gismoShader->SetMatrix4("model", model);
     gismoShader->SetMatrix4("view", camera.view);
     gismoShader->SetMatrix4("projection", camera.projection);
 

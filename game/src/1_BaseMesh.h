@@ -5,6 +5,8 @@
 #include <chrono>
 #include <functional>
 #include <atomic>
+#include <algorithm>
+#include <execution>
 
 using namespace OD;
 
@@ -128,7 +130,15 @@ struct BaseMesh_1: OD::Module {
             arr[i] += 20;
         }
         #else
-        std::atomic<int> counter(0);
+        /*std::for_each(
+            std::execution::par,
+            arr.begin(),
+            arr.end(),
+            [&](auto& component_set){
+                component_set += 20;
+        });*/
+
+        //std::atomic<int> counter(0);
         JobSystem::Dispatch(SIZE, SIZE/4, [&](JobDispatchArgs args){
             //LogInfo("JobIndex: %d, Group Index: %d", args.jobIndex, args.groupIndex);
 

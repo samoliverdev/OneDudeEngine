@@ -101,6 +101,10 @@ public:
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);
 
+    inline void SetEnableInstancing(bool enable){
+        enableInstancing = enable;
+    }
+
 private:
     bool enableInstancing = false;
     int currentTextureSlot = 0;

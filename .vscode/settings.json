@@ -94,7 +94,8 @@
         "coroutine": "cpp",
         "resumable": "cpp",
         "internal.h": "c",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "execution": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "git.ignoreLimitWarning": true,

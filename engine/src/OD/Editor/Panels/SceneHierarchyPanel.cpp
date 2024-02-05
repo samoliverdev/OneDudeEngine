@@ -36,6 +36,11 @@ void SceneHierarchyPanel::OnGui(){
             return lhs < rhs;
         });
 
+        /*Vector3 camPos = scene->GetMainCamera2().GetComponent<TransformComponent>().Position();
+        scene->GetRegistry().sort<TransformComponent>([&](const TransformComponent& lhs, const TransformComponent& rhs) {
+            return math::distance(camPos, lhs.localPosition) < math::distance(camPos, rhs.localPosition);
+        });*/
+
         auto view = scene->GetRegistry().view<TransformComponent, InfoComponent>();
         view.use<InfoComponent>();
         for(auto e: view){

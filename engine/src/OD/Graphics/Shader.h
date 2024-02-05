@@ -8,6 +8,7 @@
 #include "Framebuffer.h"
 #include "UniformBuffer.h"
 #include "RendererTypes.h"
+#include <algorithm>
 
 namespace OD {
 
@@ -50,6 +51,8 @@ public:
     inline BlendMode GetSrcBlend(){ return srcBlend; }
     inline BlendMode GetDstBlend(){ return dstBlend; }
 
+    inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
+
     inline std::vector<std::vector<std::string>>& Properties(){ return properties; }
 
 private:
@@ -64,6 +67,7 @@ private:
     
     unsigned int rendererId;
     std::unordered_map<std::string, GLint> uniforms;
+    std::vector<std::string> _uniforms;
     std::vector<std::vector<std::string>> properties;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);

@@ -71,7 +71,7 @@ struct ECS_4: public OD::Module {
 
         Ref<Model> floorModel = AssetManager::Get().LoadModel(
             "res/Game/Models/plane.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
         //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -79,7 +79,7 @@ struct ECS_4: public OD::Module {
 
         Ref<Model> cubeModel = AssetManager::Get().LoadModel(
             "res/Game/models/Cube.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
+            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
         //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -160,7 +160,7 @@ struct ECS_4: public OD::Module {
         pointLight2.GetComponent<TransformComponent>().Position(Vector3(-3, 0.5f, 0));
         //*/
 
-        for(int i = 0; i < 10000; i++){
+        for(int i = 0; i < 100/*00*/; i++){
             float posRange = 200;
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
@@ -168,6 +168,7 @@ struct ECS_4: public OD::Module {
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
             mr.SetModel(cubeModel);
             mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
+            //mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         
             float angle = 20.0f * i; 
             e.GetComponent<TransformComponent>().LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));

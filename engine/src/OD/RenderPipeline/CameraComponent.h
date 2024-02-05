@@ -35,10 +35,33 @@ struct CameraComponent{
         camera.viewportRect = viewportRect;
         camera.viewPos = transform.Position();
         camera.view = math::inverse(transform.GlobalModelMatrix());
-        Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
+        //Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
+        Transform _trans = Transform(transform.GlobalModelMatrix());
         camera.frustum = CreateFrustumFromCamera(
             _trans, 
-            (float)width / (float)height, 
+            static_cast<float>(width) / static_cast<float>(height), 
+            Mathf::Deg2Rad(fieldOfView), 
+            nearClipPlane, 
+            farClipPlane
+        );
+    }
+
+    inline void UpdateCameraDataLocal(TransformComponent& transform, int width, int height){
+        if(type == Type::Perspective)
+            camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane, width, height);
+        else    
+            camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, width, height);
+
+        camera.width = width;
+        camera.height = height;
+        camera.viewportRect = viewportRect;
+        camera.viewPos = transform.Position();
+        camera.view = math::inverse(transform.GetLocalModelMatrix());
+        //Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
+        Transform _trans = Transform(transform.GetLocalModelMatrix());
+        camera.frustum = CreateFrustumFromCamera(
+            _trans, 
+            static_cast<float>(width) / static_cast<float>(height), 
             Mathf::Deg2Rad(fieldOfView), 
             nearClipPlane, 
             farClipPlane
