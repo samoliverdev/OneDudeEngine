@@ -21,24 +21,45 @@
 #pragma MultiCompile Default Skinned Instancing
 #pragma MultiCompile Opaque Fade
 #pragma MultiCompile Black White
-
 /*
-Default-Opaque-Black
-Default-Fade-Black
-Default-Opaque-White
-Default-Fade-White
+Default
+    -Opaque
+        -Black
+Default
+    -Opaque
+        -White
+Default
+    -Fade
+        -Black
+Default
+    -Fade
+        -White
 
-Default-Fade-Black
-Skinned-Fade-Black
-Instancing-Fade-Black
+Skinned
+    -Opaque
+        -Black
+Skinned
+    -Opaque
+        -White
+Skinned
+    -Fade
+        -Black
+Skinned
+    -Fade
+        -White
 
-Default-Opaque-White
-Skinned-Opaque-White
-Instancing-Opaque-White
-
-Default-Fade-White
-Skinned-Fade-White
-Instancing-Fade-White
+Instancing
+    -Opaque
+        -Black
+Instancing
+    -Opaque
+        -White
+Instancing
+    -Fade
+        -Black
+Instancing
+    -Fade
+        -White
 */
 
 #ifdef VERTEX

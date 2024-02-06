@@ -450,13 +450,13 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     return lightProjection * lightView;
 }
 
-void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light){
-    float shadowDistance = cam.farClip;
-    shadowDistance = 500;
+void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels){
+    //float shadowDistance = cam.farClip;
+    //shadowDistance = 500;
 
     //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f, cam.farClip };
     //std::vector<float> shadowCascadeLevels{ cam.farClip/50.0f, cam.farClip/25.0f, cam.farClip/10.0f };
-    std::vector<float> shadowCascadeLevels{ shadowDistance*0.1f, shadowDistance*0.25f, shadowDistance*0.5f, shadowDistance*1.0f };
+    //std::vector<float> shadowCascadeLevels{ shadowDistance*0.1f, shadowDistance*0.25f, shadowDistance*0.5f, shadowDistance*1.0f };
 
     Assert(shadowCascadeLevels.size() == count);
     
@@ -483,7 +483,7 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
 
     for(int i = 0; i < count; i++){
         splitData[i].projViewMatrix = lightMatrixs[i];
-        splitData[i].splitDistance = shadowCascadeLevels[i];
+        //splitData[i].splitDistance = shadowCascadeLevels[i];
         splitData[i].frustum = frustums[i];
     }
 }

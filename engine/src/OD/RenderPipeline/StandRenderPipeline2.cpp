@@ -21,6 +21,12 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
     context = inContext;
     settings = inSettings;
     cam = inCam;
+
+    shadowCascadeLevels.clear();
+    shadowCascadeLevels.push_back(inSettings.maxDistance * inSettings.directional.cascadeRatio1);
+    shadowCascadeLevels.push_back(inSettings.maxDistance * inSettings.directional.cascadeRatio2);
+    shadowCascadeLevels.push_back(inSettings.maxDistance * inSettings.directional.cascadeRatio3);
+    shadowCascadeLevels.push_back(inSettings.maxDistance * inSettings.directional.cascadeRatio4);
     
     shadowedDirectionalLightCount = 0; 
     directionalShadowAtlas->Resize((int)settings.directional.altasSize, (int)settings.directional.altasSize);
@@ -53,11 +59,16 @@ void Shadows::Render(){
 void Shadows::RenderDirectionalShadows(){
     Assert(settings.directional.cascadeCount == 4);
 
+    cascadeCullingSpheres[0] = shadowCascadeLevels[0];
+    cascadeCullingSpheres[1] = shadowCascadeLevels[1];
+    cascadeCullingSpheres[2] = shadowCascadeLevels[2];
+    cascadeCullingSpheres[3] = shadowCascadeLevels[3];
+
     int index = 0;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             dirShadowMatrices[index] = shadowDirectionalLightsSplits[index].projViewMatrix;
-            cascadeCullingSpheres[index] = shadowDirectionalLightsSplits[index].splitDistance;
+            //cascadeCullingSpheres[index] = shadowDirectionalLightsSplits[index].splitDistance;
             index += 1;
         }
     }
@@ -80,7 +91,8 @@ Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans
             &shadowDirectionalLightsSplits[shadowedDirectionalLightCount*settings.directional.cascadeCount],
             settings.directional.cascadeCount, 
             cam, 
-            trans
+            trans,
+            shadowCascadeLevels
         );
 
         shadowedDirectionalLightCount += 1;
@@ -138,7 +150,7 @@ void Lighting::UpdateGlobalShaders(){
 
     Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
     Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, 16); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
     Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
 
     //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size

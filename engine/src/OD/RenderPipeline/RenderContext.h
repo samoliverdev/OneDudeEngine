@@ -27,10 +27,10 @@ struct ShadowDrawingSettings{
 
 struct ShadowSplitData{
     Matrix4 projViewMatrix;
-    float splitDistance;
+    //float splitDistance;
     Frustum frustum;
     
-    static void SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light);
+    static void SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels);
 };
 
 struct CommandBaseData{

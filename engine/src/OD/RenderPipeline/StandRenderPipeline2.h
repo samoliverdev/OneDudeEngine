@@ -38,6 +38,7 @@ struct ShadowSettings{
         float cascadeRatio1 = 0.1f;
         float cascadeRatio2 = 0.25f;
         float cascadeRatio3 = 0.5f;
+        float cascadeRatio4 = 1.0f;
 
         //[Range(0.001f, 1f)]
 		float cascadeFade = 0.1f;
@@ -61,6 +62,8 @@ public:
     
 private:
     void RenderDirectionalShadows();
+
+    std::vector<float> shadowCascadeLevels;
 
     RenderContext* context;
     ShadowSettings settings;
@@ -86,7 +89,7 @@ private:
     inline static const char* shadowDistanceFadeId = "_ShadowDistanceFade";
 
 	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
-    inline static float cascadeCullingSpheres[maxShadowedDirectionalLightCount * maxCascades];
+    inline static float cascadeCullingSpheres[maxCascades];
     //inline static Vector4 cascadeData[maxShadowedDirectionalLightCount * maxCascades];
 };
 

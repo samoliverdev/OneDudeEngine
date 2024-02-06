@@ -35,8 +35,8 @@ struct CameraComponent{
         camera.viewportRect = viewportRect;
         camera.viewPos = transform.Position();
         camera.view = math::inverse(transform.GlobalModelMatrix());
-        //Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
-        Transform _trans = Transform(transform.GlobalModelMatrix());
+        Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
+        //Transform _trans = Transform(transform.GlobalModelMatrix());
         camera.frustum = CreateFrustumFromCamera(
             _trans, 
             static_cast<float>(width) / static_cast<float>(height), 
@@ -44,6 +44,7 @@ struct CameraComponent{
             nearClipPlane, 
             farClipPlane
         );
+        //camera.frustum = CreateFrustumFromMatrix2(camera.view * camera.projection);
     }
 
     inline void UpdateCameraDataLocal(TransformComponent& transform, int width, int height){

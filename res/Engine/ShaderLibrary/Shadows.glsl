@@ -7,7 +7,7 @@
 uniform sampler2DArray _DirectionalShadowAtlas;
 uniform mat4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
 uniform int _CascadeCount;
-uniform float _CascadeCullingSpheres[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+uniform float _CascadeCullingSpheres[MAX_CASCADE_COUNT];
 uniform float _ShadowDistance;
 uniform vec4 _ShadowDistanceFade;
 
@@ -27,7 +27,7 @@ float FadedShadowStrength(float distance, float scale, float fade){
 	return saturate((1.0 - distance * scale) * fade);
 }
 
-ShadowData GetShadowData(Surface surfaceWS, int lightIndex){
+ShadowData GetShadowData(Surface surfaceWS){
     vec4 fragPosViewSpace = view * vec4(surfaceWS.position, 1);
     float depthValue = abs(fragPosViewSpace.z);
 
@@ -39,8 +39,7 @@ ShadowData GetShadowData(Surface surfaceWS, int lightIndex){
 		surfaceWS.depth, _ShadowDistanceFade.x, _ShadowDistanceFade.y
 	);
 
-    int i;
-    for(i = lightIndex * _CascadeCount; i < _CascadeCount; i++){
+    for(int i = 0; i < _CascadeCount; i++){
         if(depthValue <= _CascadeCullingSpheres[i]){
             data.cascadeIndex = i;
             break;
