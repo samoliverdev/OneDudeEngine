@@ -32,8 +32,15 @@ struct ShadowSettings{
     //[Range(0.001f, 1f)]
 	float distanceFade = 0.1f;
 
+
+    enum class FilterMode{
+		PCF2x2, PCF3x3, PCF5x5, PCF7x7
+	};
+
     struct Directional{
         TextureSize altasSize;
+        FilterMode filter = FilterMode::PCF2x2;
+
         int cascadeCount = 4; 
         float cascadeRatio1 = 0.1f;
         float cascadeRatio2 = 0.25f;
@@ -86,6 +93,7 @@ private:
 	inline static const char* cascadeCullingSpheresId = "_CascadeCullingSpheres";
     //inline static const char* cascadeDataId = "_CascadeData";
     inline static const char* shadowDistanceId = "_ShadowDistance";
+    inline static const char* shadowAtlasSizeId = "_ShadowAtlasSize";
     inline static const char* shadowDistanceFadeId = "_ShadowDistanceFade";
 
 	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
@@ -95,18 +103,21 @@ private:
 
 class Lighting{
 public:
-    void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings);
+    void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
 	void SetupDirectionalLight();
     void UpdateGlobalShaders();
 private:
     RenderContext* context;
     Shadows* shadows;
+    EnvironmentSettings environmentSettings;
 
     int currentLightsCount;
 
     inline static const int maxDirLightCount = 4;
 
-    inline static const char* dirLightCountId = "_DirectionalLightCount";
+    inline static const char* ambientLightId = "_AmbientLight";
+
+    inline static const char* dirLightCountId = "_DirectionalLightCount";       
     inline static const char* dirLightColorsId = "_DirectionalLightColors";
 	inline static const char* dirLightDirectionsId = "_DirectionalLightDirections";
     inline static const char* dirLightShadowDataId = "_DirectionalLightShadowData";
@@ -120,7 +131,7 @@ class CameraRenderer{
 public:
     Camera camera;
     RenderContext* context;
-    void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings);
+    void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings);
     inline Lighting& GetLighting(){ return lighting; }
 private:
     Shadows shadows;

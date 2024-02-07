@@ -66,6 +66,7 @@ uniform mat4 view;
 #include ../ShaderLibrary/Shadows.glsl
 #include ../ShaderLibrary/Light.glsl
 #include ../ShaderLibrary/BRDF.glsl
+#include ../ShaderLibrary/GI.glsl
 #include ../ShaderLibrary/Lighting.glsl
 
 in VsOut{
@@ -101,7 +102,8 @@ void main(){
     surface.smoothness = smoothness;
     
     BRDF brdf = GetBRDF(surface);
-    vec3 color = GetLightingFinal2(surface, brdf);
+    GI gi = GetGI();
+    vec3 color = GetLightingFinal2(surface, brdf, gi);
     fragColor = vec4(color, surface.alpha);
 
     if(base.a < cutoff) discard;

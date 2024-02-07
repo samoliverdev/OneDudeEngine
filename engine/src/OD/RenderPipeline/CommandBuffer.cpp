@@ -40,6 +40,7 @@ void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
     );*/
 
     drawCommands.Add(comand);
+    drawCommandsMaterials.insert(comand.material);
 }   
 
 void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
@@ -74,6 +75,8 @@ void CommandBuffer::Clean(){
     drawCommands.Clear();
     drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
+
+    drawCommandsMaterials.clear();
 }
 
 void CommandBuffer::Sort(){
@@ -135,6 +138,18 @@ void CommandBuffer::Submit(){
     Ref<Material> lastMat = nullptr;
 
     // ---------------Submiting DrawCommands-----------------
+    /*for(auto i: drawCommandsMaterials){
+        i->DisableKeyword("INSTANCING");
+        i->DisableKeyword("SKINNED");
+        Material::SubmitGraphicDatas(*i);
+        if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
+    }
+    if(overrideMaterial != nullptr){
+        overrideMaterial->DisableKeyword("INSTANCING");
+        overrideMaterial->DisableKeyword("SKINNED");
+        Material::SubmitGraphicDatas(*overrideMaterial);
+        if(onUpdateMaterial != nullptr) onUpdateMaterial(*overrideMaterial);
+    }*/
     drawCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
@@ -147,6 +162,7 @@ void CommandBuffer::Submit(){
         }
 
         lastMat = _mat;
+        //Shader::Bind(*_mat->GetShader());
         _mat->GetShader()->SetMatrix4("model", cm.trans);
         Graphics::DrawMesh(*cm.meshs);
     });

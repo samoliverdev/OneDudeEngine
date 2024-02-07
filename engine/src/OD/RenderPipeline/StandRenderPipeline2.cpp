@@ -110,9 +110,10 @@ struct Light{
 	Vector3 direction;
 };
 
-void Lighting::Setup(RenderContext* inContext, Shadows* inShadows, ShadowSettings shadowSettings){
+void Lighting::Setup(RenderContext* inContext, Shadows* inShadows, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings){
     context = inContext;
     shadows = inShadows;
+    environmentSettings = inEnvironmentSettings;
     SetupDirectionalLight();
 }
 
@@ -143,6 +144,8 @@ void Lighting::SetupDirectionalLight(){
 void Lighting::UpdateGlobalShaders(){
     //return;
 
+    Material::SetGlobalVector3(ambientLightId, environmentSettings.ambient);
+
     Material::SetGlobalInt(dirLightCountId, currentLightsCount);
     Material::SetGlobalVector4(dirLightColorsId, dirLightColors, maxDirLightCount);
     Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, maxDirLightCount);
@@ -169,20 +172,29 @@ void Lighting::UpdateGlobalShaders(){
             1.0f
         )
     );
+
+    float altlasSize = (int)shadows->settings.directional.altasSize;
+    Material::SetGlobalVector4(
+        Shadows::shadowAtlasSizeId, 
+        Vector4(altlasSize, 1.0f / altlasSize, 0, 0)
+    );
 }
 #pragma endregion
 
 #pragma region CameraRenderer
-void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings){
+void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings){
+    // ----------- Setup ----------- 
     camera = inCam;
     context = inRenderContext;
-
     shadows.Setup(context, shadowSettings, camera);
-    lighting.Setup(context, &shadows, shadowSettings);
+    lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
     
-    //Get All RenderData and Building CommandsBuffer to Post Renderer
+    // ----------- Build Render Datas Loop ----------- 
+    // Get All RenderData and Building CommandsBuffer to Post Renderer
+    // Building the Render Graph
     RunSetupLoop();
     
+    // ----------- Rendering ------------
     shadows.Render();
     lighting.UpdateGlobalShaders();
     RenderVisibleGeometry();
@@ -282,7 +294,7 @@ void StandRenderPipeline2::Update(){
     shadow.directional.shadowBias = environmentSettings.shadowBias;
 
     if(overrideCamera != nullptr){
-        cameraRenderer.Render(*overrideCamera, renderContext, shadow);
+        cameraRenderer.Render(*overrideCamera, renderContext, shadow, environmentSettings);
     } else {
         auto camView = GetScene()->GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>();
         for(auto entity: camView){
@@ -292,7 +304,7 @@ void StandRenderPipeline2::Update(){
 
             cam.UpdateCameraData(trans, renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
             //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
-            cameraRenderer.Render(cam.GetCamera(), renderContext, shadow);
+            cameraRenderer.Render(cam.GetCamera(), renderContext, shadow, environmentSettings);
             //LogInfo("Camera Name: %s", info.name.c_str());
             break;
         }

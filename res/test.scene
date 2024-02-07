@@ -1,0 +1,146 @@
+{
+    "value0": 2,
+    "value1": 2,
+    "value2": 0,
+    "value3": 1,
+    "value4": 2,
+    "value5": 0,
+    "value6": {
+        "localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": true,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value7": 1,
+    "value8": {
+        "localPosition": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "localRotation": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 1.0
+        },
+        "localScale": {
+            "v.x": 1.0,
+            "v.y": 1.0,
+            "v.z": 1.0
+        },
+        "isDirt": true,
+        "children": [],
+        "parent": 0,
+        "hasParent": false
+    },
+    "value9": 2,
+    "value10": 1,
+    "value11": {
+        "name": "Test2",
+        "tag": "",
+        "active": false
+    },
+    "value12": 0,
+    "value13": {
+        "name": "Test",
+        "tag": "",
+        "active": false
+    },
+    "value14": 1,
+    "value15": 0,
+    "value16": {
+        "speed": 0.0,
+        "test": {
+            "a": "",
+            "b": 0
+        },
+        "tests": [
+            {
+                "a": "",
+                "b": 0
+            },
+            {
+                "a": "",
+                "b": 0
+            }
+        ]
+    },
+    "value17": 0,
+    "value18": 1,
+    "value19": 1,
+    "value20": {},
+    "value21": 0,
+    "value22": 0,
+    "value23": 0,
+    "value24": 0,
+    "value25": 0,
+    "value26": 0,
+    "value27": 0,
+    "value28": 1,
+    "value29": 1,
+    "value30": {
+        "_float": 0.0,
+        "_int": 0,
+        "_string": "",
+        "_vector3": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0
+        },
+        "_Vector4": {
+            "v.x": 0.0,
+            "v.y": 0.0,
+            "v.z": 0.0,
+            "v.w": 0.0
+        },
+        "_quaternion": {
+            "q.x": 0.0,
+            "q.y": 0.0,
+            "q.z": 0.0,
+            "q.w": 0.0
+        },
+        "_object": {
+            "center": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "radius": 0.0
+        },
+        "_list": [
+            {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "radius": 0.0
+            },
+            {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "radius": 0.0
+            }
+        ]
+    }
+}
