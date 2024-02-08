@@ -4,5 +4,5 @@
 
 # Bugs
 
-* Animation Rotation Glitch
+* Animation Rotation Glitch -
 * Skinned Model Scale

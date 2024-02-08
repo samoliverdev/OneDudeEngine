@@ -38,11 +38,17 @@ public:
 
     Matrix4 GlobalModelMatrix();
     
-    Vector3 InverseTransformDirection(Vector3 dir); //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
-    Vector3 TransformDirection(Vector3 dir); //Transforms direction from local space to world space.
+    //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
+    Vector3 InverseTransformDirection(Vector3 dir); 
+    
+    //Transforms direction from local space to world space.
+    Vector3 TransformDirection(Vector3 dir); 
 
-    Vector3 InverseTransformPoint(Vector3 point); //Transforms position from world space to local space.
-    Vector3 TransformPoint(Vector3 point);  //Transforms position from local space to world space.
+    //Transforms position from world space to local space.
+    Vector3 InverseTransformPoint(Vector3 point); 
+
+    //Transforms position from local space to world space.
+    Vector3 TransformPoint(Vector3 point);  
 
     Vector3 Position();
     void Position(Vector3 position);
@@ -220,8 +226,8 @@ private:
         std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
-        std::function<void(ODSnapshot& s, ODOutputArchive& out)> snapshotOut;
-        std::function<void(ODSnapshotLoader& s, ODInputArchive& out)> snapshotIn;
+        std::function<void(ODOutputArchive& out, entt::registry& registry, std::string name)> snapshotOut;
+        std::function<void(ODInputArchive& out, entt::registry& registry, std::string name)> snapshotIn;
     };
 
     struct CoreComponent{
@@ -230,8 +236,8 @@ private:
         std::function<void(Entity&)> removeComponent;
         std::function<void(Entity&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
-        std::function<void(ODSnapshot& s, ODOutputArchive& out)> snapshotOut;
-        std::function<void(ODSnapshotLoader& s, ODInputArchive& out)> snapshotIn;
+        std::function<void(ODOutputArchive& out, entt::registry& registry, std::string name)> snapshotOut;
+        std::function<void(ODInputArchive& out, entt::registry& registry, std::string name)> snapshotIn;
     };
 
     SceneState sceneState;
@@ -251,6 +257,30 @@ struct CoreComponentTypeRegistrator{
         SceneManager::Get().RegisterCoreComponent<T>(name);
     }
 };
+
+template<typename T>
+void _SaveComponent(ODOutputArchive& archive, entt::registry& registry, std::string componentName){
+    auto view = registry.view<T>();
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+    for(auto e: view){
+        components.push_back(view.get<T>(e));
+        componentsEntities.push_back(e);
+    }
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+}
+
+template<typename T>
+void _LoadComponent(ODInputArchive& archive, entt::registry& registry, std::string componentName){
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+    for(int i = 0; i < components.size(); i++){
+        registry.emplace<T>(componentsEntities[i], components[i]);
+    }
+}
 
 #define OD_REGISTER_CORE_COMPONENT_TYPE(componentName) static inline const CoreComponentTypeRegistrator<componentName> componentNameReg{#componentName} 
 

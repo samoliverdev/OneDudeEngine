@@ -62,7 +62,9 @@ public:
         }*/
         return Transform(
             math::mix(a.localPosition, b.localPosition, t),
-            math::normalize( math::lerp(math::normalize(a.localRotation), math::normalize(bRot), t) ),
+            math::slerp(a.localRotation, bRot, t),
+            //math::normalize( math::slerp(math::normalize(a.localRotation), math::normalize(bRot), t) ),
+            //math::normalize( math::lerp(math::normalize(a.localRotation), math::normalize(bRot), t) ),
             math::mix(a.localScale, b.localScale, t)
         );
     }

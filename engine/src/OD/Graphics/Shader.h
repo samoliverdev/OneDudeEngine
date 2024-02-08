@@ -54,6 +54,7 @@ public:
     inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
 
     inline std::vector<std::vector<std::string>>& Properties(){ return properties; }
+    inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
 
 private:
     bool supportInstancing = false;
@@ -69,6 +70,7 @@ private:
     std::unordered_map<std::string, GLint> uniforms;
     std::vector<std::string> _uniforms;
     std::vector<std::vector<std::string>> properties;
+    std::vector<std::vector<std::string>> pragmas;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
     std::string load(std::string path);

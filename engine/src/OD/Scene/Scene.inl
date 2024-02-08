@@ -52,7 +52,6 @@ void Entity::RemoveComponent(){
 }
 
 //-----------Scene---------
-
 template <typename T>
 void Scene::AddSystem(){
     static_assert(std::is_base_of<OD::System, T>::value);
@@ -131,12 +130,13 @@ void SceneManager::RegisterCoreComponent(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
-        s.get<T>(out);
+    funcs.snapshotOut = [&](ODOutputArchive& out, entt::registry& registry, std::string name){
+        //LogWarning("Saving Component %s", name.c_str());
+        _SaveComponent<T>(out, registry, name);
     };
 
-    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& in){
-        s.get<T>(in);
+    funcs.snapshotIn = [](ODInputArchive& in, entt::registry& registry, std::string name){
+        _LoadComponent<T>(in, registry, name);
     };
     
     coreComponentsSerializer[name] = funcs;
@@ -176,12 +176,12 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
-        s.get<T>(out);
+    funcs.snapshotOut = [](ODOutputArchive& out, entt::registry& registry, std::string name){
+        _SaveComponent<T>(out, registry, name);
     };
 
-    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& out){
-        s.get<T>(out);
+    funcs.snapshotIn = [](ODInputArchive& out, entt::registry& registry, std::string name){
+        _LoadComponent<T>(out, registry, name);
     };
     
     coreComponentsSerializer[name] = funcs;
@@ -213,12 +213,12 @@ void SceneManager::RegisterComponent(const char* name){
         }
     };
 
-    funcs.snapshotOut = [](ODSnapshot& s, ODOutputArchive& out){
-        s.get<T>(out);
+    funcs.snapshotOut = [](ODOutputArchive& out, entt::registry& registry, std::string name){
+        _SaveComponent<T>(out, registry, name);
     };
 
-    funcs.snapshotIn = [](ODSnapshotLoader& s, ODInputArchive& out){
-        s.get<T>(out);
+    funcs.snapshotIn = [](ODInputArchive& out, entt::registry& registry, std::string name){
+        _LoadComponent<T>(out, registry, name);
     };
     
     componentsSerializer[name] = funcs;

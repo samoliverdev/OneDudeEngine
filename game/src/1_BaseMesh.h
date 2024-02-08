@@ -169,8 +169,36 @@ struct BaseMesh_1: OD::Module {
         std::vector<std::vector<std::string>> multCompile{
             std::vector<std::string>{ "Default", "Skinned", "Instancing" },
             std::vector<std::string>{ "Opaque", "Fade"},
-            std::vector<std::string>{ "White", "Black"}
+            std::vector<std::string>{ "White", "Black"},
+            std::vector<std::string>{ "Shadow_X1", "Shadow_X2", "Shadow_X3", "Shadow_X4"},
         };
+
+        std::vector<std::string> combinations;
+        Combine(multCompile, std::string(""), combinations);
+        for(std::string s: combinations){
+            LogInfo("%s", s.c_str());
+        }
+    }
+
+    void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
+        bool last = (terms.size() == 1);
+        int n = terms[0].size();
+        for(int i = 0; i < n; i++){
+            std::string item = accum + "_" + terms[0][i];
+            if(last){
+                combinations.push_back(item);
+            } else{
+                auto newTerms = terms;
+                newTerms.erase(newTerms.begin());
+                Combine(newTerms, item, combinations);
+            }
+        }
+        /*for i in range(n):
+            item = accum + '_' + terms[0][i]
+            if last:
+                combinations.append(item)
+            else:
+                combine(terms[1:], item)*/
     }
 
     void OnUpdate(float deltaTime) override {

@@ -1,0 +1,169 @@
+{
+    "Entities": [
+        0,
+        1
+    ],
+    "InfoComponents": [
+        {
+            "name": "Test",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "Test2",
+            "tag": "",
+            "active": false
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1
+    ],
+    "TransformComponents": [
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        }
+    ],
+    "TransformComponentEntities": [
+        1,
+        0
+    ],
+    "ComponentTest_01s": [
+        {
+            "speed": 0.0,
+            "test": {
+                "a": "",
+                "b": 0
+            },
+            "tests": [
+                {
+                    "a": "",
+                    "b": 0
+                },
+                {
+                    "a": "",
+                    "b": 0
+                }
+            ]
+        }
+    ],
+    "ComponentTest_01Entities": [
+        0
+    ],
+    "JointComponents": [],
+    "JointComponentEntities": [],
+    "RigidbodyComponents": [],
+    "RigidbodyComponentEntities": [],
+    "SkinnedMeshRendererComponents": [],
+    "SkinnedMeshRendererComponentEntities": [],
+    "MeshRendererComponents": [],
+    "MeshRendererComponentEntities": [],
+    "LightComponents": [],
+    "LightComponentEntities": [],
+    "CameraComponents": [],
+    "CameraComponentEntities": [],
+    "EnvironmentComponents": [],
+    "EnvironmentComponentEntities": [],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        1
+    ],
+    "AnimatorComponents": [],
+    "AnimatorComponentEntities": [],
+    "ComponentTest_02s": [
+        {
+            "_float": 0.0,
+            "_int": 0,
+            "_string": "",
+            "_vector3": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "_Vector4": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0,
+                "v.w": 0.0
+            },
+            "_quaternion": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.0
+            },
+            "_object": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "radius": 0.0
+            },
+            "_list": [
+                {
+                    "center": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "radius": 0.0
+                },
+                {
+                    "center": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "radius": 0.0
+                }
+            ]
+        }
+    ],
+    "ComponentTest_02Entities": [
+        1
+    ]
+}

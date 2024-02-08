@@ -1,5 +1,6 @@
 #version 330 core
 
+#pragma MultiCompile _ SKINNED INSTANCING
 #pragma CullFace BACK
 #pragma DepthTest LESS
 #pragma Blend Off

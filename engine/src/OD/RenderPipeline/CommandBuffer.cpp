@@ -172,8 +172,8 @@ void CommandBuffer::Submit(){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
 
-        _mat->EnableKeyword("INSTANCING");
         _mat->DisableKeyword("SKINNED");
+        _mat->EnableKeyword("INSTANCING");
         Material::SubmitGraphicDatas(*_mat);
         if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
         

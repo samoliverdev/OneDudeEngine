@@ -61,8 +61,10 @@ std::string Shader::load(std::string path){
             }
         }
 
+        pragmas.push_back(pragmaLine);
+
         /*for(auto i: pragmaLine){
-            LogInfo("%s", i.c_str());
+            LogInfo("===> %s", i.c_str());
         }*/
 
         if(beginProperties == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginProperties"){
@@ -397,7 +399,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     GLchar name[bufSize]; // variable name in GLSL
     GLsizei length; // name length
     glGetProgramiv(rendererId, GL_ACTIVE_UNIFORMS, &count);
-    printf("Active Uniforms: %d\n", count);
+    //printf("Active Uniforms: %d\n", count);
     for(int i = 0; i < count; i++){
         glGetActiveUniform(rendererId, (GLuint)i, bufSize, &length, &size, &type, name);
         
@@ -408,7 +410,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
         t.erase(_i, s.length());
 
         _uniforms.push_back(std::string(t));
-        printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+        //printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
     }
 }
 

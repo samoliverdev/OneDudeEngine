@@ -97,6 +97,7 @@ struct NewRenderPipeline_13: public OD::Module {
         _meshRenderer3.SetModel(sphereModel);
         _meshRenderer3.GetMaterialsOverride()[0] = LoadFloorMaterial();
         _meshRenderer3.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+        _meshRenderer3.GetMaterialsOverride()[0]->SetEnableInstancing(true);
 
         AddTransparent(Vector3(5, 3, -8));
         AddTransparent(Vector3(6, 3, -12));
@@ -180,6 +181,7 @@ struct NewRenderPipeline_13: public OD::Module {
             MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
             mr.SetModel(cubeModel);
             mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
+            mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         
             float angle = 20.0f * i; 
             e.GetComponent<TransformComponent>().LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
@@ -209,6 +211,11 @@ struct NewRenderPipeline_13: public OD::Module {
 
         Application::AddModule<Editor>();
         //scene->Start();
+
+        LogInfo(" InfoTest ");
+        LogWarning(" WarningTest ");
+        LogError(" ErrorTest ");
+        LogFatal(" FatalTest ");
     }
 
     void OnUpdate(float deltaTime) override {

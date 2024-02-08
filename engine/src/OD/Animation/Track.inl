@@ -20,7 +20,8 @@ namespace TrackHelpers{
         //return a;
         //return math::normalize(a);
         //return math::mix(a, b, t);
-        return math::normalize(math::slerp(a, b, t));
+        return math::slerp(a, b, t);
+        //return math::normalize(math::slerp(a, b, t));
 
         //t = math::clamp<float>(t, 0, 1);
         //Quaternion result = math::mix(a, b, t);
@@ -223,7 +224,7 @@ float Track<T,N>::AdjustTimeToFitTrack(float time, bool looping){
     
     if(duration <= 0.0f) return 0.0f;
 
-    return fmod(time, duration);
+    //return fmod(time, duration);
 
     if(looping){
         time = fmodf(time - startTime, endTime - startTime);

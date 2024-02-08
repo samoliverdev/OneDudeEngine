@@ -25,16 +25,25 @@
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"
 
+static const char* LogColors[] = {
+    "\033[\033[0m",    //Reset Info
+    "\033[0;33m",      //Yellow Warning
+    "\033[0;31m",      //Red Error
+    "\033[0;36m",      //Cyan Fatal
+};
+
 // logging macros
 //#if defined(_DEBUG)
-	#define _LOG(level, message, ...) \
-        fprintf(stderr, "[%s] ", level); \
+	#define _LOG(level, colorIndex, message , ...) \
+        fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level); \
         fprintf(stderr, message, __VA_ARGS__); \
         fprintf(stderr, "\n");
 
-	#define LogWarning(message, ...) _LOG("warning", message, __VA_ARGS__)
-	#define LogError(message, ...) _LOG("error", message,__VA_ARGS__)
-	#define LogInfo(message, ...) _LOG("info", message, __VA_ARGS__)
+    #define LogInfo(message, ...) _LOG("info", 0, message, __VA_ARGS__)
+	#define LogWarning(message, ...) _LOG("warning", 1, message, __VA_ARGS__)
+	#define LogError(message, ...) _LOG("error", 2, message,__VA_ARGS__)
+    #define LogFatal(message, ...) _LOG("fatal", 3, message,__VA_ARGS__)
+	
 //#else
 //	#define LogWarning
 //	#define LogError	

@@ -3,7 +3,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Shader.h"
-#include "OD/Graphics/UberShader.h"
+#include "OD/Graphics/ShaderHandler.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Serialization/Serialization.h"
@@ -110,7 +110,7 @@ private:
     int currentTextureSlot = 0;
 
     //Ref<Shader> shader;
-    Ref<UberShader> uberShader;
+    Ref<ShaderHandler> shaderHandler;
     std::unordered_map<std::string, MaterialMap> maps;
     static std::unordered_map<std::string, MaterialMap> globalMaps;
 

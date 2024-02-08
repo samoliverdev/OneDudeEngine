@@ -278,42 +278,45 @@ void Scene::Draw(){
 
 void Scene::Save(const char* path){
     std::ofstream os(path);
-    ODOutputArchive output{os};
-    ODSnapshot snapshotOut(registry);
+    ODOutputArchive archive(os);
+    
+    auto entityView = registry.view<entt::entity>();
+    std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
+    archive(cereal::make_nvp("Entities", entities));
 
-    snapshotOut.get<entt::entity>(output);
-    snapshotOut.get<TransformComponent>(output);
-    snapshotOut.get<InfoComponent>(output);
+    _SaveComponent<InfoComponent>(archive, registry, "InfoComponent");
+    _SaveComponent<TransformComponent>(archive, registry, "TransformComponent");
+
     for(auto i: SceneManager::Get().componentsSerializer){
-        i.second.snapshotOut(snapshotOut, output);
+        i.second.snapshotOut(archive, registry, std::string(i.first));
     }
     for(auto i: SceneManager::Get().coreComponentsSerializer){
-        i.second.snapshotOut(snapshotOut, output);
+        i.second.snapshotOut(archive, registry, std::string(i.first));
     }
 }
 
 void Scene::Load(const char* path){
-    std::ifstream storage(path);
-    ODInputArchive input{storage};
-    ODSnapshotLoader snapshot(registry);
+    std::ifstream is(path);
+    ODInputArchive archive(is);
 
-    snapshot.get<entt::entity>(input);
-    snapshot.get<TransformComponent>(input);
-    snapshot.get<InfoComponent>(input);
-
-    for(auto e: registry.view<TransformComponent, InfoComponent>()){
-        TransformComponent& trans = registry.get<TransformComponent>(e);
-        InfoComponent& info = registry.get<InfoComponent>(e);
-
-        trans.registry = &registry;
-        info.id = e;
+    std::vector<entt::entity> entities;
+    archive(cereal::make_nvp("Entities", entities));
+    for(auto i: entities){
+        entt::entity e = registry.create(i);
     }
+
+    _LoadComponent<InfoComponent>(archive, registry, "InfoComponent");
+    _LoadComponent<TransformComponent>(archive, registry, "TransformComponent");
 
     for(auto i: SceneManager::Get().componentsSerializer){
-        i.second.snapshotIn(snapshot, input);
+        try{
+            i.second.snapshotIn(archive, registry, std::string(i.first));
+        }catch(...){}
     }
     for(auto i: SceneManager::Get().coreComponentsSerializer){
-        i.second.snapshotIn(snapshot, input);
+        try{
+            i.second.snapshotIn(archive, registry, std::string(i.first));
+        }catch(...){}
     }
 }
 

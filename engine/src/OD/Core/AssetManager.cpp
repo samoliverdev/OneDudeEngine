@@ -46,15 +46,15 @@ Ref<Shader> AssetManager::LoadShaderFromFile(const std::string& filePath){
     return shader;
 }
 
-Ref<UberShader> AssetManager::LoadUberShader(const std::string& path){
-    if(uberShaders.count(path)) return uberShaders[path];
+Ref<ShaderHandler> AssetManager::LoadUberShader(const std::string& path){
+    if(shaderHandlers.count(path)) return shaderHandlers[path];
 
     LogInfo("LoadShaderFromFile: %s", path.c_str());
 
-    Ref<UberShader> shader = CreateRef<UberShader>(path);
+    Ref<ShaderHandler> shader = CreateRef<ShaderHandler>(path);
     Assert(shader != nullptr);
 
-    uberShaders[path] = shader;
+    shaderHandlers[path] = shader;
     return shader;
 }
 

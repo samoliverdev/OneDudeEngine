@@ -54,6 +54,10 @@ protected:
     virtual int FrameIndex(float time, bool looping);
 };
 
+template class FastTrack<float, 1>;
+template class FastTrack<Vector3, 3>;
+template class FastTrack<Quaternion, 4>;
+
 typedef FastTrack<float, 1> FastScalarTrack;
 typedef FastTrack<Vector3, 3> FastVectorTrack;
 typedef FastTrack<Quaternion, 4> FastQuaternionTrack;

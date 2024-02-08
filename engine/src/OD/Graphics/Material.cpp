@@ -25,12 +25,12 @@ Material::Material(Ref<Shader> s){
 
 Ref<Shader> Material::GetShader(){ 
     //return shader;
-    return uberShader->GetCurrentShader(); 
+    return shaderHandler->GetCurrentShader(); 
 }
 
 void Material::SetShader(Ref<Shader> s){ 
     //shader = s; 
-    uberShader = CreateRef<UberShader>(s);
+    shaderHandler = CreateRef<ShaderHandler>(s);
     UpdateMaps(); 
 }
 
@@ -218,11 +218,11 @@ void Material::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
 }
 
 void Material::DisableKeyword(std::string keyword){
-    uberShader->DisableKeyword(keyword);
+    shaderHandler->DisableKeyword(keyword);
 }
 
 void Material::EnableKeyword(std::string keyword){
-    uberShader->EnableKeyword(keyword);
+    shaderHandler->EnableKeyword(keyword);
 }
 
 void Material::CleanData(){
@@ -255,7 +255,7 @@ void Material::UpdateDatas(){
 
 void Material::SubmitGraphicDatas(Material& material){
     material.currentTextureSlot = 0;
-    material.uberShader->SetCurrentShader();
+    material.shaderHandler->SetCurrentShader();
 
     Assert(material.GetShader() != nullptr);
     if(material.GetShader() == nullptr) return;

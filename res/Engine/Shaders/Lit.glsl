@@ -13,6 +13,8 @@
 
 #pragma SupportInstancing true
 #pragma DrawType Stand
+#pragma MultiCompile _ SKINNED INSTANCING
+#pragma MultiCompile Opaque Blend
 
 #pragma CullFace BACK
 #pragma DepthTest LESS

@@ -196,7 +196,7 @@ void Editor::OpenScene(){
     if(path.empty() == false){
         renderPipeline->SetOverrideFrameBuffer(nullptr);
         Scene* scene = SceneManager::Get().NewScene();
-        
+
         scene->Load(path.c_str());
         curScenePath = scene->Path();
     }
