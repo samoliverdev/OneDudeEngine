@@ -38,19 +38,6 @@ protected:
     float AdjustTimeToFitTrack(float time, bool looping);
 
     T Cast(float* value); // Will be specialized
-
-private:
-    inline float Interpolate(float a, float b, float t);
-    inline Vector3 Interpolate(Vector3 a, Vector3 b, float t);
-    inline Quaternion Interpolate(Quaternion a, Quaternion b, float t);
-
-    inline float AdjustHermiteResult(float f);
-    inline Vector3 AdjustHermiteResult(const Vector3& v);
-    inline Quaternion AdjustHermiteResult(const Quaternion& q);
-
-    inline void Neighborhood(const float& a, float& b);
-    inline void Neighborhood(const Vector3& a, Vector3& b);
-    inline void Neighborhood(const Quaternion& a, Quaternion& b);
 };
 
 typedef Track<float, 1> ScalarTrack;

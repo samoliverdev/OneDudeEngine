@@ -6,7 +6,7 @@ namespace glm
 
 #	if GLM_CONFIG_DEFAULTED_DEFAULT_CTOR == GLM_DISABLE
 		template<typename T, qualifier Q>
-		GLM_FUNC_QUALIFIER GLM_CONSTEXPR mat<2, 2, T, Q>::mat()
+		GLM_DEFAULTED_DEFAULT_CTOR_QUALIFIER GLM_CONSTEXPR mat<2, 2, T, Q>::mat()
 #			if GLM_CONFIG_CTOR_INIT == GLM_CTOR_INITIALIZER_LIST
 				: value{col_type(1, 0), col_type(0, 1)}
 #			endif
@@ -22,7 +22,7 @@ namespace glm
 	template<qualifier P>
 	GLM_FUNC_QUALIFIER GLM_CONSTEXPR mat<2, 2, T, Q>::mat(mat<2, 2, T, P> const& m)
 #		if GLM_HAS_INITIALIZER_LISTS
-			: value{m[0], m[1]}
+			: value{col_type(m[0]), col_type(m[1])}
 #		endif
 	{
 #		if !GLM_HAS_INITIALIZER_LISTS
@@ -217,14 +217,14 @@ namespace glm
 	// -- Accesses --
 
 	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER typename mat<2, 2, T, Q>::col_type& mat<2, 2, T, Q>::operator[](typename mat<2, 2, T, Q>::length_type i)
+	GLM_FUNC_QUALIFIER typename mat<2, 2, T, Q>::col_type& mat<2, 2, T, Q>::operator[](typename mat<2, 2, T, Q>::length_type i) GLM_NOEXCEPT
 	{
 		assert(i < this->length());
 		return this->value[i];
 	}
 
 	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER GLM_CONSTEXPR typename mat<2, 2, T, Q>::col_type const& mat<2, 2, T, Q>::operator[](typename mat<2, 2, T, Q>::length_type i) const
+	GLM_FUNC_QUALIFIER GLM_CONSTEXPR typename mat<2, 2, T, Q>::col_type const& mat<2, 2, T, Q>::operator[](typename mat<2, 2, T, Q>::length_type i) const GLM_NOEXCEPT
 	{
 		assert(i < this->length());
 		return this->value[i];

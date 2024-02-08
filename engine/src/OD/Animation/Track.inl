@@ -3,6 +3,55 @@
 
 namespace OD{
 
+namespace TrackHelpers{
+    inline float Interpolate(float a, float b, float t){
+        //return a;
+        //t = math::clamp<float>(t, 0, 1);
+        return math::mix(a, b, t);
+    }
+
+    inline Vector3 Interpolate(Vector3 a, Vector3 b, float t){
+        //return a;
+        //t = math::clamp<float>(t, 0, 1);
+        return math::mix(a, b, t);
+    }
+
+    inline Quaternion Interpolate(Quaternion a, Quaternion b, float t){
+        //return a;
+        //return math::normalize(a);
+        //return math::mix(a, b, t);
+        return math::normalize(math::slerp(a, b, t));
+
+        //t = math::clamp<float>(t, 0, 1);
+        //Quaternion result = math::mix(a, b, t);
+        //if(math::dot(a, b) < 0){
+        //    result = math::lerp(a, -b, t);
+        //}
+        //return result;
+        //return math::normalize(result);
+    }
+
+    inline float AdjustHermiteResult(float f){
+        return f; 
+    }
+
+    inline Vector3 AdjustHermiteResult(const Vector3& v){
+        return v; 
+    }
+
+    inline Quaternion AdjustHermiteResult(const Quaternion& q){
+        return math::normalize(q); 
+    }
+
+    inline void Neighborhood(const float& a, float& b){}
+    inline void Neighborhood(const Vector3& a, Vector3& b){}
+    inline void Neighborhood(const Quaternion& a, Quaternion& b){
+        /*if(dot(a, b) < 0){
+            b = -b;
+        }*/
+    }
+}
+
 template<typename T, int N>
 Track<T,N>::Track(){ 
     interpolation = Interpolation::Linear; 
@@ -44,8 +93,7 @@ T Track<T,N>::Sample(float time, bool looping){
         return SampleConstant(time, looping);
     } else if(interpolation == Interpolation::Linear){
         return SampleLinear(time, looping);
-    } 
-    
+    }
     return SampleCubic(time, looping);
 }
 
@@ -59,6 +107,7 @@ T Track<T,N>::SampleConstant(float t, bool looping){
     int frame = FrameIndex(t, looping);
     if(frame < 0 || frame >= (int)frames.size()){
         return T();
+        //return Cast(&frames[0].value[0]);
     }
 
     return Cast(&frames[frame].value[0]);
@@ -67,20 +116,26 @@ T Track<T,N>::SampleConstant(float t, bool looping){
 template<typename T, int N>
 T Track<T,N>::SampleLinear(float time, bool looping){
     int thisFrame = FrameIndex(time, looping);
-    if(thisFrame < 0 || thisFrame >= (int)(frames.size() - 1)) return T();
+    if(thisFrame < 0 || thisFrame >= (int)(frames.size() - 1)){
+        return T();
+        //return Cast(&frames[0].value[0]);
+    }
     
     int nextFrame = thisFrame + 1;
 
     float trackTime = AdjustTimeToFitTrack(time, looping);
     float frameDelta = frames[nextFrame].time - frames[thisFrame].time;
-    if(frameDelta <= 0.0f) return T();
+    if(frameDelta <= 0.0f){
+        return T();
+        //frameDelta = 0;
+    }
 
     float t = (trackTime - frames[thisFrame].time) / frameDelta;
 
     T start = Cast(&frames[thisFrame].value[0]);
     T end = Cast(&frames[nextFrame].value[0]);
 
-    return Interpolate(start, end, t);
+    return TrackHelpers::Interpolate(start, end, t);
 }
 
 template<typename T, int N>
@@ -115,7 +170,7 @@ T Track<T,N>::Hermite(float t, const T& p1, const T& s1, const T& _p2, const T& 
     float ttt = tt * t;
 
     T p2 = _p2;
-    Neighborhood(p1, p2);
+    TrackHelpers::Neighborhood(p1, p2);
 
     float h1 = 2.0f * ttt - 3.0f * tt + 1.0f;
     float h2 = -2.0f * ttt + 3.0f * tt;
@@ -123,7 +178,7 @@ T Track<T,N>::Hermite(float t, const T& p1, const T& s1, const T& _p2, const T& 
     float h4 = ttt - tt;
 
     T result = p1 * h1 + p2 * h2 + s1 * h3 + s2 * h4;
-    return AdjustHermiteResult(result);
+    return TrackHelpers::AdjustHermiteResult(result);
 }
 
 template<typename T, int N>
@@ -168,6 +223,8 @@ float Track<T,N>::AdjustTimeToFitTrack(float time, bool looping){
     
     if(duration <= 0.0f) return 0.0f;
 
+    return fmod(time, duration);
+
     if(looping){
         time = fmodf(time - startTime, endTime - startTime);
         if(time <= 0.0f){
@@ -184,58 +241,6 @@ float Track<T,N>::AdjustTimeToFitTrack(float time, bool looping){
     }
 
     return time;
-}
-
-template<typename T, int N>
-float Track<T,N>::Interpolate(float a, float b, float t){
-    t = math::clamp<float>(t, 0, 1);
-    return math::mix(a, b, t);
-}
-
-template<typename T, int N>
-Vector3 Track<T,N>::Interpolate(Vector3 a, Vector3 b, float t){ 
-    t = math::clamp<float>(t, 0, 1);
-    return math::mix(a, b, t);
-}
-
-template<typename T, int N>
-Quaternion Track<T,N>::Interpolate(Quaternion a, Quaternion b, float t){
-    t = math::clamp<float>(t, 0, 1);
-    Quaternion result = math::lerp(a, b, t);
-    /*if(math::dot(a, b) < 0){
-        result = math::slerp(a, -b, t);
-    }*/
-    return math::normalize(result);
-    return result;
-}
-
-template<typename T, int N>
-float Track<T,N>::AdjustHermiteResult(float f){ 
-    return f; 
-}
-
-template<typename T, int N>
-Vector3 Track<T,N>::AdjustHermiteResult(const Vector3& v){ 
-    return v; 
-}
-
-template<typename T, int N>
-Quaternion Track<T,N>::AdjustHermiteResult(const Quaternion& q){ 
-    return math::normalize(q); 
-    //return q;
-}
-
-template<typename T, int N>
-void Track<T,N>::Neighborhood(const float& a, float& b){}
-
-template<typename T, int N>
-void Track<T,N>::Neighborhood(const Vector3& a, Vector3& b){}
-
-template<typename T, int N>
-void Track<T,N>::Neighborhood(const Quaternion& a, Quaternion& b){
-    /*if(dot(a, b) < 0){
-        b = -b;
-    }*/
 }
 
 //-------------FastTrack------------

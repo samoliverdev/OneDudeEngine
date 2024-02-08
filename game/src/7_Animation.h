@@ -88,6 +88,13 @@ struct Animation_7: public OD::Module{
             }
         }
 
+        Clip& _clip = char1Clips[char1Anim.mClip];
+        for(int i = 0; i < _clip.Size(); i++){
+            LogInfo("Clip Pos Frames: %d", _clip[i].GetPositionTrack().Size());
+            LogInfo("Clip Rot Frames: %d", _clip[i].GetRotationTrack().Size());
+            LogInfo("Clip Scale Frames: %d", _clip[i].GetScaleTrack().Size());
+        }
+
         char1Controller.SetSkeleton(char1Skeleton);
         char1Controller.Play(&char1Clips[char1Anim.mClip]);
         char1Controller.Update(0.0f);
@@ -152,6 +159,7 @@ struct Animation_7: public OD::Module{
             char2T += Application::DeltaTime(); 
         }
 
+        //char1Anim.mAnimatedPose = char1Skeleton.GetRestPose();
         //char1Anim.mPlayback = char1Clips[char1Anim.mClip].Sample(char1Anim.mAnimatedPose, char1T);
         //char1Anim.mAnimatedPose.GetMatrixPalette(char1Anim.mPosePalette);
 

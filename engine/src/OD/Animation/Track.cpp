@@ -12,8 +12,8 @@ template<> Vector3 Track<Vector3, 3>::Cast(float* value){
 
 template<> Quaternion Track<Quaternion, 4>::Cast(float* value){
     Quaternion r = Quaternion(value[0], value[1], value[2], value[3]);
-    return math::normalize(r);
-    //return r;
+    //return math::normalize(r);
+    return r;
 }
 
 }

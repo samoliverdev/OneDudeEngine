@@ -82,8 +82,8 @@
 
 #if (defined(GLM_FORCE_CXX_UNKNOWN))
 #	define GLM_LANG 0
-#elif defined(GLM_FORCE_CXX2A)
-#	define GLM_LANG (GLM_LANG_CXX2A | GLM_LANG_EXT)
+#elif defined(GLM_FORCE_CXX20)
+#	define GLM_LANG (GLM_LANG_CXX20 | GLM_LANG_EXT)
 #	define GLM_LANG_STL11_FORCED
 #elif defined(GLM_FORCE_CXX17)
 #	define GLM_LANG (GLM_LANG_CXX17 | GLM_LANG_EXT)
@@ -360,6 +360,18 @@
 #	define GLM_HAS_BITSCAN_WINDOWS 0
 #endif
 
+#if GLM_LANG & GLM_LANG_CXX11_FLAG
+#	define GLM_HAS_NOEXCEPT 1
+#else
+#	define GLM_HAS_NOEXCEPT 0
+#endif
+
+#if GLM_HAS_NOEXCEPT
+#	define GLM_NOEXCEPT noexcept
+#else
+#	define GLM_NOEXCEPT
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////
 // OpenMP
 #ifdef _OPENMP
@@ -423,9 +435,23 @@
 ///////////////////////////////////////////////////////////////////////////////////
 // Qualifiers
 
+// User defines: GLM_CUDA_FORCE_DEVICE_FUNC, GLM_CUDA_FORCE_HOST_FUNC
+
 #if (GLM_COMPILER & GLM_COMPILER_CUDA) || (GLM_COMPILER & GLM_COMPILER_HIP)
-#	define GLM_CUDA_FUNC_DEF __device__ __host__
-#	define GLM_CUDA_FUNC_DECL __device__ __host__
+#	if defined(GLM_CUDA_FORCE_DEVICE_FUNC) && defined(GLM_CUDA_FORCE_HOST_FUNC)
+#		error "GLM error: GLM_CUDA_FORCE_DEVICE_FUNC and GLM_CUDA_FORCE_HOST_FUNC should not be defined at the same time, GLM by default generates both device and host code for CUDA compiler."
+#	endif//defined(GLM_CUDA_FORCE_DEVICE_FUNC) && defined(GLM_CUDA_FORCE_HOST_FUNC)
+
+#	if defined(GLM_CUDA_FORCE_DEVICE_FUNC)
+#		define GLM_CUDA_FUNC_DEF __device__
+#		define GLM_CUDA_FUNC_DECL __device__
+#	elif defined(GLM_CUDA_FORCE_HOST_FUNC)
+#		define GLM_CUDA_FUNC_DEF __host__
+#		define GLM_CUDA_FUNC_DECL __host__
+#	else
+#		define GLM_CUDA_FUNC_DEF __device__ __host__
+#		define GLM_CUDA_FUNC_DECL __device__ __host__
+#	endif//defined(GLM_CUDA_FORCE_XXXX_FUNC)
 #else
 #	define GLM_CUDA_FUNC_DEF
 #	define GLM_CUDA_FUNC_DECL
@@ -434,7 +460,7 @@
 #if defined(GLM_FORCE_INLINE)
 #	if GLM_COMPILER & GLM_COMPILER_VC
 #		define GLM_INLINE __forceinline
-#		define GLM_NEVER_INLINE __declspec((noinline))
+#		define GLM_NEVER_INLINE __declspec(noinline)
 #	elif GLM_COMPILER & (GLM_COMPILER_GCC | GLM_COMPILER_CLANG)
 #		define GLM_INLINE inline __attribute__((__always_inline__))
 #		define GLM_NEVER_INLINE __attribute__((__noinline__))
@@ -452,6 +478,22 @@
 
 #define GLM_FUNC_DECL GLM_CUDA_FUNC_DECL
 #define GLM_FUNC_QUALIFIER GLM_CUDA_FUNC_DEF GLM_INLINE
+
+// Do not use CUDA function qualifiers on CUDA compiler when functions are made default
+#if GLM_HAS_DEFAULTED_FUNCTIONS
+#	define GLM_DEFAULTED_FUNC_DECL
+#	define GLM_DEFAULTED_FUNC_QUALIFIER GLM_INLINE
+#else
+#	define GLM_DEFAULTED_FUNC_DECL GLM_FUNC_DECL
+#	define GLM_DEFAULTED_FUNC_QUALIFIER GLM_FUNC_QUALIFIER
+#endif//GLM_HAS_DEFAULTED_FUNCTIONS
+#if !defined(GLM_FORCE_CTOR_INIT)
+#	define GLM_DEFAULTED_DEFAULT_CTOR_DECL GLM_DEFAULTED_FUNC_DECL
+#	define GLM_DEFAULTED_DEFAULT_CTOR_QUALIFIER GLM_DEFAULTED_FUNC_QUALIFIER
+#else
+#	define GLM_DEFAULTED_DEFAULT_CTOR_DECL GLM_FUNC_DECL
+#	define GLM_DEFAULTED_DEFAULT_CTOR_QUALIFIER GLM_FUNC_QUALIFIER
+#endif//GLM_FORCE_CTOR_INIT
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Swizzle operators
@@ -540,48 +582,6 @@
 #else
 #	define GLM_EXPLICIT
 #endif
-
-///////////////////////////////////////////////////////////////////////////////////
-// SYCL
-
-#if GLM_COMPILER==GLM_COMPILER_SYCL
-
-#include <CL/sycl.hpp>
-#include <limits>
-
-namespace glm {
-namespace std {
-	// Import SYCL's functions into the namespace glm::std to force their usages.
-	// It's important to use the math built-in function (sin, exp, ...)
-	// of SYCL instead the std ones.
-	using namespace cl::sycl;
-
-	///////////////////////////////////////////////////////////////////////////////
-	// Import some "harmless" std's stuffs used by glm into
-	// the new glm::std namespace.
-	template<typename T>
-	using numeric_limits = ::std::numeric_limits<T>;
-
-	using ::std::size_t;
-
-	using ::std::uint8_t;
-	using ::std::uint16_t;
-	using ::std::uint32_t;
-	using ::std::uint64_t;
-
-	using ::std::int8_t;
-	using ::std::int16_t;
-	using ::std::int32_t;
-	using ::std::int64_t;
-
-	using ::std::make_unsigned;
-	///////////////////////////////////////////////////////////////////////////////
-} //namespace std
-} //namespace glm
-
-#endif
-
-///////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Length type: all length functions returns a length_t type.

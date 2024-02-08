@@ -270,7 +270,7 @@ namespace detail
 	{
 		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'bitfieldInsert' only accept integer values");
 
-		T const Mask = static_cast<T>(detail::mask(Bits) << Offset);
+		T const Mask = detail::mask(static_cast<T>(Bits)) << Offset;
 		return (Base & ~Mask) | ((Insert << static_cast<T>(Offset)) & Mask);
 	}
 
@@ -362,7 +362,7 @@ namespace detail
 	{
 		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'findMSB' only accept integer values");
 
-		return detail::compute_findMSB_vec<L, T, Q, sizeof(T) * 8>::call(v);
+		return detail::compute_findMSB_vec<L, T, Q, static_cast<int>(sizeof(T) * 8)>::call(v);
 	}
 }//namespace glm
 
