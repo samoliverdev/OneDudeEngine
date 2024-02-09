@@ -21,7 +21,6 @@ void serialize(Archive& ar, Ref<Model>& model){
 
 struct MeshRendererComponent{
     friend class StandRenderPipeline;
-    friend class StandRenderPipeline2;
     
     static void OnGui(Entity& e);
 

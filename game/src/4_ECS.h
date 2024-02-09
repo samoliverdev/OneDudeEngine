@@ -12,7 +12,7 @@
 #include <thread>
 #include <future>
 #include <fstream>
-#include <OD/RenderPipeline/StandRenderPipeline2.h>
+//#include <OD/RenderPipeline/StandRenderPipeline.h>
 
 using namespace OD;
 

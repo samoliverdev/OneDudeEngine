@@ -1,7 +1,7 @@
 #pragma once
 
 #include <OD/OD.h>
-#include <OD/RenderPipeline/StandRenderPipeline2.h>
+//#include <OD/RenderPipeline/StandRenderPipeline2.h>
 #include "CameraMovement.h"
 #include <assert.h>
 #include "Ultis.h"

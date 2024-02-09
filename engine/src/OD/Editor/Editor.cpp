@@ -4,7 +4,6 @@
 #include "OD/Utils/PlatformUtils.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
-#include "OD/RenderPipeline/StandRenderPipeline2.h"
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
@@ -136,7 +135,7 @@ void Editor::PlayScene(){
 
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
-    Assert(dynamic_cast<StandRenderPipeline2*>(renderPipeline));
+    Assert(dynamic_cast<StandRenderPipeline*>(renderPipeline));
 
     /*Scene* scene = SceneManager::Get().activeScene();
     if(_curScenePath.empty()) scene->Save("res/temp.scene");

@@ -15,111 +15,182 @@
 #include "LightComponent.h"
 #include "EnvironmentComponent.h"
 
+#include "CommandBuffer.h"
+#include "RenderContext.h"
+
 namespace OD{
 
-class PostProcessingPass{
+class PostFXTest: public PostFX{
 public:
-    virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
-    bool enable = true;
+    PostFXTest(int option):_option(option){
+        _ppShader = Shader::CreateFromFile("res/Engine/Shaders/BasicPostProcessing.glsl");
+        Assert(_ppShader != nullptr);
+    }
+
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
+        Shader::Bind(*_ppShader);
+        _ppShader->SetFloat("option", _option);
+        Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
+    }
+
+private:
+    int _option;
+    Ref<Shader> _ppShader;
 };
 
-struct StandRenderPipeline: public OD::BaseRenderPipeline{
-    StandRenderPipeline(Scene* inScene);
-    ~StandRenderPipeline();
+struct ShadowSettings{
+    enum class TextureSize{
+        _256 = 256, _512 = 512, _1024 = 1024,
+        _2048 = 2048, _4096 = 4096, _8192 = 8192
+    };
 
-    System* Clone(Scene* inScene) const override { 
-        return new StandRenderPipeline(inScene); 
-    }
+    //[Min(0.001f)]
+    float maxDistance = 500.0f;
+    
+    //[Range(0.001f, 1f)]
+	float distanceFade = 0.1f;
+
+
+    enum class FilterMode{
+		PCF2x2, PCF3x3, PCF5x5, PCF7x7
+	};
+
+    struct Directional{
+        TextureSize altasSize;
+        FilterMode filter = FilterMode::PCF2x2;
+
+        int cascadeCount = 4; 
+        float cascadeRatio1 = 0.1f;
+        float cascadeRatio2 = 0.25f;
+        float cascadeRatio3 = 0.5f;
+        float cascadeRatio4 = 1.0f;
+
+        //[Range(0.001f, 1f)]
+		float cascadeFade = 0.1f;
+
+        float shadowBias = 0.001f;
+    };
+
+    Directional directional{TextureSize::_2048};
+};
+
+class Shadows{
+    friend class Lighting;
+public:
+    Shadows();
+
+    void Setup(RenderContext* context, ShadowSettings settings, Camera cam);
+    void OnSetupLoop(RenderData& data);
+    void Render();
+
+    Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
+    
+private:
+    void RenderDirectionalShadows();
+
+    std::vector<float> shadowCascadeLevels;
+
+    RenderContext* context;
+    ShadowSettings settings;
+    Camera cam;
+
+    inline static const int maxShadowedDirectionalLightCount = 4;
+    inline static const int maxCascades = 4;
+    
+    int shadowedDirectionalLightCount;
+
+    Framebuffer* directionalShadowAtlas;
+    Ref<Material> shadowPass;
+
+    CommandBuffer shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
+    ShadowSplitData shadowDirectionalLightsSplits[maxShadowedDirectionalLightCount * maxCascades];
+
+    inline static const char* dirShadowAtlasId = "_DirectionalShadowAtlas";
+    inline static const char* dirShadowMatricesId = "_DirectionalShadowMatrices";
+    inline static const char* cascadeCountId = "_CascadeCount";
+	inline static const char* cascadeCullingSpheresId = "_CascadeCullingSpheres";
+    //inline static const char* cascadeDataId = "_CascadeData";
+    inline static const char* shadowDistanceId = "_ShadowDistance";
+    inline static const char* shadowAtlasSizeId = "_ShadowAtlasSize";
+    inline static const char* shadowDistanceFadeId = "_ShadowDistanceFade";
+
+	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
+    inline static float cascadeCullingSpheres[maxCascades];
+    //inline static Vector4 cascadeData[maxShadowedDirectionalLightCount * maxCascades];
+};
+
+class Lighting{
+public:
+    void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
+	void SetupDirectionalLight();
+    void UpdateGlobalShaders();
+private:
+    RenderContext* context;
+    Shadows* shadows;
+    EnvironmentSettings environmentSettings;
+
+    int currentLightsCount;
+
+    inline static const int maxDirLightCount = 4;
+
+    inline static const char* ambientLightId = "_AmbientLight";
+
+    inline static const char* dirLightCountId = "_DirectionalLightCount";       
+    inline static const char* dirLightColorsId = "_DirectionalLightColors";
+	inline static const char* dirLightDirectionsId = "_DirectionalLightDirections";
+    inline static const char* dirLightShadowDataId = "_DirectionalLightShadowData";
+
+    inline static Vector4 dirLightColors[maxDirLightCount];
+	inline static Vector4 dirLightDirections[maxDirLightCount];
+    inline static Vector4 dirLightShadowData[maxDirLightCount];
+};
+
+class CameraRenderer{
+public:
+    Camera camera;
+    RenderContext* context;
+    CameraRenderer();
+    void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings);
+    inline Lighting& GetLighting(){ return lighting; }
+private:
+    Shadows shadows;
+    Lighting lighting;
+
+    CommandBuffer opaqueDrawTarget;
+    DrawingSettings opaqueDrawSettings;
+
+    CommandBuffer blendDrawTarget;
+    DrawingSettings blendDrawSettings;
+
+    PostFXTest* postFXTest;
+
+    void RunSetupLoop();
+    void OnSetupLoop(RenderData& data);
+    void RenderVisibleGeometry();
+};
+
+class StandRenderPipeline: public BaseRenderPipeline{
+public:
+    StandRenderPipeline(Scene* _scene);
+    ~StandRenderPipeline();
+    System* Clone(Scene* inScene) const override;
+
+    void SetOverrideFrameBuffer(Framebuffer* out) override;
+    void SetOverrideCamera(Camera* cam, Transform trans) override;
+    Framebuffer* FinalColor() override;
 
     SystemType Type() override { return SystemType::Renderer; }
     void Update() override;
 
-    inline void SetOverrideFrameBuffer(Framebuffer* out) override { outFramebuffer = out; }
-    inline void SetOverrideCamera(Camera* cam, Transform trans) override { overrideCamera = cam; overrideCameraTrans = trans; } 
-    inline Framebuffer* FinalColor() override { return finalColor; }
-
-    inline Framebuffer* ObjectsId(){ return objectsId; }
-    //inline Framebuffer* finalColor2(){ return _finalColor2; }
-
-    inline void AddPostProcessingPass(PostProcessingPass* pass){ ppPass.push_back(pass); }
-
 private:
-    Ref<Shader> spriteShader;
-    Mesh spriteMesh;
+    ShadowSettings shadow;
 
-    Framebuffer* objectsId;
-
-    Ref<Shader> shadowMapShader;
-    Ref<Shader> postProcessingShader;
-    Ref<Shader> blitShader;
-
-    Matrix4 lightSpaceMatrix;
-
-    Framebuffer* outFramebuffer = nullptr;
-    
-    Framebuffer* pp1;
-    Framebuffer* pp2;
-    Framebuffer* finalColor;
-    Framebuffer* finalColor2;
+    RenderContext* renderContext;
+    CameraRenderer cameraRenderer;
+    EnvironmentSettings environmentSettings;
 
     Camera* overrideCamera = nullptr;
     Transform overrideCameraTrans;
-
-    std::vector<PostProcessingPass*> ppPass;
-
-    //Ref<Shader> _skyboxShader;
-    Mesh skyboxMesh;
-    Ref<Cubemap> skyboxCubemap;
-
-    struct CommandBaseData{
-        Ref<Material> targetMaterial;
-        Ref<Mesh> targetMesh;
-        Matrix4 targetMatrix;
-        float distance;
-    };
-
-    void UpdateAllCommands(Vector3 viewPos);
-    void UpdateOpaquesCommands(CommandBaseData& data);
-    void UpdateOpaquesIntancingCommands(CommandBaseData& data);
-    void UpdateBlendCommands(CommandBaseData& data);
-    void UpdateCascadeShadowCommands(CommandBaseData& data);
-    void UpdateCascadeShadowIntancingCommands(CommandBaseData& data);
-    
-    void SetStandUniforms(Vector3 viewPos, Shader& material);
-    void RenderScene(Camera& camera, bool isMain, Vector3 camPOs);
-
-    struct ShadowRenderPass{
-        Framebuffer* shadowMap;
-        Matrix4 lightSpaceMatrix;
-
-        void Clean(StandRenderPipeline& root);
-        void Render(LightComponent& light, TransformComponent& transform, StandRenderPipeline& root);
-    };
-
-    ShadowRenderPass directinallightShadowPass;
-
-    #define MAX_SPOTLIGHT_SHADOWS 5
-    ShadowRenderPass spotlightShadowPass[MAX_SPOTLIGHT_SHADOWS];
-    int spotlightShadowPassCount = 0;
-
-    #define SHADOW_MAP_CASCADE_COUNT 4
-    struct CascadeShadow{
-        Matrix4 projViewMatrix;
-        float splitDistance;
-
-        Framebuffer* shadowMap;
-
-        void Clean(StandRenderPipeline& root);
-        void Render(LightComponent& light, TransformComponent& transform, StandRenderPipeline& root);
-
-        static void UpdateCascadeShadow(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light);
-        static void UpdateCascadeShadow2(CascadeShadow* cascadeShadows, Camera& cam, TransformComponent& light);
-    };
-    CascadeShadow cascadeShadows[SHADOW_MAP_CASCADE_COUNT];
-
-    Framebuffer* cascadeShadowMap;
-    Ref<Shader> cascadeShadowMapShader;
-    void RenderCascadeShadow(LightComponent& light, TransformComponent& transform, StandRenderPipeline& root);
 };
 
-};
+}

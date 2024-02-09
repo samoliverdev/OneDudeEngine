@@ -23,6 +23,8 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
     framebufferSpecification.sample = 1;
     finalColor = new Framebuffer(framebufferSpecification);
+    postFx1 = new Framebuffer(framebufferSpecification);
+    postFx2 = new Framebuffer(framebufferSpecification);
 
     blitShader = AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Blit.glsl");
 
@@ -53,6 +55,8 @@ void RenderContext::BeginDrawToScreen(){
 
     outColor->Resize(width, height);
     finalColor->Resize(width, height);
+    postFx1->Resize(width, height);
+    postFx2->Resize(width, height);
 
     Framebuffer::Bind(*outColor);
 }
@@ -68,11 +72,32 @@ void RenderContext::EndDrawToScreen(){
     }
 
     Framebuffer::Unbind();
+}
 
-    /*finalColor->Unbind();
-    outColor->Unbind();
-    if(overrideFramebuffer != nullptr) overrideFramebuffer->Unbind();
-    */
+void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
+    bool step = false;
+    Framebuffer* finalFramebuffer = postFx1;
+    Graphics::BlitFramebuffer(outColor, postFx1);
+
+    for(auto i: postFXs){
+        finalFramebuffer = step == false ? postFx2 : postFx1;
+
+        if(i->enable){
+            i->OnRenderImage(
+                step == false ? postFx1 : postFx2, 
+                step == false ? postFx2 : postFx1
+            );
+        } else {
+            Graphics::BlitFramebuffer(
+                step == false ? postFx1 : postFx2,
+                step == false ? postFx2 : postFx1
+            );
+        }
+
+        step = !step;
+    }
+
+    Graphics::BlitQuadPostProcessing(finalFramebuffer, outColor, *blitShader);
 }
 
 void RenderContext::SetupCameraProperties(Camera inCam){

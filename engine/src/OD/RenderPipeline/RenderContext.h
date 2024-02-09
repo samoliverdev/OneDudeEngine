@@ -8,6 +8,12 @@ namespace OD{
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
 
+class PostFX{
+public:
+    virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
+    bool enable = true;
+};
+
 struct DrawingSettings{
     bool enableIntancing = true;
     RenderQueueRange renderQueueRange;
@@ -70,6 +76,7 @@ public:
     void RenderSkybox();
     //void DrawRenderers(const std::vector<DrawingTarget*>& targets);
     void DrawGizmos();
+    void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, CommandBuffer& target);
     void DrawRenderersBuffer(CommandBuffer& commandBuffer);
@@ -90,6 +97,8 @@ public:
 private:
     Framebuffer* outColor;
     Framebuffer* finalColor;
+    Framebuffer* postFx1;
+    Framebuffer* postFx2;
 
     Ref<Shader> blitShader;
     Mesh skyboxMesh;
