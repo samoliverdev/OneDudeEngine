@@ -5,6 +5,7 @@
 #include <entt/entt.hpp>
 #include <map>
 #include <string>
+#include <magic_enum/magic_enum.hpp>
 
 namespace cereal {
     
@@ -58,6 +59,8 @@ public:
         
         float getSpacing(){ return mSpacing; }
         bool hasSpacing(){ return mHasSpacing; }
+
+        bool isColor = false;
          
     private:
 
@@ -76,7 +79,7 @@ public:
     ~ImGuiArchive(){}
     
     template <class T>
-    void draw(std::string name, T & value){
+    void draw(std::string name, T& value){
         //elementCount = 0;
         elementCount += 1;
         
@@ -95,6 +98,10 @@ public:
     
     void setOption(const std::string& elementName, Options option){
         mElementOptions[elementName] = option;
+    }
+
+    inline void CleanOptions(){
+        mElementOptions.clear();
     }
 private:
 
@@ -164,6 +171,7 @@ private:
     void DrawUI(const char * name, float& value, Options opt = Options()){
         if(opt.hasMinMax()){
             ImGui::DragFloat(name, &value, opt.getStep(), opt.getMin(), opt.getMax());
+            //ImGui::SliderFloat(name, &value, opt.getMin(), opt.getMax());
         } else {
             ImGui::DragFloat(name, &value, opt.getStep());
         }
@@ -191,7 +199,7 @@ private:
         }
     }
     
-    void DrawUI(const char* name, glm::vec3& value,Options opt = Options()){
+    void DrawUI(const char* name, glm::vec3& value, Options opt = Options()){
         if(opt.hasMinMax()){
             ImGui::DragFloat3(name, &value[0], opt.getStep(), opt.getMin(), opt.getMax() );
         } else {
@@ -199,11 +207,15 @@ private:
         }
     }
     
-    void DrawUI(const char* name, glm::vec4& value,Options opt = Options()){
+    void DrawUI(const char* name, glm::vec4& value, Options opt = Options()){
         if(opt.hasMinMax()){
             ImGui::DragFloat4(name, &value[0], opt.getStep(), opt.getMin(), opt.getMax() );
         } else {
-            ImGui::DragFloat4(name, &value[0], opt.getStep());
+            if(opt.isColor){
+                ImGui::ColorEdit4(name, &value[0]);
+            } else {
+                ImGui::DragFloat4(name, &value[0], opt.getStep());
+            }
         }
     }
     
@@ -213,6 +225,41 @@ private:
         if(ImGui::DragFloat3(name, &euler[0], opt.getStep())){
             value = glm::quat(euler);
         }
+    }
+
+    template <class E, std::enable_if_t<std::is_enum<E>{}> * = nullptr>
+    void DrawUI(std::string name, E &e, Options opt = Options()){
+        ImGui::PushID(elementCount++);
+
+        static std::unique_ptr<std::vector<std::string>> enumNames{};
+        if (!enumNames) {
+            enumNames = std::make_unique<std::vector<std::string>>();
+            auto vals = magic_enum::enum_names<E>();
+            for (auto &v : vals) {
+                enumNames->push_back({v.begin(), v.end()});
+            }
+        }
+
+        std::string currentItem = std::string(magic_enum::enum_name(e));
+
+        ImGui::Text("%s", name.c_str());
+        if(ImGui::BeginCombo("##enum_combo", currentItem.c_str())){
+            for (int n = 0; n < enumNames->size(); n++) {
+                bool is_selected = (currentItem == enumNames->at(n));
+                if (ImGui::Selectable(enumNames->at(n).c_str(), is_selected)) {
+                    currentItem = enumNames->at(n);
+                    std::optional<E> getter = magic_enum::enum_cast<E>(currentItem);
+                    if(getter.has_value()) {
+                        e = getter.value();
+                    }
+                }
+                if(is_selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::PopID();
     }
     
     int elementCount = 0;

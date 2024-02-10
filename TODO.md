@@ -1,8 +1,7 @@
 # Current
 
-* Skinned Animation Shadows
-
-# Bugs
-
-* Animation Rotation Glitch -
-* Skinned Model Scale
+* Fix No HDR
+* Fix Material Proprities
+* Fix Animation Rotation Glitch -
+* Fix Skinned Model Scale
+* Fix Skinned Animation Shadows

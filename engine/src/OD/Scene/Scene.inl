@@ -52,6 +52,15 @@ void Entity::RemoveComponent(){
 }
 
 //-----------Scene---------
+
+template<typename... T, typename Func> 
+Entity Scene::AddEntityWith(std::string name, Func func){
+    Entity e = AddEntity(name);
+    (e.AddOrGetComponent<T>(), ...);
+    func( std::forward<T>(e.GetComponent<T>())... );
+    return e;
+}
+
 template <typename T>
 void Scene::AddSystem(){
     static_assert(std::is_base_of<OD::System, T>::value);

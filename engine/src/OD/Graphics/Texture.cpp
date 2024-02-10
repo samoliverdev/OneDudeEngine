@@ -186,7 +186,7 @@ bool Texture2D::Create(const std::string path, Texture2DSetting settings){
     if(nrChannels > 3) alpha = true;
 
     if(alpha){
-        this->internalFormat = GL_RGBA;
+        this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
         this->imageFormat = GL_RGBA;
     }
     
@@ -231,7 +231,7 @@ bool Texture2D::Create(void* data, size_t size, Texture2DSetting settings){
     if(nrChannels > 3) alpha = true;
 
     if(alpha){
-        this->internalFormat = GL_RGBA;
+        this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
         this->imageFormat = GL_RGBA;
     }
     

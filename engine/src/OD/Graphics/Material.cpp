@@ -337,7 +337,7 @@ void Material::OnGui(){
         }
 
         if(i.second.type == MaterialMap::Type::Vector4 && i.second.vectorIsColor == true){
-            if(ImGui::ColorEdit4(i.first.c_str(), &i.second.vector[0])){
+            if(ImGui::ColorEdit4(i.first.c_str(), &i.second.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
                 toSave = true;
             }
         }
@@ -467,7 +467,15 @@ void Material::UpdateMaps(){
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
-            SetTexture(i[1].c_str(), AssetManager::Get().LoadDefautlTexture2D());
+            if(i[2] == "White"){
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/White.jpg", {TextureFilter::Linear, true}) );
+            } else if(i[2] == "Black"){
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/Black.jpg", {TextureFilter::Linear, true}) );
+            } else if(i[2] == "Normal"){
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/Normal.jpg", {TextureFilter::Linear, true}) );
+            } else {
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadDefautlTexture2D());
+            }
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Color4"){

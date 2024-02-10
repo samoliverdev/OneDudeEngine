@@ -8,6 +8,7 @@ struct Surface{
 	float depth;
 	vec3 color;
 	float alpha;
+	float occlusion;
     float metallic;
 	float smoothness;
 };

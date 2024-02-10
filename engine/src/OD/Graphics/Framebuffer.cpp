@@ -31,6 +31,12 @@ void Framebuffer::GenColorAttachment(int index){
     glGenTextures(1, &colorAttachment);
     glCheckError();
 
+    bool hdr = false;
+    if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB16F) hdr = true;
+    if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB32F) hdr = true;
+    if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA16F) hdr = true;
+    if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F) hdr = true;
+
     if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorAttachment);
         glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, specification.sample, internalFormat, specification.width, specification.height, GL_TRUE);
@@ -39,9 +45,11 @@ void Framebuffer::GenColorAttachment(int index){
         glCheckError();
     } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
         glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glCheckError();
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
         glCheckError();
@@ -49,10 +57,12 @@ void Framebuffer::GenColorAttachment(int index){
         //Assert(false);
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, colorAttachment);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, GL_UNSIGNED_BYTE, NULL);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
         glCheckError();
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glCheckError();
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
         glCheckError();

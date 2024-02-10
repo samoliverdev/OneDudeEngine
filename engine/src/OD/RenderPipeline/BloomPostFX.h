@@ -8,7 +8,7 @@ class BloomPostFX: public PostFX{
 public:
     int maxIterations = 5;
     int downscaleLimit = 5;
-    bool bicubicUpsampling;
+    bool bicubicUpsampling = true;
     float threshold = 0.5f;
     float thresholdKnee = 0.5f;
     float intensity = 1.0f;

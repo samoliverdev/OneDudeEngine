@@ -67,4 +67,15 @@ vec3 DirectBRDF(Surface surface, BRDF brdf, Light light){
 	return SpecularStrength(surface, brdf, light) * brdf.specular + brdf.diffuse;
 }
 
+vec3 IndirectBRDF(Surface surface, BRDF brdf, vec3 diffuse, vec3 specular){
+	return diffuse * brdf.diffuse;
+	
+	// Disable until add Diffuse irradiance
+	/*
+	vec3 reflection = specular * brdf.specular;
+	reflection /= brdf.roughness * brdf.roughness + 1.0;
+    return (diffuse * brdf.diffuse + reflection) * surface.occlusion;
+	*/
+}
+
 #endif

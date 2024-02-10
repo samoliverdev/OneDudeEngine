@@ -241,7 +241,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->ScreenClean();
 
     context->SetupCameraProperties(camera);
-    context->RenderSkybox();
+    context->RenderSkybox(environmentSettings.skyboxCubemap);
     context->DrawRenderersBuffer(opaqueDrawTarget);
     context->DrawRenderersBuffer(blendDrawTarget);
     
@@ -258,7 +258,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out{ 
         environmentSettings.bloomPostFX.get(),
-        environmentSettings.colorGradingPostFX.get() 
+        environmentSettings.colorGradingPostFX.get(),
+        environmentSettings.toneMappingPostFX.get()
     };
     return out;
 }

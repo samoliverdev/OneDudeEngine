@@ -20,7 +20,9 @@ vec3 GetLighting(Surface surface, BRDF brdf, Light light){
 vec3 GetLightingFinal2(Surface surfaceWS, BRDF brdf, GI gi){
 	//vec3 color = vec3(0.0);
 	ShadowData shadowData = GetShadowData(surfaceWS);
-	vec3 color = gi.diffuse * brdf.diffuse;
+	//vec3 color = gi.diffuse * brdf.diffuse;
+	vec3 color = IndirectBRDF(surfaceWS, brdf, gi.diffuse, /*vec3(1.0)*/ gi.specular);
+
 	for(int i = 0; i < GetDirectionalLightCount(); i++){
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
 		color += GetLighting(surfaceWS, brdf, light);

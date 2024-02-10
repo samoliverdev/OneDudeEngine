@@ -90,14 +90,77 @@ struct NewRenderPipeline_13: public OD::Module {
         _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
         _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
 
-        Entity e3 = scene->AddEntity("Sphere");
+        /*Entity e3 = scene->AddEntity("Sphere");
         e3.GetComponent<TransformComponent>().Position(Vector3(8, 2, 8));
         e3.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
         MeshRendererComponent& _meshRenderer3 = e3.AddComponent<MeshRendererComponent>();
         _meshRenderer3.SetModel(sphereModel);
         _meshRenderer3.GetMaterialsOverride()[0] = LoadFloorMaterial();
         _meshRenderer3.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
-        _meshRenderer3.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        _meshRenderer3.GetMaterialsOverride()[0]->SetEnableInstancing(true);*/
+
+        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("Sphere", [&](auto& transform, auto& meshRenderer){
+            transform.Position(Vector3(8, 2, 8));
+            transform.LocalScale(Vector3(4*1, 4*1, 4*1));
+            meshRenderer.SetModel(sphereModel);
+            meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        });
+
+        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereLighting", [&](auto& transform, auto& meshRenderer){
+            Ref<Material> material = CreateRef<Material>();
+            *material = *LoadFloorMaterial();
+            material->SetTexture(
+                "emissionMap", 
+                AssetManager::Get().LoadTexture2D("res/Engine/Textures/White.jpg", {TextureFilter::Linear, true})
+            );
+            material->SetVector4("emissionColor", Vector4(2,2,2,2));
+
+            transform.Position(Vector3(8*2.5f, 2, 8));
+            transform.LocalScale(Vector3(4*1, 4*1, 4*1));
+            meshRenderer.SetModel(sphereModel);
+            meshRenderer.GetMaterialsOverride()[0] = material;
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        });
+
+        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
+            Ref<Material> material = CreateRef<Material>();
+            material->SetTexture(
+                "mainTex", 
+                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-albedo.png", {TextureFilter::Linear, true})
+            );
+            material->SetTexture(
+                "emissionMap", 
+                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-emission.png", {TextureFilter::Linear, true})
+            );
+            material->SetTexture(
+                "maskMap", 
+                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-mask-mods.png", {TextureFilter::Linear, true})
+            );
+            material->SetFloat("metallic", 1);
+
+            transform.Position(Vector3(8*4.5f, 2, 8));
+            transform.LocalScale(Vector3(4*1, 4*1, 4*1));
+            meshRenderer.SetModel(sphereModel);
+            meshRenderer.GetMaterialsOverride()[0] = material;
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        });
+
+        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
+            Ref<Material> material = CreateRef<Material>();
+            material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
+            material->SetFloat("metallic", 1);
+
+            transform.Position(Vector3(8*6.5f, 2, 8));
+            transform.LocalScale(Vector3(4*1, 4*1, 4*1));
+            meshRenderer.SetModel(sphereModel);
+            meshRenderer.GetMaterialsOverride()[0] = material;
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        });
 
         AddTransparent(Vector3(5, 3, -8));
         AddTransparent(Vector3(6, 3, -12));

@@ -76,11 +76,18 @@ void EnvironmentComponent::OnGui(Entity& e){
         2
     );
 
+    if(environment.settings.toneMappingPostFX != nullptr){
+        if(ImGui::TreeNode("ToneMappingPostFX")){
+            cereal::ImGuiArchive toneMappingPostFX;
+            toneMappingPostFX(*environment.settings.toneMappingPostFX);
+            ImGui::TreePop();
+        }
+    }
+
     if(environment.settings.colorGradingPostFX != nullptr){
         if(ImGui::TreeNode("ColorGradingPostFX")){
             cereal::ImGuiArchive colorGradring;
             colorGradring(*environment.settings.colorGradingPostFX);
-
             ImGui::TreePop();
         }
     }
@@ -89,7 +96,6 @@ void EnvironmentComponent::OnGui(Entity& e){
         if(ImGui::TreeNode("BloomPostFX")){
             cereal::ImGuiArchive colorGradring;
             colorGradring(*environment.settings.bloomPostFX);
-
             ImGui::TreePop();
         }
     }

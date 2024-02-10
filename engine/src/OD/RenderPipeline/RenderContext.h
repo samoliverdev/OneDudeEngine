@@ -75,6 +75,7 @@ public:
     void ScreenClean();
 
     void RenderSkybox();
+    void RenderSkybox(Ref<Cubemap>& skyTexture);
     //void DrawRenderers(const std::vector<DrawingTarget*>& targets);
     void DrawGizmos();
     void DrawPostFXs(std::vector<PostFX*>& postFXs);

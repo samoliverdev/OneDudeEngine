@@ -15,12 +15,12 @@ RenderContext::RenderContext(Scene* inScene){
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}, {FramebufferTextureFormat::RED_INTEGER}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
-    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 2;
     outColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}};
     framebufferSpecification.sample = 1;
     finalColor = new Framebuffer(framebufferSpecification);
     postFx1 = new Framebuffer(framebufferSpecification);
@@ -45,6 +45,8 @@ void RenderContext::End(){
 }
 
 void RenderContext::BeginDrawToScreen(){
+    //glEnable(GL_FRAMEBUFFER_SRGB); 
+
     int width = Application::ScreenWidth();
     int height = Application::ScreenHeight();
 
@@ -63,7 +65,7 @@ void RenderContext::BeginDrawToScreen(){
 
 void RenderContext::EndDrawToScreen(){
     Graphics::BlitFramebuffer(outColor, finalColor);
-    //Renderer::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
+    //Graphics::BlitQuadPostProcessing(outColor, finalColor, *blitShader);
 
     if(overrideFramebuffer != nullptr){
         Graphics::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
@@ -72,12 +74,15 @@ void RenderContext::EndDrawToScreen(){
     }
 
     Framebuffer::Unbind();
+
+    //glDisable(GL_FRAMEBUFFER_SRGB); 
 }
 
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     bool step = false;
     Framebuffer* finalFramebuffer = postFx1;
     Graphics::BlitFramebuffer(outColor, postFx1);
+    //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
 
     for(auto i: postFXs){
         finalFramebuffer = step == false ? postFx2 : postFx1;
@@ -92,6 +97,11 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
                 step == false ? postFx1 : postFx2,
                 step == false ? postFx2 : postFx1
             );
+            /*Graphics::BlitQuadPostProcessing(
+                step == false ? postFx1 : postFx2, 
+                step == false ? postFx2 : postFx1,
+                *blitShader
+            );*/
         }
 
         step = !step;
@@ -225,6 +235,31 @@ void RenderContext::RenderSkybox(){
         Assert(skyMaterial->GetShader() != nullptr);
 
         //skyMaterial->UpdateDatas();
+        Material::SubmitGraphicDatas(*skyMaterial);
+
+        Graphics::SetCullFace(CullFace::BACK);
+        Graphics::SetDepthMask(false);
+        Graphics::SetBlend(false);
+        Shader::Bind(*skyMaterial->GetShader());
+        
+        //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
+        skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
+        Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
+        skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
+        Graphics::DrawMesh(skyboxMesh);
+
+        Graphics::SetDepthMask(true);
+    }
+}
+
+void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
+    OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
+    
+    if(skyMaterial != nullptr){
+        Assert(skyMaterial->GetShader() != nullptr);
+
+        //skyMaterial->UpdateDatas();
+        Material::SetGlobalCubemap("_SpecCube0", skyTexture);
         Material::SubmitGraphicDatas(*skyMaterial);
 
         Graphics::SetCullFace(CullFace::BACK);

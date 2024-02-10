@@ -4,6 +4,7 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
+#include "ToneMappingPostFX.h"
 #include "ColorGradingPostFX.h"
 #include "BloomPostFX.h"
 
@@ -27,6 +28,7 @@ struct EnvironmentSettings{
     Vector3 ambient = {0.1f, 0.1f, 0.1f};
     Vector3 cleanColor = {0.5f, 0.1f, 0.8f};
     Ref<Material> sky = nullptr;
+    Ref<Cubemap> skyboxCubemap;
 
     ShadowQuality shadowQuality = ShadowQuality::Ultra;
     float shadowBias = 0.00001f;
@@ -37,6 +39,7 @@ struct EnvironmentSettings{
 
     ColorCorrection colorCorrection = ColorCorrection::None;
 
+    Ref<ToneMappingPostFX> toneMappingPostFX = nullptr;
     Ref<ColorGradingPostFX> colorGradingPostFX = nullptr;
     Ref<BloomPostFX> bloomPostFX = nullptr;
     
@@ -50,6 +53,7 @@ struct EnvironmentSettings{
         ArchiveDump(ar, CEREAL_NVP(antiAliasing));
         ArchiveDump(ar, CEREAL_NVP(msaaQuality));
         ArchiveDump(ar, CEREAL_NVP(colorCorrection));
+        ArchiveDump(ar, CEREAL_NVP(toneMappingPostFX));
         ArchiveDump(ar, CEREAL_NVP(colorGradingPostFX));
         ArchiveDump(ar, CEREAL_NVP(bloomPostFX));
     }
@@ -74,7 +78,7 @@ private:
     inline void Init(){
         inited = true;
 
-        Ref<Cubemap> skyboxCubemap = Cubemap::CreateFromFile(
+        settings.skyboxCubemap = Cubemap::CreateFromFile(
             "res/Engine/Textures/Skybox/right.jpg",
             "res/Engine/Textures/Skybox/left.jpg",
             "res/Engine/Textures/Skybox/top.jpg",
@@ -82,12 +86,15 @@ private:
             "res/Engine/Textures/Skybox/front.jpg",
             "res/Engine/Textures/Skybox/back.jpg"
         );
-        Assert(skyboxCubemap != nullptr);
+        Assert(settings.skyboxCubemap != nullptr);
 
         settings.sky = CreateRef<Material>();
         settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
-        settings.sky->SetCubemap("mainTex", skyboxCubemap);
+        settings.sky->SetCubemap("mainTex", settings.skyboxCubemap);
+
+        settings.toneMappingPostFX = CreateRef<ToneMappingPostFX>();
+        settings.toneMappingPostFX->enable = false;
 
         settings.colorGradingPostFX = CreateRef<ColorGradingPostFX>();
         settings.colorGradingPostFX->enable = false;
