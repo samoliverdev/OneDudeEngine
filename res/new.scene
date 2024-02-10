@@ -91,6 +91,12 @@
     "ComponentTest_01Entities": [
         0
     ],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        1
+    ],
     "JointComponents": [],
     "JointComponentEntities": [],
     "RigidbodyComponents": [],
@@ -105,18 +111,11 @@
     "CameraComponentEntities": [],
     "EnvironmentComponents": [],
     "EnvironmentComponentEntities": [],
-    "ScriptComponents": [
-        {}
-    ],
-    "ScriptComponentEntities": [
-        1
-    ],
     "AnimatorComponents": [],
     "AnimatorComponentEntities": [],
     "ComponentTest_02s": [
         {
-            "_float": 0.0,
-            "_int": 0,
+            "_int": 45456,
             "_string": "",
             "_vector3": {
                 "v.x": 0.0,

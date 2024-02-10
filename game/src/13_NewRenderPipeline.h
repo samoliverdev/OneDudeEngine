@@ -211,11 +211,6 @@ struct NewRenderPipeline_13: public OD::Module {
 
         Application::AddModule<Editor>();
         //scene->Start();
-
-        LogInfo(" InfoTest ");
-        LogWarning(" WarningTest ");
-        LogError(" ErrorTest ");
-        LogFatal(" FatalTest ");
     }
 
     void OnUpdate(float deltaTime) override {

@@ -19,33 +19,11 @@ void MeshRendererComponent::OnGui(Entity& e){
         mesh.SetSubMeshIndex(subMeshIndex);
     }
 
-    if(ImGui::TreeNode("materialsOverride")){
+    if(ImGui::TreeNode("materialSlots")){
         int index = 0;
         for(auto i: mesh.materialsOverride){
-            if(ImGui::TreeNode(std::to_string(index).c_str())){
-                /*ImGui::BeginGroup();
-                if(i == nullptr)
-                    ImGui::Text("None");
-                else 
-                    ImGui::Text("Path: %s", i->path().c_str());
-
-                ImGui::SameLine();
-                if(ImGui::SmallButton("X")){
-                    mesh._materialsOverride[index] = nullptr;
-                }
-                ImGui::EndGroup();*/
-
-                ImGui::DrawMaterialAsset("override", mesh.materialsOverride[index]);
-    
-                ImGui::TreePop();
-            }
-
-            /*ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
-                if(path->string().empty() == false && path->extension() == ".material"){
-                    mesh._materialsOverride[index] = AssetManager::Get().LoadMaterial(path->string());
-                }
-            });*/
-
+            std::string name = "["+std::to_string(index)+"]";
+            ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
             index += 1;
         }
 
@@ -129,33 +107,11 @@ void SkinnedMeshRendererComponent::OnGui(Entity& e){
         mesh.SetSubMeshIndex(subMeshIndex);
     }
 
-    if(ImGui::TreeNode("materialsOverride")){
+    if(ImGui::TreeNode("materialSlots")){
         int index = 0;
         for(auto i: mesh.materialsOverride){
-            if(ImGui::TreeNode(std::to_string(index).c_str())){
-                /*ImGui::BeginGroup();
-                if(i == nullptr)
-                    ImGui::Text("None");
-                else 
-                    ImGui::Text("Path: %s", i->path().c_str());
-
-                ImGui::SameLine();
-                if(ImGui::SmallButton("X")){
-                    mesh._materialsOverride[index] = nullptr;
-                }
-                ImGui::EndGroup();*/
-
-                ImGui::DrawMaterialAsset("override", mesh.materialsOverride[index], mesh.model->materials[index]);
-    
-                ImGui::TreePop();
-            }
-
-            /*ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
-                if(path->string().empty() == false && path->extension() == ".material"){
-                    mesh._materialsOverride[index] = AssetManager::Get().LoadMaterial(path->string());
-                }
-            });*/
-
+            std::string name = "["+std::to_string(index)+"]";
+            ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
             index += 1;
         }
 

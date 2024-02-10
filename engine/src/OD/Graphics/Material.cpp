@@ -284,6 +284,8 @@ void Material::CleanGlobalUniformsData(){
 void Material::OnGui(){
     bool toSave = false;
 
+    //ImGui::BeginDisabled();
+
     ImGui::BeginGroup();
     ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));
     ImGui::EndGroup();
@@ -399,6 +401,8 @@ void Material::OnGui(){
 
         ImGui::TreePop();
     }
+
+    //ImGui::EndDisabled();
 
     if(toSave && this->path.empty() == false) Save(this->path);
 }

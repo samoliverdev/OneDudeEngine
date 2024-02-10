@@ -1,5 +1,6 @@
 #include "EnvironmentComponent.h"
 #include "OD/Utils/ImGuiCustomDraw.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
 
@@ -34,7 +35,7 @@ void EnvironmentComponent::OnGui(Entity& e){
         environment.settings.cleanColor = Vector3(cleanColor[0], cleanColor[1], cleanColor[2]);
     }
     
-    ImGui::DrawMaterialAsset("sky", environment.settings.sky);
+    ImGui::DrawMaterialAsset(std::string("sky"), environment.settings.sky);
 
     ImGui::Spacing();ImGui::Spacing();
 
@@ -74,6 +75,24 @@ void EnvironmentComponent::OnGui(Entity& e){
         ColorCorrectionLookupNames,
         2
     );
+
+    if(environment.settings.colorGradingPostFX != nullptr){
+        if(ImGui::TreeNode("ColorGradingPostFX")){
+            cereal::ImGuiArchive colorGradring;
+            colorGradring(*environment.settings.colorGradingPostFX);
+
+            ImGui::TreePop();
+        }
+    }
+
+    if(environment.settings.bloomPostFX != nullptr){
+        if(ImGui::TreeNode("BloomPostFX")){
+            cereal::ImGuiArchive colorGradring;
+            colorGradring(*environment.settings.bloomPostFX);
+
+            ImGui::TreePop();
+        }
+    }
 }
 
 }

@@ -168,6 +168,8 @@ bool Framebuffer::IsValid(){
 }
 
 void Framebuffer::Destroy(){
+    //if(renderId == 0) return;
+
     Assert(renderId > 0);
     //LogInfo("Framebuffer::Destroy %d", _framebuffer);
     

@@ -111,7 +111,7 @@ void ShaderHandler::Init(Ref<Shader> baseShader, std::string path){
     if(multCompile.size() < 1) return;
 
     _Combine(multCompile, std::string(""), combinations);
-    LogInfo("-----------All Shader Varing-------------");
+    //LogInfo("-----------All Shader Varing-------------");
     for(std::string s: combinations){
         std::set<std::string> keywords = Split(s, "_");
         std::string key = GetKey(keywords);
@@ -119,7 +119,7 @@ void ShaderHandler::Init(Ref<Shader> baseShader, std::string path){
         /*for(auto j: keywords){
             LogInfo("SplitValue: %s", j.c_str());
         }*/
-        LogInfo("Shader Varing Key: \"%s\" Original: \"%s\" KeywordsCount: %zd", key.c_str(), s.c_str(), keywords.size());
+        //LogInfo("Shader Varing Key: \"%s\" Original: \"%s\" KeywordsCount: %zd", key.c_str(), s.c_str(), keywords.size());
         if(shaders.count(key) == false) AddShaderVaring(key, keywords);
 
         /*std::string shaderVaring = baseShader->Path();

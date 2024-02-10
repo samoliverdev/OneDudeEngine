@@ -202,7 +202,14 @@ struct BaseMesh_1: OD::Module {
     }
 
     void OnUpdate(float deltaTime) override {
-        if(Input::IsKey(KeyCode::D)){ LogInfo("Pressing key: D"); }
+        if(Input::IsKey(KeyCode::D)){ 
+            LogInfo("Pressing key: D"); 
+        }
+
+        if(Input::IsKeyDown(KeyCode::R)){
+            LogInfo("Reloading Shader");
+            meshShader->Reload();
+        }
     }   
 
     void OnRender(float deltaTime) override {
@@ -234,8 +241,8 @@ struct BaseMesh_1: OD::Module {
     }
 
     void OnGUI() override {
-        //static bool show;
-        //ImGui::ShowDemoWindow(&show);
+        static bool show;
+        ImGui::ShowDemoWindow(&show);
     }
 
     void OnResize(int width, int height) override {}

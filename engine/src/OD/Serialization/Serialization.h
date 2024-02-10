@@ -26,6 +26,8 @@
 
 #define TYPE_TO_STRING(T) #T
 
+#define ArchiveDump(archive, data) try{ archive(data); }catch(...){}
+
 namespace glm{
 
 template<class Archive>

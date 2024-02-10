@@ -4,7 +4,7 @@
 #include "OD/Graphics/Material.h"
 
 namespace ImGui{
-    void DrawMaterialAsset(const char* name, OD::Ref<OD::Material>& asset, OD::Ref<OD::Material> default = nullptr);
+    void DrawMaterialAsset(std::string& name, OD::Ref<OD::Material>& asset, OD::Ref<OD::Material> default = nullptr);
 
     template<typename T>
     void DrawEnumCombo(const char* name, T& enumValue, const char** lookupNames, int count){

@@ -4,6 +4,8 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
+#include "ColorGradingPostFX.h"
+#include "BloomPostFX.h"
 
 namespace OD{
 
@@ -35,25 +37,27 @@ struct EnvironmentSettings{
 
     ColorCorrection colorCorrection = ColorCorrection::None;
 
+    Ref<ColorGradingPostFX> colorGradingPostFX = nullptr;
+    Ref<BloomPostFX> bloomPostFX = nullptr;
+    
     template <class Archive>
-    void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(ambient),
-            CEREAL_NVP(cleanColor),
-            CEREAL_NVP(shadowQuality),
-            CEREAL_NVP(shadowBias),
-            CEREAL_NVP(shadowBackFaceRender),
-            CEREAL_NVP(antiAliasing),
-            CEREAL_NVP(msaaQuality),
-            CEREAL_NVP(colorCorrection)
-        );
+    void serialize(Archive& ar){
+        ArchiveDump(ar, CEREAL_NVP(ambient));
+        ArchiveDump(ar, CEREAL_NVP(cleanColor));
+        ArchiveDump(ar, CEREAL_NVP(shadowQuality));
+        ArchiveDump(ar, CEREAL_NVP(shadowBias));
+        ArchiveDump(ar, CEREAL_NVP(shadowBackFaceRender));
+        ArchiveDump(ar, CEREAL_NVP(antiAliasing));
+        ArchiveDump(ar, CEREAL_NVP(msaaQuality));
+        ArchiveDump(ar, CEREAL_NVP(colorCorrection));
+        ArchiveDump(ar, CEREAL_NVP(colorGradingPostFX));
+        ArchiveDump(ar, CEREAL_NVP(bloomPostFX));
     }
 };
 
 struct EnvironmentComponent{
     //OD_REGISTER_CORE_COMPONENT_TYPE(EnvironmentComponent)
     friend class StandRenderPipeline;
-    friend class StandRenderPipeline2;
 
     EnvironmentSettings settings;
 
@@ -61,7 +65,7 @@ struct EnvironmentComponent{
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(CEREAL_NVP(settings));
+        ArchiveDump(ar, CEREAL_NVP(settings));
     }
 
 private:
@@ -84,6 +88,12 @@ private:
         settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
         settings.sky->SetCubemap("mainTex", skyboxCubemap);
+
+        settings.colorGradingPostFX = CreateRef<ColorGradingPostFX>();
+        settings.colorGradingPostFX->enable = false;
+
+        settings.bloomPostFX = CreateRef<BloomPostFX>();
+        settings.bloomPostFX->enable = false;
     }
 };
 

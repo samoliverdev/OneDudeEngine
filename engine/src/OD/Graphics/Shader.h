@@ -26,6 +26,8 @@ public:
 
     bool IsValid();
 
+    void Reload() override;
+
     void SetFloat(const char* name, float value);
     void SetFloat(const char* name, float* value, int count);
     void SetInt(const char* name, int value);
@@ -65,6 +67,8 @@ private:
     bool blend = false;
     BlendMode srcBlend;
     BlendMode dstBlend;
+
+    std::vector<std::string> enabledKeyworlds;
     
     unsigned int rendererId;
     std::unordered_map<std::string, GLint> uniforms;

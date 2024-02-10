@@ -192,6 +192,8 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     context = inRenderContext;
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
+    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    for(auto i: postFXs) i->OnSetup();
     
     // ----------- Build Render Datas Loop ----------- 
     // Get All RenderData and Building CommandsBuffer to Post Renderer
@@ -201,7 +203,7 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     // ----------- Rendering ------------
     shadows.Render();
     lighting.UpdateGlobalShaders();
-    RenderVisibleGeometry();
+    RenderVisibleGeometry(environmentSettings);
 }
 
 void CameraRenderer::RunSetupLoop(){
@@ -234,7 +236,7 @@ void CameraRenderer::OnSetupLoop(RenderData& data){
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
 }
 
-void CameraRenderer::RenderVisibleGeometry(){
+void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
     context->BeginDrawToScreen();
     context->ScreenClean();
 
@@ -245,13 +247,22 @@ void CameraRenderer::RenderVisibleGeometry(){
     
     //context->DrawGizmos();
     
-    //std::vector<PostFX*> postFXs{ postFXTest };
-    //context->DrawPostFXs(postFXs);
+    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    context->DrawPostFXs(postFXs);
 
-    context->DrawGizmos();
+    //context->DrawGizmos();
 
     context->EndDrawToScreen();
 }
+
+std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
+    std::vector<PostFX*> out{ 
+        environmentSettings.bloomPostFX.get(),
+        environmentSettings.colorGradingPostFX.get() 
+    };
+    return out;
+}
+
 #pragma endregion
 
 #pragma region StandRenderPipeline
@@ -286,7 +297,7 @@ void StandRenderPipeline::Update(){
 
     //----------Setup Envroment Settings-------------
     ///*
-    environmentSettings = EnvironmentSettings();
+    environmentSettings = defaultEnvironmentSettings;
     auto enviView = GetScene()->GetRegistry().view<EnvironmentComponent>();
     for(auto entity: enviView){
         EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);

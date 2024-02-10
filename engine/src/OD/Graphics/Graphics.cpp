@@ -501,6 +501,7 @@ void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     } else {
         Framebuffer::Bind(*dst);
+        Graphics::SetViewport(0, 0, dst->Width(), dst->Height());
     }
     glCheckError();
     

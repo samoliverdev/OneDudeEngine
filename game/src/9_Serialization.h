@@ -76,7 +76,7 @@ struct ComponentTest_02{
     SphereShape _object;
     std::vector<SphereShape> _list = {SphereShape(), SphereShape()};
     
-    template<class Archive>
+    /*template<class Archive>
     void serialize(Archive& ar){
         ar(
             CEREAL_NVP(_float), 
@@ -88,6 +88,18 @@ struct ComponentTest_02{
             CEREAL_NVP(_object),
             CEREAL_NVP(_list)
         );
+    }*/
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        ArchiveDump(ar, CEREAL_NVP(_float));
+        ArchiveDump(ar, CEREAL_NVP(_int));
+        ArchiveDump(ar, CEREAL_NVP(_string));
+        ArchiveDump(ar, CEREAL_NVP(_vector3));
+        ArchiveDump(ar, CEREAL_NVP(_Vector4));
+        ArchiveDump(ar, CEREAL_NVP(_quaternion));
+        ArchiveDump(ar, CEREAL_NVP(_object));
+        ArchiveDump(ar, CEREAL_NVP(_list));
     }
 };
 

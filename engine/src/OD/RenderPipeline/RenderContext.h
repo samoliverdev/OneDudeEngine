@@ -10,6 +10,7 @@ enum class RenderQueueRange{All, Opaue, Transparent};
 
 class PostFX{
 public:
+    virtual void OnSetup(){}
     virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
     bool enable = true;
 };

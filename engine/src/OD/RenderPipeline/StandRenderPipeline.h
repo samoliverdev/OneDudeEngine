@@ -166,7 +166,9 @@ private:
 
     void RunSetupLoop();
     void OnSetupLoop(RenderData& data);
-    void RenderVisibleGeometry();
+    void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
+    
+    std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
 
 class StandRenderPipeline: public BaseRenderPipeline{
@@ -188,6 +190,8 @@ private:
     RenderContext* renderContext;
     CameraRenderer cameraRenderer;
     EnvironmentSettings environmentSettings;
+
+    EnvironmentSettings defaultEnvironmentSettings;
 
     Camera* overrideCamera = nullptr;
     Transform overrideCameraTrans;

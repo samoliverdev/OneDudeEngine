@@ -6,6 +6,8 @@
 
 namespace OD{
 
+//int curBindShaderRenderId = 0;
+
 void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName){
     // Remove the file name and store the path to this folder
     size_t found = fullPath.find_last_of("/\\");
@@ -14,6 +16,8 @@ void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName
 
 bool Shader::Create(const std::string& filepath, std::vector<std::string>& keyworlds){
     Destroy(*this);
+
+    enabledKeyworlds = keyworlds;
 
     std::string source = this->load(filepath);
 
@@ -249,16 +253,22 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath, std::vector<std:
 }
 
 void Shader::Bind(Shader& shader){
+    //curBindShaderRenderId = shader.rendererId;
+
     glUseProgram(shader.rendererId);
     glCheckError();
 }
 
 void Shader::Unbind(){
+    //curBindShaderRenderId = 0;
+
     glUseProgram(0);
     glCheckError();
 }
 
 void Shader::Destroy(Shader& shader){
+    //if(curBindShaderRenderId == shader.rendererId) curBindShaderRenderId = 0;
+
     if(shader.rendererId != 0){
         glDeleteProgram(shader.rendererId);
         glCheckError();
@@ -340,7 +350,8 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
             glCheckError();
 
             printf("%s", infoLog.data());
-            Assert(false && "Shader compilation failure!");
+            //Assert(false && "Shader compilation failure!");
+            LogError("Shader compilation failure!");
             break;
         }
 
@@ -418,6 +429,10 @@ bool Shader::IsValid(){
     return rendererId != 0;
 }
 
+void Shader::Reload(){
+    Create(Path(), enabledKeyworlds);
+}
+
 GLint Shader::GetLocation(const char* name){
     if(uniforms.count(name)) return uniforms[name];
     
@@ -429,6 +444,8 @@ GLint Shader::GetLocation(const char* name){
 }
 
 void Shader::SetFloat(const char* name, float value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform1f(GetLocation(name), value);
     glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
@@ -436,12 +453,16 @@ void Shader::SetFloat(const char* name, float value){
 }
 
 void Shader::SetFloat(const char* name, float* value, int count){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     //glUniform1f(GetLocation(name), value);
     glUniform1fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
     glCheckError();
 }
 
 void Shader::SetInt(const char* name, int value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform1i(GetLocation(name), value);
     //glCheckError();
     glCheckError2([&](){ 
@@ -450,26 +471,36 @@ void Shader::SetInt(const char* name, int value){
 }
 
 void Shader::SetVector2(const char* name, Vector2 value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform2f(GetLocation(name), value.x, value.y);
     glCheckError();
 }
 
 void Shader::SetVector3(const char* name, Vector3 value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform3f(GetLocation(name), value.x, value.y, value.z);
     glCheckError();
 }
 
 void Shader::SetVector4(const char* name, Vector4 value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform4f(GetLocation(name), value.x, value.y, value.z, value.w);
     glCheckError();
 }
 
 void Shader::SetVector4(const char* name, Vector4* value, int count){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniform4fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
     glCheckError();
 }
 
 void Shader::SetMatrix4(const char* name, Matrix4 value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
     //glCheckError();
     glCheckError2([&](){ 
@@ -482,6 +513,8 @@ void Set(unsigned int slot, Matrix4* inputArray, unsigned int arrayLength) {
 }
 
 void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniformMatrix4fv(GetLocation(name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
     //Set(GetLocation(name), &value[0], (unsigned int)value.size());
     //glCheckError();
@@ -491,21 +524,29 @@ void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
 }
 
 void Shader::SetMatrix4(const char* name, Matrix4* value, int count){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     glUniformMatrix4fv(GetLocation(name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
     glCheckError();
 }
 
 void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     Texture2D::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetCubemap(const char* name, Cubemap& value, int index){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     Cubemap::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
     UniformBuffer::Bind(buffer, index);
     unsigned int bufferIndex = glGetUniformBlockIndex(rendererId, name);   
     glUniformBlockBinding(rendererId, bufferIndex, index);
@@ -513,6 +554,8 @@ void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index)
 }
 
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+    
     Assert(framebuffer.Specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
     //Assert(framebuffer.specification().sample <= 1);
 
