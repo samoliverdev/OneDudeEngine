@@ -1,12 +1,12 @@
 #version 330 core
 
 #pragma BeginProperties
+    Color4 color
     Texture2D mainTex White
     Texture2D normal Normal
     Texture2D emissionMap Black
     Color4 emissionColor
-    Color4 color
-    texture2D maskMap White
+    Texture2D maskMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
     Float smoothness 0.5 0.0 1.0
@@ -119,7 +119,7 @@ float GetSmoothness(vec2 baseUV){
 }
 
 float GetOcclusion(vec2 baseUV){
-	return 1;
+	return 1.0;
     //return GetMask(baseUV).g;
 
     /*float strength = occlusion;

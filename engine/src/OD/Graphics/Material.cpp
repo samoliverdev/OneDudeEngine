@@ -88,18 +88,30 @@ void Material::SetVector2(const char* name, Vector2 value){
     map.vector = Vector4(value.x, value.y, 0, 1);
 }
 
-void Material::SetVector3(const char* name, Vector3 value, bool isColor){
+void Material::SetVector3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
-    map.vectorIsColor = isColor;
 }
 
-void Material::SetVector4(const char* name, Vector4 value, bool isColor){
+void Material::SetVector4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
-    map.vectorIsColor = isColor;
+}
+
+void Material::SetColor3(const char* name, Vector3 value){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Vector3;
+    map.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vectorIsColor = true;
+}
+
+void Material::SetColor4(const char* name, Vector4 value){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Vector4;
+    map.vector = value;
+    map.vectorIsColor = true;
 }
 
 void Material::SetVector4(const char* name, Vector4* value, int count){
@@ -169,18 +181,16 @@ void Material::SetGlobalVector2(const char* name, Vector2 value){
     map.vector = Vector4(value.x, value.y, 0, 1);
 }
 
-void Material::SetGlobalVector3(const char* name, Vector3 value, bool isColor){
+void Material::SetGlobalVector3(const char* name, Vector3 value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
-    map.vectorIsColor = isColor;
 }
 
-void Material::SetGlobalVector4(const char* name, Vector4 value, bool isColor){
+void Material::SetGlobalVector4(const char* name, Vector4 value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
-    map.vectorIsColor = isColor;
 }
 
 void Material::SetGlobalVector4(const char* name, Vector4* value, int count){
@@ -305,77 +315,84 @@ void Material::OnGui(){
 
     ImGui::Spacing();ImGui::Spacing();
 
-    for(auto& i: maps){
-        if(i.second.type == MaterialMap::Type::Float){
-            if(i.second.valueMax != i.second.valueMin){
-                if(ImGui::SliderFloat(i.first.c_str(), &i.second.value, i.second.valueMin, i.second.valueMax)){
+    /*for(auto& i: maps){
+        const std::string& name = i.first;
+        MaterialMap& map = i.second;*/
+
+    for(auto& i: properties){
+        const std::string& name = i;
+        MaterialMap& map = maps[i];
+
+        if(map.type == MaterialMap::Type::Float){
+            if(map.valueMax != map.valueMin){
+                if(ImGui::SliderFloat(name.c_str(), &map.value, map.valueMin, map.valueMax)){
                     toSave = true;
                 }
             } else {
-                if(ImGui::DragFloat(i.first.c_str(), &i.second.value, 1, i.second.valueMin, i.second.valueMax)){
+                if(ImGui::DragFloat(name.c_str(), &map.value, 1, map.valueMin, map.valueMax)){
                     toSave = true;
                 }
             }
         }
 
-        if(i.second.type == MaterialMap::Type::Vector2){
-            if(ImGui::DragFloat2(i.first.c_str(), &i.second.vector[0])){
+        if(map.type == MaterialMap::Type::Vector2){
+            if(ImGui::DragFloat2(name.c_str(), &map.vector[0])){
                 toSave = true;
             }
         }
         
-        if(i.second.type == MaterialMap::Type::Vector3 && i.second.vectorIsColor == false){
-            if(ImGui::DragFloat3(i.first.c_str(), &i.second.vector[0])){
+        if(map.type == MaterialMap::Type::Vector3 && map.vectorIsColor == false){
+            if(ImGui::DragFloat3(name.c_str(), &map.vector[0])){
                 toSave = true;
             }
         }
 
-        if(i.second.type == MaterialMap::Type::Vector4 && i.second.vectorIsColor == false){
-            if(ImGui::DragFloat4(i.first.c_str(), &i.second.vector[0])){
+        if(map.type == MaterialMap::Type::Vector4 && map.vectorIsColor == false){
+            if(ImGui::DragFloat4(name.c_str(), &map.vector[0])){
                 toSave = true;
             }
         }
 
-        if(i.second.type == MaterialMap::Type::Vector3 && i.second.vectorIsColor == true){
-            if(ImGui::ColorEdit3(i.first.c_str(), &i.second.vector[0])){
+        if(map.type == MaterialMap::Type::Vector3 && map.vectorIsColor == true){
+            if(ImGui::ColorEdit3(name.c_str(), &map.vector[0])){
                 toSave = true;
             }
         }
 
-        if(i.second.type == MaterialMap::Type::Vector4 && i.second.vectorIsColor == true){
-            if(ImGui::ColorEdit4(i.first.c_str(), &i.second.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
+        if(map.type == MaterialMap::Type::Vector4 && map.vectorIsColor == true){
+            if(ImGui::ColorEdit4(name.c_str(), &map.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
                 toSave = true;
             }
         }
 
-        if(i.second.type == MaterialMap::Type::Texture){
+        if(map.type == MaterialMap::Type::Texture){
             const float widthSize = 60;
             float aspect = 1;
 
-            if(i.second.texture != nullptr){
-                Assert(i.second.texture->Height() != 0);
-                aspect = i.second.texture->Width() / i.second.texture->Height();
+            if(map.texture != nullptr){
+                Assert(map.texture->Height() != 0);
+                aspect = map.texture->Width() / map.texture->Height();
             }
 
             ImGui::BeginGroup();
             ImVec2 imagePos = ImGui::GetCursorPos();
-            ImGui::Image((void*)(uint64_t)i.second.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
+            ImGui::Image((void*)(uint64_t)map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
             ImGui::SetCursorPos(imagePos);
             if(ImGui::SmallButton("X")){
-                i.second.texture = AssetManager::Get().LoadDefautlTexture2D();
+                map.texture = AssetManager::Get().LoadDefautlTexture2D();
                 toSave = true;
             }
             ImGui::EndGroup();
 
             ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
                 if(path->string().empty() == false && (path->extension() == ".png" || path->extension() == ".jpg")){
-                    i.second.texture = AssetManager::Get().LoadTexture2D(path->string(), {TextureFilter::Linear, true});
+                    map.texture = AssetManager::Get().LoadTexture2D(path->string(), {TextureFilter::Linear, true});
                     toSave = true;
                 }
             });
 
             ImGui::SameLine();
-            ImGui::Text(i.first.c_str());
+            ImGui::Text(name.c_str());
         }
     }
 
@@ -442,18 +459,20 @@ void Material::UpdateMaps(){
     if(GetShader() == nullptr) return;
 
     ///*
-    //maps.clear();
 
     //Remove Unused Maps
     for(auto i: GetShader()->Properties()){
         if(maps.count(i[1].c_str())) continue;
-
         maps.erase(i[1].c_str());
     }
+    //maps.clear();
+    properties.clear();
 
     // Add If Not Contains
     for(auto i: GetShader()->Properties()){
         if(i.size() < 2) continue;
+
+        properties.push_back(i[1]);
         
         if(!maps.count(i[1].c_str()) && i[0] == "Float"){
             Assert(i.size() >= 3);
@@ -485,19 +504,19 @@ void Material::UpdateMaps(){
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Color4"){
-            SetVector4(i[1].c_str(), Vector4(1,1,1,1), true);
+            SetColor4(i[1].c_str(), Vector4(1,1,1,1));
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Color3"){
-            SetVector3(i[1].c_str(), Vector3(1,1,1), true);
+            SetColor3(i[1].c_str(), Vector3(1,1,1));
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Vetor4"){
-            SetVector4(i[1].c_str(), Vector4(1,1,1,1), false);
+            SetVector4(i[1].c_str(), Vector4(1,1,1,1));
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Vetor3"){
-            SetVector3(i[1].c_str(), Vector3(1,1,1), false);
+            SetVector3(i[1].c_str(), Vector3(1,1,1));
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Vetor2"){

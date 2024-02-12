@@ -149,7 +149,7 @@ public:
     static Scene* Copy(Scene* other);
 
     Entity AddEntity(std::string name = "Entity");
-    //template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
+    template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
     void DestroyEntity(EntityId entity);
     bool IsChildOf(EntityId parent, EntityId child);

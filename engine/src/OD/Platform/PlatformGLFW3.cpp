@@ -206,6 +206,8 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 		sevStr = "UNK";
 	}
 
+    if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER) return;
+
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
     LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
 }

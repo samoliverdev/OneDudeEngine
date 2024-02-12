@@ -63,8 +63,8 @@ public:
     void SetFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
     void SetFloat(const char* name, float* value, int count);
     void SetVector2(const char* name, Vector2 value);
-    void SetVector3(const char* name, Vector3 value, bool isColor = false);
-    void SetVector4(const char* name, Vector4 value, bool isColor = false);
+    void SetVector3(const char* name, Vector3 value);
+    void SetVector4(const char* name, Vector4 value);
     void SetVector4(const char* name, Vector4* value, int count);
     void SetMatrix4(const char* name, Matrix4 value);
     void SetMatrix4(const char* name, Matrix4* value, int count);
@@ -76,8 +76,8 @@ public:
     static void SetGlobalFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
     static void SetGlobalFloat(const char* name, float* value, int count);
     static void SetGlobalVector2(const char* name, Vector2 value);
-    static void SetGlobalVector3(const char* name, Vector3 value, bool isColor = false);
-    static void SetGlobalVector4(const char* name, Vector4 value, bool isColor = false);
+    static void SetGlobalVector3(const char* name, Vector3 value);
+    static void SetGlobalVector4(const char* name, Vector4 value);
     static void SetGlobalVector4(const char* name, Vector4* value, int count);
     static void SetGlobalMatrix4(const char* name, Matrix4 value);
     static void SetGlobalMatrix4(const char* name, Matrix4* value, int count);
@@ -114,11 +114,15 @@ private:
 
     //Ref<Shader> shader;
     Ref<ShaderHandler> shaderHandler;
+    std::vector<std::string> properties;
     std::unordered_map<std::string, MaterialMap> maps;
     static std::unordered_map<std::string, MaterialMap> globalMaps;
 
     uint32_t id;
     static uint32_t baseId;
+
+    void SetColor3(const char* name, Vector3 value);
+    void SetColor4(const char* name, Vector4 value);
 
     void UpdateMaps();
     static void ApplyUniformTo(Material& material, Shader& shader, std::unordered_map<std::string, MaterialMap>& maps);

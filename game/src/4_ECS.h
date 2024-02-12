@@ -46,10 +46,9 @@ struct ECS_4: public OD::Module {
 
     void OnInit() override {
         LogInfo("Game Init");
-
         soloud.init();
 
-        AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Sprite.glsl");
+        Ref<Shader> _shaderTest = Shader::CreateFromFile("res/Engine/Shaders/_BaseShaderTest.glsl");
 
         //LogInfo("Size of: %zd", sizeof(ArchiveNode));
     
@@ -75,15 +74,17 @@ struct ECS_4: public OD::Module {
             "res/Game/Models/plane.glb",
             AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
+        Assert(floorModel != nullptr);
 
         //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
         //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
         Ref<Model> cubeModel = AssetManager::Get().LoadModel(
-            "res/Game/models/Cube.glb",
+            "res/Game/Models/Cube.glb",
             AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
+        Assert(cubeModel != nullptr);
         //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
         //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
@@ -95,14 +96,18 @@ struct ECS_4: public OD::Module {
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
         e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
         MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
+        Assert(floorModel != nullptr); 
         _meshRenderer.SetModel(floorModel);
+        Assert(_meshRenderer.GetMaterialsOverride().size() > 0);
         _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
    
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
         e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
         MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
+        Assert(cubeModel != nullptr); 
         _meshRenderer2.SetModel(cubeModel);
+        Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
         _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
 
         /*Entity sponza = scene->AddEntity("Sponza");

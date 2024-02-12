@@ -19,6 +19,8 @@ bool Shader::Create(const std::string& filepath, std::vector<std::string>& keywo
 
     enabledKeyworlds = keyworlds;
 
+    this->path = filepath;
+
     std::string source = this->load(filepath);
 
     auto shaderSources = this->PreProcess(source, keyworlds);
@@ -31,12 +33,12 @@ bool Shader::Create(const std::string& filepath, std::vector<std::string>& keywo
     auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
     //out->name = filepath.substr(lastSlash, count);
 
-    this->path = filepath;
+    
     return true;
 }
 
 std::string Shader::load(std::string path){
-    LogWarning("Path: %s", path.c_str());
+    //LogWarning("Path: %s", path.c_str());
 
     std::string includeIndentifier = "#include ";
     //includeIndentifier += ' ';
@@ -45,7 +47,7 @@ std::string Shader::load(std::string path){
     std::string fullSourceCode = "";
     std::ifstream file(path);
 
-    if (!file.is_open()){
+    if(!file.is_open()){
         std::cerr << "ERROR: could not open the shader at: " << path << "\n" << std::endl;
         return fullSourceCode;
     }
@@ -53,7 +55,7 @@ std::string Shader::load(std::string path){
     bool beginProperties = false;
 
     std::string lineBuffer;
-    while (std::getline(file, lineBuffer)){
+    while(std::getline(file, lineBuffer)){
         std::vector<std::string> pragmaLine;
         std::stringstream ss(lineBuffer);
         std::string _out;
@@ -148,6 +150,11 @@ std::string Shader::load(std::string path){
             std::string pathOfThisFile;
             getFilePath(path, pathOfThisFile);
             lineBuffer.insert(0, pathOfThisFile);
+
+            //Remove "\r"
+            //lineBuffer.erase(std::remove(lineBuffer.begin(), lineBuffer.end(), "\r"), lineBuffer.cend());
+            if(lineBuffer[lineBuffer.size()-1] == '\r')
+                lineBuffer.erase(lineBuffer.length()-1);
 
             // By using recursion, the new include file can be extracted
             // and inserted at this location in the shader source code
@@ -393,6 +400,7 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
         }
 
         printf("%s", infoLog.data());
+        LogError("Shader link failure! %s", path.c_str());
         Assert(false && "Shader link failure!");
         return;
     }

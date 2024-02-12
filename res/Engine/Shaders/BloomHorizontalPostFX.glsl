@@ -23,7 +23,7 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 vec2 GetSourceTexelSize(){
-	return 1 / textureSize(mainTex, 0);
+	return 1 / vec2(textureSize(mainTex, 0));
 }
 
 vec4 GetSource(vec2 uv){
@@ -32,14 +32,14 @@ vec4 GetSource(vec2 uv){
 
 vec4 BloomHorizontalPassFragment(){
 	vec3 color = vec3(0.0);
-	float offsets[] = {
+	float offsets[9] = float[9](
 		-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0
-	};
-	float weights[] = {
+	);
+	float weights[9] = float[9](
 		0.01621622, 0.05405405, 0.12162162, 0.19459459, 0.22702703,
 		0.19459459, 0.12162162, 0.05405405, 0.01621622
-	};
-	for(int i = 0; i < 9; i++) {
+	);
+	for(int i = 0; i < 9; i++){
 		float offset = offsets[i] * 2.0 * GetSourceTexelSize().x;
 		color += GetSource(texCoord + vec2(offset, 0.0)).rgb * weights[i];
 	}

@@ -41,6 +41,9 @@ void MeshRendererComponent::OnGui(Entity& e){
 }
 
 void MeshRendererComponent::SetModel(Ref<Model> m){
+    Assert(m != nullptr);
+    //Assert(m->materials.size() > 0);
+
     model = m;
     materialsOverride.resize(model->materials.size());
 
