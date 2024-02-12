@@ -170,6 +170,12 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
     }
 }
 
+#ifdef _WIN32
+#define _strcpy(a, b, c) strcpy_s(a, b, c)
+#else 
+#define _strcpy(a, b, c) strcpy(a, c)
+#endif
+
 void InspectorPanel::DrawComponents(Entity entity){
     TransformComponent& transform = entity.GetComponent<TransformComponent>();
     InfoComponent& info = entity.GetComponent<InfoComponent>();
@@ -178,12 +184,12 @@ void InspectorPanel::DrawComponents(Entity entity){
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
         
-        strcpy_s(buffer, sizeof(buffer), info.name.c_str());
+        _strcpy(buffer, sizeof(buffer), info.name.c_str());
         if(ImGui::InputText("Name", buffer, sizeof(buffer))){
             info.name = std::string(buffer);
         }
 
-        strcpy_s(buffer, sizeof(buffer), info.tag.c_str());
+        _strcpy(buffer, sizeof(buffer), info.tag.c_str());
         if(ImGui::InputText("Tag", buffer, sizeof(buffer))){
             info.tag = std::string(buffer);
         }

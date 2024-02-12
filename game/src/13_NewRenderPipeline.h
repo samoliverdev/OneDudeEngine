@@ -99,6 +99,7 @@ struct NewRenderPipeline_13: public OD::Module {
         _meshRenderer3.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
         _meshRenderer3.GetMaterialsOverride()[0]->SetEnableInstancing(true);*/
 
+        /*
         scene->AddEntityWith<TransformComponent, MeshRendererComponent>("Sphere", [&](auto& transform, auto& meshRenderer){
             transform.Position(Vector3(8, 2, 8));
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
@@ -160,7 +161,7 @@ struct NewRenderPipeline_13: public OD::Module {
             meshRenderer.GetMaterialsOverride()[0] = material;
             meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
-        });
+        });*/
 
         AddTransparent(Vector3(5, 3, -8));
         AddTransparent(Vector3(6, 3, -12));

@@ -3,6 +3,7 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Asset.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Panels/SceneHierarchyPanel.h"
 #include "OD/Editor/Panels/ContentBrowserPanel.h"
 #include "OD/Editor/Panels/InspectorPanel.h"

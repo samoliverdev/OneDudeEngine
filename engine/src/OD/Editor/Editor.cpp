@@ -53,7 +53,7 @@ void Editor::OnInit(){
 }
 
 void Editor::OnExit(){
-    LogInfo("Edito::OnExit");
+    //LogInfo("Edito::OnExit");
 
     std::ofstream os("res/Editor.Save");
     cereal::JSONOutputArchive archive{os};

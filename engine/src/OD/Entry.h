@@ -11,6 +11,8 @@ int main(int argc, char *argv[]){
     //std::filesystem::current_path("../../");
     std::filesystem::current_path(RESOURCES_PATH "/");
 
+    LogInfo("Setting Current Path: %s", RESOURCES_PATH "/");
+    
     for(int i = 0; i < argc; i++){
         OD::Application::args.push_back(std::string(argv[i]));
     }

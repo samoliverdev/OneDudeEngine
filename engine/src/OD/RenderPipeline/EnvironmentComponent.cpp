@@ -35,7 +35,8 @@ void EnvironmentComponent::OnGui(Entity& e){
         environment.settings.cleanColor = Vector3(cleanColor[0], cleanColor[1], cleanColor[2]);
     }
     
-    ImGui::DrawMaterialAsset(std::string("sky"), environment.settings.sky);
+    std::string sky("sky");
+    ImGui::DrawMaterialAsset(sky, environment.settings.sky);
 
     ImGui::Spacing();ImGui::Spacing();
 

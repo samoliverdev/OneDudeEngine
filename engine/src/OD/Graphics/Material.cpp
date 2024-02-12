@@ -9,6 +9,12 @@
 
 namespace OD{
 
+void MaterialMap::OnLoad(std::string& texPath){
+    if(texPath.empty() == false){
+        texture = AssetManager::Get().LoadTexture2D(texPath);
+    }
+}
+
 uint32_t Material::baseId = 0;
 std::unordered_map<std::string, MaterialMap> Material::globalMaps;
 

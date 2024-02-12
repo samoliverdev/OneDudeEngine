@@ -39,6 +39,9 @@ struct MaterialMap{
 
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);
+
+private:
+    void OnLoad(std::string& texPath);
 };
 
 class Material: public Asset{
@@ -149,10 +152,7 @@ void MaterialMap::load(Archive& ar){
         CEREAL_NVP(valueMin),
         CEREAL_NVP(valueMax)
     );
-
-    if(texPath.empty() == false){
-        texture = AssetManager::Get().LoadTexture2D(texPath);
-    }
+    OnLoad(texPath);
 }
 
 template<class Archive>

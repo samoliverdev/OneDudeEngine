@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
 #include "OD/Core/Asset.h"
 #include "OD/Editor/EditorPanel.h"
 

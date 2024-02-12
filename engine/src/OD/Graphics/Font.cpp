@@ -31,7 +31,7 @@ Ref<Font> Font::CreateFromFile(const char* path){
     if(FT_New_Face(ft, path, 0, &face)){
         LogError("ERROR::FREETYPE: Failed to load font");  
         Application::Quit();
-        return false;
+        return nullptr;
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48); 

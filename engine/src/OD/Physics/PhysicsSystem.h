@@ -3,6 +3,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
 #include "Phys.h"
 
 namespace OD{

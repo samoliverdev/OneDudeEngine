@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <typeinfo>
 #include <typeindex>
+#include <stdarg.h>
 
 #undef NDEBUG
 #include <assert.h>
@@ -34,15 +35,25 @@ static const char* LogColors[] = {
 
 // logging macros
 //#if defined(_DEBUG)
-	#define _LOG(level, colorIndex, message , ...) \
+	#define _LOG(level, colorIndex, ...) \
         fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level); \
-        fprintf(stderr, message, __VA_ARGS__); \
+        fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, "\n");
 
-    #define LogInfo(message, ...) _LOG("info", 0, message, __VA_ARGS__)
-	#define LogWarning(message, ...) _LOG("warning", 1, message, __VA_ARGS__)
-	#define LogError(message, ...) _LOG("error", 2, message,__VA_ARGS__)
-    #define LogFatal(message, ...) _LOG("fatal", 3, message,__VA_ARGS__)
+    /*void _LOG(const char* level, int colorIndex, const char* message, ...){
+        va_list args;
+        va_start(args, message);
+        fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level);
+        fprintf(stderr, message, args);
+        fprintf(stderr, "\n");
+        va_end(args);
+    }*/
+    
+
+    #define LogInfo(...) _LOG("info", 0, __VA_ARGS__)
+	#define LogWarning(...) _LOG("warning", 1, __VA_ARGS__)
+	#define LogError(...) _LOG("error", 2, __VA_ARGS__)
+    #define LogFatal(...) _LOG("fatal", 3, __VA_ARGS__)
 	
 //#else
 //	#define LogWarning

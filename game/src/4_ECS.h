@@ -49,6 +49,8 @@ struct ECS_4: public OD::Module {
 
         soloud.init();
 
+        AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Sprite.glsl");
+
         //LogInfo("Size of: %zd", sizeof(ArchiveNode));
     
         /*sample.load("res/sounds/2ne1_2.mp3");
@@ -73,6 +75,7 @@ struct ECS_4: public OD::Module {
             "res/Game/Models/plane.glb",
             AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
+
         //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
         //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
         //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));

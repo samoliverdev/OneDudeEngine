@@ -1,4 +1,5 @@
 #include "Scripts.h"
+#include "SceneManager.h"
 #include <functional>
 #include <string>
 

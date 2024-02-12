@@ -2,6 +2,7 @@
 #include "OD/Core/Application.h"
 #include "OD/Core/AssetManager.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
 #include "OD/Scene/Scripts.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Physics/PhysicsSystem.h"

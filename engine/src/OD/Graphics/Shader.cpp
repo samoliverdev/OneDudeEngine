@@ -8,7 +8,7 @@ namespace OD{
 
 //int curBindShaderRenderId = 0;
 
-void getFilePath(const std::string & fullPath, std::string & pathWithoutFileName){
+void getFilePath(const std::string& fullPath, std::string& pathWithoutFileName){
     // Remove the file name and store the path to this folder
     size_t found = fullPath.find_last_of("/\\");
     pathWithoutFileName = fullPath.substr(0, found + 1);
@@ -36,6 +36,8 @@ bool Shader::Create(const std::string& filepath, std::vector<std::string>& keywo
 }
 
 std::string Shader::load(std::string path){
+    LogWarning("Path: %s", path.c_str());
+
     std::string includeIndentifier = "#include ";
     //includeIndentifier += ' ';
     static bool isRecursiveCall = false;
@@ -162,7 +164,7 @@ std::string Shader::load(std::string path){
 
     // Only add the null terminator at the end of the complete file,
     // essentially skipping recursive function calls this way
-    if (!isRecursiveCall)
+    if(!isRecursiveCall)
         fullSourceCode += '\0';
 
     file.close();

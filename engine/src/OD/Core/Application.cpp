@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "OD/Defines.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
 #include "ImGui.h"
@@ -105,7 +106,7 @@ void Application::_OnResize(int inWidth, int inHeight){
 }
 
 void Application::OnExit(){
-    LogInfo("Application::OnExit");
+    //LogInfo("Application::OnExit");
 
     for(auto i: modules){
         i->OnExit();

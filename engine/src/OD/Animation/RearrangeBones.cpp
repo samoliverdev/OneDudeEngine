@@ -8,7 +8,7 @@ BoneMap RearrangeSkeleton(Skeleton& skeleton){
 	unsigned int size = restPose.Size();
 	if(size == 0) { return BoneMap(); }
 	std::vector<std::vector<int>> hierarchy(size);
-	std::list<int> process;
+	std::vector<int> process;
 	for(unsigned int i = 0; i < size; ++i){
 		int parent = restPose.GetParent(i);
 		if(parent >= 0){
@@ -22,7 +22,8 @@ BoneMap RearrangeSkeleton(Skeleton& skeleton){
 	int index = 0;
 	while(process.size() > 0){
 		int current = *process.begin();
-		process.pop_front();
+		//process.pop_front();
+		process.erase(process.begin());
 		std::vector<int>& children = hierarchy[current];
 
 		unsigned int numChildren = (unsigned int)children.size();

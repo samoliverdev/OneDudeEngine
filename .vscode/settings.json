@@ -95,7 +95,13 @@
         "resumable": "cpp",
         "internal.h": "c",
         "csignal": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "*.tcc": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "string_view": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "git.ignoreLimitWarning": true,
