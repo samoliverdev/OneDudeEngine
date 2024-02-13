@@ -6,6 +6,8 @@
 #include "OD/Scene/Scripts.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Physics/PhysicsSystem.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include <filesystem>
 
@@ -30,7 +32,8 @@ void CoreModulesStartup(){
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
     SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
     SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");

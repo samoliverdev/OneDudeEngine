@@ -35,7 +35,7 @@ struct ECS_4: public OD::Module {
         Entity et = SceneManager::Get().GetActiveScene()->AddEntity("Transparent");
         et.GetComponent<TransformComponent>().Position(pos);
         et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
-        MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer3 = et.AddComponent<ModelRendererComponent>();
         _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Engine/Models/plane.obj"));
 
         for(auto i: _meshRenderer3.GetModel()->materials){
@@ -95,7 +95,7 @@ struct ECS_4: public OD::Module {
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
         e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
-        MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
         Assert(floorModel != nullptr); 
         _meshRenderer.SetModel(floorModel);
         Assert(_meshRenderer.GetMaterialsOverride().size() > 0);
@@ -104,7 +104,7 @@ struct ECS_4: public OD::Module {
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
         e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
-        MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
         Assert(cubeModel != nullptr); 
         _meshRenderer2.SetModel(cubeModel);
         Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
@@ -173,7 +173,7 @@ struct ECS_4: public OD::Module {
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
             e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
-            MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
+            ModelRendererComponent& mr = e.AddComponent<ModelRendererComponent>();
             mr.SetModel(cubeModel);
             mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
             //mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);

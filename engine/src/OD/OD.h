@@ -37,6 +37,7 @@
 
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/SpriteComponent.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/LightComponent.h"

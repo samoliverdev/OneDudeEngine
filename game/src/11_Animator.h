@@ -39,7 +39,7 @@ struct Animator_11: OD::Module {
         Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
-        MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
         floorRenderer.SetModel(floorModel);
         floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
@@ -58,7 +58,7 @@ struct Animator_11: OD::Module {
         Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
         charTrans.LocalScale(Vector3(0.01f, 0.01f, 0.01f));
-        SkinnedMeshRendererComponent& charRenderer = charEntity.AddComponent<SkinnedMeshRendererComponent>();
+        SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
         charRenderer.SetModel(charModel);
         charRenderer.UpdatePosePalette();
         LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());

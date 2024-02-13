@@ -14,6 +14,7 @@
 #include "13_NewRenderPipeline.h"
 #include "14_CommandBuffer.h"
 #include "15_UberShader.h"
+#include "Minicraft/Minicraft.h"
 
 #include <string>
 
@@ -26,7 +27,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 12;
+    int i = 15;
     if(OD::Application::args.size() > 1) i = atoi(OD::Application::args[1].c_str());
 
     if(i == 0) return new BaseMesh_1();
@@ -43,6 +44,7 @@ OD::Module* CreateMainModule(){
     if(i == 12) return new NewRenderPipeline_13();
     if(i == 13) return new CommandBuffer_14();
     if(i == 14) return new UberShader_15();
+    if(i == 15) return new Minicraft();
 
     return new BaseMesh_1();
 }

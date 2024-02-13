@@ -1,6 +1,6 @@
 #include "Animator.h"
 #include "OD/Core/Application.h"
-#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 
 namespace OD{
 
@@ -17,11 +17,11 @@ SystemType AnimatorSystem::Type(){
 }
 
 void AnimatorSystem::Update(){
-    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
+    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     
     for(auto e: view){
         AnimatorComponent& anim = view.get<AnimatorComponent>(e);
-        SkinnedMeshRendererComponent& skinned = view.get<SkinnedMeshRendererComponent>(e);
+        SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
 
         if(skinned.GetModel() == nullptr) continue;
 

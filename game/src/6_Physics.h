@@ -27,7 +27,7 @@ struct PhysicsCubeS: public Script{
         entity.GetComponent<TransformComponent>().Position({2, 13, 0});
         entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
 
-        MeshRendererComponent& renderer = entity.AddOrGetComponent<MeshRendererComponent>();
+        ModelRendererComponent& renderer = entity.AddOrGetComponent<ModelRendererComponent>();
         renderer.SetModel(cubeModel);
 
         RigidbodyComponent& physicObject = entity.AddOrGetComponent<RigidbodyComponent>();
@@ -92,7 +92,7 @@ struct Physics_6: OD::Module {
         Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
-        MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
         floorRenderer.SetModel(floorModel);
         floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
         RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
@@ -103,7 +103,7 @@ struct Physics_6: OD::Module {
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Entity character2Entity = scene->AddEntity("MainCube");
-        MeshRendererComponent& character2Renderer = character2Entity.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& character2Renderer = character2Entity.AddComponent<ModelRendererComponent>();
         character2Renderer.SetModel(cubeModel);
         character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
         RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
@@ -114,7 +114,7 @@ struct Physics_6: OD::Module {
         character2Entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
 
         Entity character2Entity2 = scene->AddEntity("MainCube2");
-        MeshRendererComponent& character2Renderer2 = character2Entity2.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& character2Renderer2 = character2Entity2.AddComponent<ModelRendererComponent>();
         character2Renderer2.SetModel(cubeModel);
         character2Renderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
         RigidbodyComponent& physicObject2 = character2Entity2.AddComponent<RigidbodyComponent>();

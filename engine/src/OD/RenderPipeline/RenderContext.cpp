@@ -1,6 +1,7 @@
 #include "RenderContext.h"
 #include "CameraComponent.h"
 #include "MeshRendererComponent.h"
+#include "ModelRendererComponent.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/AssetManager.h"
 #include "OD/Core/Instrumentor.h"
@@ -130,9 +131,28 @@ void RenderContext::ScreenClean(){
 void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderData){
     //globalUniformBuffer->CleanData();
 
-    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto e: meshView){
+        auto& c = meshView.get<MeshRendererComponent>(e);
+        auto& t = meshView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.transform = t;
+        data.distance = math::distance(cam.viewPos, t.Position());
+        data.targetMaterial = c.material;
+        data.targetMesh = c.mesh;
+        data.targetMatrix =  t.GlobalModelMatrix();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetAABB();
+
+        onReciveRenderData(data);
+    }
+
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
-        auto& c = meshRenderView.get<MeshRendererComponent>(e);
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
         //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
@@ -154,9 +174,9 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         }
     }
 
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent>();
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
     for(auto e: skinnedView){
-        SkinnedMeshRendererComponent& c = skinnedView.get<SkinnedMeshRendererComponent>(e);
+        SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
         TransformComponent& t = skinnedView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
         //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
@@ -310,9 +330,9 @@ void RenderContext::DrawGizmos(){
         _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
     }
 
-    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
-        auto& c = meshRenderView.get<MeshRendererComponent>(e);
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
@@ -321,9 +341,9 @@ void RenderContext::DrawGizmos(){
         //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
-    auto skinnedMeshRenderView = scene->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent>();
+    auto skinnedMeshRenderView = scene->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
     for(auto e: skinnedMeshRenderView){
-        auto& c = skinnedMeshRenderView.get<SkinnedMeshRendererComponent>(e);
+        auto& c = skinnedMeshRenderView.get<SkinnedModelRendererComponent>(e);
         auto& t = skinnedMeshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 

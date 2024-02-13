@@ -230,7 +230,7 @@ void CameraRenderer::RunSetupLoop(){
 
 void CameraRenderer::OnSetupLoop(RenderData& data){
     //TODO: Check Culling
-    if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
+    //if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);

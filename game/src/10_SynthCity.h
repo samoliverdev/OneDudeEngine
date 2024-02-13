@@ -48,7 +48,7 @@ struct SynthCity_10: OD::Module {
         );
   
         Entity floorEntity = scene->AddEntity("City");
-        MeshRendererComponent& floorRenderer = floorEntity.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
         floorRenderer.SetModel(floorModel);
         TransformComponent& cityTransform = floorEntity.GetComponent<TransformComponent>();
         cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));

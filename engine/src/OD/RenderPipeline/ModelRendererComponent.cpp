@@ -1,12 +1,12 @@
-#include "MeshRendererComponent.h"
+#include "ModelRendererComponent.h"
 #include "StandRenderPipeline.h"
 #include "OD/Utils/ImGuiCustomDraw.h"
 #include <filesystem>
 
 namespace OD{
 
-void MeshRendererComponent::OnGui(Entity& e){
-    MeshRendererComponent& mesh = e.GetComponent<MeshRendererComponent>();
+void ModelRendererComponent::OnGui(Entity& e){
+    ModelRendererComponent& mesh = e.GetComponent<ModelRendererComponent>();
 
     if(mesh.model == nullptr){
         ImGui::Text("Path: None");
@@ -40,7 +40,7 @@ void MeshRendererComponent::OnGui(Entity& e){
     }
 }
 
-void MeshRendererComponent::SetModel(Ref<Model> m){
+void ModelRendererComponent::SetModel(Ref<Model> m){
     Assert(m != nullptr);
     //Assert(m->materials.size() > 0);
 
@@ -51,11 +51,11 @@ void MeshRendererComponent::SetModel(Ref<Model> m){
     boundingVolumeSphere = Model::GenerateSphereBV(*model);
 }
 
-AABB MeshRendererComponent::GetAABB(){
+AABB ModelRendererComponent::GetAABB(){
     return boundingVolume;
 }
 
-AABB MeshRendererComponent::GetGlobalAABB(TransformComponent& transform){
+AABB ModelRendererComponent::GetGlobalAABB(TransformComponent& transform){
     //Get global scale thanks to our transform
     const Vector3 globalCenter{ transform.GlobalModelMatrix() * Vector4(boundingVolume.center, 1) };
 
@@ -96,8 +96,8 @@ void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
     }
 }
 
-void SkinnedMeshRendererComponent::OnGui(Entity& e){
-    SkinnedMeshRendererComponent& mesh = e.GetComponent<SkinnedMeshRendererComponent>();
+void SkinnedModelRendererComponent::OnGui(Entity& e){
+    SkinnedModelRendererComponent& mesh = e.GetComponent<SkinnedModelRendererComponent>();
 
     if(mesh.model == nullptr){
         ImGui::Text("Path: None");

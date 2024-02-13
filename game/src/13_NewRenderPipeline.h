@@ -34,7 +34,7 @@ struct NewRenderPipeline_13: public OD::Module {
         Entity et = SceneManager::Get().GetActiveScene()->AddEntity("Transparent");
         et.GetComponent<TransformComponent>().Position(pos);
         et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
-        MeshRendererComponent& _meshRenderer3 = et.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer3 = et.AddComponent<ModelRendererComponent>();
         _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Engine/Models/plane.obj"));
 
         for(auto i: _meshRenderer3.GetModel()->materials){
@@ -77,7 +77,7 @@ struct NewRenderPipeline_13: public OD::Module {
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
         e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
-        MeshRendererComponent& _meshRenderer = e.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
         _meshRenderer.SetModel(floorModel);
         _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
         _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
@@ -85,7 +85,7 @@ struct NewRenderPipeline_13: public OD::Module {
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
         e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
-        MeshRendererComponent& _meshRenderer2 = e2.AddComponent<MeshRendererComponent>();
+        ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
         _meshRenderer2.SetModel(cubeModel);
         _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
         _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
@@ -100,7 +100,7 @@ struct NewRenderPipeline_13: public OD::Module {
         _meshRenderer3.GetMaterialsOverride()[0]->SetEnableInstancing(true);*/
 
         ///*
-        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("Sphere", [&](auto& transform, auto& meshRenderer){
+        scene->AddEntityWith<TransformComponent, ModelRendererComponent>("Sphere", [&](auto& transform, auto& meshRenderer){
             transform.Position(Vector3(8, 2, 8));
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
@@ -109,7 +109,7 @@ struct NewRenderPipeline_13: public OD::Module {
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
-        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereLighting", [&](auto& transform, auto& meshRenderer){
+        scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereLighting", [&](auto& transform, auto& meshRenderer){
             Ref<Material> material = CreateRef<Material>();
             *material = *LoadFloorMaterial();
             material->SetTexture(
@@ -126,7 +126,7 @@ struct NewRenderPipeline_13: public OD::Module {
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
-        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
+        scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
             Ref<Material> material = CreateRef<Material>();
             material->SetTexture(
                 "mainTex", 
@@ -150,7 +150,7 @@ struct NewRenderPipeline_13: public OD::Module {
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
-        scene->AddEntityWith<TransformComponent, MeshRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
+        scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
             Ref<Material> material = CreateRef<Material>();
             material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
             material->SetFloat("metallic", 1);
@@ -243,7 +243,7 @@ struct NewRenderPipeline_13: public OD::Module {
 
             Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
             e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
-            MeshRendererComponent& mr = e.AddComponent<MeshRendererComponent>();
+            ModelRendererComponent& mr = e.AddComponent<ModelRendererComponent>();
             mr.SetModel(cubeModel);
             mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
             mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);
