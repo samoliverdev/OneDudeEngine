@@ -1,9 +1,9 @@
 #pragma once
 
 #include <OD/OD.h>
-#include "CameraMovement.h"
+#include "Ultis/CameraMovement.h"
 #include <assert.h>
-#include "Ultis.h"
+#include "Ultis/Ultis.h"
 #include <entt/entt.hpp>
 
 using namespace OD;

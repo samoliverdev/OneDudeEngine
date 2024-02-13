@@ -1,8 +1,8 @@
 #pragma once
 
 #include <OD/OD.h>
-#include "CameraMovement.h"
-#include "Ultis.h"
+#include "Ultis/CameraMovement.h"
+#include "Ultis/Ultis.h"
 
 using namespace OD;
 

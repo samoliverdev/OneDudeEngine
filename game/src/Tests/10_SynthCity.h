@@ -2,9 +2,9 @@
 
 #include <OD/OD.h>
 //#include <OD/RenderPipeline/StandRenderPipeline2.h>
-#include "CameraMovement.h"
+#include "Ultis/CameraMovement.h"
 #include <assert.h>
-#include "Ultis.h"
+#include "Ultis/Ultis.h"
 
 using namespace OD;
 

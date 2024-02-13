@@ -2,9 +2,9 @@
 
 #include <OD/OD.h>
 //#include <OD/AnimationSystem/Animator.h>
-#include "CameraMovement.h"
+#include "Ultis/CameraMovement.h"
 #include <assert.h>
-#include "Ultis.h"
+#include "Ultis/Ultis.h"
 #include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_speech.h>

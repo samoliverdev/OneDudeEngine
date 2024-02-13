@@ -5,8 +5,8 @@
 #include <OD/Animation/RearrangeBones.h>
 #include <OD/Animation/CrossFadeController.h>
 #include <ImGuizmo/ImGuizmo.h>
-#include "CameraMovement.h"
-#include "Ultis.h"
+#include "Ultis/CameraMovement.h"
+#include "Ultis/Ultis.h"
 #include <OD/Loader/AssimpLoader.h>
 
 using namespace OD;
