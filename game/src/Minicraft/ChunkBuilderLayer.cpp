@@ -1,9 +1,17 @@
 #include "ChunkBuilderLayer.h"
+#include "Ultis/Ultis.h"
+
+float Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
+    return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
+}
 
 ChunkBuilderLayer::ChunkBuilderLayer(){
     Ref<Texture2D> tex = AssetManager::Get().LoadTexture2D("res/Game/Textures/floor.jpg");
     material = CreateRef<Material>(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
     material->SetTexture("mainTex", tex);
+
+    noise = fnlCreateState();
+    noise.noise_type = FNL_NOISE_VALUE;
 }
 
 void AddFace(Vector3 pos, int dirIndex, Mesh& mesh){
@@ -16,6 +24,36 @@ void AddFace(Vector3 pos, int dirIndex, Mesh& mesh){
         mesh.uv.push_back(FaceUvs[i]);
         mesh.normals.push_back(normal);
         mesh.indices.push_back(mesh.vertices.size()-1);
+    }
+}
+
+void ChunkBuilderLayer::BuildData(IVector3 coord, ChunkData& chunkData){
+    for(int z = 0; z < chunkData.GetSize(); z++){
+        for(int x = 0; x < chunkData.GetSize(); x++){
+            const int baseY = 80;
+            int maxHeight = baseY+25;
+            int upSpace = maxHeight - baseY; 
+            const float noiseScale = 5;
+
+            int _x = x + coord.x * chunkData.GetSize();
+            int _z = z + coord.z * chunkData.GetSize();
+
+            LogInfo("X: %d Y: %d", _x, _z);
+
+            float noiseValue = fnlGetNoise2D(&noise, _x*noiseScale, _z*noiseScale);
+            noiseValue = Remap(noiseValue, Vector2(-1, 1), Vector2(0, 1));
+
+            //int targetY = random(1, chunkData.GetHeight());
+            int targetY = upSpace * noiseValue;
+            targetY += baseY;
+
+            LogInfo("Target Y: %d NoiseValue: %f", targetY, noiseValue);
+
+            for(int y = 0; y < chunkData.GetHeight(); y++){
+                chunkData.SetVoxel(x, y, z, y <= targetY ? Voxel{1} : Voxel{0});
+                //chunkData.SetVoxel(x, y, z, Voxel{1});
+            }
+        }
     }
 }
 
@@ -34,7 +72,7 @@ void ChunkBuilderLayer::BuildMesh(ChunkData& chunkData, MeshRendererComponent& m
 
     for(int z = 0; z < chunkData.GetSize(); z++){
         for(int x = 0; x < chunkData.GetSize(); x++){
-            for(int y = 0; y < chunkData.GetSize(); y++){
+            for(int y = 0; y < chunkData.GetHeight(); y++){
                 if(chunkData.GetVoxel(x, y, z).id == 0) continue;
 
                 for(int d = 0; d < 6; d++){
@@ -42,7 +80,7 @@ void ChunkBuilderLayer::BuildMesh(ChunkData& chunkData, MeshRendererComponent& m
                     IVector3 dirCoodr = curCoord + ChunkVoxelNeighbors[d];
 
                     if(
-                        chunkData.IsOffChunk(dirCoodr.x, dirCoodr.y, dirCoodr.z)
+                        chunkData.IsOffChunk(dirCoodr.x, dirCoodr.y, dirCoodr.z) == true
                         || chunkData.GetVoxel(dirCoodr.x, dirCoodr.y, dirCoodr.z).id == 0
                     ){
                         AddFace(Vector3(x, y, z), d, *mesh.mesh);

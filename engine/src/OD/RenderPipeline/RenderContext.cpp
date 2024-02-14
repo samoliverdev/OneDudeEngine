@@ -317,6 +317,10 @@ void RenderContext::DrawGizmos(){
 
     scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
+    for(System* s: scene->GetStandSystems()){
+        s->OnDrawGizmos();
+    }
+
     Camera cm = cam;
     _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
 

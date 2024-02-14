@@ -101,7 +101,7 @@ Scene::Scene(Scene& other){
     }
 
     auto view = other.registry.view<entt::entity>();
-    for(auto it = view.rbegin(); it != view.rend(); ++it){
+    for(auto it = view.begin(); it != view.end(); ++it){
         entt::entity e = registry.create(*it);
 
         auto& c = other.registry.get<TransformComponent>(*it);
@@ -132,7 +132,7 @@ Scene* Scene::Copy(Scene* other){
     Scene* scene = new Scene();
 
     auto view = other->registry.view<entt::entity>();
-    for(auto it = view.rbegin(); it != view.rend(); ++it){
+    for(auto it = view.begin(); it != view.end(); ++it){
         entt::entity e = scene->registry.create(*it);
 
         auto& c = other->registry.get<TransformComponent>(*it);
@@ -180,6 +180,7 @@ Entity Scene::AddEntity(std::string name){
 }
 
 void Scene::DestroyEntity(EntityId entity){
+    //if(registry.valid(entity) == false) return;
     //_DestroyEntity(entity);
     toDestroy.push_back(entity);
 }
@@ -245,7 +246,6 @@ Entity Scene::GetMainCamera2(){
     for(auto e: registry.view<CameraComponent>()){
         return Entity(e, this);
     }
-
     return Entity();
 }
 
@@ -281,7 +281,7 @@ void Scene::Save(const char* path){
     ODOutputArchive archive(os);
     
     auto entityView = registry.view<entt::entity>();
-    std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
+    std::vector<entt::entity> entities(entityView.begin(), entityView.end()); //std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
     archive(cereal::make_nvp("Entities", entities));
 
     _SaveComponent<InfoComponent>(archive, registry, "InfoComponent");

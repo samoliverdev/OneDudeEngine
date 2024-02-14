@@ -24,6 +24,9 @@
 #include <glm/gtc/matrix_access.hpp>
 //#include <glm/gtx/matrix_query.hpp>
 
+//#define GLM_ENABLE_EXPERIMENTAL
+//#include "glm/gtx/hash.hpp"
+
 namespace OD {
 
 using Vector2 = glm::vec2;

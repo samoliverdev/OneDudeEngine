@@ -6,8 +6,8 @@ namespace OD{
 #pragma region Shadows
 Shadows::Shadows(){
     FrameBufferSpecification specification;
-    specification.width = 1024 * 2;
-    specification.height = 1024 * 2;
+    specification.width = 1024 * 1;
+    specification.height = 1024 * 1;
     specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
     specification.sample = Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades;
     specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
@@ -250,7 +250,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
 
-    //context->DrawGizmos();
+    context->DrawGizmos();
 
     context->EndDrawToScreen();
 }

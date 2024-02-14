@@ -13,6 +13,7 @@ void Minicraft::OnInit(){
     
     Entity env = scene->AddEntity("Env");
     env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+    env.GetComponent<EnvironmentComponent>().settings.shadowQuality = ShadowQuality::Low;
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = camera.AddComponent<CameraComponent>();
@@ -29,7 +30,7 @@ void Minicraft::OnInit(){
     light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
     light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
 
-    Entity e2 = scene->AddEntity("Cube");
+    /*Entity e2 = scene->AddEntity("Cube");
     e2.GetComponent<TransformComponent>().Position(Vector3(0, 0, 0));
     e2.GetComponent<TransformComponent>().LocalScale(Vector3(1, 1, 1));
     ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
@@ -38,22 +39,22 @@ void Minicraft::OnInit(){
         "res/Engine/Models/Cube.obj",
         AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
     );
-    _meshRenderer2.SetModel(cubeModel);
+    _meshRenderer2.SetModel(cubeModel);*/
 
-    Entity _chunk = scene->AddEntity("Chunk");
+    /*Entity _chunk = scene->AddEntity("Chunk");
     ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
     MeshRendererComponent& mesh = _chunk.AddComponent<MeshRendererComponent>();
+    chunk.data.SetSize(32, 32*24);*/
 
-    chunk.data.SetSize(16);
-
-    for(int z = 0; z < chunk.data.GetSize(); z++){
+    /*for(int z = 0; z < chunk.data.GetSize(); z++){
         for(int x = 0; x < chunk.data.GetSize(); x++){
-            int targetY = random(1, chunk.data.GetSize());
-            for(int y = 0; y < chunk.data.GetSize(); y++){
-                chunk.data.SetVoxel(x, y, z, y <= targetY ? Voxel{1} : Voxel{0});
+            int targetY = random(1, chunk.data.GetHeight());
+            for(int y = 0; y < chunk.data.GetHeight(); y++){
+                //chunk.data.SetVoxel(x, y, z, y <= targetY ? Voxel{1} : Voxel{0});
+                chunk.data.SetVoxel(x, y, z, Voxel{1});
             }
         }
-    }
+    }*/
 
     /*for(int z = 0; z < chunk.data.GetSize(); z++){
         for(int x = 0; x < chunk.data.GetSize(); x++){

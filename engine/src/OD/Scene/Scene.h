@@ -129,6 +129,7 @@ public:
 
     virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
+    virtual void OnDrawGizmos(){}
     
     Scene* GetScene(){ return scene; }
 
@@ -165,6 +166,7 @@ public:
     template<typename T> T* GetSystemDynamic();
 
     inline entt::registry& GetRegistry(){ return registry; }
+    inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
 
     void Start();
     void Update();
