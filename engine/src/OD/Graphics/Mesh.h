@@ -30,7 +30,7 @@ public:
     std::vector<Matrix4> instancingModelMatrixs;
     
     Mesh();
-    ~Mesh();
+    ~Mesh() override;
 
     void UpdateMesh();
     void UpdateMeshInstancingModelMatrixs();

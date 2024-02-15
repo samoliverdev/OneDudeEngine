@@ -60,9 +60,12 @@ void WorldManagerSystem::OnDrawGizmos(){
     }
 }
 
+void _LoadChunk(IVector3 coord, MeshRendererComponent& mesh){
+}
+
 void WorldManagerSystem::LoadChunk(IVector3 coord){
     Entity _chunk = scene->AddEntity("Chunk");
-    LogWarning("Add Chunk Entity: %d Coord(%d, %d, %d)", _chunk.Id(), coord.x, coord.y, coord.z);
+    //LogWarning("Add Chunk Entity: %d Coord(%d, %d, %d)", _chunk.Id(), coord.x, coord.y, coord.z);
 
     ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
     MeshRendererComponent& mesh = _chunk.AddComponent<MeshRendererComponent>();
@@ -83,11 +86,13 @@ void WorldManagerSystem::LoadChunk(IVector3 coord){
 }
 
 void WorldManagerSystem::UnLoadChunk(IVector3 coord){
-    LogWarning("Destroing Chunk Entity: %d Coord(%d, %d, %d)", loadedChunks[coord].Id(), coord.x, coord.y, coord.z);
+    //LogWarning("Destroing Chunk Entity: %d Coord(%d, %d, %d)", loadedChunks[coord].Id(), coord.x, coord.y, coord.z);
     scene->DestroyEntity(loadedChunks[coord].Id());
 }
 
 void WorldManagerSystem::HandleLoadUnload(){
+    using namespace std::chrono_literals;
+
     IVector3 currentCoord = WorldToGrid(chunkSize, camPos);
     toLoadCoords.clear();
     for(int x = -chunkLoadDistance; x <= chunkLoadDistance; x++){
@@ -109,7 +114,16 @@ void WorldManagerSystem::HandleLoadUnload(){
 
     for(auto i: toLoadCoords){
         if(loadedChunks.count(_IVector3(i)) <= 0){
+            //JobSystem::Execute([&](){ LoadChunk(i); });
             LoadChunk(i);
         }
     }
+
+    //JobSystem::Wait();
+
+    /*for(auto& i: test2){
+        if(i.second.wait_for(0ms) == std::future_status::ready){
+
+        }
+    }*/
 }

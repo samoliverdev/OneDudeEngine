@@ -30,24 +30,19 @@ void AddFace(Vector3 pos, int dirIndex, Mesh& mesh){
 void ChunkBuilderLayer::BuildData(IVector3 coord, ChunkData& chunkData){
     for(int z = 0; z < chunkData.GetSize(); z++){
         for(int x = 0; x < chunkData.GetSize(); x++){
-            const int baseY = 80;
-            int maxHeight = baseY+25;
-            int upSpace = maxHeight - baseY; 
-            const float noiseScale = 5;
+            const int baseY = 192;
+            int noiseHeight = 32;
+            const float noiseScale = 1;
 
             int _x = x + coord.x * chunkData.GetSize();
             int _z = z + coord.z * chunkData.GetSize();
 
-            LogInfo("X: %d Y: %d", _x, _z);
+            //LogInfo("X: %d Y: %d", _x, _z);
 
-            float noiseValue = fnlGetNoise2D(&noise, _x*noiseScale, _z*noiseScale);
-            noiseValue = Remap(noiseValue, Vector2(-1, 1), Vector2(0, 1));
+            float noiseValue = fnlGetNoise2D(&noise, _x*noiseScale, _z*noiseScale);;
+            int targetY = noiseValue * noiseHeight + baseY;
 
-            //int targetY = random(1, chunkData.GetHeight());
-            int targetY = upSpace * noiseValue;
-            targetY += baseY;
-
-            LogInfo("Target Y: %d NoiseValue: %f", targetY, noiseValue);
+            //LogInfo("Target Y: %d NoiseValue: %f", targetY, noiseValue);
 
             for(int y = 0; y < chunkData.GetHeight(); y++){
                 chunkData.SetVoxel(x, y, z, y <= targetY ? Voxel{1} : Voxel{0});
@@ -58,7 +53,7 @@ void ChunkBuilderLayer::BuildData(IVector3 coord, ChunkData& chunkData){
 }
 
 void ChunkBuilderLayer::BuildMesh(ChunkData& chunkData, MeshRendererComponent& mesh){
-    LogWarning("Building Chunk Mesh");
+    //LogWarning("Building Chunk Mesh");
 
     mesh.material = material;
     if(mesh.mesh == nullptr){
@@ -80,8 +75,8 @@ void ChunkBuilderLayer::BuildMesh(ChunkData& chunkData, MeshRendererComponent& m
                     IVector3 dirCoodr = curCoord + ChunkVoxelNeighbors[d];
 
                     if(
-                        chunkData.IsOffChunk(dirCoodr.x, dirCoodr.y, dirCoodr.z) == true
-                        || chunkData.GetVoxel(dirCoodr.x, dirCoodr.y, dirCoodr.z).id == 0
+                        chunkData.IsOffChunk(dirCoodr.x, dirCoodr.y, dirCoodr.z) == false
+                        && chunkData.GetVoxel(dirCoodr.x, dirCoodr.y, dirCoodr.z).id == 0
                     ){
                         AddFace(Vector3(x, y, z), d, *mesh.mesh);
                     }

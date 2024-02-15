@@ -6,6 +6,8 @@ namespace OD{
 
 class Asset{
 public:
+    virtual ~Asset(){}
+
     inline std::string& Path(){ return path; }
     inline void Path(const std::string& inPath){ path = inPath; }
 
