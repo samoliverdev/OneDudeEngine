@@ -266,7 +266,7 @@ void RenderContext::RenderSkybox(){
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
         Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
         skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMesh(skyboxMesh);
+        Graphics::DrawMesh(*skyboxMesh);
 
         Graphics::SetDepthMask(true);
     }
@@ -291,7 +291,7 @@ void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
         Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
         skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMesh(skyboxMesh);
+        Graphics::DrawMesh(*skyboxMesh);
 
         Graphics::SetDepthMask(true);
     }
@@ -330,8 +330,21 @@ void RenderContext::DrawGizmos(){
         auto& t = cameraView.get<TransformComponent>(e);
 
         c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
-        Camera cm = c.GetCamera();
-        _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+        cm = c.GetCamera(); //Camera cm = c.GetCamera();
+
+        if(c.type == CameraComponent::Type::Perspective){
+            _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+        } else {
+            /*Transform _t = t.ToTransform();
+            float spread = c.farClipPlane - c.nearClipPlane;
+			float center = (c.farClipPlane + c.nearClipPlane)*0.5f;
+            _t.LocalPosition(_t.LocalPosition() + _t.Forward() * (-center));
+            float aspect = static_cast<float>(finalColor->Width()) / static_cast<float>(finalColor->Height());
+            _t.LocalScale(Vector3(c.orthographicSize * 2 * aspect, c.orthographicSize * 2, spread));
+			Graphics::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(1), 1);*/
+
+            _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+        }
     }
 
     auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
@@ -341,7 +354,13 @@ void RenderContext::DrawGizmos(){
         if(c.GetModel() == nullptr) continue;
 
         AABB aabb = c.GetGlobalAABB(t);
-        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,0,1), 1);
+
+        Vector3 color = Vector3(0,0,1);
+        if(aabb.isOnFrustum(cm.frustum)){
+            color = Vector3(1, 0, 0);
+        }
+
+        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents*2.0f), color, 1);
         //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
@@ -430,9 +449,9 @@ void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& s
 }
 
 Vector3 _Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
-    return ( ( p1.distance * math::cross( p2.normal, p3.normal ) ) +
-            ( p2.distance * math::cross( p3.normal, p1.normal ) ) +
-            ( p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
+    return ( ( -p1.distance * math::cross( p2.normal, p3.normal ) ) +
+            ( -p2.distance * math::cross( p3.normal, p1.normal ) ) +
+            ( -p3.distance * math::cross( p1.normal, p2.normal ) ) ) /
         ( math::dot( p1.normal, math::cross( p2.normal, p3.normal ) ) );
 }
 
@@ -498,7 +517,7 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     if(outFrustom != nullptr){
         //*outFrustom = CreateFrustumFromMatrix(lightView,proj);
         Matrix4 viewProj = lightView * proj;
-        *outFrustom = CreateFrustumFromMatrix2(viewProj);
+        *outFrustom = CreateFrustumFromMatrix2(math::transpose( proj * lightView ));
     }
 
     float minX = std::numeric_limits<float>::max();
@@ -569,6 +588,7 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
         splitData[i].projViewMatrix = lightMatrixs[i];
         //splitData[i].splitDistance = shadowCascadeLevels[i];
         splitData[i].frustum = frustums[i];
+        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose( lightMatrixs[i] ));
     }
 }
 

@@ -24,7 +24,7 @@ struct Entity;
 struct System;
 struct Scene;
 
-class TransformComponent: public Transform{
+class TransformComponent{
     friend struct Scene;
     friend class cereal::access;
 
@@ -56,6 +56,15 @@ public:
     Quaternion Rotation();
     void Rotation(Quaternion rotation);
 
+    inline Vector3 LocalPosition(){ return transform.LocalPosition(); }
+    inline void LocalPosition(Vector3 pos){ transform.LocalPosition(pos); }
+    inline Vector3 LocalEulerAngles(){ return transform.LocalEulerAngles(); }
+    inline void LocalEulerAngles(Vector3 euler){ transform.LocalEulerAngles(euler); }
+    inline Quaternion LocalRotation(){ return transform.LocalRotation(); }
+    inline void LocalRotation(Quaternion rot){ transform.LocalRotation(rot); }
+    inline Vector3 LocalScale(){ return transform.LocalScale(); }
+    inline void LocalScale(Vector3 scale){ transform.LocalScale(scale); }
+
     inline EntityId Parent(){ return parent; }
     inline bool HasParent(){ return hasParent; }
     inline std::vector<EntityId> Children(){ return children; }
@@ -63,9 +72,16 @@ public:
     template <class Archive>
     void serialize(Archive & ar);
 
-    //inline operator Transform(){ return Transform(Position(), Rotation(), LocalScale()); } 
+    inline operator Transform() {
+        return Transform(Position(), Rotation(), LocalScale()); 
+    }
+
+    inline Transform ToTransform(){ 
+        return Transform(Position(), Rotation(), LocalScale()); 
+    } 
 
 private:
+    Transform transform;
     std::vector<EntityId> children;
 
     EntityId parent;

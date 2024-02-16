@@ -130,7 +130,9 @@ Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2
 }
 
 void Texture2D::Destroy(Texture2D& tex){
-    if(tex.id != 0) glDeleteTextures(1, &tex.id);
+    if(tex.IsValid() == false) return;
+
+    glDeleteTextures(1, &tex.id);
     tex.id = 0;
     glCheckError();
 }

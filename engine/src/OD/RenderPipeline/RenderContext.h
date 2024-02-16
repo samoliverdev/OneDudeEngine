@@ -103,7 +103,7 @@ private:
     Framebuffer* postFx2;
 
     Ref<Shader> blitShader;
-    Mesh skyboxMesh;
+    Ref<Mesh> skyboxMesh;
     Camera cam;
 
     Scene* scene;

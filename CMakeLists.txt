@@ -62,7 +62,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/glad/*.c 
     engine/vendor/stb/*.c 
     engine/vendor/cgltf/*.c
-    engine/vendor/glm/*.cpp
+    #engine/vendor/glm/*.cpp
     engine/vendor/imgui/*.cpp 
     engine/vendor/ImGuizmo/*.cpp 
     engine/vendor/entt/*.cpp

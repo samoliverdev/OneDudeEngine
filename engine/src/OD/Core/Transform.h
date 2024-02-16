@@ -6,6 +6,7 @@
 namespace OD {
     
 class Transform{
+    friend class TransformComponent;
 public:
     Transform(){}
     Transform(Vector3 pos, Quaternion rot, Vector3 scale):

@@ -11,9 +11,9 @@ namespace OD{
 Matrix4 TransformComponent::GlobalModelMatrix(){
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
-        return p.GetLocalModelMatrix() * GetLocalModelMatrix();
+        return p.transform.GetLocalModelMatrix() * transform.GetLocalModelMatrix();
     }
-    return GetLocalModelMatrix();
+    return transform.GetLocalModelMatrix();
 }
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){

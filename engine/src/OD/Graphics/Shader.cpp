@@ -22,7 +22,6 @@ bool Shader::Create(const std::string& filepath, std::vector<std::string>& keywo
     this->path = filepath;
 
     std::string source = this->load(filepath);
-
     auto shaderSources = this->PreProcess(source, keyworlds);
     this->Compile(shaderSources);
 
@@ -276,12 +275,10 @@ void Shader::Unbind(){
 }
 
 void Shader::Destroy(Shader& shader){
-    //if(curBindShaderRenderId == shader.rendererId) curBindShaderRenderId = 0;
+    if(shader.IsValid() == false) return;
 
-    if(shader.rendererId != 0){
-        glDeleteProgram(shader.rendererId);
-        glCheckError();
-    }
+    glDeleteProgram(shader.rendererId);
+    glCheckError();
     shader.rendererId = 0;
 }
 

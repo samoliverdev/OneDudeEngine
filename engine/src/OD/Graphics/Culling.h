@@ -20,7 +20,7 @@ struct Plane{
 		normal(abcd.x, abcd.y, abcd.z), distance(abcd.w){}
 
 	inline float getSignedDistanceToPlane(const Vector3& point) const{
-		return math::dot(normal, point) - distance;
+		return math::dot(normal, point) + distance;
 	}
 
 	inline void normalize(){
@@ -42,6 +42,7 @@ struct Frustum{
 };
 
 Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
+Frustum CreateFrustumFromOthor(Transform& cam, float orthographicSize, float aspect, float zNear, float zFar);
 Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);
 Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalize_planes = true);
 
@@ -96,6 +97,8 @@ struct AABB: public BoundingVolume{
 	//see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 	bool isOnOrForwardPlane(Plane& plane) const override;
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
+
+	bool isOnFrustum(Frustum& camFrustum);
 };
 
 }

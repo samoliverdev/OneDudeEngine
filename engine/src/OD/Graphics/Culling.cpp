@@ -1,11 +1,12 @@
 #include "Culling.h"
+#include "OD/Core/Math.h"
 
 namespace OD{
 
 Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar){
     Vector3 forward = -cam.Forward();
-    Vector3 right = -cam.Right();
-    Vector3 up = -cam.Up();
+    Vector3 right = cam.Right();
+    Vector3 up = cam.Up();
     Vector3 position = cam.LocalPosition();
 
     Frustum frustum;
@@ -19,6 +20,28 @@ Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float 
     frustum.leftFace = { position, math::cross(up, frontMultFar + right * halfHSide) };
     frustum.topFace = { position, math::cross(right, frontMultFar - up * halfVSide) };
     frustum.bottomFace = { position, math::cross(frontMultFar + up * halfVSide, right) };
+
+    return frustum;
+}
+
+Frustum CreateFrustumFromOthor(Transform& cam, float orthographicSize, float aspect, float zNear, float zFar){
+    Vector3 forward = -cam.Forward();
+    Vector3 right = cam.Right();
+    Vector3 left = -right;
+    Vector3 up = cam.Up();
+    Vector3 down = -up;
+    Vector3 position = cam.LocalPosition();
+
+    float size = aspect * orthographicSize;
+
+    Frustum frustum;
+ 
+    frustum.nearFace = { position + zNear * forward, forward };
+    frustum.farFace = { position + zFar * forward, -forward };
+    frustum.rightFace = { position + right * size, right};
+    frustum.leftFace = { position + left * size, left };
+    frustum.topFace = { position + up * size, up };
+    frustum.bottomFace = { position + down * size, down };
 
     return frustum;
 }
@@ -52,35 +75,37 @@ Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projec
     out.rightFace.normal.y = clipMatrix[3][1]-clipMatrix[0][1];
     out.rightFace.normal.z = clipMatrix[3][2]-clipMatrix[0][2];
     out.rightFace.distance = clipMatrix[3][3]-clipMatrix[0][3];
+    out.rightFace.normal = -out.rightFace.normal;
  
     out.leftFace.normal.x = clipMatrix[3][0]+clipMatrix[0][0];
     out.leftFace.normal.y = clipMatrix[3][1]+clipMatrix[0][1];
     out.leftFace.normal.z = clipMatrix[3][2]+clipMatrix[0][2];
     out.leftFace.distance = clipMatrix[3][3]+clipMatrix[0][3];
+    out.leftFace.normal = -out.leftFace.normal;
  
     out.bottomFace.normal.x = clipMatrix[3][0]+clipMatrix[1][0];
     out.bottomFace.normal.y = clipMatrix[3][1]+clipMatrix[1][1];
     out.bottomFace.normal.z = clipMatrix[3][2]+clipMatrix[1][2];
     out.bottomFace.distance = clipMatrix[3][3]+clipMatrix[1][3];
+    out.bottomFace.normal = -out.bottomFace.normal;
  
     out.topFace.normal.x = clipMatrix[3][0]-clipMatrix[1][0];
     out.topFace.normal.y = clipMatrix[3][1]-clipMatrix[1][1];
     out.topFace.normal.z = clipMatrix[3][2]-clipMatrix[1][2];
     out.topFace.distance = clipMatrix[3][3]-clipMatrix[1][3];
+    out.topFace.normal = -out.topFace.normal;
  
     out.nearFace.normal.x = clipMatrix[3][0]-clipMatrix[2][0];
     out.nearFace.normal.y = clipMatrix[3][1]-clipMatrix[2][1];
     out.nearFace.normal.z = clipMatrix[3][2]-clipMatrix[2][2];
     out.nearFace.distance = clipMatrix[3][3]-clipMatrix[2][3];
+    out.nearFace.normal = -out.nearFace.normal;
  
     out.farFace.normal.x = clipMatrix[3][0]+clipMatrix[2][0];
     out.farFace.normal.y = clipMatrix[3][1]+clipMatrix[2][1];
     out.farFace.normal.z = clipMatrix[3][2]+clipMatrix[2][2];
     out.farFace.distance = clipMatrix[3][3]+clipMatrix[2][3];
- 
-    //for( int i = 0; i < 6; i++ ){
-    //    m_planes[i] = glm::normalize( m_planes[i] );
-    //}
+    out.farFace.normal = -out.farFace.normal;
 
     out.rightFace.normalize();
     out.leftFace.normalize();
@@ -92,6 +117,8 @@ Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projec
     return out;
 }
 
+// i extract planes from projection matrix using this class:
+// mat is column major, mat[i] is ith column of matrix
 // create frustum from  matrix
 // if extracted from projection matrix only, planes will be in eye-space
 // if extracted from view*projection, planes will be in world space
@@ -156,7 +183,7 @@ bool Sphere::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
 bool SquareAABB::isOnOrForwardPlane(Plane& plane) const{
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
     const float r = extent * (math::abs(plane.normal.x) + math::abs(plane.normal.y) + math::abs(plane.normal.z));
-    return -r <= plane.getSignedDistanceToPlane(center);
+    return r <= plane.getSignedDistanceToPlane(center);
 }
 
 bool SquareAABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
@@ -246,7 +273,7 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB globalAABB(globalCenter, newIi, newIj, newIk);
-    globalAABB.Expand(transform.LocalScale() * 2.0f);
+    //globalAABB.Expand(transform.LocalScale() * 2.0f);
 
     return (globalAABB.isOnOrForwardPlane(camFrustum.leftFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.rightFace) &&
@@ -255,5 +282,14 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         globalAABB.isOnOrForwardPlane(camFrustum.nearFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.farFace));
 };
+
+bool AABB::isOnFrustum(Frustum& camFrustum){
+    return (isOnOrForwardPlane(camFrustum.leftFace) &&
+        isOnOrForwardPlane(camFrustum.rightFace) &&
+        isOnOrForwardPlane(camFrustum.topFace) &&
+        isOnOrForwardPlane(camFrustum.bottomFace) &&
+        isOnOrForwardPlane(camFrustum.nearFace) &&
+        isOnOrForwardPlane(camFrustum.farFace));
+}
 
 }

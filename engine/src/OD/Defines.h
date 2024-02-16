@@ -26,6 +26,8 @@
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"
 
+#define GRAPHIC_LOG_ERROR
+
 static const char* LogColors[] = {
     "\033[\033[0m",    //Reset Info
     "\033[0;33m",      //Yellow Warning

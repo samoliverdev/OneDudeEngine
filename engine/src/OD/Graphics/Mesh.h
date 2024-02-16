@@ -30,6 +30,7 @@ public:
     std::vector<Matrix4> instancingModelMatrixs;
     
     Mesh();
+    Mesh(const Mesh& mesh);
     ~Mesh() override;
 
     void UpdateMesh();
@@ -42,9 +43,9 @@ public:
     inline int VertexCount(){ return vertexCount; }
     inline int IndiceCount(){ return indiceCount; }
 
-    static Mesh FullScreenQuad();
-    static Mesh SkyboxCube();
-    static Mesh CenterQuad(bool useIndices);
+    static Ref<Mesh> FullScreenQuad();
+    static Ref<Mesh> SkyboxCube();
+    static Ref<Mesh> CenterQuad(bool useIndices);
 
     inline unsigned int RendererId(){ return vao; }
 

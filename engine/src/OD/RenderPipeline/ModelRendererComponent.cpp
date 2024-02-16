@@ -77,7 +77,7 @@ AABB ModelRendererComponent::GetGlobalAABB(TransformComponent& transform){
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB result = AABB(globalCenter, newIi, newIj, newIk);
-    result.Expand(transform.LocalScale() * 2.0f);
+    //result.Expand(transform.LocalScale() * 2.0f);
     return result;
 }
 

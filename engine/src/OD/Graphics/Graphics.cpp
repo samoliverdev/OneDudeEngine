@@ -15,7 +15,7 @@ unsigned int textQuadVBO;
 unsigned int wiredCubeVAO;
 
 Ref<Shader> gismoShader;
-Mesh fullScreenQuad;
+Ref<Mesh> fullScreenQuad;
 Camera camera;
 
 int Graphics::drawCalls;
@@ -177,6 +177,13 @@ void Graphics::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool in
 }*/
 
 void Graphics::DrawMesh(Mesh& mesh){
+    if(mesh.IsValid() == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
     Assert(mesh.IsValid() && "Mesh is not vali!");
     //Assert(shader.IsValid()  && "Shader is not vali!");
 
@@ -512,7 +519,7 @@ void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     Shader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
-    Graphics::DrawMesh(fullScreenQuad);
+    Graphics::DrawMesh(*fullScreenQuad);
     glCheckError();
 }
 

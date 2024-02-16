@@ -10,18 +10,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 //#include <glm/gtx/matrix_interpolation.hpp>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+// -- #include <glm/vec2.hpp>
+// -- #include <glm/vec3.hpp>
+// -- #include <glm/vec4.hpp>
 #include <glm/gtc/quaternion.hpp> 
 //#include <glm/gtx/quaternion.hpp>
-#include <glm/mat3x3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/geometric.hpp>
-//#include <glm/gtx/norm.hpp>
-#include <glm/gtx/vector_angle.hpp>
+// -- #include <glm/mat3x3.hpp>
+// -- #include <glm/mat4x4.hpp>
+//#include <glm/geometric.hpp>
+#include <glm/gtx/norm.hpp>
+// -- #include <glm/gtx/vector_angle.hpp>
 //#include <glm/gtx/orthonormalize.hpp>
-#include <glm/gtc/matrix_access.hpp>
+// -- #include <glm/gtc/matrix_access.hpp>
 //#include <glm/gtx/matrix_query.hpp>
 
 //#define GLM_ENABLE_EXPERIMENTAL
@@ -34,12 +34,20 @@ using Vector3 = glm::vec3;
 using Vector4 = glm::vec4;
 using Quaternion = glm::quat;
 using Matrix4 = glm::mat4;
-
 using IVector2 = glm::ivec2;
 using IVector3 = glm::ivec3;
 using IVector4 = glm::ivec4;
-
 namespace math = glm;
+
+/*#define Vector2 glm::vec2
+#define Vector3 glm::vec3
+#define Vector4 glm::vec4
+#define Quaternion glm::quat
+#define Matrix4 glm::mat4;
+#define IVector2 glm::ivec2
+#define IVector3 glm::ivec3
+#define IVector4 glm::ivec4
+#define math glm*/
 
 const Vector2 Vector2Left(-1.0f, 0.0f);
 const Vector2 Vector2Right(1.0f, 0.0f);
@@ -77,7 +85,7 @@ namespace Mathf{
     inline float* Raw(Matrix4& m){ return &(m[0].x); }
 
     inline static Matrix4 TRS(Vector3 pos, Quaternion q, Vector3 s){
-        return math::translate(pos) * math::mat4_cast(q) * math::scale(s);
+        return math::translate(Matrix4Identity, pos) * math::mat4_cast(q) * math::scale(Matrix4Identity, s);
     }
 
     inline static Quaternion mix(const Quaternion& from, const Quaternion& to, float t) {

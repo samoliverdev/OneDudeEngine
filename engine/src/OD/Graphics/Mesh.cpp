@@ -11,8 +11,30 @@ Mesh::Mesh(){
     isReadable = true;
 }
 
+Mesh::Mesh(const Mesh& other){
+    if(other.isReadable == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("Trying copy mesh what is not isReadable");
+        #endif
+        return;
+    }
+
+    isReadable = true;
+    vertices = other.vertices;
+    uv = other.uv;
+    normals = other.normals;
+    colors = other.colors;
+    tangents = other.tangents;
+    weights = other.weights;
+	influences = other.influences;
+    indices = other.indices;
+    instancingModelMatrixs = other.instancingModelMatrixs;
+    UpdateMesh();
+    UpdateMeshInstancingModelMatrixs();
+}
+
 Mesh::~Mesh(){
-    //Destroy();
+    Destroy();
 }
 
 void Mesh::UpdateMesh(){
@@ -191,15 +213,28 @@ bool Mesh::IsValid(){
 }
 
 void Mesh::Destroy(){
+    if(IsValid() == false) return;
+
     if(vertexVbo != 0) glDeleteBuffers(1, &vertexVbo);
     if(normalVbo != 0) glDeleteBuffers(1, &normalVbo);
     if(uvVbo != 0) glDeleteBuffers(1, &uvVbo);
+    if(colorVbo != 0) glDeleteBuffers(1, &colorVbo);
+    if(tangentVbo != 0) glDeleteBuffers(1, &tangentVbo);
+    if(instancingModelMatrixsVbo != 0) glDeleteBuffers(1, &instancingModelMatrixsVbo);
+    if(jointVbo != 0) glDeleteBuffers(1, &jointVbo);
+    if(weightsVbo != 0) glDeleteBuffers(1, &weightsVbo);
+
     if(ebo != 0) glDeleteBuffers(1, &ebo);
     if(vao != 0) glDeleteVertexArrays(1, &vao);
 
     vertexCount = 0;
     vertexVbo = 0;
     normalVbo = 0;
+    colorVbo = 0;
+    tangentVbo = 0;
+    instancingModelMatrixsVbo = 0;
+    jointVbo = 0;
+    weightsVbo = 0;
     uvVbo = 0;
     indiceCount = 0;
     ebo = 0;
@@ -208,7 +243,7 @@ void Mesh::Destroy(){
     glCheckError();
 }
 
-Mesh Mesh::FullScreenQuad(){
+Ref<Mesh> Mesh::FullScreenQuad(){
     float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
         // positions   // texCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -220,14 +255,14 @@ Mesh Mesh::FullScreenQuad(){
          1.0f,  1.0f,  1.0f, 1.0f
     };
 
-    Mesh model;
-    model.isReadable = false;
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    mesh->isReadable = false;
     //model.ebo = 0;
 
-    glGenVertexArrays(1, &model.vao);
-    glGenBuffers(1, &model.vertexVbo);
-    glBindVertexArray(model.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->vertexVbo);
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -238,12 +273,12 @@ Mesh Mesh::FullScreenQuad(){
     glBindVertexArray(0);
     glCheckError();
 
-    model.vertexCount = 6;
+    mesh->vertexCount = 6;
 
-    return model;
+    return mesh;
 }
 
-Mesh Mesh::SkyboxCube(){
+Ref<Mesh> Mesh::SkyboxCube(){
     float skyboxVertices[] = {
         // positions          
         -1.0f,  1.0f, -1.0f,
@@ -289,24 +324,24 @@ Mesh Mesh::SkyboxCube(){
         1.0f, -1.0f,  1.0f
     };
 
-    Mesh model;
-    model.isReadable = false;
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    mesh->isReadable = false;
 
-    glGenVertexArrays(1, &model.vao);
-    glGenBuffers(1, &model.vertexVbo);
-    glBindVertexArray(model.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->vertexVbo);
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glCheckError();
 
-    model.vertexCount = 36;
+    mesh->vertexCount = 36;
 
-    return model;
+    return mesh;
 }
 
-Mesh Mesh::CenterQuad(bool useIndices){
+Ref<Mesh> Mesh::CenterQuad(bool useIndices){
     float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
         // positions        // texCoords
         -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
@@ -330,21 +365,21 @@ Mesh Mesh::CenterQuad(bool useIndices){
         1, 2, 3    // second triangle
     };
 
-    Mesh model;
-    model.isReadable = false;
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    mesh->isReadable = false;
 
-    glGenVertexArrays(1, &model.vao);
-    glBindVertexArray(model.vao);
+    glGenVertexArrays(1, &mesh->vao);
+    glBindVertexArray(mesh->vao);
     glCheckError();
 
     if(useIndices){
-        glGenBuffers(1, &model.vertexVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
+        glGenBuffers(1, &mesh->vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerticesIndices), quadVerticesIndices, GL_STATIC_DRAW);
         glCheckError();
 
-        glGenBuffers(1, &model.ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.ebo);
+        glGenBuffers(1, &mesh->ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quadIndices), quadIndices, GL_STATIC_DRAW); 
         glCheckError();
 
@@ -354,11 +389,11 @@ Mesh Mesh::CenterQuad(bool useIndices){
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
         glCheckError();
 
-        model.vertexCount = 4;
-        model.indiceCount = 6;
+        mesh->vertexCount = 4;
+        mesh->indiceCount = 6;
     } else {
-        glGenBuffers(1, &model.vertexVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, model.vertexVbo);
+        glGenBuffers(1, &mesh->vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
         glCheckError();
 
@@ -368,13 +403,13 @@ Mesh Mesh::CenterQuad(bool useIndices){
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
         glCheckError();
 
-        model.vertexCount = 6;
-        model.indiceCount = 0;
+        mesh->vertexCount = 6;
+        mesh->indiceCount = 0;
     }
 
     glBindVertexArray(0);
 
-    return model;
+    return mesh;
 }
 
 }

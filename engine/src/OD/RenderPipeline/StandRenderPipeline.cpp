@@ -46,7 +46,7 @@ void Shadows::OnSetupLoop(RenderData& data){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
 
-            //if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum, data.transform) == false) continue;
+            if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum, data.transform) == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
@@ -230,7 +230,7 @@ void CameraRenderer::RunSetupLoop(){
 
 void CameraRenderer::OnSetupLoop(RenderData& data){
     //TODO: Check Culling
-    //if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
+    if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
@@ -250,7 +250,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
 
-    context->DrawGizmos();
+    //context->DrawGizmos();
 
     context->EndDrawToScreen();
 }
