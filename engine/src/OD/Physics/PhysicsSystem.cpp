@@ -264,11 +264,19 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 }
 
 PhysicsSystem::~PhysicsSystem(){
-    delete collisionConfiguration;
+    this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
+
+    /*delete collisionConfiguration;
     delete dispatcher;
     delete broadphase;
     delete solver;
+    delete world;*/
+
     delete world;
+    delete solver;
+    delete broadphase;
+    delete dispatcher;
+    delete collisionConfiguration;
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
@@ -295,6 +303,7 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
     delete data->motionState;
     delete data->body;
     delete data;
+    rb.data = nullptr;
 }
 
 void PhysicsSystem::Update(){

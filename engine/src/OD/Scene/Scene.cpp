@@ -121,6 +121,7 @@ Scene::Scene(Scene& other){
 }
 
 Scene::~Scene(){
+    registry.clear();
     for(auto i: standSystems) delete i;
     for(auto i: rendererSystems) delete i;
     for(auto i: physicsSystems) delete i;

@@ -16,7 +16,7 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
     Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
     //Transform _trans = Transform(transform.GlobalModelMatrix());
 
-    if(type == Type::Perspective){
+    /*if(type == Type::Perspective){
         camera.frustum = CreateFrustumFromCamera(
             _trans, 
             static_cast<float>(width) / static_cast<float>(height), 
@@ -32,7 +32,7 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
             nearClipPlane, 
             farClipPlane
         );
-    }  
+    }*/  
 
     camera.frustum = CreateFrustumFromMatrix2(math::transpose( camera.projection * camera.view ));
     //camera.frustum = CreateFrustumFromMatrix2(camera.view * camera.projection);

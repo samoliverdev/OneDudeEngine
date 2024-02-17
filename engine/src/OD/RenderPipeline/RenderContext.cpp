@@ -353,14 +353,15 @@ void RenderContext::DrawGizmos(){
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
-        AABB aabb = c.GetGlobalAABB(t);
+        AABB aabb = c.GetAABB();
+        AABB globalAABB = c.GetGlobalAABB(t);
 
         Vector3 color = Vector3(0,0,1);
-        if(aabb.isOnFrustum(cm.frustum)){
+        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())){
             color = Vector3(1, 0, 0);
         }
 
-        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents*2.0f), color, 1);
+        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
         //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 

@@ -3,7 +3,7 @@
 
 namespace OD{
 
-Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar){
+/*Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar){
     Vector3 forward = -cam.Forward();
     Vector3 right = cam.Right();
     Vector3 up = cam.Up();
@@ -116,6 +116,7 @@ Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projec
 
     return out;
 }
+*/
 
 // i extract planes from projection matrix using this class:
 // mat is column major, mat[i] is ith column of matrix
@@ -123,7 +124,7 @@ Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projec
 // if extracted from projection matrix only, planes will be in eye-space
 // if extracted from view*projection, planes will be in world space
 // if extracted from model*view*projection planes will be in model space
-Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalize_planes){
+Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes){
     Frustum out;
 
     out.leftFace = Plane(mat[3]+mat[0]);       // left
@@ -133,7 +134,7 @@ Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalize_planes){
     out.nearFace = Plane(mat[3]+mat[2]);       // near
     out.farFace = Plane(mat[3]-mat[2]);       // far
     // normalize the plane equations, if requested
-    if(normalize_planes){
+    if(normalizePlanes){
         out.leftFace.normalize();
         out.rightFace.normalize();
         out.topFace.normalize();
@@ -273,7 +274,7 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB globalAABB(globalCenter, newIi, newIj, newIk);
-    //globalAABB.Expand(transform.LocalScale() * 2.0f);
+    globalAABB.Expand(transform.LocalScale());
 
     return (globalAABB.isOnOrForwardPlane(camFrustum.leftFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.rightFace) &&
@@ -283,13 +284,13 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         globalAABB.isOnOrForwardPlane(camFrustum.farFace));
 };
 
-bool AABB::isOnFrustum(Frustum& camFrustum){
+/*bool AABB::isOnFrustum(Frustum& camFrustum){
     return (isOnOrForwardPlane(camFrustum.leftFace) &&
         isOnOrForwardPlane(camFrustum.rightFace) &&
         isOnOrForwardPlane(camFrustum.topFace) &&
         isOnOrForwardPlane(camFrustum.bottomFace) &&
         isOnOrForwardPlane(camFrustum.nearFace) &&
         isOnOrForwardPlane(camFrustum.farFace));
-}
+}*/
 
 }

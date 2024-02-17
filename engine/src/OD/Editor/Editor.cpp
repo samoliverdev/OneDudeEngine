@@ -83,7 +83,8 @@ void Editor::OnUpdate(float deltaTime){
         editorCam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
         editorCam.cam.viewPos = editorCam.transform.LocalPosition();
         editorCam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
-        editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
+        //editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
+        editorCam.cam.frustum = CreateFrustumFromMatrix2(math::transpose( editorCam.cam.projection * editorCam.cam.view ));
         renderPipeline->SetOverrideCamera(&editorCam.cam, editorCam.transform);
     }
 

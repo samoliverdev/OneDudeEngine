@@ -147,7 +147,7 @@ struct PhysicsSystem: public System{
     static inline PhysicsSystem* Get(){ return instance; }
 
 private:
-    static void OnRemoveRigidbody(entt::registry & r, entt::entity e);
+    static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
 
     void CheckForCollisionEvents();
     void AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t);

@@ -41,10 +41,10 @@ struct Frustum{
     Plane nearFace;
 };
 
-Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
+/*Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
 Frustum CreateFrustumFromOthor(Transform& cam, float orthographicSize, float aspect, float zNear, float zFar);
-Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);
-Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalize_planes = true);
+Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);*/
+Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes = true);
 
 struct BoundingVolume{
     virtual bool isOnFrustum(Frustum& camFrustum, Transform& transform) const = 0;
@@ -98,7 +98,7 @@ struct AABB: public BoundingVolume{
 	bool isOnOrForwardPlane(Plane& plane) const override;
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
 
-	bool isOnFrustum(Frustum& camFrustum);
+	//bool isOnFrustum(Frustum& camFrustum);
 };
 
 }
