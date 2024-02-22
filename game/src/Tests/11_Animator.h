@@ -50,8 +50,8 @@ struct Animator_11: OD::Module {
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Ref<Model> charModel = AssetManager::Get().LoadModel(
-            //"res/Game/Animations/Walking.dae",
-            "res/Game/Animations/RumbaDancing.glb",
+            "res/Game/Animations/Walking.dae",
+            //"res/Game/Animations/RumbaDancing.glb",
             AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
             //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl")
         );

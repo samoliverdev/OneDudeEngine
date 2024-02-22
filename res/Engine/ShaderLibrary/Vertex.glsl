@@ -28,7 +28,7 @@ mat4 GetModelMatrix(){
 #ifdef INSTANCING
     return modelInstancing;
 #else
-    return model ;
+    return model;
 #endif
 }
 

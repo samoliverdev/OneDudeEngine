@@ -533,9 +533,7 @@ void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered
     for(auto i: maps){
         MaterialMap& map = i.second;
 
-        if(shader.ContainUniformName(i.first) == false){
-            continue;
-        }
+        //if(shader.ContainUniformName(i.first) == false) continue;
 
         if(map.type == MaterialMap::Type::Int){
             shader.SetInt(i.first.c_str(), map.valueInt);

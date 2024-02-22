@@ -3,6 +3,7 @@
 #include "OD/Core/AssetManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Defines.h"
+#include <algorithm>
 
 namespace OD{
 
@@ -40,7 +41,11 @@ void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
     );*/
 
     drawCommands.Add(comand);
-    drawCommandsMaterials.insert(comand.material);
+    //drawCommandsMaterials.insert(comand.material);
+    
+    /*if(std::find(drawCommandsMaterials.begin(), drawCommandsMaterials.end(), comand.material) == drawCommandsMaterials.end()){
+        drawCommandsMaterials.push_back(comand.material);
+    }*/
 }   
 
 void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
@@ -51,6 +56,8 @@ void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
     c.material = comand.material;
     c.meshs = comand.meshs;
     c.trans.push_back(comand.trans);
+
+    //drawIntancingCommandsMaterials.insert(comand.material);
 } 
 
 void CommandBuffer::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distance){
@@ -61,6 +68,7 @@ void CommandBuffer::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float dista
         {distance, comand.material->MaterialId()}, 
         comand
     );
+    //skinnedDrawCommandsMaterials.insert(comand.material);
 }
 
 void CommandBuffer::Clean(){
@@ -76,7 +84,9 @@ void CommandBuffer::Clean(){
     drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
 
-    drawCommandsMaterials.clear();
+    /*drawCommandsMaterials.clear();
+    drawIntancingCommandsMaterials.clear();
+    skinnedDrawCommandsMaterials.clear();*/
 }
 
 void CommandBuffer::Sort(){
@@ -131,24 +141,25 @@ void CommandBuffer::Submit(){
     }
 
     if(setCamera) Graphics::SetCamera(camera);
-
     if(setViewport) Graphics::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
     if(clearRenderTarget) Graphics::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
 
     Ref<Material> lastMat = nullptr;
 
-    // ---------------Submiting DrawCommands-----------------
-    /*for(auto i: drawCommandsMaterials){
-        i->DisableKeyword("INSTANCING");
-        i->DisableKeyword("SKINNED");
-        Material::SubmitGraphicDatas(*i);
-        if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
-    }
+    //NOTE: This not working why Materials can shared the same shader
+    /*
     if(overrideMaterial != nullptr){
         overrideMaterial->DisableKeyword("INSTANCING");
         overrideMaterial->DisableKeyword("SKINNED");
         Material::SubmitGraphicDatas(*overrideMaterial);
         if(onUpdateMaterial != nullptr) onUpdateMaterial(*overrideMaterial);
+    } else {
+        for(Ref<Material> i: drawCommandsMaterials){
+            i->DisableKeyword("INSTANCING");
+            i->DisableKeyword("SKINNED");
+            Material::SubmitGraphicDatas(*i);
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
+        }
     }*/
     drawCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
@@ -166,6 +177,7 @@ void CommandBuffer::Submit(){
         _mat->GetShader()->SetMatrix4("model", cm.trans);
         Graphics::DrawMesh(*cm.meshs);
     });
+    lastMat = nullptr;
 
     // ---------------Submiting DrawIntancingCommands-----------------
     drawIntancingCommands.Each([&](auto& cm){
@@ -185,8 +197,24 @@ void CommandBuffer::Submit(){
         
         Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
     });
+    lastMat = nullptr;
 
     // ---------------Submiting SkinnedDrawCommands-----------------
+    //NOTE: This not working why Materials can shared the same shader
+    /*
+    if(overrideMaterial != nullptr){
+        overrideMaterial->DisableKeyword("INSTANCING");
+        overrideMaterial->EnableKeyword("SKINNED");
+        Material::SubmitGraphicDatas(*overrideMaterial);
+        if(onUpdateMaterial != nullptr) onUpdateMaterial(*overrideMaterial);
+    } else {
+        for(auto i: skinnedDrawCommandsMaterials){
+            i->DisableKeyword("INSTANCING");
+            i->EnableKeyword("SKINNED");
+            Material::SubmitGraphicDatas(*i);
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
+        }
+    }*/
     skinnedDrawCommands.Each([&](auto& cm){
         Ref<Material> _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial;
@@ -199,10 +227,12 @@ void CommandBuffer::Submit(){
         }
 
         lastMat = _mat;
+        //Shader::Bind(*_mat->GetShader());
         _mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
         _mat->GetShader()->SetMatrix4("model", cm.trans);
         Graphics::DrawMesh(*cm.meshs);
     });
+    lastMat = nullptr;
 }
 
 }

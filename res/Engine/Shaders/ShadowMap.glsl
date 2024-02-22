@@ -8,6 +8,8 @@
 #if defined(VERTEX)
 //layout (location = 0) in vec3 aPos;
 
+//#define SKINNED
+
 uniform mat4 lightSpaceMatrix;
 //uniform mat4 model;
 

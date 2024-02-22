@@ -9,6 +9,7 @@
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
 #include <functional>
+#include <unordered_set>
 
 namespace OD{
 
@@ -84,7 +85,11 @@ private:
     CommandBucket4<Ref<Material>, Ref<Mesh>, DrawInstancingCommand> drawIntancingCommands;
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
 
-    std::set<Ref<Material>> drawCommandsMaterials;
+    //NOTE: This not working why Materials can shared the same shader
+    /*std::unordered_set<Ref<Material>> drawCommandsMaterials;
+    //std::vector<Ref<Material>> drawCommandsMaterials;
+    std::set<Ref<Material>> drawIntancingCommandsMaterials;
+    std::set<Ref<Material>> skinnedDrawCommandsMaterials;*/
 
     bool setRenderTarget = false;
     Framebuffer* renderTarget = nullptr;

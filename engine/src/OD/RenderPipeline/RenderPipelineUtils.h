@@ -29,7 +29,7 @@ struct CommandBucket0{
     }
 
     inline void Each(std::function<void(Value& value)> func){
-        for(auto i: commands){
+        for(Value& i: commands){
             func(i);
         }
     }
