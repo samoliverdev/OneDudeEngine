@@ -76,6 +76,12 @@ void TransformComponent::Rotation(Quaternion rotation){
         LocalRotation(rotation);
     }
 }
+
+Vector3 TransformComponent::Scale(){
+    Transform t(GlobalModelMatrix());
+    return t.LocalScale();
+}
+
 #pragma endregion
 
 #pragma region InfoComponent
@@ -237,6 +243,34 @@ void Scene::SetParent(EntityId parent, EntityId child){
     _parent.children.emplace_back(child);
     _child.parent = parent;
     _child.hasParent = true;
+}
+
+Entity Scene::Instantiate(const Ref<Model> model){
+    if(model == nullptr){
+        LogWarning("Trying instantiate a null model");
+        return Entity();
+    }
+
+    Entity root = AddEntity("Root");
+
+    for(auto i: model->renderTargets){
+        Entity mesh = AddEntity(model->skeleton.GetJointName(i.bindPoseIndex));
+        MeshRendererComponent& meshRenderer = mesh.AddComponent<MeshRendererComponent>();
+        TransformComponent& transform = mesh.GetComponent<TransformComponent>();
+
+        meshRenderer.material = model->materials[i.materialIndex];
+        meshRenderer.mesh = model->meshs[i.meshIndex];
+        auto targetMatrix = Transform(model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
+
+        transform.LocalPosition(targetMatrix.LocalPosition());
+        transform.LocalRotation(targetMatrix.LocalRotation());
+        transform.LocalScale(targetMatrix.LocalScale());
+        meshRenderer.UpdateAABB();
+
+        SetParent(root.id, mesh.id);
+    }
+
+    return root;
 }
 
 Camera& Scene::GetMainCamera(){ 

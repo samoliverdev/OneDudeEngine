@@ -80,7 +80,7 @@ void Editor::OnUpdate(float deltaTime){
         }
 
         editorCam.OnUpdate();
-        editorCam.cam.SetPerspective(45, 0.1f, 2000.0f, width, height);
+        editorCam.cam.SetPerspective(45, 0.1f, 20000.0f, width, height);
         editorCam.cam.viewPos = editorCam.transform.LocalPosition();
         editorCam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
         //editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);

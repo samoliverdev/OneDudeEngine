@@ -37,24 +37,27 @@ struct SynthCity_10: OD::Module {
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
         camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
         camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
-        cam.farClipPlane = 1000;
+        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 160;
+        cam.farClipPlane = 10000;
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel(
+        Ref<Model> cityModel = AssetManager::Get().LoadModel(
             "res/Game/Models/PolygonCity/FBX_SCENE/City.fbx",
             //"res/PolygonCity/City.fbx",
             //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
             AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
         );
   
-        Entity floorEntity = scene->AddEntity("City");
+        /*Entity floorEntity = scene->AddEntity("City");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
-        floorRenderer.SetModel(floorModel);
+        floorRenderer.SetModel(cityModel);
         TransformComponent& cityTransform = floorEntity.GetComponent<TransformComponent>();
-        cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));
+        cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));*/
+
+        Entity city = scene->Instantiate(cityModel);
+        city.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
     
-        //Application::AddModule<Editor>();
-        scene->Start();
+        Application::AddModule<Editor>();
+        //scene->Start();
     }
 
     void OnUpdate(float deltaTime) override {

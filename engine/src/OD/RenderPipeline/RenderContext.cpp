@@ -139,13 +139,13 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         if(c.material == nullptr) continue;
 
         RenderData data;
-        data.transform = t;
+        data.transform = t.ToTransform();
         data.distance = math::distance(cam.viewPos, t.Position());
         data.targetMaterial = c.material;
         data.targetMesh = c.mesh;
         data.targetMatrix =  t.GlobalModelMatrix();
         data.posePalette = nullptr;
-        //data.aabb = c.GetAABB();
+        data.aabb = c.boundingVolume;
 
         onReciveRenderData(data);
     }
@@ -159,7 +159,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.transform = t;
+            data.transform = t.ToTransform();
             data.distance = math::distance(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex];
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
@@ -183,7 +183,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.transform = t;
+            data.transform = t.ToTransform();
             data.distance = math::distance(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex];
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
@@ -347,35 +347,59 @@ void RenderContext::DrawGizmos(){
         }
     }
 
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
-        auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        auto& c = meshRenderView.get<MeshRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+
+        AABB aabb = c.boundingVolume;
+        AABB globalAABB = c.GetGlobalAABB(t);
+
+        Vector3 color = Vector3(0,0,1);
+        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
+
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        
+        //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
+    }
+
+    auto modelRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+    for(auto e: modelRenderView){
+        auto& c = modelRenderView.get<ModelRendererComponent>(e);
+        auto& t = modelRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
         AABB aabb = c.GetAABB();
         AABB globalAABB = c.GetGlobalAABB(t);
 
         Vector3 color = Vector3(0,0,1);
-        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())){
-            color = Vector3(1, 0, 0);
-        }
+        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
 
-        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        
         //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
-    auto skinnedMeshRenderView = scene->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
-    for(auto e: skinnedMeshRenderView){
-        auto& c = skinnedMeshRenderView.get<SkinnedModelRendererComponent>(e);
-        auto& t = skinnedMeshRenderView.get<TransformComponent>(e);
+    auto skinnedModelRenderView = scene->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
+    for(auto e: skinnedModelRenderView){
+        auto& c = skinnedModelRenderView.get<SkinnedModelRendererComponent>(e);
+        auto& t = skinnedModelRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
         //LogInfo("Ifdfdfd22222222");
 
-        AABB aabb = c.GetGlobalAABB(t);
-        Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
+        //AABB aabb = c.GetGlobalAABB(t);
+        //Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
         //Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, Vector3One), Vector3(0,1,0), 1);
+
+        AABB aabb = c.GetAABB();
+        AABB globalAABB = c.GetGlobalAABB(t);
+
+        Vector3 color = Vector3(0,0,1);
+        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
+
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents), color, 1);
     }
 }
 

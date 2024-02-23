@@ -250,7 +250,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
 
-    //context->DrawGizmos();
+    context->DrawGizmos();
 
     context->EndDrawToScreen();
 }

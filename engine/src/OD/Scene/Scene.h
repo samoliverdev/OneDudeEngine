@@ -56,6 +56,8 @@ public:
     Quaternion Rotation();
     void Rotation(Quaternion rotation);
 
+    Vector3 Scale();
+
     inline Vector3 LocalPosition(){ return transform.LocalPosition(); }
     inline void LocalPosition(Vector3 pos){ transform.LocalPosition(pos); }
     inline Vector3 LocalEulerAngles(){ return transform.LocalEulerAngles(); }
@@ -73,11 +75,13 @@ public:
     void serialize(Archive & ar);
 
     inline operator Transform() {
-        return Transform(Position(), Rotation(), LocalScale()); 
+        return Transform(GlobalModelMatrix());
+        //return Transform(Position(), Rotation(), LocalScale()); 
     }
 
     inline Transform ToTransform(){ 
-        return Transform(Position(), Rotation(), LocalScale()); 
+        return Transform(GlobalModelMatrix()); 
+        //return Transform(Position(), Rotation(), LocalScale()); 
     } 
 
 private:
@@ -172,6 +176,8 @@ public:
     bool IsChildOf(EntityId parent, EntityId child);
     void CleanParent(EntityId e);
     void SetParent(EntityId parent, EntityId child);
+
+    Entity Instantiate(const Ref<Model> model);
     
     Entity GetMainCamera2();
     Camera& GetMainCamera();

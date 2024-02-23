@@ -86,4 +86,5 @@ void ChunkBuilderLayer::BuildMesh(ChunkData& chunkData, MeshRendererComponent& m
     }
 
     mesh.mesh->UpdateMesh();
+    mesh.UpdateAABB();
 }

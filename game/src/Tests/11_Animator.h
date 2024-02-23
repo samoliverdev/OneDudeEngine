@@ -57,7 +57,7 @@ struct Animator_11: OD::Module {
         );
         Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
-        charTrans.LocalScale(Vector3(0.01f, 0.01f, 0.01f));
+        charTrans.LocalScale(Vector3(200));
         SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
         charRenderer.SetModel(charModel);
         charRenderer.UpdatePosePalette();
