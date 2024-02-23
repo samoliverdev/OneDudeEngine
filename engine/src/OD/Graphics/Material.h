@@ -161,17 +161,17 @@ void MaterialMap::load(Archive& ar){
 
 template<class Archive>
 void Material::save(Archive& ar) const{
-    /*std::string shaderPath = uberShader->GetCurrentShader() == nullptr ? "" : uberShader->GetCurrentShader()->Path();
+    std::string shaderPath = shaderHandler->GetCurrentShader() == nullptr ? "" : shaderHandler->GetCurrentShader()->Path();
     ar(
         CEREAL_NVP(enableInstancing),
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
-    );*/
+    );
 }
 
 template<class Archive>
 void Material::load(Archive& ar){
-    /*std::string shaderPath;
+    std::string shaderPath;
     ar(
         CEREAL_NVP(enableInstancing),
         CEREAL_NVP(shaderPath),
@@ -181,7 +181,6 @@ void Material::load(Archive& ar){
     if(shaderPath.empty() == false){
         SetShader(AssetManager::Get().LoadShaderFromFile(shaderPath));
     }
-    */
 }
 
 }

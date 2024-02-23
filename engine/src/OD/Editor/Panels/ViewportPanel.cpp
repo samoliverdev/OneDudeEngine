@@ -13,9 +13,22 @@ void ViewportPanel::OnGui(){
         LogError("ViewportPanel:EditorNotAssigned");
         return;
     }
+
+    bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
     
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-    ImGui::Begin("Viewport");
+    ImGui::Begin("Viewport", (bool*)0, sceneRunning ? 0 : ImGuiWindowFlags_MenuBar);
+
+    if(sceneRunning == false){
+        ImGui::BeginMenuBar();
+        ImGui::BeginGroup();
+        ImGui::Button("Test");ImGui::SameLine();
+        static int e = 0;
+        ImGui::RadioButton("radio a", &e, 0); ImGui::SameLine();
+        ImGui::RadioButton("radio b", &e, 1); ImGui::SameLine();
+        ImGui::RadioButton("radio c", &e, 2);
+        ImGui::EndMenuBar();
+    }
 
     auto& io = ImGui::GetIO();
     io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -72,12 +85,14 @@ void ViewportPanel::OnGui(){
         ImGui::EndDragDropTarget();
     }
 
-    ImGui::SetCursorPos(ImVec2(imagePos.x + 5, imagePos.y + 5));
-    ImGui::BeginGroup();
-    ImGui::SmallButton("X"); 
-    ImGui::SmallButton("Y");
-    ImGui::SmallButton("Z");
-    ImGui::EndGroup();
+    if(sceneRunning == false){
+        ImGui::SetCursorPos(ImVec2(imagePos.x + 5, imagePos.y + 25));
+        ImGui::BeginGroup();
+        ImGui::SmallButton("X"); 
+        ImGui::SmallButton("Y");
+        ImGui::SmallButton("Z");
+        ImGui::EndGroup();
+    }
 
     //_framebuffer->Resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
 

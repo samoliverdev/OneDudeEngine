@@ -1,6 +1,7 @@
 #include "Material.h"
 #include "Graphics.h"
 #include <fstream>
+#include "OD/Utils/PlatformUtils.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/AssetManager.h"
 #include "OD/Core/ImGui.h"
@@ -428,11 +429,20 @@ void Material::OnGui(){
     //ImGui::EndDisabled();
 
     if(toSave && this->path.empty() == false) Save(this->path);
+
+    if(this->path.empty() == true || this->path == "Memory"){
+        if(ImGui::Button("Save As")){
+            std::string _path = FileDialogs::SaveFile("");
+            if(_path.empty() == false){
+                Save(_path);
+            } 
+        }
+    }
 }
 
 void Material::Save(std::string& path){
-    return;
-    Assert(false && "Not Implemented");
+    //return;
+    //Assert(false && "Not Implemented");
 
     LogInfo("Saving: %s", path.c_str());
 
@@ -443,7 +453,7 @@ void Material::Save(std::string& path){
 }
 
 Ref<Material> Material::CreateFromFile(std::string const &path){
-    Assert(false && "Not Implemented");
+    //Assert(false && "Not Implemented");
 
     Ref<Material> m = CreateRef<Material>();
     m->Path(path);

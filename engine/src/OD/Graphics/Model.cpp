@@ -10,9 +10,26 @@ bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> cu
 AABB Model::GenerateAABB(Model& model){
 	Vector3 minAABB = Vector3(std::numeric_limits<float>::max());
 	Vector3 maxAABB = Vector3(std::numeric_limits<float>::min());
-	for(auto&& mesh : model.meshs){
+	
+	/*for(auto&& mesh : model.meshs){
 		for(auto& vertex : mesh->vertices){
-        
+			minAABB.x = std::min(minAABB.x, vertex.x);
+			minAABB.y = std::min(minAABB.y, vertex.y);
+			minAABB.z = std::min(minAABB.z, vertex.z);
+
+			maxAABB.x = std::max(maxAABB.x, vertex.x);
+			maxAABB.y = std::max(maxAABB.y, vertex.y);
+			maxAABB.z = std::max(maxAABB.z, vertex.z);
+		}
+	}*/
+
+	for(auto i: model.renderTargets){
+		auto mesh = model.meshs[i.meshIndex];
+        auto targetMatrix = model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex) * model.skeleton.GetInvBindPose()[i.bindPoseIndex];
+
+		for(auto vertex : mesh->vertices){
+			vertex = targetMatrix * Vector4(vertex.x, vertex.y, vertex.z, 1);
+
 			minAABB.x = std::min(minAABB.x, vertex.x);
 			minAABB.y = std::min(minAABB.y, vertex.y);
 			minAABB.z = std::min(minAABB.z, vertex.z);
@@ -22,6 +39,7 @@ AABB Model::GenerateAABB(Model& model){
 			maxAABB.z = std::max(maxAABB.z, vertex.z);
 		}
 	}
+
 	return AABB(minAABB, maxAABB);
 }
 

@@ -399,7 +399,7 @@ void RenderContext::DrawGizmos(){
         Vector3 color = Vector3(0,0,1);
         if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
 
-        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents), color, 1);
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
     }
 }
 

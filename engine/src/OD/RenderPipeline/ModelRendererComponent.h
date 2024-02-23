@@ -27,8 +27,8 @@ struct ModelRendererComponent{
     inline Ref<Model> GetModel(){ return model; }
     void SetModel(Ref<Model> m);
 
-    inline void SetDefaultAABB(){
-        boundingVolume = AABB(Vector3Zero, 1, 1, 1);
+    inline void SetAABB(Vector3 center = Vector3Zero, Vector3 size = Vector3One){
+        boundingVolume = AABB(center, size.x, size.y, size.z);
     }
 
     inline int GetSubMeshIndex(){ return subMeshIndex; }

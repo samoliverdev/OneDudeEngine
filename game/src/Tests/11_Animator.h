@@ -60,6 +60,7 @@ struct Animator_11: OD::Module {
         charTrans.LocalScale(Vector3(200));
         SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
         charRenderer.SetModel(charModel);
+        charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
         charRenderer.UpdatePosePalette();
         LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
         Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
