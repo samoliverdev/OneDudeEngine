@@ -26,7 +26,7 @@
 
 #define TYPE_TO_STRING(T) #T
 
-#define ArchiveDump(archive, data) try{ archive(data); }catch(...){}
+#define ArchiveDump(archive, data) try{ archive(data); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
 
 namespace glm{
 

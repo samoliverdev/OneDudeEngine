@@ -37,6 +37,7 @@ cmake --build build --config Release
 * Dynamic C++ GameModule
 * Project System
 * Mod Support
+* Finish All Serialization
 
 ### Version 3.3.b
 

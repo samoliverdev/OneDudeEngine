@@ -52,14 +52,20 @@ struct CameraComponent{
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
+        /*ar(
             CEREAL_NVP(type),
             CEREAL_NVP(isMain),
             CEREAL_NVP(orthographicSize),
             CEREAL_NVP(fieldOfView),
             CEREAL_NVP(nearClipPlane),
             CEREAL_NVP(farClipPlane)
-        );
+        );*/
+        ArchiveDump(ar, CEREAL_NVP(type));
+        ArchiveDump(ar, CEREAL_NVP(isMain));
+        ArchiveDump(ar, CEREAL_NVP(orthographicSize));
+        ArchiveDump(ar, CEREAL_NVP(fieldOfView));
+        ArchiveDump(ar, CEREAL_NVP(nearClipPlane));
+        ArchiveDump(ar, CEREAL_NVP(farClipPlane));
     }
 
 private:

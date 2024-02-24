@@ -73,6 +73,10 @@ ScriptSystem::ScriptSystem(Scene* inScene):System(inScene){
     this->scene->GetRegistry().on_destroy<ScriptComponent>().connect<&OnDestroyScript>();
 }
 
+ScriptSystem::~ScriptSystem(){
+    this->scene->GetRegistry().on_destroy<ScriptComponent>().disconnect<&OnDestroyScript>();
+}
+
 void ScriptSystem::Update(){
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
 

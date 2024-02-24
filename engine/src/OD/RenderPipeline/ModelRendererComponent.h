@@ -19,6 +19,7 @@ void serialize(Archive& ar, Ref<Model>& model){
     LogInfo("Ref<Model> Test Serialize");
 }*/
 
+//TODO: Make Serializable
 struct ModelRendererComponent{
     friend class StandRenderPipeline;
     
@@ -49,11 +50,15 @@ struct ModelRendererComponent{
             materialsOverridePaths.push_back(i == nullptr ? "" : i->Path());
         }
 
-        ar(
+        /*ar(
             CEREAL_NVP(subMeshIndex),
             CEREAL_NVP(path),
             CEREAL_NVP(materialsOverridePaths)
-        );
+        );*/
+
+        ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
+        ArchiveDump(ar, CEREAL_NVP(path));
+        ArchiveDump(ar, CEREAL_NVP(materialsOverridePaths));
     }
 
     template<class Archive>
@@ -61,11 +66,15 @@ struct ModelRendererComponent{
         std::string path;
         std::vector<std::string> materialsOverridePaths;
 
-        ar(
+        /*ar(
             CEREAL_NVP(subMeshIndex),
             CEREAL_NVP(path),
             CEREAL_NVP(materialsOverridePaths)
-        );
+        );*/
+
+        ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
+        ArchiveDump(ar, CEREAL_NVP(path));
+        ArchiveDump(ar, CEREAL_NVP(materialsOverridePaths));
 
 
         if(path.empty() == false){

@@ -7,6 +7,7 @@
 
 namespace OD{
 
+//TODO: Make Serializable
 struct AnimatorComponent{
     friend struct AnimatorSystem;
     void Play(Clip* clip);

@@ -23,11 +23,14 @@ struct JointComponent{
 
     template<class Archive>
     void serialize(Archive& ar){
-        ar(
+        /*ar(
             CEREAL_NVP(pivot),
             CEREAL_NVP(strength),
             CEREAL_NVP(rb)
-        );
+        );*/
+        ArchiveDump(ar, CEREAL_NVP(pivot));
+        ArchiveDump(ar, CEREAL_NVP(strength));
+        ArchiveDump(ar, CEREAL_NVP(rb));
     }
 
 private:
@@ -43,11 +46,14 @@ struct CollisionShape{
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
+        /*ar(
             CEREAL_NVP(type),
             CEREAL_NVP(boxShapeSize),
             CEREAL_NVP(sphereRadius)
-        );
+        );*/
+        ArchiveDump(ar, CEREAL_NVP(type));
+        ArchiveDump(ar, CEREAL_NVP(boxShapeSize));
+        ArchiveDump(ar, CEREAL_NVP(sphereRadius));
     }
 
     inline static CollisionShape BoxShape(Vector3 size){
@@ -99,12 +105,16 @@ struct RigidbodyComponent{
     friend class cereal::access;
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
+        /*ar(
             CEREAL_NVP(type),
             CEREAL_NVP(shape),
             CEREAL_NVP(mass),
             CEREAL_NVP(neverSleep)
-        );
+        );*/
+        ArchiveDump(ar, CEREAL_NVP(type));
+        ArchiveDump(ar, CEREAL_NVP(shape));
+        ArchiveDump(ar, CEREAL_NVP(mass));
+        ArchiveDump(ar, CEREAL_NVP(neverSleep));
     }
 
 private:

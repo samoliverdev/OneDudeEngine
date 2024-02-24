@@ -23,6 +23,7 @@ private:
     bool hasStarted = false;
 };
 
+//TODO: Make Serializable
 struct ScriptComponent{
     friend struct ScriptSystem;
     friend struct Scene;
@@ -89,6 +90,7 @@ private:
 
 struct ScriptSystem: public System{
     ScriptSystem(Scene* scene);
+    ~ScriptSystem();
     System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }
 
     virtual void Update() override;

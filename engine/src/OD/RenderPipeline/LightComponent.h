@@ -30,7 +30,7 @@ struct LightComponent{
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
+        /*ar(
             //CEREAL_NVP(type),
             CEREAL_NVP(color),
             CEREAL_NVP(intensity),
@@ -39,7 +39,15 @@ struct LightComponent{
             CEREAL_NVP(coneAngleInner),
             CEREAL_NVP(coneAngleOuter),
             CEREAL_NVP(renderShadow)
-        );
+        );*/
+
+        ArchiveDump(ar, CEREAL_NVP(color));
+        ArchiveDump(ar, CEREAL_NVP(intensity));
+        ArchiveDump(ar, CEREAL_NVP(falloff));
+        ArchiveDump(ar, CEREAL_NVP(radius));
+        ArchiveDump(ar, CEREAL_NVP(coneAngleInner));
+        ArchiveDump(ar, CEREAL_NVP(coneAngleOuter));
+        ArchiveDump(ar, CEREAL_NVP(renderShadow));
     }
 };
 
