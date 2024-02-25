@@ -163,6 +163,11 @@ struct Serialization_9: public OD::Module{
         e2.AddComponent<ScriptComponent>().AddScript<RotateScript>();
 
         Application::AddModule<Editor>();
+
+        /*typedef Module* (*CreateInstanceFunc)();
+        void* module = Platform::LoadDynamicLibrary("build/lib/Release/dynamic_module.dll");
+        CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(module, "CreateInstance");
+        Application::AddModule(func());*/
     }
 
     void OnUpdate(float deltaTime) override{

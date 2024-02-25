@@ -87,6 +87,8 @@ Vector3 TransformComponent::Scale(){
 #pragma region InfoComponent
 #pragma endregion
 
+bool Entity::IsValid(){ return isValid && scene->registry.valid(id); }
+
 #pragma region Scene
 
 Scene::Scene(){
@@ -376,54 +378,6 @@ void Scene::_DestroyEntity(EntityId entity){
     }
 
     registry.destroy(entity);
-}
-
-#pragma endregion
-
-#pragma region SceneManager
-
-SceneManager& SceneManager::Get(){
-    static SceneManager sceneManager;
-    return sceneManager;
-}
-
-void SceneManager::OnInit(){}
-void SceneManager::OnExit(){}
-
-void SceneManager::OnUpdate(float deltaTime){
-    if(GetActiveScene() == nullptr) return;
-    GetActiveScene()->Update();
-}
-
-void SceneManager::OnRender(float deltaTime){
-    if(GetActiveScene() == nullptr) return;
-    GetActiveScene()->Draw();
-}
-
-void SceneManager::OnGUI(){}
-void SceneManager::OnResize(int width, int height){}
-
-SceneManager::SceneState SceneManager::GetSceneState(){ 
-    return sceneState; 
-}
-
-bool SceneManager::InEditor(){ 
-    return inEditor; 
-}
-
-Scene* SceneManager::GetActiveScene(){ 
-    //if(activeScene == nullptr) return NewScene();
-    return activeScene; 
-}
-
-void SceneManager::SetActiveScene(Scene* s){ 
-    activeScene = s; 
-}
-
-Scene* SceneManager::NewScene(){
-    delete activeScene;
-    activeScene = new Scene();
-    return activeScene;
 }
 
 #pragma endregion

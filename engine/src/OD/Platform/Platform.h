@@ -24,6 +24,10 @@ public:
     static void ShowWindow(bool show);
     
     static void* GetInternalData();
+
+    static void* LoadDynamicLibrary(char* dll);
+    static void* LoadDynamicFunction(void* dll, char* funcName);
+    static bool FreeDynimicLibrary(void* dll);
 };
 
 }

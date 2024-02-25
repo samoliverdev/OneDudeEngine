@@ -93,6 +93,8 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "coroutine": "cpp",
-        "resumable": "cpp"
+        "resumable": "cpp",
+        "*.rh": "cpp",
+        "core": "cpp"
     }
 }

@@ -22,6 +22,12 @@
 #undef NDEBUG
 #include <assert.h>
 
+#ifdef _WIN32
+#define EXPORT_FN __declspec(dllexport)
+#else 
+#define EXPORT_FN
+#endif
+
 #define OD_PROFILE 1
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"

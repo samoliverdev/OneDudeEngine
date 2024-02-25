@@ -107,6 +107,17 @@ target_link_libraries(game engine)
 target_compile_definitions(game PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 #target_compile_definitions(game PUBLIC RESOURCES_PATH="../../res/")
 
+project(dynamic_module)
+file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES dynamic_module/src/*.cpp)
+add_library(dynamic_module SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
+#target_include_directories(dynamic_module PUBLIC engine/vendor/)
+#target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
+#target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)
+target_include_directories(dynamic_module PUBLIC engine/src/)
+#target_include_directories(dynamic_module PUBLIC game/src/)
+target_link_libraries(dynamic_module engine)
+target_compile_definitions(dynamic_module PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+
 
 # Enable Disable Tests
 if(OFF) 

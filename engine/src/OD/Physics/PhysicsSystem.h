@@ -4,14 +4,21 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
-#include "Phys.h"
+
+class btRigidBody;
+class btBroadphaseInterface;
+class btCollisionConfiguration;
+class btCollisionDispatcher;
+class btConstraintSolver;
+class btDynamicsWorld;
+class btGeneric6DofConstraint;
 
 namespace OD{
 
 struct Rigidbody;
 
 struct JointComponent{
-    OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);
+    //OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);
 
     friend struct PhysicsSystem;
 

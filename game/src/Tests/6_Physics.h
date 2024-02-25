@@ -137,6 +137,11 @@ struct Physics_6: OD::Module {
         //scene->Save("res/scene1.scene");
         //scene->Start();
         Application::AddModule<Editor>();
+
+        typedef Module* (*CreateInstanceFunc)();
+        void* module = Platform::LoadDynamicLibrary("build/lib/Release/dynamic_module.dll");
+        CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(module, "CreateInstance");
+        Application::AddModule(func());
     }
 
     void OnUpdate(float deltaTime) override {

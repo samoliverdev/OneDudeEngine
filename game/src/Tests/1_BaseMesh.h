@@ -71,6 +71,10 @@ struct CompTest1{
     }
 };
 
+struct TestComp{
+    int a;
+};
+
 struct BaseMesh_1: OD::Module {
     Mesh mesh;
     
@@ -178,6 +182,27 @@ struct BaseMesh_1: OD::Module {
         for(std::string s: combinations){
             LogInfo("%s", s.c_str());
         }
+
+        entt::registry registry;
+        auto entity = registry.create();
+        registry.emplace<TestComp>(entity, 20);
+
+        TestComp* tc = registry.try_get<TestComp>(entity);
+
+        for(int i = 0; i < 100000; i++){
+            entity = registry.create();
+            registry.emplace<TestComp>(entity, 50);
+            registry.destroy(entity);
+        }
+
+        entt::handle g;
+        
+        LogInfo("Test %d", tc->a);
+
+        typedef Module* (*myFuncDef)();
+        void* module = Platform::LoadDynamicLibrary("build/lib/Release/dynamic_module.dll");
+        myFuncDef func = (myFuncDef)Platform::LoadDynamicFunction(module, "CreateInstance");
+        Application::AddModule(func());
     }
 
     void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){

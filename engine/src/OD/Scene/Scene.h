@@ -123,7 +123,7 @@ public:
     template<typename T> T& AddOrGetComponent();
     template<typename T> void RemoveComponent();
 
-    inline bool IsValid(){ return isValid; }
+    bool IsValid();
     inline EntityId Id(){ return id; }
     inline Scene* GetScene(){ return scene; }
 

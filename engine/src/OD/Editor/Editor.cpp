@@ -192,7 +192,7 @@ void Editor::OpenScene(){
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
-    std::string path = FileDialogs::OpenFile(""); 
+    std::string path = FileDialogs::OpenFile("*.scene"); 
     if(path.empty() == false){
         renderPipeline->SetOverrideFrameBuffer(nullptr);
         Scene* scene = SceneManager::Get().NewScene();
@@ -206,7 +206,7 @@ void Editor::OpenScene(){
 void Editor::SaveAsScene(){
     if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    std::string path = FileDialogs::SaveFile("");
+    std::string path = FileDialogs::SaveFile("*.scene");
     if(path.empty() == false){
         Scene* scene = SceneManager::Get().GetActiveScene();
         scene->Save(path.c_str());

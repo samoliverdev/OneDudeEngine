@@ -432,7 +432,7 @@ void Material::OnGui(){
 
     if(this->path.empty() == true || this->path == "Memory"){
         if(ImGui::Button("Save As")){
-            std::string _path = FileDialogs::SaveFile("");
+            std::string _path = FileDialogs::SaveFile("*.material");
             if(_path.empty() == false){
                 Save(_path);
             } 
