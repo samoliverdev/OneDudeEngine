@@ -28,6 +28,16 @@
 #define EXPORT_FN
 #endif
 
+#ifdef _WIN32
+#ifdef OD_BUILD_DLL
+#define OD_API __declspec(dllexport)
+#else
+#define OD_API __declspec(dllimport)
+#endif
+#else 
+#define OD_API
+#endif
+
 #define OD_PROFILE 1
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"

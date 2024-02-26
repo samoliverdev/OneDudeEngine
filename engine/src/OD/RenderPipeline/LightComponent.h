@@ -1,5 +1,6 @@
 #pragma once
 
+#include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
@@ -7,7 +8,7 @@
 
 namespace OD{
 
-struct LightComponent{
+struct OD_API LightComponent{
     friend class StandRenderPipeline;
 
     enum class Type{ Directional, Point, Spot };

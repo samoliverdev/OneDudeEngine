@@ -6,7 +6,7 @@
 
 namespace OD{
 
-class CrossFadeController{
+class OD_API CrossFadeController{
 public:
     CrossFadeController();
     CrossFadeController(Skeleton& skeleton);

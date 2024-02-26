@@ -7,13 +7,13 @@
 
 namespace OD{
 
-struct ProfileResult{
+struct OD_API ProfileResult{
     const char* name;
     long long start, end;
     uint32_t threadID;
 };
 
-class Instrumentor{
+class OD_API Instrumentor{
 private:
     std::vector<ProfileResult> _results;
 public:
@@ -29,7 +29,7 @@ public:
     }
 };
 
-class InstrumentationTimer{
+class OD_API InstrumentationTimer{
 public:
     InstrumentationTimer(const char* name): _name(name), _stopped(false){
         _startTimepoint = std::chrono::high_resolution_clock::now();

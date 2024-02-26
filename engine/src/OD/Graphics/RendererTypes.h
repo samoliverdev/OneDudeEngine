@@ -1,8 +1,9 @@
 #pragma once
+#include "OD/Defines.h"
 
 namespace OD {
 
-enum class DepthTest{
+enum class OD_API DepthTest{
     DISABLE         = 0,
     LESS            = 1,
     LESS_EQUAL      = 2,
@@ -14,14 +15,14 @@ enum class DepthTest{
     ALWAYS          = 8
 };
 
-enum class CullFace{
+enum class OD_API CullFace{
     NONE            = 0,
     BACK            = 1,
     FRONT           = 2,
     FRONT_AND_BACK  = 3
 };
 
-enum class BlendMode{
+enum class OD_API BlendMode{
     ZERO,
     ONE,
     SRC_COLOR,

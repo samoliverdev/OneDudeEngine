@@ -2,14 +2,9 @@
 
 namespace OD{
 
-SceneManager* _sceneManager = nullptr;
-
 SceneManager& SceneManager::Get(){
     static SceneManager sceneManager;
     return sceneManager;
-
-    //if(_sceneManager == nullptr) _sceneManager = new SceneManager();
-    //return *_sceneManager;
 }
 
 void SceneManager::OnInit(){}

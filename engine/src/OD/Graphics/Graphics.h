@@ -10,14 +10,14 @@
 
 namespace OD {
 
-class Graphics {
+class OD_API Graphics {
     friend class Application;
 public:
     enum class RenderMode{SHADED, WIREFRAME};
 
-    static int drawCalls;
-    static int vertices;
-    static int tris;
+    static int GetDrawCallsCount();
+    static int GetVerticesCount();
+    static int GetTrisCount();
 
     static void Begin();
     static void End();

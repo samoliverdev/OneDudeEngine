@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Framebuffer.h"
@@ -8,12 +8,10 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
-#include <functional>
-#include <unordered_set>
 
 namespace OD{
 
-struct DrawCommand{
+struct OD_API DrawCommand{
     Ref<Material> material;
     Ref<Mesh> meshs;
     Matrix4 trans;
@@ -24,7 +22,7 @@ struct DrawCommand{
     }
 };
 
-struct SkinnedDrawCommand{
+struct OD_API SkinnedDrawCommand{
     Ref<Material> material;
     Ref<Mesh> meshs;
     Matrix4 trans;
@@ -36,7 +34,7 @@ struct SkinnedDrawCommand{
     }
 };
 
-struct DrawInstancingCommand{
+struct OD_API DrawInstancingCommand{
     Ref<Material> material;
     Ref<Mesh> meshs;
     std::vector<Matrix4> trans;
@@ -46,7 +44,7 @@ struct DrawInstancingCommand{
     }
 };
 
-struct MaterialBind2{
+struct OD_API MaterialBind2{
     float distance;
     uint32_t materialId;
 
@@ -55,7 +53,7 @@ struct MaterialBind2{
     }
 };
 
-struct CommandBuffer{
+struct OD_API CommandBuffer{
     friend class RenderContext;
 
     enum class SortType{None, CommonOpaque, CommonTransparent};

@@ -1,26 +1,25 @@
 #pragma once
-
-#include <vector>
+#include "OD/Defines.h"
 
 namespace OD{
 
 class Shader;
 
-enum class FramebufferTextureFormat{
+enum class OD_API FramebufferTextureFormat{
     None, RGB, RGBA8, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
 };
 
-enum class FramebufferAttachmentType{
+enum class OD_API FramebufferAttachmentType{
     TEXTURE_2D,
     TEXTURE_2D_MULTISAMPLE,
     TEXTURE_2D_ARRAY
 };
 
-struct FramebufferAttachment{
+struct OD_API FramebufferAttachment{
     FramebufferTextureFormat colorFormat;
 };
 
-struct FrameBufferSpecification{
+struct OD_API FrameBufferSpecification{
     int width;
     int height;
     unsigned int sample = 1;
@@ -32,7 +31,7 @@ struct FrameBufferSpecification{
     bool swapChainTarget = false;
 };
 
-class Framebuffer{
+class OD_API Framebuffer{
 public:
     static void Bind(Framebuffer& framebuffer, int layer = 0);
     static void Unbind();

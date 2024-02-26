@@ -1,10 +1,9 @@
 #pragma once
-
 #include "OD/Defines.h"
 
 namespace OD{
 
-class Platform{
+class OD_API Platform{
 public:
     static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
     static void SystemShutdown(void* plat_state);

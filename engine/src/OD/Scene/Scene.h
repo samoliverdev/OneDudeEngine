@@ -24,7 +24,7 @@ struct Entity;
 struct System;
 struct Scene;
 
-class TransformComponent{
+class OD_API TransformComponent{
     friend struct Scene;
     friend class cereal::access;
 
@@ -94,7 +94,7 @@ private:
     entt::registry* registry;
 };
 
-struct InfoComponent{
+struct OD_API InfoComponent{
     friend struct Scene;
 
     std::string name = "Entity";
@@ -110,7 +110,7 @@ private:
     EntityId id;
 };
 
-struct Entity{
+struct OD_API Entity{
     friend struct Scene;
 public:
 
@@ -140,7 +140,7 @@ enum class SystemType{
     Stand, Renderer, Physics
 };
 
-class System{
+class OD_API System{
 public:
     System(Scene* inScene):scene(inScene){}
     virtual ~System(){}
@@ -157,7 +157,7 @@ protected:
     Scene* scene;
 };
 
-class Scene: public Asset {
+class OD_API Scene: public Asset {
 public:
     friend struct Entity;
 

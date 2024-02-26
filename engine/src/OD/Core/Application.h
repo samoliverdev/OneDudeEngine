@@ -1,5 +1,6 @@
 #pragma once
 
+#include "OD/Defines.h"
 #include "Module.h"
 #include <string>
 #include <vector>
@@ -14,7 +15,7 @@ struct ApplicationConfig {
     std::string name;
 };
 
-class Application {
+class OD_API Application {
 public:
     static bool Create(Module* mainModule, ApplicationConfig startAppConfig);
     static bool Run();
@@ -31,23 +32,13 @@ public:
 
     static void _OnResize(int width, int height);
 
-    template<typename T>
-    inline static void AddModule(){
-        modules.push_back(new T());
-        modules.back()->OnInit();
-    }
+    static void AddModule(Module* module);
+    template<typename T> static void AddModule(){ AddModule(new T()); }
 
-    inline static void AddModule(Module* module){
-        modules.push_back(module);
-        modules.back()->OnInit();
-    }
-
-    static std::vector<std::string> args;
+    static std::vector<std::string>& GetArgs();
 
 private:
     static void OnExit();
-    
-    static std::vector<Module*> modules;
 };
 
 }

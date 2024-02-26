@@ -1,11 +1,11 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Editor/EditorPanel.h"
 
 namespace OD{
 
-class SceneHierarchyPanel: public EditorPanel{
+class OD_API SceneHierarchyPanel: public EditorPanel{
 public:
     SceneHierarchyPanel();
     void OnGui() override;

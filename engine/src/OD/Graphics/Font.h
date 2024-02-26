@@ -8,14 +8,14 @@ namespace OD{
 
 class Graphics;
 
-struct Character {
+struct OD_API Character {
     unsigned int textureID;  // ID handle of the glyph texture
     glm::ivec2   size;       // Size of glyph
     glm::ivec2   bearing;    // Offset from baseline to left/top of glyph
     unsigned int advance;    // Offset to advance to next glyph
 };
     
-struct Font: public Asset{
+struct OD_API Font: public Asset{
     friend class Graphics;
 
     static Ref<Font> CreateFromFile(const char* path);

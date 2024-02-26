@@ -1,6 +1,5 @@
 #pragma once
-
-#include <vector>
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/Graphics/Culling.h"
@@ -20,7 +19,7 @@
 
 namespace OD{
 
-class PostFXTest: public PostFX{
+class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
         _ppShader = Shader::CreateFromFile("res/Engine/Shaders/BasicPostProcessing.glsl");

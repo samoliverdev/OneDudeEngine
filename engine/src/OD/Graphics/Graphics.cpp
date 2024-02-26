@@ -18,9 +18,13 @@ Ref<Shader> gismoShader;
 Ref<Mesh> fullScreenQuad;
 Camera camera;
 
-int Graphics::drawCalls;
-int Graphics::vertices;
-int Graphics::tris;
+int drawCalls;
+int vertices;
+int tris;
+
+int Graphics::GetDrawCallsCount(){ return drawCalls; }
+int Graphics::GetVerticesCount(){ return vertices; }
+int Graphics::GetTrisCount(){ return tris; }
 
 void CreateLineVAO(){
     glGenVertexArrays(1, &lineVAO);

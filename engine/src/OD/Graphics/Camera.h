@@ -1,11 +1,11 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "Culling.h"
 
 namespace OD {
 
-struct Camera {
+struct OD_API Camera {
     Matrix4 view = Matrix4Identity;
     Matrix4 projection = Matrix4Identity;
     float nearClip;

@@ -199,10 +199,10 @@ struct BaseMesh_1: OD::Module {
         
         LogInfo("Test %d", tc->a);
 
-        typedef Module* (*myFuncDef)();
+        /*typedef Module* (*myFuncDef)();
         void* module = Platform::LoadDynamicLibrary("build/lib/Release/dynamic_module.dll");
         myFuncDef func = (myFuncDef)Platform::LoadDynamicFunction(module, "CreateInstance");
-        Application::AddModule(func());
+        Application::AddModule(func());*/
     }
 
     void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){

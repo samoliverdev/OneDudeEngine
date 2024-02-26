@@ -1,11 +1,12 @@
 #pragma once
 
+#include "OD/Defines.h"
 #include "Math.h"
 #include <stdio.h>
 
 namespace OD {
     
-class Transform{
+class OD_API Transform{
     friend class TransformComponent;
 public:
     Transform(){}

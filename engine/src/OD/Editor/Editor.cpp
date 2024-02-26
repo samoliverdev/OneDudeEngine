@@ -14,7 +14,10 @@
 
 namespace OD{
 
-Editor* Editor::instance;
+//Editor* Editor::instance = nullptr;
+Editor* instance = nullptr;
+
+Editor* Editor::Get(){ return instance; }
 
 void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);

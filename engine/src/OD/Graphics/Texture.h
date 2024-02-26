@@ -8,14 +8,14 @@
 
 namespace OD {
 
-enum class TextureFilter {
+enum class OD_API TextureFilter {
     Nearest,
     Linear
 };
 
 class Graphics;
 
-struct Texture2DSetting{
+struct OD_API Texture2DSetting{
     TextureFilter filter = TextureFilter::Linear;
     bool mipmap = true;
 
@@ -28,7 +28,7 @@ struct Texture2DSetting{
     }
 };
 
-class Texture2D: public Asset{
+class OD_API Texture2D: public Asset{
     friend class Graphics;
 public:
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 

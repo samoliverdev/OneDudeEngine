@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "Asset.h"
 #include "OD/Graphics/Mesh.h"
@@ -10,12 +9,10 @@
 #include "OD/Graphics/Material.h"
 #include <typeinfo>
 #include <typeindex>
-#include <functional>
-#include <unordered_map>
 
 namespace OD{
 
-class AssetTypesDB{
+class OD_API AssetTypesDB{
 public:
     struct AssetFuncs{
         std::function<Ref<Asset>(const std::string&)> CreateFromFile;
@@ -58,7 +55,7 @@ private:
     AssetTypesDB(){}
 };
 
-class AssetManager{
+class OD_API AssetManager{
 public:
     Ref<Texture2D> LoadTexture2D(const std::string& filePath, Texture2DSetting settings); 
     Ref<Texture2D> LoadTexture2D(const std::string& filePath); 

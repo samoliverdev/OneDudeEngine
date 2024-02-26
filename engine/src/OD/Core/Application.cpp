@@ -11,8 +11,11 @@
 
 namespace OD{
 
-std::vector<std::string> Application::args;
-std::vector<Module*> Application::modules;
+/*std::vector<std::string> Application::args;
+std::vector<Module*> Application::modules;*/
+
+std::vector<std::string> args;
+std::vector<Module*> modules;
 
 Module* mainModule;
 bool running = true;
@@ -103,6 +106,15 @@ void Application::_OnResize(int inWidth, int inHeight){
 
     //mainModule->OnResize(_width, _height);
     for(auto i: modules) i->OnResize(width, heigth);
+}
+
+void Application::AddModule(Module* module){
+    modules.push_back(module);
+    modules.back()->OnInit();
+}
+
+std::vector<std::string>& Application::GetArgs(){
+    return args;
 }
 
 void Application::OnExit(){

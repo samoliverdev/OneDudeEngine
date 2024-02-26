@@ -1,14 +1,11 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "Shader.h"
-#include <unordered_map>
-#include <set>
 
 namespace OD{
 
 // Handler Mult Shader Variants
-class ShaderHandler{
+class OD_API ShaderHandler{
 public:
     ShaderHandler(std::string sourcePath);
     ShaderHandler(Ref<Shader> shader);

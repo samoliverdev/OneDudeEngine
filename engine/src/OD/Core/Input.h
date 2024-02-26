@@ -94,7 +94,7 @@ enum class KeyCode {
 
 class Application;
 
-class Input {
+class OD_API Input {
     friend class Application;
 public:
     // keyboard input

@@ -6,7 +6,7 @@
 
 namespace OD{
 
-class EditorCamera{
+class OD_API EditorCamera{
 public:
     float moveSpeed = 10;
     float rotSpeed = 50;

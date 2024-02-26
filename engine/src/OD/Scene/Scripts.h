@@ -1,14 +1,13 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "Scene.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
-#include <vector>
 #include <stdlib.h>
 
 namespace OD{
 
-struct Script{
+struct OD_API Script{
     friend struct ScriptComponent;
 
     virtual void OnStart(){}
@@ -24,7 +23,7 @@ private:
 };
 
 //TODO: Make Serializable
-struct ScriptComponent{
+struct OD_API ScriptComponent{
     friend struct ScriptSystem;
     friend struct Scene;
 
@@ -88,7 +87,7 @@ private:
     void _Update(Entity e);
 };
 
-struct ScriptSystem: public System{
+struct OD_API ScriptSystem: public System{
     ScriptSystem(Scene* scene);
     ~ScriptSystem();
     System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }

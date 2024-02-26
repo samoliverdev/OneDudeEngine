@@ -1,11 +1,12 @@
 #pragma once
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Material.h"
 
 namespace OD{
 
-struct MeshRendererComponent{
+struct OD_API MeshRendererComponent{
     Ref<Mesh> mesh;
     Ref<Material> material;
     AABB boundingVolume;

@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Defines.h"
 #include "CommandBuffer.h"
 #include "LightComponent.h"
 #include "OD/Scene/Scene.h"
@@ -8,20 +9,20 @@ namespace OD{
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
 
-class PostFX{
+class OD_API PostFX{
 public:
     virtual void OnSetup(){}
     virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
     bool enable = true;
 };
 
-struct DrawingSettings{
+struct OD_API DrawingSettings{
     bool enableIntancing = true;
     RenderQueueRange renderQueueRange;
     SortType sortType;
 };
 
-struct ShadowDrawingSettings{
+struct OD_API ShadowDrawingSettings{
     bool enableIntancing = true;
     RenderQueueRange renderQueueRange;
     SortType sortType;
@@ -32,7 +33,7 @@ struct ShadowDrawingSettings{
     IVector4 viewport;
 };
 
-struct ShadowSplitData{
+struct OD_API ShadowSplitData{
     Matrix4 projViewMatrix;
     //float splitDistance;
     Frustum frustum;
@@ -40,7 +41,7 @@ struct ShadowSplitData{
     static void SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels);
 };
 
-struct CommandBaseData{
+struct OD_API CommandBaseData{
     Ref<Material> targetMaterial;
     Ref<Mesh> targetMesh;
     Matrix4 targetMatrix;
@@ -48,7 +49,7 @@ struct CommandBaseData{
     float distance;
 };
 
-struct RenderData{
+struct OD_API RenderData{
     Ref<Material> targetMaterial;
     Ref<Mesh> targetMesh;
     Matrix4 targetMatrix;
@@ -58,7 +59,7 @@ struct RenderData{
     AABB aabb;
 };
 
-class RenderContext{
+class OD_API RenderContext{
 public:
     RenderContext(Scene* scene);
     ~RenderContext();

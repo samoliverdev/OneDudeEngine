@@ -6,7 +6,7 @@
 
 namespace OD{
 
-class Skeleton{
+class OD_API Skeleton{
 public:
     Skeleton();
     Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::string>& names);

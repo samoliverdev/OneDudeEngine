@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Texture.h"
 #include "StandRenderPipeline.h"
@@ -11,7 +11,7 @@
 
 namespace OD{
 
-struct SpriteComponent{
+struct OD_API SpriteComponent{
     Ref<Texture2D> texture = nullptr;
 
     static void OnGui(Entity& e);

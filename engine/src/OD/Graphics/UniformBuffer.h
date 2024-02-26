@@ -3,7 +3,7 @@
 
 namespace OD{
 
-class UniformBuffer{
+class OD_API UniformBuffer{
 public:
     static Ref<UniformBuffer> Create();
     static void Destroy(UniformBuffer& buffer);

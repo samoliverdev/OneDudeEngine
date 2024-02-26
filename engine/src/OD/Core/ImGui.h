@@ -1,17 +1,16 @@
 #pragma once
 
-#include <imgui/imgui.h>
-#include <functional>
-#include <filesystem>
 #include "OD/Defines.h"
+#include <imgui/imgui.h>
+#include <filesystem>
 
 namespace ImGui{
-    void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func);
+    void OD_API AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func);
 }
 
 namespace OD{
 
-class ImGuiLayer{
+class OD_API ImGuiLayer{
 public:    
     static void SetDarkTheme();
 

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -9,6 +9,6 @@
 
 namespace OD{
 
-bool AssimpLoadModel(Model& model, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips = nullptr);
+bool OD_API AssimpLoadModel(Model& model, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips = nullptr);
 
 }

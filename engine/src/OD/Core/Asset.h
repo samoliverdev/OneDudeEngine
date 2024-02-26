@@ -4,7 +4,7 @@
 
 namespace OD{
 
-class Asset{
+class OD_API Asset{
 public:
     virtual ~Asset(){}
 

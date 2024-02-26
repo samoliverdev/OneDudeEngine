@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
@@ -12,7 +11,7 @@
 
 namespace OD {
 
-class Shader: public Asset{
+class OD_API Shader: public Asset{
     friend class Graphics;
 public:
     static Ref<Shader> CreateFromFile(const std::string& filepath);

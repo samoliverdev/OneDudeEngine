@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
@@ -17,7 +17,7 @@ namespace OD{
 
 struct Rigidbody;
 
-struct JointComponent{
+struct OD_API JointComponent{
     //OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);
 
     friend struct PhysicsSystem;
@@ -44,7 +44,7 @@ private:
     btGeneric6DofConstraint* joint;
 };
 
-struct CollisionShape{
+struct OD_API CollisionShape{
     enum class Type{Box, Sphere};
 
     Type type;
@@ -80,7 +80,7 @@ struct CollisionShape{
     }
 };
 
-struct RigidbodyComponent{
+struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
     enum class Type{Dynamic, Static, Kinematic, Trigger};
@@ -136,7 +136,7 @@ private:
     void UpdateSettings();
 };
 
-struct RayResult{
+struct OD_API RayResult{
     Entity entity;
     Vector3 hitPoint;
     Vector3 hitNormal;
@@ -145,10 +145,13 @@ struct RayResult{
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
 typedef std::set<CollisionPair> CollisionPairs;
 
-struct PhysicsSystem: public System{
+struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
 
     PhysicsSystem(Scene* scene);
+    PhysicsSystem();
+    ~PhysicsSystem();
+
     System* Clone(Scene* inScene) const override{ return new PhysicsSystem(inScene); }
     
     virtual SystemType Type() override { return SystemType::Physics; }
@@ -158,10 +161,7 @@ struct PhysicsSystem: public System{
 
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
 
-    PhysicsSystem();
-    ~PhysicsSystem();
-
-    static inline PhysicsSystem* Get(){ return instance; }
+    static PhysicsSystem* Get();
 
 private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
@@ -177,7 +177,7 @@ private:
 
     CollisionPairs pairsLastUpdate;
 
-    static PhysicsSystem* instance;
+    //static PhysicsSystem* instance;
 };
 
 }

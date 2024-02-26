@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Core/Module.h"
 #include "OD/Core/Asset.h"
 #include "OD/Scene/Scene.h"
@@ -17,7 +17,7 @@
 
 namespace OD{
 
-class Editor: public Module{
+class OD_API Editor: public Module{
     friend class SceneHierarchyPanel;
     friend class ContentBrowserPanel;
     friend class InspectorPanel;
@@ -33,7 +33,7 @@ public:
 
     enum class GizmosType{None, Translation, Rotation, Scale};
     
-    static inline Editor* Get(){ return instance; }
+    static Editor* Get();
 
     inline void SetSelectionAsset(Ref<Asset> asset){
         selectionAsset = asset;
@@ -53,7 +53,7 @@ public:
     }
 
 private:
-    static Editor* instance;
+    //static Editor* instance;
 
     SceneHierarchyPanel sceneHierarchyPanel;
     ContentBrowserPanel contentBrowserPanel;

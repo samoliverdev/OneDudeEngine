@@ -1,10 +1,11 @@
 #include "GLTFLoader.h"
 #include <iostream>
 #include "OD/Core/Transform.h"
-
-namespace OD{
+#include <cgltf.h>
 
 namespace GLTFHelpers {
+	using namespace OD;
+
 	Transform GetLocalTransform(cgltf_node& node){
 		Transform result;
 
@@ -154,7 +155,9 @@ namespace GLTFHelpers {
 		}
 	}// End of MeshFromAttribute function
 
-} // End of GLTFHelpers
+}
+
+namespace OD{
 
 cgltf_data* LoadGLTFFile(const char* path){
 	cgltf_options options;

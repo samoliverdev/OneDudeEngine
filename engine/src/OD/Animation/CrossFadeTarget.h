@@ -5,7 +5,7 @@
 
 namespace OD{
 
-struct CrossFadeTarget{
+struct OD_API CrossFadeTarget{
     Pose pose;
     Clip* clip;
     float time;

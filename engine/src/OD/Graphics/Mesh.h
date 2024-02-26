@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
@@ -8,14 +7,14 @@ namespace OD {
 
 #define MAX_BONE_INFLUENCE 4
 
-struct BoneData{
+struct OD_API BoneData{
     IVector4 boneId;
     Vector4 weight;
 };
 
 class Graphics;
 
-class Mesh: public Asset{
+class OD_API Mesh: public Asset{
     friend class Graphics;
 public:
     std::vector<Vector3> vertices;

@@ -4,7 +4,7 @@
 #include <OD/Loader/GLTFLoader.h>
 #include <OD/Animation/RearrangeBones.h>
 #include <OD/Animation/CrossFadeController.h>
-#include <ImGuizmo/ImGuizmo.h>
+//#include <ImGuizmo/ImGuizmo.h>
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
 #include <OD/Loader/AssimpLoader.h>
@@ -243,9 +243,9 @@ struct Animation_7: public OD::Module{
     };
 
     void OnGUI() override {
-        ImGuizmo::Enable(true);
+        /*ImGuizmo::Enable(true);
         ImGuizmo::SetOrthographic(false);
-        ImGuizmo::BeginFrame();
+        ImGuizmo::BeginFrame();*/
 
         ImGui::Begin("Animation");
         ImGui::Checkbox("Animated", &animate);
@@ -253,6 +253,7 @@ struct Animation_7: public OD::Module{
         ImGui::SliderFloat("Char2_T", &char2Anim.mPlayback, 0, char2Model->animationClips[char2Anim.mClip]->GetEndTime());
         ImGui::End();
 
+        /*
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
@@ -288,7 +289,7 @@ struct Animation_7: public OD::Module{
         if(ImGuizmo::IsUsing()){
             char2Anim.mAnimatedPose.SetLocalTransform(curBone, Transform(trans));
         }
-
+        */
     };
 
     void OnResize(int width, int height) override {};

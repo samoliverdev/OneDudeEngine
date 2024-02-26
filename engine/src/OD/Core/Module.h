@@ -1,8 +1,9 @@
 #pragma once
+#include "OD/Defines.h"
 
 namespace OD {
 
-class Module {
+class OD_API Module {
 public:
     virtual void OnInit() = 0;
     virtual void OnExit() = 0;

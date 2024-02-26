@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "RenderContext.h"
@@ -7,7 +7,7 @@
 
 namespace OD{
 
-class ColorGradingPostFX: public PostFX{
+class OD_API ColorGradingPostFX: public PostFX{
 public:
 
     float postExposure = 0;

@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Defines.h"
 #include <functional>
 #include <stdint.h>
 
@@ -7,7 +8,7 @@
 namespace OD{
 
 // A Dispatched job will receive this as function argument:
-struct JobDispatchArgs{
+struct OD_API JobDispatchArgs{
 	uint32_t jobIndex;
 	uint32_t groupIndex;
 };
@@ -15,22 +16,22 @@ struct JobDispatchArgs{
 namespace JobSystem{
 
 // Create the internal resources such as worker threads, etc. Call it once when initializing the application.
-void Initialize();
+void OD_API Initialize();
 
 // Add a job to execute asynchronously. Any idle thread will execute this job.
-void Execute(const std::function<void()>& job);
+void OD_API Execute(const std::function<void()>& job);
 
 // Divide a job onto multiple jobs and execute in parallel.
 //	jobCount	: how many jobs to generate for this task.
 //	groupSize	: how many jobs to execute per thread. Jobs inside a group execute serially. It might be worth to increase for small jobs
 //	func		: receives a JobDispatchArgs as parameter
-void Dispatch(uint32_t jobCount, uint32_t groupSize, const std::function<void(JobDispatchArgs)>& job);
+void OD_API Dispatch(uint32_t jobCount, uint32_t groupSize, const std::function<void(JobDispatchArgs)>& job);
 
 // Check if any threads are working currently or not
-bool IsBusy();
+bool OD_API IsBusy();
 
 // Wait until all threads become idle
-void Wait();
+void OD_API Wait();
 
 }
 }

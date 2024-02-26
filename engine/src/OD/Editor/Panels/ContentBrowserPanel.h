@@ -1,13 +1,13 @@
 #pragma once
-
-#include <filesystem>
+#include "OD/Defines.h"
 #include "OD/Editor/EditorPanel.h"
+#include <filesystem>
 
 namespace OD{
 
 class Editor;
 
-class ContentBrowserPanel: public EditorPanel{
+class OD_API ContentBrowserPanel: public EditorPanel{
 public:
     ContentBrowserPanel();
     void OnGui() override;

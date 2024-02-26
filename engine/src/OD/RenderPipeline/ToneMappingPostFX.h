@@ -1,14 +1,14 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "RenderContext.h"
 #include <magic_enum/magic_enum.hpp>
 
 namespace OD{
 
-class ToneMappingPostFX: public PostFX{
+class OD_API ToneMappingPostFX: public PostFX{
 public:
-    enum class Mode{ None = -1, ACES, Neutral, Reinhard };
+    enum class OD_API Mode{ None = -1, ACES, Neutral, Reinhard };
 
     Mode mode = Mode::None;
 

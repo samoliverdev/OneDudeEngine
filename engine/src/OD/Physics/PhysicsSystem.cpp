@@ -248,7 +248,10 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 
 #pragma region PhysicsSystem
 
-PhysicsSystem* PhysicsSystem::instance;
+//PhysicsSystem* PhysicsSystem::instance = nullptr;
+PhysicsSystem* instance = nullptr;
+
+PhysicsSystem* PhysicsSystem::Get(){ return instance; }
 
 PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     collisionConfiguration = new btDefaultCollisionConfiguration();

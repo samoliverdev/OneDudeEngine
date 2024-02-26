@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Shader.h"
@@ -10,8 +9,8 @@
 
 namespace OD{
 
-struct MaterialMap{
-    enum class Type{
+struct OD_API MaterialMap{
+    enum class OD_API Type{
         Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
     };
 
@@ -44,7 +43,7 @@ private:
     void OnLoad(std::string& texPath);
 };
 
-class Material: public Asset{
+class OD_API Material: public Asset{
 public:
     Material();
     Material(Ref<Shader> s);

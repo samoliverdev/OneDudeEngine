@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
@@ -10,21 +10,21 @@
 
 namespace OD{
 
-enum class ShadowQuality{Low, High, VeryHigh, Ultra, VeryUltra };
+enum class OD_API ShadowQuality{Low, High, VeryHigh, Ultra, VeryUltra };
 extern int ShadowQualityLookup[];
 extern const char* ShadowQualityLookupNames[];
 
-enum class AntiAliasing{ None, MSAA };
+enum class OD_API AntiAliasing{ None, MSAA };
 extern const char* AntiAliasingLookupNames[];
 
-enum class MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
+enum class OD_API MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
 extern int MSAAQualityLookup[];
 extern const char* MSAAQualityLookupNames[];
 
-enum class ColorCorrection{ None, ColorCorrection };
+enum class OD_API ColorCorrection{ None, ColorCorrection };
 extern const char* ColorCorrectionLookupNames[];
 
-struct EnvironmentSettings{
+struct OD_API EnvironmentSettings{
     Vector3 ambient = {0.1f, 0.1f, 0.1f};
     Vector3 cleanColor = {0.5f, 0.1f, 0.8f};
     Ref<Material> sky = nullptr;
@@ -59,7 +59,7 @@ struct EnvironmentSettings{
     }
 };
 
-struct EnvironmentComponent{
+struct OD_API EnvironmentComponent{
     //OD_REGISTER_CORE_COMPONENT_TYPE(EnvironmentComponent)
     friend class StandRenderPipeline;
 

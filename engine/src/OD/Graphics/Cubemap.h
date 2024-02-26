@@ -7,7 +7,7 @@ namespace OD{
 
 class Graphics;
 
-class Cubemap: public Asset{
+class OD_API Cubemap: public Asset{
     friend class Graphics;
 public:
     static Ref<Cubemap> CreateFromFile(

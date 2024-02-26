@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Serialization/Serialization.h"
@@ -7,7 +7,7 @@
 
 namespace OD{
 
-struct CameraComponent{
+struct OD_API CameraComponent{
     enum class Type{
         Perspective, Orthographic 
     };

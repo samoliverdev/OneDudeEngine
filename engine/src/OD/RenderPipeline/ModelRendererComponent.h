@@ -1,14 +1,11 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
-
-#include <vector>
-#include <algorithm>
 
 namespace OD{
 
@@ -20,7 +17,7 @@ void serialize(Archive& ar, Ref<Model>& model){
 }*/
 
 //TODO: Make Serializable
-struct ModelRendererComponent{
+struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
     
     static void OnGui(Entity& e);
@@ -104,7 +101,7 @@ protected:
     bool boundingVolumeIsDirty = true;
 };
 
-struct SkinnedModelRendererComponent: public ModelRendererComponent{
+struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     friend class StandRenderPipeline;
 
     std::vector<Matrix4> posePalette;

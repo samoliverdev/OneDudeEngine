@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Core/Asset.h"
@@ -9,7 +9,7 @@ namespace OD{
 
 class Editor;
 
-class InspectorPanel: public EditorPanel{
+class OD_API InspectorPanel: public EditorPanel{
 public:
     InspectorPanel();
     void OnGui() override;

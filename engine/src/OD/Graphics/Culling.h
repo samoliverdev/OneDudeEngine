@@ -1,12 +1,13 @@
 #pragma once
 
+#include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Transform.h"
 #include <array>
 
 namespace OD{
 
-struct Plane{
+struct OD_API Plane{
     Vector3 normal = Vector3Up;
     float distance = 0;
 
@@ -30,7 +31,7 @@ struct Plane{
 	}
 };
 
-struct Frustum{
+struct OD_API Frustum{
     Plane topFace;
     Plane bottomFace;
 
@@ -46,14 +47,14 @@ Frustum CreateFrustumFromOthor(Transform& cam, float orthographicSize, float asp
 Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);*/
 Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes = true);
 
-struct BoundingVolume{
+struct OD_API BoundingVolume{
     virtual bool isOnFrustum(Frustum& camFrustum, Transform& transform) const = 0;
 	virtual bool isOnOrForwardPlane(Plane& plane) const = 0;
 
 	bool isOnFrustum(Frustum& camFrustum) const;
 };
 
-struct Sphere: public BoundingVolume{
+struct OD_API Sphere: public BoundingVolume{
     Vector3 center{ 0.f, 0.f, 0.f };
 	float radius{ 0.f };
 
@@ -66,7 +67,7 @@ struct Sphere: public BoundingVolume{
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
 };
 
-struct SquareAABB: public BoundingVolume{
+struct OD_API SquareAABB: public BoundingVolume{
 	Vector3 center{ 0.f, 0.f, 0.f };
 	float extent{ 0.f };
 
@@ -77,7 +78,7 @@ struct SquareAABB: public BoundingVolume{
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
 };
 
-struct AABB: public BoundingVolume{
+struct OD_API AABB: public BoundingVolume{
 	Vector3 center{ 0.f, 0.f, 0.f };
 	Vector3 extents{ 0.f, 0.f, 0.f };
 

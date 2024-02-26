@@ -1,10 +1,11 @@
 #pragma once
+#include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "RenderContext.h"
 
 namespace OD{
     
-class BloomPostFX: public PostFX{
+class OD_API BloomPostFX: public PostFX{
 public:
     int maxIterations = 5;
     int downscaleLimit = 5;

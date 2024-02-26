@@ -5,7 +5,7 @@
 
 namespace OD{
 
-class Pose{
+class OD_API Pose{
 public:
     Pose();
     Pose(const Pose& p);

@@ -8,7 +8,7 @@
 namespace OD{
 
 //TODO: Make Serializable
-struct AnimatorComponent{
+struct OD_API AnimatorComponent{
     friend struct AnimatorSystem;
     void Play(Clip* clip);
 
@@ -22,7 +22,7 @@ private:
     CrossFadeController controller;
 };
 
-struct AnimatorSystem: public System{
+struct OD_API AnimatorSystem: public System{
     AnimatorSystem(Scene* scene);
     inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "EditorPanel.h"
 
@@ -7,7 +7,7 @@ namespace OD{
 
 class Editor;
 
-class MainWorkspace: public EditorPanel {
+class OD_API MainWorkspace: public EditorPanel {
     friend class Editor;
 public:
     inline void AddPanel(EditorPanel* panel){ 

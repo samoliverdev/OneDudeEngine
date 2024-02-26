@@ -6,7 +6,7 @@ namespace OD{
 
 class Editor;
 
-class EditorPanel{
+class OD_API EditorPanel{
 public:
     inline void SetEditor(Editor* inEditor){ editor = inEditor; }
     inline void SetScene(Scene* inScene){ scene = inScene; }

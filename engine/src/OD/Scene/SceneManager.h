@@ -1,10 +1,10 @@
 #pragma once
-
+#include "OD/Defines.h"
 #include "Scene.h"
 
 namespace OD{
 
-class SceneManager: public Module{
+class OD_API SceneManager: public Module{
 public:
     friend class Editor;
     friend class SceneHierarchyPanel;

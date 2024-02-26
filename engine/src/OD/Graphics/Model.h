@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Asset.h"
@@ -18,7 +17,7 @@ struct AABB;
 struct Sphere;
 */
 
-class Model: public Asset{
+class OD_API Model: public Asset{
 public:
     struct RenderTarget{
         int meshIndex;

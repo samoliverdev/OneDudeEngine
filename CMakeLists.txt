@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.16)
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+#set(CMAKE_MSVC_RUNTIME_LIBRARY)
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -68,7 +73,8 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/entt/*.cpp
     engine/src/*.cpp
 )
-add_library(engine STATIC ${ENGINE_SOURCE_FILES})
+add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+target_compile_definitions(engine PUBLIC OD_BUILD_DLL)
 
 target_include_directories(engine PUBLIC 
     engine/vendor/
@@ -103,7 +109,6 @@ add_executable(game ${GAME_SOURCE_FILES})
 target_include_directories(game PUBLIC engine/src/)
 target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
-
 target_compile_definitions(game PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 #target_compile_definitions(game PUBLIC RESOURCES_PATH="../../res/")
 

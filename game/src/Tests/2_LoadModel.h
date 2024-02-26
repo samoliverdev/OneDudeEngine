@@ -98,9 +98,9 @@ struct LoadModel_2: OD::Module {
         //ImGui::ShowDemoWindow(&show);
 
         ImGui::Begin("Renderer Stats");
-        ImGui::Text("DrawCalls: %d", Graphics::drawCalls);
-        ImGui::Text("Vertices: %dk", Graphics::vertices / 1000);
-        ImGui::Text("Tris: %dk", Graphics::tris / 1000);
+        ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
+        ImGui::Text("Vertices: %dk", Graphics::GetVerticesCount() / 1000);
+        ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);
         ImGui::End();
     }
 
