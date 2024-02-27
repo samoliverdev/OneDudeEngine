@@ -19,6 +19,8 @@ void serialize(Archive& ar, Ref<Model>& model){
 //TODO: Make Serializable
 struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
+
+    Transform localTransform;
     
     static void OnGui(Entity& e);
 
@@ -91,6 +93,7 @@ struct OD_API ModelRendererComponent{
 
     AABB GetAABB();
     AABB GetGlobalAABB(TransformComponent& transform);
+    AABB GetGlobalAABB(Transform& transform);
 
 protected:
     Ref<Model> model = nullptr;

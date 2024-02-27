@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Defines.h"
+#include "OD/Serialization/Serialization.h"
 #include "Math.h"
 #include <stdio.h>
 
@@ -77,6 +78,17 @@ public:
 
     inline static Transform Combine(Transform& a, Transform& b){
         return Transform(a.GetLocalModelMatrix() * b.GetLocalModelMatrix());
+    }
+
+    static void OnGui(Transform& e);
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDump(ar, CEREAL_NVP(localPosition)); 
+        ArchiveDump(ar, CEREAL_NVP(localRotation));
+        ArchiveDump(ar, CEREAL_NVP(localEulerAngles)); 
+        ArchiveDump(ar, CEREAL_NVP(localScale)); 
+        ArchiveDump(ar, CEREAL_NVP(isDirt));
     }
 
 protected:

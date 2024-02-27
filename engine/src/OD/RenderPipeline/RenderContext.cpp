@@ -10,6 +10,12 @@
 
 namespace OD{
 
+RenderContextSettings settings;
+
+RenderContextSettings& RenderContext::GetSettings(){
+    return settings;
+}
+
 RenderContext::RenderContext(Scene* inScene){
     scene = inScene;
 
@@ -159,11 +165,11 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.transform = t.ToTransform();
             data.distance = math::distance(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex];
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
-            data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = nullptr;
             data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
@@ -183,11 +189,11 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.transform = t.ToTransform();
             data.distance = math::distance(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex];
             data.targetMesh = c.GetModel()->meshs[i.meshIndex];
-            data.targetMatrix =  t.GlobalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = &c.posePalette;
             data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
@@ -310,6 +316,10 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
 void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
 
 void RenderContext::DrawGizmos(){
+    if(SceneManager::Get().GetActiveScene() == nullptr) return;
+    if(SceneManager::Get().GetActiveScene()->Running() && settings.enableGizmosRuntime == false) return;
+    if(SceneManager::Get().GetActiveScene()->Running() == false && settings.enableGizmos == false) return;
+
     //Renderer::SetCamera(cam);
     Graphics::SetDepthTest(DepthTest::LESS);
     Graphics::SetCullFace(CullFace::BACK);
@@ -331,20 +341,7 @@ void RenderContext::DrawGizmos(){
 
         c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
         cm = c.GetCamera(); //Camera cm = c.GetCamera();
-
-        if(c.type == CameraComponent::Type::Perspective){
-            _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
-        } else {
-            /*Transform _t = t.ToTransform();
-            float spread = c.farClipPlane - c.nearClipPlane;
-			float center = (c.farClipPlane + c.nearClipPlane)*0.5f;
-            _t.LocalPosition(_t.LocalPosition() + _t.Forward() * (-center));
-            float aspect = static_cast<float>(finalColor->Width()) / static_cast<float>(finalColor->Height());
-            _t.LocalScale(Vector3(c.orthographicSize * 2 * aspect, c.orthographicSize * 2, spread));
-			Graphics::DrawWireCube(_t.GetLocalModelMatrix(), Vector3(1), 1);*/
-
-            _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
-        }
+        _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
     }
 
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
@@ -360,8 +357,6 @@ void RenderContext::DrawGizmos(){
         if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
 
         Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
-        
-        //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
     auto modelRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
@@ -370,15 +365,15 @@ void RenderContext::DrawGizmos(){
         auto& t = modelRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
+        Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+
         AABB aabb = c.GetAABB();
-        AABB globalAABB = c.GetGlobalAABB(t);
+        AABB globalAABB = c.GetGlobalAABB(globalTransform);
 
         Vector3 color = Vector3(0,0,1);
-        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
+        if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
 
         Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
-        
-        //Renderer::DrawWireCube(Matrix4Identity, Vector3(0,1,0), 1);
     }
 
     auto skinnedModelRenderView = scene->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
@@ -387,17 +382,13 @@ void RenderContext::DrawGizmos(){
         auto& t = skinnedModelRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
-        //LogInfo("Ifdfdfd22222222");
-
-        //AABB aabb = c.GetGlobalAABB(t);
-        //Graphics::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, aabb.extents), Vector3(0,1,0), 1);
-        //Renderer::DrawWireCube(Mathf::TRS(t.Position(), QuaternionIdentity, Vector3One), Vector3(0,1,0), 1);
+        Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
 
         AABB aabb = c.GetAABB();
-        AABB globalAABB = c.GetGlobalAABB(t);
+        AABB globalAABB = c.GetGlobalAABB(globalTransform);
 
         Vector3 color = Vector3(0,0,1);
-        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
+        if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
 
         Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
     }

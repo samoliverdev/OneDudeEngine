@@ -3,10 +3,10 @@
 * Fix No HDR -
 * Fix Material Proprities -
 * Fix Animation Rotation Glitch -
-//* Fix Skinned Model Scale
-//* Fix Skinned AABB Model Scale
 * Fix Skinned Animation Shadows - 
-* Fix All Physic Debug Asserts
 * Add AABB To MeshRendererComponent -
 * Add Import Scene Instantiate Model -
 * Revisar all serializatio and OnGui functions -
+* Add Color Type
+* Fix Physics PlayMode In Engine as SharedLib 
+* Fix All Physic Debug Asserts

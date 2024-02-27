@@ -1,6 +1,6 @@
 # My Toy Game Engine
 
-Current Version 3.1.b
+Current Version 3.2.b
 
 ### How Compiler with Visual Studio
 
@@ -21,14 +21,13 @@ cmake --build build --config Release
 
 ### Version 3.1.b
 
-* Refactory Renderer
-* Update Editor
-* Update Animation System
-* Update Asset System
-* Finish Culling
-* Error Handlers
-* Bug fixes
-* Make Engine Usable
+* Refactory Renderer -
+* Update Editor -
+* Update Animation System -
+* Update Asset System -
+* Finish Culling -
+* Error Handlers -
+* Bug fixes -
 
 ### Version 3.2.b
 

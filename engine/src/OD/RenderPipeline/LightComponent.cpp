@@ -9,7 +9,6 @@ void LightComponent::OnGui(Entity& e){
     cereal::ImGuiArchive uiArchive;
     uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
     uiArchive(light);
-
     return;
 
     const char* projectionTypeString[] = {"Directional", "Point", "Spot"};

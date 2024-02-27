@@ -21,12 +21,16 @@ void ViewportPanel::OnGui(){
 
     if(sceneRunning == false){
         ImGui::BeginMenuBar();
-        ImGui::BeginGroup();
-        ImGui::Button("Test");ImGui::SameLine();
+
+        /*ImGui::Button("Test");
         static int e = 0;
-        ImGui::RadioButton("radio a", &e, 0); ImGui::SameLine();
-        ImGui::RadioButton("radio b", &e, 1); ImGui::SameLine();
-        ImGui::RadioButton("radio c", &e, 2);
+        ImGui::RadioButton("radio a", &e, 0);
+        ImGui::RadioButton("radio b", &e, 1);
+        ImGui::RadioButton("radio c", &e, 2);*/
+
+        ImGui::Checkbox("Gizmos", &RenderContext::GetSettings().enableGizmos);
+        ImGui::Checkbox("GizmosRuntime", &RenderContext::GetSettings().enableGizmosRuntime);
+
         ImGui::EndMenuBar();
     }
 

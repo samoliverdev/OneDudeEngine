@@ -42,6 +42,7 @@ struct OD_API LightComponent{
             CEREAL_NVP(renderShadow)
         );*/
 
+        ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(color));
         ArchiveDump(ar, CEREAL_NVP(intensity));
         ArchiveDump(ar, CEREAL_NVP(falloff));

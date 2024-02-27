@@ -59,6 +59,11 @@ struct OD_API RenderData{
     AABB aabb;
 };
 
+struct OD_API RenderContextSettings{
+    bool enableGizmos = true;
+    bool enableGizmosRuntime = false;
+};
+
 class OD_API RenderContext{
 public:
     RenderContext(Scene* scene);
@@ -92,6 +97,8 @@ public:
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
     inline Camera GetCamera(){ return cam; }
+
+    static RenderContextSettings& GetSettings();
 
     //-------Settings---------
     Ref<Material> skyMaterial;

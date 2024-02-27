@@ -1,12 +1,17 @@
 #include "ModelRendererComponent.h"
 #include "StandRenderPipeline.h"
 #include "OD/Utils/ImGuiCustomDraw.h"
+#include "OD/Serialization/CerealImGui.h"
 #include <filesystem>
 
 namespace OD{
 
 void ModelRendererComponent::OnGui(Entity& e){
     ModelRendererComponent& mesh = e.GetComponent<ModelRendererComponent>();
+
+    if(ImGui::TreeNode("localTransform")){
+        Transform::OnGui(mesh.localTransform);
+    }
 
     if(mesh.model == nullptr){
         ImGui::Text("Path: None");
@@ -81,6 +86,32 @@ AABB ModelRendererComponent::GetGlobalAABB(TransformComponent& transform){
     return result;
 }
 
+AABB ModelRendererComponent::GetGlobalAABB(Transform& transform){
+    //Get global scale thanks to our transform
+    const Vector3 globalCenter{ transform.GetLocalModelMatrix() * Vector4(boundingVolume.center, 1) };
+
+    // Scaled orientation
+    const Vector3 right = transform.Right() * boundingVolume.extents.x;
+    const Vector3 up = transform.Up() * boundingVolume.extents.y;
+    const Vector3 forward = transform.Forward() * boundingVolume.extents.z;
+
+    const float newIi = math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, right)) +
+        math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, up)) +
+        math::abs(math::dot(Vector3{ 1.f, 0.f, 0.f }, forward));
+
+    const float newIj = math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, right)) +
+        math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, up)) +
+        math::abs(math::dot(Vector3{ 0.f, 1.f, 0.f }, forward));
+
+    const float newIk = math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, right)) +
+        math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, up)) +
+        math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
+
+    AABB result = AABB(globalCenter, newIi, newIj, newIk);
+    result.Expand(transform.LocalScale());
+    return result;
+}
+
 void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
     std::string name = skeleton.GetJointName(index) + "_" + std::to_string(index);
     std::vector<int> ch = pose.GetChildrens(index);
@@ -98,6 +129,10 @@ void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
 
 void SkinnedModelRendererComponent::OnGui(Entity& e){
     SkinnedModelRendererComponent& mesh = e.GetComponent<SkinnedModelRendererComponent>();
+
+    if(ImGui::TreeNode("localTransform")){
+        Transform::OnGui(mesh.localTransform);
+    }
 
     if(mesh.model == nullptr){
         ImGui::Text("Path: None");
