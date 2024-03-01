@@ -28,7 +28,7 @@ struct SynthCity_10: OD::Module {
 
         Entity light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(1,1,1);
+        lightComponent.color = {1,1,1};
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = true;

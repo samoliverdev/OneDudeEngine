@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Defines.h"
+#include "OD/Core/Color.h"
 #include "OD/Core/Math.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
@@ -14,7 +15,8 @@ struct OD_API LightComponent{
     enum class Type{ Directional, Point, Spot };
 
     Type type = Type::Directional;
-    Vector3 color = {1,1,1};
+    //Vector3 color = {1,1,1};
+    Color color = {1,1,1,1};
     
     float intensity = 1;
     float specular = 1;

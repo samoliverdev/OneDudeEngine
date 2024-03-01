@@ -192,7 +192,7 @@ struct NewRenderPipeline_13: public OD::Module {
         ///*
         light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(1,1,1);
+        lightComponent.color = {1,1,1};
         lightComponent.intensity = 1.5f;
         lightComponent.renderShadow = true;
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
@@ -202,7 +202,7 @@ struct NewRenderPipeline_13: public OD::Module {
         ///*
         Entity light3 = scene->AddEntity("Directional Light");
         LightComponent& lightComponent3 = light3.AddComponent<LightComponent>();
-        lightComponent3.color = Vector3(1,1,1);
+        lightComponent3.color = {1,1,1};
         lightComponent3.intensity = 0.5f;
         lightComponent3.renderShadow = false;
         light3.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
@@ -212,7 +212,7 @@ struct NewRenderPipeline_13: public OD::Module {
         ///*
         Entity light2 = scene->AddEntity("Directional Light 2");
         LightComponent& lightComponent2 = light2.AddComponent<LightComponent>();
-        lightComponent2.color = Vector3(0.25f, 0.25f, 1);
+        lightComponent2.color = {0.25f, 0.25f, 1};
         lightComponent2.intensity = 1;
         lightComponent2.renderShadow = false;
         light2.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));

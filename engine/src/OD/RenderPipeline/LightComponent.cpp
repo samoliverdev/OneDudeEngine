@@ -7,11 +7,14 @@ void LightComponent::OnGui(Entity& e){
     LightComponent& light = e.GetComponent<LightComponent>();
 
     cereal::ImGuiArchive uiArchive;
+    //cereal::ImGuiArchive::Options colorOpt;
+    //colorOpt.colorHDR = true;
+    //uiArchive.setOption("color", colorOpt);
     uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
     uiArchive(light);
     return;
 
-    const char* projectionTypeString[] = {"Directional", "Point", "Spot"};
+    /*const char* projectionTypeString[] = {"Directional", "Point", "Spot"};
     const char* curProjectionTypeString = projectionTypeString[(int)light.type];
     if(ImGui::BeginCombo("Type", curProjectionTypeString)){
         for(int i = 0; i < 3; i++){
@@ -57,7 +60,7 @@ void LightComponent::OnGui(Entity& e){
         
     }
 
-    ImGui::Checkbox("renderShadow", &light.renderShadow);
+    ImGui::Checkbox("renderShadow", &light.renderShadow);*/
 }
 
 }

@@ -144,7 +144,7 @@ struct ECS_4: public OD::Module {
 
         light = scene->AddEntity("Directional Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(1,1,1);
+        lightComponent.color = {1,1,1};
         lightComponent.intensity = 1;
         lightComponent.renderShadow = false;
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
@@ -154,7 +154,7 @@ struct ECS_4: public OD::Module {
         Entity pointLight = scene->AddEntity("Point Light");
         LightComponent& _pointLight = pointLight.AddComponent<LightComponent>();
         _pointLight.type = LightComponent::Type::Point;
-        _pointLight.color = Vector3(1,1,1);
+        _pointLight.color = {1,1,1};
         _pointLight.intensity = 5;
         _pointLight.radius = 10;
         pointLight.GetComponent<TransformComponent>().Position(Vector3(4, 4, 0));
@@ -162,7 +162,7 @@ struct ECS_4: public OD::Module {
         Entity pointLight2 = scene->AddEntity("Point Light 2");
         LightComponent& _pointLight2 = pointLight2.AddComponent<LightComponent>();
         _pointLight2.type = LightComponent::Type::Point;
-        _pointLight2.color = Vector3(0,0,1);
+        _pointLight2.color = {0,0,1};
         _pointLight2.intensity = 5;
         _pointLight2.radius = 20;
         pointLight2.GetComponent<TransformComponent>().Position(Vector3(-3, 0.5f, 0));

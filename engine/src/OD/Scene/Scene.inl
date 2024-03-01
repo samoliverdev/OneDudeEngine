@@ -96,6 +96,8 @@ void Scene::RemoveSystem(){
     standSystems.erase(std::remove(standSystems.begin(), standSystems.end(), s), standSystems.end());
     rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
     physicsSystems.erase(std::remove(physicsSystems.begin(), physicsSystems.end(), s), physicsSystems.end());
+
+    delete s;
 }
 
 template<typename T>

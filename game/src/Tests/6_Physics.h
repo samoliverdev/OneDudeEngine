@@ -74,7 +74,7 @@ struct Physics_6: OD::Module {
 
         Entity light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();
-        lightComponent.color = Vector3(1,1,1);
+        lightComponent.color = {1,1,1};
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
@@ -114,7 +114,7 @@ struct Physics_6: OD::Module {
         character2Entity.GetComponent<TransformComponent>().Position({2, 13, 0});
         character2Entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
 
-        Entity character2Entity2 = scene->AddEntity("MainCube2");
+        /*Entity character2Entity2 = scene->AddEntity("MainCube2");
         ModelRendererComponent& character2Renderer2 = character2Entity2.AddComponent<ModelRendererComponent>();
         character2Renderer2.SetModel(cubeModel);
         character2Renderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
@@ -126,7 +126,7 @@ struct Physics_6: OD::Module {
         character2Entity2.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
         JointComponent& joint = character2Entity2.AddComponent<JointComponent>();
         joint.pivot = Vector3{-3, 13, 0};
-        joint.rb = character2Entity2.Id();
+        joint.rb = character2Entity2.Id();*/
 
         Entity trigger = scene->AddEntity("Trigger");
         RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();
@@ -151,9 +151,16 @@ struct Physics_6: OD::Module {
 
         TransformComponent& camT = camera.GetComponent<TransformComponent>();
         RayResult hit;
+        //Throwing a Possible Null Expection Pointer Here
         if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
         }
+
+        /*Assert(scene->GetRegistry().ctx().get<PhysicsSystem*>() == scene->GetSystem<PhysicsSystem>());
+        auto physicsSystem = scene->GetRegistry().ctx().get<PhysicsSystem*>();
+        if(physicsSystem->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
+            LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
+        }*/
 
         if(Input::IsKeyDown(KeyCode::R)){
             SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();

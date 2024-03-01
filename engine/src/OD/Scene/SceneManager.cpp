@@ -8,7 +8,10 @@ SceneManager& SceneManager::Get(){
 }
 
 void SceneManager::OnInit(){}
-void SceneManager::OnExit(){}
+
+void SceneManager::OnExit(){
+    //if(activeScene != nullptr) delete activeScene;
+}
 
 void SceneManager::OnUpdate(float deltaTime){
     if(GetActiveScene() == nullptr) return;

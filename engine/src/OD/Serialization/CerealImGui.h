@@ -2,6 +2,7 @@
 
 #include "Serialization.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Color.h"
 #include <entt/entt.hpp>
 #include <map>
 #include <string>
@@ -61,6 +62,7 @@ public:
         bool hasSpacing(){ return mHasSpacing; }
 
         bool isColor = false;
+        bool colorHDR = false;
          
     private:
 
@@ -218,8 +220,11 @@ private:
             }
         }
     }
-    
 
+    void DrawUI(const char* name, OD::Color& value, Options opt = Options()){
+        ImGui::ColorEdit4(name, &value.r, opt.colorHDR ? ImGuiColorEditFlags_HDR : ImGuiColorEditFlags_None);
+    }
+    
     void DrawUI(const char* name, glm::quat& value, Options opt = Options()){
         glm::vec3 euler = glm::eulerAngles(value);
         if(ImGui::DragFloat3(name, &euler[0], opt.getStep())){

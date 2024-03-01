@@ -8,5 +8,6 @@
 * Add Import Scene Instantiate Model -
 * Revisar all serializatio and OnGui functions -
 * Add Color Type
-* Fix Physics PlayMode In Engine as SharedLib 
-* Fix All Physic Debug Asserts
+* Fix Physics PlayMode In Engine as SharedLib - 
+* Fix All Physic Debug Asserts -
+* Fix JointComponent -

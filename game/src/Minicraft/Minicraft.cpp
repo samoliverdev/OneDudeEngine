@@ -24,7 +24,7 @@ void Minicraft::OnInit(){
 
     Entity light = scene->AddEntity("Directional Light");
     LightComponent& lightComponent = light.AddComponent<LightComponent>();
-    lightComponent.color = Vector3(1,1,1);
+    lightComponent.color = {1,1,1};
     lightComponent.intensity = 1;
     lightComponent.renderShadow = false;
     light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));

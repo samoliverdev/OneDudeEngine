@@ -83,7 +83,7 @@ struct OD_API CollisionShape{
 struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
-    enum class Type{Dynamic, Static, Kinematic, Trigger};
+    enum class OD_API Type{Dynamic, Static, Kinematic, Trigger};
 
     static void OnGui(Entity& e);
 
@@ -149,8 +149,8 @@ struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
 
     PhysicsSystem(Scene* scene);
-    PhysicsSystem();
-    ~PhysicsSystem();
+    //PhysicsSystem();
+    ~PhysicsSystem() override;
 
     System* Clone(Scene* inScene) const override{ return new PhysicsSystem(inScene); }
     
@@ -161,7 +161,7 @@ struct OD_API PhysicsSystem: public System{
 
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
 
-    static PhysicsSystem* Get();
+    //static PhysicsSystem* Get();
 
 private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);

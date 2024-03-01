@@ -249,9 +249,8 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 #pragma region PhysicsSystem
 
 //PhysicsSystem* PhysicsSystem::instance = nullptr;
-PhysicsSystem* instance = nullptr;
-
-PhysicsSystem* PhysicsSystem::Get(){ return instance; }
+//PhysicsSystem* instance = nullptr;
+//PhysicsSystem* PhysicsSystem::Get(){ return instance; }
 
 PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     collisionConfiguration = new btDefaultCollisionConfiguration();
@@ -264,10 +263,15 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     world->setDebugDrawer(&debuger);
 
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
-    instance = this;
+    //instance = this;
+
+    LogWarning("PhysicsSystem Contructor");
+
+    this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 }
 
 PhysicsSystem::~PhysicsSystem(){
+    this->scene->GetRegistry().ctx().erase<PhysicsSystem*>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 
     /*delete collisionConfiguration;
@@ -281,10 +285,14 @@ PhysicsSystem::~PhysicsSystem(){
     delete broadphase;
     delete dispatcher;
     delete collisionConfiguration;
+
+    LogWarning("PhysicsSystem Destructor"); 
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
     LogInfo("Removing Rigidbody");
+
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
 
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
 
@@ -293,8 +301,12 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry & r, entt::entity e){
     Rigidbody* data = rb.data;
     data->world->removeRigidBody(data->body);
 
-    Assert(PhysicsSystem::Get() != nullptr);
-    auto& _pairsLastUpdate = PhysicsSystem::Get()->pairsLastUpdate;
+    //Assert(PhysicsSystem::Get() != nullptr);
+    //auto& _pairsLastUpdate = PhysicsSystem::Get()->pairsLastUpdate;
+
+    Assert(physicsSystem != nullptr);
+    auto& _pairsLastUpdate = physicsSystem->pairsLastUpdate;
+    
     for(auto i = _pairsLastUpdate.begin(); i != _pairsLastUpdate.end(); ){
         if(i->first == data->body || i->second == data->body){
             _pairsLastUpdate.erase(i++);
@@ -493,6 +505,9 @@ void PhysicsSystem::ShowDebugGizmos(){
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
+    //if(world == nullptr) return false;
+    Assert(world != nullptr);
+
     btVector3 _pos = btVector3(pos.x, pos.y, pos.z);
     btVector3 _dir = btVector3(dir.x, dir.y, dir.z);
 

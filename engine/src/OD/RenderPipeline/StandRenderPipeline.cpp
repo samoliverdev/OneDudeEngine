@@ -126,7 +126,7 @@ void Lighting::SetupDirectionalLight(){
         TransformComponent& trans = lightView.get<TransformComponent>(entity);
 
         if(light.type == LightComponent::Type::Directional){
-            dirLightColors[index] = Mathf::ToVector4(light.color * light.intensity);
+            dirLightColors[index] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
             dirLightDirections[index] = Mathf::ToVector4(-trans.Forward());
             Vector2 v = shadows->ReserveDirectionalShadows(light, trans);
             dirLightShadowData[index] = Vector4(v.x, v.y, 0, 1);
