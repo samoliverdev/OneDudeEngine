@@ -1,7 +1,10 @@
 #include "PhysicsSystem.h"
 #include "Phys.h"
+#include "Ragdoll.h"
+#include "Ragdoll2.h"
 #include "OD/Core/Application.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Serialization/ImGuiArchive.h"
 #include <set>
 #include <algorithm>
 
@@ -60,9 +63,18 @@ Debuger debuger;
 void JointComponent::OnGui(Entity& e){
     JointComponent& light = e.GetComponent<JointComponent>();
 
-    cereal::ImGuiArchive uiArchive;
-    //uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
+    ImGuiArchive2 uiArchive;
     uiArchive(light);
+
+    //cereal::ImGuiArchive uiArchive;
+    //uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
+    //uiArchive(light);
+}
+
+void RagdollComponent::OnGui(Entity& e){
+    RagdollComponent& component = e.GetComponent<RagdollComponent>();
+    ImGuiArchive2 uiArchive;
+    uiArchive(component);
 }
 
 #pragma region RigidbodyComponent
@@ -394,6 +406,23 @@ void PhysicsSystem::Update(){
         }
     }
 
+    auto view3 = GetScene()->GetRegistry().view<RagdollComponent, SkinnedModelRendererComponent, TransformComponent>();
+    for(auto e: view3){
+        RagdollComponent& ragdoll = view3.get<RagdollComponent>(e);
+        SkinnedModelRendererComponent& skinned = view3.get<SkinnedModelRendererComponent>(e);
+        TransformComponent& transform = view3.get<TransformComponent>(e);
+
+        if(ragdoll.ragdoll == nullptr){
+            ProsseBodyParts(ragdoll.bodyParts, skinned, transform);
+            std::vector<RagdollBodyPart> bodyParts = ragdoll.bodyParts;
+            ragdoll.ragdoll = new Ragdoll2(world, bodyParts);
+        }
+
+        /*if(ragdoll.ragdoll2 == nullptr){
+            ragdoll.ragdoll2 = new Ragdoll(world, btVector3(0, 0, 0), 1.0f);
+        }*/
+    }
+
     CheckForCollisionEvents();
 }
 
@@ -410,7 +439,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
 		
 		// ignore manifolds that have 
 		// no contact points.
-		if (pManifold->getNumContacts() > 0){
+		if(pManifold->getNumContacts() > 0){
 			// get the two rigid bodies involved in the collision
 			const btRigidBody* pBody0 = static_cast<const btRigidBody*>(pManifold->getBody0());
 			const btRigidBody* pBody1 = static_cast<const btRigidBody*>(pManifold->getBody1());
@@ -430,7 +459,10 @@ void PhysicsSystem::CheckForCollisionEvents(){
 			// if this pair doesn't exist in the list
 			// from the previous update, it is a new
 			// pair and we must send a collision event
-			if(pairsLastUpdate.find(thisPair) == pairsLastUpdate.end()) {
+			if(pairsLastUpdate.find(thisPair) == pairsLastUpdate.end()){
+                if(pBody0->getUserPointer() == nullptr) continue;
+                if(pBody1->getUserPointer() == nullptr) continue;
+
                 Assert(pBody0 != nullptr);
                 Assert(pBody0->getUserPointer() != nullptr);
                 Assert(pBody1 != nullptr);
@@ -473,6 +505,9 @@ void PhysicsSystem::CheckForCollisionEvents(){
 	// iterate through all of the removed pairs
 	// sending separation events for them
 	for(CollisionPairs::const_iterator iter = removedPairs.begin(); iter != removedPairs.end(); ++iter){
+        if(iter->first->getUserPointer() == nullptr) continue;
+        if(iter->second->getUserPointer() == nullptr) continue;
+
         Assert(iter->first != nullptr);
         Assert(iter->first->getUserPointer() != nullptr);
         Assert(iter->second != nullptr);

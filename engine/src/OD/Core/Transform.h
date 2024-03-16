@@ -47,6 +47,18 @@ public:
     inline Vector3 LocalScale(){ return localScale; }
     inline void LocalScale(Vector3 scale){ localScale = scale; isDirt = true; }
 
+    //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
+    Vector3 InverseTransformDirection(Vector3 dir); 
+    
+    //Transforms direction from local space to world space.
+    Vector3 TransformDirection(Vector3 dir); 
+
+    //Transforms position from world space to local space.
+    Vector3 InverseTransformPoint(Vector3 point); 
+
+    //Transforms position from local space to world space.
+    Vector3 TransformPoint(Vector3 point); 
+
     inline bool operator==(const Transform& b){
         return 
             this->localPosition == b.localPosition &&

@@ -1,0 +1,456 @@
+{
+    "Entities": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+    ],
+    "InfoComponents": [
+        {
+            "name": "Env",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "Light",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "Camera",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "Floor",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "Trigger",
+            "tag": "",
+            "active": false
+        },
+        {
+            "name": "FromDynamicModule",
+            "tag": "",
+            "active": false
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 2.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": false,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": false,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 15.0,
+                "v.z": 15.0
+            },
+            "transform.localRotation": {
+                "q.x": -0.2164396196603775,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.9762960076332092
+            },
+            "transform.localEulerAngles": {
+                "v.x": -25.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": false,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -2.0,
+                "v.y": 4.0,
+                "v.z": -1.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.1767035573720932,
+                "q.y": -0.8194911479949951,
+                "q.z": 0.3394443988800049,
+                "q.w": 0.42660006880760195
+            },
+            "transform.localEulerAngles": {
+                "v.x": 45.0,
+                "v.y": -125.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": false,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        }
+    ],
+    "TransformComponentEntities": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+    ],
+    "ComponentTest_01s": [],
+    "ComponentTest_01Entities": [],
+    "RigidbodyComponents": [
+        {
+            "type": 3,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 4.0,
+                    "v.y": 1.0,
+                    "v.z": 4.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 1,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 25.0,
+                    "v.y": 0.10000000149011612,
+                    "v.z": 25.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 0.0,
+            "neverSleep": true
+        }
+    ],
+    "RigidbodyComponentEntities": [
+        5,
+        4,
+        3
+    ],
+    "JointComponents": [],
+    "JointComponentEntities": [],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "intensity": 1.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": false
+        }
+    ],
+    "LightComponentEntities": [
+        1
+    ],
+    "SkinnedModelRendererComponents": [],
+    "SkinnedModelRendererComponentEntities": [],
+    "ModelRendererComponents": [
+        {
+            "subMeshIndex": -1,
+            "path": "res/Game/Models/Cube.glb",
+            "materialsOverridePaths": [
+                "Memory",
+                ""
+            ]
+        },
+        {
+            "subMeshIndex": -1,
+            "path": "res/Game/Models/plane.glb",
+            "materialsOverridePaths": [
+                "Memory"
+            ]
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        4,
+        3
+    ],
+    "MeshRendererComponents": [],
+    "MeshRendererComponentEntities": [],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 45.0,
+            "nearClipPlane": 0.10000000149011612,
+            "farClipPlane": 1000.0
+        }
+    ],
+    "CameraComponentEntities": [
+        2
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "ambient": {
+                    "v.x": 0.10999999940395355,
+                    "v.y": 0.1599999964237213,
+                    "v.z": 0.25
+                },
+                "cleanColor": {
+                    "v.x": 0.5,
+                    "v.y": 0.10000000149011612,
+                    "v.z": 0.800000011920929
+                },
+                "shadowQuality": 3,
+                "shadowBias": 0.000009999999747378752,
+                "shadowBackFaceRender": true,
+                "antiAliasing": 0,
+                "msaaQuality": 1,
+                "colorCorrection": 0,
+                "toneMappingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "enable": false,
+                            "mode": "None"
+                        }
+                    }
+                },
+                "colorGradingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "enable": false,
+                            "postExposure": 0.0,
+                            "contrast": 0.0,
+                            "colorFilter": {
+                                "v.x": 1.0,
+                                "v.y": 1.0,
+                                "v.z": 1.0,
+                                "v.w": 1.0
+                            },
+                            "hueShift": 0.0,
+                            "saturation": 0.0
+                        }
+                    }
+                },
+                "bloomPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "enable": false,
+                            "maxIterations": 5,
+                            "downscaleLimit": 5,
+                            "bicubicUpsampling": true,
+                            "threshold": 0.5,
+                            "thresholdKnee": 0.5,
+                            "intensity": 1.0
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        0
+    ],
+    "RagdollComponents": [],
+    "RagdollComponentEntities": [],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        2
+    ],
+    "AnimatorComponents": [],
+    "AnimatorComponentEntities": [],
+    "DynamicComponents": [
+        {
+            "name": "fd",
+            "age": 13
+        }
+    ],
+    "DynamicComponentEntities": [
+        6
+    ]
+}

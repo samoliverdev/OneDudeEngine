@@ -17,7 +17,7 @@ struct OD_API AnimatorComponent{
 
     static void OnGui(Entity& e);
 
-private:
+//private:
     //std::vector<Matrix4> posePalette;
     CrossFadeController controller;
 };

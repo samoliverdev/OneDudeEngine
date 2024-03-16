@@ -19,7 +19,7 @@
 // -- #include <glm/mat4x4.hpp>
 //#include <glm/geometric.hpp>
 #include <glm/gtx/norm.hpp>
-// -- #include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/vector_angle.hpp>
 //#include <glm/gtx/orthonormalize.hpp>
 // -- #include <glm/gtc/matrix_access.hpp>
 //#include <glm/gtx/matrix_query.hpp>

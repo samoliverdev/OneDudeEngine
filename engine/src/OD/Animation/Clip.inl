@@ -40,7 +40,8 @@ float TClip<TRACK>::Sample(Pose& outPose, float time){
 
         //INFO: Used to ignore RootMotion 
         if(i == 0){
-        //    animated.LocalPosition(Vector3Zero);
+            Vector3 newPos(0, animated.LocalPosition().y, 0);
+            animated.LocalPosition(newPos);
         }
 
         outPose.SetLocalTransform(j, animated);

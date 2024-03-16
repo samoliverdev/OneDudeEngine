@@ -2,6 +2,7 @@
 #include "CameraComponent.h"
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
+#include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/AssetManager.h"
 #include "OD/Core/Instrumentor.h"
@@ -391,6 +392,33 @@ void RenderContext::DrawGizmos(){
         if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
 
         Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+    }
+
+    auto animView = scene->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent, TransformComponent>();
+    for(auto e: animView){
+        auto& s = animView.get<SkinnedModelRendererComponent>(e);
+        auto& c = animView.get<AnimatorComponent>(e);
+        auto& t = animView.get<TransformComponent>(e);
+        if(s.GetModel() == nullptr) continue;
+
+        Transform globalTransform = Transform(t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0));
+
+        Pose pose;
+        if(scene->Running()){ 
+            pose = c.controller.GetCurrentPose();
+        } else {
+            pose = s.GetModel()->skeleton.GetBindPose(); 
+        }
+
+        for(int i = 0; i < pose.Size(); i++){
+            if(pose.GetParent(i) < 0) continue;
+            Vector3 p0 = globalTransform.TransformPoint( pose.GetGlobalTransform(i).LocalPosition() );
+            Vector3 p1 = globalTransform.TransformPoint( pose.GetGlobalTransform(pose.GetParent(i)).LocalPosition() );
+            Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
+
+            Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+            Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
+        }
     }
 }
 

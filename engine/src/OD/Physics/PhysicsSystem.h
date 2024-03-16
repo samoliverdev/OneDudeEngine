@@ -1,9 +1,11 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
+#include "RagdollBodyPart.h"
 
 class btRigidBody;
 class btBroadphaseInterface;
@@ -16,6 +18,25 @@ class btGeneric6DofConstraint;
 namespace OD{
 
 struct Rigidbody;
+class Ragdoll;
+class Ragdoll2;
+
+struct RagdollComponent{
+    friend struct PhysicsSystem;
+    
+    std::vector<RagdollBodyPart> bodyParts;
+
+    static void OnGui(Entity& e);
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        ArchiveDump(ar, CEREAL_NVP(bodyParts));
+    }
+
+private:
+    Ragdoll2* ragdoll = nullptr;
+    Ragdoll* ragdoll2 = nullptr;
+};
 
 struct OD_API JointComponent{
     //OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);

@@ -53,6 +53,7 @@ cmake --build build --config Release
 * MultCompile Shader
 * Indirect Renderer
 * Binary Asset Compile/Pack
+* 2D Game Features(Sprite, Tile map)
 
 ### Version 3.5.b
 

@@ -26,7 +26,29 @@ Matrix4 Transform::GetLocalModelMatrix(){
     //return Mathf::TRS(_localPosition, _localRotation, _localScale);
 }
 
+Vector3 Transform::InverseTransformDirection(Vector3 dir){
+    Matrix4 matrix4 = GetLocalModelMatrix();
+    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+}
+
+Vector3 Transform::TransformDirection(Vector3 dir){
+    Matrix4 matrix4 = GetLocalModelMatrix();
+    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+}
+
+Vector3 Transform::InverseTransformPoint(Vector3 point){
+    Matrix4 matrix4 = GetLocalModelMatrix();
+    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+}
+
+Vector3 Transform::TransformPoint(Vector3 point){
+    Matrix4 matrix4 = GetLocalModelMatrix();
+    return matrix4 * Vector4(point.x, point.y, point.z, 1);
+}
+
 void Transform::OnGui(Transform& transform){
+    //ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.4f);
+
     float p[] = {transform.LocalPosition().x, transform.LocalPosition().y, transform.LocalPosition().z};
     if(ImGui::DragFloat3("Position", p, 0.5f)){
         transform.LocalPosition(Vector3(p[0], p[1], p[2]));
@@ -41,6 +63,8 @@ void Transform::OnGui(Transform& transform){
     if(ImGui::DragFloat3("Scale", s, 0.5f)){
         transform.LocalScale(Vector3(s[0], s[1], s[2]));
     } 
+
+    //ImGui::PopItemWidth();
 }
 
 /*

@@ -38,6 +38,7 @@ void CoreModulesStartup(){
 
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
+    SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 
     SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
