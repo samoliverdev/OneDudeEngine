@@ -1,6 +1,5 @@
 {
     "Entities": [
-        6,
         5,
         4,
         3,
@@ -38,11 +37,6 @@
             "name": "Trigger",
             "tag": "",
             "active": false
-        },
-        {
-            "name": "FromDynamicModule",
-            "tag": "",
-            "active": false
         }
     ],
     "InfoComponentEntities": [
@@ -51,37 +45,9 @@
         2,
         3,
         4,
-        5,
-        6
+        5
     ],
     "TransformComponents": [
-        {
-            "transform.localPosition": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localRotation": {
-                "q.x": 0.0,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 1.0
-            },
-            "transform.localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localScale": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
-            },
-            "transform.isDirt": true,
-            "children": [],
-            "parent": 0,
-            "hasParent": false
-        },
         {
             "transform.localPosition": {
                 "v.x": 0.0,
@@ -246,7 +212,6 @@
         }
     ],
     "TransformComponentEntities": [
-        6,
         5,
         4,
         3,
@@ -256,57 +221,8 @@
     ],
     "ComponentTest_01s": [],
     "ComponentTest_01Entities": [],
-    "RigidbodyComponents": [
-        {
-            "type": 3,
-            "shape": {
-                "type": 0,
-                "boxShapeSize": {
-                    "v.x": 4.0,
-                    "v.y": 1.0,
-                    "v.z": 4.0
-                },
-                "sphereRadius": 1.0
-            },
-            "mass": 1.0,
-            "neverSleep": true
-        },
-        {
-            "type": 0,
-            "shape": {
-                "type": 0,
-                "boxShapeSize": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                },
-                "sphereRadius": 1.0
-            },
-            "mass": 1.0,
-            "neverSleep": true
-        },
-        {
-            "type": 1,
-            "shape": {
-                "type": 0,
-                "boxShapeSize": {
-                    "v.x": 25.0,
-                    "v.y": 0.10000000149011612,
-                    "v.z": 25.0
-                },
-                "sphereRadius": 1.0
-            },
-            "mass": 0.0,
-            "neverSleep": true
-        }
-    ],
-    "RigidbodyComponentEntities": [
-        5,
-        4,
-        3
-    ],
-    "JointComponents": [],
-    "JointComponentEntities": [],
+    "MeshRendererComponents": [],
+    "MeshRendererComponentEntities": [],
     "LightComponents": [
         {
             "type": 0,
@@ -327,31 +243,6 @@
     "LightComponentEntities": [
         1
     ],
-    "SkinnedModelRendererComponents": [],
-    "SkinnedModelRendererComponentEntities": [],
-    "ModelRendererComponents": [
-        {
-            "subMeshIndex": -1,
-            "path": "res/Game/Models/Cube.glb",
-            "materialsOverridePaths": [
-                "Memory",
-                ""
-            ]
-        },
-        {
-            "subMeshIndex": -1,
-            "path": "res/Game/Models/plane.glb",
-            "materialsOverridePaths": [
-                "Memory"
-            ]
-        }
-    ],
-    "ModelRendererComponentEntities": [
-        4,
-        3
-    ],
-    "MeshRendererComponents": [],
-    "MeshRendererComponentEntities": [],
     "CameraComponents": [
         {
             "type": 0,
@@ -434,23 +325,90 @@
     "EnvironmentComponentEntities": [
         0
     ],
-    "RagdollComponents": [],
-    "RagdollComponentEntities": [],
     "ScriptComponents": [
         {}
     ],
     "ScriptComponentEntities": [
         2
     ],
-    "AnimatorComponents": [],
-    "AnimatorComponentEntities": [],
-    "DynamicComponents": [
+    "RigidbodyComponents": [
         {
-            "name": "fd",
-            "age": 13
+            "type": 3,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 4.0,
+                    "v.y": 1.0,
+                    "v.z": 4.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 1,
+            "shape": {
+                "type": 0,
+                "boxShapeSize": {
+                    "v.x": 25.0,
+                    "v.y": 0.10000000149011612,
+                    "v.z": 25.0
+                },
+                "sphereRadius": 1.0
+            },
+            "mass": 0.0,
+            "neverSleep": true
         }
     ],
-    "DynamicComponentEntities": [
-        6
-    ]
+    "RigidbodyComponentEntities": [
+        5,
+        4,
+        3
+    ],
+    "JointComponents": [],
+    "JointComponentEntities": [],
+    "SkinnedModelRendererComponents": [],
+    "SkinnedModelRendererComponentEntities": [],
+    "AnimatorComponents": [],
+    "AnimatorComponentEntities": [],
+    "ModelRendererComponents": [
+        {
+            "subMeshIndex": -1,
+            "path": "res/Game/Models/Cube.glb",
+            "materialsOverridePaths": [
+                "Memory",
+                ""
+            ]
+        },
+        {
+            "subMeshIndex": -1,
+            "path": "res/Game/Models/plane.glb",
+            "materialsOverridePaths": [
+                "Memory"
+            ]
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        4,
+        3
+    ],
+    "RagdollComponents": [],
+    "RagdollComponentEntities": [],
+    "DynamicComponents": [],
+    "DynamicComponentEntities": []
 }

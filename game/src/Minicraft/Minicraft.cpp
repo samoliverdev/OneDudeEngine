@@ -17,10 +17,11 @@ void Minicraft::OnInit(){
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 2, 4));
+    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 25, 4));
     camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
     camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 20;
-    cam.farClipPlane = 1000;
+    cam.farClipPlane = 10000;
+    cam.fieldOfView = 70;
 
     Entity light = scene->AddEntity("Directional Light");
     LightComponent& lightComponent = light.AddComponent<LightComponent>();
@@ -77,6 +78,7 @@ void Minicraft::OnInit(){
     }*/
 
     //Application::AddModule<Editor>();
+    //RenderContext::GetSettings().enableGizmosRuntime = true;
     scene->Start();
 }
 

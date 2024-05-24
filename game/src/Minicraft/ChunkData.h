@@ -5,6 +5,8 @@
 
 struct Voxel{
     unsigned char id = 0;
+    //unsigned short id = 0;
+    //unsigned char light = 0;
 };
 
 struct ChunkData{

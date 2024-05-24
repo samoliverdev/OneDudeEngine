@@ -166,6 +166,7 @@ private:
     void RunSetupLoop();
     void OnSetupLoop(RenderData& data);
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
+    void RenderUI();
     
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };

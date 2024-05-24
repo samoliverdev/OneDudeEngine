@@ -488,7 +488,10 @@ void Shader::SetVector3(const char* name, Vector3 value){
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform3f(GetLocation(name), value.x, value.y, value.z);
-    glCheckError();
+    //glCheckError();
+    glCheckError2([&](){ 
+        LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
+    });
 }
 
 void Shader::SetVector4(const char* name, Vector4 value){

@@ -32,6 +32,7 @@ public:
 
     static void _OnResize(int width, int height);
 
+    static void RemoveModule(Module* module);
     static void AddModule(Module* module);
     template<typename T> static void AddModule(){ AddModule(new T()); }
 

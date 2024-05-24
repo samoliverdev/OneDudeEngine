@@ -24,8 +24,8 @@
 // -- #include <glm/gtc/matrix_access.hpp>
 //#include <glm/gtx/matrix_query.hpp>
 
-//#define GLM_ENABLE_EXPERIMENTAL
-//#include "glm/gtx/hash.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 namespace OD {
 
@@ -38,6 +38,11 @@ using IVector2 = glm::ivec2;
 using IVector3 = glm::ivec3;
 using IVector4 = glm::ivec4;
 namespace math = glm;
+
+/*inline bool operator<(const IVector3& lhs, const IVector3& rhs){
+    return lhs.x < rhs.x ||
+           lhs.x == rhs.x && (lhs.y < rhs.y || lhs.y == rhs.y && lhs.z < rhs.z);
+}*/
 
 /*#define Vector2 glm::vec2
 #define Vector3 glm::vec3

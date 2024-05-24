@@ -80,3 +80,7 @@ cmake --build build --config Release
 ### Version 1.1
 
 * Sdf Global Illuminations
+
+### Planned
+
+* Seamless C++ scripting | c++ hot reloading 

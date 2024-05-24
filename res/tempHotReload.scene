@@ -1,0 +1,81 @@
+{
+    "Entities": [
+        0
+    ],
+    "InfoComponents": [
+        {
+            "name": "Test",
+            "tag": "",
+            "active": false
+        }
+    ],
+    "InfoComponentEntities": [
+        0
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": false,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        }
+    ],
+    "TransformComponentEntities": [
+        0
+    ],
+    "ComponentTest_01s": [],
+    "ComponentTest_01Entities": [],
+    "EnvironmentComponents": [],
+    "EnvironmentComponentEntities": [],
+    "LightComponents": [],
+    "LightComponentEntities": [],
+    "SkinnedModelRendererComponents": [],
+    "SkinnedModelRendererComponentEntities": [],
+    "ModelRendererComponents": [],
+    "ModelRendererComponentEntities": [],
+    "MeshRendererComponents": [],
+    "MeshRendererComponentEntities": [],
+    "CameraComponents": [],
+    "CameraComponentEntities": [],
+    "RigidbodyComponents": [],
+    "RigidbodyComponentEntities": [],
+    "RagdollComponents": [],
+    "RagdollComponentEntities": [],
+    "JointComponents": [],
+    "JointComponentEntities": [],
+    "ScriptComponents": [],
+    "ScriptComponentEntities": [],
+    "AnimatorComponents": [],
+    "AnimatorComponentEntities": [],
+    "DynamicComponents": [
+        {
+            "name": "ffffffffff",
+            "age": 13,
+            "test": 20.0
+        }
+    ],
+    "DynamicComponentEntities": [
+        0
+    ]
+}

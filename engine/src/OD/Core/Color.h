@@ -28,6 +28,10 @@ struct OD_API Color{
         return Vector4(r, g, b, a);
     }
 
+    inline operator Vector3(){
+        return Vector3(r, g, b);
+    }
+
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDump(ar, CEREAL_NVP(r));

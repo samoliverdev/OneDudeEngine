@@ -80,7 +80,7 @@ void SceneManager::RegisterCoreComponent(const char* name){
 
 template<typename T>
 void SceneManager::RegisterCoreComponentSimple(const char* name){
-    Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
+    //Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
     //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
     CoreComponent funcs;

@@ -5,22 +5,36 @@
 #include <assert.h>
 #include "Ultis/Ultis.h"
 #include <entt/entt.hpp>
+#include <fstream>
+#include <stdio.h>
 
 using namespace OD;
 
 struct PhysicsCubeS;
 
+inline bool FileExists(const std::string& name){
+    std::ifstream f(name.c_str());
+    return f.good();
+}
+
 struct DynamicModule_16: OD::Module {
     //CameraMovement camMove;
     Entity camera;
+    Module* currentModule = nullptr;
+    void* currentDll = nullptr;
+
+    #ifdef NDEBUG
+    char* modulePath = "./build/Release/dynamic_module.dll";
+    #else
+    char* modulePath = "build/Debug/dynamic_moduled.dll";
+    #endif
 
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-        //Scene* scene = SceneManager::Get().NewScene();
-        //Entity e = scene->AddEntity("Test");
-
-        ///*
+        /*Scene* scene = SceneManager::Get().NewScene();
+        Entity e = scene->AddEntity("Test");*/
+        
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
@@ -72,19 +86,48 @@ struct DynamicModule_16: OD::Module {
         _trigger.SetShape(CollisionShape::BoxShape({4,1,4}));
         _trigger.SetType(RigidbodyComponent::Type::Trigger);
         _trigger.NeverSleep(true);
-        //*/
+        
 
         //scene->Save("res/scene1.scene");
         //scene->Start();
         Application::AddModule<Editor>();
 
-        /*typedef Module* (*CreateInstanceFunc)();
-        void* module = Platform::LoadDynamicLibrary("build/Release/dynamic_module.dll");
-        CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(module, "CreateInstance");
-        Application::AddModule(func());*/
+        
+        if(FileExists(modulePath)){
+            typedef Module* (*CreateInstanceFunc)();
+            currentDll = Platform::LoadDynamicLibrary(modulePath);
+            CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(currentDll, "CreateInstance");
+            currentModule = func();
+            Application::AddModule(currentModule);
+        } else {
+            LogError("Load Dynamic Module");
+        }
     }
 
-    void OnUpdate(float deltaTime) override {}   
+    void OnUpdate(float deltaTime) override {
+        //NOTE: HotRelead Test( Not worlking if change class defination)
+        if(Input::IsKeyDown(KeyCode::R) && currentModule != nullptr){
+            SceneManager::Get().GetActiveScene()->Save("res/tempHotReload.scene");
+            //Clean Old Refs
+            Application::RemoveModule(currentModule);
+            Platform::FreeDynimicLibrary(currentDll);
+
+            //system("cmake -S . -B build");
+            #ifdef NDEBUG
+            system("cmake --build build --config Release");
+            #else 
+            system("cmake --build build --config Debug");
+            #endif
+
+            typedef Module* (*CreateInstanceFunc)();
+            currentDll = Platform::LoadDynamicLibrary(modulePath);
+            CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(currentDll, "CreateInstance");
+            currentModule = func();
+            Application::AddModule(currentModule);
+            SceneManager::Get().NewScene()->Load("res/tempHotReload.scene");
+        }
+    }   
+
     void OnRender(float deltaTime) override {}
     void OnGUI() override {}
     void OnResize(int width, int height) override {}

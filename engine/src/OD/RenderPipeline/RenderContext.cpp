@@ -355,7 +355,8 @@ void RenderContext::DrawGizmos(){
         AABB globalAABB = c.GetGlobalAABB(t);
 
         Vector3 color = Vector3(0,0,1);
-        if(aabb.isOnFrustum(cm.frustum, t.ToTransform())) color = Vector3(1, 0, 0);
+        Transform _t = t.ToTransform();
+        if(aabb.isOnFrustum(cm.frustum, _t)) color = Vector3(1, 0, 0);
 
         Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
     }

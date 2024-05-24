@@ -8,6 +8,7 @@
 #include "JobSystem.h"
 #include "AssetManager.h"
 #include "OD/CoreModulesStartup.h"
+#include <algorithm>
 
 namespace OD{
 
@@ -106,6 +107,16 @@ void Application::_OnResize(int inWidth, int inHeight){
 
     //mainModule->OnResize(_width, _height);
     for(auto i: modules) i->OnResize(width, heigth);
+}
+
+void Application::RemoveModule(Module* module){
+    if(std::find(modules.begin(), modules.end(), module) == modules.end()){
+        LogError("Trying remove module with has not added");
+        return;
+    }
+
+    modules.erase(std::remove(modules.begin(), modules.end(), module), modules.end());
+    module->OnExit();
 }
 
 void Application::AddModule(Module* module){

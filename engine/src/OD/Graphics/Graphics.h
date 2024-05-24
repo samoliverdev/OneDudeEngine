@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OD/Core/Math.h"
+#include "OD/Core/Color.h"
 #include "Mesh.h"
 #include "Shader.h"
 #include "Camera.h"
@@ -36,7 +37,8 @@ public:
     static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
 
-    static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color);
+    static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Color color);
+    static void DrawText(Font& f, Shader& s, std::string text, Matrix4 model, float scale, Color color);
 
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);

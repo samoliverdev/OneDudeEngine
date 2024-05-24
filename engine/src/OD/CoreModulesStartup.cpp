@@ -8,6 +8,7 @@
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
+#include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include <filesystem>
 
@@ -34,6 +35,7 @@ void CoreModulesStartup(){
     SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");

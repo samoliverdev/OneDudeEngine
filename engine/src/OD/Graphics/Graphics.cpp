@@ -321,17 +321,78 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     //glCheckError();
 }
 
-void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Vector3 color){
+void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Color color){
     Shader::Bind(s);
-    s.SetVector3("color", color);
+    s.SetVector4("color", color);
     s.SetMatrix4("projection", camera.projection);
+    s.SetMatrix4("view", Matrix4Identity);
+
+    Transform t;
+    t.LocalPosition(pos);
+    s.SetMatrix4("model", t.GetLocalModelMatrix());
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(textQuadVAO);
     glCheckError();
 
-    int x = pos.x;
-    int y = pos.y;
+    int x = 0; //pos.x;
+    int y = 0; //pos.y;
+
+    // iterate through all characters
+    std::string::const_iterator c;
+    for(c = text.begin(); c != text.end(); c++){
+        Character ch = f.characters[*c];
+
+        float xpos = x + ch.bearing.x * scale;
+        float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+        float zpos = 0;
+
+        float w = ch.size.x * scale;
+        float h = ch.size.y * scale;
+        // update VBO for each character
+        float vertices[6][5] = {
+            { xpos,     ypos + h, zpos,   0.0f, 0.0f },            
+            { xpos,     ypos,     zpos,   0.0f, 1.0f },
+            { xpos + w, ypos,     zpos,   1.0f, 1.0f },
+
+            { xpos,     ypos + h, zpos,   0.0f, 0.0f },
+            { xpos + w, ypos,     zpos,   1.0f, 1.0f },
+            { xpos + w, ypos + h, zpos,   1.0f, 0.0f }           
+        };
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.textureID);
+        glCheckError();
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCheckError();
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glCheckError();
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glCheckError();
+}
+
+void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model, float scale, Color color){
+    Shader::Bind(s);
+    s.SetVector4("color", color);
+    s.SetMatrix4("projection", camera.projection);
+    s.SetMatrix4("model", model);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(textQuadVAO);
+    glCheckError();
+
+    int x = 0; //pos.x;
+    int y = 0; //pos.y;
 
     // iterate through all characters
     std::string::const_iterator c;

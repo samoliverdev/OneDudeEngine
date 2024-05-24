@@ -1,5 +1,6 @@
 #include "StandRenderPipeline.h"
 #include "OD/Core/Application.h"
+#include "TextRendererComponent.h"
 
 namespace OD{
 
@@ -252,10 +253,49 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
     context->DrawGizmos();
 
+    RenderUI();
+
     context->EndDrawToScreen();
 }
 
+void CameraRenderer::RenderUI(){
+    Graphics::SetBlend(true);
+    Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+
+    //Camera cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
+    Camera cam2d = {Matrix4Identity, math::ortho(0.0f, (float)camera.width, 0.0f, (float)camera.height, -10.0f, 10.0f)};
+    
+    auto textView = context->GetScene()->GetRegistry().view<TransformComponent, TextRendererComponent>();
+    for(auto entity: textView){
+        TransformComponent& trans = textView.get<TransformComponent>(entity);
+        TextRendererComponent& text = textView.get<TextRendererComponent>(entity);
+
+        if(text.font == nullptr) continue;
+        if(text.material == nullptr) continue;
+
+        if(text.is3d){
+            Graphics::SetCamera(camera);
+        } else {
+            Graphics::SetCamera(cam2d);
+        }
+
+        Graphics::SetDefaultShaderData(*text.material->GetShader(), trans.GlobalModelMatrix());
+        Graphics::DrawText(
+            *text.font, 
+            *text.material->GetShader(), 
+            text.text, 
+            trans.GlobalModelMatrix(),
+            text.scale, 
+            text.color
+        );
+    }
+}
+
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
+    if(environmentSettings.bloomPostFX == nullptr || environmentSettings.colorGradingPostFX == nullptr || environmentSettings.toneMappingPostFX){
+        return std::vector<PostFX*>(); 
+    }
+
     std::vector<PostFX*> out{ 
         environmentSettings.bloomPostFX.get(),
         environmentSettings.colorGradingPostFX.get(),
@@ -314,6 +354,7 @@ void StandRenderPipeline::Update(){
 
     renderContext->skyMaterial = environmentSettings.sky;
     shadow.directional.shadowBias = environmentSettings.shadowBias;
+    //shadow.directional.altasSize = environmentSettings.shadowQuality;
 
     if(overrideCamera != nullptr){
         cameraRenderer.Render(*overrideCamera, renderContext, shadow, environmentSettings);
@@ -331,6 +372,29 @@ void StandRenderPipeline::Update(){
             break;
         }
     }
+
+    //-------------Render UI----------
+    /*Camera cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
+    if(overrideCamera != nullptr) cam = {Matrix4Identity, math::ortho(0.0f, (float)overrideCamera->width, 0.0f, (float)overrideCamera->height, -10.0f, 10.0f)};
+    Graphics::SetCamera(cam);
+
+    auto textView = GetScene()->GetRegistry().view<TransformComponent, TextRendererComponent>();
+    for(auto entity: textView){
+        TransformComponent& trans = textView.get<TransformComponent>(entity);
+        TextRendererComponent& text = textView.get<TextRendererComponent>(entity);
+
+        if(text.font == nullptr) continue;
+        if(text.material == nullptr) continue;
+
+        Graphics::DrawText(
+            *text.font, 
+            *text.material->GetShader(), 
+            text.text, 
+            trans.Position(), 
+            1.0f, 
+            text.color
+        );
+    }*/
 
     renderContext->End();
 }

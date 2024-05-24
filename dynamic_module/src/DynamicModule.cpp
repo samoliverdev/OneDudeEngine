@@ -5,11 +5,17 @@ using namespace OD;
 struct DynamicComponent{
     std::string name;
     int age;
-    
+    float test = 20;
+    //float test2 = 26660;
+    std::string st = "dfddfd";
+
     template<class Archive>
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(name));
         ArchiveDump(ar, CEREAL_NVP(age));
+        ArchiveDump(ar, CEREAL_NVP(test));
+        //ArchiveDump(ar, CEREAL_NVP(test2));
+        ArchiveDump(ar, CEREAL_NVP(st));
     }
 };
 
@@ -26,10 +32,10 @@ void DynamicModule::OnInit(){
 
     SceneManager::Get().RegisterCoreComponentSimple<DynamicComponent>("DynamicComponent");
 
-    Scene* scene = SceneManager::Get().GetActiveScene();
+    /*Scene* scene = SceneManager::Get().GetActiveScene();
     Assert(scene != nullptr);
     Entity e = scene->AddEntity("FromDynamicModule");
-    e.AddComponent<DynamicComponent>();
+    e.AddComponent<DynamicComponent>();*/
 }
 
 void DynamicModule::OnExit(){
@@ -37,10 +43,11 @@ void DynamicModule::OnExit(){
 }
 
 void DynamicModule::OnUpdate(float deltaTime){
-
+    //LogInfo("OnUpdate Dynamic Module");
 }
-void DynamicModule::OnRender(float deltaTime){
 
+void DynamicModule::OnRender(float deltaTime){
+    //LogInfo("OnRender Dynamic Module");
 }
 
 void DynamicModule::OnGUI(){}

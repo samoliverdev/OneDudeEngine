@@ -1,7 +1,9 @@
 #pragma once
 
 #include <stdio.h>
-#include <set>
+#include <stdarg.h>
+#include "pch.h"
+/*#include <set>
 #include <random>
 #include <limits>
 #include <vector>
@@ -16,10 +18,9 @@
 #include <map>
 #include <unordered_map>
 #include <typeinfo>
-#include <typeindex>
-#include <stdarg.h>
+#include <typeindex>*/
 
-#undef NDEBUG
+//#undef NDEBUG
 #include <assert.h>
 
 #ifdef _WIN32
@@ -39,9 +40,7 @@
 #endif
 
 #define OD_PROFILE 1
-
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"
-
 #define GRAPHIC_LOG_ERROR
 
 static const char* LogColors[] = {

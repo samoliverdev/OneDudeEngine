@@ -259,8 +259,8 @@ struct BaseMesh_1: OD::Module {
         cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
         Graphics::SetCamera(cam);
 
-        Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Vector3(0.5f, 0.8f, 0.2f));
-        Graphics::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f, Vector3(0.3, 0.7f, 0.9f));
+        Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f, Color{0.5f, 0.8f, 0.2f});
+        Graphics::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f, Color{0.3, 0.7f, 0.9f});
 
         Graphics::End();
     }

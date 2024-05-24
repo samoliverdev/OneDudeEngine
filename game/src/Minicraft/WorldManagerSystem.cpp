@@ -2,11 +2,6 @@
 #include "ChunkComponent.h"
 #include <algorithm>
 
-bool operator<(const _IVector3& a, const _IVector3& b){
-    return a.x < b.x ||
-           a.x == b.x && (a.y < b.y || a.y == b.y && a.z < b.z);
-}
-
 IVector3 WorldToGrid(int cellSize, Vector3 worldPosition){
     int x = math::floor<int>(worldPosition.x / cellSize);
     int y = math::floor<int>(worldPosition.y / cellSize);
@@ -19,17 +14,20 @@ Vector3 GridToWorld(int cellSize, IVector3 coord){
 }
 
 WorldManagerSystem::WorldManagerSystem(Scene* inScene):System(inScene){
-
+    chunkSize = 16*4;
+    chunkHeigtCount = 24/4;
+    chunkLoadDistance = 64/4;
 }
 
 void WorldManagerSystem::Update(){
+    OD_PROFILE_SCOPE("WorldManagerSystem::Update");
+
     camPos = scene->GetMainCamera2().GetComponent<TransformComponent>().Position();
     camPos.y = 0;
 
     HandleLoadUnload();
 
     auto chunkView = scene->GetRegistry().view<TransformComponent, ChunkComponent, MeshRendererComponent>();
-
     for(auto e: chunkView){
         TransformComponent& trans = chunkView.get<TransformComponent>(e);
         ChunkComponent& chunk = chunkView.get<ChunkComponent>(e);
@@ -48,7 +46,7 @@ void WorldManagerSystem::OnDrawGizmos(){
     Transform trans;
 
     for(auto i: toLoadCoords){
-        Vector3 pos = GridToWorld(chunkSize, i);// i * IVector3(chunkSize, 0, chunkSize);
+        Vector3 pos = GridToWorld(chunkSize, i.first);// i * IVector3(chunkSize, 0, chunkSize);
         //pos += Vector3((chunkSize/2), 0, (chunkSize/2));
         //pos.y = -(chunkSize*chunkHeigtCount);
 
@@ -64,6 +62,8 @@ void _LoadChunk(IVector3 coord, MeshRendererComponent& mesh){
 }
 
 void WorldManagerSystem::LoadChunk(IVector3 coord){
+    OD_PROFILE_SCOPE("WorldManagerSystem::LoadChunk");
+
     Entity _chunk = scene->AddEntity("Chunk");
     //LogWarning("Add Chunk Entity: %d Coord(%d, %d, %d)", _chunk.Id(), coord.x, coord.y, coord.z);
 
@@ -86,37 +86,52 @@ void WorldManagerSystem::LoadChunk(IVector3 coord){
 }
 
 void WorldManagerSystem::UnLoadChunk(IVector3 coord){
+    OD_PROFILE_SCOPE("WorldManagerSystem::UnLoadChunk"); 
+
     //LogWarning("Destroing Chunk Entity: %d Coord(%d, %d, %d)", loadedChunks[coord].Id(), coord.x, coord.y, coord.z);
     scene->DestroyEntity(loadedChunks[coord].Id());
 }
 
 void WorldManagerSystem::HandleLoadUnload(){
-    using namespace std::chrono_literals;
+    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload");
 
+    using namespace std::chrono_literals;
+    
+    {
+    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::0") 
     IVector3 currentCoord = WorldToGrid(chunkSize, camPos);
     toLoadCoords.clear();
     for(int x = -chunkLoadDistance; x <= chunkLoadDistance; x++){
         for(int z = -chunkLoadDistance; z <= chunkLoadDistance; z++){
-            toLoadCoords.push_back(currentCoord + IVector3(x, 0, z));
+            //toLoadCoords.push_back(currentCoord + IVector3(x, 0, z));
+            toLoadCoords[currentCoord + IVector3(x, 0, z)] = true;
+        }
+    }
+    }
+
+    {
+        OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::1") 
+        std::vector<IVector3> toRemove;
+        for(auto i: loadedChunks){
+            //if(std::find(toLoadCoords.begin(), toLoadCoords.end(), i.first) == toLoadCoords.end()){
+            if(toLoadCoords.count(i.first) == false){
+                UnLoadChunk(IVector3(i.first.x, i.first.y, i.first.z));
+                toRemove.push_back(IVector3(i.first.x, i.first.y, i.first.z));
+            }
+        }
+        for(auto i: toRemove){
+            loadedChunks.erase(i);
         }
     }
 
-    std::vector<IVector3> toRemove;
-    for(auto i: loadedChunks){
-        if(std::find(toLoadCoords.begin(), toLoadCoords.end(), ToIVector3(i.first)) == toLoadCoords.end()){
-            UnLoadChunk(IVector3(i.first.x, i.first.y, i.first.z));
-            toRemove.push_back(IVector3(i.first.x, i.first.y, i.first.z));
-        }
-    }
-    for(auto i: toRemove){
-        loadedChunks.erase(i);
-    }
-
+    {
+    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::2") 
     for(auto i: toLoadCoords){
-        if(loadedChunks.count(_IVector3(i)) <= 0){
+        if(loadedChunks.count(i.first) <= 0){
             //JobSystem::Execute([&](){ LoadChunk(i); });
-            LoadChunk(i);
+            LoadChunk(i.first);
         }
+    }
     }
 
     //JobSystem::Wait();

@@ -1,7 +1,5 @@
 #pragma once
 #include <OD/OD.h>
-#include <unordered_map>
-#include <map>
 #include "ChunkBuilderLayer.h"
 #include <chrono>
 #include <thread>
@@ -9,7 +7,7 @@
 
 using namespace OD;
 
-struct _IVector3{
+/*struct _IVector3{
     int x;
     int y; 
     int z;
@@ -20,7 +18,7 @@ struct _IVector3{
 
 bool operator<(const _IVector3& a, const _IVector3& b);
 
-inline IVector3 ToIVector3(_IVector3 v){ return IVector3(v.x, v.y, v.z); }
+inline IVector3 ToIVector3(_IVector3 v){ return IVector3(v.x, v.y, v.z); }*/
 
 Ref<Mesh> _LoadChunk(IVector3 coord);
 
@@ -38,10 +36,11 @@ public:
 
 private:
     ChunkBuilderLayer chunkBuilderLayer;
-    std::map<_IVector3, Entity> loadedChunks;
+    std::unordered_map<IVector3, Entity> loadedChunks;
 
     Vector3 camPos;
-    std::vector<IVector3> toLoadCoords;
+    //std::vector<IVector3> toLoadCoords;
+    std::unordered_map<IVector3, bool> toLoadCoords;
 
     //std::map<Entity, std::future< void > > test2;
 

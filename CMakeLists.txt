@@ -62,6 +62,12 @@ add_subdirectory(engine/vendor/freetype)
 #----------------Engine------------------
 project(engine)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    #using Clang
+else() 
+    add_compile_options(/bigobj)
+endif()
+
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
     engine/vendor/tinyfiledialogs/*.c
     engine/vendor/glad/*.c 
@@ -74,6 +80,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/src/*.cpp
 )
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
 target_compile_definitions(engine PUBLIC OD_BUILD_DLL)
 
 target_include_directories(engine PUBLIC 
@@ -111,6 +118,8 @@ target_include_directories(game PUBLIC game/src/)
 target_link_libraries(game engine)
 target_compile_definitions(game PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 #target_compile_definitions(game PUBLIC RESOURCES_PATH="../../res/")
+
+#----------------Dynamic module------------------
 
 project(dynamic_module)
 file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES dynamic_module/src/*.cpp)
