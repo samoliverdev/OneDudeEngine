@@ -104,7 +104,7 @@ struct OD_API CollisionShape{
 struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
-    enum class OD_API Type{Dynamic, Static, Kinematic, Trigger};
+    enum class Type{Dynamic, Static, Kinematic, Trigger};
 
     static void OnGui(Entity& e);
 

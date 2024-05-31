@@ -1,28 +1,38 @@
 #version 330 core
 
+#pragma SupportInstancing true
+#pragma MultiCompile _ SKINNED INSTANCING
+
 #if defined(VERTEX)
+
+/*
 layout (location = 0) in vec3 _pos;
 layout (location = 1) in vec2 _texCoord;
 layout (location = 2) in vec3 _normal;
-
 layout (location = 10) in mat4 _modelInstancing;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
-out vec3 pos;
-out vec3 normal;
-out vec2 texCoord;
-
 uniform float useInstancing = 0;
+*/
+
+#include ../ShaderLibrary/Vertex.glsl
+
+out vec3 _pos;
+out vec3 _normal;
+out vec2 _texCoord;
 
 void main(){
-    pos = _pos;
-    normal = _normal;
-    texCoord = _texCoord;
+    //mat4 targetModelMatrix = (useInstancing >= 1.0 ? modelInstancing : model);
+    mat4 targetModelMatrix = GetModelMatrix();
 
-    gl_Position = projection * view * (useInstancing >= 1.0 ? _modelInstancing : model) * vec4(pos, 1.0);
+    _pos = pos;
+    _normal = normal;
+    _texCoord = texCoord;
+
+    //gl_Position = projection * view * targetModelMatrix * vec4(pos, 1.0);
+    gl_Position = projection * view * targetModelMatrix * GetLocalPos();
 }
 #endif
 
@@ -30,16 +40,16 @@ void main(){
 uniform sampler2D mainTex;
 uniform vec4 color = vec4(1,1,1,1);
 
-in vec3 pos;
-in vec3 normal;
-in vec2 texCoord;
+in vec3 _pos;
+in vec3 _normal;
+in vec2 _texCoord;
 
 out vec4 fragColor;
 
 #include TestLib.glsl
 
 void main(){
-    vec4 texColor = texture(mainTex, texCoord);
+    vec4 texColor = texture(mainTex, _texCoord);
     if(texColor.a < 0.1) discard;
 
 //#define TEST

@@ -83,6 +83,7 @@ void Editor::OnUpdate(float deltaTime){
         }
 
         editorCam.OnUpdate();
+        editorCam.cam.isDebug = true;
         editorCam.cam.SetPerspective(45, 0.1f, 20000.0f, width, height);
         editorCam.cam.viewPos = editorCam.transform.LocalPosition();
         editorCam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
@@ -127,6 +128,9 @@ void Editor::OnGUI(){
     if(open == false) return;
 
     DrawMainPanel();
+
+    //static bool show;
+    //ImGui::ShowDemoWindow(&show);
 }
 
 void Editor::OnResize(int width, int height){}
@@ -221,7 +225,7 @@ void Editor::HandleShotcuts(){
     if(Input::IsKeyDown(KeyCode::F1)) PlayScene();
     if(Input::IsKeyDown(KeyCode::F2)) StopScene();
 
-    if(SceneManager::Get().GetActiveScene()->Running()) return;
+    //if(SceneManager::Get().GetActiveScene()->Running()) return;
 
     if(Input::IsKeyDown(KeyCode::Q)) gizmoType = Editor::GizmosType::None;
     if(Input::IsKeyDown(KeyCode::W)) gizmoType = Editor::GizmosType::Translation;

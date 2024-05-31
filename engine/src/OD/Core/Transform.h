@@ -11,7 +11,7 @@ class OD_API Transform{
     friend class TransformComponent;
 public:
     Transform(){}
-    Transform(Vector3 pos, Quaternion rot, Vector3 scale):
+    Transform(Vector3 pos, Quaternion rot = QuaternionIdentity, Vector3 scale = Vector3(1, 1, 1)):
         localPosition(pos), localRotation(rot), localScale(scale), isDirt(true){}
     Transform(const Matrix4& m);
 

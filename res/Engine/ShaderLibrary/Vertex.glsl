@@ -2,7 +2,11 @@
 #define VERTEX_INCLUDED
 
 layout (location = 0) in vec3 pos;
+#ifdef UV3
+layout (location = 1) in vec3 texCoord;
+#else
 layout (location = 1) in vec2 texCoord;
+#endif
 layout (location = 2) in vec3 normal;
 layout (location = 5) in ivec4 boneIds;
 layout (location = 6) in vec4 weights;

@@ -273,7 +273,7 @@ void RenderContext::RenderSkybox(){
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
         Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
         skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMesh(*skyboxMesh);
+        Graphics::DrawMeshRaw(*skyboxMesh);
 
         Graphics::SetDepthMask(true);
     }
@@ -298,7 +298,7 @@ void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
         Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
         skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMesh(*skyboxMesh);
+        Graphics::DrawMeshRaw(*skyboxMesh);
 
         Graphics::SetDepthMask(true);
     }

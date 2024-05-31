@@ -44,6 +44,11 @@ T& Entity::GetComponent(){
     return scene->registry.get<T>(id);
 }
 
+template <typename T>
+T* Entity::TryGetComponent(){
+    return scene->registry.try_get<T>(id);
+}
+
 template<typename T>
 bool Entity::HasComponent(){
     return scene->registry.any_of<T>(id);

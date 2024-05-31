@@ -194,8 +194,11 @@ struct Animation_7: public OD::Module{
         shader->SetTexture2D("mainTex", *texture, 0);
 
         for(auto i: char1Meshs){
-            Graphics::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
-            Graphics::DrawMesh(*i);
+            //Graphics::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
+            Shader::Bind(*shader);
+            Graphics::SetProjectionViewMatrix(*shader);
+            Graphics::SetModelMatrix(*shader, char1Anim.mModel.GetLocalModelMatrix());
+            Graphics::DrawMeshRaw(*i);
         }
 
         for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
@@ -228,8 +231,11 @@ struct Animation_7: public OD::Module{
 
             //LogInfo("Bind Pose Index: %d", i.bindPoseIndex);
 
-            Graphics::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
-            Graphics::DrawMesh(*char2Model->meshs[i.meshIndex]);
+            //Graphics::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
+            Shader::Bind(*char2Model->materials[i.materialIndex]->GetShader());
+            Graphics::SetProjectionViewMatrix(*char2Model->materials[i.materialIndex]->GetShader());
+            Graphics::SetModelMatrix(*char2Model->materials[i.materialIndex]->GetShader(), m);
+            Graphics::DrawMeshRaw(*char2Model->meshs[i.meshIndex]);
         }
 
         for(int i = 0; i < char2Anim.mAnimatedPose.Size(); i++){

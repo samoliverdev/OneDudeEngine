@@ -17,6 +17,7 @@ struct OD_API Camera {
     Vector3 viewPos;
     Frustum frustum;
     Vector4 viewportRect = Vector4(0, 0, 1, 1);
+    bool isDebug = false;
 
     void LookAt(Vector3 eye, Vector3 center,Vector3 up);
     void SetOrtho(float scale, float near, float far, int width, int height);

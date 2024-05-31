@@ -3,6 +3,7 @@
 #include "OD/Core/Math.h"
 #include "OD/Core/Color.h"
 #include "Mesh.h"
+#include "Model.h"
 #include "Shader.h"
 #include "Camera.h"
 #include "Framebuffer.h"
@@ -14,7 +15,7 @@ namespace OD {
 class OD_API Graphics {
     friend class Application;
 public:
-    enum class RenderMode{SHADED, WIREFRAME};
+    enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
 
     static int GetDrawCallsCount();
     static int GetVerticesCount();
@@ -28,17 +29,23 @@ public:
     static void SetCamera(Camera& camera);
     static Camera GetCamera();
 
-    static void SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing = false);
+    static void SetProjectionViewMatrix(Shader& shader);
+    static void SetModelMatrix(Shader& shader, Matrix4 modelMatrix);
 
-    static void DrawMesh(Mesh& mesh);
-    static void DrawMeshInstancing(Mesh& mesh, int count);
+    static void DrawMeshRaw(Mesh& mesh);
+    static void DrawMeshInstancingRaw(Mesh& mesh, int count);
+
+    static void DrawMesh(Mesh& mesh, Shader& shader, Matrix4 modelMatrix);
+    static void DrawMeshInstancing(Mesh& mesh, Shader& shader, Matrix4* modelMatrixs, int count);
+
+    static void DrawModel(Model& model, Matrix4 modelMatrix);
 
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
 
-    static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Color color);
-    static void DrawText(Font& f, Shader& s, std::string text, Matrix4 model, float scale, Color color);
+    static void DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale);
+    static void DrawText(Font& f, Shader& s, std::string text, Matrix4 model);
 
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);

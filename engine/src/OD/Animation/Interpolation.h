@@ -3,7 +3,7 @@
 
 namespace OD{
 
-enum class OD_API Interpolation{
+enum class Interpolation{
     Constant,
     Linear, 
     Cubic

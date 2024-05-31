@@ -1,11 +1,15 @@
 #include "WorldManagerSystem.h"
 #include "ChunkComponent.h"
+#include "ChunkBuilderLayer.h"
 #include <algorithm>
 
-IVector3 WorldToGrid(int cellSize, Vector3 worldPosition){
-    int x = math::floor<int>(worldPosition.x / cellSize);
-    int y = math::floor<int>(worldPosition.y / cellSize);
-    int z = math::floor<int>(worldPosition.z / cellSize);
+inline IVector3 InvertZ(IVector3 v){ return {v.x, v.y, -v.z}; }
+
+IVector3 WorldToGrid(int cellSize, Vector3 worldPosition, bool invertZ = true){
+    int x = math::floor(worldPosition.x / cellSize);
+    int y = math::floor(worldPosition.y / cellSize);
+    int z = math::floor(worldPosition.z / cellSize);
+    if(invertZ) z = math::floor((-worldPosition.z) / cellSize);
     return IVector3(x, y, z);
 }
 
@@ -14,9 +18,11 @@ Vector3 GridToWorld(int cellSize, IVector3 coord){
 }
 
 WorldManagerSystem::WorldManagerSystem(Scene* inScene):System(inScene){
-    chunkSize = 16*4;
-    chunkHeigtCount = 24/4;
-    chunkLoadDistance = 64/4;
+    chunkSize = 16*1;
+    chunkHeigtCount = 24/1;
+    chunkLoadDistance = 8/1;
+    floorY = 0;
+    chunkBuilderLayer = CreateRef<ChunkBuilderLayer>(this);
 }
 
 void WorldManagerSystem::Update(){
@@ -25,8 +31,127 @@ void WorldManagerSystem::Update(){
     camPos = scene->GetMainCamera2().GetComponent<TransformComponent>().Position();
     camPos.y = 0;
 
-    HandleLoadUnload();
+    /*if(loadedChunks.size() == 0) LoadChunk(IVector3(0, 0, 0)); 
+    return;*/
 
+    HandleLoadUnload();
+    HandleChunkEdit();
+    HandleInput();
+    HandleChunkDirt();
+}
+
+void WorldManagerSystem::OnRender(){
+    if(hasPlaceAndHighlightPos == false) return;
+    Graphics::DrawWireCube(Transform(placeBlockPos+Vector3(0.5f, 0.5f, 0.5f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+}
+
+void WorldManagerSystem::OnDrawGizmos(){
+    return;
+    TransformComponent& camTrans = scene->GetMainCamera2().GetComponent<TransformComponent>();
+    Vector3 editVoxelPos = camTrans.Position() + (-camTrans.Forward() * 2.0f);
+    editVoxelPos.x = math::floor(editVoxelPos.x);
+    editVoxelPos.y = math::floor(editVoxelPos.y);
+    editVoxelPos.z = math::floor(editVoxelPos.z);
+
+    /*if(CheckForVoxel(editVoxelPos)){
+        Graphics::DrawWireCube(Transform(editVoxelPos).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+    } else {
+        Graphics::DrawWireCube(Transform(editVoxelPos).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+    }
+    return;*/
+
+    //Source: https://github.com/b3agz/Code-A-Game-Like-Minecraft-In-Unity/blob/master/08-create-and-destroy-blocks/Assets/Scripts/Player.cs
+    float checkIncrement = 0.1f;
+    float step = checkIncrement;
+    float reach = 8.0f;
+    Vector3 lastPos;
+    while(step < reach){
+        Vector3 pos = camTrans.Position() + (-camTrans.Forward() * step);
+        if(CheckForVoxelNotEmpty(pos)){
+            Vector3 addPos = Vector3(math::floor(pos.x), math::floor(pos.y), math::floor(pos.z));
+            //highlightBlock.position = addPos
+            //placeBlock.position = lastPos;
+            Graphics::DrawWireCube(Transform(lastPos+Vector3(0.5f, 0.5f, 0.5f)).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+            return;
+        }
+
+        lastPos = Vector3(math::floor(pos.x), math::floor(pos.y), math::floor(pos.z));
+        step += checkIncrement;
+
+        if(Input::IsKeyDown(KeyCode::Q)){
+            ChunkComponent* chunkData = GetChunkFromWorldPos(lastPos);
+            if(chunkData != nullptr && chunkData->data != nullptr){
+                chunkData->data->SetVoxelFromGlobalVector3(InvertZ(lastPos), Voxel{1});
+                chunkData->isDirt = true;
+                LogInfo("Try Edit Chunk");
+            }
+        }
+    }
+    return;
+
+    Transform trans;
+    for(auto i: toLoadCoords){
+        Vector3 pos = GridToWorld(chunkSize, i.first);// i * IVector3(chunkSize, 0, chunkSize);
+        //pos += Vector3((chunkSize/2), 0, (chunkSize/2));
+        //pos.y = -(chunkSize*chunkHeigtCount);
+
+        trans.LocalPosition(pos + Vector3(chunkSize/2, 0, (-chunkSize/2)));
+        trans.LocalScale(Vector3(chunkSize, 0.1f, chunkSize));
+
+        Graphics::DrawWireCube(trans.GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+
+        trans.LocalPosition(pos);
+        trans.LocalScale(Vector3(1, 1, 1));
+        Graphics::DrawWireCube(trans.GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+    }
+}
+
+void WorldManagerSystem::HandleChunkEdit(){
+    TransformComponent& camTrans = scene->GetMainCamera2().GetComponent<TransformComponent>();
+
+    float checkIncrement = 0.1f;
+    float step = checkIncrement;
+    float reach = 8.0f*4;
+    Vector3 lastPos;
+    hasPlaceAndHighlightPos = false;
+
+    while(step < reach){
+        Vector3 pos = camTrans.Position() + (-camTrans.Forward() * step);
+        if(CheckForVoxelNotEmpty(pos)){
+            Vector3 addPos = Vector3(math::floor(pos.x), math::floor(pos.y), math::floor(pos.z));
+            highlightBlockPos = addPos;
+            placeBlockPos = lastPos;
+            hasPlaceAndHighlightPos = true;
+            return;
+        } 
+        lastPos = Vector3(math::floor(pos.x), math::floor(pos.y), math::floor(pos.z));
+        step += checkIncrement;
+    }
+
+    hasPlaceAndHighlightPos = false;
+}
+
+void WorldManagerSystem::HandleInput(){
+    if(Input::IsKeyDown(KeyCode::Q) && hasPlaceAndHighlightPos){
+        ChunkComponent* chunkData = GetChunkFromWorldPos(placeBlockPos);
+        if(chunkData != nullptr && chunkData->data != nullptr){
+            chunkData->data->SetVoxelFromGlobalVector3(InvertZ(placeBlockPos), Voxel{1});
+            chunkData->isDirt = true;
+            LogInfo("Try Edit Chunk");
+        }
+    }
+
+    if(Input::IsKeyDown(KeyCode::E) && hasPlaceAndHighlightPos){
+        ChunkComponent* chunkData = GetChunkFromWorldPos(highlightBlockPos);
+        if(chunkData != nullptr && chunkData->data != nullptr){
+            chunkData->data->SetVoxelFromGlobalVector3(InvertZ(highlightBlockPos), Voxel{0});
+            chunkData->isDirt = true;
+            LogInfo("Try Edit Chunk");
+        }
+    }
+}
+
+void WorldManagerSystem::HandleChunkDirt(){
     auto chunkView = scene->GetRegistry().view<TransformComponent, ChunkComponent, MeshRendererComponent>();
     for(auto e: chunkView){
         TransformComponent& trans = chunkView.get<TransformComponent>(e);
@@ -34,31 +159,46 @@ void WorldManagerSystem::Update(){
         MeshRendererComponent& renderer = chunkView.get<MeshRendererComponent>(e);
 
         if(chunk.isDirt){
-            chunkBuilderLayer.BuildMesh(chunk.data, renderer);
+            chunkBuilderLayer->BuildMesh2(*chunk.data, renderer.mesh);
+            renderer.mesh->UpdateMesh();
+            renderer.UpdateAABB();
             chunk.isDirt = false;
+            LogInfo("Updating Chunk");
         }
     }
 }
 
-void WorldManagerSystem::OnDrawGizmos(){
-    return;
-
-    Transform trans;
-
-    for(auto i: toLoadCoords){
-        Vector3 pos = GridToWorld(chunkSize, i.first);// i * IVector3(chunkSize, 0, chunkSize);
-        //pos += Vector3((chunkSize/2), 0, (chunkSize/2));
-        //pos.y = -(chunkSize*chunkHeigtCount);
-
-        //pos += Vector3(chunkSize/2, 0, chunkSize/2);
-        trans.LocalPosition(pos);
-        trans.LocalScale(Vector3(chunkSize, 0.1f, chunkSize));
-
-        Graphics::DrawWireCube(trans.GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
-    }
+bool WorldManagerSystem::CheckForVoxelNotEmpty(Vector3 worldPos, bool invertZ){
+    IVector3 chunkCoord = WorldToGrid(chunkSize, worldPos, invertZ);
+    chunkCoord.y = 0;
+    if(invertZ) worldPos.z = -worldPos.z;
+    //LogInfo("CheckForVoxel x: %d z: %d", chunkCoord.x, chunkCoord.z);
+    if(loadedChunksB.count(chunkCoord) <= 0) return false;
+    if(worldPos.y < 0 || worldPos.y > (chunkSize*chunkHeigtCount)) return false;
+    //if(loadedChunksB[chunkCoord]->GetVoxelFromGlobalVector3(worldPos).id == 0) return false;
+    //if(loadedChunksB[chunkCoord]->GetVoxelFromGlobalVector3(worldPos, Vector3(chunkCoord.x*chunkSize, 0.0f, chunkCoord.z*chunkSize)).id == 0) return false;
+    //return true;
+    return loadedChunksB[chunkCoord]->GetVoxelFromGlobalVector3(worldPos).id != 0;
 }
 
-void _LoadChunk(IVector3 coord, MeshRendererComponent& mesh){
+bool WorldManagerSystem::CheckForVoxelIsEmpty(Vector3 worldPos, bool invertZ){
+    IVector3 chunkCoord = WorldToGrid(chunkSize, worldPos, invertZ);
+    chunkCoord.y = 0;
+    if(invertZ) worldPos.z = -worldPos.z;
+    if(loadedChunksB.count(chunkCoord) <= 0) return false;
+    if(worldPos.y < 0 || worldPos.y > (chunkSize*chunkHeigtCount)) return false;
+    return loadedChunksB[chunkCoord]->GetVoxelFromGlobalVector3(worldPos).id == 0;
+}
+
+ChunkComponent* WorldManagerSystem::GetChunkFromWorldPos(Vector3 worldPos){
+    IVector3 chunkCoord = WorldToGrid(chunkSize, worldPos);
+    chunkCoord.y = 0;
+    worldPos.z = -worldPos.z;
+    if(loadedChunksB.count(chunkCoord) <= 0) return nullptr;
+
+    return loadedChunks[chunkCoord].TryGetComponent<ChunkComponent>();
+    
+    //return loadedChunksB[chunkCoord];
 }
 
 void WorldManagerSystem::LoadChunk(IVector3 coord){
@@ -71,17 +211,22 @@ void WorldManagerSystem::LoadChunk(IVector3 coord){
     MeshRendererComponent& mesh = _chunk.AddComponent<MeshRendererComponent>();
     TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
 
-    chunk.data.SetSize(chunkSize, chunkSize*chunkHeigtCount);
-
+    
     Vector3 pos = GridToWorld(chunkSize, coord); // coord * IVector3(chunkSize);
-    pos += Vector3(-(chunkSize/2), 0, -(chunkSize/2));
-    pos.y = -floorY;
+    chunk.data = CreateRef<ChunkData>(pos, chunkSize, chunkSize*chunkHeigtCount);
+
+    pos.z = -pos.z;
+    //pos += Vector3(-(chunkSize/2), 0, -(chunkSize/2));
+    //pos.y = -floorY;
 
     trans.Position(pos);
     loadedChunks[coord] = _chunk;
 
-    chunkBuilderLayer.BuildData(coord, chunk.data);
-    chunkBuilderLayer.BuildMesh(chunk.data, mesh);
+    chunkBuilderLayer->BuildData(coord, chunk.data);
+    chunkBuilderLayer->BuildMesh(*chunk.data, mesh.mesh);
+    mesh.material = chunkBuilderLayer->material;
+    mesh.mesh->UpdateMesh();
+    mesh.UpdateAABB();
     chunk.isDirt = false;
 }
 
@@ -94,26 +239,131 @@ void WorldManagerSystem::UnLoadChunk(IVector3 coord){
 
 void WorldManagerSystem::HandleLoadUnload(){
     OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload");
-
     using namespace std::chrono_literals;
-    
-    {
-    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::0") 
-    IVector3 currentCoord = WorldToGrid(chunkSize, camPos);
-    toLoadCoords.clear();
-    for(int x = -chunkLoadDistance; x <= chunkLoadDistance; x++){
-        for(int z = -chunkLoadDistance; z <= chunkLoadDistance; z++){
-            //toLoadCoords.push_back(currentCoord + IVector3(x, 0, z));
-            toLoadCoords[currentCoord + IVector3(x, 0, z)] = true;
+
+    if(_loadingThreadsA > 0){
+        /*int endedJobs = 0;
+        for(auto& th: toLoadCoordsB){
+            if(*th.done) endedJobs += 1;
         }
-    }
+        if(endedJobs < _loadingThreadsA) return;*/
+
+        if(threadPool->busy() == true) return;
+
+        /*{
+        SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::1 %.3f.ms", duration); });
+        for(auto& i: loadingThreadsA) i.join();
+        loadingThreadsA.clear();
+        }*/
+        _loadingThreadsA = 0;
+
+        {
+        //SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::2 %.3f.ms", duration); });
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            loadedChunksB[toLoadCoordsA[i]] = toLoadCoordsB[i].chunkData;
+            //*(toLoadCoordsB[i].done) = false;
+        }
+        }
+
+        // ------------------ Deffered Load By Thread ----------------------
+        /*{
+        //SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::3 %.3f.ms", duration); });
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            loadingThreadsB.push_back(std::thread([&, i](){
+                chunkBuilderLayer.BuildMesh2(toLoadCoordsA[i], *toLoadCoordsB[i].chunkData, toLoadCoordsB[i].mesh, loadedChunksB);
+                *toLoadCoordsB[i].done = true; 
+            }));
+            _loadingThreadsB += 1;
+        }
+        }*/
+
+        // ------------------ Deffered Load By ThreadPool ----------------------
+        {
+        //SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::3 %.3f.ms", duration); });
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            threadPool->enqueue([&, i](){
+                //chunkBuilderLayer.BuildMesh(*toLoadCoordsB[i].chunkData, toLoadCoordsB[i].mesh);
+                chunkBuilderLayer->BuildMesh2(/*toLoadCoordsA[i],*/ *toLoadCoordsB[i].chunkData, toLoadCoordsB[i].mesh/*, loadedChunksB*/);
+                //*toLoadCoordsB[i].done = true; 
+            });
+            _loadingThreadsB += 1;
+        }
+        }
+        return;
     }
 
-    {
-        OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::1") 
+    if(_loadingThreadsB > 0){
+        /*int endedJobs = 0;
+        for(auto& th: toLoadCoordsB){
+            if(*th.done) endedJobs += 1;
+        }
+        if(endedJobs < _loadingThreadsB) return;*/
+
+        if(threadPool->busy() == true) return;
+
+        /*{
+        //SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::4 %.3f.ms", duration); });
+        for(auto& i: loadingThreadsB) i.join();
+        loadingThreadsB.clear();
+        }*/
+        _loadingThreadsB = 0;
+
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            Entity _chunk = scene->AddEntity("Chunk");
+            ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
+            MeshRendererComponent& mesh = _chunk.AddComponent<MeshRendererComponent>();
+            TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
+            
+            mesh.material = chunkBuilderLayer->material;
+            mesh.mesh = toLoadCoordsB[i].mesh;
+            mesh.mesh->UpdateMesh();
+            mesh.UpdateAABB();
+            chunk.data = toLoadCoordsB[i].chunkData;
+            chunk.isDirt = false;
+
+            Vector3 pos = GridToWorld(chunkSize, toLoadCoordsA[i]); // coord * IVector3(chunkSize);
+            pos.z = -pos.z;
+            //pos += Vector3(-(chunkSize/2), 0, -(chunkSize/2));
+            //pos.y = -floorY;
+
+            trans.Position(pos);
+            loadedChunks[toLoadCoordsA[i]] = _chunk;
+        }
+        return;
+    }
+
+    int loadOffset = 0;
+
+    lastCoord = currentCoord;
+    currentCoord = WorldToGrid(chunkSize, camPos);
+    //LogInfo("Current Coord x: %d z: %d", currentCoord.x, currentCoord.z);
+    
+    if(currentCoord != lastCoord /*(lastCoord-currentCoord).length() >= loadOffset*/ || loadedChunks.size() <= 0){
+        //lastCoord = currentCoord;
+        toLoadCoords.clear();
+        toLoadCoordsA.clear();
+        toLoadCoordsB.clear();
+        loadedIndexRange = {0, loadedRangeStep};
+
+        //
+        for(int x = -(chunkLoadDistance+loadOffset); x <= (chunkLoadDistance+loadOffset); x++){
+            for(int z = -(chunkLoadDistance+loadOffset); z <= (chunkLoadDistance+loadOffset); z++){
+                IVector3 _c = currentCoord + IVector3(x, 0, z);
+                //LogInfo("To Load Coord x: %d z: %d", _c.x, _c.z);
+                toLoadCoords[_c] = true;
+                if(loadedChunks.count(_c) > 0) continue;
+
+                toLoadCoordsA.push_back(_c);
+                toLoadCoordsB.push_back({
+                    CreateRef<Mesh>(),
+                    CreateRef<ChunkData>(_c*chunkSize, chunkSize, chunkSize*chunkHeigtCount),
+                    CreateRef<std::atomic<bool>>(false)
+                });
+            }
+        }
+
         std::vector<IVector3> toRemove;
         for(auto i: loadedChunks){
-            //if(std::find(toLoadCoords.begin(), toLoadCoords.end(), i.first) == toLoadCoords.end()){
             if(toLoadCoords.count(i.first) == false){
                 UnLoadChunk(IVector3(i.first.x, i.first.y, i.first.z));
                 toRemove.push_back(IVector3(i.first.x, i.first.y, i.first.z));
@@ -121,24 +371,105 @@ void WorldManagerSystem::HandleLoadUnload(){
         }
         for(auto i: toRemove){
             loadedChunks.erase(i);
+            loadedChunksB.erase(i);
+        }
+
+        // ------------------ Deffered Load By Thread ----------------------
+        /*{
+        SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::5 %.3f.ms", duration); });
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            loadingThreadsA.push_back(std::thread([&, i](){
+                chunkBuilderLayer.BuildData(toLoadCoordsA[i], toLoadCoordsB[i].chunkData); 
+                *toLoadCoordsB[i].done = true; 
+            }));
+            _loadingThreadsA += 1;
+        }
+        }*/
+        
+        // ------------------ Deffered Load By ThreadPool ----------------------
+        {
+        //SimpleTimer timer([](float duration){ LogInfo("WorldManagerSystem::HandleLoadUnload::5 %.3f.ms", duration); });
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            threadPool->enqueue([&, i](){
+                chunkBuilderLayer->BuildData(toLoadCoordsA[i], toLoadCoordsB[i].chunkData); 
+                //*toLoadCoordsB[i].done = true; 
+            });
+            _loadingThreadsA += 1;
+        }
         }
     }
+}
 
-    {
-    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload::2") 
-    for(auto i: toLoadCoords){
-        if(loadedChunks.count(i.first) <= 0){
-            //JobSystem::Execute([&](){ LoadChunk(i); });
-            LoadChunk(i.first);
+void WorldManagerSystem::HandleLoadUnload2(){
+    OD_PROFILE_SCOPE("WorldManagerSystem::HandleLoadUnload");
+    using namespace std::chrono_literals;
+
+    lastCoord = currentCoord;
+    currentCoord = WorldToGrid(chunkSize, camPos);
+    if(currentCoord != lastCoord || loadedChunks.size() <= 0){
+        
+        toLoadCoords.clear();
+        toLoadCoordsA.clear();
+        toLoadCoordsB.clear();
+        loadedIndexRange = {0, loadedRangeStep};
+
+        for(int x = -chunkLoadDistance; x <= chunkLoadDistance; x++){
+            for(int z = -chunkLoadDistance; z <= chunkLoadDistance; z++){
+                IVector3 _c = currentCoord + IVector3(x, 0, z);
+                toLoadCoords[_c] = true;
+                if(loadedChunks.count(_c) > 0) continue;
+
+                toLoadCoordsA.push_back(_c);
+                toLoadCoordsB.push_back({
+                    CreateRef<Mesh>(),
+                    CreateRef<ChunkData>(_c*chunkSize, chunkSize, chunkSize*chunkHeigtCount),
+                    CreateRef<std::atomic<bool>>(false)
+                });
+            }
+        }
+
+        std::vector<IVector3> toRemove;
+        for(auto i: loadedChunks){
+            if(toLoadCoords.count(i.first) == false){
+                UnLoadChunk(IVector3(i.first.x, i.first.y, i.first.z));
+                toRemove.push_back(IVector3(i.first.x, i.first.y, i.first.z));
+            }
+        }
+        for(auto i: toRemove){
+            loadedChunks.erase(i);
+            loadedChunksB.erase(i);
+        }
+
+        //------------------ NoDeffered Load By JobSystem ----------------------
+        JobSystem::Dispatch(toLoadCoordsA.size(), toLoadCoordsA.size()/4, [&](JobDispatchArgs args){
+            chunkBuilderLayer->BuildData(toLoadCoordsA[args.jobIndex], toLoadCoordsB[args.jobIndex].chunkData); 
+            chunkBuilderLayer->BuildMesh(*toLoadCoordsB[args.jobIndex].chunkData, toLoadCoordsB[args.jobIndex].mesh); 
+        });
+        JobSystem::Wait();
+        //for(int i = 0; i < toLoadCoordsA.size(); i++){
+        //    chunkBuilderLayer.BuildData(toLoadCoordsA[i], toLoadCoordsB[i].chunkData); 
+        //    chunkBuilderLayer.BuildMesh(*toLoadCoordsB[i].chunkData, toLoadCoordsB[i].mesh); 
+        //}
+        for(int i = 0; i < toLoadCoordsA.size(); i++){
+            Entity _chunk = scene->AddEntity("Chunk");
+            ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
+            MeshRendererComponent& mesh = _chunk.AddComponent<MeshRendererComponent>();
+            TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
+            
+            mesh.material = chunkBuilderLayer->material;
+            mesh.mesh = toLoadCoordsB[i].mesh;
+            mesh.mesh->UpdateMesh();
+            mesh.UpdateAABB();
+            chunk.data = toLoadCoordsB[i].chunkData;
+            chunk.isDirt = false;
+
+            Vector3 pos = GridToWorld(chunkSize, toLoadCoordsA[i]); // coord * IVector3(chunkSize);
+            //pos += Vector3(-(chunkSize/2), 0, -(chunkSize/2));
+            pos.z = -pos.z;
+            pos.y = -floorY;
+
+            trans.Position(pos);
+            loadedChunks[toLoadCoordsA[i]] = _chunk;
         }
     }
-    }
-
-    //JobSystem::Wait();
-
-    /*for(auto& i: test2){
-        if(i.second.wait_for(0ms) == std::future_status::ready){
-
-        }
-    }*/
 }

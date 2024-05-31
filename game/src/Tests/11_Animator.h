@@ -14,6 +14,8 @@ struct Animator_11: OD::Module {
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
+        Application::Vsync(false);
+
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
@@ -65,7 +67,7 @@ struct Animator_11: OD::Module {
         LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
         Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
         AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
-        //charAnim.Play(charModel->animationClips[0].get());
+        charAnim.Play(charModel->animationClips[0].get());
         
         RagdollComponent& ragdoll = charEntity.AddComponent<RagdollComponent>();
         ragdoll.bodyParts.push_back( //Hip_1 == 0

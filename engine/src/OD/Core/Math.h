@@ -37,6 +37,7 @@ using Matrix4 = glm::mat4;
 using IVector2 = glm::ivec2;
 using IVector3 = glm::ivec3;
 using IVector4 = glm::ivec4;
+
 namespace math = glm;
 
 /*inline bool operator<(const IVector3& lhs, const IVector3& rhs){

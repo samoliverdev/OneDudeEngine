@@ -48,12 +48,20 @@ struct UberShader_15: OD::Module {
         Matrix4 m2 = math::translate(Matrix4Identity, Vector3(-2, 0, 0));
 
         uberShader->EnableKeyword("COLOR_1");
-        Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m1);
-        Graphics::DrawMesh(*model->meshs[0]);
+        uberShader->SetCurrentShader();
+        //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m1);
+        Shader::Bind(*uberShader->GetCurrentShader());
+        Graphics::SetProjectionViewMatrix(*uberShader->GetCurrentShader());
+        Graphics::SetModelMatrix(*uberShader->GetCurrentShader(), m1);
+        Graphics::DrawMeshRaw(*model->meshs[0]);
 
         uberShader->DisableKeyword("COLOR_1");
-        Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m2);
-        Graphics::DrawMesh(*model->meshs[0]);
+        uberShader->SetCurrentShader();
+        //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m2);
+        Shader::Bind(*uberShader->GetCurrentShader());
+        Graphics::SetProjectionViewMatrix(*uberShader->GetCurrentShader());
+        Graphics::SetModelMatrix(*uberShader->GetCurrentShader(), m2);
+        Graphics::DrawMeshRaw(*model->meshs[0]);
 
         Graphics::End();
     }

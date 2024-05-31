@@ -343,4 +343,85 @@ void LoadSettings(const char* filePath, Texture2DSetting& settings){
     archive(CEREAL_NVP(settings));
 }
 
+Texture2DArray::Texture2DArray(const std::vector<std::string>& filePaths){
+    stbi_set_flip_vertically_on_load(1);
+
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+    glCheckError();
+
+    std::vector<unsigned char*> datas;
+    
+    int width, height, nrComponents;
+    unsigned int internalFormat = GL_RGB8;
+    unsigned int imageFormat = GL_RGB;
+    unsigned int mipLevelCount = 8;
+    for(auto& i: filePaths){
+        unsigned char* data = stbi_load(i.c_str(), &width, &height, &nrComponents, 0);   // Load the first Image of size 512   X   512  (RGB))
+
+        if(!data){
+            LogError("Cannot load file image %s\nSTB Reason: %s\n", this->path.c_str(), stbi_failure_reason());
+        }
+
+        if(nrComponents > 3){
+            internalFormat = GL_RGBA8; //GL_SRGB_ALPHA; //GL_RGBA;
+            imageFormat = GL_RGBA;
+            //mipLevelCount = 1;
+        }
+
+        datas.push_back(data);
+    }
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
+    glCheckError();
+   
+    int _i = 0;
+    for(auto i: datas){
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, _i, width, height, 1, imageFormat, GL_UNSIGNED_BYTE, i);
+        glCheckError();
+        _i += 1;
+    }
+
+    if(mipLevelCount > 1) glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
+    glCheckError();
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glCheckError();
+
+    for(auto i: datas){
+        stbi_image_free(i);
+    }
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glCheckError();
+}
+
+Texture2DArray::~Texture2DArray(){
+    Texture2DArray::Destroy(*this);
+}
+
+void Texture2DArray::Destroy(Texture2DArray& tex){
+    if(tex.IsValid() == false) return;
+
+    glDeleteTextures(1, &tex.id);
+    tex.id = 0;
+    glCheckError();
+}
+
+void Texture2DArray::Bind(Texture2DArray& tex, int index){
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, tex.id);
+    glCheckError();
+}
+
+bool Texture2DArray::IsValid(){
+    return id != 0;
+}
+
+void Texture2DArray::OnGui(){
+
+}
+
 }

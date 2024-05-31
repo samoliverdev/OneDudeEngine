@@ -34,6 +34,7 @@ public:
 
     void UpdateMesh();
     void UpdateMeshInstancingModelMatrixs();
+    void UpdateMeshInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
 
     bool IsValid();
     void Destroy();

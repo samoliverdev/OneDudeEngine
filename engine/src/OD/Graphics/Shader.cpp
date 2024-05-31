@@ -9,6 +9,7 @@ namespace OD{
 //int curBindShaderRenderId = 0;
 
 void getFilePath(const std::string& fullPath, std::string& pathWithoutFileName){
+    //LogInfo("FullPath: %s", fullPath.c_str());
     // Remove the file name and store the path to this folder
     size_t found = fullPath.find_last_of("/\\");
     pathWithoutFileName = fullPath.substr(0, found + 1);
@@ -146,9 +147,9 @@ std::string Shader::load(std::string path){
             lineBuffer.erase(0, includeIndentifier.size());
 
             // The include path is relative to the current shader file path
-            std::string pathOfThisFile;
+            /*std::string pathOfThisFile;
             getFilePath(path, pathOfThisFile);
-            lineBuffer.insert(0, pathOfThisFile);
+            lineBuffer.insert(0, pathOfThisFile);*/
 
             //Remove "\r"
             //lineBuffer.erase(std::remove(lineBuffer.begin(), lineBuffer.end(), "\r"), lineBuffer.cend());
@@ -544,6 +545,11 @@ void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     Texture2D::Bind(value, index);
+    SetInt(name, index);
+}
+
+void Shader::SetTexture2DArray(const char* name, Texture2DArray& value, int index){
+    Texture2DArray::Bind(value, index);
     SetInt(name, index);
 }
 

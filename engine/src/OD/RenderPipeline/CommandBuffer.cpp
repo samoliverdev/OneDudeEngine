@@ -175,7 +175,7 @@ void CommandBuffer::Submit(){
         lastMat = _mat;
         //Shader::Bind(*_mat->GetShader());
         _mat->GetShader()->SetMatrix4("model", cm.trans);
-        Graphics::DrawMesh(*cm.meshs);
+        Graphics::DrawMeshRaw(*cm.meshs);
     });
     lastMat = nullptr;
 
@@ -195,7 +195,7 @@ void CommandBuffer::Submit(){
         }
         cm.meshs->UpdateMeshInstancingModelMatrixs();
         
-        Graphics::DrawMeshInstancing(*cm.meshs, cm.trans.size());
+        Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
     });
     lastMat = nullptr;
 
@@ -230,7 +230,7 @@ void CommandBuffer::Submit(){
         //Shader::Bind(*_mat->GetShader());
         _mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
         _mat->GetShader()->SetMatrix4("model", cm.trans);
-        Graphics::DrawMesh(*cm.meshs);
+        Graphics::DrawMeshRaw(*cm.meshs);
     });
     lastMat = nullptr;
 }

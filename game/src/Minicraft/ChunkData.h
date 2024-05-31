@@ -3,20 +3,23 @@
 #include <OD/OD.h>
 #include <vector>
 
+using namespace OD;
+
 struct Voxel{
-    unsigned char id = 0;
-    //unsigned short id = 0;
-    //unsigned char light = 0;
+    //unsigned char id = 0;
+    unsigned short id = 0;
+    unsigned char light = 0;
 };
 
 struct ChunkData{
-    ChunkData(int inSize = 32, int inHeight = 32){
+    inline ChunkData(Vector3 inCoordPos, int inSize = 32, int inHeight = 32){
         if(inSize <= 0) inSize = 1;
         if(inHeight <= 0) inHeight = 1;
         SetSize(inSize, inHeight);
+        coordPos = inCoordPos;
     }
 
-    ~ChunkData(){
+    inline ~ChunkData(){
         voxels.clear();
         //delete voxels;
     }
@@ -55,10 +58,67 @@ struct ChunkData{
         return false;
     }
 
+    inline bool IsOffChunkX(int x){
+        if(x < 0 || x >= size) return true;
+        return false;
+    }
+    inline bool IsOffChunkY(int y){
+        if(y < 0 || y >= height) return true;
+        return false;
+    }
+    inline bool IsOffChunkZ(int z){
+        if(z < 0 || z >= size) return true;
+        return false;
+    }
+
+    inline bool SetVoxelFromGlobalVector3(Vector3 pos, Voxel voxel){
+        int xCheck = math::floor(pos.x);
+        int yCheck = math::floor(pos.y);
+        int zCheck = math::floor(pos.z);
+
+        xCheck -= math::floor(coordPos.x);
+        zCheck -= math::floor(coordPos.z);
+
+        LogInfo("GetVoxelFromGlobalVector3 x: %d y: %d z: %d", xCheck, yCheck, zCheck);
+        if(IsOffChunk(xCheck, yCheck, zCheck)) return false;
+        SetVoxel(xCheck, yCheck, zCheck, voxel);
+        return true;
+    }
+
+    inline Voxel GetVoxelFromGlobalVector3(Vector3 pos){
+        int xCheck = math::floor(pos.x);
+        int yCheck = math::floor(pos.y);
+        int zCheck = math::floor(pos.z);
+
+        xCheck -= math::floor(coordPos.x);
+        zCheck -= math::floor(coordPos.z);
+
+        //LogInfo("GetVoxelFromGlobalVector3 x: %d y: %d z: %d", xCheck, yCheck, zCheck);
+        if(IsOffChunk(xCheck, yCheck, zCheck)) return Voxel{0};
+        return GetVoxel(xCheck, yCheck, zCheck);
+    }
+
+    /*inline Voxel GetVoxelFromGlobalVector3(Vector3 pos, Vector3 chunkPos){
+        int xCheck = math::floor(pos.x);
+        int yCheck = math::floor(pos.y);
+        int zCheck = math::floor(pos.z);
+
+        xCheck -= math::floor(chunkPos.x);
+        zCheck -= math::floor(chunkPos.z);
+
+        LogInfo("GetVoxelFromGlobalVector3 x: %d y: %d z: %d", xCheck, yCheck, zCheck);
+        if(IsOffChunk(xCheck, yCheck, zCheck)) return Voxel{0};
+        return GetVoxel(xCheck, yCheck, zCheck);
+    }*/
+
+    inline Vector3 CoordPos(){ return coordPos; }
+    
 private:
     int size = 32;
     int height = 32;
     std::vector<Voxel> voxels;
+    Vector3 coordPos;
+    
     //Voxel* voxels;
 
     inline int to1D(int x, int y, int z){

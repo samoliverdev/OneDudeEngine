@@ -119,6 +119,7 @@ public:
 
     template<typename T> T& AddComponent();
     template<typename T> T& GetComponent();
+    template<typename T> T* TryGetComponent();
     template<typename T> bool HasComponent();
     template<typename T> T& AddOrGetComponent();
     template<typename T> void RemoveComponent();
@@ -149,6 +150,7 @@ public:
 
     virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
+    virtual void OnRender(){}
     virtual void OnDrawGizmos(){}
     
     Scene* GetScene(){ return scene; }

@@ -141,6 +141,12 @@ void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     map.texture = tex;
 }
 
+void Material::SetTexture(const char* name, Ref<Texture2DArray> tex){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::TextureArray;
+    map.textureArray = tex;
+}
+
 void Material::SetTexture(const char* name, Framebuffer* tex, int bind, int attachment){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Framebuffer;
@@ -565,6 +571,10 @@ void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered
         }
         if(map.type == MaterialMap::Type::Texture){
             shader.SetTexture2D(i.first.c_str(), *i.second.texture, material.currentTextureSlot);
+            material.currentTextureSlot += 1;
+        }
+        if(map.type == MaterialMap::Type::TextureArray){
+            shader.SetTexture2DArray(i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
             material.currentTextureSlot += 1;
         }
         if(map.type == MaterialMap::Type::Framebuffer){

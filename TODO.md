@@ -11,22 +11,21 @@
 * Fix Physics PlayMode In Engine as SharedLib - 
 * Fix All Physic Debug Asserts -
 
-* Better PBR
+* Revisar RenderPipeline Code
 * Fix Save/Load
-
-* Double Precesion
-* Relative Renderer
-* Dynamic C++ GameModule
-* Project System
-
 * Fix JointComponent
 * Fix Bloom
 * Revisar Color Space 
 * Gizmos System
 * DragDrop For All MainTypes
 * Sound
-* Better Text Render
+
 * Game Test
+
+* Double Precesion
+* Relative Renderer
+* Dynamic C++ GameModule
+* Project System
 
 * Mod Support
 * Usable Engine And Publush Engine

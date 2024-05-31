@@ -4,6 +4,7 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <functional>
 
 namespace OD{
 
@@ -15,22 +16,33 @@ struct OD_API ProfileResult{
 
 class OD_API Instrumentor{
 public:
-    std::vector<ProfileResult>& results();
-    void WriteProfile(const ProfileResult& result);
+    std::vector<ProfileResult>& Results();
+    void WriteProfile(const ProfileResult& _result);
     static Instrumentor& Get();
 private:
-    std::vector<ProfileResult> _results;
+    std::vector<ProfileResult> results;
 };
 
 class OD_API InstrumentationTimer{
 public:
-    InstrumentationTimer(const char* name);
+    InstrumentationTimer(const char* _name);
     ~InstrumentationTimer();
     void Stop();
 private:
-    const char* _name;
-    std::chrono::time_point<std::chrono::high_resolution_clock> _startTimepoint;
-    bool _stopped = false;
+    const char* name;
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTimepoint;
+    bool stopped = false;
+};
+
+class OD_API SimpleTimer{
+public:
+    SimpleTimer(std::function<void(float)> _onStop);
+    ~SimpleTimer();
+    void Stop();
+private:
+    std::function<void(float)> onStop;
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTimepoint;
+    bool stopped = false;
 };
 
 }

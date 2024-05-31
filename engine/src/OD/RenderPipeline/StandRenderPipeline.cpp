@@ -247,11 +247,15 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->DrawRenderersBuffer(blendDrawTarget);
     
     //context->DrawGizmos();
-    
+
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
 
     context->DrawGizmos();
+
+    for(System* s: context->GetScene()->GetStandSystems()){
+        s->OnRender();
+    }
 
     RenderUI();
 
@@ -273,20 +277,22 @@ void CameraRenderer::RenderUI(){
         if(text.font == nullptr) continue;
         if(text.material == nullptr) continue;
 
-        if(text.is3d){
+        if(/*camera.isDebug*/ text.is3d){
             Graphics::SetCamera(camera);
         } else {
             Graphics::SetCamera(cam2d);
         }
 
-        Graphics::SetDefaultShaderData(*text.material->GetShader(), trans.GlobalModelMatrix());
+        //Graphics::SetDefaultShaderData(*text.material->GetShader(), trans.GlobalModelMatrix());
+        Shader::Bind(*text.material->GetShader());
+        //Graphics::SetProjectionViewMatrix(*text.material->GetShader());
+        //Graphics::SetModelMatrix(*text.material->GetShader(), trans.GlobalModelMatrix());
+        text.material->GetShader()->SetVector4("color", text.color);
         Graphics::DrawText(
             *text.font, 
             *text.material->GetShader(), 
             text.text, 
-            trans.GlobalModelMatrix(),
-            text.scale, 
-            text.color
+            trans.GlobalModelMatrix()
         );
     }
 }

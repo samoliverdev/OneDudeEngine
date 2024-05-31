@@ -12,16 +12,17 @@ struct LoadModel_2: OD::Module {
     Transform camTransform;
     Camera cam;
     CameraMovement camMove;
-
     std::vector<Matrix4> transforms;
+
+    bool useInstancing = true;
 
     void OnInit() override {
         LogInfo("Game Init");
 
         Application::Vsync(false);
 
-        camTransform.LocalPosition(Vector3(0, 2, 4));
-        camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
+        camTransform.LocalPosition(Vector3(0, 10, 70));
+        camTransform.LocalEulerAngles(Vector3(0, 0, 0));
 
         camMove.transform = &camTransform;
 
@@ -60,25 +61,38 @@ struct LoadModel_2: OD::Module {
         //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
         //Renderer::DrawModel(*model, modelTransform.GetLocalModelMatrix());
 
-        bool useInstancing = true;
-
         if(useInstancing){  
-            //model->materials[0]->UpdateDatas();
+            //model->materials[0]->SetEnableInstancing(true);
+            model->materials[0]->DisableKeyword("SKINNED");
+            model->materials[0]->EnableKeyword("INSTANCING");
             Material::SubmitGraphicDatas(*model->materials[0]);
 
+            /*
             model->meshs[0]->instancingModelMatrixs.clear();
             for(auto i: transforms){
                 model->meshs[0]->instancingModelMatrixs.push_back(i);
             }
-            model->meshs[0]->UpdateMeshInstancingModelMatrixs();
+            model->meshs[0]->UpdateMeshInstancingModelMatrixs();*/
 
-            Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
-            Graphics::DrawMeshInstancing(*model->meshs[0], transforms.size());
+            //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
+            /*Shader::Bind(*model->materials[0]->GetShader());
+            Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
+            Graphics::DrawMeshInstancingRaw(*model->meshs[0], transforms.size());*/
+            
+            Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->GetShader(), &transforms[0], transforms.size());
+
         } else {
+            model->materials[0]->DisableKeyword("SKINNED");
+            model->materials[0]->DisableKeyword("INSTANCING");
+            Material::SubmitGraphicDatas(*model->materials[0]);
+
             for(auto i: transforms){
-                Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), i, false);
-                Graphics::DrawMesh(*model->meshs[0]);
-                //Renderer::DrawModel(*model, i);
+                //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), i, false);
+                /*Shader::Bind(*model->materials[0]->GetShader());
+                Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
+                Graphics::SetModelMatrix(*model->materials[0]->GetShader(), i);
+                Graphics::DrawMeshRaw(*model->meshs[0]);*/
+                Graphics::DrawMesh(*model->meshs[0], *model->materials[0]->GetShader(), i);
             }
         }
         
@@ -97,10 +111,31 @@ struct LoadModel_2: OD::Module {
         //static bool show;
         //ImGui::ShowDemoWindow(&show);
 
-        ImGui::Begin("Renderer Stats");
+        ImGui::Begin("Load Model Test");
+
+        ImGui::Checkbox("Use Instancing", &useInstancing);
+        ImGui::Spacing();
+        
         ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
-        ImGui::Text("Vertices: %dk", Graphics::GetVerticesCount() / 1000);
-        ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);
+        //ImGui::Text("Vertices: %dk", Graphics::GetVerticesCount() / 1000);
+        //ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);
+        
+        if(Graphics::GetVerticesCount() >= 1000000){
+            ImGui::Text("Vertices: %.1fM", Graphics::GetVerticesCount() / 1000000.0f);
+        } else if(Graphics::GetVerticesCount() >= 1000){
+            ImGui::Text("Vertices: %.1fk", Graphics::GetVerticesCount() / 1000.0f);
+        } else {
+            ImGui::Text("Vertices: %d", Graphics::GetVerticesCount());
+        }
+
+        if(Graphics::GetTrisCount() >= 1000000){
+            ImGui::Text("Tris: %.1fM", Graphics::GetTrisCount() / 1000000.0f);
+        } else if(Graphics::GetTrisCount() >= 1000){
+            ImGui::Text("Tris: %.1fk", Graphics::GetTrisCount() / 1000.0f);
+        } else {
+            ImGui::Text("Tris: %d", Graphics::GetTrisCount());
+        }
+        
         ImGui::End();
     }
 

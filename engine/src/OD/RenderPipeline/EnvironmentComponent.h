@@ -10,18 +10,18 @@
 
 namespace OD{
 
-enum class OD_API ShadowQuality{Low, High, VeryHigh, Ultra, VeryUltra };
+enum class ShadowQuality{Low, High, VeryHigh, Ultra, VeryUltra };
 extern int ShadowQualityLookup[];
 extern const char* ShadowQualityLookupNames[];
 
-enum class OD_API AntiAliasing{ None, MSAA };
+enum class AntiAliasing{ None, MSAA };
 extern const char* AntiAliasingLookupNames[];
 
-enum class OD_API MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
+enum class MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
 extern int MSAAQualityLookup[];
 extern const char* MSAAQualityLookupNames[];
 
-enum class OD_API ColorCorrection{ None, ColorCorrection };
+enum class ColorCorrection{ None, ColorCorrection };
 extern const char* ColorCorrectionLookupNames[];
 
 struct OD_API EnvironmentSettings{

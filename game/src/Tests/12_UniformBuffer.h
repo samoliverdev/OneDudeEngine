@@ -74,8 +74,10 @@ struct UniformBuffer_12: OD::Module {
         cBuffer->SetData(&transforms[0], sizeof(Matrix4) * transforms.size(), 0);
         model->materials[0]->GetShader()->SetUniforBuffer("Model", *cBuffer, 0);
         
-        Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
-        Graphics::DrawMeshInstancing(*model->meshs[0], transforms.size());
+        //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
+        Shader::Bind(*model->materials[0]->GetShader());
+        Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
+        Graphics::DrawMeshInstancingRaw(*model->meshs[0], transforms.size());
         
         Graphics::End();
     }

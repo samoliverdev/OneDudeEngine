@@ -8,7 +8,7 @@ namespace OD{
 
 class OD_API ToneMappingPostFX: public PostFX{
 public:
-    enum class OD_API Mode{ None = -1, ACES, Neutral, Reinhard };
+    enum class Mode{ None = -1, ACES, Neutral, Reinhard };
 
     Mode mode = Mode::None;
 

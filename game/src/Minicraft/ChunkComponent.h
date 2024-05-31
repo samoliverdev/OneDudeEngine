@@ -3,7 +3,7 @@
 #include "ChunkData.h"
 
 struct ChunkComponent{
-    ChunkData data;
+    Ref<ChunkData> data = nullptr;
     bool isDirt = true;
 
     template<class Archive>

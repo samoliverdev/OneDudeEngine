@@ -38,6 +38,7 @@ public:
     void SetMatrix4(const char* name, std::vector<Matrix4>& value);
     void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture2D(const char* name, Texture2D& value, int index);
+    void SetTexture2DArray(const char* name, Texture2DArray& value, int index);
     void SetCubemap(const char* name, Cubemap& value, int index);
     void SetUniforBuffer(const char* name, UniformBuffer& buffer, int index);
     void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);

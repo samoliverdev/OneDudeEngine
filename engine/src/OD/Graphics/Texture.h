@@ -8,7 +8,7 @@
 
 namespace OD {
 
-enum class OD_API TextureFilter {
+enum class OD_API_IMPORT TextureFilter {
     Nearest,
     Linear
 };
@@ -65,6 +65,28 @@ private:
     void texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data);
 
     //void SaveSettings();
+};
+
+class OD_API Texture2DArray: public Asset{
+    friend class Graphics;
+public:
+    Texture2DArray(const std::vector<std::string>& filePaths); 
+    ~Texture2DArray();
+
+    static void Destroy(Texture2DArray& tex);
+    static void Bind(Texture2DArray& tex, int index);
+
+    bool IsValid();
+    inline unsigned int Width(){ return width; }
+    inline unsigned int Height(){ return height; }
+    inline unsigned int RenderId(){ return id; }
+
+    void OnGui() override;
+
+private:
+    unsigned int id = 0;
+    unsigned int width;
+    unsigned int height;
 };
 
 }

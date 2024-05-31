@@ -37,7 +37,7 @@ uniform mat4 projection;
 uniform float useInstancing = 0;
 */
 
-#include ../ShaderLibrary/Vertex.glsl
+#include res/Engine/ShaderLibrary/Vertex.glsl
 
 out VsOut{
     vec3 pos;
@@ -67,13 +67,13 @@ void main(){
 
 uniform mat4 view;
 
-#include ../ShaderLibrary/Common.glsl
-#include ../ShaderLibrary/Surface.glsl
-#include ../ShaderLibrary/Shadows.glsl
-#include ../ShaderLibrary/Light.glsl
-#include ../ShaderLibrary/BRDF.glsl
-#include ../ShaderLibrary/GI.glsl
-#include ../ShaderLibrary/Lighting.glsl
+#include res/Engine/ShaderLibrary/Common.glsl
+#include res/Engine/ShaderLibrary/Surface.glsl
+#include res/Engine/ShaderLibrary/Shadows.glsl
+#include res/Engine/ShaderLibrary/Light.glsl
+#include res/Engine/ShaderLibrary/BRDF.glsl
+#include res/Engine/ShaderLibrary/GI.glsl
+#include res/Engine/ShaderLibrary/Lighting.glsl
 
 in VsOut{
     vec3 pos;

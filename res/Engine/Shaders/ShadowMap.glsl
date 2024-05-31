@@ -13,7 +13,7 @@
 uniform mat4 lightSpaceMatrix;
 //uniform mat4 model;
 
-#include ../ShaderLibrary/Vertex.glsl
+#include res/Engine/ShaderLibrary/Vertex.glsl
 
 void main(){
     //gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);

@@ -3,7 +3,7 @@
 
 namespace OD {
 
-enum class OD_API DepthTest{
+enum class OD_API_IMPORT DepthTest{
     DISABLE         = 0,
     LESS            = 1,
     LESS_EQUAL      = 2,
@@ -15,14 +15,14 @@ enum class OD_API DepthTest{
     ALWAYS          = 8
 };
 
-enum class OD_API CullFace{
+enum class OD_API_IMPORT CullFace{
     NONE            = 0,
     BACK            = 1,
     FRONT           = 2,
     FRONT_AND_BACK  = 3
 };
 
-enum class OD_API BlendMode{
+enum class OD_API_IMPORT BlendMode{
     ZERO,
     ONE,
     SRC_COLOR,

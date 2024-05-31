@@ -10,13 +10,14 @@
 namespace OD{
 
 struct OD_API MaterialMap{
-    enum class OD_API Type{
-        Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
+    enum class OD_API_IMPORT Type{
+        Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, TextureArray, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
     };
 
     Type type;
 
     Ref<Texture2D> texture;
+    Ref<Texture2DArray> textureArray;
     Ref<Cubemap> cubemap;
     Framebuffer* framebuffer;
     int framebufferBind;
@@ -68,6 +69,7 @@ public:
     void SetMatrix4(const char* name, Matrix4 value);
     void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture(const char* name, Ref<Texture2D> tex);
+    void SetTexture(const char* name, Ref<Texture2DArray> tex);
     void SetTexture(const char* name, Framebuffer* tex, int bind, int attachment);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 

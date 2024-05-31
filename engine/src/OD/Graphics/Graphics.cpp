@@ -117,6 +117,10 @@ void Graphics::Initialize(){
     CreateLineVAO();
     CreateWiredCubeVAO();
     CreateTextQuadVAO();
+
+    GLint max_layers;
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
+    LogInfo("MaxLayer: %d", max_layers);
 }
 
 void Graphics::Shutdown(){
@@ -144,18 +148,13 @@ Camera Graphics::GetCamera(){
     return camera;
 }
 
-void Graphics::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool instancing){
-    Shader::Bind(shader);
-
+void Graphics::SetProjectionViewMatrix(Shader& shader){
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
+}
 
-    if(instancing){
-        shader.SetFloat("useInstancing", 1);
-    } else {
-        shader.SetFloat("useInstancing", 0.0f); 
-        shader.SetMatrix4("model", modelMatrix);
-    }
+void Graphics::SetModelMatrix(Shader& shader, Matrix4 modelMatrix){
+    shader.SetMatrix4("model", modelMatrix);
 }
 
 /*void Renderer::DrawMeshRaw(Mesh& mesh){
@@ -180,7 +179,7 @@ void Graphics::SetDefaultShaderData(Shader& shader, Matrix4 modelMatrix, bool in
     glCheckError();
 }*/
 
-void Graphics::DrawMesh(Mesh& mesh){
+void Graphics::DrawMeshRaw(Mesh& mesh){
     if(mesh.IsValid() == false){
         #ifdef GRAPHIC_LOG_ERROR
         LogError("DrawMesh::InvalidMesh");
@@ -195,15 +194,6 @@ void Graphics::DrawMesh(Mesh& mesh){
     vertices += mesh.vertexCount;
     tris += mesh.indiceCount;
     
-    /*
-    shader.Bind();
-    shader.SetFloat("useInstancing", 0.0f); 
-    //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 0.0f);
-    shader.SetMatrix4("model", modelMatrix);
-    shader.SetMatrix4("view", camera.view);
-    shader.SetMatrix4("projection", camera.projection);
-    */
-
     glBindVertexArray(mesh.vao);
     glCheckError();
 
@@ -219,7 +209,7 @@ void Graphics::DrawMesh(Mesh& mesh){
     //glCheckError();
 }
 
-void Graphics::DrawMeshInstancing(Mesh& mesh, int count){
+void Graphics::DrawMeshInstancingRaw(Mesh& mesh, int count){
     Assert(mesh.IsValid() && "Mesh is not vali!");
 
     drawCalls += 1;
@@ -246,6 +236,33 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, int count){
 
     //glBindVertexArray(0);
     //glCheckError();
+}
+
+void Graphics::DrawMesh(Mesh& mesh, Shader& shader, Matrix4 modelMatrix){
+    Shader::Bind(shader);
+    shader.SetMatrix4("projection", camera.projection);
+    shader.SetMatrix4("view", camera.view);
+    shader.SetMatrix4("model", modelMatrix);
+    Graphics::DrawMeshRaw(mesh);
+}
+
+void Graphics::DrawMeshInstancing(Mesh& mesh, Shader& shader, Matrix4* modelMatrixs, int count){
+    mesh.UpdateMeshInstancingCustomModelMatrixs(modelMatrixs, count);
+    Shader::Bind(shader);
+    shader.SetMatrix4("projection", camera.projection);
+    shader.SetMatrix4("view", camera.view);
+    Graphics::DrawMeshInstancingRaw(mesh, count);
+}
+
+void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){
+    int index = 0;
+    for(auto i: model.renderTargets){
+        Ref<Material> targetMaterial = model.materials[i.materialIndex];
+        Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
+        Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+        Material::SubmitGraphicDatas(*targetMaterial);
+        DrawMesh(*targetMesh, *targetMaterial->GetShader(), targetMatrix);
+    }
 }
 
 void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
@@ -321,14 +338,14 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     //glCheckError();
 }
 
-void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale, Color color){
+void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale){
     Shader::Bind(s);
-    s.SetVector4("color", color);
+    //s.SetVector4("color", color);
     s.SetMatrix4("projection", camera.projection);
-    s.SetMatrix4("view", Matrix4Identity);
+    s.SetMatrix4("view", camera.view);
+    //s.SetMatrix4("view", Matrix4Identity);
 
-    Transform t;
-    t.LocalPosition(pos);
+    Transform t(pos);
     s.SetMatrix4("model", t.GetLocalModelMatrix());
 
     glActiveTexture(GL_TEXTURE0);
@@ -381,10 +398,11 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
     glCheckError();
 }
 
-void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model, float scale, Color color){
+void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model){
     Shader::Bind(s);
-    s.SetVector4("color", color);
+    //s.SetVector4("color", color);
     s.SetMatrix4("projection", camera.projection);
+    s.SetMatrix4("view", camera.view);
     s.SetMatrix4("model", model);
 
     glActiveTexture(GL_TEXTURE0);
@@ -393,6 +411,7 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model, flo
 
     int x = 0; //pos.x;
     int y = 0; //pos.y;
+    float scale = 1;
 
     // iterate through all characters
     std::string::const_iterator c;
@@ -584,7 +603,7 @@ void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     Shader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
-    Graphics::DrawMesh(*fullScreenQuad);
+    Graphics::DrawMeshRaw(*fullScreenQuad);
     glCheckError();
 }
 

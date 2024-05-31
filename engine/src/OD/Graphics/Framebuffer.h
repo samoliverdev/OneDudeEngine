@@ -5,11 +5,11 @@ namespace OD{
 
 class Shader;
 
-enum class OD_API FramebufferTextureFormat{
+enum class OD_API_IMPORT FramebufferTextureFormat{
     None, RGB, RGBA8, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
 };
 
-enum class OD_API FramebufferAttachmentType{
+enum class OD_API_IMPORT FramebufferAttachmentType{
     TEXTURE_2D,
     TEXTURE_2D_MULTISAMPLE,
     TEXTURE_2D_ARRAY

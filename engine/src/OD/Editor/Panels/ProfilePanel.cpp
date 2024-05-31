@@ -9,12 +9,12 @@ ProfilePanel::ProfilePanel(){
 
 void ProfilePanel::OnGui(){
     if(ImGui::Begin("Profile", &show)){
-        ImGui::Text("Profile Count:: %zd", Instrumentor::Get().results().size());
-        for(auto i: Instrumentor::Get().results()){ 
+        ImGui::Text("Profile Count:: %zd", Instrumentor::Get().Results().size());
+        for(auto i: Instrumentor::Get().Results()){ 
             float durration = (i.end - i.start) * 0.001f;
             ImGui::Text("%s: %.3f.ms", i.name, durration);
         }
-        Instrumentor::Get().results().clear();
+        Instrumentor::Get().Results().clear();
     }
     ImGui::End();
 }
