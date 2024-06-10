@@ -1,6 +1,6 @@
 #include "CoreModulesStartup.h"
 #include "OD/Core/Application.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Asset.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Scene/Scripts.h"
@@ -18,15 +18,18 @@ void CoreModulesStartup(){
     //LogInfo("CoreModulesStartup");
 
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){
-        return AssetManager::Get().LoadTexture2D(path);
+        //return AssetManager::Get().LoadTexture2D(path);
+        return AssetManager::Get().LoadAsset<Texture2D>(path);
     });
     
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){
-        return AssetManager::Get().LoadTexture2D(path);
+        //return AssetManager::Get().LoadTexture2D(path);
+        return AssetManager::Get().LoadAsset<Texture2D>(path);
     });
 
     AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){
-        return AssetManager::Get().LoadMaterial(path);
+        //return AssetManager::Get().LoadMaterial(path);
+        return AssetManager::Get().LoadAsset<Material>(path);
     });
 
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");

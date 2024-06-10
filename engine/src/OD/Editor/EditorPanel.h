@@ -1,9 +1,8 @@
 #pragma once
 
-#include "OD/Scene/Scene.h"
-
 namespace OD{
 
+class Scene;
 class Editor;
 
 class OD_API EditorPanel{

@@ -36,8 +36,8 @@ struct Light_3: OD::Module {
         //LogInfo("SizeOf Vector3 %zu", sizeof(Vector3));
         //LogInfo("(%f, %f, %f)", (Vector3(1,1,1)+Vector3(2,2,2)).x, (Vector3(1,1,1) * 2.0f).y, (glm::vec3(1,1,1) * 5.0f).z);
 
-        lightModel = AssetManager::Get().LoadModel("res/Game/Models/sphere.obj");
-        lightModel->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Unlit.glsl"));
+        lightModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/sphere.obj");
+        lightModel->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Unlit.glsl"));
         lightModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
         lightTransform.LocalScale(Vector3(0.1f, 0.1f, 0.1f));
         lightTransform.LocalPosition(Vector3(-1, 2, 2));
@@ -52,9 +52,9 @@ struct Light_3: OD::Module {
         //model->SetShader(Shader::CreateFromFile("res/shaders/model.glsl"));
         //model->materials[0].SetTexture("texture1", Texture2D::CreateFromFile("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
 
-        model = AssetManager::Get().LoadModel("res/Game/Models/suzane.obj");
-        model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Game/Shaders/light.glsl"));
-        model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadTexture2D("res/Game/Textures/rock.jpg", {OD::TextureFilter::Linear, false}));
+        model = AssetManager::Get().LoadAsset<Model>("res/Game/Models/suzane.obj");
+        model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/light.glsl"));
+        model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("res/Game/Textures/rock.jpg"));
         model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
         model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));
         model->materials[0]->SetVector3("light.position", lightTransform.LocalPosition());

@@ -65,7 +65,7 @@ std::string GetKey(const std::set<std::string>& keyworlds){
 }
 
 ShaderHandler::ShaderHandler(std::string source){
-    Ref<Shader> shader = Shader::CreateFromFile(sourcePath);
+    Ref<Shader> shader = Shader::CreateFromFile(source);
     Init(shader, source);
 }
 

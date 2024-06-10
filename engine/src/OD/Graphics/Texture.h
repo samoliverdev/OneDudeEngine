@@ -20,7 +20,7 @@ struct OD_API Texture2DSetting{
     bool mipmap = true;
 
     template <class Archive>
-    void serialize( Archive & ar ){
+    void serialize(Archive & ar){
         ar(
             CEREAL_NVP(filter),
             CEREAL_NVP(mipmap)
@@ -31,11 +31,20 @@ struct OD_API Texture2DSetting{
 class OD_API Texture2D: public Asset{
     friend class Graphics;
 public:
+    Texture2D() = default;
+    Texture2D(const std::string& filePath, Texture2DSetting settings = Texture2DSetting()); 
+    Texture2D(void* data, size_t size, Texture2DSetting settings = Texture2DSetting()); 
+    
+    void LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
+
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings); 
+    static Ref<Texture2D> LoadDefautlTexture2D();
+    
     static void Destroy(Texture2D& tex);
     static void Bind(Texture2D& tex, int index);
-
+    
     ~Texture2D();
 
     bool IsValid();

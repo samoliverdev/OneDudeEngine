@@ -14,5 +14,6 @@
 #include <functional>
 #include <map>
 #include <unordered_map>
+#include <filesystem>
 #include <typeinfo>
 #include <typeindex>

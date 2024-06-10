@@ -9,15 +9,22 @@ namespace OD{
 void ModelRendererComponent::OnGui(Entity& e){
     ModelRendererComponent& mesh = e.GetComponent<ModelRendererComponent>();
 
+    /*cereal::ImGuiArchive uiArchive;
+    uiArchive(mesh);
+    return;*/
+
     if(ImGui::TreeNode("localTransform")){
         Transform::OnGui(mesh.localTransform);
+        ImGui::TreePop();
     }
 
-    if(mesh.model == nullptr){
+    ImGui::DrawAsset<Model>(std::string("model"), mesh.model);
+
+    /*if(mesh.model == nullptr){
         ImGui::Text("Path: None");
     } else {
         ImGui::Text("Path: %s", mesh.model->Path().c_str());
-    }
+    }*/
 
     int subMeshIndex = mesh.subMeshIndex;
     if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){

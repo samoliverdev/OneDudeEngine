@@ -2,9 +2,10 @@
 #include "OD/Defines.h"
 #include "CommandBuffer.h"
 #include "LightComponent.h"
-#include "OD/Scene/Scene.h"
 
 namespace OD{
+
+class Scene;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};

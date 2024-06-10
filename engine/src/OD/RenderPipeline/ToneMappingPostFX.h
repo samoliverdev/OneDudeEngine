@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
 #include "RenderContext.h"
+#include "OD/Serialization/Serialization.h"
 #include <magic_enum/magic_enum.hpp>
 
 namespace OD{
@@ -30,7 +30,7 @@ private:
 
 }
 
-namespace cereal{
+/*namespace cereal{
     template <class Archive> inline
     std::string save_minimal(const Archive&, const OD::ToneMappingPostFX::Mode& t){
         return std::string(magic_enum::enum_name(t));
@@ -40,4 +40,4 @@ namespace cereal{
     void load_minimal(const Archive&, OD::ToneMappingPostFX::Mode& t, const std::string& value){
         t = magic_enum::enum_cast<OD::ToneMappingPostFX::Mode>(value).value_or(OD::ToneMappingPostFX::Mode::None);
     }
-}
+}*/

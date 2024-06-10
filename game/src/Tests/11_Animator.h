@@ -37,8 +37,8 @@ struct Animator_11: OD::Module {
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         cam.farClipPlane = 1000;
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel("res/Game/Models/plane.glb");
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
+        Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/plane.glb");
+        Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
@@ -51,12 +51,12 @@ struct Animator_11: OD::Module {
         floorEntityP.NeverSleep(true);
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
-        Ref<Model> charModel = AssetManager::Get().LoadModel(
-            "res/Game/Animations/Walking.dae",
-            //"res/Game/Animations/RumbaDancing.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
-            //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl")
+        Ref<Model> charModel = AssetManager::Get().LoadAsset<Model>(
+            "res/Game/Animations/Walking.dae"
+            //"res/Game/Animations/RumbaDancing.glb"
         );
+        charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
+
         Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
         charTrans.LocalScale(Vector3(200));

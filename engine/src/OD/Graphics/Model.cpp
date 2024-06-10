@@ -3,6 +3,26 @@
 
 namespace OD{
 
+void Model::SetShader(Ref<Shader> shader){
+	for(Ref<Material>& m: materials){
+		m->SetShader(shader);
+	}
+}
+
+void Model::LoadFromFile(const std::string& path){
+    Model::CreateFromFile(*this, path, nullptr);
+}
+
+std::vector<std::string> Model::GetFileAssociations(){ 
+	return std::vector<std::string>{
+		".obj",
+		".glb",
+		".gltf",
+		".blend",
+		".dae"
+	};
+}
+
 bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
     return AssimpLoadModel(model, path, customShader);
 }

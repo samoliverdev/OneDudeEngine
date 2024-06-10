@@ -99,6 +99,9 @@ public:
 
     void OnGui() override;
 
+    void LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
+    
     static Ref<Material> CreateFromFile(std::string const &path);
 
     friend class cereal::access;
@@ -180,7 +183,7 @@ void Material::load(Archive& ar){
     );
 
     if(shaderPath.empty() == false){
-        SetShader(AssetManager::Get().LoadShaderFromFile(shaderPath));
+        SetShader(AssetManager::Get().LoadAsset<Shader>(shaderPath));
     }
 }
 

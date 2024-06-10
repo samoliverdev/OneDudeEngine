@@ -30,9 +30,9 @@ struct UniformBuffer_12: OD::Module {
 
         cBuffer = UniformBuffer::Create();
 
-        model = AssetManager::Get().LoadModel("res/Game/Models/cube.glb");
-        model->materials[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Game/Shaders/UniformBufferInstancing.glsl"));
-        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Game/Textures/rock.jpg", {OD::TextureFilter::Linear, false}));
+        model = AssetManager::Get().LoadAsset<Model>("res/Game/Models/cube.glb");
+        model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/UniformBufferInstancing.glsl"));
+        model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("res/Game/Textures/rock.jpg"));
 
         for(int i = 0; i < 100; i++){
             float posRange = 25;
@@ -83,7 +83,7 @@ struct UniformBuffer_12: OD::Module {
     }
 
     void OnGUI() override {
-        ImGui::Begin("Renderer Stats");
+        ImGui::Begin("UniformBuffer");
         ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
         ImGui::Text("Vertices: %dk", Graphics::GetVerticesCount() / 1000);
         ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);

@@ -267,6 +267,90 @@
     "LightComponentEntities": [
         2
     ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "res/Game/Models/Cube.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "res/Game/Models/plane.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Memory"
+                ]
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        5,
+        4
+    ],
     "CameraComponents": [
         {
             "type": 0,
@@ -305,7 +389,7 @@
                         "id": 2147483649,
                         "data": {
                             "enable": false,
-                            "mode": "None"
+                            "mode": -1
                         }
                     }
                 },
@@ -418,31 +502,14 @@
             "fontRef": {
                 "isNull": false,
                 "path": "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf"
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Memory"
             }
         }
     ],
     "TextRendererComponentEntities": [
         0
-    ],
-    "ModelRendererComponents": [
-        {
-            "subMeshIndex": -1,
-            "path": "res/Game/Models/Cube.glb",
-            "materialsOverridePaths": [
-                "Memory",
-                ""
-            ]
-        },
-        {
-            "subMeshIndex": -1,
-            "path": "res/Game/Models/plane.glb",
-            "materialsOverridePaths": [
-                "Memory"
-            ]
-        }
-    ],
-    "ModelRendererComponentEntities": [
-        5,
-        4
     ]
 }

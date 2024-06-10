@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Editor/EditorPanel.h"
-#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 

@@ -35,6 +35,11 @@ public:
     Skeleton skeleton;
 
     std::vector<Ref<Clip>> animationClips;
+
+    void LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
+
+    void SetShader(Ref<Shader> customShader);
     
     static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
     static AABB GenerateAABB(Model& model);

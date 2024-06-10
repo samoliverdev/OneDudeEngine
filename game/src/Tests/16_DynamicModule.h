@@ -57,8 +57,8 @@ struct DynamicModule_16: OD::Module {
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
         cam.farClipPlane = 1000;
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel("res/Game/Models/plane.glb");
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
+        Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/plane.glb");
+        Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();

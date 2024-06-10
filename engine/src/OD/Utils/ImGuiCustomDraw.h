@@ -2,10 +2,10 @@
 
 #include "OD/Core/ImGui.h"
 #include "OD/Graphics/Material.h"
-#include "OD/Core/AssetManager.h"
 
 namespace ImGui{
     void DrawMaterialAsset(std::string& name, OD::Ref<OD::Material>& asset, OD::Ref<OD::Material> preview = nullptr);
+    void _SelectionAsset(OD::Ref<OD::Asset> asset);
 
     template<class T>
     void DrawAsset(std::string& name, OD::Ref<T>& asset, OD::Ref<T> preview = nullptr){
@@ -17,11 +17,18 @@ namespace ImGui{
             strcpy(_field, field.c_str()); 
             ImGui::InputText(name.c_str(), _field, field.size(), ImGuiInputTextFlags_ReadOnly);
 
+            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+                _SelectionAsset(asset == nullptr ? preview : asset);
+            }
         } else {
             std::string field = asset == nullptr ? "None" : asset->Path();
             char _field[160];
             strcpy(_field, field.c_str()); 
             ImGui::InputText(name.c_str(), _field, field.size(), ImGuiInputTextFlags_ReadOnly);
+            
+            if(asset != nullptr && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+                _SelectionAsset(asset);
+            }
         }
 
         if(asset != nullptr){

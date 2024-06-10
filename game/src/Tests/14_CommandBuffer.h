@@ -40,7 +40,7 @@ struct CommandBuffer_14: OD::Module {
         framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
         renderTarget = new Framebuffer(framebufferSpecification);
 
-        cubeModel = AssetManager::Get().LoadModel("res/Game/Models/cube.glb");
+        cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/cube.glb");
 
         meshShader = Shader::CreateFromFile("res/Engine/Shaders/Unlit.glsl");
         texture = Texture2D::CreateFromFile("res/Game/Textures/image.jpg", Texture2DSetting());

@@ -22,11 +22,14 @@ void InitFreeFont(){
     freeFontHasInited = true;
 }
 
-Font::Font(const char* inPath){
+Font::Font(const std::string& inPath){
+    LoadFromFile(path);
+    return;
+
     InitFreeFont();
 
     FT_Face face;
-    if(FT_New_Face(ft, inPath, 0, &face)){
+    if(FT_New_Face(ft, inPath.c_str(), 0, &face)){
         LogError("ERROR::FREETYPE: Failed to load font");  
         Application::Quit();
     }
@@ -84,6 +87,8 @@ Font::Font(const char* inPath){
 
 Ref<Font> Font::CreateFromFile(const char* path){
     Ref<Font> font = CreateRef<Font>();
+    font->LoadFromFile(path);
+    return font;
 
     InitFreeFont();
 

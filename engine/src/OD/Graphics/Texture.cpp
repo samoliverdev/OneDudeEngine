@@ -15,6 +15,32 @@ const int TextureFilterLookupMipmap[] = {
     GL_LINEAR_MIPMAP_LINEAR
 };
 
+Texture2D::Texture2D(const std::string& filePath, Texture2DSetting settings){
+    if(Create(path, settings) == false){
+        Destroy(*this);
+    }
+}
+
+Texture2D::Texture2D(void* data, size_t size, Texture2DSetting settings){
+    if(Create(data, size, settings) == false){
+        Destroy(*this);
+    }
+} 
+
+void Texture2D::LoadFromFile(const std::string& path){
+    Texture2DSetting defaultSetting;
+    if(Create(path, defaultSetting) == false){
+        Destroy(*this);
+    }
+}
+
+std::vector<std::string> Texture2D::GetFileAssociations(){ 
+    return std::vector<std::string>{
+        ".jpg",
+        ".png"
+    }; 
+}
+
 void LoadSettings(const char* filePath, Texture2DSetting& settings);
 
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
@@ -127,6 +153,10 @@ Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2
 
     return tex;
     */
+}
+
+Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
+    return AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/White.jpg");
 }
 
 void Texture2D::Destroy(Texture2D& tex){

@@ -1,4 +1,8 @@
 #include "Editor.h"
+#include "OD/Core/Asset.h"
+#include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Utils/PlatformUtils.h"

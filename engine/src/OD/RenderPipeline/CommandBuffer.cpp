@@ -1,11 +1,27 @@
 #include "CommandBuffer.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "MeshRendererComponent.h"
-#include "OD/Core/AssetManager.h"
-#include "OD/Core/Instrumentor.h"
-#include "OD/Defines.h"
 #include <algorithm>
 
 namespace OD{
+
+bool DrawCommand::operator<(const DrawCommand& a) const {
+    return material->MaterialId() < a.material->MaterialId();
+}
+
+bool SkinnedDrawCommand::operator<(const SkinnedDrawCommand& a) const {
+    return material->MaterialId() < a.material->MaterialId();
+}
+
+bool DrawInstancingCommand::operator<(const DrawCommand& a) const{
+    return material->MaterialId() < a.material->MaterialId();
+}
+
+bool MaterialBind2::operator<(const MaterialBind2& a) const{
+    return materialId < a.materialId;
+}
 
 void CommandBuffer::SetCamera(Camera inCamera){
     setCamera = true;

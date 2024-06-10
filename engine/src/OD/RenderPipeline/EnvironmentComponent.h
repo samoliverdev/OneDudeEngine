@@ -89,7 +89,7 @@ private:
         Assert(settings.skyboxCubemap != nullptr);
 
         settings.sky = CreateRef<Material>();
-        settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkyboxCubemap.glsl"));
+        settings.sky->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
         settings.sky->SetCubemap("mainTex", settings.skyboxCubemap);
 

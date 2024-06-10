@@ -1,4 +1,6 @@
 #include "ProfilePanel.h"
+#include "OD/Core/Instrumentor.h"
+#include "OD/Core/ImGui.h"
 
 namespace OD{
 

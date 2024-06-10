@@ -40,7 +40,18 @@ struct OD_API ModelRendererComponent{
 
     inline std::vector<Ref<Material>>& GetMaterialsOverride(){ return materialsOverride; }
 
-    template<class Archive>
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, localTransform);
+        ArchiveDumpNVP(ar, subMeshIndex);
+
+        AssetRef<Model> modelRef(model);
+        ArchiveDumpNVP(ar, modelRef);
+        AssetVectorRef<Material> materialVectorRef(materialsOverride);
+        ArchiveDumpNVP(ar, materialVectorRef);
+    }
+
+    /*template<class Archive>
     void save(Archive & ar) const{
         std::string path = model == nullptr ? "" : model->Path();
         std::vector<std::string> materialsOverridePaths;
@@ -48,12 +59,6 @@ struct OD_API ModelRendererComponent{
         for(auto i: materialsOverride){
             materialsOverridePaths.push_back(i == nullptr ? "" : i->Path());
         }
-
-        /*ar(
-            CEREAL_NVP(subMeshIndex),
-            CEREAL_NVP(path),
-            CEREAL_NVP(materialsOverridePaths)
-        );*/
 
         ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
         ArchiveDump(ar, CEREAL_NVP(path));
@@ -65,31 +70,23 @@ struct OD_API ModelRendererComponent{
         std::string path;
         std::vector<std::string> materialsOverridePaths;
 
-        /*ar(
-            CEREAL_NVP(subMeshIndex),
-            CEREAL_NVP(path),
-            CEREAL_NVP(materialsOverridePaths)
-        );*/
-
         ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
         ArchiveDump(ar, CEREAL_NVP(path));
         ArchiveDump(ar, CEREAL_NVP(materialsOverridePaths));
 
 
         if(path.empty() == false){
-            SetModel(AssetManager::Get().LoadModel(path));
+            SetModel(AssetManager::Get().LoadAsset<Model>(path));
         }
 
         if(model != nullptr) Assert(materialsOverride.size() == materialsOverride.size()); 
 
-        //if(_materialsOverride.size() != materialsOverride.size()) _materialsOverride.resize(materialsOverride.size());
-
         int index = 0;
         for(auto i: materialsOverridePaths){
-            if(i.empty() == false) materialsOverride[index] = AssetManager::Get().LoadMaterial(i);
+            if(i.empty() == false) materialsOverride[index] = AssetManager::Get().LoadAsset<Material>(i);
             index += 1;
         }
-    }
+    }*/
 
     AABB GetAABB();
     AABB GetGlobalAABB(TransformComponent& transform);

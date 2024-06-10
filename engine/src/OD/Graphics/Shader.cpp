@@ -224,6 +224,12 @@ GLenum ShaderTypeFromString(const std::string& type){
     return 0;
 }
 
+void Shader::LoadFromFile(const std::string& path){
+    std::vector<std::string> keyworlds;
+    if(Create(path, keyworlds) == false){
+    }
+}
+
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     std::vector<std::string> keyworlds;
 

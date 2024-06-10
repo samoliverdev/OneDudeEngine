@@ -25,7 +25,7 @@ struct UberShader_15: OD::Module {
 
         camMove.transform = &camTransform;
 
-        model = AssetManager::Get().LoadModel("res/Game/Models/suzane.obj");
+        model = AssetManager::Get().LoadAsset<Model>("res/Game/Models/suzane.obj");
         uberShader = new ShaderHandler("res/Game/Shaders/UberShaderTest.glsl");
         uberShader->EnableKeyword("Fade");
         uberShader->EnableKeyword("Instancing");
@@ -47,7 +47,7 @@ struct UberShader_15: OD::Module {
         Matrix4 m1 = math::translate(Matrix4Identity, Vector3(2, 0, 0));
         Matrix4 m2 = math::translate(Matrix4Identity, Vector3(-2, 0, 0));
 
-        uberShader->EnableKeyword("COLOR_1");
+        uberShader->EnableKeyword("COLOR1");
         uberShader->SetCurrentShader();
         //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m1);
         Shader::Bind(*uberShader->GetCurrentShader());
@@ -55,7 +55,7 @@ struct UberShader_15: OD::Module {
         Graphics::SetModelMatrix(*uberShader->GetCurrentShader(), m1);
         Graphics::DrawMeshRaw(*model->meshs[0]);
 
-        uberShader->DisableKeyword("COLOR_1");
+        uberShader->DisableKeyword("COLOR1");
         uberShader->SetCurrentShader();
         //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m2);
         Shader::Bind(*uberShader->GetCurrentShader());

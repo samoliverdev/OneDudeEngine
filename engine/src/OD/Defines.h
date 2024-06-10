@@ -20,7 +20,7 @@
 #include <typeinfo>
 #include <typeindex>*/
 
-//#undef NDEBUG
+#undef NDEBUG
 #include <assert.h>
 
 #ifdef _WIN32
@@ -59,6 +59,8 @@ static const char* LogColors[] = {
         fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level); \
         fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, "\n");
+
+    //fprintf(stderr, "\nat line number %d in file %s", __LINE__, __FILE__); \
 
     /*void _LOG(const char* level, int colorIndex, const char* message, ...){
         va_list args;

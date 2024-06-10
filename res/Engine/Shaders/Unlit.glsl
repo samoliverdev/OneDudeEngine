@@ -17,7 +17,7 @@ uniform mat4 projection;
 uniform float useInstancing = 0;
 */
 
-#include ../ShaderLibrary/Vertex.glsl
+#include res/Engine/ShaderLibrary/Vertex.glsl
 
 out vec3 _pos;
 out vec3 _normal;
@@ -46,7 +46,7 @@ in vec2 _texCoord;
 
 out vec4 fragColor;
 
-#include TestLib.glsl
+#include res/Engine/Shaders/TestLib.glsl
 
 void main(){
     vec4 texColor = texture(mainTex, _texCoord);

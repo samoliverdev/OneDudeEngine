@@ -18,7 +18,7 @@ struct PhysicsCubeS: public Script{
 
         Entity& entity = GetEntity();
 
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
+        Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
         //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
         //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
         //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
@@ -75,7 +75,7 @@ struct Physics_6: OD::Module {
         textRenderer.text = "Ai meu cu!!!";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
         textRenderer.font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
-        //textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
+        textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
@@ -97,8 +97,8 @@ struct Physics_6: OD::Module {
         //camMove.OnInit();
         cam.farClipPlane = 1000;
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel("res/Game/Models/plane.glb");
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel("res/Game/Models/Cube.glb");
+        Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/plane.glb");
+        Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();

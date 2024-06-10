@@ -1,21 +1,20 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Module.h"
-#include "OD/Core/Asset.h"
-#include "OD/Scene/Scene.h"
-#include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Panels/SceneHierarchyPanel.h"
 #include "OD/Editor/Panels/ContentBrowserPanel.h"
 #include "OD/Editor/Panels/InspectorPanel.h"
 #include "OD/Editor/Panels/ViewportPanel.h"
 #include "OD/Editor/Panels/ProfilePanel.h"
 #include "OD/Editor/Panels/RendererStatsPanel.h"
-#include "OD/Graphics/Framebuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "EditorCamera.h"
 #include "Workspace.h"
 
 namespace OD{
+
+class Asset;
+class Framebuffer;
 
 class OD_API Editor: public Module{
     friend class SceneHierarchyPanel;
@@ -42,14 +41,12 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(sceneHierarchyPanel.show),
-            CEREAL_NVP(contentBrowserPanel.show),
-            CEREAL_NVP(inspectorPanel.show),
-            CEREAL_NVP(viewportPanel.show),
-            CEREAL_NVP(profilePanel.show),
-            CEREAL_NVP(rendererStatsPanel.show)
-        );
+        ArchiveDumpNVP(ar, sceneHierarchyPanel.show);
+        ArchiveDumpNVP(ar, contentBrowserPanel.show);
+        ArchiveDumpNVP(ar, inspectorPanel.show);
+        ArchiveDumpNVP(ar, viewportPanel.show);
+        ArchiveDumpNVP(ar, profilePanel.show);
+        ArchiveDumpNVP(ar, rendererStatsPanel.show);
     }
 
 private:

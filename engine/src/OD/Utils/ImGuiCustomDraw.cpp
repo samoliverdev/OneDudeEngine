@@ -1,5 +1,5 @@
 #include "ImGuiCustomDraw.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Asset.h"
 #include "OD/Editor/Editor.h"
 
 namespace ImGui{
@@ -48,9 +48,15 @@ void DrawMaterialAsset(std::string& name, OD::Ref<OD::Material>& asset, OD::Ref<
 
     ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
         if(path->string().empty() == false && path->extension() == ".material"){
-            asset = AssetManager::Get().LoadMaterial(path->string());
+            asset = AssetManager::Get().LoadAsset<Material>(path->string());
         }
     });
+}
+
+void _SelectionAsset(OD::Ref<OD::Asset> asset){
+    if(Editor::Get() != nullptr){
+        Editor::Get()->SetSelectionAsset(asset);
+    }
 }
 
 }

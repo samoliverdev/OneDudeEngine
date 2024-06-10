@@ -66,6 +66,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     #using Clang
 else() 
     add_compile_options(/bigobj)
+    add_compile_options(/MP)
 endif()
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 

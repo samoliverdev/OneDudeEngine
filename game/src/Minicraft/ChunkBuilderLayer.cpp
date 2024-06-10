@@ -70,10 +70,10 @@ float Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
 ChunkBuilderLayer::ChunkBuilderLayer(WorldManagerSystem* inWorldManagerSystem){
     texture = CreateRef<Texture2DArray>(texturePaths);
 
-    materialOpaque = CreateRef<Material>(AssetManager::Get().LoadShaderFromFile("res/Game/Shaders/Minicraft.glsl"));
+    materialOpaque = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/Minicraft.glsl"));
     materialOpaque->SetTexture("mainTex", texture);
 
-    materialWater = CreateRef<Material>(AssetManager::Get().LoadShaderFromFile("res/Game/Shaders/MinicraftWater.glsl"));
+    materialWater = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/MinicraftWater.glsl"));
     materialWater->SetTexture("mainTex", texture);
     materialWater->SetVector4("color", Vector4{1, 1, 1, 0.85f});
     materialWater->SetFloat("smoothness", 0.55f);

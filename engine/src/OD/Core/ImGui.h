@@ -13,7 +13,6 @@ namespace OD{
 class OD_API ImGuiLayer{
 public:    
     static void SetDarkTheme();
-
     static void SetCleanAll(bool value);
     static bool GetCleanAll();
 };

@@ -57,8 +57,8 @@ struct Animation_7: public OD::Module{
         camMove.transform = & camTransform;
         camMove.OnStart();
 
-        texture = AssetManager::Get().LoadTexture2D("res/Game/Models/gltf/Woman.png");
-        shader = AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/SkinnedModel.glsl");
+        texture = AssetManager::Get().LoadAsset<Texture2D>("res/Game/Models/gltf/Woman.png");
+        shader = AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkinnedModel.glsl");
         
         cgltf_data* char1 = OD::LoadGLTFFile("res/Game/Models/gltf/Woman.gltf");
         //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");

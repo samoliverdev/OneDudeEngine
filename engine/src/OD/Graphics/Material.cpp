@@ -3,7 +3,7 @@
 #include <fstream>
 #include "OD/Utils/PlatformUtils.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Asset.h"
 #include "OD/Core/ImGui.h"
 #include <filesystem>
 #include <magic_enum/magic_enum.hpp>
@@ -12,7 +12,7 @@ namespace OD{
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
-        texture = AssetManager::Get().LoadTexture2D(texPath);
+        texture = AssetManager::Get().LoadAsset<Texture2D>(texPath);
     }
 }
 
@@ -315,7 +315,8 @@ void Material::OnGui(){
     ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
         if(path->string().empty() == false && path->extension() == ".glsl"){
             //_shader = AssetManager::Get().LoadShaderFromFile(path->string());
-            SetShader(AssetManager::Get().LoadShaderFromFile(path->string()));
+            //SetShader(AssetManager::Get().LoadShaderFromFile(path->string()));
+            SetShader(AssetManager::Get().LoadAsset<Shader>(path->string()));
             toSave = true;
         }
     });
@@ -386,14 +387,14 @@ void Material::OnGui(){
             ImGui::Image((void*)(uint64_t)map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 0), ImVec2(1, -1));
             ImGui::SetCursorPos(imagePos);
             if(ImGui::SmallButton("X")){
-                map.texture = AssetManager::Get().LoadDefautlTexture2D();
+                map.texture = Texture2D::LoadDefautlTexture2D();
                 toSave = true;
             }
             ImGui::EndGroup();
 
             ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
                 if(path->string().empty() == false && (path->extension() == ".png" || path->extension() == ".jpg")){
-                    map.texture = AssetManager::Get().LoadTexture2D(path->string(), {TextureFilter::Linear, true});
+                    map.texture = AssetManager::Get().LoadAsset<Texture2D>(path->string());
                     toSave = true;
                 }
             });
@@ -458,6 +459,20 @@ void Material::Save(std::string& path){
     archive(cereal::make_nvp("Material",*this));
 }
 
+void Material::LoadFromFile(const std::string& path){
+    Path(path);
+
+    std::ifstream os(path);
+    cereal::JSONInputArchive archive{os};
+    archive(*this);
+}
+
+std::vector<std::string> Material::GetFileAssociations(){
+    return std::vector<std::string>{
+		".material"
+	};
+}
+
 Ref<Material> Material::CreateFromFile(std::string const &path){
     //Assert(false && "Not Implemented");
 
@@ -509,13 +524,13 @@ void Material::UpdateMaps(){
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
             if(i[2] == "White"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/White.jpg", {TextureFilter::Linear, true}) );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/White.jpg") );
             } else if(i[2] == "Black"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/Black.jpg", {TextureFilter::Linear, true}) );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/Black.jpg") );
             } else if(i[2] == "Normal"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadTexture2D("res/Engine/Textures/Normal.jpg", {TextureFilter::Linear, true}) );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/Normal.jpg") );
             } else {
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadDefautlTexture2D());
+                SetTexture(i[1].c_str(), Texture2D::LoadDefautlTexture2D());
             }
         }
 

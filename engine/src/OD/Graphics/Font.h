@@ -20,7 +20,7 @@ struct OD_API Font: public Asset{
     friend class Graphics;
 
     Font() = default;
-    Font(const char* path);
+    Font(const std::string& inPath);
     static Ref<Font> CreateFromFile(const char* path);
     void LoadFromFile(const std::string& path) override;
 
@@ -40,18 +40,3 @@ private:
 };
 
 }
-
-//CEREAL_REGISTER_TYPE(Font)
-
-/*namespace cereal{
-
-template <> struct LoadAndConstruct<OD::Font>{
-    template <class Archive>
-    static void load_and_construct(Archive& ar, cereal::construct<OD::Font>& construct){
-        std::string path;
-        ArchiveDump(ar, CEREAL_NVP(path)); //ar(path);
-        construct(path.c_str()); // calls MyType( x )
-    }
-};
-
-}*/

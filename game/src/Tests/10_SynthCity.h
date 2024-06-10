@@ -40,12 +40,11 @@ struct SynthCity_10: OD::Module {
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 160;
         cam.farClipPlane = 10000;
 
-        Ref<Model> cityModel = AssetManager::Get().LoadModel(
-            "res/Game/Models/PolygonCity/FBX_SCENE/City.fbx",
-            //"res/PolygonCity/City.fbx",
-            //AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/StandDiffuse.glsl")
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
+        Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
+            "res/Game/Models/PolygonCity/FBX_SCENE/City.fbx"
+            //"res/PolygonCity/City.fbx"
         );
+        cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
   
         /*Entity floorEntity = scene->AddEntity("City");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();

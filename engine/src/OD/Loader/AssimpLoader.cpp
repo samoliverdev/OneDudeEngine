@@ -1,5 +1,5 @@
 #include "AssimpLoader.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Asset.h"
 
 namespace OD{
 
@@ -187,15 +187,14 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
             textures.push_back(texture);
         } else {
             std::string filename = loadData.directory + '/' +std::string(str.C_Str());
-            Ref<Texture2D> texture = AssetManager::Get().LoadTexture2D(filename.c_str(), {TextureFilter::Linear, true});
+            Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
             textures.push_back(texture);
         }
     }
 
     if(textures.empty()){
-        textures.push_back(AssetManager::Get().LoadTexture2D(
-            "res/Engine/Textures/White.jpg", 
-            {OD::TextureFilter::Linear, false}
+        textures.push_back(AssetManager::Get().LoadAsset<Texture2D>(
+            "res/Engine/Textures/White.jpg"
         ));
     }
 
@@ -263,7 +262,7 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> cus
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Model.glsl"));
+        out->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Model.glsl"));
     } else {
         out->SetShader(customShader);
     }

@@ -21,7 +21,7 @@ GLenum glCheckError_(const char *file, int line, std::function<void()> callback)
         //Assert(false);
         if(callback != nullptr) callback();
 
-        //Assert(false);
+        Assert(false);
     }
 
     return errorCode;

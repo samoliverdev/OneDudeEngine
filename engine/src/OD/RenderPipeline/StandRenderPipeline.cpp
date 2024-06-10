@@ -15,7 +15,7 @@ Shadows::Shadows(){
     directionalShadowAtlas = new Framebuffer(specification);
 
     shadowPass = CreateRef<Material>();
-    shadowPass->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/ShadowMap.glsl"));
 }
 
 void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera inCam){

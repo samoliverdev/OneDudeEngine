@@ -131,9 +131,23 @@ private:
         ImGui::DrawAsset<T>(std::string(name), value.asset);
     }
 
+    template<class T>
+    void DrawUI(const char* name, OD::AssetVectorRef<T>& value, Options opt = Options()){
+        if(ImGui::TreeNodeEx(name)){
+            int index = 0;
+            for(auto& asset: value.assets){
+                std::string name = "["+std::to_string(index)+"]";
+                ImGui::DrawAsset<T>(std::string(name), asset);
+                //ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
+                index += 1;
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
     template<class T, std::enable_if_t<std::is_base_of<OD::Asset, T>{}> * = nullptr>
     void DrawUI(const char* name, OD::Ref<T>& value, Options opt = Options()){
-        ImGui::Text("Test");
         ImGui::DrawAsset<T>(std::string(name), value);
     }
 

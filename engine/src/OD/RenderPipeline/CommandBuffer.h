@@ -1,15 +1,19 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Graphics/Material.h"
+/*#include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
-#include "OD/Graphics/Framebuffer.h"
-#include "OD/Graphics/Graphics.h"
-#include "OD/Graphics/Culling.h"
-#include "OD/Scene/Scene.h"
+#include "OD/Graphics/Framebuffer.h"*/
+//#include "OD/Graphics/Graphics.h"
+//#include "OD/Graphics/Culling.h"
+#include "OD/Graphics/Camera.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
 
 namespace OD{
+
+class Material;
+class Mesh;
+class Framebuffer;
 
 struct OD_API DrawCommand{
     Ref<Material> material;
@@ -17,9 +21,7 @@ struct OD_API DrawCommand{
     Matrix4 trans;
     float distance;
 
-    bool operator<(const DrawCommand& a) const{
-        return material->MaterialId() < a.material->MaterialId();
-    }
+    bool operator<(const DrawCommand& a) const;
 };
 
 struct OD_API SkinnedDrawCommand{
@@ -29,9 +31,7 @@ struct OD_API SkinnedDrawCommand{
     std::vector<Matrix4>* posePalette;
     float distance;
 
-    bool operator<(const SkinnedDrawCommand& a) const{
-        return material->MaterialId() < a.material->MaterialId();
-    }
+    bool operator<(const SkinnedDrawCommand& a) const;
 };
 
 struct OD_API DrawInstancingCommand{
@@ -39,18 +39,14 @@ struct OD_API DrawInstancingCommand{
     Ref<Mesh> meshs;
     std::vector<Matrix4> trans;
 
-    bool operator<(const DrawCommand& a) const{
-        return material->MaterialId() < a.material->MaterialId();
-    }
+    bool operator<(const DrawCommand& a) const;
 };
 
 struct OD_API MaterialBind2{
     float distance;
     uint32_t materialId;
 
-    bool operator<(const MaterialBind2& a) const{
-        return materialId < a.materialId;
-    }
+    bool operator<(const MaterialBind2& a) const;
 };
 
 struct OD_API CommandBuffer{

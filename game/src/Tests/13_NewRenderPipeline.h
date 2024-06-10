@@ -35,11 +35,11 @@ struct NewRenderPipeline_13: public OD::Module {
         et.GetComponent<TransformComponent>().Position(pos);
         et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
         ModelRendererComponent& _meshRenderer3 = et.AddComponent<ModelRendererComponent>();
-        _meshRenderer3.SetModel(AssetManager::Get().LoadModel("res/Engine/Models/plane.obj"));
+        _meshRenderer3.SetModel(AssetManager::Get().LoadAsset<Model>("res/Engine/Models/plane.obj"));
 
         for(auto i: _meshRenderer3.GetModel()->materials){
-            i->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/UnlitBlend.glsl"));
-            i->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/Engine/Textures/blending_transparent.png", {TextureFilter::Linear, true}));
+            i->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/UnlitBlend.glsl"));
+            i->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/blending_transparent.png"));
         }
     }
 
@@ -56,20 +56,14 @@ struct NewRenderPipeline_13: public OD::Module {
         //scene->RemoveSystem<StandRenderPipeline>();
         //scene->AddSystem<StandRenderPipeline2>();
 
-        Ref<Model> floorModel = AssetManager::Get().LoadModel(
-            "res/Game/Models/plane.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
-        );
+        Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/plane.glb");
+        floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
-        Ref<Model> cubeModel = AssetManager::Get().LoadModel(
-            "res/Game/Models/Cube.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
-        );
+        Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
+        cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
-        Ref<Model> sphereModel = AssetManager::Get().LoadModel(
-            "res/Game/Models/Sphere.glb",
-            AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl")
-        );
+        Ref<Model> sphereModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Sphere.glb");
+        sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         Entity env = scene->AddEntity("Env");
         env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
@@ -80,7 +74,7 @@ struct NewRenderPipeline_13: public OD::Module {
         ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
         _meshRenderer.SetModel(floorModel);
         _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-        _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+        _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
    
         Entity e2 = scene->AddEntity("Cube");
         e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
@@ -88,7 +82,7 @@ struct NewRenderPipeline_13: public OD::Module {
         ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
         _meshRenderer2.SetModel(cubeModel);
         _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
-        _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+        _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         /*Entity e3 = scene->AddEntity("Sphere");
         e3.GetComponent<TransformComponent>().Position(Vector3(8, 2, 8));
@@ -105,24 +99,21 @@ struct NewRenderPipeline_13: public OD::Module {
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
             meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
         scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereLighting", [&](auto& transform, auto& meshRenderer){
             Ref<Material> material = CreateRef<Material>();
             *material = *LoadFloorMaterial();
-            material->SetTexture(
-                "emissionMap", 
-                AssetManager::Get().LoadTexture2D("res/Engine/Textures/White.jpg", {TextureFilter::Linear, true})
-            );
+            material->SetTexture("emissionMap", AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/White.jpg"));
             material->SetVector4("emissionColor", Vector4(2,2,2,2));
 
             transform.Position(Vector3(8*2.5f, 2, 8));
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
             meshRenderer.GetMaterialsOverride()[0] = material;
-            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
@@ -130,15 +121,15 @@ struct NewRenderPipeline_13: public OD::Module {
             Ref<Material> material = CreateRef<Material>();
             material->SetTexture(
                 "mainTex", 
-                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-albedo.png", {TextureFilter::Linear, true})
+                AssetManager::Get().LoadAsset<Texture2D>("res/Game/Materials/Complex/circuitry-albedo.png")
             );
             material->SetTexture(
                 "emissionMap", 
-                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-emission.png", {TextureFilter::Linear, true})
+                AssetManager::Get().LoadAsset<Texture2D>("res/Game/Materials/Complex/circuitry-emission.png")
             );
             material->SetTexture(
                 "maskMap", 
-                AssetManager::Get().LoadTexture2D("res/Game/Materials/Complex/circuitry-mask-mods.png", {TextureFilter::Linear, true})
+                AssetManager::Get().LoadAsset<Texture2D>("res/Game/Materials/Complex/circuitry-mask-mods.png")
             );
             material->SetFloat("metallic", 1);
 
@@ -146,7 +137,7 @@ struct NewRenderPipeline_13: public OD::Module {
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
             meshRenderer.GetMaterialsOverride()[0] = material;
-            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
 
@@ -159,7 +150,7 @@ struct NewRenderPipeline_13: public OD::Module {
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
             meshRenderer.GetMaterialsOverride()[0] = material;
-            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Lit.glsl"));
+            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
             meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
         //*/

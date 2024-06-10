@@ -1,6 +1,12 @@
 #include "CameraComponent.h"
+#include "OD/Core/ImGui.h"
+#include "OD/Core/Math.h"
 
 namespace OD{
+
+Camera CameraComponent::GetCamera(){ 
+    return camera; 
+}
 
 void CameraComponent::UpdateCameraData(TransformComponent& transform, int width, int height){
     if(type == Type::Perspective)

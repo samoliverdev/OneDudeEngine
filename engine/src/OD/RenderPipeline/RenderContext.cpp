@@ -4,7 +4,7 @@
 #include "ModelRendererComponent.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Asset.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Defines.h"
 #include "OD/Physics/PhysicsSystem.h"
@@ -34,7 +34,7 @@ RenderContext::RenderContext(Scene* inScene){
     postFx1 = new Framebuffer(framebufferSpecification);
     postFx2 = new Framebuffer(framebufferSpecification);
 
-    blitShader = AssetManager::Get().LoadShaderFromFile("res/Engine/Shaders/Blit.glsl");
+    blitShader = AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Blit.glsl");
 
     skyboxMesh = Mesh::SkyboxCube();
 }
