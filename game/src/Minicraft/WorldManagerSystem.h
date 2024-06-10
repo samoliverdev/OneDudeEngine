@@ -9,27 +9,6 @@
 
 using namespace OD;
 
-/*struct _IVector3{
-    int x;
-    int y; 
-    int z;
-
-    _IVector3(int _x, int _y, int _z):x(_x),y(_y),z(_z){}
-    _IVector3(IVector3 v):x(v.x),y(v.y),z(v.z){}
-};
-
-bool operator<(const _IVector3& a, const _IVector3& b);
-
-inline IVector3 ToIVector3(_IVector3 v){ return IVector3(v.x, v.y, v.z); }*/
-
-Ref<Mesh> _LoadChunk(IVector3 coord);
-
-struct ChunkDataHolder{
-    Ref<Mesh> mesh;
-    Ref<ChunkData> chunkData;
-    Ref<std::atomic<bool>> done;
-};
-
 class ChunkBuilderLayer;
 
 class WorldManagerSystem: public System{
@@ -47,33 +26,35 @@ public:
 
     bool CheckForVoxelNotEmpty(Vector3 worldPos, bool invertZ = true);
     bool CheckForVoxelIsEmpty(Vector3 worldPos, bool invertZ = true);
+    int CheckForVoxel(Vector3 worldPos, bool invertZ = true);
     ChunkComponent* GetChunkFromWorldPos(Vector3 worldPos);
 
 private:
     Ref<ChunkBuilderLayer> chunkBuilderLayer;
-    
     std::unordered_map<IVector3, Entity> loadedChunks;
-    std::unordered_map<IVector3, Ref<ChunkData>> loadedChunksB;
+    std::unordered_map<IVector3, ChunkDataHolder> loadedChunksB;
 
     IVector3 lastCoord;
     IVector3 currentCoord;
     Vector3 camPos;
     //std::vector<IVector3> toLoadCoords;
     std::unordered_map<IVector3, bool> toLoadCoords;
-
     //std::unordered_map<IVector3, ChunkDataHolder> toLoadCoords2;
     std::vector<IVector3> toLoadCoordsA;
     std::vector<ChunkDataHolder> toLoadCoordsB;
+    
     IVector2 loadedIndexRange;
     const int loadedRangeStep = 33;
 
     std::vector<std::thread> loadingThreadsA;
-    int _loadingThreadsA = 0;
+    int loadingChunkDataJobs = 0;
     std::vector<std::thread> loadingThreadsB;
-    int _loadingThreadsB = 0;
+    int loadingMeshJobs = 0;
 
     //Ref<ThreadPool> threadPool = CreateRef<ThreadPool>(4);
     Ref<ThreadPool2> threadPool = CreateRef<ThreadPool2>();
+    std::vector<std::thread> loadingJobs;
+    std::atomic<bool> loadingJobsDone;
 
     bool hasPlaceAndHighlightPos;
     Vector3 placeBlockPos;
@@ -83,9 +64,13 @@ private:
     void HandleInput();
     void HandleChunkDirt();
 
+    Entity BuildChunkMeshEntity(Entity chunkRoot, Ref<Mesh>& mesh, Ref<Material>& material);
+    void UpdateChunkMeshEntity(Entity subChunk, Ref<Mesh>& mesh, Ref<Material>& material);
+
     void LoadChunk(IVector3 coord);
     void UnLoadChunk(IVector3 coord);
     void HandleLoadUnload();
     void HandleLoadUnload2();
+    void HandleLoadUnload3();
 };
 

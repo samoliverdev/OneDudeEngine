@@ -201,6 +201,7 @@ public:
 
 private:
     void _DestroyEntity(EntityId entity);
+    void _LoadTransform(ODInputArchive& archive, entt::registry& registry, std::string componentName);
     
     bool running = false;
 

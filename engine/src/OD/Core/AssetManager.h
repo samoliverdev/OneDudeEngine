@@ -67,12 +67,29 @@ public:
     Ref<Texture2D> LoadDefautlTexture2D();
     Ref<Shader> LoadErrorShader();
 
+    template<class T>
+    Ref<T> LoadAsset(const std::string& path){
+        auto& db = data[std::type_index(typeid(T))];
+        //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
+        if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
+
+        LogInfo("LoadAsset: %s", path.c_str());
+
+        Ref<T> d = CreateRef<T>();
+        d->LoadFromFile(path);
+        db[path] = d;
+        
+        //return reinterpret_cast<const Ref<T>&>(d);
+        return std::static_pointer_cast<T>(d);
+    }
+
     inline void UnloadAll(){
         meshs.clear();
         models.clear();
         shaders.clear();
         textures.clear();
         materials.clear();
+        data.clear();
     }
 
     static AssetManager& Get();
@@ -84,8 +101,7 @@ private:
     std::unordered_map<std::string, Ref<ShaderHandler>> shaderHandlers;
     std::unordered_map<std::string, Ref<Texture2D>> textures;
     std::unordered_map<std::string, Ref<Material>> materials;
-    
-    //std::unordered_map<std::type_index, std::vector<Asset*>> _data;
+    std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
 };
 
 }

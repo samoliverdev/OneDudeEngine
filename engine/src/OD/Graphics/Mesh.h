@@ -41,7 +41,7 @@ public:
 
     inline bool IsReadable(){ return isReadable; }
     inline int VertexCount(){ return vertexCount; }
-    inline int IndiceCount(){ return indiceCount; }
+    inline int IndiceCount(){ return ebo != 0 ? indiceCount : vertexCount / 3; }
 
     static Ref<Mesh> FullScreenQuad();
     static Ref<Mesh> SkyboxCube();

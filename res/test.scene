@@ -1,146 +1,185 @@
 {
-    "value0": 2,
-    "value1": 2,
-    "value2": 0,
-    "value3": 1,
-    "value4": 2,
-    "value5": 0,
-    "value6": {
-        "localPosition": {
-            "v.x": 0.0,
-            "v.y": 0.0,
-            "v.z": 0.0
+    "Entities": [
+        1,
+        0
+    ],
+    "InfoComponents": [
+        {
+            "name": "Test",
+            "tag": "",
+            "active": false
         },
-        "localRotation": {
-            "q.x": 0.0,
-            "q.y": 0.0,
-            "q.z": 0.0,
-            "q.w": 1.0
-        },
-        "localScale": {
-            "v.x": 1.0,
-            "v.y": 1.0,
-            "v.z": 1.0
-        },
-        "isDirt": true,
-        "children": [],
-        "parent": 0,
-        "hasParent": false
-    },
-    "value7": 1,
-    "value8": {
-        "localPosition": {
-            "v.x": 0.0,
-            "v.y": 0.0,
-            "v.z": 0.0
-        },
-        "localRotation": {
-            "q.x": 0.0,
-            "q.y": 0.0,
-            "q.z": 0.0,
-            "q.w": 1.0
-        },
-        "localScale": {
-            "v.x": 1.0,
-            "v.y": 1.0,
-            "v.z": 1.0
-        },
-        "isDirt": true,
-        "children": [],
-        "parent": 0,
-        "hasParent": false
-    },
-    "value9": 2,
-    "value10": 1,
-    "value11": {
-        "name": "Test2",
-        "tag": "",
-        "active": false
-    },
-    "value12": 0,
-    "value13": {
-        "name": "Test",
-        "tag": "",
-        "active": false
-    },
-    "value14": 1,
-    "value15": 0,
-    "value16": {
-        "speed": 0.0,
-        "test": {
-            "a": "",
-            "b": 0
-        },
-        "tests": [
-            {
-                "a": "",
-                "b": 0
+        {
+            "name": "Test2",
+            "tag": "",
+            "active": false
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 46.5,
+                "v.y": 0.0,
+                "v.z": 0.0
             },
-            {
-                "a": "",
-                "b": 0
-            }
-        ]
-    },
-    "value17": 0,
-    "value18": 1,
-    "value19": 1,
-    "value20": {},
-    "value21": 0,
-    "value22": 0,
-    "value23": 0,
-    "value24": 0,
-    "value25": 0,
-    "value26": 0,
-    "value27": 0,
-    "value28": 1,
-    "value29": 1,
-    "value30": {
-        "_float": 0.0,
-        "_int": 0,
-        "_string": "",
-        "_vector3": {
-            "v.x": 0.0,
-            "v.y": 0.0,
-            "v.z": 0.0
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.22069743275642396,
+                "q.z": 0.0,
+                "q.w": 0.975342333316803
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 25.5,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
         },
-        "_Vector4": {
-            "v.x": 0.0,
-            "v.y": 0.0,
-            "v.z": 0.0,
-            "v.w": 0.0
-        },
-        "_quaternion": {
-            "q.x": 0.0,
-            "q.y": 0.0,
-            "q.z": 0.0,
-            "q.w": 0.0
-        },
-        "_object": {
-            "center": {
+        {
+            "transform.localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "radius": 0.0
-        },
-        "_list": [
-            {
-                "center": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "radius": 0.0
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
             },
-            {
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        }
+    ],
+    "TransformComponentEntities": [
+        1,
+        0
+    ],
+    "ComponentTest_01s": [
+        {
+            "speed": 0.0,
+            "test": {
+                "a": "",
+                "b": 0
+            },
+            "tests": [
+                {
+                    "a": "",
+                    "b": 0
+                },
+                {
+                    "a": "",
+                    "b": 0
+                }
+            ]
+        }
+    ],
+    "ComponentTest_01Entities": [
+        0
+    ],
+    "MeshRendererComponents": [],
+    "MeshRendererComponentEntities": [],
+    "JointComponents": [],
+    "JointComponentEntities": [],
+    "ComponentTest_02s": [
+        {
+            "_float": 16.299999237060548,
+            "_int": 11,
+            "_string": "ffffffffffffff",
+            "_vector3": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "_Vector4": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 5.900000095367432,
+                "v.w": 0.0
+            },
+            "_quaternion": {
+                "q.x": 0.19574789702892304,
+                "q.y": 0.6523889899253845,
+                "q.z": -0.21041789650917054,
+                "q.w": 0.7012814283370972
+            },
+            "_object": {
                 "center": {
                     "v.x": 0.0,
-                    "v.y": 0.0,
+                    "v.y": 6.300000190734863,
                     "v.z": 0.0
                 },
-                "radius": 0.0
-            }
-        ]
-    }
+                "radius": 7.800000190734863
+            },
+            "_list": [
+                {
+                    "center": {
+                        "v.x": 0.0,
+                        "v.y": 6.5,
+                        "v.z": 0.0
+                    },
+                    "radius": 10.0
+                },
+                {
+                    "center": {
+                        "v.x": 0.0,
+                        "v.y": 8.5,
+                        "v.z": 0.0
+                    },
+                    "radius": 7.800000190734863
+                }
+            ]
+        }
+    ],
+    "ComponentTest_02Entities": [
+        1
+    ],
+    "RigidbodyComponents": [],
+    "RigidbodyComponentEntities": [],
+    "TextRendererComponents": [],
+    "TextRendererComponentEntities": [],
+    "LightComponents": [],
+    "LightComponentEntities": [],
+    "SkinnedModelRendererComponents": [],
+    "SkinnedModelRendererComponentEntities": [],
+    "ModelRendererComponents": [],
+    "ModelRendererComponentEntities": [],
+    "CameraComponents": [],
+    "CameraComponentEntities": [],
+    "EnvironmentComponents": [],
+    "EnvironmentComponentEntities": [],
+    "RagdollComponents": [],
+    "RagdollComponentEntities": [],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        1
+    ],
+    "AnimatorComponents": [],
+    "AnimatorComponentEntities": []
 }

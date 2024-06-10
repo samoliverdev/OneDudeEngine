@@ -27,6 +27,7 @@
 #define TYPE_TO_STRING(T) #T
 
 #define ArchiveDump(archive, data) try{ archive(data); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
+#define ArchiveDumpNVP(archive, data) try{ archive(CEREAL_NVP(data)); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
 
 namespace glm{
 

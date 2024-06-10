@@ -1,6 +1,5 @@
 #include "ImGuiCustomDraw.h"
 #include "OD/Core/AssetManager.h"
-
 #include "OD/Editor/Editor.h"
 
 namespace ImGui{

@@ -14,8 +14,8 @@ struct OD_API TextRendererComponent{
 
     bool is3d = false;
 
-    Ref<Font> font = nullptr;
-    Ref<Material> material = nullptr;
+    Ref<Font> font = nullptr; //Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf"); //nullptr;
+    Ref<Material> material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl")); //nullptr;
 
     static void OnGui(Entity& e);
 
@@ -27,6 +27,9 @@ struct OD_API TextRendererComponent{
         ArchiveDump(ar, CEREAL_NVP(is3d));
         //ArchiveDump(ar, CEREAL_NVP(font));
         //ArchiveDump(ar, CEREAL_NVP(material));
+
+        AssetRef<Font> fontRef(font);
+        ArchiveDump(ar, CEREAL_NVP(fontRef));
     }
 };
 

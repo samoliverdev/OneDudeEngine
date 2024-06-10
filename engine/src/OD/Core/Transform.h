@@ -7,8 +7,11 @@
 
 namespace OD {
     
+class Scene;
+
 class OD_API Transform{
     friend class TransformComponent;
+    //friend class Scene;
 public:
     Transform(){}
     Transform(Vector3 pos, Quaternion rot = QuaternionIdentity, Vector3 scale = Vector3(1, 1, 1)):
@@ -100,7 +103,7 @@ public:
         ArchiveDump(ar, CEREAL_NVP(localRotation));
         ArchiveDump(ar, CEREAL_NVP(localEulerAngles)); 
         ArchiveDump(ar, CEREAL_NVP(localScale)); 
-        ArchiveDump(ar, CEREAL_NVP(isDirt));
+        //ArchiveDump(ar, CEREAL_NVP(isDirt));
     }
 
 protected:

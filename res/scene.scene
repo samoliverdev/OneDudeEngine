@@ -1,5 +1,6 @@
 {
     "Entities": [
+        6,
         5,
         4,
         3,
@@ -8,6 +9,11 @@
         0
     ],
     "InfoComponents": [
+        {
+            "name": "Text",
+            "tag": "",
+            "active": false
+        },
         {
             "name": "Env",
             "tag": "",
@@ -45,7 +51,8 @@
         2,
         3,
         4,
-        5
+        5,
+        6
     ],
     "TransformComponents": [
         {
@@ -70,7 +77,6 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": true,
             "children": [],
             "parent": 0,
             "hasParent": false
@@ -97,7 +103,6 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
             "parent": 0,
             "hasParent": false
@@ -124,7 +129,6 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
             "parent": 0,
             "hasParent": false
@@ -151,7 +155,6 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
             "parent": 0,
             "hasParent": false
@@ -178,7 +181,6 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
             "parent": 0,
             "hasParent": false
@@ -205,13 +207,39 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": true,
+            "children": [],
+            "parent": 0,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 25.0,
+                "v.y": 25.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
             "children": [],
             "parent": 0,
             "hasParent": false
         }
     ],
     "TransformComponentEntities": [
+        6,
         5,
         4,
         3,
@@ -219,10 +247,6 @@
         1,
         0
     ],
-    "ComponentTest_01s": [],
-    "ComponentTest_01Entities": [],
-    "MeshRendererComponents": [],
-    "MeshRendererComponentEntities": [],
     "LightComponents": [
         {
             "type": 0,
@@ -241,7 +265,7 @@
         }
     ],
     "LightComponentEntities": [
-        1
+        2
     ],
     "CameraComponents": [
         {
@@ -254,7 +278,7 @@
         }
     ],
     "CameraComponentEntities": [
-        2
+        3
     ],
     "EnvironmentComponents": [
         {
@@ -323,13 +347,13 @@
         }
     ],
     "EnvironmentComponentEntities": [
-        0
+        1
     ],
     "ScriptComponents": [
         {}
     ],
     "ScriptComponentEntities": [
-        2
+        3
     ],
     "RigidbodyComponents": [
         {
@@ -376,16 +400,30 @@
         }
     ],
     "RigidbodyComponentEntities": [
+        6,
         5,
-        4,
-        3
+        4
     ],
-    "JointComponents": [],
-    "JointComponentEntities": [],
-    "SkinnedModelRendererComponents": [],
-    "SkinnedModelRendererComponentEntities": [],
-    "AnimatorComponents": [],
-    "AnimatorComponentEntities": [],
+    "TextRendererComponents": [
+        {
+            "text": "Ai meu cu!!!",
+            "scale": 1.0,
+            "color": {
+                "r": 0.5,
+                "g": 0.800000011920929,
+                "b": 0.20000000298023225,
+                "a": 1.0
+            },
+            "is3d": false,
+            "fontRef": {
+                "isNull": false,
+                "path": "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf"
+            }
+        }
+    ],
+    "TextRendererComponentEntities": [
+        0
+    ],
     "ModelRendererComponents": [
         {
             "subMeshIndex": -1,
@@ -404,9 +442,7 @@
         }
     ],
     "ModelRendererComponentEntities": [
-        4,
-        3
-    ],
-    "RagdollComponents": [],
-    "RagdollComponentEntities": []
+        5,
+        4
+    ]
 }

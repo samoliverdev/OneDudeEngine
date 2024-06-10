@@ -12,10 +12,11 @@ struct Voxel{
 };
 
 struct ChunkData{
-    inline ChunkData(Vector3 inCoordPos, int inSize = 32, int inHeight = 32){
+    inline ChunkData(IVector3 inCoord, Vector3 inCoordPos, int inSize = 32, int inHeight = 32){
         if(inSize <= 0) inSize = 1;
         if(inHeight <= 0) inHeight = 1;
         SetSize(inSize, inHeight);
+        coord = inCoord;
         coordPos = inCoordPos;
     }
 
@@ -98,6 +99,19 @@ struct ChunkData{
         return GetVoxel(xCheck, yCheck, zCheck);
     }
 
+    inline bool VoxelFromGlobalVector3IsOffChunk(Vector3 pos){
+        int xCheck = math::floor(pos.x);
+        int yCheck = math::floor(pos.y);
+        int zCheck = math::floor(pos.z);
+
+        xCheck -= math::floor(coordPos.x);
+        zCheck -= math::floor(coordPos.z);
+
+        //LogInfo("GetVoxelFromGlobalVector3 x: %d y: %d z: %d", xCheck, yCheck, zCheck);
+        if(IsOffChunk(xCheck, yCheck, zCheck)) return true;
+        return false;
+    }
+
     /*inline Voxel GetVoxelFromGlobalVector3(Vector3 pos, Vector3 chunkPos){
         int xCheck = math::floor(pos.x);
         int yCheck = math::floor(pos.y);
@@ -112,14 +126,14 @@ struct ChunkData{
     }*/
 
     inline Vector3 CoordPos(){ return coordPos; }
+    inline Vector3 Coord(){ return coord; }
     
 private:
     int size = 32;
     int height = 32;
     std::vector<Voxel> voxels;
     Vector3 coordPos;
-    
-    //Voxel* voxels;
+    IVector3 coord;
 
     inline int to1D(int x, int y, int z){
         // x* width + y +z*( width * height)
@@ -128,4 +142,12 @@ private:
         //return x + height * (y + size * z);
         //return x + size * (y + size * z);
     }   
+};
+
+struct ChunkDataHolder{
+    Ref<ChunkData> chunkData = nullptr;
+    Ref<Mesh> opaqueMesh = nullptr;
+    Ref<Mesh> transparentMesh = nullptr;
+    Ref<Mesh> grassMesh = nullptr;
+    Ref<Mesh> waterMesh = nullptr;
 };

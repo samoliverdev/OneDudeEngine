@@ -19,6 +19,9 @@ void _SaveComponent(ODOutputArchive& archive, entt::registry& registry, std::str
         components.push_back(view.template get<T>(e));
         componentsEntities.push_back(e);
     }
+
+    if(components.size() <= 0 || componentsEntities.size() <= 0) return;
+
     archive(cereal::make_nvp(componentName + "s", components));
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
 }
@@ -27,8 +30,18 @@ template<typename T>
 void _LoadComponent(ODInputArchive& archive, entt::registry& registry, std::string componentName){
     std::vector<T> components;
     std::vector<entt::entity> componentsEntities;
+
+    try{
+
     archive(cereal::make_nvp(componentName + "s", components));
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+
+    }catch(...){ 
+        LogWarning("ErrorOnTrySerialize"); 
+        components.clear();
+        componentsEntities.clear();
+    }
+
     for(int i = 0; i < components.size(); i++){
         registry.emplace<T>(componentsEntities[i], components[i]);
     }

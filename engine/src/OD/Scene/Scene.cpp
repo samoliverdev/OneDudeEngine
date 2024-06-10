@@ -332,6 +332,17 @@ void Scene::Save(const char* path){
     }
 }
 
+void Scene::_LoadTransform(ODInputArchive& archive, entt::registry& registry, std::string componentName){
+    std::vector<TransformComponent> components;
+    std::vector<entt::entity> componentsEntities;
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+    for(int i = 0; i < components.size(); i++){
+        components[i].registry = &registry;
+        registry.emplace<TransformComponent>(componentsEntities[i], components[i]);
+    }
+}
+
 void Scene::Load(const char* path){
     std::ifstream is(path);
     ODInputArchive archive(is);
@@ -343,7 +354,8 @@ void Scene::Load(const char* path){
     }
 
     _LoadComponent<InfoComponent>(archive, registry, "InfoComponent");
-    _LoadComponent<TransformComponent>(archive, registry, "TransformComponent");
+    //_LoadComponent<TransformComponent>(archive, registry, "TransformComponent");
+    _LoadTransform(archive, registry, "TransformComponent");
 
     for(auto i: SceneManager::Get().componentsSerializer){
         try{

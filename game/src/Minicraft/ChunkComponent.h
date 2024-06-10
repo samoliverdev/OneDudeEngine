@@ -3,7 +3,11 @@
 #include "ChunkData.h"
 
 struct ChunkComponent{
-    Ref<ChunkData> data = nullptr;
+    ChunkDataHolder data;
+    Entity opaqueMesh;
+    Entity transparentMesh;
+    Entity grassMesh;
+    Entity waterMesh;
     bool isDirt = true;
 
     template<class Archive>

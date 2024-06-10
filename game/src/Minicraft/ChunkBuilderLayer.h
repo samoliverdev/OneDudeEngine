@@ -11,12 +11,16 @@ class WorldManagerSystem;
 class ChunkBuilderLayer{
 public:
     ChunkBuilderLayer(WorldManagerSystem* inWorld);
-    void BuildData(IVector3 coor, Ref<ChunkData> chunkData);
+    void BuildData(IVector3 coor, ChunkDataHolder& data);
+
+    void BuildMeshOpaque(ChunkDataHolder& data);
+    void BuildMeshWater(ChunkDataHolder& data);
     
-    void BuildMesh(ChunkData& chunkData, Ref<Mesh>& mesh);
-    void BuildMesh2(/*IVector3 coord,*/ ChunkData& chunkData, Ref<Mesh>& mesh/*, std::unordered_map<IVector3, Ref<ChunkData>>& loadedChunkDatas*/);
+    void BuildMesh(ChunkDataHolder& data);
+    void BuildMesh2(ChunkDataHolder& data);
     
-    Ref<Material> material;
+    Ref<Material> materialOpaque;
+    Ref<Material> materialWater;
     Ref<Texture2DArray> texture;
 
 private:

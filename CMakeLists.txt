@@ -80,6 +80,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/src/*.cpp
 )
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+#add_library(engine STATIC ${ENGINE_SOURCE_FILES})
 target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
 target_compile_definitions(engine PUBLIC OD_BUILD_DLL)
 

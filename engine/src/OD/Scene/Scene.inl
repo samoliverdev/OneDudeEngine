@@ -6,22 +6,10 @@ namespace OD{
 //-----------TransformComponent---------
 template <class Archive>
 void TransformComponent::serialize(Archive & ar){
-    /*ar(
-        CEREAL_NVP(transform.localPosition), 
-        CEREAL_NVP(transform.localRotation),
-        CEREAL_NVP(transform.localEulerAngles), 
-        CEREAL_NVP(transform.localScale), 
-        CEREAL_NVP(transform.isDirt),
-        CEREAL_NVP(children),
-        CEREAL_NVP(parent),
-        CEREAL_NVP(hasParent)
-    );*/
-
     ArchiveDump(ar, CEREAL_NVP(transform.localPosition)); 
     ArchiveDump(ar, CEREAL_NVP(transform.localRotation));
     ArchiveDump(ar, CEREAL_NVP(transform.localEulerAngles)); 
-    ArchiveDump(ar, CEREAL_NVP(transform.localScale)); 
-    ArchiveDump(ar, CEREAL_NVP(transform.isDirt));
+    ArchiveDump(ar, CEREAL_NVP(transform.localScale));
     ArchiveDump(ar, CEREAL_NVP(children));
     ArchiveDump(ar, CEREAL_NVP(parent));
     ArchiveDump(ar, CEREAL_NVP(hasParent));

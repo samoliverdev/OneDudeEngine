@@ -1,12 +1,16 @@
 #pragma once
 
 #include "Serialization.h"
+#include "OD/Defines.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Color.h"
+#include "OD/Core/Asset.h"
+#include "OD/Utils/ImGuiCustomDraw.h"
 #include <entt/entt.hpp>
 #include <map>
 #include <string>
 #include <magic_enum/magic_enum.hpp>
+#include <type_traits>
 
 namespace cereal {
     
@@ -108,7 +112,7 @@ public:
 private:
 
     template<class T, std::enable_if_t<!std::is_enum<T>{}> * = nullptr>
-    void DrawUI(const char* name, T &value, Options opt = Options()){
+    void DrawUI(const char* name, T& value, Options opt = Options()){
         elementCount += 1;
 
         ImGui::PushID(elementCount);
@@ -120,6 +124,27 @@ private:
         }
 
         ImGui::PopID();
+    }
+
+    template<class T>
+    void DrawUI(const char* name, OD::AssetRef<T>& value, Options opt = Options()){
+        ImGui::DrawAsset<T>(std::string(name), value.asset);
+    }
+
+    template<class T, std::enable_if_t<std::is_base_of<OD::Asset, T>{}> * = nullptr>
+    void DrawUI(const char* name, OD::Ref<T>& value, Options opt = Options()){
+        ImGui::Text("Test");
+        ImGui::DrawAsset<T>(std::string(name), value);
+    }
+
+    template<class T, std::enable_if_t<!std::is_base_of<OD::Asset, T>{}> * = nullptr>
+    void DrawUI(const char* name, OD::Ref<T>& value, Options opt = Options()){
+        if(value == nullptr){
+            ImGui::Text("Null");
+            return;    
+        }
+        
+        DrawUI(name, *value, opt);
     }
 
     template <class T>
@@ -233,7 +258,7 @@ private:
     }
 
     template <class E, std::enable_if_t<std::is_enum<E>{}> * = nullptr>
-    void DrawUI(std::string name, E &e, Options opt = Options()){
+    void DrawUI(std::string name, E& e, Options opt = Options()){
         ImGui::PushID(elementCount++);
 
         static std::unique_ptr<std::vector<std::string>> enumNames{};

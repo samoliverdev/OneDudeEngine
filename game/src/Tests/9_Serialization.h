@@ -29,24 +29,26 @@ struct ObjectTest{
 template<typename T>
 struct TestRegisterComponent{
     TestRegisterComponent(const char* name){
-        SceneManager::Get().RegisterComponent<T>(name);
+        //SceneManager::Get().RegisterComponent<T>(name);
+        SceneManager::Get().RegisterCoreComponentSimple<T>(name);
     }
 };
+
+#define REGISTER_COMPONENT(component_name) inline static TestRegisterComponent<component_name> component_name_Reg = TestRegisterComponent<component_name>(#component_name)
 
 struct ComponentTest_01{
     float speed;
     ObjectTest test;
     std::vector<ObjectTest> tests = {ObjectTest(), ObjectTest()};
 
-    inline static TestRegisterComponent<ComponentTest_01> registerTest = TestRegisterComponent<ComponentTest_01>("ComponentTest_01");
+    //inline static TestRegisterComponent<ComponentTest_01> registerTest = TestRegisterComponent<ComponentTest_01>("ComponentTest_01");
+    REGISTER_COMPONENT(ComponentTest_01);
 
     template<class Archive>
     void serialize(Archive& ar){
-        ar(
-            CEREAL_NVP(speed), 
-            CEREAL_NVP(test),
-            CEREAL_NVP(tests)
-        );
+        ArchiveDump(ar, CEREAL_NVP(speed));
+        ArchiveDump(ar, CEREAL_NVP(test));
+        ArchiveDump(ar, CEREAL_NVP(tests));
     }
 };
 
