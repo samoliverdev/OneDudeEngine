@@ -75,15 +75,15 @@ private:
 
 class OD_API AssetManager{
 public:
-    template<class T>
-    Ref<T> LoadAsset(const std::string& path){
+    template<class T, typename ... Args>
+    Ref<T> LoadAsset(const std::string& path, Args&& ... args){
         auto& db = data[std::type_index(typeid(T))];
         //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
         if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
 
         LogInfo("LoadAsset: %s", path.c_str());
 
-        Ref<T> d = CreateRef<T>();
+        Ref<T> d = CreateRef<T>(std::forward<Args>(args)...);
         d->LoadFromFile(path);
         db[path] = d;
         

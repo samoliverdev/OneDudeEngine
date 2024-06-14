@@ -243,8 +243,10 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
     context->SetupCameraProperties(camera);
     context->RenderSkybox(environmentSettings.skyboxCubemap);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     context->DrawRenderersBuffer(opaqueDrawTarget);
     context->DrawRenderersBuffer(blendDrawTarget);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     //context->DrawGizmos();
 

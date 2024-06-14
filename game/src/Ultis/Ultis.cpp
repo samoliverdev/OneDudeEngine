@@ -1,6 +1,15 @@
 #include "Ultis.h"
 #include <iostream>
 
+
+Random::Random(unsigned int seed){
+   srand(seed);
+}
+
+int Random::Range(int min, int max){
+   return min + rand() % (( max + 1 ) - min);
+}
+
 int random(int min, int max){
    static bool first = true;
    if(first) {  

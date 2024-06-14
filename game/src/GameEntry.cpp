@@ -16,6 +16,8 @@
 #include "Tests/15_UberShader.h"
 #include "Tests/16_DynamicModule.h"
 #include "Minicraft/Minicraft.h"
+#include "ProceduralTerrain/ProceduralTerrain.h"
+#include "TerrainRenderer/TerrainRenderer.h"
 
 #include <string>
 
@@ -28,7 +30,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 5;
+    int i = 18;
     if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMesh_1();
@@ -47,6 +49,8 @@ OD::Module* CreateMainModule(){
     if(i == 14) return new UberShader_15();
     if(i == 15) return new Minicraft();
     if(i == 16) return new DynamicModule_16();
+    if(i == 17) return new ProceduralTerrain();
+    if(i == 18) return new TerrainRenderer();
 
     return new BaseMesh_1();
 }

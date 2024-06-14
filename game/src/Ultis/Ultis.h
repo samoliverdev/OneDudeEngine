@@ -7,6 +7,12 @@
 
 using namespace OD;
 
+class Random{
+public:
+   Random(unsigned int seed);
+   int Range(int min, int max);
+};
+
 int random(int min, int max);
 bool FileExist(const std::string& path);
 

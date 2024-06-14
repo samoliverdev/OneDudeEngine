@@ -32,6 +32,8 @@ public:
     Mesh(const Mesh& mesh);
     ~Mesh() override;
 
+    void CalculateNormals();
+
     void UpdateMesh();
     void UpdateMeshInstancingModelMatrixs();
     void UpdateMeshInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);

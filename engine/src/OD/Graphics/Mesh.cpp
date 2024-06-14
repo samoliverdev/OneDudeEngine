@@ -37,6 +37,44 @@ Mesh::~Mesh(){
     Destroy();
 }
 
+//Source: https://gamedev.stackexchange.com/questions/152991/how-can-i-calculate-normals-using-a-vertex-and-index-buffer
+void Mesh::CalculateNormals(){
+    normals.resize(vertices.size());
+
+    // Zero-out our normal buffer to start from a clean slate.
+    for(int vertex = 0; vertex < vertices.size(); vertex++){
+        normals[vertex] = Vector3Zero;
+    }
+
+    // For each face, compute the face normal, and accumulate it into each vertex.
+    for(int index = 0; index < indices.size(); index += 3) {
+        int vertexA = indices[index];
+        int vertexB = indices[index + 1];
+        int vertexC = indices[index + 2];    
+
+        auto edgeAB = vertices[vertexB] - vertices[vertexA];
+        auto edgeAC = vertices[vertexC] - vertices[vertexA];
+
+        // The cross product is perpendicular to both input vectors (normal to the plane).
+        // Flip the argument order if you need the opposite winding.    
+        auto areaWeightedNormal = math::cross(edgeAB, edgeAC);
+
+        // Don't normalize this vector just yet. Its magnitude is proportional to the
+        // area of the triangle (times 2), so this helps ensure tiny/skinny triangles
+        // don't have an outsized impact on the final normal per vertex.
+
+        // Accumulate this cross product into each vertex normal slot.
+        normals[vertexA] += areaWeightedNormal;
+        normals[vertexB] += areaWeightedNormal;
+        normals[vertexC] += areaWeightedNormal;
+    }       
+
+    // Finally, normalize all the sums to get a unit-length, area-weighted average.
+    for(int vertex = 0; vertex < vertices.size(); vertex++){  
+        normals[vertex] = math::normalize(normals[vertex]);
+    }
+}
+
 void Mesh::UpdateMesh(){
     Assert(isReadable == true && "Only can Update isReadable Mesh");
 

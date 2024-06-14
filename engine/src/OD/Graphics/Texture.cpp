@@ -15,6 +15,17 @@ const int TextureFilterLookupMipmap[] = {
     GL_LINEAR_MIPMAP_LINEAR
 };
 
+const int TextureWrappingLookupMipmap[] = {
+    GL_REPEAT,
+    GL_MIRRORED_REPEAT,
+    GL_CLAMP_TO_EDGE,
+    GL_CLAMP_TO_BORDER
+};
+
+Texture2D::Texture2D(Texture2DSetting inSettings){
+    settings = inSettings;
+}
+
 Texture2D::Texture2D(const std::string& filePath, Texture2DSetting settings){
     if(Create(path, settings) == false){
         Destroy(*this);
@@ -28,8 +39,7 @@ Texture2D::Texture2D(void* data, size_t size, Texture2DSetting settings){
 } 
 
 void Texture2D::LoadFromFile(const std::string& path){
-    Texture2DSetting defaultSetting;
-    if(Create(path, defaultSetting) == false){
+    if(Create(path, settings) == false){
         Destroy(*this);
     }
 }
@@ -191,8 +201,8 @@ bool Texture2D::Create(const std::string path, Texture2DSetting settings){
 
     this->internalFormat = GL_RGB;
     this->imageFormat = GL_RGB;
-    this->wrapS = GL_REPEAT;
-    this->wrapT = GL_REPEAT;
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
     if(settings.mipmap){
         this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
@@ -236,8 +246,8 @@ bool Texture2D::Create(void* data, size_t size, Texture2DSetting settings){
 
     this->internalFormat = GL_RGB;
     this->imageFormat = GL_RGB;
-    this->wrapS = GL_REPEAT;
-    this->wrapT = GL_REPEAT;
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
     if(settings.mipmap){
         this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];

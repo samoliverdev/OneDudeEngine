@@ -13,10 +13,18 @@ enum class OD_API_IMPORT TextureFilter {
     Linear
 };
 
+enum class OD_API_IMPORT TextureWrapping{
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+    ClampToBorder
+};
+
 class Graphics;
 
 struct OD_API Texture2DSetting{
     TextureFilter filter = TextureFilter::Linear;
+    TextureWrapping wrap = TextureWrapping::Repeat;
     bool mipmap = true;
 
     template <class Archive>
@@ -32,6 +40,7 @@ class OD_API Texture2D: public Asset{
     friend class Graphics;
 public:
     Texture2D() = default;
+    Texture2D(Texture2DSetting settings);
     Texture2D(const std::string& filePath, Texture2DSetting settings = Texture2DSetting()); 
     Texture2D(void* data, size_t size, Texture2DSetting settings = Texture2DSetting()); 
     
