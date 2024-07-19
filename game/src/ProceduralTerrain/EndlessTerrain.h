@@ -44,7 +44,7 @@ public:
     }
     
     inline virtual void OnUpdate() override{
-        if(WaitingFinishMeshUpdate()) return;
+        //if(WaitingFinishMeshUpdate()) return;
 
         float loadDstThreshold = 50;
 
@@ -52,18 +52,18 @@ public:
         viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
         if(math::distance2(viewPos, lastViewPos) > loadDstThreshold*loadDstThreshold || loadedChunks.size() <= 0){
-            UpdateVisibleChunks2();
+            UpdateVisibleChunks();
             lastViewPos = viewPos;
         }
     }
 
 private:
     std::vector<LODInfo> detailLevels = {
-        {0, 200},
-        {4, 400},
-        {6, 600},
-        {12, 800},
-        {24, 1000}
+        {2, 200},
+        {3, 400},
+        {4, 600},
+        {5, 800},
+        {6, 1000}
     };
 
     int chunkSize;

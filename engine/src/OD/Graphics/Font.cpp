@@ -23,10 +23,10 @@ void InitFreeFont(){
 }
 
 Font::Font(const std::string& inPath){
-    LoadFromFile(path);
+    LoadFromFile(inPath);
     return;
 
-    InitFreeFont();
+    /*InitFreeFont();
 
     FT_Face face;
     if(FT_New_Face(ft, inPath.c_str(), 0, &face)){
@@ -80,15 +80,14 @@ Font::Font(const std::string& inPath){
     }
 
     FT_Done_Face(face);
-    //FT_Done_FreeType(ft);
-
-    path = std::string(inPath);
+    path = std::string(inPath);*/
 }
 
+/*
 Ref<Font> Font::CreateFromFile(const char* path){
     Ref<Font> font = CreateRef<Font>();
-    font->LoadFromFile(path);
-    return font;
+    //font->LoadFromFile(path);
+    //return font;
 
     InitFreeFont();
 
@@ -151,14 +150,16 @@ Ref<Font> Font::CreateFromFile(const char* path){
 
     return font;
 }
+*/
 
-void Font::LoadFromFile(const std::string& inPath){
+bool Font::LoadFromFile(const std::string& inPath){
     InitFreeFont();
 
     FT_Face face;
     if(FT_New_Face(ft, inPath.c_str(), 0, &face)){
-        LogError("ERROR::FREETYPE: Failed to load font");  
+        LogError("ERROR::FREETYPE: Failed to load font: %s", inPath.c_str());  
         Application::Quit();
+        return false;
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48); 
@@ -210,6 +211,7 @@ void Font::LoadFromFile(const std::string& inPath){
     //FT_Done_FreeType(ft);
 
     path = inPath;
+    return true;
 }
 
 }

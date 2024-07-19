@@ -67,7 +67,6 @@ struct PhysicsDirectInternalData
 	btAlignedObjectArray<b3CollisionShapeData> m_cachedCollisionShapes;
 
 	b3MeshData m_cachedMeshData;
-	b3TetraMeshData m_cachedTetraMeshData;
 	btAlignedObjectArray<b3MeshVertex> m_cachedVertexPositions;
 
 	btAlignedObjectArray<b3VRControllerEvent> m_cachedVREvents;
@@ -100,7 +99,6 @@ struct PhysicsDirectInternalData
 		  m_timeOutInSeconds(1e30)
 	{
 		memset(&m_cachedMeshData.m_numVertices, 0, sizeof(b3MeshData));
-		memset(&m_cachedTetraMeshData.m_numVertices, 0, sizeof(b3TetraMeshData));
 		memset(&m_command, 0, sizeof(m_command));
 		memset(&m_serverStatus, 0, sizeof(m_serverStatus));
 		memset(m_bulletStreamDataServerToClient, 0, sizeof(m_bulletStreamDataServerToClient));
@@ -1692,16 +1690,6 @@ void PhysicsDirect::getCachedMeshData(struct b3MeshData* meshData)
 
 	*meshData = m_data->m_cachedMeshData;
 }
-
-void PhysicsDirect::getCachedTetraMeshData(struct b3TetraMeshData* meshData)
-{
-	m_data->m_cachedTetraMeshData.m_numVertices = m_data->m_cachedVertexPositions.size();
-
-	m_data->m_cachedTetraMeshData.m_vertices = m_data->m_cachedTetraMeshData.m_numVertices ? &m_data->m_cachedVertexPositions[0] : 0;
-
-	*meshData = m_data->m_cachedTetraMeshData;
-}
-
 
 void PhysicsDirect::getCachedContactPointInformation(struct b3ContactInformation* contactPointData)
 {

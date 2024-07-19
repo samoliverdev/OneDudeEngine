@@ -2,7 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Shader.h"
-#include "OD/Graphics/ShaderHandler.h"
+#include "OD/Graphics/MultiCompileShader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Serialization/Serialization.h"
@@ -16,24 +16,37 @@ struct OD_API MaterialMap{
 
     Type type;
 
+    //union{
     Ref<Texture2D> texture;
     Ref<Texture2DArray> textureArray;
     Ref<Cubemap> cubemap;
     Framebuffer* framebuffer;
-    int framebufferBind;
-    int framebufferAttachment;
-    Vector4 vector;
     
-    bool hidden = false;
-    bool vectorIsColor = false;
+    //struct{
+        int framebufferBind;
+        int framebufferAttachment;
+    //};
+    
+    bool hidden/* = false*/;
+    
+    //struct{
+    Vector4 vector;
+    bool vectorIsColor/* = false*/;
+    //};
 
     int valueInt;
+
+    //struct{
     float value;
     float valueMin;
     float valueMax;
+    //};
 
+    //struct{
     void* list;
     int listCount;
+    //};
+    //};
 
     Matrix4 matrix;
 
@@ -99,10 +112,10 @@ public:
 
     void OnGui() override;
 
-    void LoadFromFile(const std::string& path) override;
+    bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
     
-    static Ref<Material> CreateFromFile(std::string const &path);
+    //static Ref<Material> CreateFromFile(std::string const &path);
 
     friend class cereal::access;
     template<class Archive> void save(Archive& ar) const;
@@ -117,7 +130,7 @@ private:
     int currentTextureSlot = 0;
 
     //Ref<Shader> shader;
-    Ref<ShaderHandler> shaderHandler;
+    Ref<MultiCompileShader> shaderHandler;
     std::vector<std::string> properties;
     std::unordered_map<std::string, MaterialMap> maps;
     static std::unordered_map<std::string, MaterialMap> globalMaps;
@@ -136,7 +149,7 @@ private:
 
 template<class Archive>
 void MaterialMap::save(Archive& ar) const{
-    std::string texPath = texture == nullptr ? "" : texture->Path();
+    /*std::string texPath = texture == nullptr ? "" : texture->Path();
     ar(
         CEREAL_NVP(type),
         CEREAL_NVP(texPath),
@@ -145,12 +158,38 @@ void MaterialMap::save(Archive& ar) const{
         CEREAL_NVP(value),
         CEREAL_NVP(valueMin),
         CEREAL_NVP(valueMax)
-    );
+    );*/
+
+    ArchiveDump(ar, CEREAL_NVP(type));
+    if(type == MaterialMap::Type::Int){
+        ArchiveDump(ar, CEREAL_NVP(valueInt));
+    }
+    if(type == MaterialMap::Type::Float){
+        ArchiveDump(ar, CEREAL_NVP(value));
+        ArchiveDump(ar, CEREAL_NVP(valueMin));
+        ArchiveDump(ar, CEREAL_NVP(valueMax));
+    }
+    if(type == MaterialMap::Type::Vector2){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Vector3){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Vector4){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Texture){
+        std::string texPath = texture == nullptr ? "" : texture->Path();
+        ArchiveDump(ar, CEREAL_NVP(texPath));
+    }
 }
 
 template<class Archive>
 void MaterialMap::load(Archive& ar){
-    std::string texPath;
+    /*std::string texPath;
     ar(
         CEREAL_NVP(type),
         CEREAL_NVP(texPath),
@@ -160,7 +199,34 @@ void MaterialMap::load(Archive& ar){
         CEREAL_NVP(valueMin),
         CEREAL_NVP(valueMax)
     );
-    OnLoad(texPath);
+    OnLoad(texPath);*/
+
+    ArchiveDump(ar, CEREAL_NVP(type));
+    if(type == MaterialMap::Type::Int){
+        ArchiveDump(ar, CEREAL_NVP(valueInt));
+    }
+    if(type == MaterialMap::Type::Float){
+        ArchiveDump(ar, CEREAL_NVP(value));
+        ArchiveDump(ar, CEREAL_NVP(valueMin));
+        ArchiveDump(ar, CEREAL_NVP(valueMax));
+    }
+    if(type == MaterialMap::Type::Vector2){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Vector3){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Vector4){
+        ArchiveDump(ar, CEREAL_NVP(vector));
+        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+    }
+    if(type == MaterialMap::Type::Texture){
+        std::string texPath = texture == nullptr ? "" : texture->Path();
+        ArchiveDump(ar, CEREAL_NVP(texPath));
+        OnLoad(texPath);
+    }
 }
 
 template<class Archive>

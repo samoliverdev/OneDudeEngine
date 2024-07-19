@@ -26,17 +26,17 @@ public:
     };
 
     std::vector<RenderTarget> renderTargets;
-
     std::vector<Ref<Mesh>> meshs;
     std::vector<Ref<Material>> materials;
     std::vector<Ref<Texture2D>> textures;
     std::vector<Matrix4> matrixs;
-    
     Skeleton skeleton;
-
     std::vector<Ref<Clip>> animationClips;
 
-    void LoadFromFile(const std::string& path) override;
+
+    inline void SetPath(const std::string& inPath){ path = inPath; }
+
+    bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
     void SetShader(Ref<Shader> customShader);

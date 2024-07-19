@@ -9,8 +9,8 @@ void Model::SetShader(Ref<Shader> shader){
 	}
 }
 
-void Model::LoadFromFile(const std::string& path){
-    Model::CreateFromFile(*this, path, nullptr);
+bool Model::LoadFromFile(const std::string& path){
+    return Model::CreateFromFile(*this, path, nullptr);
 }
 
 std::vector<std::string> Model::GetFileAssociations(){ 

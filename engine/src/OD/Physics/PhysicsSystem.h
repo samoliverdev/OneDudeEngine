@@ -5,65 +5,11 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
-#include "RagdollBodyPart.h"
-
-class btRigidBody;
-class btBroadphaseInterface;
-class btCollisionConfiguration;
-class btCollisionDispatcher;
-class btConstraintSolver;
-class btDynamicsWorld;
-class btGeneric6DofConstraint;
 
 namespace OD{
 
 struct Rigidbody;
-class Ragdoll;
-class Ragdoll2;
-
-struct RagdollComponent{
-    friend struct PhysicsSystem;
-    
-    std::vector<RagdollBodyPart> bodyParts;
-
-    static void OnGui(Entity& e);
-
-    template<class Archive>
-    void serialize(Archive& ar){
-        ArchiveDump(ar, CEREAL_NVP(bodyParts));
-    }
-
-private:
-    Ragdoll2* ragdoll = nullptr;
-    Ragdoll* ragdoll2 = nullptr;
-};
-
-struct OD_API JointComponent{
-    //OD_REGISTER_CORE_COMPONENT_TYPE(JointComponent);
-
-    friend struct PhysicsSystem;
-
-    Vector3 pivot;
-    float strength = 0.5f;
-    EntityId rb;
-
-    static void OnGui(Entity& e);
-
-    template<class Archive>
-    void serialize(Archive& ar){
-        /*ar(
-            CEREAL_NVP(pivot),
-            CEREAL_NVP(strength),
-            CEREAL_NVP(rb)
-        );*/
-        ArchiveDump(ar, CEREAL_NVP(pivot));
-        ArchiveDump(ar, CEREAL_NVP(strength));
-        ArchiveDump(ar, CEREAL_NVP(rb));
-    }
-
-private:
-    btGeneric6DofConstraint* joint;
-};
+struct PhysicsWorld;
 
 struct OD_API CollisionShape{
     enum class Type{Box, Sphere};
@@ -74,11 +20,6 @@ struct OD_API CollisionShape{
 
     template <class Archive>
     void serialize(Archive & ar){
-        /*ar(
-            CEREAL_NVP(type),
-            CEREAL_NVP(boxShapeSize),
-            CEREAL_NVP(sphereRadius)
-        );*/
         ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(boxShapeSize));
         ArchiveDump(ar, CEREAL_NVP(sphereRadius));
@@ -133,12 +74,6 @@ struct OD_API RigidbodyComponent{
     friend class cereal::access;
     template <class Archive>
     void serialize(Archive & ar){
-        /*ar(
-            CEREAL_NVP(type),
-            CEREAL_NVP(shape),
-            CEREAL_NVP(mass),
-            CEREAL_NVP(neverSleep)
-        );*/
         ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(mass));
@@ -163,42 +98,57 @@ struct OD_API RayResult{
     Vector3 hitNormal;
 };
 
-typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
-typedef std::set<CollisionPair> CollisionPairs;
+using OnCollisionCallback = void(*)(Entity, Entity);
+//using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
 struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
 
     PhysicsSystem(Scene* scene);
-    //PhysicsSystem();
     ~PhysicsSystem() override;
 
-    System* Clone(Scene* inScene) const override{ return new PhysicsSystem(inScene); }
+    System* Clone(Scene* inScene) const override{ 
+        PhysicsSystem* system = new PhysicsSystem(inScene);
+        system->onCollisionEnterCallbacks = onCollisionEnterCallbacks;
+        system->onCollisionExitCallbacks = onCollisionExitCallbacks;
+        system->onTriggerEnterCallbacks = onTriggerEnterCallbacks;
+        system->onTriggerExitCallbacks = onTriggerExitCallbacks;
+        return system; 
+    }
     
     virtual SystemType Type() override { return SystemType::Physics; }
     virtual void Update() override;
 
     void ShowDebugGizmos();
-
+    
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
+    bool IsSimulationEnable();
 
-    //static PhysicsSystem* Get();
+    void AddOnCollisionEnterCallback(OnCollisionCallback callback);
+    void RemoveOnCollisionEnterCallback(OnCollisionCallback callback);
+    
+    void AddOnCollisionExitCallback(OnCollisionCallback callback);
+    void RemoveOnCollisionExitCallback(OnCollisionCallback callback);
+
+    void AddOnTriggerEnterCallback(OnCollisionCallback callback);
+    void RemoveOnTriggerEnterCallback(OnCollisionCallback callback);
+    
+    void AddOnTriggerExitCallback(OnCollisionCallback callback);
+    void RemoveOnTriggerExitCallback(OnCollisionCallback callback);
 
 private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
 
     void CheckForCollisionEvents();
     void AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t);
+    void RemoveRigidbody(EntityId entityId, RigidbodyComponent& c);
+
+    PhysicsWorld* physicsWorld;
     
-    btBroadphaseInterface* broadphase;
-    btCollisionConfiguration* collisionConfiguration;
-    btCollisionDispatcher* dispatcher;
-    btConstraintSolver* solver;
-    btDynamicsWorld* world;
-
-    CollisionPairs pairsLastUpdate;
-
-    //static PhysicsSystem* instance;
+    std::vector<OnCollisionCallback> onCollisionEnterCallbacks;
+    std::vector<OnCollisionCallback> onCollisionExitCallbacks;
+    std::vector<OnCollisionCallback> onTriggerEnterCallbacks;
+    std::vector<OnCollisionCallback> onTriggerExitCallbacks;
 };
 
 }

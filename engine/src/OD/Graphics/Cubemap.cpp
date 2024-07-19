@@ -6,6 +6,8 @@
 namespace OD{
 
 Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
+    bool mipmap = true;
+
     Ref<Cubemap> out = CreateRef<Cubemap>();
 
     std::vector<const char*> faces;
@@ -39,11 +41,15 @@ Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const 
 
         LogInfo("Loading Cubemap: %s", faces[i]);
     }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    if(mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glCheckError();
+
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); 
     glCheckError();
 
     return out;

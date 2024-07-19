@@ -28,7 +28,7 @@ struct ProceduralTerrain: OD::Module {
         TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
-        textRenderer.font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        textRenderer.font = CreateRef<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
@@ -69,19 +69,19 @@ struct ProceduralTerrain: OD::Module {
 
         //scene->Save("res/scene1.scene");
         scene->Start();
-        Application::AddModule<Editor>();
+        //Application::AddModule<Editor>();
     }
 
     void OnUpdate(float deltaTime) override {
         Scene* scene = SceneManager::Get().GetActiveScene();
         if(scene->Running() == false) return;
 
-        TransformComponent& camT = camera.GetComponent<TransformComponent>();
+        /*TransformComponent& camT = camera.GetComponent<TransformComponent>();
         RayResult hit;
         //Throwing a Possible Null Expection Pointer Here
         if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
-        }
+        }*/
 
     }   
 

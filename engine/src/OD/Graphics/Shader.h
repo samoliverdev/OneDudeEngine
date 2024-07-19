@@ -17,7 +17,7 @@ public:
     static Ref<Shader> CreateFromFile(const std::string& filepath);
     static Ref<Shader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
 
-    void LoadFromFile(const std::string& path) override;
+    bool LoadFromFile(const std::string& path) override;
 
     static void Destroy(Shader& shader);
     static void Bind(Shader& shader);

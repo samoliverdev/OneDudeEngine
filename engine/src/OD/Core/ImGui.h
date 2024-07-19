@@ -3,6 +3,7 @@
 #include "OD/Defines.h"
 #include <imgui/imgui.h>
 #include <filesystem>
+#include <IconFontCppHeaders/IconsFontAwesome5.h>
 
 namespace ImGui{
     void OD_API AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func);

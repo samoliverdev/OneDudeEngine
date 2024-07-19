@@ -10,6 +10,7 @@ class Graphics;
 class OD_API Cubemap: public Asset{
     friend class Graphics;
 public:
+
     static Ref<Cubemap> CreateFromFile(
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back

@@ -41,9 +41,7 @@ void CoreModulesStartup(){
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
-    SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
-    SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 
     SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");

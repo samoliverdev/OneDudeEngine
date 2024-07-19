@@ -21,10 +21,17 @@ void InfoComponent::serialize(Archive & ar){
     ar(CEREAL_NVP(name), CEREAL_NVP(tag), CEREAL_NVP(active));
 }
 
+HAS_MEM_FUNC(OnCreate, HasOnCreate);
+
 //-----------Entity---------
 template<typename T>
 T& Entity::AddComponent(){
-    return scene->registry.emplace<T>(id);
+    T& c = scene->registry.emplace<T>(id);
+    if constexpr(HasOnCreate<T>::value) c.OnCreate(*this);
+
+    return c;
+
+    //return scene->registry.emplace<T>(id);
 }
 
 template <typename T>

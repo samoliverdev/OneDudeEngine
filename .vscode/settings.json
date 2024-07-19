@@ -95,6 +95,7 @@
         "coroutine": "cpp",
         "resumable": "cpp",
         "*.rh": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "geometry": "cpp"
     }
 }

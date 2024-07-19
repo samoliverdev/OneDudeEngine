@@ -1,7 +1,7 @@
 #pragma once
 
 #include <OD/OD.h>
-#include <OD/Graphics/ShaderHandler.h>
+#include <OD/Graphics/MultiCompileShader.h>
 #include "Ultis/CameraMovement.h"
 #include <assert.h>
 
@@ -10,7 +10,7 @@ using namespace OD;
 struct UberShader_15: OD::Module {
     Ref<Model> model;
     //Ref<Shader> shader;
-    ShaderHandler* uberShader;
+    MultiCompileShader* uberShader;
     Transform modelTransform;
     Transform camTransform;
     Camera cam;
@@ -26,7 +26,7 @@ struct UberShader_15: OD::Module {
         camMove.transform = &camTransform;
 
         model = AssetManager::Get().LoadAsset<Model>("res/Game/Models/suzane.obj");
-        uberShader = new ShaderHandler("res/Game/Shaders/UberShaderTest.glsl");
+        uberShader = new MultiCompileShader("res/Game/Shaders/UberShaderTest.glsl");
         uberShader->EnableKeyword("Fade");
         uberShader->EnableKeyword("Instancing");
     }

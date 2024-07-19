@@ -18,9 +18,9 @@ Vector3 GridToWorld(int cellSize, IVector3 coord){
 }
 
 WorldManagerSystem::WorldManagerSystem(Scene* inScene):System(inScene){
-    chunkSize = 16*2;
-    chunkHeigtCount = 24/2;
-    chunkLoadDistance = 8/2;
+    chunkSize = 16*1;
+    chunkHeigtCount = 24/1;
+    chunkLoadDistance = 12;
     floorY = 0;
     chunkBuilderLayer = CreateRef<ChunkBuilderLayer>(this);
 }

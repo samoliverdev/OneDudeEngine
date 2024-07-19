@@ -46,3 +46,4 @@
 
 #include "OD/Physics/PhysicsSystem.h"
 
+#include <IconFontCppHeaders/IconsFontAwesome5.h>

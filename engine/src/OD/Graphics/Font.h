@@ -21,8 +21,9 @@ struct OD_API Font: public Asset{
 
     Font() = default;
     Font(const std::string& inPath);
-    static Ref<Font> CreateFromFile(const char* path);
-    void LoadFromFile(const std::string& path) override;
+    
+    //static Ref<Font> CreateFromFile(const char* path);
+    bool LoadFromFile(const std::string& path) override;
 
     inline std::vector<std::string> GetFileAssociations() override { 
         return std::vector<std::string>{

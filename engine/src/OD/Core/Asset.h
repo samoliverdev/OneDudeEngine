@@ -9,13 +9,12 @@ class OD_API Asset{
 public:
     virtual ~Asset(){}
 
-    inline std::string& Path(){ return path; }
-    inline void Path(const std::string& inPath){ path = inPath; }
+    inline virtual std::string& Path(){ return path; }
 
     virtual void OnGui(){}
     virtual void Reload(){ LoadFromFile(path); }
     virtual void Save(){}
-    virtual void LoadFromFile(const std::string& path){}
+    virtual bool LoadFromFile(const std::string& path){ return false; }
 
     inline virtual std::vector<std::string> GetFileAssociations(){ return std::vector<std::string>(); }
 

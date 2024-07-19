@@ -181,12 +181,12 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         const aiTexture* paiTexture = loadData.scene->GetEmbeddedTexture(str.C_Str());
 
         if(paiTexture){
-            Ref<Texture2D> texture = Texture2D::CreateFromFileMemory(
-                paiTexture->pcData, 
-                paiTexture->mWidth, 
-                {TextureFilter::Linear, TextureWrapping::Repeat, true}
+            Ref<Texture2D> texture = CreateRef<Texture2D>(
+                (void*)paiTexture->pcData, 
+                (size_t)paiTexture->mWidth, 
+                Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
             );
-            Assert(texture != nullptr);
+            Assert(texture->IsValid() != false);
             
             textures.push_back(texture);
         } else {
@@ -576,7 +576,7 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
     
     LoadData loadData;
     loadData.model = &out;
-    loadData.model->Path(path);
+    loadData.model->SetPath(path);
     loadData.directory = path.substr(0, path.find_last_of('/'));
     loadData.scene = scene;
 

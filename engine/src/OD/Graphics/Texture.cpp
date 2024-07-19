@@ -22,6 +22,57 @@ const int TextureWrappingLookupMipmap[] = {
     GL_CLAMP_TO_BORDER
 };
 
+const int TextureFormatLookupMipmap[] = {
+    GL_NONE,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+};
+
+const int TextureInternalFormatLookupMipmap[] = {
+    GL_NONE,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_R8,
+    GL_RGB8,
+    GL_RGBA8,
+
+    GL_R16,
+    GL_RGB16,
+    GL_RGBA16,
+
+    GL_R16F,
+    GL_RGB16F,
+    GL_RGBA16F,
+
+    GL_R32F,
+    GL_RGB32F,
+    GL_RGBA32F,
+};
+
+const int TextureDataTypeFormatLookupMipmap[] = {
+    GL_UNSIGNED_BYTE,
+    GL_UNSIGNED_INT,
+    GL_INT,
+    GL_FLOAT
+};
+
 Texture2D::Texture2D(Texture2DSetting inSettings){
     settings = inSettings;
 }
@@ -38,10 +89,19 @@ Texture2D::Texture2D(void* data, size_t size, Texture2DSetting settings){
     }
 } 
 
-void Texture2D::LoadFromFile(const std::string& path){
-    if(Create(path, settings) == false){
+Texture2D::Texture2D(void* data, size_t size, int width, int height,  TextureDataType dataType, Texture2DSetting settings){
+    if(Create(data, size, width, height, dataType, settings) == false){
         Destroy(*this);
     }
+}
+
+bool Texture2D::LoadFromFile(const std::string& path){
+    if(Create(path, settings) == false){
+        Destroy(*this);
+        return false;
+    }
+
+    return true;
 }
 
 std::vector<std::string> Texture2D::GetFileAssociations(){ 
@@ -61,53 +121,6 @@ Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DS
     }
 
     return tex;
-
-    /*
-    Ref<Texture2D> tex = CreateRef<Texture2D>();
-
-    tex->path = std::string(filePath);
-    tex->settings = settings;
-
-    LoadSettings(tex->path.c_str(), tex->settings);
-
-    tex->internalFormat = GL_RGB;
-    tex->imageFormat = GL_RGB;
-    tex->wrapS = GL_REPEAT;
-    tex->wrapT = GL_REPEAT;
-    tex->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    if(settings.mipmap){
-        tex->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
-    }
-    tex->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    tex->mipmap = settings.mipmap;
-
-    stbi_set_flip_vertically_on_load(1);
-
-    int width;
-    int height;
-    int nrChannels;
-    unsigned char* data = stbi_load(tex->path.c_str(), &width, &height, &nrChannels, 0);
-
-    //LogInfo("Chennels %d", nrChannels);
-
-    if(!data){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", tex->path.c_str(), stbi_failure_reason());
-        return false;
-    }
-
-    bool alpha = false;
-    if(nrChannels > 3) alpha = true;
-
-    if(alpha){
-        tex->internalFormat = GL_RGBA;
-        tex->imageFormat = GL_RGBA;
-    }
-    
-    tex->texture2DGenerate(width, height, data);
-    stbi_image_free(data);
-
-    return tex;
-    */
 }
 
 Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings){
@@ -118,51 +131,6 @@ Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2
     }
 
     return tex;
-
-    /*
-    Ref<Texture2D> tex = CreateRef<Texture2D>();
-
-    tex->path = "Memory";
-    tex->settings = settings;
-
-    tex->internalFormat = GL_RGB;
-    tex->imageFormat = GL_RGB;
-    tex->wrapS = GL_REPEAT;
-    tex->wrapT = GL_REPEAT;
-    tex->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    if(settings.mipmap){
-        tex->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
-    }
-    tex->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    tex->mipmap = settings.mipmap;
-
-    stbi_set_flip_vertically_on_load(1);
-
-    int width;
-    int height;
-    int nrChannels;
-    unsigned char* _data = stbi_load_from_memory((const stbi_uc*)data, size, &width, &height, &nrChannels, 0);
-
-    //LogInfo("Chennels %d", nrChannels);
-
-    if(!_data){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", tex->path.c_str(), stbi_failure_reason());
-        return false;
-    }
-
-    bool alpha = false;
-    if(nrChannels > 3) alpha = true;
-
-    if(alpha){
-        tex->internalFormat = GL_RGBA;
-        tex->imageFormat = GL_RGBA;
-    }
-    
-    tex->texture2DGenerate(width, height, _data);
-    stbi_image_free(_data);
-
-    return tex;
-    */
 }
 
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
@@ -196,11 +164,7 @@ bool Texture2D::Create(const std::string path, Texture2DSetting settings){
 
     this->path = std::string(path);
     this->settings = settings;
-
     LoadSettings(this->path.c_str(), this->settings);
-
-    this->internalFormat = GL_RGB;
-    this->imageFormat = GL_RGB;
     this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
@@ -227,12 +191,20 @@ bool Texture2D::Create(const std::string path, Texture2DSetting settings){
     bool alpha = false;
     if(nrChannels > 3) alpha = true;
 
-    if(alpha){
-        this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
-        this->imageFormat = GL_RGBA;
+    if(settings.textureFormat == TextureFormat::Auto){
+        if(alpha){
+            this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGBA;
+        } else {
+            this->internalFormat = GL_RGB; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGB;
+        }
+    } else {
+        this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+        this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
     }
     
-    this->texture2DGenerate(width, height, data);
+    this->texture2DGenerate(width, height, TextureDataType::UnsignedByte, data);
     stbi_image_free(data);
 
     return true;
@@ -243,9 +215,6 @@ bool Texture2D::Create(void* data, size_t size, Texture2DSetting settings){
 
     this->path = "Memory";
     this->settings = settings;
-
-    this->internalFormat = GL_RGB;
-    this->imageFormat = GL_RGB;
     this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
     this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
@@ -272,18 +241,50 @@ bool Texture2D::Create(void* data, size_t size, Texture2DSetting settings){
     bool alpha = false;
     if(nrChannels > 3) alpha = true;
 
-    if(alpha){
-        this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
-        this->imageFormat = GL_RGBA;
+    if(settings.textureFormat == TextureFormat::Auto){
+        if(alpha){
+            this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGBA;
+        } else {
+            this->internalFormat = GL_RGB; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGB;
+        }
+    } else {
+        this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+        this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
     }
+
     
-    this->texture2DGenerate(width, height, _data);
+    this->texture2DGenerate(width, height, TextureDataType::UnsignedByte, _data);
     stbi_image_free(_data);
 
     return true;
 }
 
-void Texture2D::texture2DGenerate(unsigned int inWidth, unsigned int inHeight, unsigned char* data){
+bool Texture2D::Create(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
+    Destroy(*this);
+
+    this->path = "Memory";
+    this->settings = settings;
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    this->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    this->mipmap = settings.mipmap;
+
+    Assert(settings.textureFormat != TextureFormat::Auto);
+
+    this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+    this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+    this->texture2DGenerate(width, height, dataType, data);
+
+    return true;
+}
+
+void Texture2D::texture2DGenerate(unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
     width = inWidth;
     height = inHeight;
     
@@ -291,7 +292,7 @@ void Texture2D::texture2DGenerate(unsigned int inWidth, unsigned int inHeight, u
     glCheckError();
 
     glBindTexture(GL_TEXTURE_2D, id);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, imageFormat, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
     glCheckError();
     
     if(mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);

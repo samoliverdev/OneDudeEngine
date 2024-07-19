@@ -167,7 +167,7 @@ struct BaseMesh_1: OD::Module {
         meshShader = Shader::CreateFromFile("res/Game/Shaders/test.glsl", keywords);
         fontShader = Shader::CreateFromFile("res/Engine/Shaders/Font.glsl");
 
-        font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        font = CreateRef<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
 
         LogInfo("-------------ShaderVariantCreateTest------------");
         std::vector<std::vector<std::string>> multCompile{

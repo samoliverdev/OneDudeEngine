@@ -224,10 +224,9 @@ GLenum ShaderTypeFromString(const std::string& type){
     return 0;
 }
 
-void Shader::LoadFromFile(const std::string& path){
+bool Shader::LoadFromFile(const std::string& path){
     std::vector<std::string> keyworlds;
-    if(Create(path, keyworlds) == false){
-    }
+    return Create(path, keyworlds);
 }
 
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
@@ -322,6 +321,18 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
         std::string ss = _source;
         ss.insert(pos, "\n#define GEOMETRY\n");
         shaderSources[GL_GEOMETRY_SHADER] = ss;
+    }
+
+    if(_source.find("TESS_CONTROL") != std::string::npos){
+        std::string ss = _source;
+        ss.insert(pos, "\n#define TESS_CONTROL\n");
+        shaderSources[GL_TESS_CONTROL_SHADER] = ss;
+    }
+
+    if(_source.find("TESS_EVALUATION") != std::string::npos){
+        std::string ss = _source;
+        ss.insert(pos, "\n#define TESS_EVALUATION\n");
+        shaderSources[GL_TESS_EVALUATION_SHADER] = ss;
     }
 
     //LogInfo("%s", _source.c_str());

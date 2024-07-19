@@ -15,11 +15,13 @@ struct NoiseData{
     }
 
     inline void Set(int x, int y, float value){
-        data[x * width + y] = value;  
+        data[y * width + x] = value;  
+        //data[x * width + y] = value;  
     }
 
     inline float Get(int x, int y){
-        return data[x * width + y];  
+        return data[y * width + x];  
+        //return data[x * width + y];  
     }
 
     std::vector<float> data;

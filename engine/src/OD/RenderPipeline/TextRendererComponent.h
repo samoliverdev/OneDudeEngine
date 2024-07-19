@@ -17,8 +17,8 @@ struct OD_API TextRendererComponent{
     Color color;
     bool is3d = false;
 
-    Ref<Font> font = nullptr;
-    Ref<Material> material = nullptr;
+    Ref<Font> font = nullptr; //AssetManager::Get().LoadAsset<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+    Ref<Material> material = nullptr; //CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
     static void OnGui(Entity& e);
 

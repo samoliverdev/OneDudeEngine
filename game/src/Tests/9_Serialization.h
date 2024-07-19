@@ -77,21 +77,11 @@ struct ComponentTest_02{
 
     SphereShape _object;
     std::vector<SphereShape> _list = {SphereShape(), SphereShape()};
-    
-    /*template<class Archive>
-    void serialize(Archive& ar){
-        ar(
-            CEREAL_NVP(_float), 
-            CEREAL_NVP(_int),
-            CEREAL_NVP(_string),
-            CEREAL_NVP(_vector3),
-            CEREAL_NVP(_Vector4),
-            CEREAL_NVP(_quaternion),
-            CEREAL_NVP(_object),
-            CEREAL_NVP(_list)
-        );
-    }*/
 
+    void OnCreate(Entity& e){
+        LogWarning("ComponentTest_02 OnCreate %s", e.GetComponent<InfoComponent>().name.c_str());
+    }
+    
     template<class Archive>
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(_float));

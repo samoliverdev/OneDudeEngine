@@ -10,6 +10,7 @@ using namespace OD;
 
 struct PhysicsCubeS: public Script{
     float t;
+    float timeToDestroy = 5;
 
     void OnStart() override{
         LogInfo("PhysicsCubeS OnStart");
@@ -24,13 +25,11 @@ struct PhysicsCubeS: public Script{
         //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
         cubeModel->materials[0] = LoadMaterial1();
 
-        entity.GetComponent<TransformComponent>().Position({2, 13, 0});
-        entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
-
         ModelRendererComponent& renderer = entity.AddOrGetComponent<ModelRendererComponent>();
         renderer.SetModel(cubeModel);
 
         RigidbodyComponent& physicObject = entity.AddOrGetComponent<RigidbodyComponent>();
+        physicObject.NeverSleep(true);
         
         //physicObject->boxShapeSize = {1,1,1};
         //physicObject->mass = 1;
@@ -42,7 +41,7 @@ struct PhysicsCubeS: public Script{
     void OnUpdate() override{
         ///*
         t += Application::DeltaTime();
-        if(t > 5){
+        if(t > timeToDestroy){
             GetEntity().GetScene()->DestroyEntity(GetEntity().Id());
             //LogInfo("ToDestroy");
         }
@@ -74,7 +73,7 @@ struct Physics_6: OD::Module {
         TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
         textRenderer.text = "Ai meu cu!!!";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
-        textRenderer.font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        textRenderer.font = CreateRef<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
@@ -142,6 +141,11 @@ struct Physics_6: OD::Module {
         _trigger.SetType(RigidbodyComponent::Type::Trigger);
         _trigger.NeverSleep(true);
 
+        scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Entity trigger, Entity other){
+            LogInfo("OnTrigger");
+            other.GetComponent<RigidbodyComponent>().ApplyImpulse(Vector3Up * 25.0f);
+        });
+
         //scene->Save("res/scene1.scene");
         //scene->Start();
         Application::AddModule<Editor>();
@@ -164,14 +168,17 @@ struct Physics_6: OD::Module {
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
         }
 
-        /*Assert(scene->GetRegistry().ctx().get<PhysicsSystem*>() == scene->GetSystem<PhysicsSystem>());
+        Assert(scene->GetRegistry().ctx().get<PhysicsSystem*>() == scene->GetSystem<PhysicsSystem>());
         auto physicsSystem = scene->GetRegistry().ctx().get<PhysicsSystem*>();
         if(physicsSystem->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
             LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
-        }*/
+        }
 
         if(Input::IsKeyDown(KeyCode::R)){
-            SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube").AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
+            e.GetComponent<TransformComponent>().Position({2, 13, 0});
+            e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+            e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
             //SceneManager::Get().ActiveScene()->Save("res/Game/Scenes/scene1.scene");
             
             //scene = SceneManager::Get().NewScene();

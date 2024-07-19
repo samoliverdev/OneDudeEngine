@@ -12,12 +12,12 @@
 #include "Tests/11_Animator.h"
 #include "Tests/12_UniformBuffer.h"
 #include "Tests/13_NewRenderPipeline.h"
-#include "Tests/14_CommandBuffer.h"
 #include "Tests/15_UberShader.h"
 #include "Tests/16_DynamicModule.h"
 #include "Minicraft/Minicraft.h"
 #include "ProceduralTerrain/ProceduralTerrain.h"
 #include "TerrainRenderer/TerrainRenderer.h"
+#include "TerrainRenderer/TerrainRenderer2.h"
 
 #include <string>
 
@@ -30,7 +30,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 18;
+    int i = 5;
     if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMesh_1();
@@ -45,12 +45,12 @@ OD::Module* CreateMainModule(){
     if(i == 10) return new Animator_11();
     if(i == 11) return new UniformBuffer_12();
     if(i == 12) return new NewRenderPipeline_13();
-    if(i == 13) return new CommandBuffer_14();
     if(i == 14) return new UberShader_15();
     if(i == 15) return new Minicraft();
     if(i == 16) return new DynamicModule_16();
     if(i == 17) return new ProceduralTerrain();
     if(i == 18) return new TerrainRenderer();
+    if(i == 19) return new TerrainRenderer2();
 
     return new BaseMesh_1();
 }

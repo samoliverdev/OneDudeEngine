@@ -20,19 +20,49 @@ enum class OD_API_IMPORT TextureWrapping{
     ClampToBorder
 };
 
+enum class OD_API_IMPORT TextureDataType{
+    UnsignedByte,
+    UnsignedInt,
+    Int,
+    Float
+};
+
+enum class OD_API_IMPORT TextureFormat{
+    Auto,
+    RGB,
+    RGBA,
+
+    RED8,
+    RGB8,
+    RGBA8,
+
+    RED16,
+    RGB16,
+    RGBA16,
+
+    RED16F,
+    RGB16F,
+    RGBA16F,
+
+    RED32F,
+    RGB32F,
+    RGBA32F,
+};
+
 class Graphics;
 
 struct OD_API Texture2DSetting{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrap = TextureWrapping::Repeat;
     bool mipmap = true;
+    TextureFormat textureFormat = TextureFormat::Auto;
 
     template <class Archive>
     void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(filter),
-            CEREAL_NVP(mipmap)
-        );
+        ArchiveDumpNVP(ar, filter);
+        ArchiveDumpNVP(ar, wrap);
+        ArchiveDumpNVP(ar, mipmap);
+        ArchiveDumpNVP(ar, textureFormat);
     }
 };
 
@@ -41,10 +71,11 @@ class OD_API Texture2D: public Asset{
 public:
     Texture2D() = default;
     Texture2D(Texture2DSetting settings);
-    Texture2D(const std::string& filePath, Texture2DSetting settings = Texture2DSetting()); 
-    Texture2D(void* data, size_t size, Texture2DSetting settings = Texture2DSetting()); 
+    Texture2D(const std::string& filePath, Texture2DSetting settings); 
+    Texture2D(void* data, size_t size, Texture2DSetting settings); 
+    Texture2D(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings); 
     
-    void LoadFromFile(const std::string& path) override;
+    bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
@@ -80,7 +111,8 @@ private:
 
     bool Create(const std::string path, Texture2DSetting settings);
     bool Create(void* data, size_t size, Texture2DSetting settings);
-    void texture2DGenerate(unsigned int width, unsigned int height, unsigned char* data);
+    bool Create(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings);
+    void texture2DGenerate(unsigned int width, unsigned int height, TextureDataType dataType, void* data);
 
     //void SaveSettings();
 };

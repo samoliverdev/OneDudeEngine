@@ -12,7 +12,7 @@ namespace OD{
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
-        texture = AssetManager::Get().LoadAsset<Texture2D>(texPath);
+        if(type == MaterialMap::Type::Texture) texture = AssetManager::Get().LoadAsset<Texture2D>(texPath);
     }
 }
 
@@ -37,7 +37,7 @@ Ref<Shader> Material::GetShader(){
 
 void Material::SetShader(Ref<Shader> s){ 
     //shader = s; 
-    shaderHandler = CreateRef<ShaderHandler>(s);
+    shaderHandler = CreateRef<MultiCompileShader>(s);
     UpdateMaps(); 
 }
 
@@ -459,12 +459,18 @@ void Material::Save(std::string& path){
     archive(cereal::make_nvp("Material",*this));
 }
 
-void Material::LoadFromFile(const std::string& path){
-    Path(path);
+bool Material::LoadFromFile(const std::string& inPath){
+    path = inPath;
 
-    std::ifstream os(path);
-    cereal::JSONInputArchive archive{os};
-    archive(*this);
+    try{
+        std::ifstream os(inPath);
+        cereal::JSONInputArchive archive{os};
+        archive(*this);
+    } catch(...){
+        return false;
+    }
+
+    return true;
 }
 
 std::vector<std::string> Material::GetFileAssociations(){
@@ -473,7 +479,7 @@ std::vector<std::string> Material::GetFileAssociations(){
 	};
 }
 
-Ref<Material> Material::CreateFromFile(std::string const &path){
+/*Ref<Material> Material::CreateFromFile(std::string const &path){
     //Assert(false && "Not Implemented");
 
     Ref<Material> m = CreateRef<Material>();
@@ -484,7 +490,7 @@ Ref<Material> Material::CreateFromFile(std::string const &path){
     archive(*m);
 
     return m;
-}
+}*/
 
 void Material::UpdateMaps(){
     if(GetShader() == nullptr) return;

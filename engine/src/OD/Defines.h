@@ -160,4 +160,12 @@ inline Type GetType(){
 
 #endif
 
+#pragma once
+
+#include <type_traits>
+
+#define HAS_MEM_FUNC(func, name)                                        \
+    template <typename T, typename = int> struct name : std::false_type {}; \
+    template <typename T> struct name<T, decltype(&T::func, 0)> : std::true_type {};  
+
 }

@@ -22,6 +22,7 @@ in vec3 texCoords;
 out vec4 fragColor;
 
 void main() {
-    fragColor = texture(mainTex, texCoords);
+    //fragColor = texture(mainTex, texCoords);
+    fragColor = textureLod(mainTex, texCoords, 0);
 }
 #endif
