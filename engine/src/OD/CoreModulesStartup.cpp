@@ -39,6 +39,7 @@ void CoreModulesStartup(){
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");

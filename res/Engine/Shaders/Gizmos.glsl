@@ -13,7 +13,7 @@ void main() {
 #endif
 
 #if defined(FRAGMENT)
-uniform vec3 color;
+uniform vec3 color = vec3(0, 0, 1);
 
 out vec4 outColor;
 

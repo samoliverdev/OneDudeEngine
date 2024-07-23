@@ -8,6 +8,7 @@
 #include "OD/Core/Instrumentor.h"
 #include "OD/Defines.h"
 #include "OD/Physics/PhysicsSystem.h"
+#include "OD/Navmesh/Navmesh.h"
 
 namespace OD{
 
@@ -402,7 +403,9 @@ void RenderContext::DrawGizmos(){
         auto& t = animView.get<TransformComponent>(e);
         if(s.GetModel() == nullptr) continue;
 
-        Transform globalTransform = Transform(t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0));
+        Transform globalTransform = Transform(
+            t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.skeletonTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
+        );
 
         Pose pose;
         if(scene->Running()){ 
@@ -420,6 +423,19 @@ void RenderContext::DrawGizmos(){
             Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
             Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
         }
+    }
+
+    auto drawGizmosView = scene->GetRegistry().view<GizmosDrawComponent, TransformComponent>();
+    for(auto e: drawGizmosView){
+        auto& g = drawGizmosView.get<GizmosDrawComponent>(e);
+        auto& t = drawGizmosView.get<TransformComponent>(e);
+        Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+    }
+
+    auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
+    for(auto e: navmeshView){
+        auto& n = navmeshView.get<NavmeshComponent>(e);
+        n.navmesh->DrawDebug();
     }
 }
 

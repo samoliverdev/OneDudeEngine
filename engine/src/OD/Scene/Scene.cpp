@@ -9,9 +9,16 @@ namespace OD{
 
 #pragma region TransformComponent
 Matrix4 TransformComponent::GlobalModelMatrix(){
+    /*Matrix4 result = transform.GetLocalModelMatrix();
+    for(TransformComponent* p = registry->try_get<TransformComponent>(parent); p != nullptr; p = registry->try_get<TransformComponent>(p->parent)){
+        result = p->GetLocalModelMatrix() * result;
+    }
+    return result;*/
+
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
-        return p.transform.GetLocalModelMatrix() * transform.GetLocalModelMatrix();
+        //return p.transform.GetLocalModelMatrix() * transform.GetLocalModelMatrix();
+        return p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
     }
     return transform.GetLocalModelMatrix();
 }
@@ -217,6 +224,7 @@ void Scene::CleanParent(EntityId e){
         );
     }
 
+    entity.parent = entt::null;
     entity.hasParent = false;
 }
 

@@ -566,7 +566,7 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
         aiProcess_Triangulate | 
         aiProcess_GenSmoothNormals | /*| aiProcess_FlipUVs*/ 
         aiProcess_CalcTangentSpace |
-        aiProcess_PopulateArmatureData//|aiProcess_OptimizeGraph | aiProcess_GlobalScale
+        aiProcess_PopulateArmatureData | aiProcess_OptimizeGraph | aiProcess_GlobalScale
     );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){

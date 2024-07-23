@@ -10,6 +10,10 @@ void AnimatorComponent::Play(Clip* clip){
     controller.Play(clip);
 }
 
+void AnimatorComponent::FadeTo(Clip* target, float fadeTime){
+    controller.FadeTo(target, fadeTime);
+}
+
 AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
 
 SystemType AnimatorSystem::Type(){ 
@@ -37,6 +41,8 @@ void AnimatorSystem::Update(){
 
         anim.controller.Update(Application::DeltaTime());
         anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose());
+        if(skinned.skeletonEntities.size() == 0) skinned.CreateSkeletonEntites(Entity(e, GetScene()));
+        skinned.UpdateSkeletonEntites(anim.controller.GetCurrentPose());
     }
 }
 

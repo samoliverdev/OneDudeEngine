@@ -40,7 +40,6 @@ inline btTransform ToBullet(TransformComponent& v){
     return t;
 }
 
-
 struct Rigidbody{
     bool updating = false;
     btCollisionShape* shape = nullptr;
@@ -68,6 +67,12 @@ public:
     Scene* scene = nullptr;
 
     void drawLine(const btVector3 &from,const btVector3&to, const btVector3 &color) override{
+        Graphics::AddDrawLineCommand(
+            Vector3(from.x(), from.y(), from.z()), 
+            Vector3(to.x(), to.y(), to.z())
+        );
+        return;
+
         if(scene != nullptr){
             TransformComponent& cam = scene->GetMainCamera2().GetComponent<TransformComponent>();
             if(math::distance(cam.Position(), FromBullet(from)) > 50) return;
@@ -82,6 +87,8 @@ public:
     }
 
     void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override {
+        return;
+
         Transform transform;
         transform.LocalPosition(Vector3(PointOnB.x(), PointOnB.y(), PointOnB.z()));
         transform.LocalScale(Vector3(0.25f, 0.25f, 0.25f));
@@ -100,10 +107,19 @@ public:
         );
     }
 
+    void flushLines() override{
+        Graphics::DrawLinesComamnd(
+            Vector3(0, 1, 0),
+            2
+        );
+    }
+
     void reportErrorWarning(const char* warningString) override {}
 	void draw3dText(const btVector3& location, const char* textString) override {}
 	void setDebugMode(int debugMode) override {}
 	int getDebugMode() const override { return 1; }
+
+
 };
 
 Debuger debuger;
@@ -145,7 +161,7 @@ void RigidbodyComponent::OnGui(Entity& e){
     ImGui::Spacing();
     ImGui::SeparatorText("CollisionShape");
 
-    const char* shapeTypeString[] = {"Box", "Sphere"};
+    const char* shapeTypeString[] = {"Box", "Sphere", "Capsule"};
     const char* curShapeTypeString = shapeTypeString[(int)rb.GetShape().type];
     if(ImGui::BeginCombo("CollisionShape", curShapeTypeString)){
         for(int i = 0; i < 2; i++){
@@ -165,36 +181,100 @@ void RigidbodyComponent::OnGui(Entity& e){
     shape = rb.GetShape();
 
     if(rb.shape.type == CollisionShape::Type::Box){
-        float _shape[] = {shape.boxShapeSize.x, shape.boxShapeSize.y, shape.boxShapeSize.z};
-        if(ImGui::DragFloat3("size", _shape)){
-            shape.boxShapeSize = Vector3(_shape[0], _shape[1], _shape[2]);
-            rb.SetShape(shape);
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
         }
+        float _shape[] = {shape.size.x, shape.size.y, shape.size.z};
+        if(ImGui::DragFloat3("size", _shape)){
+            shape.size = Vector3(_shape[0], _shape[1], _shape[2]);
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
     }
 
     if(rb.shape.type == CollisionShape::Type::Sphere){
-        float _radius = shape.sphereRadius;
-        if(ImGui::DragFloat("radius", &_radius)){
-            shape.sphereRadius = _radius;
-            rb.SetShape(shape);
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
         }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Capsule){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+        float _height = shape.height;
+        if(ImGui::DragFloat("height", &_height)){
+            shape.height = _height;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
     }
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
     shape = inShape;
-
     if(data == nullptr) return;
-
     if(data->shape != nullptr) delete data->shape;
 
     if(shape.type == CollisionShape::Type::Box){
-        data->shape = new btBoxShape(btVector3(shape.boxShapeSize.x/2, shape.boxShapeSize.y/2, shape.boxShapeSize.z/2));
+        auto _shape = new btBoxShape(btVector3(shape.size.x/2, shape.size.y/2, shape.size.z/2));
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
         if(data->body != nullptr) data->body->setCollisionShape(data->shape);
     }
 
     if(shape.type == CollisionShape::Type::Sphere){
-        data->shape = new btSphereShape(shape.sphereRadius);
+        auto _shape = new btSphereShape(shape.radius);
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
+        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+    }
+
+    if(shape.type == CollisionShape::Type::Capsule){
+        auto _shape = new btCapsuleShape(shape.radius, shape.height);
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
         if(data->body != nullptr) data->body->setCollisionShape(data->shape);
     }
 
@@ -252,15 +332,31 @@ Vector3 RigidbodyComponent::Position(){
 
 void RigidbodyComponent::Position(Vector3 position){
     if(data == nullptr) return;
-    btTransform trans;
-    trans.setIdentity();
+    btTransform trans = data->body->getWorldTransform();
     trans.setOrigin(ToBullet(position));
     data->body->setWorldTransform(trans);
-    data->motionState->setWorldTransform(trans);
+    //data->motionState->setWorldTransform(trans);
 
-    data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    /*data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
     data->body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
-    data->body->clearForces();
+    data->body->clearForces();*/
+}
+
+Quaternion RigidbodyComponent::Rotation(){
+    if(data == nullptr) return QuaternionIdentity;
+    btTransform trans = data->body->getWorldTransform();
+    return FromBullet(trans.getRotation());
+}
+
+void RigidbodyComponent::Rotation(Quaternion rotation){
+    btTransform trans = data->body->getWorldTransform();
+    trans.setRotation(ToBullet(rotation));
+    data->body->setWorldTransform(trans);
+    //data->motionState->setWorldTransform(trans);
+
+    /*data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    data->body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
+    data->body->clearForces();*/
 }
 
 Vector3 RigidbodyComponent::Velocity(){
@@ -269,6 +365,9 @@ Vector3 RigidbodyComponent::Velocity(){
 }
 
 void RigidbodyComponent::Velocity(Vector3 v){
+    Assert(isnan(v.x) == false);
+    Assert(isnan(v.y) == false);
+    Assert(isnan(v.z) == false);
     if(data == nullptr) return;
     return data->body->setLinearVelocity(ToBullet(v));
 }

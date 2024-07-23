@@ -33,10 +33,8 @@ public:
     void OnUpdate() override;
 
     template <class Archive>
-    void serialize(Archive & ar){
-        ar(
-            CEREAL_NVP(moveSpeed), 
-            CEREAL_NVP(rotSpeed)
-        );
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, moveSpeed);
+        ArchiveDumpNVP(ar, rotSpeed);
     }
 };

@@ -90,6 +90,26 @@ struct OD_API AABB: public BoundingVolume{
 	AABB(const Vector3& inCenter, float iI, float iJ, float iK): 
 		BoundingVolume{}, center{ inCenter }, extents{ iI, iJ, iK }{}
 
+	inline Vector3 GetMin(){
+		Vector3 p1 = center + extents;
+		Vector3 p2 = center - extents;
+		return Vector3(
+			fminf(p1.x, p2.x),
+			fminf(p1.y, p2.y),
+			fminf(p1.z, p2.z)
+		);
+	}
+
+	inline Vector3 GetMax(){
+		Vector3 p1 = center + extents;
+		Vector3 p2 = center - extents;
+		return Vector3(
+			fmaxf(p1.x, p2.x),
+			fmaxf(p1.y, p2.y),
+			fmaxf(p1.z, p2.z)
+		);
+	}
+
 	void Expand(Vector3 amount);
 	AABB Scaled(Vector3 s);
 

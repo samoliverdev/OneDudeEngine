@@ -52,16 +52,19 @@ struct Animator_11: OD::Module {
         //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
         Ref<Model> charModel = AssetManager::Get().LoadAsset<Model>(
-            "res/Game/Animations/Walking.dae"
-            //"res/Game/Animations/RumbaDancing.glb"
+            //"res/Game/Animations/Walking.dae"
+            "res/Game/Animations/RumbaDancing.glb"
+            //"res/Game/Animations/SillyDancing.fbx"
+            ///"res/Game/Animations/UnarmedWalkForward.dae"
         );
         charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
-        charTrans.LocalScale(Vector3(200));
+        charTrans.LocalScale(Vector3(0.01f));
         SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
         charRenderer.SetModel(charModel);
+        //charRenderer.CreateSkeletonEntites(*scene, charEntity);
         charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
         charRenderer.UpdatePosePalette();
         LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());

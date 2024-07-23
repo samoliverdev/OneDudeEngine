@@ -37,6 +37,7 @@ public:
     inline Vector3 Down(){ return Rotation() * Vector3Down; }
 
     Matrix4 GlobalModelMatrix();
+    inline Matrix4 GetLocalModelMatrix(){ return transform.GetLocalModelMatrix(); }
     
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
     Vector3 InverseTransformDirection(Vector3 dir); 
@@ -66,9 +67,10 @@ public:
     inline void LocalRotation(Quaternion rot){ transform.LocalRotation(rot); }
     inline Vector3 LocalScale(){ return transform.LocalScale(); }
     inline void LocalScale(Vector3 scale){ transform.LocalScale(scale); }
+    inline void SetLocalModelMatrix(Matrix4 matrix){ transform = Transform(matrix); }
 
     inline EntityId Parent(){ return parent; }
-    inline bool HasParent(){ return hasParent; }
+    inline bool HasParent(){ /*return parent != entt::null;*/ return hasParent; }
     inline std::vector<EntityId> Children(){ return children; }
 
     template <class Archive>
@@ -88,7 +90,7 @@ private:
     Transform transform;
     std::vector<EntityId> children;
 
-    EntityId parent;
+    EntityId parent = entt::null;
     bool hasParent;
 
     entt::registry* registry;

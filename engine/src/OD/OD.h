@@ -44,6 +44,8 @@
 #include "OD/RenderPipeline/LightComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 
+#include "OD/Navmesh/Navmesh.h"
+
 #include "OD/Physics/PhysicsSystem.h"
 
 #include <IconFontCppHeaders/IconsFontAwesome5.h>

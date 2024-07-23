@@ -14,6 +14,13 @@ struct OD_API BoneData{
 
 class Graphics;
 
+enum class MeshDrawMode{
+    TRIANGLES = 0,
+    LINES,
+    POINTS,
+    QUADS
+};
+
 class OD_API Mesh: public Asset{
     friend class Graphics;
 public:
@@ -27,6 +34,8 @@ public:
     std::vector<unsigned int> indices;
 
     std::vector<Matrix4> instancingModelMatrixs;
+
+    MeshDrawMode drawMode = MeshDrawMode::TRIANGLES;
     
     Mesh();
     Mesh(const Mesh& mesh);

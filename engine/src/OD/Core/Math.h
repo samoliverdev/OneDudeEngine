@@ -109,6 +109,13 @@ namespace Mathf{
             s.z + (e.z - s.z) * t
         );
     }
+
+    inline static bool IsNan(const Vector3& v){
+        if(isnan(v.x)) return true;
+        if(isnan(v.y)) return true;
+        if(isnan(v.z)) return true;
+        return false;
+    }
 }
 
 }

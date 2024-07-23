@@ -103,14 +103,27 @@ protected:
 
 struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     friend class StandRenderPipeline;
-
+    
+    Transform skeletonTransform;
     std::vector<Matrix4> posePalette;
+    std::vector<Entity> skeletonEntities;
 
     static void OnGui(Entity& e);
+    
+    //INFO: Bug if is called in editor scene the skeletonEntities are linked with editor scene not the running scene
+    void CreateSkeletonEntites(Entity& selfEntity);
+    void UpdateSkeletonEntites(Pose& animatedPose);
 
     inline void UpdatePosePalette(){
         GetModel()->skeleton.GetRestPose().GetMatrixPalette(posePalette, model->skeleton.GetInvBindPose());
     }
+};
+
+struct OD_API GizmosDrawComponent{
+    Vector3 globalScale = {0.05f, 0.05f, 0.05f};
+
+    inline static void OnGui(Entity& e){}
+    template <class Archive> void serialize(Archive& ar){}
 };
 
 };

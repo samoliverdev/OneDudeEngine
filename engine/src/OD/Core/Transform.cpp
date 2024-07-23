@@ -15,6 +15,7 @@ Transform::Transform(const Matrix4& m){
     localPosition = t;
     localRotation = r;
     localScale = s;
+    isDirt = true;
 }
 
 Matrix4 Transform::GetLocalModelMatrix(){

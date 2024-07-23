@@ -11,6 +11,7 @@ namespace OD{
 struct OD_API AnimatorComponent{
     friend struct AnimatorSystem;
     void Play(Clip* clip);
+    void FadeTo(Clip* target, float fadeTime);
 
     template <class Archive>
     void serialize(Archive & ar){}

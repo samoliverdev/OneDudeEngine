@@ -12,33 +12,44 @@ struct Rigidbody;
 struct PhysicsWorld;
 
 struct OD_API CollisionShape{
-    enum class Type{Box, Sphere};
+    enum class Type{Box, Sphere, Capsule};
 
     Type type;
-    Vector3 boxShapeSize = {1,1,1};
-    float sphereRadius = 1;
+    Vector3 center = {0, 0, 0};
+    Vector3 size = {1,1,1};
+    float radius = 1;
+    float height = 1;
 
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDump(ar, CEREAL_NVP(type));
-        ArchiveDump(ar, CEREAL_NVP(boxShapeSize));
-        ArchiveDump(ar, CEREAL_NVP(sphereRadius));
+        ArchiveDump(ar, CEREAL_NVP(center));
+        ArchiveDump(ar, CEREAL_NVP(size));
+        ArchiveDump(ar, CEREAL_NVP(radius));
+        ArchiveDump(ar, CEREAL_NVP(height));
     }
 
     inline static CollisionShape BoxShape(Vector3 size){
-        return CollisionShape{
-            Type::Box,
-            size,
-            1
-        };
+        CollisionShape shape;
+        shape.type = Type::Box;
+        shape.size = size;
+        return shape;
     }
 
     inline static CollisionShape SphereShape(float radius){
-        return CollisionShape{
-            Type::Sphere,
-            Vector3One,
-            radius
-        };
+        CollisionShape shape;
+        shape.type = Type::Sphere;
+        shape.radius = radius;
+        return shape;
+    }
+
+    inline static CollisionShape CapsuleShape(float radius, float height, Vector3 center){
+        CollisionShape shape;
+        shape.type = Type::Capsule;
+        shape.radius = radius;
+        shape.height = height;
+        shape.center = center;
+        return shape;
     }
 };
 
@@ -63,6 +74,9 @@ struct OD_API RigidbodyComponent{
 
     Vector3 Position();
     void Position(Vector3 position);
+
+    Quaternion Rotation();
+    void Rotation(Quaternion rotation);
 
     Vector3 Velocity();
     void Velocity(Vector3 v);

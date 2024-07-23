@@ -40,6 +40,9 @@ public:
 
     static void DrawModel(Model& model, Matrix4 modelMatrix);
 
+    static void AddDrawLineCommand(Vector3 start, Vector3 end);
+    static void DrawLinesComamnd(Vector3 color, int lineWidth);
+
     static void DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);

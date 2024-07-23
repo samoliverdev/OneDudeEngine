@@ -134,11 +134,60 @@ void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
     }
 }
 
+void SkinnedModelRendererComponent::CreateSkeletonEntites(Entity& selfEntity){
+    skeletonEntities.clear();
+    UpdatePosePalette();
+    Pose& pose = model->skeleton.GetBindPose();
+    TransformComponent& selfTransform = selfEntity.GetComponent<TransformComponent>();
+
+    for(int i = 0; i < pose.Size(); i++){
+        Entity e = selfEntity.GetScene()->AddEntity(model->skeleton.GetJointName(i));
+        e.AddComponent<GizmosDrawComponent>();
+        skeletonEntities.push_back(e);
+    }
+
+    for(int i = 0; i < pose.Size(); i++){
+        TransformComponent& trans = skeletonEntities[i].GetComponent<TransformComponent>();
+        int parent = pose.GetParent(i);
+
+        if(parent < 0){
+            selfEntity.GetScene()->SetParent(selfEntity.Id(), skeletonEntities[i].Id());
+            trans.SetLocalModelMatrix(localTransform.GetLocalModelMatrix() * skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(i));
+        } else {
+            selfEntity.GetScene()->SetParent(skeletonEntities[parent].Id(), skeletonEntities[i].Id());
+            trans.SetLocalModelMatrix(pose.GetLocalMatrix(i));
+        }  
+    }
+}
+
+void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose){
+    for(int i = 0; i < skeletonEntities.size(); i++){
+        TransformComponent& trans = skeletonEntities[i].GetComponent<TransformComponent>();
+        InfoComponent& info = skeletonEntities[i].GetComponent<InfoComponent>();
+        int parent = pose.GetParent(i);
+        
+        if(parent < 0){
+            trans.SetLocalModelMatrix(localTransform.GetLocalModelMatrix() * skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(i));
+        } else {
+            trans.SetLocalModelMatrix(pose.GetLocalMatrix(i));
+        }  
+        
+        /*Transform t = Transform(animatedPose.GetLocalMatrix(i));
+        trans.LocalPosition(t.LocalPosition());
+        trans.LocalRotation(t.LocalRotation());*/
+        
+        //LogWarning("Update Bone: %s", info.name.c_str());
+    }
+}
+
 void SkinnedModelRendererComponent::OnGui(Entity& e){
     SkinnedModelRendererComponent& mesh = e.GetComponent<SkinnedModelRendererComponent>();
 
     if(ImGui::TreeNode("localTransform")){
         Transform::OnGui(mesh.localTransform);
+    }
+    if(ImGui::TreeNode("skeletonTransform")){
+        Transform::OnGui(mesh.skeletonTransform);
     }
 
     if(mesh.model == nullptr){

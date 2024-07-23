@@ -45,19 +45,17 @@ set(FT_WITH_HARFBUZZ  OFF CACHE BOOL "" FORCE)
 set(FT_WITH_PNG  OFF CACHE BOOL "" FORCE)
 set(FT_WITH_ZLIB  OFF CACHE BOOL "" FORCE)
 
-set(ozz_build_samples  OFF CACHE BOOL "" FORCE)
-set(ozz_build_howtos  OFF CACHE BOOL "" FORCE)
-set(ozz_build_tests  OFF CACHE BOOL "" FORCE)
-#set(ozz_build_msvc_rt_dll  ON CACHE BOOL "" FORCE)
-#set(ozz_build_simd_ref  ON CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_DEMO  OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_TESTS  OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_EXAMPLES  OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_DEMO  OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/assimp)
 add_subdirectory(engine/vendor/bullet3)
 add_subdirectory(engine/vendor/soloud)
 add_subdirectory(engine/vendor/freetype)
-#add_subdirectory(engine/vendor/ozz-animation)
-#add_subdirectory(engine/vendor/ozz-animation/ ozz_animation EXCLUDE_FROM_ALL)
+add_subdirectory(engine/vendor/recastnavigation)
 
 #----------------Engine------------------
 project(engine)
@@ -94,11 +92,14 @@ target_include_directories(engine PUBLIC
     engine/vendor/ImGuizmo/
     engine/vendor/glfw/include/
     engine/vendor/assimp/include/
-    #engine/vendor/assimp/code/
     engine/vendor/bullet3/src
     engine/vendor/entt/
     engine/vendor/soloud/include/
     engine/vendor/freetype/include/
+    engine/vendor/recastnavigation/Recast/Include/
+    engine/vendor/recastnavigation/Detour/Include/
+    engine/vendor/recastnavigation/DetourCrowd/Include/
+    engine/vendor/recastnavigation/Detour/Include/
     engine/src/
 )
 
@@ -107,6 +108,7 @@ target_link_libraries(engine PUBLIC
     assimp
     soloud
     freetype
+    DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
 )
 

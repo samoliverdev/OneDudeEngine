@@ -8,6 +8,10 @@ namespace OD{
 
 unsigned int lineVAO;
 unsigned int lineVBO;
+unsigned int lineCommandsVAO;
+unsigned int lineCommandsVBO;
+std::vector<float> lineCommandsData;
+#define MAX_LINES_VERTEX_DRAWCALL 1000000
 
 unsigned int textQuadVAO;
 unsigned int textQuadVBO;
@@ -22,18 +26,26 @@ int drawCalls;
 int vertices;
 int tris;
 
+GLenum meshDrawModeLookup[] = {
+    GL_TRIANGLES,
+    GL_LINES,
+    GL_POINTS,
+    GL_QUADS
+};  
+
 int Graphics::GetDrawCallsCount(){ return drawCalls; }
 int Graphics::GetVerticesCount(){ return vertices; }
 int Graphics::GetTrisCount(){ return tris; }
 
-void CreateLineVAO(){
-    glGenVertexArrays(1, &lineVAO);
-	glBindVertexArray(lineVAO);
+void CreateLineVAO(unsigned int* vao, unsigned int* vbo, int vertexCount){
+    glGenVertexArrays(1, vao);
+	glBindVertexArray(*vao);
     glCheckError();
     
-	glGenBuffers(1, &lineVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+	glGenBuffers(1, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+	//glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertexCount * 3, NULL, GL_DYNAMIC_DRAW);
     glCheckError();
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
@@ -114,7 +126,8 @@ void Graphics::Initialize(){
     gismoShader = Shader::CreateFromFile("res/Engine/Shaders/Gizmos.glsl");
     Assert(gismoShader != nullptr);
 
-    CreateLineVAO();
+    CreateLineVAO(&lineVAO, &lineVBO, 2);
+    CreateLineVAO(&lineCommandsVAO, &lineCommandsVBO, MAX_LINES_VERTEX_DRAWCALL*2);
     CreateWiredCubeVAO();
     CreateTextQuadVAO();
 
@@ -198,10 +211,10 @@ void Graphics::DrawMeshRaw(Mesh& mesh){
     glCheckError();
 
     if(mesh.ebo != 0){
-        glDrawElements(GL_TRIANGLES, mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
         glCheckError();
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
         glCheckError();
     }
 
@@ -227,10 +240,10 @@ void Graphics::DrawMeshInstancingRaw(Mesh& mesh, int count){
     glBindVertexArray(mesh.vao);
 
     if(mesh.ebo != 0){
-        glDrawElementsInstanced(GL_TRIANGLES, mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
+        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
         glCheckError();
     } else {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.vertexCount, count);
+        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
         glCheckError();
     }
 
@@ -263,6 +276,51 @@ void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){
         Material::SubmitGraphicDatas(*targetMaterial);
         DrawMesh(*targetMesh, *targetMaterial->GetShader(), targetMatrix);
     }
+}
+
+void Graphics::AddDrawLineCommand(Vector3 start, Vector3 end){
+    lineCommandsData.push_back(start.x);
+    lineCommandsData.push_back(start.y);
+    lineCommandsData.push_back(start.z);
+
+    lineCommandsData.push_back(end.x);
+    lineCommandsData.push_back(end.y);
+    lineCommandsData.push_back(end.z);
+}
+
+void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
+    //drawCalls += 1;
+    vertices += lineCommandsData.size()/3;
+    tris += 0;
+
+    Shader::Bind(*gismoShader);
+    gismoShader->SetVector3("color", color);
+    gismoShader->SetMatrix4("model", Matrix4Identity);
+    gismoShader->SetMatrix4("view", camera.view);
+    gismoShader->SetMatrix4("projection", camera.projection);
+
+	glLineWidth(lineWidth);
+    glCheckError();
+
+	glBindVertexArray(lineCommandsVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, lineCommandsVBO);
+    glCheckError();
+    
+    /*glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * lineCommandsData.size(), &lineCommandsData[0]);
+	glCheckError();
+    glDrawArrays(GL_LINES, 0, lineCommandsData.size()/3);
+    glCheckError();*/
+
+    for (int i = 0; i < lineCommandsData.size(); i += 2 * MAX_LINES_VERTEX_DRAWCALL * 3){
+        drawCalls += 1;
+        int batchVertexCount = std::min<int>(lineCommandsData.size() - i, 2 * MAX_LINES_VERTEX_DRAWCALL * 3);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * batchVertexCount, &lineCommandsData[i]);
+	    glCheckError();
+        glDrawArrays(GL_LINES, 0, batchVertexCount/3);
+        glCheckError();
+    }
+
+    lineCommandsData.clear();
 }
 
 void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
