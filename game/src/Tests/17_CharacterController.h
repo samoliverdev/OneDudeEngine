@@ -15,9 +15,15 @@ struct PlayerController: public Script{
     Clip* idleAnimation;
     Clip* runningAnimation;
 
+    Ref<AudioClip> shootClip;
+
     void OnStart() override{
-        //Assert(idleAnimation != nullptr);
-        //Assert(runningAnimation != nullptr);
+        Assert(idleAnimation != nullptr);
+        Assert(runningAnimation != nullptr);
+
+        shootClip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/633250__aesterial-arts__arcade-shoot.wav");
+        AudioSourceComponent& audioSource = GetEntity().AddComponent<AudioSourceComponent>();
+        audioSource.clip = shootClip;
     }
 
     void OnUpdate() override{
@@ -44,6 +50,11 @@ struct PlayerController: public Script{
             if(anim.controller.GetCurrentClip() != idleAnimation) anim.FadeTo(idleAnimation, 0.1f);
         } else {
             if(anim.controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, 0.1f);
+        }
+
+        AudioSourceComponent& audioSource = GetEntity().GetComponent<AudioSourceComponent>();
+        if(Input::IsKeyDown(KeyCode::Space)){
+            audioSource.Play();
         }
     }
 
@@ -144,7 +155,7 @@ struct CharacterController_17: OD::Module {
         AnimatorComponent& charAnim = playerEntity.AddComponent<AnimatorComponent>();
         charAnim.Play(charIdleModel->animationClips[0].get());
         
-        Entity navmeshEntity = scene->AddEntity("Navmesh");
+        /*Entity navmeshEntity = scene->AddEntity("Navmesh");
         NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();
         navmeshComp.navmesh = CreateRef<Navmesh>();
         navmeshComp.navmesh->buildSettings.cellSize = 0.3f;
@@ -161,7 +172,7 @@ struct CharacterController_17: OD::Module {
         navmeshComp.navmesh->buildSettings.detailSampleDist = 6.0f;
         navmeshComp.navmesh->buildSettings.detailSampleMaxError = 1.0f;
         navmeshComp.navmesh->buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
-        navmeshComp.navmesh->Bake(scene, AABB(Vector3(-15.5f, 0, -12.5f), Vector3(100, 100, 100)));
+        navmeshComp.navmesh->Bake(scene, AABB(Vector3(-15.5f, 0, -12.5f), Vector3(100, 100, 100)));*/
 
         /*navmesh.buildSettings.cellSize = 0.3f;
         navmesh.buildSettings.cellHeight = 0.2f;

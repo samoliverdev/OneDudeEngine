@@ -19,7 +19,7 @@ enum class KeyCode {
     Control = 341,
     Alt = 0x11,
     Escape = 256,
-    Space = 342,
+    Space = 32,
     //8
 
     Left = 0x25,

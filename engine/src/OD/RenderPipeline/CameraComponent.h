@@ -41,3 +41,10 @@ private:
 };
 
 }
+
+/*namespace cereal {                                                                                                                               
+    template<class Archive> inline std::string save_minimal(Archive&, const OD::CameraComponent::Type& h){ return std::string(magic_enum::enum_name(h)); }    
+    template<class Archive> inline void load_minimal(const Archive&, OD::CameraComponent::Type& enumType, const std::string& str){                     
+        enumType = magic_enum::enum_cast<OD::CameraComponent::Type>(str).value();                                                                
+    }                                                                                                                           
+}*/

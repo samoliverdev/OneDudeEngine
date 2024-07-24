@@ -10,7 +10,7 @@ SceneManager& SceneManager::Get(){
 void SceneManager::OnInit(){}
 
 void SceneManager::OnExit(){
-    //if(activeScene != nullptr) delete activeScene;
+    if(activeScene != nullptr) delete activeScene;
 }
 
 void SceneManager::OnUpdate(float deltaTime){

@@ -45,18 +45,18 @@
             "prefabPath": ""
         },
         {
-            "name": "Trigger",
+            "name": "MainCube",
             "tag": "",
             "active": false,
             "entityType": 0,
             "prefabPath": ""
         },
         {
-            "name": "Empty Entity",
+            "name": "Trigger",
             "tag": "",
             "active": false,
-            "entityType": 1,
-            "prefabPath": "C:\\Users\\sam\\Desktop\\cpp\\OneDudeEngine\\res\\Game\\test.prefab"
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -201,6 +201,32 @@
         },
         {
             "transform.localPosition": {
+                "v.x": 2.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
@@ -222,34 +248,6 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 4294967295,
-            "hasParent": false
-        },
-        {
-            "transform.localPosition": {
-                "v.x": 15.5,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localRotation": {
-                "q.x": 0.0,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 1.0
-            },
-            "transform.localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localScale": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
-            },
-            "children": [
-                7
-            ],
             "parent": 4294967295,
             "hasParent": false
         }
@@ -411,6 +409,26 @@
             "neverSleep": true
         },
         {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
             "type": 3,
             "shape": {
                 "type": 0,
@@ -433,7 +451,8 @@
     ],
     "RigidbodyComponentEntities": [
         4,
-        5
+        5,
+        6
     ],
     "ModelRendererComponents": [
         {
@@ -473,10 +492,51 @@
                     "Memory"
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "res/Game/Models/Cube.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
         }
     ],
     "ModelRendererComponentEntities": [
-        4
+        4,
+        5
     ],
     "ScriptComponents": [
         {}

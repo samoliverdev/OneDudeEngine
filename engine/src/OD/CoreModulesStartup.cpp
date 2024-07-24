@@ -10,6 +10,8 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
+#include "OD/Audio/AudioClip.h"
+#include "OD/Audio/AudioSystem.h"
 #include <filesystem>
 
 namespace OD{
@@ -17,20 +19,13 @@ namespace OD{
 void CoreModulesStartup(){
     //LogInfo("CoreModulesStartup");
 
-    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){
-        //return AssetManager::Get().LoadTexture2D(path);
-        return AssetManager::Get().LoadAsset<Texture2D>(path);
-    });
-    
-    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){
-        //return AssetManager::Get().LoadTexture2D(path);
-        return AssetManager::Get().LoadAsset<Texture2D>(path);
-    });
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
 
-    AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){
-        //return AssetManager::Get().LoadMaterial(path);
-        return AssetManager::Get().LoadAsset<Material>(path);
-    });
+    AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){ return AssetManager::Get().LoadAsset<Material>(path); });
+
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
 
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
@@ -50,6 +45,9 @@ void CoreModulesStartup(){
 
     SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
     SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
+
+    SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent");
+    SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
 
     Application::AddModule(&SceneManager::Get());
 }

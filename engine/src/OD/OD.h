@@ -44,6 +44,9 @@
 #include "OD/RenderPipeline/LightComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 
+#include "OD/Audio/AudioClip.h"
+#include "OD/Audio/AudioSystem.h"
+
 #include "OD/Navmesh/Navmesh.h"
 
 #include "OD/Physics/PhysicsSystem.h"

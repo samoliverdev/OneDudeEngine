@@ -264,10 +264,12 @@ struct BaseMesh_1: OD::Module {
 
         Shader::Bind(*fontShader);
         fontShader->SetVector4("color", Color{0.5f, 0.8f, 0.2f});
-        Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f);
-        
+        //Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f);
+        //LogInfo: Compile Error Strange
+
         fontShader->SetVector4("color", Color{0.3, 0.7f, 0.9f});
-        Graphics::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f);
+        //Graphics::DrawText(*font, *fontShader, "(C) LearnOpenGL.com", Vector3(Application::ScreenWidth()-260, Application::ScreenHeight()-30, 0), 0.5f);
+        //LogInfo: Compile Error Strange
 
         Graphics::End();
     }

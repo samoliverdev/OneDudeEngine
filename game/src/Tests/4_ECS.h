@@ -5,10 +5,10 @@
 #include "Ultis/CameraMovement.h"
 #include <assert.h>
 #include "Ultis/Ultis.h"
-#include <soloud.h>
+/*#include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_speech.h>
-#include <soloud_thread.h>
+#include <soloud_thread.h>*/
 #include <thread>
 #include <future>
 #include <fstream>
@@ -28,8 +28,8 @@ struct ECS_4: public OD::Module {
 
     std::future<void> playMusic;
 
-    SoLoud::Soloud soloud;
-    SoLoud::Wav sample;
+    /*SoLoud::Soloud soloud;
+    SoLoud::Wav sample;*/
 
     void AddTransparent(Vector3 pos){
         Entity et = SceneManager::Get().GetActiveScene()->AddEntity("Transparent");
@@ -47,13 +47,13 @@ struct ECS_4: public OD::Module {
 
     void OnInit() override {
         LogInfo("Game Init");
-        soloud.init();
+        //soloud.init();
 
         //Ref<Shader> _shaderTest = Shader::CreateFromFile("res/Engine/Shaders/_BaseShaderTest.glsl");
 
         //LogInfo("Size of: %zd", sizeof(ArchiveNode));
     
-        /*sample.load("res/sounds/2ne1_2.mp3");
+        /*sample.load("res/Game/Sounds/2ne1_2.mp3");
         soloud.play(sample);*/
 
         Application::Vsync(false);
@@ -181,7 +181,10 @@ struct ECS_4: public OD::Module {
             scene->SetParent(mainEntity.Id(), e.Id());
         }
 
-
+        Entity audioSourceEntity = scene->AddEntity("AudioSource");
+        AudioSourceComponent& audioSource = audioSourceEntity.AddComponent<AudioSourceComponent>();
+        audioSource.clip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/2ne1_2.mp3");
+        audioSource.Play();
 
         Application::AddModule<Editor>();
         //scene->Start();
