@@ -179,7 +179,9 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
 void InspectorPanel::DrawComponents(Entity entity){
     TransformComponent& transform = entity.GetComponent<TransformComponent>();
     InfoComponent& info = entity.GetComponent<InfoComponent>();
+    EntityType entityType = entity.GetComponent<InfoComponent>().Type();
 
+    if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
     DrawComponent<InfoComponent>(entity, "Info", [&](Entity e){
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
@@ -196,7 +198,9 @@ void InspectorPanel::DrawComponents(Entity entity){
 
         ImGui::Text("Id: %zd", (size_t)e.Id());
     });
+    if(entityType != EntityType::Stand) ImGui::EndDisabled();
 
+    if(entityType == EntityType::PrefabChild) ImGui::BeginDisabled(true);
     DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
         /*if(e.HasComponent<RigidbodyComponent>()){
             RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
@@ -221,10 +225,13 @@ void InspectorPanel::DrawComponents(Entity entity){
             transform.LocalScale(Vector3(s[0], s[1], s[2]));
         } 
     });
+    if(entityType == EntityType::PrefabChild) ImGui::EndDisabled();
 
     ImGui::Spacing();
     //ImGui::Separator();
     ImGui::Spacing();
+
+    if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
     
     for(auto& i: SceneManager::Get().coreComponentsSerializer){
         //LogInfo("%s", i.first.c_str());
@@ -238,6 +245,8 @@ void InspectorPanel::DrawComponents(Entity entity){
     for(auto& i: SceneManager::Get().componentsSerializer){
         DrawComponentFromSerializeFuncs(entity, i.first, i.second);
     }
+
+    if(entityType != EntityType::Stand) ImGui::EndDisabled();
 }
 
 void InspectorPanel::ShowAddComponent(Entity entity){

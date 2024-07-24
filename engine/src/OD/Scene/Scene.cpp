@@ -321,33 +321,97 @@ void Scene::Draw(){
     Graphics::End();
 }
 
-void Scene::Save(const char* path){
-    std::ofstream os(path);
-    ODOutputArchive archive(os);
-    
-    auto entityView = registry.view<entt::entity>();
-    std::vector<entt::entity> entities(entityView.begin(), entityView.end()); //std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
-    archive(cereal::make_nvp("Entities", entities));
+void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity entity, std::string prefabPath, bool isRoot){
+    entities.push_back(entity);
 
-    _SaveComponent<InfoComponent>(archive, registry, "InfoComponent");
-    _SaveComponent<TransformComponent>(archive, registry, "TransformComponent");
+    InfoComponent& infoComponent = registry.get<InfoComponent>(entity);
+    infoComponent.entityType = isRoot ? EntityType::PrefabRoot : EntityType::PrefabChild;
+    infoComponent.prefabPath = prefabPath;
 
-    for(auto i: SceneManager::Get().componentsSerializer){
-        i.second.snapshotOut(archive, registry, std::string(i.first));
-    }
-    for(auto i: SceneManager::Get().coreComponentsSerializer){
-        i.second.snapshotOut(archive, registry, std::string(i.first));
+    TransformComponent& trans = registry.get<TransformComponent>(entity);
+    for(auto e: trans.children){
+        _AddEntityPrefab(registry, entities, e, std::string(""));
     }
 }
 
-void Scene::_LoadTransform(ODInputArchive& archive, entt::registry& registry, std::string componentName){
+void Scene::Save(const char* path, entt::entity root){
+    std::ofstream os(path);
+    ODOutputArchive archive(os);
+
+    std::vector<entt::entity> entities;
+    std::vector<entt::entity> entitiesAll;
+    
+    /*auto entityView = registry.view<entt::entity>();
+    std::vector<entt::entity> entities(entityView.begin(), entityView.end()); //std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
+    archive(cereal::make_nvp("Entities", entities));*/
+
+    if(root == entt::null){
+        registry.sort<InfoComponent>([](const entt::entity lhs, const entt::entity rhs){
+            return lhs < rhs;
+        });
+
+        auto entityView = registry.view<TransformComponent, InfoComponent>();
+        entityView.use<InfoComponent>();
+        for(auto e: entityView){
+            InfoComponent& infoComponent = registry.get<InfoComponent>(e);
+            if(infoComponent.entityType == EntityType::Stand){
+                entities.push_back(e);
+                entitiesAll.push_back(e);
+            }
+            if(infoComponent.entityType == EntityType::PrefabRoot){
+                entitiesAll.push_back(e);
+            }
+        }
+    } else {
+        //Assert(false);
+        _AddEntityPrefab(registry, entities, root, path, true);
+        entitiesAll = std::vector<entt::entity>(entities.begin(), entities.end());
+    }
+
+    archive(cereal::make_nvp("Entities", entitiesAll));
+
+    _SaveComponent<InfoComponent>(archive, entitiesAll, registry, "InfoComponent");
+    _SaveComponent<TransformComponent>(archive, entitiesAll, registry, "TransformComponent");
+
+    for(auto i: SceneManager::Get().componentsSerializer){
+        i.second.snapshotOut(archive, entities, registry, std::string(i.first));
+    }
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        i.second.snapshotOut(archive, entities, registry, std::string(i.first));
+    }
+}
+
+void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab){
     std::vector<TransformComponent> components;
     std::vector<entt::entity> componentsEntities;
     archive(cereal::make_nvp(componentName + "s", components));
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
     for(int i = 0; i < components.size(); i++){
-        components[i].registry = &registry;
-        registry.emplace<TransformComponent>(componentsEntities[i], components[i]);
+        //if(loadLookup[componentsEntities[i]] == entt::null) continue;
+        bool _handleRootPrefab = 
+            registry.any_of<TransformComponent>(loadLookup[componentsEntities[i]]) && 
+            registry.get<InfoComponent>(loadLookup[componentsEntities[i]]).entityType == EntityType::PrefabRoot;
+
+        if(_handleRootPrefab == false){
+            TransformComponent& trans = registry.emplace<TransformComponent>(loadLookup[componentsEntities[i]], components[i]);
+            trans.registry = &registry;
+            trans.hasParent = components[i].hasParent;
+            if(trans.hasParent) 
+                trans.parent = loadLookup[components[i].parent];
+            else 
+                trans.parent = entt::null;
+            
+            trans.children.clear();
+            for(auto j: components[i].children){
+                trans.children.push_back(loadLookup[j]);
+            }
+        } else {
+            TransformComponent& trans = registry.get<TransformComponent>(loadLookup[componentsEntities[i]]);
+            trans.children.clear();
+            for(auto j: components[i].children){
+                trans.children.push_back(loadLookup[j]);
+            }
+        }    
     }
 }
 
@@ -355,26 +419,125 @@ void Scene::Load(const char* path){
     std::ifstream is(path);
     ODInputArchive archive(is);
 
+    std::unordered_map<entt::entity, entt::entity> loadLookup;
+
     std::vector<entt::entity> entities;
     archive(cereal::make_nvp("Entities", entities));
     for(auto i: entities){
-        entt::entity e = registry.create(i);
+        entt::entity e = registry.create();
+        loadLookup[i] = e;
     }
 
-    _LoadComponent<InfoComponent>(archive, registry, "InfoComponent");
-    //_LoadComponent<TransformComponent>(archive, registry, "TransformComponent");
-    _LoadTransform(archive, registry, "TransformComponent");
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadTransform(archive, loadLookup, registry, "TransformComponent");
 
     for(auto i: SceneManager::Get().componentsSerializer){
         try{
-            i.second.snapshotIn(archive, registry, std::string(i.first));
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
         }catch(...){}
     }
     for(auto i: SceneManager::Get().coreComponentsSerializer){
         try{
-            i.second.snapshotIn(archive, registry, std::string(i.first));
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
         }catch(...){}
     }
+
+    auto entityView = registry.view<InfoComponent>();
+    for(auto e: entityView){
+        InfoComponent& info = registry.get<InfoComponent>(e);
+        if(info.entityType == EntityType::PrefabRoot){
+            _Load(info.prefabPath.c_str(), e);
+        }
+    }
+
+    LogWarning("LoadingScene: %s Succefu", path);
+}
+
+void Scene::_Load(const char* path, entt::entity prefab){
+    LogWarning("LoadingPrefab: %s", path);
+    //Assert(false);
+
+    std::ifstream is(path);
+    ODInputArchive archive(is);
+
+    std::unordered_map<entt::entity, entt::entity> loadLookup;
+    std::vector<entt::entity> entities;
+    archive(cereal::make_nvp("Entities", entities));
+
+    for(auto i: entities){
+        if(i == entities[0]){
+            loadLookup[i] = prefab;
+        } else {
+            loadLookup[i] = registry.create();
+        }
+    } 
+
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadTransform(archive, loadLookup, registry, "TransformComponent", true);
+
+    for(auto i: SceneManager::Get().componentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+
+    //auto entityView = registry.view<InfoComponent>();
+    for(auto e: loadLookup){
+        if(e.first == entities[0]) continue;
+        InfoComponent& info = registry.get<InfoComponent>(e.second);
+        if(info.entityType == EntityType::PrefabRoot){
+            _Load(info.prefabPath.c_str(), e.second);
+        }
+    }
+}
+
+Entity Scene::InstantiatePrefab(const char* path){
+    LogWarning("LoadingPrefab: %s", path);
+    //Assert(false);
+
+    std::ifstream is(path);
+    ODInputArchive archive(is);
+
+    std::unordered_map<entt::entity, entt::entity> loadLookup;
+    std::vector<entt::entity> entities;
+    archive(cereal::make_nvp("Entities", entities));
+
+    Entity root;
+
+    for(auto i: entities){
+        loadLookup[i] = registry.create();
+        if(i == entities[0]) root = Entity(loadLookup[i], this);
+    } 
+
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadTransform(archive, loadLookup, registry, "TransformComponent", true);
+
+    for(auto i: SceneManager::Get().componentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+
+    //auto entityView = registry.view<InfoComponent>();
+    for(auto e: loadLookup){
+        if(e.first == entities[0]) continue;
+        InfoComponent& info = registry.get<InfoComponent>(e.second);
+        if(info.entityType == EntityType::PrefabRoot){
+            _Load(info.prefabPath.c_str(), e.second);
+        }
+    }
+
+    return root;
 }
 
 void Scene::_DestroyEntity(EntityId entity){

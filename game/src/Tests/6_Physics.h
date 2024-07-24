@@ -179,11 +179,13 @@ struct Physics_6: OD::Module {
             e.GetComponent<TransformComponent>().Position({2, 13, 0});
             e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
             e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
-            //SceneManager::Get().ActiveScene()->Save("res/Game/Scenes/scene1.scene");
-            
-            //scene = SceneManager::Get().NewScene();
-            //scene->Load("res/scene1.scene");
-            //scene->Start();
+        }
+
+        if(Input::IsKeyDown(KeyCode::T)){
+            Entity e = SceneManager::Get().GetActiveScene()->InstantiatePrefab("res/Game/test.prefab");
+            e.GetComponent<TransformComponent>().Position({2, 13, 0});
+            e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+            e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
         }
     }   
 

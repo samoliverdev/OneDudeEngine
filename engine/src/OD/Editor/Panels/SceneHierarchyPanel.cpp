@@ -7,6 +7,7 @@
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 #include "OD/Physics/PhysicsSystem.h"
+#include "OD/Utils/PlatformUtils.h"
 //#include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <functional>
@@ -17,6 +18,8 @@ namespace OD{
 
 bool _toDestroy = false;
 entt::entity _toDestroyEntity;
+
+entt::entity _savePrefab = entt::null;
 
 SceneHierarchyPanel::SceneHierarchyPanel(){
     name = "SceneHierarchyPanel";
@@ -145,7 +148,14 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         | (transform.Children().empty() == false ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
+    EntityType entityType = entity.GetComponent<InfoComponent>().Type();
+
+    if(entityType == EntityType::PrefabRoot) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 125, 205)));
+    if(entityType == EntityType::PrefabChild) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 155, 205)));
+
     bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.Id(), flags, info.name.c_str());
+    
+    if(entityType != EntityType::Stand) ImGui::PopStyleColor();
     
     if(entity.IsValid() && ImGui::BeginDragDropSource()){
         ImGui::SetDragDropPayload("EntityMoveDragDrop", &entity, sizeof(Entity), ImGuiCond_Once);
@@ -176,6 +186,13 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
             entityDeleted = true;
             //_toDestroy = true;
             //_toDestroyEntity = entity.id();
+        }
+        if(entity.GetComponent<InfoComponent>().Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){
+            std::string path = FileDialogs::SaveFile("*.prefab");
+            if(path.empty() == false){
+                Scene* scene = SceneManager::Get().GetActiveScene();
+                scene->Save(path.c_str(), entity.Id());
+            } 
         }
         ImGui::EndPopup();
     }

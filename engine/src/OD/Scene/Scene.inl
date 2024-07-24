@@ -17,8 +17,12 @@ void TransformComponent::serialize(Archive & ar){
 
 //-----------InfoComponent---------
 template <class Archive>
-void InfoComponent::serialize(Archive & ar){
-    ar(CEREAL_NVP(name), CEREAL_NVP(tag), CEREAL_NVP(active));
+void InfoComponent::serialize(Archive& ar){
+    ArchiveDumpNVP(ar, name);
+    ArchiveDumpNVP(ar, tag);
+    ArchiveDumpNVP(ar, active);
+    ArchiveDumpNVP(ar, entityType);
+    ArchiveDumpNVP(ar, prefabPath);
 }
 
 HAS_MEM_FUNC(OnCreate, HasOnCreate);

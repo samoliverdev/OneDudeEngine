@@ -29,6 +29,8 @@ class OD_API TransformComponent{
     friend class cereal::access;
 
 public:
+    //static constexpr auto in_place_delete = true;
+
     inline Vector3 Forward(){ return Rotation() * Vector3Forward; }
     inline Vector3 Back(){ return Rotation() * Vector3Back; }
     inline Vector3 Left(){ return Rotation() * Vector3Left; }
@@ -96,6 +98,12 @@ private:
     entt::registry* registry;
 };
 
+enum class EntityType{
+    Stand,
+    PrefabRoot,
+    PrefabChild
+};
+
 struct OD_API InfoComponent{
     friend struct Scene;
 
@@ -103,6 +111,7 @@ struct OD_API InfoComponent{
     std::string tag =  "";
 
     inline EntityId Id() const { return id; }
+    inline EntityType Type() const { return entityType; }
 
     template <class Archive>
     void serialize(Archive & ar);
@@ -110,6 +119,8 @@ struct OD_API InfoComponent{
 private:
     bool active;
     EntityId id;
+    EntityType entityType = EntityType::Stand;
+    std::string prefabPath;
 };
 
 struct OD_API Entity{
@@ -182,6 +193,7 @@ public:
     void SetParent(EntityId parent, EntityId child);
 
     Entity Instantiate(const Ref<Model> model);
+    Entity InstantiatePrefab(const char* prefabPath);
     
     Entity GetMainCamera2();
     Camera& GetMainCamera();
@@ -198,12 +210,14 @@ public:
     void Update();
     void Draw();
 
-    void Save(const char* path);
+    void Save(const char* path, entt::entity root = entt::null);
     void Load(const char* path);
-
+    
 private:
+    void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
+    void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(EntityId entity);
-    void _LoadTransform(ODInputArchive& archive, entt::registry& registry, std::string componentName);
+    void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     
     bool running = false;
 
