@@ -473,6 +473,10 @@ void PhysicsSystem::Update(){
     CheckForCollisionEvents();
 }
 
+void PhysicsSystem::OnDrawGizmos(){
+    ShowDebugGizmos();
+}
+
 void PhysicsSystem::CheckForCollisionEvents(){
     //return;
     // keep a list of the collision pairs we

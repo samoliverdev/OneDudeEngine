@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Graphics/Culling.h"
+#include "OD/Scene/Scene.h"
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
@@ -96,6 +97,17 @@ enum DrawMode{
 	MAX_DRAWMODE
 };
 
+enum class NavMeshPathStatus{
+	PathComplete,
+	PathPartial,
+	PathInvalid
+};
+
+struct OD_API NavMeshPath{
+	std::vector<Vector3> corners;
+	NavMeshPathStatus status;
+};
+
 class OD_API Navmesh{
 public:
 	BuildSettings buildSettings;
@@ -104,8 +116,11 @@ public:
 	bool Bake(Scene* scene, AABB bounds);
 	void Cleanup();
 	void DrawDebug();
+	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
 
 private:
+	static const int MAX_POLYS = 256*2;
+
     unsigned char* m_triareas;
 	rcHeightfield* m_solid;
 	rcCompactHeightfield* m_chf;
@@ -120,11 +135,46 @@ private:
 	unsigned char m_navMeshDrawFlags = 0;
 	NavmeshBuildData builData;
 
+	dtPolyRef m_polys[MAX_POLYS];
+	float m_straightPath[MAX_POLYS*3];
+	unsigned char m_straightPathFlags[MAX_POLYS];
+	dtPolyRef m_straightPathPolys[MAX_POLYS];
+	int m_nstraightPath = 0;
+	int m_npolys = 0;
+
 	bool RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh);
 };
 
 struct OD_API NavmeshComponent{
 	Ref<Navmesh> navmesh;
+};
+
+struct OD_API NavmeshAgentComponent{
+	friend class NavmeshSystem;
+
+	Vector3 GetDestination(){ return destination; }
+	void SetDestination(Vector3 d){
+		if(d == destination) return;
+		destination = d;
+		isDirty = true;
+	}
+private:
+	Vector3 destination = {0, 0, 0};
+	Vector3 lastPos = {0, 0, 0};
+	bool isDirty = false;
+	NavMeshPath path;
+};
+
+class OD_API NavmeshSystem: public System{
+public:
+	NavmeshSystem(Scene* scene);
+    ~NavmeshSystem() override;
+    
+	NavmeshSystem* Clone(Scene* inScene) const override{ return new NavmeshSystem(inScene); }
+    virtual SystemType Type() override { return SystemType::Physics; }
+
+    virtual void Update() override;
+	virtual void OnDrawGizmos() override;
 };
 
 }

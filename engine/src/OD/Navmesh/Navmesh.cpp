@@ -6,6 +6,7 @@
 #include "OD/Platform/GL.h"
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
+#include <DetourCommon.h>
 
 namespace OD{
 
@@ -90,6 +91,10 @@ public:
         //glLineWidth(1.0f);
         //glPointSize(1.0f);
         if(mesh->vertices.size() == 0) return;
+
+		Shader::Bind(*shader);
+		shader->SetFloat("alpha", 0.5f);
+
         mesh->UpdateMesh();
         Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
     }
@@ -426,7 +431,7 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
 		int navDataSize = 0;
 
 		// Update poly flags from areas.
-		/*for(int i = 0; i < m_pmesh->npolys; ++i){
+		for(int i = 0; i < m_pmesh->npolys; ++i){
 			if(m_pmesh->areas[i] == RC_WALKABLE_AREA)
 				m_pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
 				
@@ -435,13 +440,12 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
 				m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
             {
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
-			} else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER){
+			} else if(m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER){
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
-			} else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR){
+			} else if(m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR){
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
 			}
-		}*/
-
+		}
 
 		dtNavMeshCreateParams params;
 		memset(&params, 0, sizeof(params));
@@ -497,7 +501,7 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
             return false;
 		}
 		
-		status = m_navQuery->init(m_navMesh, 2048);
+		status = m_navQuery->init(m_navMesh, 2048*2);
 		if(dtStatusFailed(status)){
 			//m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh query");
             LogError("Could not init Detour navmesh query");
@@ -513,13 +517,11 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
 void Navmesh::DrawDebug(){
     if(m_dd == nullptr) m_dd = new DebugDrawGL();
 
-	glEnable(GL_FOG);
-	glDepthMask(GL_TRUE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
 
 	const float texScale = 1.0f / (buildSettings.cellSize * 10.0f);
-
-	glDisable(GL_FOG);
-	glDepthMask(GL_FALSE);
 
 	if(m_navMesh && m_navQuery &&
 		(m_drawMode == DRAWMODE_NAVMESH ||
@@ -528,82 +530,112 @@ void Navmesh::DrawDebug(){
 		 m_drawMode == DRAWMODE_NAVMESH_NODES ||
 		m_drawMode == DRAWMODE_NAVMESH_INVIS))
 	{
-		if (m_drawMode != DRAWMODE_NAVMESH_INVIS)
+		if(m_drawMode != DRAWMODE_NAVMESH_INVIS)
 			duDebugDrawNavMeshWithClosedList(m_dd, *m_navMesh, *m_navQuery, m_navMeshDrawFlags);
-		if (m_drawMode == DRAWMODE_NAVMESH_BVTREE)
+		if(m_drawMode == DRAWMODE_NAVMESH_BVTREE)
 			duDebugDrawNavMeshBVTree(m_dd, *m_navMesh);
-		if (m_drawMode == DRAWMODE_NAVMESH_NODES)
+		if(m_drawMode == DRAWMODE_NAVMESH_NODES)
 			duDebugDrawNavMeshNodes(m_dd, *m_navQuery);
 		duDebugDrawNavMeshPolysWithFlags(m_dd, *m_navMesh, SAMPLE_POLYFLAGS_DISABLED, duRGBA(0,0,0,128));
 	}
 		
 	glDepthMask(GL_TRUE);
-	
-	/*if (m_chf && m_drawMode == DRAWMODE_COMPACT)
-		duDebugDrawCompactHeightfieldSolid(&m_dd, *m_chf);
+	glDisable(GL_BLEND);	
+}
 
-	if (m_chf && m_drawMode == DRAWMODE_COMPACT_DISTANCE)
-		duDebugDrawCompactHeightfieldDistance(&m_dd, *m_chf);
-	if (m_chf && m_drawMode == DRAWMODE_COMPACT_REGIONS)
-		duDebugDrawCompactHeightfieldRegions(&m_dd, *m_chf);
-	if (m_solid && m_drawMode == DRAWMODE_VOXELS)
-	{
-		glEnable(GL_FOG);
-		duDebugDrawHeightfieldSolid(&m_dd, *m_solid);
-		glDisable(GL_FOG);
-	}
-	if (m_solid && m_drawMode == DRAWMODE_VOXELS_WALKABLE)
-	{
-		glEnable(GL_FOG);
-		duDebugDrawHeightfieldWalkable(&m_dd, *m_solid);
-		glDisable(GL_FOG);
-	}
-	if (m_cset && m_drawMode == DRAWMODE_RAW_CONTOURS)
-	{
-		glDepthMask(GL_FALSE);
-		duDebugDrawRawContours(&m_dd, *m_cset);
-		glDepthMask(GL_TRUE);
-	}
-	if (m_cset && m_drawMode == DRAWMODE_BOTH_CONTOURS)
-	{
-		glDepthMask(GL_FALSE);
-		duDebugDrawRawContours(&m_dd, *m_cset, 0.5f);
-		duDebugDrawContours(&m_dd, *m_cset);
-		glDepthMask(GL_TRUE);
-	}
-	if (m_cset && m_drawMode == DRAWMODE_CONTOURS)
-	{
-		glDepthMask(GL_FALSE);
-		duDebugDrawContours(&m_dd, *m_cset);
-		glDepthMask(GL_TRUE);
-	}
-	if (m_chf && m_cset && m_drawMode == DRAWMODE_REGION_CONNECTIONS)
-	{
-		duDebugDrawCompactHeightfieldRegions(&m_dd, *m_chf);
-			
-		glDepthMask(GL_FALSE);
-		duDebugDrawRegionConnections(&m_dd, *m_cset);
-		glDepthMask(GL_TRUE);
-	}
-	if (m_pmesh && m_drawMode == DRAWMODE_POLYMESH)
-	{
-		glDepthMask(GL_FALSE);
-		duDebugDrawPolyMesh(&m_dd, *m_pmesh);
-		glDepthMask(GL_TRUE);
-	}
-	if (m_dmesh && m_drawMode == DRAWMODE_POLYMESH_DETAIL)
-	{
-		glDepthMask(GL_FALSE);
-		duDebugDrawPolyMeshDetail(&m_dd, *m_dmesh);
-		glDepthMask(GL_TRUE);
-	}
-	
-	m_geom->drawConvexVolumes(&m_dd);
+bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
+	if(!m_navMesh) return false;
 
-	if (m_tool) m_tool->handleRender();
-	renderToolStates();*/
+	dtPolyRef m_startRef = 0;
+	dtPolyRef m_endRef = 0;
+	dtQueryFilter m_filter;
+	m_filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
+	m_filter.setExcludeFlags(0);
 
-	glDepthMask(GL_TRUE);
+	float tolerance[3] = {2, 4, 2};
+	float _startPos[3] = {startPos.x, startPos.y, startPos.z};
+	float _endPos[3] = {endPos.x, endPos.y, endPos.z};
+
+	int m_nstraightPath = 0;
+	int m_straightPathOptions = 0;
+
+	auto s1 = m_navQuery->findNearestPoly(_startPos, tolerance, &m_filter, &m_startRef, 0);
+	auto s2 = m_navQuery->findNearestPoly(_endPos, tolerance, &m_filter, &m_endRef, 0);
+	auto s3 = m_navQuery->findPath(m_startRef, m_endRef, _startPos, _endPos, &m_filter, m_polys, &m_npolys, MAX_POLYS);
+
+	m_nstraightPath = 0;
+	if(m_npolys){
+		// In case of partial path, make sure the end point is clamped to the last polygon.
+		float epos[3];
+		dtVcopy(epos, _endPos);
+		if(m_polys[m_npolys-1] != m_endRef)
+			m_navQuery->closestPointOnPoly(m_polys[m_npolys-1], _endPos, epos, 0);
+		
+		m_navQuery->findStraightPath(
+			_startPos, epos, m_polys, m_npolys,
+			m_straightPath, m_straightPathFlags,
+			m_straightPathPolys, &m_nstraightPath, MAX_POLYS, m_straightPathOptions
+		);
+
+		outPath.corners.clear();
+		for(int i = 0; i < m_nstraightPath*3; i += 3){
+			outPath.corners.push_back(Vector3(m_straightPath[i], m_straightPath[i+1], m_straightPath[i+2]));
+		}
+
+		outPath.status = NavMeshPathStatus::PathComplete;
+		LogWarning("OK Count: %zd", outPath.corners.size());
+		return true;
+	}
+
+	outPath.status = NavMeshPathStatus::PathInvalid;
+	outPath.corners.clear();
+	LogWarning("Not OK");
+	return false;
+}
+
+NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
+NavmeshSystem::~NavmeshSystem(){}
+
+void NavmeshSystem::Update(){
+	Ref<Navmesh> navmesh = nullptr;
+
+	auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
+	for(auto e: navmeshView){
+		NavmeshComponent& navmeshComponent = navmeshView.get<NavmeshComponent>(e);
+		navmesh = navmeshComponent.navmesh;
+	}
+
+	if(navmesh == nullptr) return;
+
+	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
+	for(auto e: navmeshAgentView){
+		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
+		TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
+
+		if(navmeshComponent.isDirty || (transform.Position() != navmeshComponent.lastPos)){
+			navmeshComponent.isDirty = false;
+			navmeshComponent.lastPos = transform.Position();
+			navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
+		}
+	}
+}
+
+void NavmeshSystem::OnDrawGizmos(){
+	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent>();
+	for(auto e: navmeshAgentView){
+		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
+		if(navmeshComponent.path.status == NavMeshPathStatus::PathInvalid) continue;
+		if(navmeshComponent.path.corners.size() < 2) continue;
+
+		for(int i = 0; i < navmeshComponent.path.corners.size()-1; i++){
+			Graphics::DrawLine(
+				navmeshComponent.path.corners[i] + Vector3(0, 0.1f, 0), 
+				navmeshComponent.path.corners[i+1] + Vector3(0, 0.1f, 0), 
+				Vector3(0, 1, 0), 
+				1
+			);
+		}
+	}
 }
 
 }

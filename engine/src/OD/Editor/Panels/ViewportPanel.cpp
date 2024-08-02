@@ -30,6 +30,7 @@ void ViewportPanel::OnGui(){
 
         ImGui::Checkbox("Gizmos", &RenderContext::GetSettings().enableGizmos);
         ImGui::Checkbox("GizmosRuntime", &RenderContext::GetSettings().enableGizmosRuntime);
+        ImGui::Checkbox("Wireframe", &RenderContext::GetSettings().enableWireframe);
 
         ImGui::EndMenuBar();
     }

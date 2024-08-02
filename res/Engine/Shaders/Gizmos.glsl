@@ -14,10 +14,11 @@ void main() {
 
 #if defined(FRAGMENT)
 uniform vec3 color = vec3(0, 0, 1);
+uniform float alpha = 1;
 
 out vec4 outColor;
 
 void main(){
-    outColor = vec4(color.xyz, 1);
+    outColor = vec4(color.xyz, alpha);
 }
 #endif

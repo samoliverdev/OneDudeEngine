@@ -12,6 +12,7 @@
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/Audio/AudioClip.h"
 #include "OD/Audio/AudioSystem.h"
+#include "OD/Navmesh/Navmesh.h"
 #include <filesystem>
 
 namespace OD{
@@ -48,6 +49,8 @@ void CoreModulesStartup(){
 
     SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent");
     SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
+
+    SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
 
     Application::AddModule(&SceneManager::Get());
 }

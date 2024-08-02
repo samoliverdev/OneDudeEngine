@@ -63,6 +63,7 @@ struct OD_API RenderData{
 struct OD_API RenderContextSettings{
     bool enableGizmos = true;
     bool enableGizmosRuntime = false;
+    bool enableWireframe = false;
 };
 
 class OD_API RenderContext{

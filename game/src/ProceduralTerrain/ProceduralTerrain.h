@@ -69,12 +69,14 @@ struct ProceduralTerrain: OD::Module {
 
         //scene->Save("res/scene1.scene");
         scene->Start();
-        //Application::AddModule<Editor>();
+        Application::AddModule<Editor>();
     }
 
     void OnUpdate(float deltaTime) override {
         Scene* scene = SceneManager::Get().GetActiveScene();
         if(scene->Running() == false) return;
+
+        if(Input::IsKeyDown(KeyCode::T)) RenderContext::GetSettings().enableWireframe = !RenderContext::GetSettings().enableWireframe;
 
         /*TransformComponent& camT = camera.GetComponent<TransformComponent>();
         RayResult hit;

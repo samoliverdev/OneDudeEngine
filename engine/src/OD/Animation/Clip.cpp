@@ -2,7 +2,7 @@
 
 namespace OD{
 
-FastClip OptimizeClip(Clip& input) {
+FastClip OptimizeClip(Clip& input){
 	FastClip result;
 
 	result.SetName(input.GetName());

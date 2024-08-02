@@ -327,8 +327,12 @@ void RenderContext::DrawGizmos(){
     Graphics::SetCullFace(CullFace::BACK);
     Graphics::SetBlend(false);
 
-    scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+    //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
+    for(System* s: scene->GetPhysicsSystems()){
+        s->OnDrawGizmos();
+    }
+    
     for(System* s: scene->GetStandSystems()){
         s->OnDrawGizmos();
     }

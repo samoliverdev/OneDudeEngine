@@ -132,6 +132,7 @@ struct OD_API PhysicsSystem: public System{
     
     virtual SystemType Type() override { return SystemType::Physics; }
     virtual void Update() override;
+    virtual void OnDrawGizmos() override;
 
     void ShowDebugGizmos();
     

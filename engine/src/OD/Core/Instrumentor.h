@@ -50,6 +50,7 @@ private:
 #if OD_PROFILE
 #define OD_PROFILE_SCOPE(name) ::OD::InstrumentationTimer timer##__LINE__(name);
 #define OD_PROFILE_FUNCTION() OD_PROFILE_SCOPE(__FUNCSIG__)
+#define OD_LOG_PROFILE(name) SimpleTimer _name([](float duration){ LogWarning("%s: %.3f.ms", name, duration);});
 #else
 #define OD_PROFILE_SCOPE(name)
 #define OD_PROFILE_FUNCTION()

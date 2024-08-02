@@ -11,9 +11,6 @@
 
 namespace OD{
 
-/*std::vector<std::string> Application::args;
-std::vector<Module*> Application::modules;*/
-
 std::vector<std::string> args;
 std::vector<Module*> modules;
 

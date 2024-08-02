@@ -205,6 +205,7 @@ public:
 
     inline entt::registry& GetRegistry(){ return registry; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
+    inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
 
     void Start();
     void Update();

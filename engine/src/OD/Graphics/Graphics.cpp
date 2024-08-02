@@ -321,6 +321,7 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     }
 
     lineCommandsData.clear();
+
 }
 
 void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){

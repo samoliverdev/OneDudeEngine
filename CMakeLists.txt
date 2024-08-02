@@ -36,19 +36,22 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT  OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT  ON CACHE BOOL "" FORCE)
 
-set(YAML_BUILD_SHARED_LIBS  OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_BUILD_TOOLS  OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_INSTALL  OFF CACHE BOOL "" FORCE)
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
 
-set(FT_WITH_BZIP2  OFF CACHE BOOL "" FORCE)
-set(FT_WITH_HARFBUZZ  OFF CACHE BOOL "" FORCE)
-set(FT_WITH_PNG  OFF CACHE BOOL "" FORCE)
-set(FT_WITH_ZLIB  OFF CACHE BOOL "" FORCE)
+set(FT_WITH_BZIP2 OFF CACHE BOOL "" FORCE)
+set(FT_WITH_HARFBUZZ OFF CACHE BOOL "" FORCE)
+set(FT_WITH_PNG OFF CACHE BOOL "" FORCE)
+set(FT_WITH_ZLIB OFF CACHE BOOL "" FORCE)
 
-set(RECASTNAVIGATION_DEMO  OFF CACHE BOOL "" FORCE)
-set(RECASTNAVIGATION_TESTS  OFF CACHE BOOL "" FORCE)
-set(RECASTNAVIGATION_EXAMPLES  OFF CACHE BOOL "" FORCE)
-set(RECASTNAVIGATION_DEMO  OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
+
+#set(TF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+#set(TF_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/assimp)
@@ -56,6 +59,7 @@ add_subdirectory(engine/vendor/bullet3)
 add_subdirectory(engine/vendor/soloud)
 add_subdirectory(engine/vendor/freetype)
 add_subdirectory(engine/vendor/recastnavigation)
+#add_subdirectory(engine/vendor/taskflow)
 
 #----------------Engine------------------
 project(engine)
@@ -100,6 +104,7 @@ target_include_directories(engine PUBLIC
     engine/vendor/recastnavigation/Detour/Include/
     engine/vendor/recastnavigation/DetourCrowd/Include/
     engine/vendor/recastnavigation/Detour/Include/
+    engine/vendor/taskflow/
     engine/src/
 )
 

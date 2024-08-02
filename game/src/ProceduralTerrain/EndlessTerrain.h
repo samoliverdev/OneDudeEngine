@@ -31,7 +31,7 @@ public:
 
     inline void OnStart() override{
         chunkSize = mapChunkSize-1;
-        chunkLoadDistance = 8;
+        chunkLoadDistance = 8*2;
         material = LoadFloorMaterial();
         loadingJobsDone = CreateRef<std::atomic<bool>>();
         loadingJobs = CreateRef<std::vector<std::thread>>();
@@ -44,7 +44,7 @@ public:
     }
     
     inline virtual void OnUpdate() override{
-        //if(WaitingFinishMeshUpdate()) return;
+        if(WaitingFinishMeshUpdate()) return;
 
         float loadDstThreshold = 50;
 
@@ -52,18 +52,19 @@ public:
         viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
         if(math::distance2(viewPos, lastViewPos) > loadDstThreshold*loadDstThreshold || loadedChunks.size() <= 0){
-            UpdateVisibleChunks();
+            UpdateVisibleChunks2();
             lastViewPos = viewPos;
         }
     }
 
 private:
     std::vector<LODInfo> detailLevels = {
+        {2, 0},
         {2, 200},
-        {3, 400},
-        {4, 600},
-        {5, 800},
-        {6, 1000}
+        {2, 400},
+        {2, 600},
+        {2, 800},
+        //{5, 1000}
     };
 
     int chunkSize;
@@ -86,8 +87,8 @@ private:
     Ref<std::atomic<bool>> loadingJobsDone;
 
     inline int GetLoadInfo(Vector2 viewPos, Vector2 coordPos){
-        int lodIndex = 0;
-        for(int i = 0; i < detailLevels.size(); i++){
+        int lodIndex = detailLevels[0].lod;
+        for(int i = 1; i < detailLevels.size(); i++){
             if(math::distance2(viewPos, coordPos) > detailLevels[i].visibleDstThreshold*detailLevels[i].visibleDstThreshold){
                 lodIndex = detailLevels[i].lod;
             }
@@ -179,7 +180,8 @@ private:
 
     inline bool WaitingFinishMeshUpdate(){
         if(loadingJobs->size() > 0){
-            if(*loadingJobsDone == false) return true;
+            if(*loadingJobsDone == false) return true; 
+            OD_LOG_PROFILE("EndlessTerrain::WaitingFinishMeshUpdate");
             for(auto& i: *loadingJobs) i.join();
 
             for(int i = 0; i < toLoadCoords.size(); i++){

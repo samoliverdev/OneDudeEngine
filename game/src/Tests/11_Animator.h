@@ -10,6 +10,7 @@ using namespace OD;
 
 struct Animator_11: OD::Module {
     Entity camera;
+    //std::vector<FastClip> clips;
 
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
@@ -53,13 +54,21 @@ struct Animator_11: OD::Module {
 
         Ref<Model> charModel = AssetManager::Get().LoadAsset<Model>(
             //"res/Game/Animations/Walking.dae"
-            "res/Game/Animations/RumbaDancing.glb"
+            "res/Game/Animations/RumbaDancing2.dae"
             //"res/Game/Animations/SillyDancing.fbx"
             ///"res/Game/Animations/UnarmedWalkForward.dae"
         );
         charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
-        Entity charEntity = scene->AddEntity("Character");
+        
+        /*OD::BoneMap bm = OD::RearrangeSkeleton(charModel->skeleton);
+        //OD::RearrangeMesh(*charModel->meshs[0], bm);
+        for(auto i: charModel->animationClips){
+            clips.push_back(OD::OptimizeClip(*i));
+            OD::RearrangeFastclip(clips[clips.size()-1], bm);
+        }*/
+        
+        /*Entity charEntity = scene->AddEntity("Character");
         TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
         charTrans.LocalScale(Vector3(0.01f));
         SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
@@ -70,12 +79,32 @@ struct Animator_11: OD::Module {
         LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
         Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
         AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
-        charAnim.Play(charModel->animationClips[0].get());
+        charAnim.Play(charModel->animationClips[0].get());*/
+        
+        const int Size = 32;
+        for(int x = 0; x < Size; x++){
+            for(int y = 0; y < Size; y++){
+                Entity charEntity = scene->AddEntity("Character");
+                TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
+                charTrans.Position(Vector3(x*2, 0, y*2));
+                charTrans.LocalScale(Vector3(1));
+                SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
+                charRenderer.SetModel(charModel);
+                //charRenderer.CreateSkeletonEntites(*scene, charEntity);
+                charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
+                charRenderer.UpdatePosePalette();
+                LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
+                Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
+                AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
+                charAnim.Play(charModel->animationClips[0].get() /*&clips[0]*/);
+            }
+        }
         
         //scene->Start();
+        RenderContext::GetSettings().enableGizmos = false;
         Application::AddModule<Editor>();
 
-        //LogInfo("BonesCount: %zd", charModel->skeleton.GetRestPose().Size());
+        LogInfo("AnimationCount: %zd", charModel->animationClips.size());
     }
 
     void OnUpdate(float deltaTime) override {

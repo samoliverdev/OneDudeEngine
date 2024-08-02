@@ -564,9 +564,10 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
     const aiScene* scene = importer.ReadFile(
         path, 
         aiProcess_Triangulate | 
-        aiProcess_GenSmoothNormals | /*| aiProcess_FlipUVs*/ 
+        //aiProcess_GenSmoothNormals | /*| aiProcess_FlipUVs*/ 
         aiProcess_CalcTangentSpace |
-        aiProcess_PopulateArmatureData | aiProcess_OptimizeGraph | aiProcess_GlobalScale
+        aiProcess_PopulateArmatureData //| aiProcess_GlobalScale
+        //| aiProcess_OptimizeGraph 
     );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){

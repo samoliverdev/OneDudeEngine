@@ -120,7 +120,7 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
 
 //TODO: To Revise this function
 void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses){
-#if 1
+#if 0
     // Less Otimized
     unsigned int size = Size();
     if(out.size() != size){

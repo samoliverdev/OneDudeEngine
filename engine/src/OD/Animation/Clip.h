@@ -43,7 +43,7 @@ protected:
 typedef TClip<TransformTrack> Clip;
 typedef TClip<FastTransformTrack> FastClip;
 
-FastClip OptimizeClip(Clip& input);
+FastClip OD_API OptimizeClip(Clip& input);
 
 }
 
