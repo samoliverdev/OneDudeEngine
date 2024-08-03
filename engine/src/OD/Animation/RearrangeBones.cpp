@@ -87,7 +87,7 @@ void RearrangeMesh(Mesh& mesh, BoneMap& boneMap){
 		influences[i].w = boneMap[influences[i].w];
 	}
 
-	mesh.UpdateMesh();
+	mesh.Submit();
 }
 
 }

@@ -43,4 +43,6 @@ public:
     virtual void Update() override;
 };
 
+void AudioModuleInit();
+
 }

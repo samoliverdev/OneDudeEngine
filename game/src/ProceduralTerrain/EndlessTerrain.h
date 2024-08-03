@@ -31,7 +31,7 @@ public:
 
     inline void OnStart() override{
         chunkSize = mapChunkSize-1;
-        chunkLoadDistance = 8*2;
+        chunkLoadDistance = 8;
         material = LoadFloorMaterial();
         loadingJobsDone = CreateRef<std::atomic<bool>>();
         loadingJobs = CreateRef<std::vector<std::thread>>();
@@ -159,6 +159,10 @@ private:
                 meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
+
+                /*meshRenderer.mesh->vertices.clear();
+                meshRenderer.mesh->uv.clear();
+                meshRenderer.mesh->normals.clear();*/
             } else {
                 Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
                 Assert(toLoadMesh[i] != nullptr);
@@ -171,6 +175,10 @@ private:
                 meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
+
+                /*meshRenderer.mesh->vertices.clear();
+                meshRenderer.mesh->uv.clear();
+                meshRenderer.mesh->normals.clear();*/
                 
                 loadedChunks[coord] = chunk;
                 loadedDatas[coord] = toLoadNoise[i];

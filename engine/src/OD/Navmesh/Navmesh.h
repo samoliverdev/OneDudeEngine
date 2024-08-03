@@ -113,6 +113,13 @@ public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
 
+	/*Navmesh(){ 
+		LogWarning("Navmesh::Navmesh()"); 
+	}*/
+	/*~Navmesh(){ 
+		LogWarning("Navmesh::~Navmesh()"); 
+	}*/
+
 	bool Bake(Scene* scene, AABB bounds);
 	void Cleanup();
 	void DrawDebug();
@@ -147,10 +154,21 @@ private:
 
 struct OD_API NavmeshComponent{
 	Ref<Navmesh> navmesh;
+
+	template<class Archive> void serialize(Archive& ar){}
+    static inline void OnGui(Entity& e){
+		if(ImGui::Button("Bake")){
+			NavmeshComponent& navmeshComponent = e.GetComponent<NavmeshComponent>();
+			if(navmeshComponent.navmesh != nullptr) navmeshComponent.navmesh->Bake(e.GetScene(), AABB(Vector3(0, 0, 0), 100, 100, 100)); 
+		}
+	}
 };
 
 struct OD_API NavmeshAgentComponent{
 	friend class NavmeshSystem;
+
+	float speed = 2;
+	float stopDistance = 0.25f;
 
 	Vector3 GetDestination(){ return destination; }
 	void SetDestination(Vector3 d){
@@ -158,11 +176,17 @@ struct OD_API NavmeshAgentComponent{
 		destination = d;
 		isDirty = true;
 	}
+
+	template<class Archive> void serialize(Archive& ar){}
+    static inline void OnGui(Entity& e){}
+
 private:
 	Vector3 destination = {0, 0, 0};
 	Vector3 lastPos = {0, 0, 0};
 	bool isDirty = false;
 	NavMeshPath path;
+	int curPathIndex = -1;
+	bool reach = false;
 };
 
 class OD_API NavmeshSystem: public System{
@@ -176,5 +200,7 @@ public:
     virtual void Update() override;
 	virtual void OnDrawGizmos() override;
 };
+
+void NavmeshModuleInit();
 
 }

@@ -17,6 +17,11 @@
 
 namespace OD{
 
+void PhysicsModuleInit(){
+    SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
+    SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+}
+
 #pragma region Core
 inline Vector3 FromBullet(btVector3 v){ return Vector3(v.x(), v.y(), v.z()); }
 inline btVector3 ToBullet(Vector3 v){ return btVector3(v.x, v.y, v.z); }
@@ -431,7 +436,7 @@ PhysicsSystem::~PhysicsSystem(){
     delete physicsWorld->collisionConfiguration;
     delete physicsWorld;
 
-    LogWarning("PhysicsSystem Destructor"); 
+    LogWarningExtra("PhysicsSystem Destructor"); 
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){

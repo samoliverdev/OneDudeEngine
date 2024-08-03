@@ -29,8 +29,8 @@ Mesh::Mesh(const Mesh& other){
 	influences = other.influences;
     indices = other.indices;
     instancingModelMatrixs = other.instancingModelMatrixs;
-    UpdateMesh();
-    UpdateMeshInstancingModelMatrixs();
+    Submit();
+    SubmitInstancingModelMatrixs();
 }
 
 Mesh::~Mesh(){
@@ -75,7 +75,7 @@ void Mesh::CalculateNormals(){
     }
 }
 
-void Mesh::UpdateMesh(){
+void Mesh::Submit(){
     Assert(isReadable == true && "Only can Update isReadable Mesh");
 
     if(vao == 0){
@@ -207,7 +207,7 @@ void Mesh::UpdateMesh(){
     glBindVertexArray(0);
 }
 
-void Mesh::UpdateMeshInstancingModelMatrixs(){
+void Mesh::SubmitInstancingModelMatrixs(){
     Assert(vao != 0);
 
     glBindVertexArray(vao);
@@ -248,7 +248,7 @@ void Mesh::UpdateMeshInstancingModelMatrixs(){
     glCheckError();
 }
 
-void Mesh::UpdateMeshInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count){
+void Mesh::SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count){
     Assert(vao != 0);
 
     glBindVertexArray(vao);

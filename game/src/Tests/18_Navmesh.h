@@ -10,12 +10,13 @@ using namespace OD;
 
 struct Navmesh_18: OD::Module {
     Entity camera;
-    Navmesh navmesh;
+    EntityId navmeshAgentEntity;
+    EntityId targetPosEntity;
 
     void OnInit() override {
         LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-        Application::Vsync(true);
+        Application::Vsync(false);
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
         Scene* scene = SceneManager::Get().NewScene();
@@ -89,6 +90,21 @@ struct Navmesh_18: OD::Module {
         Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
         NavmeshAgentComponent& agent = navmeshAgent.AddComponent<NavmeshAgentComponent>();
         agent.SetDestination(Vector3(-8, 0, -11));
+        navmeshAgentEntity = navmeshAgent.Id();
+
+        Entity e2 = scene->AddEntity("Cube");
+        e2.GetComponent<TransformComponent>().Position(Vector3(0, 1, 0));
+        e2.GetComponent<TransformComponent>().LocalScale(Vector3(0.5f, 2, 0.5f));
+        ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
+        Assert(cubeModel != nullptr); 
+        _meshRenderer2.SetModel(cubeModel);
+        Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
+        _meshRenderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
+        scene->SetParent(navmeshAgent.Id(), e2.Id());
+
+        Entity target = scene->AddEntity("target");
+        target.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -11));
+        targetPosEntity = target.Id();
 
         /*NavMeshPath path;
         bool result = navmeshComp.navmesh->FindPath(Vector3(0, 0, 0), Vector3(-8, 0, -11), path);
@@ -110,11 +126,21 @@ struct Navmesh_18: OD::Module {
         navmesh.buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
         navmesh.Bake(scene, AABB(Vector3Zero, Vector3One * 200.0f));*/
         
+        //RenderContext::GetSettings().enableGizmosRuntime = true;
         //scene->Start();
         Application::AddModule<Editor>();
     }
 
-    void OnUpdate(float deltaTime) override {}   
+    void OnUpdate(float deltaTime) override {
+        if(SceneManager::Get().GetActiveScene()->Running() == false) return;
+
+        Entity target(targetPosEntity, SceneManager::Get().GetActiveScene());
+        Entity navmeshAgent(navmeshAgentEntity, SceneManager::Get().GetActiveScene());
+
+        NavmeshAgentComponent& navmeshAgentComp = navmeshAgent.GetComponent<NavmeshAgentComponent>();
+        navmeshAgentComp.SetDestination(target.GetComponent<TransformComponent>().Position());
+    }   
+
     void OnRender(float deltaTime) override {}
     void OnGUI() override {}
     void OnResize(int width, int height) override {}

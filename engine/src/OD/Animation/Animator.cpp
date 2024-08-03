@@ -3,8 +3,14 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Core/JobSystem.h"
 #include <taskflow/taskflow.hpp> 
+#include "OD/Scene/SceneManager.h"
 
 namespace OD{
+
+void AnimatorModuleInit(){
+    SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
+    SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
+}
 
 void AnimatorComponent::OnGui(Entity& e){}
 

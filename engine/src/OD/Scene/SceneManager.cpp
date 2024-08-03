@@ -1,6 +1,11 @@
 #include "SceneManager.h"
+#include "OD/Core/Application.h"
 
 namespace OD{
+
+void SceneManagerModuleInit(){
+    Application::AddModule(&SceneManager::Get());
+}
 
 SceneManager& SceneManager::Get(){
     static SceneManager sceneManager;

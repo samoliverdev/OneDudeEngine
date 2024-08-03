@@ -5,6 +5,11 @@
 
 namespace OD{
 
+void ScriptModuleInit(){
+    SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
+    SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
+}
+
 void ScriptComponent::OnGui(Entity& e){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 

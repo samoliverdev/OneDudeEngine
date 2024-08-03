@@ -4,8 +4,17 @@
 #include <soloud_wav.h>
 #include <soloud_speech.h>
 #include <soloud_thread.h>
+#include "OD/Scene/SceneManager.h"
 
 namespace OD{
+
+void AudioModuleInit(){
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+
+    SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent");
+    SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
+}
 
 SoLoud::Soloud soloud;
 bool hasInited = false;
@@ -34,7 +43,7 @@ AudioSystem::AudioSystem(Scene* inScene):System(inScene){
 }
 
 AudioSystem::~AudioSystem(){
-    LogWarning("AudioSystem::~AudioSystem");
+    LogWarningExtra("AudioSystem::~AudioSystem");
     if(hasInited == true){
         soloud.deinit();
         hasInited = false;

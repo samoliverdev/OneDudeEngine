@@ -228,7 +228,7 @@ Entity WorldManagerSystem::BuildChunkMeshEntity(Entity chunkRoot, Ref<Mesh>& mes
     MeshRendererComponent& meshComponent = subChunk.AddComponent<MeshRendererComponent>();
     meshComponent.material = material;
     meshComponent.mesh = mesh;
-    meshComponent.mesh->UpdateMesh();
+    meshComponent.mesh->Submit();
     meshComponent.UpdateAABB();
 
     /*meshComponent.mesh->vertices.clear();
@@ -243,7 +243,7 @@ void WorldManagerSystem::UpdateChunkMeshEntity(Entity subChunk, Ref<Mesh>& mesh,
     MeshRendererComponent& meshComponent = subChunk.GetComponent<MeshRendererComponent>();
     meshComponent.material = material;
     meshComponent.mesh = mesh;
-    meshComponent.mesh->UpdateMesh();
+    meshComponent.mesh->Submit();
     meshComponent.UpdateAABB();
 }
 

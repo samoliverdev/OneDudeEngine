@@ -42,6 +42,8 @@ struct Animator_11: OD::Module {
         Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
 
         Entity floorEntity = scene->AddEntity("Floor");
+        TransformComponent& floorTransform = floorEntity.GetComponent<TransformComponent>();
+        floorTransform.LocalScale(Vector3(5));
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
         floorRenderer.SetModel(floorModel);
         floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
@@ -54,9 +56,9 @@ struct Animator_11: OD::Module {
 
         Ref<Model> charModel = AssetManager::Get().LoadAsset<Model>(
             //"res/Game/Animations/Walking.dae"
-            "res/Game/Animations/RumbaDancing2.dae"
+            "res/Game/Animations/RumbaDancing3.glb"
             //"res/Game/Animations/SillyDancing.fbx"
-            ///"res/Game/Animations/UnarmedWalkForward.dae"
+            //"res/Game/Animations/UnarmedWalkForward.dae"
         );
         charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
@@ -81,20 +83,22 @@ struct Animator_11: OD::Module {
         AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
         charAnim.Play(charModel->animationClips[0].get());*/
         
-        const int Size = 32;
-        for(int x = 0; x < Size; x++){
-            for(int y = 0; y < Size; y++){
+        const int Size = 3;
+        for(int x = -(Size/2); x <= (Size/2); x++){
+            for(int y = -(Size/2); y <= (Size/2); y++){
                 Entity charEntity = scene->AddEntity("Character");
+                
                 TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
                 charTrans.Position(Vector3(x*2, 0, y*2));
                 charTrans.LocalScale(Vector3(1));
+                
                 SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
                 charRenderer.SetModel(charModel);
-                //charRenderer.CreateSkeletonEntites(*scene, charEntity);
                 charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
                 charRenderer.UpdatePosePalette();
                 LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
                 Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
+                
                 AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
                 charAnim.Play(charModel->animationClips[0].get() /*&clips[0]*/);
             }

@@ -25,17 +25,6 @@
 #pragma Blend Off
 
 #ifdef VERTEX
-/*
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec2 texCoord;
-layout (location = 2) in vec3 normal;
-layout (location = 10) in mat4 modelInstancing;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform float useInstancing = 0;
-*/
 
 #include res/Engine/ShaderLibrary/Vertex.glsl
 
@@ -48,17 +37,15 @@ out VsOut{
 } vsOut;
 
 void main(){
-    //mat4 targetModelMatrix = (useInstancing >= 1.0 ? modelInstancing : model);
     mat4 targetModelMatrix = GetModelMatrix();
 
     vsOut.pos = pos;
     vsOut.normal = normal;
     vsOut.texCoord = texCoord;
     vsOut.worldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
-    //worldNormal = vec3(model * vec4(normal, 1.01));
+    //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
     vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
 
-    //gl_Position = projection * view * targetModelMatrix * vec4(pos, 1.0);
     gl_Position = projection * view * targetModelMatrix * GetLocalPos();
 }
 #endif

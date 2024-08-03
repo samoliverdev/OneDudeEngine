@@ -1,8 +1,24 @@
 #include "StandRenderPipeline.h"
 #include "OD/Core/Application.h"
 #include "TextRendererComponent.h"
+#include "OD/Scene/SceneManager.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
+#include "OD/RenderPipeline/TextRendererComponent.h"
 
 namespace OD{
+
+void StandRenderPipelineModuleInit(){
+    SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
+    SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
+    SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
+    SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent");
+    SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
+}
 
 #pragma region Shadows
 Shadows::Shadows(){

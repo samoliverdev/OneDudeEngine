@@ -97,4 +97,6 @@ private:
     static void OnDestroyScript(entt::registry & r, entt::entity e);
 };
 
+void ScriptModuleInit();
+
 }

@@ -60,7 +60,13 @@ static const char* LogColors[] = {
         fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, "\n");
 
-    //fprintf(stderr, "\nat line number %d in file %s", __LINE__, __FILE__); \
+    #define _LOG_Extra(level, colorIndex, ...) \
+        fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level); \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, " | %s %d", __FILE__, __LINE__); \
+        fprintf(stderr, "\n");
+
+    //fprintf(stderr, "%s %d %s", __FILE__, __LINE__, __func__); \
 
     /*void _LOG(const char* level, int colorIndex, const char* message, ...){
         va_list args;
@@ -76,6 +82,11 @@ static const char* LogColors[] = {
 	#define LogWarning(...) _LOG("warning", 1, __VA_ARGS__)
 	#define LogError(...) _LOG("error", 2, __VA_ARGS__)
     #define LogFatal(...) _LOG("fatal", 3, __VA_ARGS__)
+
+    #define LogInfoExtra(...) _LOG_Extra("info", 0, __VA_ARGS__)
+	#define LogWarningExtra(...) _LOG_Extra("warning", 1, __VA_ARGS__)
+	#define LogErrorExtra(...) _LOG_Extra("error", 2, __VA_ARGS__)
+    #define LogFatalExtra(...) _LOG_Extra("fatal", 3, __VA_ARGS__)
 	
 //#else
 //	#define LogWarning

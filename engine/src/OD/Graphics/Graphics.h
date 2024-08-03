@@ -69,4 +69,6 @@ private:
     static void Shutdown();
 };
 
+void GraphicsModuleInit();
+
 }

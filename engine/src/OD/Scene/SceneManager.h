@@ -71,6 +71,8 @@ private:
 
 #define OD_REGISTER_CORE_COMPONENT_TYPE(componentName) static inline const CoreComponentTypeRegistrator<componentName> componentNameReg{#componentName} 
 
+void SceneManagerModuleInit();
+
 }
 
 #include "SceneManager.inl"

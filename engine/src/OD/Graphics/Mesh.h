@@ -43,9 +43,9 @@ public:
 
     void CalculateNormals();
 
-    void UpdateMesh();
-    void UpdateMeshInstancingModelMatrixs();
-    void UpdateMeshInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
+    void Submit();
+    void SubmitInstancingModelMatrixs();
+    void SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
 
     bool IsValid();
     void Destroy();

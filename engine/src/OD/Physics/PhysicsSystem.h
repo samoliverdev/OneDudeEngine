@@ -166,4 +166,6 @@ private:
     std::vector<OnCollisionCallback> onTriggerExitCallbacks;
 };
 
+void PhysicsModuleInit();
+
 }

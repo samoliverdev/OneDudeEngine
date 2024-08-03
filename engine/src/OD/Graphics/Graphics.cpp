@@ -6,6 +6,12 @@
 
 namespace OD{
 
+void GraphicsModuleInit(){
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){ return AssetManager::Get().LoadAsset<Material>(path); });
+}
+
 unsigned int lineVAO;
 unsigned int lineVBO;
 unsigned int lineCommandsVAO;
@@ -260,7 +266,7 @@ void Graphics::DrawMesh(Mesh& mesh, Shader& shader, Matrix4 modelMatrix){
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Shader& shader, Matrix4* modelMatrixs, int count){
-    mesh.UpdateMeshInstancingCustomModelMatrixs(modelMatrixs, count);
+    mesh.SubmitInstancingCustomModelMatrixs(modelMatrixs, count);
     Shader::Bind(shader);
     shader.SetMatrix4("projection", camera.projection);
     shader.SetMatrix4("view", camera.view);

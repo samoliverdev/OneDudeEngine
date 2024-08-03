@@ -96,7 +96,7 @@ struct BaseMesh_1: OD::Module {
         mesh.indices.push_back(1);
         mesh.indices.push_back(2);
         mesh.indices.push_back(3);
-        mesh.UpdateMesh();
+        mesh.Submit();
 
         /*
         mesh.indices.clear();

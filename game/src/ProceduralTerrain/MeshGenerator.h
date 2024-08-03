@@ -27,7 +27,7 @@ struct MeshData{
         mesh->uv = uvs;
         mesh->indices = triangles;
         mesh->CalculateNormals();
-        mesh->UpdateMesh();
+        mesh->Submit();
         return mesh;
     }
 };

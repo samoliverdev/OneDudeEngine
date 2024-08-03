@@ -4,11 +4,19 @@
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Platform/GL.h"
+#include "OD/Core/Application.h"
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
 #include <DetourCommon.h>
+#include "OD/Scene/SceneManager.h"
 
 namespace OD{
+
+void NavmeshModuleInit(){
+	SceneManager::Get().RegisterCoreComponent<NavmeshComponent>("NavmeshComponent");
+	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent");
+	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
+}
 
 class DebugDrawGL : public duDebugDraw{
 public:
@@ -95,7 +103,7 @@ public:
 		Shader::Bind(*shader);
 		shader->SetFloat("alpha", 0.5f);
 
-        mesh->UpdateMesh();
+        mesh->Submit();
         Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
     }
 };
@@ -583,13 +591,13 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 		}
 
 		outPath.status = NavMeshPathStatus::PathComplete;
-		LogWarning("OK Count: %zd", outPath.corners.size());
+		//LogWarningExtra("OK Count: %zd", outPath.corners.size());
 		return true;
 	}
 
 	outPath.status = NavMeshPathStatus::PathInvalid;
 	outPath.corners.clear();
-	LogWarning("Not OK");
+	//LogWarningExtra("Not OK");
 	return false;
 }
 
@@ -612,10 +620,44 @@ void NavmeshSystem::Update(){
 		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
 		TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
 
-		if(navmeshComponent.isDirty || (transform.Position() != navmeshComponent.lastPos)){
+		if(navmeshComponent.isDirty /*|| (transform.Position() != navmeshComponent.lastPos)*/){
 			navmeshComponent.isDirty = false;
 			navmeshComponent.lastPos = transform.Position();
 			navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
+			navmeshComponent.curPathIndex = -1;
+			navmeshComponent.reach = false;
+		}
+
+		if(scene->Running() == false) continue;
+
+		if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+			if(navmeshComponent.curPathIndex == -1){
+				navmeshComponent.curPathIndex = 0;
+				navmeshComponent.reach = false;
+			}
+
+			if(navmeshComponent.reach) return;
+
+			Vector3 pos = transform.Position();
+			Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
+			if(math::length(dir) > 0.1f) dir = math::normalize(dir);
+        	Assert(Mathf::IsNan(dir) == false);
+
+			float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
+
+			if(distance <= navmeshComponent.stopDistance){
+				navmeshComponent.curPathIndex += 1;
+				if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
+					navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
+					navmeshComponent.reach = true;
+					continue;
+				}
+			}
+			
+			transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+		} else {
+			navmeshComponent.curPathIndex = -1;
+			navmeshComponent.reach = false;
 		}
 	}
 }

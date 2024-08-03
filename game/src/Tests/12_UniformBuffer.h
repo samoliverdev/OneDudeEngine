@@ -69,7 +69,7 @@ struct UniformBuffer_12: OD::Module {
         for(auto i: transforms){
             model->meshs[0]->instancingModelMatrixs.push_back(i);
         }
-        model->meshs[0]->UpdateMeshInstancingModelMatrixs();
+        model->meshs[0]->SubmitInstancingModelMatrixs();
 
         cBuffer->SetData(&transforms[0], sizeof(Matrix4) * transforms.size(), 0);
         model->materials[0]->GetShader()->SetUniforBuffer("Model", *cBuffer, 0);

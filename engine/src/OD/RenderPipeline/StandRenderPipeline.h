@@ -197,4 +197,6 @@ private:
     Transform overrideCameraTrans;
 };
 
+void StandRenderPipelineModuleInit();
+
 }

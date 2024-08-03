@@ -341,7 +341,7 @@ std::vector<Ref<Mesh>> LoadMeshes(cgltf_data* data){
 				}
 			}
 			//mesh.UpdateOpenGLBuffers();
-			mesh->UpdateMesh();
+			mesh->Submit();
 		}
 	}
 

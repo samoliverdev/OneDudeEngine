@@ -209,7 +209,7 @@ void CommandBuffer::Submit(){
         for(auto j: cm.trans){
             cm.meshs->instancingModelMatrixs.push_back(j);
         }
-        cm.meshs->UpdateMeshInstancingModelMatrixs();
+        cm.meshs->SubmitInstancingModelMatrixs();
         
         Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
     });

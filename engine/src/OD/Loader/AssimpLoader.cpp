@@ -533,7 +533,7 @@ Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
         ExtractBoneWeightForVertices(data, out, mesh);
     }
 
-    out->UpdateMesh();
+    out->Submit();
 
     return out;
 }
