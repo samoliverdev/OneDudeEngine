@@ -2,10 +2,12 @@
 
 Current Version 3.2.b
 
-### How Compiler with Visual Studio
+### How Compiler And Run with Visual Studio Compiler
 
 cmake -S . -B build
+
 cmake --build build --config Release
+
 ./build/Release/game
 
 # Lean References

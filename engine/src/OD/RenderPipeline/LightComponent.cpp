@@ -10,7 +10,7 @@ void LightComponent::OnGui(Entity& e){
     //cereal::ImGuiArchive::Options colorOpt;
     //colorOpt.colorHDR = true;
     //uiArchive.setOption("color", colorOpt);
-    uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(-10, 10));
+    uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(0, 100000));
     uiArchive(light);
     return;
 

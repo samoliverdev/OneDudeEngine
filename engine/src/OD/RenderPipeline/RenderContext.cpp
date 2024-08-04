@@ -657,4 +657,12 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
     }
 }
 
+void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
+    auto lightProjection = glm::perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1.0f, 0.1f, light.radius);
+    auto lightView = glm::lookAt(transform.LocalPosition(), transform.LocalPosition() - (-transform.Forward()), Vector3Up);
+
+    splitData->projViewMatrix = lightProjection * lightView;
+    splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
+}
+
 }

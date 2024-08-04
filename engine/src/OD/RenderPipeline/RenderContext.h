@@ -40,6 +40,7 @@ struct OD_API ShadowSplitData{
     Frustum frustum;
     
     static void SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels);
+    static void ComputeSpotShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& lightTrans);
 };
 
 struct OD_API CommandBaseData{

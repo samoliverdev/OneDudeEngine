@@ -15,7 +15,6 @@ struct OD_API LightComponent{
     enum class Type{ Directional, Point, Spot };
 
     Type type = Type::Directional;
-    //Vector3 color = {1,1,1};
     Color color = {1,1,1,1};
     
     float intensity = 1;
@@ -28,22 +27,14 @@ struct OD_API LightComponent{
     float coneAngleOuter = 45;
     
     bool renderShadow = true;
+    float shadowStrength = 1;
+    float shadowBias;
+    float shadowNormalBias;
 
     static void OnGui(Entity& e);
 
     template <class Archive>
     void serialize(Archive & ar){
-        /*ar(
-            //CEREAL_NVP(type),
-            CEREAL_NVP(color),
-            CEREAL_NVP(intensity),
-            CEREAL_NVP(falloff),
-            CEREAL_NVP(radius),
-            CEREAL_NVP(coneAngleInner),
-            CEREAL_NVP(coneAngleOuter),
-            CEREAL_NVP(renderShadow)
-        );*/
-
         ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(color));
         ArchiveDump(ar, CEREAL_NVP(intensity));
@@ -52,6 +43,9 @@ struct OD_API LightComponent{
         ArchiveDump(ar, CEREAL_NVP(coneAngleInner));
         ArchiveDump(ar, CEREAL_NVP(coneAngleOuter));
         ArchiveDump(ar, CEREAL_NVP(renderShadow));
+        ArchiveDump(ar, CEREAL_NVP(shadowStrength));
+        ArchiveDump(ar, CEREAL_NVP(shadowBias));
+        ArchiveDump(ar, CEREAL_NVP(shadowNormalBias));
     }
 };
 

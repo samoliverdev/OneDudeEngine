@@ -70,7 +70,13 @@ struct ShadowSettings{
         float shadowBias = 0.001f;
     };
 
+    struct Other{
+        TextureSize altasSize;
+        FilterMode filter = FilterMode::PCF2x2;
+    };
+
     Directional directional{TextureSize::_2048};
+    Other other{TextureSize::_2048};
 };
 
 class Shadows{
@@ -83,9 +89,12 @@ public:
     void Render();
 
     Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
+    Vector4 ReserveOtherShadows(LightComponent light, Transform trans);
     
 private:
     void RenderDirectionalShadows();
+    void RenderOtherShadows();
+    void RenderSpotShadows(int index, int split, int tileSize);
 
     std::vector<float> shadowCascadeLevels;
 
@@ -94,15 +103,21 @@ private:
     Camera cam;
 
     inline static const int maxShadowedDirectionalLightCount = 4;
+    inline static const int maxShadowedOtherLightCount = 16;
     inline static const int maxCascades = 4;
     
     int shadowedDirectionalLightCount;
+    int shadowedOtherLightCount;
 
     Framebuffer* directionalShadowAtlas;
+    Framebuffer* otherShadowAtlas;
     Ref<Material> shadowPass;
 
     CommandBuffer shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
     ShadowSplitData shadowDirectionalLightsSplits[maxShadowedDirectionalLightCount * maxCascades];
+
+    CommandBuffer shadowOtherLightsBuffers[maxShadowedOtherLightCount];
+    ShadowSplitData shadowOtherLightsSplits[maxShadowedOtherLightCount];
 
     inline static const char* dirShadowAtlasId = "_DirectionalShadowAtlas";
     inline static const char* dirShadowMatricesId = "_DirectionalShadowMatrices";
@@ -116,6 +131,19 @@ private:
 	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
     inline static float cascadeCullingSpheres[maxCascades];
     //inline static Vector4 cascadeData[maxShadowedDirectionalLightCount * maxCascades];
+
+    inline static const char* otherShadowAltasId = "_OtherShadowAtlas";
+    inline static const char* otherShadowMatricesId = "_OtherShadowMatrices";
+
+    inline static Matrix4 otherShadowMatrices[maxShadowedOtherLightCount];
+
+    struct ShadowedOtherLight{
+        int visibleLightIndex;
+        float slopeScaleBias;
+        float normalBias;
+    };
+
+    inline static ShadowedOtherLight shadowedOtherLights[maxShadowedOtherLightCount]; 
 };
 
 class Lighting{
@@ -128,9 +156,11 @@ private:
     Shadows* shadows;
     EnvironmentSettings environmentSettings;
 
-    int currentLightsCount;
+    int curDirLightsCount;
+    int curOtherLightsCount;
 
     inline static const int maxDirLightCount = 4;
+    inline static const int maxOtherLightCount = 64;
 
     inline static const char* ambientLightId = "_AmbientLight";
 
@@ -142,6 +172,19 @@ private:
     inline static Vector4 dirLightColors[maxDirLightCount];
 	inline static Vector4 dirLightDirections[maxDirLightCount];
     inline static Vector4 dirLightShadowData[maxDirLightCount];
+
+    inline static const char* otherLightCountId = "_OtherLightCount";
+    inline static const char* otherLightColorsId = "_OtherLightColors";
+    inline static const char* otherLightPositionsId = "_OtherLightPositions";
+    inline static const char* otherLightDirectionId = "_OtherLightDirections";
+    inline static const char* otherLightSpotAnglesId = "_OtherLightSpotAngles";
+    inline static const char* otherLightShadowDataId = "_OtherLightShadowData";
+
+    inline static Vector4 otherLightColors[maxOtherLightCount];
+	inline static Vector4 otherLightPositions[maxOtherLightCount];
+    inline static Vector4 otherLightDirections[maxOtherLightCount];
+    inline static Vector4 otherLightSpotAngles[maxOtherLightCount];
+    inline static Vector4 otherLightShadowData[maxOtherLightCount];
 };
 
 class CameraRenderer{

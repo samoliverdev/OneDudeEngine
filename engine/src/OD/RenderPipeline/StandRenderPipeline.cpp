@@ -30,6 +30,9 @@ Shadows::Shadows(){
     specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
     directionalShadowAtlas = new Framebuffer(specification);
 
+    specification.sample = Shadows::maxShadowedOtherLightCount;
+    otherShadowAtlas = new Framebuffer(specification);
+
     shadowPass = CreateRef<Material>();
     shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/ShadowMap.glsl"));
 }
@@ -46,9 +49,14 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
     shadowCascadeLevels.push_back(inSettings.maxDistance * inSettings.directional.cascadeRatio4);
     
     shadowedDirectionalLightCount = 0; 
+    shadowedOtherLightCount = 0;
     directionalShadowAtlas->Resize((int)settings.directional.altasSize, (int)settings.directional.altasSize);
+    otherShadowAtlas->Resize((int)settings.other.altasSize, (int)settings.other.altasSize);
 
     for(auto& i: shadowDirectionalLightsBuffers){
+        i.Clean();
+    }
+    for(auto& i: shadowOtherLightsBuffers){
         i.Clean();
     }
 }
@@ -67,10 +75,25 @@ void Shadows::OnSetupLoop(RenderData& data){
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
+
+    index = -1;
+    for(int i = 0; i < shadowedOtherLightCount; i++){
+        index += 1;
+
+        //if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum, data.transform) == false) continue;
+        context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
+    } 
 }
 
 void Shadows::Render(){
     RenderDirectionalShadows();
+    RenderOtherShadows();
+
+    /*if(shadowedDirectionalLightCount > 0){
+        RenderDirectionalShadows();
+    } else {
+        ClearDirectionalAltas;
+    }*/
 }
 
 void Shadows::RenderDirectionalShadows(){
@@ -102,6 +125,28 @@ void Shadows::RenderDirectionalShadows(){
     }
 }
 
+void Shadows::RenderOtherShadows(){
+    int index = 0;
+    for(int i = 0; i < shadowedOtherLightCount; i++){
+        otherShadowMatrices[index] = shadowOtherLightsSplits[index].projViewMatrix;
+        index += 1;
+    }
+
+    index = 0;
+    for(int i = 0; i < shadowedOtherLightCount; i++){
+        RenderSpotShadows(index, index, index);
+
+        index += 1;
+    }
+}
+
+void Shadows::RenderSpotShadows(int index, int split, int tileSize){
+    ShadowedOtherLight light = shadowedOtherLights[index];
+    context->BeginDrawShadow(otherShadowAtlas, index);
+    context->DrawShadows(shadowOtherLightsBuffers[index], shadowOtherLightsSplits[index], shadowPass);
+    context->EndDrawShadow();
+}
+
 Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans){
     if(shadowedDirectionalLightCount < maxShadowedDirectionalLightCount && light.renderShadow){
         ShadowSplitData::SetupCascade(
@@ -119,6 +164,21 @@ Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans
 
     return Vector2Zero;
 }
+
+Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
+    if(shadowedOtherLightCount < maxShadowedOtherLightCount && light.renderShadow){
+        //shadowedOtherLightCount += 1;
+        //return Vector4(light.shadowStrength, (shadowedOtherLightCount-1), 0, 1);
+
+        ShadowSplitData::ComputeSpotShadowData(&shadowOtherLightsSplits[shadowedOtherLightCount], light, trans);
+        shadowedOtherLights[shadowedOtherLightCount] = {0, light.shadowBias, light.shadowNormalBias};
+
+        return Vector4(light.shadowStrength, shadowedOtherLightCount++, 0, 1);
+    }
+    
+    return Vector4(-1, 0, 0, 0);
+}
+
 #pragma endregion
 
 #pragma region Lighting
@@ -137,23 +197,57 @@ void Lighting::Setup(RenderContext* inContext, Shadows* inShadows, ShadowSetting
 void Lighting::SetupDirectionalLight(){
     auto lightView = context->GetScene()->GetRegistry().view<LightComponent, TransformComponent>();
     
-    int index = 0;
+    curDirLightsCount = 0;
+    curOtherLightsCount = 0;
+    
     for(auto entity: lightView){
         LightComponent& light = lightView.get<LightComponent>(entity);
         TransformComponent& trans = lightView.get<TransformComponent>(entity);
 
         if(light.type == LightComponent::Type::Directional){
-            dirLightColors[index] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
-            dirLightDirections[index] = Mathf::ToVector4(-trans.Forward());
+            if(curDirLightsCount >= maxDirLightCount) continue;
+
+            dirLightColors[curDirLightsCount] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            dirLightDirections[curDirLightsCount] = Mathf::ToVector4(-trans.Forward());
             Vector2 v = shadows->ReserveDirectionalShadows(light, trans);
-            dirLightShadowData[index] = Vector4(v.x, v.y, 0, 1);
+            dirLightShadowData[curDirLightsCount] = Vector4(v.x, v.y, 0, 1);
+
+            curDirLightsCount += 1;
+        }  
+
+        if(light.type == LightComponent::Type::Point){
+            if(curOtherLightsCount >= maxOtherLightCount) continue;
+
+            otherLightColors[curOtherLightsCount] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            Vector4 position = Mathf::ToVector4(trans.Position());
+            position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
+            otherLightPositions[curOtherLightsCount] = position;
+            otherLightDirections[curOtherLightsCount] = Vector4Zero;
+            otherLightSpotAngles[curOtherLightsCount] = Vector4(0, 1, 0, 0);
+            otherLightShadowData[curOtherLightsCount] = shadows->ReserveOtherShadows(light, trans);
+
+            curOtherLightsCount += 1;
         }
 
-        index += 1;
-        if(index >= maxDirLightCount) break;
+        if(light.type == LightComponent::Type::Spot){
+            if(curOtherLightsCount >= maxOtherLightCount) continue;
+
+            otherLightColors[curOtherLightsCount] = light.color * light.intensity;
+            Vector4 position = Mathf::ToVector4(trans.Position());
+            position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
+            otherLightPositions[curOtherLightsCount] = position;
+            otherLightDirections[curOtherLightsCount] = Mathf::ToVector4(-trans.Forward());
+            
+            float innerCos = math::cos(math::radians(0.5f * light.coneAngleInner));
+            float outerCos = math::cos(math::radians(0.5f * light.coneAngleOuter));
+            float angleRangeInv = 1.0f / math::max(innerCos - outerCos, 0.001f);
+            otherLightSpotAngles[curOtherLightsCount] = Vector4(angleRangeInv, -outerCos * angleRangeInv, 0, 0);
+            otherLightShadowData[curOtherLightsCount] = shadows->ReserveOtherShadows(light, trans);
+
+            curOtherLightsCount += 1;
+        }
     }
 
-    currentLightsCount = index;
 
     //Assert(index == 2);
 }
@@ -163,15 +257,28 @@ void Lighting::UpdateGlobalShaders(){
 
     Material::SetGlobalVector3(ambientLightId, environmentSettings.ambient);
 
-    Material::SetGlobalInt(dirLightCountId, currentLightsCount);
-    Material::SetGlobalVector4(dirLightColorsId, dirLightColors, maxDirLightCount);
-    Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, maxDirLightCount);
-    Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, maxDirLightCount);
+    Material::SetGlobalInt(dirLightCountId, curDirLightsCount);
+    if(curDirLightsCount > 0){
+        Material::SetGlobalVector4(dirLightColorsId, dirLightColors, curDirLightsCount);
+        Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, curDirLightsCount);
+        Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, curDirLightsCount);
 
-    Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
-    Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
+        Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
+        Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
+        Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
+        Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
+    }
+
+    Material::SetGlobalInt(otherLightCountId, curOtherLightsCount);
+    if(curOtherLightsCount > 0){
+        Material::SetGlobalVector4(otherLightColorsId, otherLightColors, curOtherLightsCount);
+        Material::SetGlobalVector4(otherLightPositionsId, otherLightPositions, curOtherLightsCount);
+        Material::SetGlobalVector4(otherLightDirectionId, otherLightDirections, curOtherLightsCount);
+        Material::SetGlobalVector4(otherLightSpotAnglesId, otherLightSpotAngles, curOtherLightsCount);
+        Material::SetGlobalVector4(otherLightShadowDataId, otherLightShadowData, curOtherLightsCount);
+        Material::SetGlobalTexture(Shadows::otherShadowAltasId, shadows->otherShadowAtlas, 15, -1);
+        Material::SetGlobalMatrix4(Shadows::otherShadowMatricesId, shadows->otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
+    }
 
     //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
 
@@ -189,12 +296,13 @@ void Lighting::UpdateGlobalShaders(){
             1.0f
         )
     );
-
+    
     float altlasSize = (int)shadows->settings.directional.altasSize;
-    Material::SetGlobalVector4(
-        Shadows::shadowAtlasSizeId, 
-        Vector4(altlasSize, 1.0f / altlasSize, 0, 0)
-    );
+    Vector4 altasSizes = Vector4Zero;
+    altasSizes.x = altlasSize;
+    altasSizes.y = 1.0f / altlasSize;
+
+    Material::SetGlobalVector4(Shadows::shadowAtlasSizeId, altasSizes);
 }
 #pragma endregion
 
