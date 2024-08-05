@@ -95,6 +95,7 @@ private:
     void RenderDirectionalShadows();
     void RenderOtherShadows();
     void RenderSpotShadows(int index, int split, int tileSize);
+    void RenderPointShadows(int index, int split, int tileSize);
 
     std::vector<float> shadowCascadeLevels;
 
@@ -141,6 +142,7 @@ private:
         int visibleLightIndex;
         float slopeScaleBias;
         float normalBias;
+        bool isPoint;
     };
 
     inline static ShadowedOtherLight shadowedOtherLights[maxShadowedOtherLightCount]; 

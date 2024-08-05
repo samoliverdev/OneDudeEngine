@@ -32,8 +32,12 @@ struct DirectionalShadowData{
 struct OtherShadowData{
     float strength;
     int tileIndex;
+    bool isPoint;
     float diffuseFactor;
     int shadowMaskChannel;
+    vec3 lightPositionWS;
+	vec3 lightDirectionWS;
+	//vec3 spotDirectionWS;
 };
 
 struct ShadowData{
@@ -214,11 +218,38 @@ float GetDirectionalShadowAttenuation(DirectionalShadowData data, Surface surfac
     return mix(1.0, shadow, data.strength);
 }
 
-float GetOtherShadow(OtherShadowData other, ShadowData global, Surface surfaceWS){
-    vec3 normalBias = surfaceWS.normal * 0.0; //surfaceWS.interpolatedNormal * 0.0;
-    vec4 positionSTS = _OtherShadowMatrices[other.tileIndex] * vec4(surfaceWS.position + normalBias, 1.0);
+#define CUBEMAPFACE_POSITIVE_X 0
+#define CUBEMAPFACE_NEGATIVE_X 1
+#define CUBEMAPFACE_POSITIVE_Y 2
+#define CUBEMAPFACE_NEGATIVE_Y 3
+#define CUBEMAPFACE_POSITIVE_Z 4
+#define CUBEMAPFACE_NEGATIVE_Z 5
 
-    return FilterOtherShadow(positionSTS, other.tileIndex, other.diffuseFactor);
+int CubeMapFaceID(vec3 dir){
+    int faceID;
+
+    if(abs(dir.z) >= abs(dir.x) && abs(dir.z) >= abs(dir.y)){
+        faceID = (dir.z < 0.0) ? CUBEMAPFACE_NEGATIVE_Z : CUBEMAPFACE_POSITIVE_Z;
+    } else if(abs(dir.y) >= abs(dir.x)){
+        faceID = (dir.y < 0.0) ? CUBEMAPFACE_NEGATIVE_Y : CUBEMAPFACE_POSITIVE_Y;
+    } else {
+        faceID = (dir.x < 0.0) ? CUBEMAPFACE_NEGATIVE_X : CUBEMAPFACE_POSITIVE_X;
+    }
+
+    return faceID;
+}
+
+float GetOtherShadow(OtherShadowData other, ShadowData global, Surface surfaceWS){
+    int tileIndex = other.tileIndex;
+    if(other.isPoint){
+        int faceOffset = CubeMapFaceID(-other.lightDirectionWS);
+        tileIndex += faceOffset;
+    }
+    
+    vec3 normalBias = surfaceWS.normal * 0.0; //surfaceWS.interpolatedNormal * 0.0;
+    vec4 positionSTS = _OtherShadowMatrices[tileIndex] * vec4(surfaceWS.position + normalBias, 1.0);
+
+    return FilterOtherShadow(positionSTS, tileIndex, other.diffuseFactor);
 }
 
 float GetOtherShadowAttenuation(OtherShadowData other, ShadowData global, Surface surfaceWS){

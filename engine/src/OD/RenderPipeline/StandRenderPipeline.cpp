@@ -132,11 +132,17 @@ void Shadows::RenderOtherShadows(){
         index += 1;
     }
 
-    index = 0;
-    for(int i = 0; i < shadowedOtherLightCount; i++){
-        RenderSpotShadows(index, index, index);
+    for(index = 0; index < shadowedOtherLightCount;){
+        /*RenderSpotShadows(index, index, index);
+        index += 1;*/
 
-        index += 1;
+        if(shadowedOtherLights[index].isPoint){
+            RenderPointShadows(index, index, index);
+            index += 6;
+        } else {
+            RenderSpotShadows(index, index, index);
+            index += 1;
+        }
     }
 }
 
@@ -145,6 +151,16 @@ void Shadows::RenderSpotShadows(int index, int split, int tileSize){
     context->BeginDrawShadow(otherShadowAtlas, index);
     context->DrawShadows(shadowOtherLightsBuffers[index], shadowOtherLightsSplits[index], shadowPass);
     context->EndDrawShadow();
+}
+
+void Shadows::RenderPointShadows(int index, int split, int tileSize){
+    ShadowedOtherLight light = shadowedOtherLights[index];
+    
+    for(int i = 0; i < 6; i++){
+        context->BeginDrawShadow(otherShadowAtlas, index+i);
+        context->DrawShadows(shadowOtherLightsBuffers[index+i], shadowOtherLightsSplits[index+i], shadowPass);
+        context->EndDrawShadow();
+    }
 }
 
 Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans){
@@ -166,7 +182,37 @@ Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans
 }
 
 Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
-    if(shadowedOtherLightCount < maxShadowedOtherLightCount && light.renderShadow){
+    bool isPoint = light.type == LightComponent::Type::Point;
+    int newLightCount = shadowedOtherLightCount + (isPoint ? 6 : 1);
+    
+    if(newLightCount > maxShadowedOtherLightCount || light.renderShadow == false){
+        return Vector4(-1, 0, 0, 0);
+    }
+
+    if(isPoint){
+        ShadowSplitData::ComputePointShadowData(&shadowOtherLightsSplits[shadowedOtherLightCount], light, trans);
+    } else {
+        ShadowSplitData::ComputeSpotShadowData(&shadowOtherLightsSplits[shadowedOtherLightCount], light, trans);
+    }
+
+    shadowedOtherLights[shadowedOtherLightCount] = {
+        0, 
+        light.shadowBias, 
+        light.shadowNormalBias, 
+        isPoint
+    };
+
+    Vector4 data = Vector4(
+        light.shadowStrength, 
+        shadowedOtherLightCount, 
+        isPoint ? 1 : 0, 
+        1
+    );
+
+    shadowedOtherLightCount = newLightCount;
+    return data;
+
+    /*if(shadowedOtherLightCount < maxShadowedOtherLightCount && light.renderShadow){
         //shadowedOtherLightCount += 1;
         //return Vector4(light.shadowStrength, (shadowedOtherLightCount-1), 0, 1);
 
@@ -176,7 +222,7 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
         return Vector4(light.shadowStrength, shadowedOtherLightCount++, 0, 1);
     }
     
-    return Vector4(-1, 0, 0, 0);
+    return Vector4(-1, 0, 0, 0);*/
 }
 
 #pragma endregion

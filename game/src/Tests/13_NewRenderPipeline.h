@@ -221,6 +221,15 @@ struct NewRenderPipeline_13: public OD::Module {
         lightComponent2.renderShadow = true;
         light2.GetComponent<TransformComponent>().Position(Vector3(8, 10, 0));
         light2.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, 0, 0));
+
+        Entity light3 = scene->AddEntity("Point Light");
+        LightComponent& lightComponent3 = light3.AddComponent<LightComponent>();
+        lightComponent3.type = LightComponent::Type::Point;
+        lightComponent3.color = {1, 0.25f, 0.25f};
+        lightComponent3.intensity = 1000;
+        lightComponent3.radius = 100; 
+        lightComponent3.renderShadow = true;
+        light3.GetComponent<TransformComponent>().Position(Vector3(36, 17, 0));
         
         /*
         Entity pointLight = scene->AddEntity("Point Light");

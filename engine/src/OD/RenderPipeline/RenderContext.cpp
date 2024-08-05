@@ -665,4 +665,34 @@ void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightCom
     splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
 }
 
+void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
+    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius); 
+    Vector3 lightPos = transform.LocalPosition();
+
+    std::vector<glm::mat4> shadowMats;
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
+    shadowMats.push_back(
+        shadowProj * 
+        glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
+
+    for(int i = 0; i < 6; i++){
+        splitData[i].projViewMatrix = shadowMats[i];
+        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(shadowMats[i]));
+    }
+}
+
 }
