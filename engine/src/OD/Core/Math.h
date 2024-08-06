@@ -27,6 +27,13 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+namespace glm{
+inline vec3 normalizeSafe(vec3 v){
+    if(v == vec3(0, 0, 0)) return v;
+    return normalize(v);
+}
+}
+
 namespace OD {
 
 using Vector2 = glm::vec2;

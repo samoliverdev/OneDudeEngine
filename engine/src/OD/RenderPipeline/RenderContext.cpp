@@ -443,6 +443,14 @@ void RenderContext::DrawGizmos(){
     }
 }
 
+void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
+    Assert(shadowMap != nullptr);
+    Framebuffer::Bind(*shadowMap, layer);
+    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::Clean(1, 1, 1, 1);
+    Framebuffer::Unbind();
+}
+
 void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
 

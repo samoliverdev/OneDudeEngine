@@ -176,9 +176,9 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         ai_real blend;
         mat->GetTexture(type, i, &str, &map, &uvIndex, &blend);
 
-        //LogInfo("Blende %f", (float)blend);
-
         const aiTexture* paiTexture = loadData.scene->GetEmbeddedTexture(str.C_Str());
+
+        Assert(mat->Get(AI_MATKEY_TEXTURE(type, i), str) == AI_SUCCESS);
 
         if(paiTexture){
             Ref<Texture2D> texture = CreateRef<Texture2D>(
@@ -190,17 +190,18 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
             
             textures.push_back(texture);
         } else {
-            std::string filename = loadData.directory + '/' +std::string(str.C_Str());
+            std::string filename = loadData.directory + '/' + std::string(str.C_Str());
+            //LogWarningExtra("AssimpTexture: %s", filename.c_str());
             Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
             textures.push_back(texture);
         }
     }
 
-    if(textures.empty()){
+    /*if(textures.empty()){
         textures.push_back(AssetManager::Get().LoadAsset<Texture2D>(
             "res/Engine/Textures/White.jpg"
         ));
-    }
+    }*/
 
     return textures;
 }
@@ -281,12 +282,21 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> cus
     // 1. diffuse maps
     std::vector<Ref<Texture2D>> diffuseMaps = loadMaterialTextures(data, material, aiTextureType_DIFFUSE, "texture_diffuse");
     if(diffuseMaps.size() > 0){
-        //MaterialMap map;
-        //map.texture = diffuseMaps[0];
-        //map.type = MaterialMap::Type::Texture;
-        //out.maps["texture1"] = map;
         out->SetTexture("mainTex", diffuseMaps[0]);
         out->SetVector4("color", Vector4(1, 1, 1, 1));
+    }
+
+    std::vector<Ref<Texture2D>> normalMaps = loadMaterialTextures(data, material, aiTextureType_NORMALS, "texture_normal");
+    if(normalMaps.size() > 0){
+        out->SetTexture("normal", normalMaps[0]);
+    }
+    std::vector<Ref<Texture2D>> normalMaps2 = loadMaterialTextures(data, material, aiTextureType_NORMAL_CAMERA, "texture_normal");
+    if(normalMaps2.size() > 0){
+        out->SetTexture("normal", normalMaps2[0]);
+    }
+    std::vector<Ref<Texture2D>> normalMaps3 = loadMaterialTextures(data, material, aiTextureType_HEIGHT, "texture_normal");
+    if(normalMaps3.size() > 0){
+        out->SetTexture("normal", normalMaps3[0]);
     }
 
     /*
@@ -564,9 +574,11 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
     const aiScene* scene = importer.ReadFile(
         path, 
         aiProcess_Triangulate | 
-        //aiProcess_GenSmoothNormals | /*| aiProcess_FlipUVs*/ 
+        aiProcess_GenSmoothNormals | 
+        //aiProcess_FlipUVs | 
         aiProcess_CalcTangentSpace |
-        aiProcess_PopulateArmatureData //| aiProcess_GlobalScale
+        aiProcess_PopulateArmatureData
+        //| aiProcess_GlobalScale 
         //| aiProcess_OptimizeGraph 
     );
 

@@ -1,7 +1,7 @@
 #ifndef SHADOWS_INCLUDED
 #define SHADOWS_INCLUDED
 
-#define _RECEIVE_SHADOWS
+#define _RECEIVE_SHADOWS 0
 
 #define _DIRECTIONAL_PCF
 #define DIRECTIONAL_FILTER_SAMPLES 2
@@ -205,7 +205,11 @@ float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
 }
 
 float GetDirectionalShadowAttenuation(DirectionalShadowData data, Surface surfaceWS){
-    if(data.strength <= 0.0) return 1.0;
+    #if !defined(_RECEIVE_SHADOWS)
+        return 1.0;
+    #endif
+
+    //if(data.strength <= 0.0) return 1.0;
 
     //vec2 texelSize = 1.0 / textureSize(_DirectionalShadowAtlas, 0).xy;
     //vec3 normalBias = surfaceWS.normal * vec3(texelSize.xy, 1);
@@ -258,8 +262,8 @@ float GetOtherShadowAttenuation(OtherShadowData other, ShadowData global, Surfac
     #endif
     
     float shadow = GetOtherShadow(other, global, surfaceWS);
-    
-    return shadow;
+    //return shadow;
+    return mix(1.0, shadow, other.strength);
 }
 
 #endif

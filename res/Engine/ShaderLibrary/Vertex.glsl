@@ -8,6 +8,7 @@ layout (location = 1) in vec3 texCoord;
 layout (location = 1) in vec2 texCoord;
 #endif
 layout (location = 2) in vec3 normal;
+layout (location = 4) in vec3 tangents;
 layout (location = 5) in ivec4 boneIds;
 layout (location = 6) in vec4 weights;
 layout (location = 10) in mat4 modelInstancing;

@@ -191,6 +191,7 @@ public:
     bool IsChildOf(EntityId parent, EntityId child);
     void CleanParent(EntityId e);
     void SetParent(EntityId parent, EntityId child);
+    inline void SetParent(Entity& parent, Entity& child){ SetParent(parent.Id(), child.Id()); }
 
     Entity Instantiate(const Ref<Model> model);
     Entity InstantiatePrefab(const char* prefabPath);

@@ -11,44 +11,56 @@ namespace OD{
 
 struct OD_API MaterialMap{
     enum class OD_API_IMPORT Type{
-        Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, TextureArray, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
+        None = 0, Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, TextureArray, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
     };
 
     Type type;
 
-    //union{
-    Ref<Texture2D> texture;
-    Ref<Texture2DArray> textureArray;
-    Ref<Cubemap> cubemap;
-    Framebuffer* framebuffer;
-    
-    //struct{
-        int framebufferBind;
-        int framebufferAttachment;
-    //};
-    
-    bool hidden/* = false*/;
-    
-    //struct{
-    Vector4 vector;
-    bool vectorIsColor/* = false*/;
-    //};
+    union{
+        struct{
+            Vector4 vector;
+            bool vectorIsColor;
+        };
 
-    int valueInt;
+        Matrix4 matrix;
 
-    //struct{
-    float value;
-    float valueMin;
-    float valueMax;
-    //};
+        Ref<Texture2D> texture;
+        Ref<Texture2DArray> textureArray;
+        Ref<Cubemap> cubemap;
+        
+        struct{
+            Framebuffer* framebuffer;
+            int framebufferBind;
+            int framebufferAttachment;
+        };
+        
+        int valueInt;
 
-    //struct{
-    void* list;
-    int listCount;
-    //};
-    //};
+        struct{
+            float valueFloat;
+            float valueFloatMin;
+            float valueFloatMax;
+        };
 
-    Matrix4 matrix;
+        struct{
+            void* list;
+            int listCount;
+        };
+    };
+
+    MaterialMap(){ memset(this, 0, sizeof(MaterialMap)); }
+    MaterialMap(const MaterialMap& other){ memcpy(this, &other, sizeof(MaterialMap)); }
+    MaterialMap& operator=(const MaterialMap& other){ memcpy(this, &other, sizeof(MaterialMap)); return *this; }
+    ~MaterialMap(){
+        /*if(type == MaterialMap::Type::Vector2) vector.~Vector4();
+        if(type == MaterialMap::Type::Vector3) vector.~Vector4();
+        if(type == MaterialMap::Type::Vector4) vector.~Vector4();
+        if(type == MaterialMap::Type::Matrix4) matrix.~Matrix4();
+        if(type == MaterialMap::Type::Texture) texture.~Ref<Texture2D>();
+        if(type == MaterialMap::Type::TextureArray) textureArray.~Ref<Texture2DArray>();
+        if(type == MaterialMap::Type::Framebuffer) framebuffer->~Framebuffer();
+        if(type == MaterialMap::Type::Cubemap) cubemap.~Ref<Cubemap>();*/
+    };
 
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);
@@ -149,25 +161,14 @@ private:
 
 template<class Archive>
 void MaterialMap::save(Archive& ar) const{
-    /*std::string texPath = texture == nullptr ? "" : texture->Path();
-    ar(
-        CEREAL_NVP(type),
-        CEREAL_NVP(texPath),
-        CEREAL_NVP(vector),
-        CEREAL_NVP(vectorIsColor),
-        CEREAL_NVP(value),
-        CEREAL_NVP(valueMin),
-        CEREAL_NVP(valueMax)
-    );*/
-
     ArchiveDump(ar, CEREAL_NVP(type));
     if(type == MaterialMap::Type::Int){
         ArchiveDump(ar, CEREAL_NVP(valueInt));
     }
     if(type == MaterialMap::Type::Float){
-        ArchiveDump(ar, CEREAL_NVP(value));
-        ArchiveDump(ar, CEREAL_NVP(valueMin));
-        ArchiveDump(ar, CEREAL_NVP(valueMax));
+        ArchiveDump(ar, CEREAL_NVP(valueFloat));
+        ArchiveDump(ar, CEREAL_NVP(valueFloatMin));
+        ArchiveDump(ar, CEREAL_NVP(valueFloatMax));
     }
     if(type == MaterialMap::Type::Vector2){
         ArchiveDump(ar, CEREAL_NVP(vector));
@@ -189,26 +190,14 @@ void MaterialMap::save(Archive& ar) const{
 
 template<class Archive>
 void MaterialMap::load(Archive& ar){
-    /*std::string texPath;
-    ar(
-        CEREAL_NVP(type),
-        CEREAL_NVP(texPath),
-        CEREAL_NVP(vector),
-        CEREAL_NVP(vectorIsColor),
-        CEREAL_NVP(value),
-        CEREAL_NVP(valueMin),
-        CEREAL_NVP(valueMax)
-    );
-    OnLoad(texPath);*/
-
     ArchiveDump(ar, CEREAL_NVP(type));
     if(type == MaterialMap::Type::Int){
         ArchiveDump(ar, CEREAL_NVP(valueInt));
     }
     if(type == MaterialMap::Type::Float){
-        ArchiveDump(ar, CEREAL_NVP(value));
-        ArchiveDump(ar, CEREAL_NVP(valueMin));
-        ArchiveDump(ar, CEREAL_NVP(valueMax));
+        ArchiveDump(ar, CEREAL_NVP(valueFloat));
+        ArchiveDump(ar, CEREAL_NVP(valueFloatMin));
+        ArchiveDump(ar, CEREAL_NVP(valueFloatMax));
     }
     if(type == MaterialMap::Type::Vector2){
         ArchiveDump(ar, CEREAL_NVP(vector));

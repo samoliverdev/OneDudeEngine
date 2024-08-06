@@ -96,6 +96,10 @@
         "resumable": "cpp",
         "*.rh": "cpp",
         "core": "cpp",
-        "geometry": "cpp"
+        "geometry": "cpp",
+        "adolcforward": "cpp",
+        "alignedvector3": "cpp",
+        "memory_resource": "cpp",
+        "scoped_allocator": "cpp"
     }
 }

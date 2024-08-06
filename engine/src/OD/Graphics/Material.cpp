@@ -71,9 +71,9 @@ void Material::SetInt(const char* name, int value){
 void Material::SetFloat(const char* name, float value, float min, float max){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Float;
-    map.value = value;
-    map.valueMin = min;
-    map.valueMax = max;
+    map.valueFloat = value;
+    map.valueFloatMin = min;
+    map.valueFloatMax = max;
 }
 
 void Material::SetFloat(const char* name, float* value, int count){
@@ -170,9 +170,9 @@ void Material::SetGlobalInt(const char* name, int value){
 void Material::SetGlobalFloat(const char* name, float value, float min, float max){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Float;
-    map.value = value;
-    map.valueMin = min;
-    map.valueMax = max;
+    map.valueFloat = value;
+    map.valueFloatMin = min;
+    map.valueFloatMax = max;
 }
 
 void Material::SetGlobalFloat(const char* name, float* value, int count){
@@ -332,12 +332,12 @@ void Material::OnGui(){
         MaterialMap& map = maps[i];
 
         if(map.type == MaterialMap::Type::Float){
-            if(map.valueMax != map.valueMin){
-                if(ImGui::SliderFloat(name.c_str(), &map.value, map.valueMin, map.valueMax)){
+            if(map.valueFloatMax != map.valueFloatMin){
+                if(ImGui::SliderFloat(name.c_str(), &map.valueFloat, map.valueFloatMin, map.valueFloatMax)){
                     toSave = true;
                 }
             } else {
-                if(ImGui::DragFloat(name.c_str(), &map.value, 1, map.valueMin, map.valueMax)){
+                if(ImGui::DragFloat(name.c_str(), &map.valueFloat, 1, map.valueFloatMin, map.valueFloatMax)){
                     toSave = true;
                 }
             }
@@ -576,7 +576,7 @@ void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered
             shader.SetInt(i.first.c_str(), map.valueInt);
         }
         if(map.type == MaterialMap::Type::Float){
-            shader.SetFloat(i.first.c_str(), map.value);
+            shader.SetFloat(i.first.c_str(), map.valueFloat);
         }
         if(map.type == MaterialMap::Type::Vector2){
             shader.SetVector2(i.first.c_str(), Vector2(map.vector.x, map.vector.y));

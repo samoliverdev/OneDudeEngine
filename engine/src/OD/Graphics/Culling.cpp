@@ -293,4 +293,15 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         isOnOrForwardPlane(camFrustum.farFace));
 }*/
 
+bool AABB::isOnAABB(AABB& other){
+    Vector3 aMin = GetMin();
+    Vector3 aMax = GetMax();
+    Vector3 bMin = other.GetMin();
+    Vector3 bMax = other.GetMax();
+
+    return (aMin.x <= bMax.x && aMax.x >= bMin.x) &&
+        (aMin.y <= bMax.y && aMax.y >= bMin.y) &&
+        (aMin.z <= bMax.z && aMax.z >= bMin.z);
+}
+
 }

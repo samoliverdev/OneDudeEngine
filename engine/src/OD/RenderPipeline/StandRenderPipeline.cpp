@@ -80,23 +80,43 @@ void Shadows::OnSetupLoop(RenderData& data){
     for(int i = 0; i < shadowedOtherLightCount; i++){
         index += 1;
 
-        //if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum, data.transform) == false) continue;
+        if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum, data.transform) == false) continue;
         context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
     } 
 }
 
 void Shadows::Render(){
-    RenderDirectionalShadows();
-    RenderOtherShadows();
-
-    /*if(shadowedDirectionalLightCount > 0){
+    if(shadowedDirectionalLightCount > 0) 
         RenderDirectionalShadows();
-    } else {
-        ClearDirectionalAltas;
-    }*/
+    if(shadowedOtherLightCount > 0) 
+        RenderOtherShadows();
+
+    Material::SetGlobalFloat("_ShadowBias", settings.directional.shadowBias);
+    Material::SetGlobalFloat(shadowDistanceId, settings.maxDistance);
+
+    float f = 1.0f - settings.directional.cascadeFade;
+    Material::SetGlobalVector4(
+        Shadows::shadowDistanceFadeId,
+        Vector4(
+            1.0f / settings.maxDistance, 
+            1.0f / settings.distanceFade, 
+            0, //1.0f / (1.0f - f * f), 
+            1.0f
+        )
+    );
+    
+    float altlasSize = (int)settings.directional.altasSize;
+    Vector4 altasSizes = Vector4Zero;
+    altasSizes.x = altlasSize;
+    altasSizes.y = 1.0f / altlasSize;
+    Material::SetGlobalVector4(shadowAtlasSizeId, altasSizes);
 }
 
 void Shadows::RenderDirectionalShadows(){
+    /*for(int i = 0; i < maxShadowedDirectionalLightCount * maxCascades; i++){
+        context->CleanShadow(directionalShadowAtlas, i);
+    }*/
+
     Assert(settings.directional.cascadeCount == 4);
 
     cascadeCullingSpheres[0] = shadowCascadeLevels[0];
@@ -123,9 +143,18 @@ void Shadows::RenderDirectionalShadows(){
             index += 1;
         }
     }
+
+    Material::SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
+    Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalFloat(cascadeCullingSpheresId, cascadeCullingSpheres, settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalTexture(dirShadowAtlasId, directionalShadowAtlas, 12, -1);
 }
 
 void Shadows::RenderOtherShadows(){
+    /*for(int i = 0; i < maxShadowedOtherLightCount; i++){
+        context->CleanShadow(otherShadowAtlas, i);
+    }*/
+
     int index = 0;
     for(int i = 0; i < shadowedOtherLightCount; i++){
         otherShadowMatrices[index] = shadowOtherLightsSplits[index].projViewMatrix;
@@ -133,9 +162,6 @@ void Shadows::RenderOtherShadows(){
     }
 
     for(index = 0; index < shadowedOtherLightCount;){
-        /*RenderSpotShadows(index, index, index);
-        index += 1;*/
-
         if(shadowedOtherLights[index].isPoint){
             RenderPointShadows(index, index, index);
             index += 6;
@@ -144,6 +170,9 @@ void Shadows::RenderOtherShadows(){
             index += 1;
         }
     }
+
+    Material::SetGlobalTexture(otherShadowAltasId, otherShadowAtlas, 15, -1);
+    Material::SetGlobalMatrix4(otherShadowMatricesId, otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
 }
 
 void Shadows::RenderSpotShadows(int index, int split, int tileSize){
@@ -186,7 +215,7 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
     int newLightCount = shadowedOtherLightCount + (isPoint ? 6 : 1);
     
     if(newLightCount > maxShadowedOtherLightCount || light.renderShadow == false){
-        return Vector4(-1, 0, 0, 0);
+        return Vector4Zero; //return Vector4(-1, 0, 0, 0);
     }
 
     if(isPoint){
@@ -211,18 +240,6 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
 
     shadowedOtherLightCount = newLightCount;
     return data;
-
-    /*if(shadowedOtherLightCount < maxShadowedOtherLightCount && light.renderShadow){
-        //shadowedOtherLightCount += 1;
-        //return Vector4(light.shadowStrength, (shadowedOtherLightCount-1), 0, 1);
-
-        ShadowSplitData::ComputeSpotShadowData(&shadowOtherLightsSplits[shadowedOtherLightCount], light, trans);
-        shadowedOtherLights[shadowedOtherLightCount] = {0, light.shadowBias, light.shadowNormalBias};
-
-        return Vector4(light.shadowStrength, shadowedOtherLightCount++, 0, 1);
-    }
-    
-    return Vector4(-1, 0, 0, 0);*/
 }
 
 #pragma endregion
@@ -309,10 +326,10 @@ void Lighting::UpdateGlobalShaders(){
         Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, curDirLightsCount);
         Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, curDirLightsCount);
 
-        Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
-        Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
-        Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
-        Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
+        //Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
+        //Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
+        //Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
+        //Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
     }
 
     Material::SetGlobalInt(otherLightCountId, curOtherLightsCount);
@@ -322,14 +339,13 @@ void Lighting::UpdateGlobalShaders(){
         Material::SetGlobalVector4(otherLightDirectionId, otherLightDirections, curOtherLightsCount);
         Material::SetGlobalVector4(otherLightSpotAnglesId, otherLightSpotAngles, curOtherLightsCount);
         Material::SetGlobalVector4(otherLightShadowDataId, otherLightShadowData, curOtherLightsCount);
-        Material::SetGlobalTexture(Shadows::otherShadowAltasId, shadows->otherShadowAtlas, 15, -1);
-        Material::SetGlobalMatrix4(Shadows::otherShadowMatricesId, shadows->otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
+        //Material::SetGlobalTexture(Shadows::otherShadowAltasId, shadows->otherShadowAtlas, 15, -1);
+        //Material::SetGlobalMatrix4(Shadows::otherShadowMatricesId, shadows->otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
     }
 
     //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
 
-    Material::SetGlobalFloat("_ShadowBias", shadows->settings.directional.shadowBias);
-
+    /*Material::SetGlobalFloat("_ShadowBias", shadows->settings.directional.shadowBias);
     Material::SetGlobalFloat(Shadows::shadowDistanceId, shadows->settings.maxDistance);
 
     float f = 1.0f - shadows->settings.directional.cascadeFade;
@@ -348,7 +364,7 @@ void Lighting::UpdateGlobalShaders(){
     altasSizes.x = altlasSize;
     altasSizes.y = 1.0f / altlasSize;
 
-    Material::SetGlobalVector4(Shadows::shadowAtlasSizeId, altasSizes);
+    Material::SetGlobalVector4(Shadows::shadowAtlasSizeId, altasSizes);*/
 }
 #pragma endregion
 
@@ -470,7 +486,7 @@ void CameraRenderer::RenderUI(){
 }
 
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
-    if(environmentSettings.bloomPostFX == nullptr || environmentSettings.colorGradingPostFX == nullptr || environmentSettings.toneMappingPostFX){
+    if(environmentSettings.bloomPostFX == nullptr || environmentSettings.colorGradingPostFX == nullptr || environmentSettings.toneMappingPostFX == nullptr){
         return std::vector<PostFX*>(); 
     }
 

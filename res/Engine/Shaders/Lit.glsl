@@ -34,14 +34,20 @@ out VsOut{
     vec2 texCoord;
     vec3 worldPos;
     vec3 worldNormal;
+    mat3 TBN;
 } vsOut;
 
 void main(){
     mat4 targetModelMatrix = GetModelMatrix();
 
+    vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
+    vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
+    vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
+    
     vsOut.pos = pos;
     vsOut.normal = normal;
     vsOut.texCoord = texCoord;
+    vsOut.TBN = mat3(T, B, N);
     vsOut.worldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
     //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
     vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
@@ -68,12 +74,14 @@ in VsOut{
     vec2 texCoord;
     vec3 worldPos;
     vec3 worldNormal;
+    mat3 TBN;
 } fsIn;
 
 uniform vec3 viewPos;
 
-uniform sampler2D mainTex;
 uniform vec4 color = vec4(1,1,1,1);
+uniform sampler2D mainTex;
+uniform sampler2D normal;
 uniform sampler2D emissionMap;
 uniform vec4 emissionColor = vec4(0,0,0,0);
 uniform sampler2D maskMap;
@@ -119,9 +127,13 @@ void main(){
     vec4 base = texture(mainTex, fsIn.texCoord);
     base = base * color;
 
+    vec4 normalMap = texture(normal, fsIn.texCoord);
+    vec3 _normal = normalize(normalMap.rgb * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
+    _normal = normalize(fsIn.TBN * _normal); 
+
     Surface surface;
     surface.position = fsIn.worldPos;
-    surface.normal = normalize(fsIn.worldNormal);
+    surface.normal = _normal; //normalize(fsIn.worldNormal);
     surface.viewDirection = normalize(viewPos - fsIn.worldPos);
     surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
     surface.color = base.rgb;
