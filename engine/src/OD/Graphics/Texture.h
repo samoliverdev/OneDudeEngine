@@ -31,6 +31,8 @@ enum class OD_API_IMPORT TextureFormat{
     Auto,
     RGB,
     RGBA,
+    //SRGB,
+    //SRGBA,
 
     RED8,
     RGB8,

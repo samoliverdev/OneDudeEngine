@@ -56,7 +56,7 @@ vec3 NeutralTonemap(vec3 x){
 }
 
 void main() {
-    const float gamma = 2.2;
+    //const float gamma = 2.2;
     vec3 color = texture(mainTex, texCoord).rgb;
     color.rgb = min(color.rgb, 60.0);
     color = NeutralTonemap(color);

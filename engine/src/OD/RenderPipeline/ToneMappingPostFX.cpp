@@ -14,6 +14,11 @@ void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     if(mode == Mode::Neutral) pass = toneMappingNeutralPass;
     if(mode == Mode::Reinhard) pass = toneMappingReinhardPass;
     if(mode == Mode::ACES) pass = toneMappingACESPass;
+        
+    if(mode == Mode::Reinhard){
+        Shader::Bind(*toneMappingReinhardPass);
+        toneMappingReinhardPass->SetFloat("exposure", exposure);
+    }
 
     Graphics::BlitQuadPostProcessing(src, dst, *pass);
 }

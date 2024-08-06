@@ -16,6 +16,7 @@ void main() {
 
 #if defined(FRAGMENT)
 uniform sampler2D mainTex;
+uniform float exposure = 1;
 
 in vec3 pos;
 in vec2 texCoord;
@@ -25,9 +26,12 @@ out vec4 fragColor;
 void main() {
     const float gamma = 2.2;
     vec3 color = texture(mainTex, texCoord).rgb;
-    color.rgb = min(color.rgb, 60.0);
-    color /= (color + vec3(1.0));
-    
     fragColor = vec4(color, 1.0);
+    
+    //color.rgb = min(color.rgb, 60.0);
+    //color /= (color + vec3(1.0));
+
+    //fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0)); // exposure tone mapping
+    fragColor.rgb = vec3(1.0) - exp(-fragColor.rgb * exposure); // exposure tone mapping
 }
 #endif

@@ -26,6 +26,8 @@ const int TextureFormatLookupMipmap[] = {
     GL_NONE,
     GL_RGB,
     GL_RGBA,
+    //GL_RGB,
+    //GL_RGBA,
 
     GL_RED,
     GL_RGB,
@@ -48,6 +50,8 @@ const int TextureInternalFormatLookupMipmap[] = {
     GL_NONE,
     GL_RGB,
     GL_RGBA,
+    //GL_SRGB,
+    //GL_SRGB_ALPHA,
 
     GL_R8,
     GL_RGB8,

@@ -11,6 +11,7 @@ public:
     enum class Mode{ None = -1, ACES, Neutral, Reinhard };
 
     Mode mode = Mode::None;
+    float exposure = 1;
 
     ToneMappingPostFX();
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
@@ -19,6 +20,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(enable));
         ArchiveDump(ar, CEREAL_NVP(mode));
+        ArchiveDump(ar, CEREAL_NVP(exposure));
     }
 
 private:

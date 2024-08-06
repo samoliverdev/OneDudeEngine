@@ -15,20 +15,18 @@ void main() {
 #endif
 
 #if defined(FRAGMENT)
+
+#include res/Engine/ShaderLibrary/Core.glsl
+
 uniform sampler2D mainTex;
 uniform float option;
 
 in vec3 pos;
 in vec2 texCoord;
-
 out vec4 fragColor;
-
-const float offset = 1.0 / 300.0; 
 
 void main() {
     fragColor = texture(mainTex, texCoord);
-
-    float gamma = 2.2;
-    fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
+    fragColor.rgb = ApplyGamaCorrection(fragColor.rgb);
 }
 #endif

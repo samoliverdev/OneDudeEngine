@@ -60,6 +60,7 @@ void main(){
 
 uniform mat4 view;
 
+#include res/Engine/ShaderLibrary/Core.glsl
 #include res/Engine/ShaderLibrary/Common.glsl
 #include res/Engine/ShaderLibrary/Surface.glsl
 #include res/Engine/ShaderLibrary/Shadows.glsl
@@ -124,8 +125,11 @@ float GetOcclusion(vec2 baseUV){
 }
 
 void main(){
-    vec4 base = texture(mainTex, fsIn.texCoord);
+    vec4 base = textureSRGB(mainTex, fsIn.texCoord);
     base = base * color;
+
+    //float gamma = 2.2;
+    //base = pow(base, vec4(gamma));
 
     vec4 normalMap = texture(normal, fsIn.texCoord);
     vec3 _normal = normalize(normalMap.rgb * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
@@ -149,6 +153,15 @@ void main(){
     fragColor = vec4(color, surface.alpha);
 
     if(base.a < cutoff) discard;
+
+    //reinhard tone mapping
+    //fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));
+
+    // exposure tone mapping
+    //float exposure = 1;
+    //fragColor.rgb = vec3(1.0) - exp(-fragColor.rgb * exposure);
+
+    //fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
 }
 #endif
 

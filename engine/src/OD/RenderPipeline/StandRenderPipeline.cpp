@@ -20,6 +20,21 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 }
 
+class GamaCorrectionPP: public PostFX{
+public:
+    GamaCorrectionPP(){}
+
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
+        if(gamaCorrection == nullptr) gamaCorrection = Shader::CreateFromFile("res/Engine/Shaders/GamaCorrectionPP.glsl");
+        Graphics::BlitQuadPostProcessing(src, dst, *gamaCorrection);
+    }
+
+private:
+    Ref<Shader> gamaCorrection = nullptr;
+};
+
+GamaCorrectionPP gamaCorrectionPP;
+
 #pragma region Shadows
 Shadows::Shadows(){
     FrameBufferSpecification specification;
@@ -486,15 +501,17 @@ void CameraRenderer::RenderUI(){
 }
 
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
-    if(environmentSettings.bloomPostFX == nullptr || environmentSettings.colorGradingPostFX == nullptr || environmentSettings.toneMappingPostFX == nullptr){
-        return std::vector<PostFX*>(); 
-    }
+    std::vector<PostFX*> out;
 
-    std::vector<PostFX*> out{ 
-        environmentSettings.bloomPostFX.get(),
-        environmentSettings.colorGradingPostFX.get(),
-        environmentSettings.toneMappingPostFX.get()
-    };
+    /*if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
+    if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
+    if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());*/
+
+    if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
+    if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
+    out.push_back(&gamaCorrectionPP);
+    if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+
     return out;
 }
 

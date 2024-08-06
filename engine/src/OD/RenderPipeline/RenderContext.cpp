@@ -73,8 +73,9 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::EndDrawToScreen(){
+    //glEnable(GL_FRAMEBUFFER_SRGB); 
     Graphics::BlitFramebuffer(outColor, finalColor);
-    //Graphics::BlitQuadPostProcessing(outColor, finalColor, *blitShader);
+    Graphics::BlitQuadPostProcessing(outColor, finalColor, *blitShader);
 
     if(overrideFramebuffer != nullptr){
         Graphics::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);

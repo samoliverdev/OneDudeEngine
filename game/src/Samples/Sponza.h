@@ -35,9 +35,9 @@ struct SponzaSample: public OD::Module {
         Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
         cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
-        Entity cube = scene->AddEntity("CubeRef");
+        /*Entity cube = scene->AddEntity("CubeRef");
         ModelRendererComponent& _meshRenderer2 = cube.AddComponent<ModelRendererComponent>();
-        _meshRenderer2.SetModel(cubeModel);
+        _meshRenderer2.SetModel(cubeModel);*/
 
         Entity camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
@@ -66,8 +66,17 @@ struct SponzaSample: public OD::Module {
         lightComponent2.renderShadow = true;
         pointLight.GetComponent<TransformComponent>().Position(Vector3(0, 4, 0));
 
+        Entity pointLight2 = scene->AddEntity("Point Light 2");
+        LightComponent& lightComponent3 = pointLight2.AddComponent<LightComponent>();
+        lightComponent3.color = {1,1,0.8f};
+        lightComponent3.type = LightComponent::Type::Point;
+        lightComponent3.intensity = 3;
+        lightComponent3.radius = 5;
+        lightComponent3.renderShadow = false;
+        pointLight2.GetComponent<TransformComponent>().Position(Vector3(3, 0.02f, 0));
+
         Application::AddModule<Editor>();
-        //scene->Start();
+        scene->Start();
     }
 
     void OnUpdate(float deltaTime) override {
