@@ -8,6 +8,15 @@
 
 namespace OD{
 
+ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
+    ShadowTextureSize::_256, // VeryLow
+    ShadowTextureSize::_512, // Low
+    ShadowTextureSize::_1024, // Mediam
+    ShadowTextureSize::_2048, // High
+    ShadowTextureSize::_4096, // VeryHigh
+    ShadowTextureSize::_8192  // Ultra
+};
+
 void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
@@ -503,10 +512,6 @@ void CameraRenderer::RenderUI(){
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out;
 
-    /*if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
-    if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
-    if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());*/
-
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     out.push_back(&gamaCorrectionPP);
@@ -553,8 +558,6 @@ void StandRenderPipeline::Update(){
     auto enviView = GetScene()->GetRegistry().view<EnvironmentComponent>();
     for(auto entity: enviView){
         EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);
-        if(environmentComponent.inited == false) environmentComponent.Init();
-
         environmentSettings = environmentComponent.settings;
         break;
     }
@@ -565,7 +568,10 @@ void StandRenderPipeline::Update(){
 
     renderContext->skyMaterial = environmentSettings.sky;
     shadow.directional.shadowBias = environmentSettings.shadowBias;
-    //shadow.directional.altasSize = environmentSettings.shadowQuality;
+    shadow.maxDistance = environmentSettings.shadowDistance;
+
+    shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings.directionalshadowQuality];
+    shadow.other.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings.othershadowQuality];
 
     if(overrideCamera != nullptr){
         cameraRenderer.Render(*overrideCamera, renderContext, shadow, environmentSettings);

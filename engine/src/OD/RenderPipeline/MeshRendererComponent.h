@@ -11,10 +11,13 @@ struct OD_API MeshRendererComponent{
     Ref<Material> material;
     AABB boundingVolume;
 
-    inline static void OnGui(Entity& e){}
+    static void OnGui(Entity& e);
 
     template<class Archive>
-    void serialize(Archive& ar){}
+    void serialize(Archive& ar){
+        AssetRefSerialize<Material> materialRef(material);
+        ArchiveDumpNVP(ar, materialRef);
+    }
 
     void UpdateAABB(Vector3 scale = Vector3One){
         if(mesh == nullptr){

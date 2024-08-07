@@ -3,6 +3,7 @@
 #include "OD/Core/Math.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Serialization/Serialization.h"
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
@@ -13,47 +14,68 @@ namespace OD{
 class Scene;
 class Mesh;
 
+enum SamplePartitionType{
+	SAMPLE_PARTITION_WATERSHED,
+	SAMPLE_PARTITION_MONOTONE,
+	SAMPLE_PARTITION_LAYERS
+};
+
 struct OD_API BuildSettings{
 	// Cell size in world units
-	float cellSize;
+	float cellSize = 0.3f;
 	// Cell height in world units
-	float cellHeight;
+	float cellHeight = 0.2f;
 	// Agent height in world units
-	float agentHeight;
+	float agentHeight = 2.0f;
 	// Agent radius in world units
-	float agentRadius;
+	float agentRadius = 0.6f;
 	// Agent max climb in world units
-	float agentMaxClimb;
+	float agentMaxClimb = 0.9f;
 	// Agent max slope in degrees
-	float agentMaxSlope;
+	float agentMaxSlope = 45.0f;
 	// Region minimum size in voxels.
 	// regionMinSize = sqrt(regionMinArea)
-	float regionMinSize;
+	float regionMinSize = 8;
 	// Region merge size in voxels.
 	// regionMergeSize = sqrt(regionMergeArea)
-	float regionMergeSize;
+	float regionMergeSize = 20;
 	// Edge max length in world units
-	float edgeMaxLen;
+	float edgeMaxLen = 12.0f;
 	// Edge max error in voxels
-	float edgeMaxError;
-	float vertsPerPoly;
+	float edgeMaxError = 1.3f;
+	float vertsPerPoly = 6.0f;
 	// Detail sample distance in voxels
-	float detailSampleDist;
+	float detailSampleDist = 6.0f;
 	// Detail sample max error in voxel heights.
-	float detailSampleMaxError;
+	float detailSampleMaxError = 1.0f;
 	// Partition type, see SamplePartitionType
-	int partitionType;
+	int partitionType = SAMPLE_PARTITION_WATERSHED;
 	// Bounds of the area to mesh
 	float navMeshBMin[3];
 	float navMeshBMax[3];
 	// Size of the tiles in voxels
 	float tileSize;
-};
 
-enum SamplePartitionType{
-	SAMPLE_PARTITION_WATERSHED,
-	SAMPLE_PARTITION_MONOTONE,
-	SAMPLE_PARTITION_LAYERS
+	template<class Archive>
+    void serialize(Archive& ar){
+		ArchiveDumpNVP(ar, cellSize);
+		ArchiveDumpNVP(ar, cellHeight);
+		ArchiveDumpNVP(ar, agentHeight);
+		ArchiveDumpNVP(ar, agentRadius);
+		ArchiveDumpNVP(ar, agentMaxClimb);
+		ArchiveDumpNVP(ar, agentMaxSlope);
+		ArchiveDumpNVP(ar, regionMinSize);
+		ArchiveDumpNVP(ar, regionMergeSize);
+		ArchiveDumpNVP(ar, edgeMaxLen);
+		ArchiveDumpNVP(ar, edgeMaxError);
+		ArchiveDumpNVP(ar, vertsPerPoly);
+		ArchiveDumpNVP(ar, detailSampleDist);
+		ArchiveDumpNVP(ar, detailSampleMaxError);
+		//ArchiveDumpNVP(ar, partitionType);
+		//ArchiveDumpNVP(ar, navMeshBMin);
+		//ArchiveDumpNVP(ar, navMeshBMax);
+		//ArchiveDumpNVP(ar, tileSize);
+	}
 };
 
 enum SamplePolyAreas{
@@ -113,13 +135,6 @@ public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
 
-	/*Navmesh(){ 
-		LogWarning("Navmesh::Navmesh()"); 
-	}*/
-	/*~Navmesh(){ 
-		LogWarning("Navmesh::~Navmesh()"); 
-	}*/
-
 	bool Bake(Scene* scene, AABB bounds);
 	void Cleanup();
 	void DrawDebug();
@@ -153,14 +168,16 @@ private:
 };
 
 struct OD_API NavmeshComponent{
+	BuildSettings buildSettings;
+	Vector3 size;
 	Ref<Navmesh> navmesh;
+	
+    static inline void OnGui(Entity& e);
 
-	template<class Archive> void serialize(Archive& ar){}
-    static inline void OnGui(Entity& e){
-		if(ImGui::Button("Bake")){
-			NavmeshComponent& navmeshComponent = e.GetComponent<NavmeshComponent>();
-			if(navmeshComponent.navmesh != nullptr) navmeshComponent.navmesh->Bake(e.GetScene(), AABB(Vector3(0, 0, 0), 100, 100, 100)); 
-		}
+	template<class Archive> 
+	void serialize(Archive& ar){
+		ArchiveDumpNVP(ar, buildSettings);
+		ArchiveDumpNVP(ar, size);
 	}
 };
 
@@ -177,8 +194,11 @@ struct OD_API NavmeshAgentComponent{
 		isDirty = true;
 	}
 
-	template<class Archive> void serialize(Archive& ar){}
-    static inline void OnGui(Entity& e){}
+	template<class Archive>
+    void serialize(Archive& ar){
+		ArchiveDumpNVP(ar, speed);
+		ArchiveDumpNVP(ar, stopDistance);
+	}
 
 private:
 	Vector3 destination = {0, 0, 0};

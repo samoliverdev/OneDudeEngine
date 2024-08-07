@@ -68,28 +68,29 @@ void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,ent
     }
 }
 
+HAS_MEM_FUNC(OnGui, HasOnGui);
+//HAS_TEMPLATE_FUNC(serialize, HasSerialize);
+
 template<typename T>
 void SceneManager::RegisterCoreComponent(const char* name){
     Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
     //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
-    CoreComponent funcs;
+    SerializeFuncs funcs;
 
-    funcs.hasComponent = [](Entity& e){
-        return e.HasComponent<T>();
-    };
-
-    funcs.addComponent = [](Entity& e){
-        e.AddOrGetComponent<T>();
-    };
-
-    funcs.removeComponent = [](Entity& e){
-        e.RemoveComponent<T>();
-    };
+    funcs.hasComponent = [](Entity& e){ return e.HasComponent<T>(); };
+    funcs.addComponent = [](Entity& e){ e.AddOrGetComponent<T>(); };
+    funcs.removeComponent = [](Entity& e){ e.RemoveComponent<T>(); };
 
     funcs.onGui = [](Entity& e){
-        e.AddOrGetComponent<T>();
-        T::OnGui(e);
+        if constexpr(HasOnGui<T>::value){
+            e.AddOrGetComponent<T>();
+            T::OnGui(e);
+        } else {
+            T& c = e.AddOrGetComponent<T>();
+            cereal::ImGuiArchive uiArchive;
+            uiArchive(c);
+        }
     };
 
     funcs.copy = [](entt::registry& dst, entt::registry& src){
@@ -112,7 +113,7 @@ void SceneManager::RegisterCoreComponent(const char* name){
     coreComponentsSerializer[name] = funcs;
 }
 
-template<typename T>
+/*template<typename T>
 void SceneManager::RegisterCoreComponentSimple(const char* name){
     //Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
     //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
@@ -146,7 +147,7 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
     };
     
     coreComponentsSerializer[name] = funcs;
-}
+}*/
 
 template<typename T>
 void SceneManager::RegisterComponent(const char* name){
@@ -157,6 +158,17 @@ void SceneManager::RegisterComponent(const char* name){
     funcs.hasComponent = [](Entity& e){ return e.HasComponent<T>(); };
     funcs.addComponent = [](Entity& e){ e.AddOrGetComponent<T>(); };
     funcs.removeComponent = [](Entity& e){ e.RemoveComponent<T>(); };
+
+    funcs.onGui = [](Entity& e){
+        if constexpr(HasOnGui<T>::value){
+            e.AddOrGetComponent<T>();
+            T::OnGui(e);
+        } else {
+            T& c = e.AddOrGetComponent<T>();
+            cereal::ImGuiArchive uiArchive;
+            uiArchive(c);
+        }
+    };
 
     funcs.copy = [](entt::registry& dst, entt::registry& src){
         auto view = src.view<T>();

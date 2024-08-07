@@ -3,6 +3,7 @@
 #include "OD/Platform/GL.h"
 #include <string.h>
 #include <magic_enum/magic_enum.hpp>
+#include "OD/Core/ImGui.h"
 
 namespace OD{
 
@@ -229,6 +230,14 @@ bool Shader::LoadFromFile(const std::string& path){
     return Create(path, keyworlds);
 }
 
+std::vector<std::string> Shader::GetFileAssociations(){ 
+    return std::vector<std::string>{
+        ".shader",
+        ".glsl"
+    }; 
+}
+
+
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     std::vector<std::string> keyworlds;
 
@@ -452,6 +461,58 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
 
 bool Shader::IsValid(){
     return rendererId != 0;
+}
+
+void Shader::OnGui(){
+    ImGui::CollapsingHeader("Shader", ImGuiTreeNodeFlags_Leaf);
+
+    std::string supportInstancing = "false";
+    if(SupportInstancing() == true) supportInstancing = "true";
+    ImGui::Text("SupportInstancing: %s", supportInstancing.c_str());
+
+    std::string cullFace(magic_enum::enum_name(GetCullFace()));
+    ImGui::Text("CullFace: %s", cullFace.c_str());
+
+    std::string depthTest(magic_enum::enum_name(GetDepthTest()));
+    ImGui::Text("DepthTest: %s", depthTest.c_str());
+
+    if(IsBlend()){
+        std::string srcBlend(magic_enum::enum_name(GetSrcBlend()));
+        std::string dstBlend(magic_enum::enum_name(GetDstBlend()));
+        ImGui::Text("Blend: %s %s", srcBlend.c_str(), dstBlend.c_str());
+    } else {
+        ImGui::Text("Blend: Off");
+    }
+
+    ImGui::Spacing();ImGui::Spacing();
+
+    if(ImGui::CollapsingHeader("Uniforms")){
+        for(auto i: _uniforms){
+            ImGui::Text(i.c_str());
+        }
+    }
+    ImGui::Spacing();
+
+    if(ImGui::CollapsingHeader("Properties")){
+        for(auto& i: properties){
+            for(auto& j: i){
+                ImGui::Text(j.c_str());
+                ImGui::SameLine();
+            }
+            ImGui::Spacing();
+        }
+    }
+    ImGui::Spacing();
+
+    if(ImGui::CollapsingHeader("Pragmas")){
+        for(auto& i: pragmas){
+            for(auto& j: i){
+                ImGui::Text(j.c_str());
+                ImGui::SameLine();
+            }
+            ImGui::Spacing();
+        }
+    }
 }
 
 void Shader::Reload(){

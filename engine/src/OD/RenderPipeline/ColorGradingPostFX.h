@@ -19,6 +19,11 @@ public:
     ColorGradingPostFX();
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
 
+    inline void OnGui() override {
+        cereal::ImGuiArchive colorGradring;
+        colorGradring(*this);
+    }
+
     template <class Archive>
     void serialize(Archive& ar){
         if(std::is_same<Archive, cereal::ImGuiArchive>::value){

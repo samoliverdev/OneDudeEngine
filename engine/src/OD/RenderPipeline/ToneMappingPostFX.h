@@ -16,6 +16,11 @@ public:
     ToneMappingPostFX();
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
 
+    inline void OnGui() override {
+        cereal::ImGuiArchive colorGradring;
+        colorGradring(*this);
+    }
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(enable));

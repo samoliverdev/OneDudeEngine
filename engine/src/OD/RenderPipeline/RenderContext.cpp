@@ -54,8 +54,6 @@ void RenderContext::End(){
 }
 
 void RenderContext::BeginDrawToScreen(){
-    //glEnable(GL_FRAMEBUFFER_SRGB); 
-
     int width = Application::ScreenWidth();
     int height = Application::ScreenHeight();
 
@@ -73,7 +71,6 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    //glEnable(GL_FRAMEBUFFER_SRGB); 
     Graphics::BlitFramebuffer(outColor, finalColor);
     Graphics::BlitQuadPostProcessing(outColor, finalColor, *blitShader);
 
@@ -83,9 +80,7 @@ void RenderContext::EndDrawToScreen(){
         Graphics::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
     }
 
-    Framebuffer::Unbind();
-
-    //glDisable(GL_FRAMEBUFFER_SRGB); 
+    Framebuffer::Unbind(); 
 }
 
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){

@@ -98,7 +98,7 @@ void DrawComponent(Entity e, const char* name, UIFunction function){
     }
 }
 
-void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::CoreComponent &f){
+void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::SerializeFuncs &f){
     std::hash<std::string> hasher;
 
     const ImGuiTreeNodeFlags treeNodeFlags = 
@@ -154,12 +154,7 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         }
 
         if(open){
-            /*
-            ArchiveNode ar(ArchiveNode::Type::Object, "", nullptr);
-            sf.serialize(e, ar);
-            ArchiveNode::DrawArchive(ar);
-            */
-
+            sf.onGui(e);
             ImGui::TreePop();
         }
 

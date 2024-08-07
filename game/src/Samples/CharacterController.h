@@ -83,7 +83,7 @@ struct CharacterControllerSample: OD::Module {
         Scene* scene = SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
         LightComponent& lightComponent = light.AddComponent<LightComponent>();

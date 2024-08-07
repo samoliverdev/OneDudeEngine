@@ -85,7 +85,7 @@ struct ECSSample: public OD::Module {
         //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));

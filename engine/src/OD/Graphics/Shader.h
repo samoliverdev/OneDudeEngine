@@ -18,6 +18,7 @@ public:
     static Ref<Shader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
 
     bool LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
 
     static void Destroy(Shader& shader);
     static void Bind(Shader& shader);
@@ -26,6 +27,8 @@ public:
     virtual ~Shader();
 
     bool IsValid();
+
+    void OnGui() override;
 
     void Reload() override;
 
@@ -72,7 +75,7 @@ private:
 
     std::vector<std::string> enabledKeyworlds;
     
-    unsigned int rendererId;
+    unsigned int rendererId = 0;
     std::unordered_map<std::string, GLint> uniforms;
     std::vector<std::string> _uniforms;
     std::vector<std::vector<std::string>> properties;

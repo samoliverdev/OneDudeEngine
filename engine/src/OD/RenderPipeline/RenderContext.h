@@ -15,6 +15,8 @@ public:
     virtual void OnSetup(){}
     virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
     bool enable = true;
+
+    virtual void OnGui(){}
 };
 
 struct OD_API DrawingSettings{

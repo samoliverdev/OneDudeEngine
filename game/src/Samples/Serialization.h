@@ -30,7 +30,7 @@ template<typename T>
 struct TestRegisterComponent{
     TestRegisterComponent(const char* name){
         //SceneManager::Get().RegisterComponent<T>(name);
-        SceneManager::Get().RegisterCoreComponentSimple<T>(name);
+        SceneManager::Get().RegisterCoreComponent<T>(name);
     }
 };
 
@@ -143,7 +143,7 @@ struct SerializationSample: public OD::Module{
         SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
         //SceneManager::Get().RegisterComponent<ComponentTest_01>("ComponentTest_01");
-        SceneManager::Get().RegisterCoreComponentSimple<ComponentTest_02>("ComponentTest_02");
+        SceneManager::Get().RegisterCoreComponent<ComponentTest_02>("ComponentTest_02");
 
         scene = SceneManager::Get().NewScene();
 

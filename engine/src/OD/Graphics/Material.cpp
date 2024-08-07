@@ -309,7 +309,19 @@ void Material::OnGui(){
 
     //ImGui::BeginDisabled();
 
-    ImGui::BeginGroup();
+    /*Ref<Shader> tempShader = ImGui::DrawAssetExtra<Shader>(std::string("shader"), GetShader());
+    if(tempShader != nullptr){
+        SetShader(tempShader);
+        toSave = true;
+    }*/
+
+    Ref<Shader> tempShader = GetShader();
+    if(ImGui::DrawAsset<Shader>(std::string("shader"), tempShader) && tempShader != GetShader()){
+        SetShader(tempShader);
+        toSave = true;
+    }
+
+    /*ImGui::BeginGroup();
     ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));
     ImGui::EndGroup();
     ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
@@ -319,7 +331,7 @@ void Material::OnGui(){
             SetShader(AssetManager::Get().LoadAsset<Shader>(path->string()));
             toSave = true;
         }
-    });
+    });*/
 
     ImGui::Spacing();ImGui::Spacing();
 
@@ -408,7 +420,7 @@ void Material::OnGui(){
         toSave = true;
     }
 
-    ImGui::Spacing();ImGui::Spacing();
+    /*ImGui::Spacing();ImGui::Spacing();
 
     if(GetShader() != nullptr && ImGui::TreeNode("Info")){
 
@@ -431,7 +443,7 @@ void Material::OnGui(){
         }
 
         ImGui::TreePop();
-    }
+    }*/
 
     //ImGui::EndDisabled();
 

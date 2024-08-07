@@ -37,25 +37,24 @@ private:
     Ref<Shader> _ppShader;
 };
 
-struct ShadowSettings{
-    enum class TextureSize{
-        _256 = 256, _512 = 512, _1024 = 1024,
-        _2048 = 2048, _4096 = 4096, _8192 = 8192
-    };
+enum class ShadowTextureSize{
+    _256 = 256, _512 = 512, _1024 = 1024,
+    _2048 = 2048, _4096 = 4096, _8192 = 8192
+};
 
+struct OD_API ShadowSettings{
     //[Min(0.001f)]
     float maxDistance = 500.0f;
     
     //[Range(0.001f, 1f)]
 	float distanceFade = 0.1f;
 
-
     enum class FilterMode{
 		PCF2x2, PCF3x3, PCF5x5, PCF7x7
 	};
 
     struct Directional{
-        TextureSize altasSize;
+        ShadowTextureSize altasSize;
         FilterMode filter = FilterMode::PCF2x2;
 
         int cascadeCount = 4; 
@@ -71,12 +70,12 @@ struct ShadowSettings{
     };
 
     struct Other{
-        TextureSize altasSize;
+        ShadowTextureSize altasSize;
         FilterMode filter = FilterMode::PCF2x2;
     };
 
-    Directional directional{TextureSize::_2048};
-    Other other{TextureSize::_2048};
+    Directional directional{ShadowTextureSize::_2048};
+    Other other{ShadowTextureSize::_2048};
 };
 
 class Shadows{

@@ -3,6 +3,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Platform/GL.h"
+#include "OD/Core/ImGui.h"
 //#include "OD/Ultis/Obj.h"
 
 namespace OD{
@@ -35,6 +36,21 @@ Mesh::Mesh(const Mesh& other){
 
 Mesh::~Mesh(){
     Destroy();
+}
+
+void Mesh::OnGui(){
+    ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_Leaf);
+
+    ImGui::Text("Vertex Count %d", vertexCount);
+    ImGui::Text("Indice Count %d", indiceCount);
+    ImGui::Spacing();ImGui::Spacing();
+    ImGui::Text("Runtime Vertices Count %zd", vertices.size());
+    ImGui::Text("Runtime UV Count %zd", uv.size());
+    ImGui::Text("Runtime Colors Count %zd", colors.size());
+    ImGui::Text("Runtime Tangents Count %zd", tangents.size());
+    ImGui::Text("Runtime Weights Count %zd", weights.size());
+    ImGui::Text("Runtime Influences Count %zd", influences.size());
+    ImGui::Text("Runtime Indices Count %zd", indices.size());
 }
 
 //Source: https://gamedev.stackexchange.com/questions/152991/how-can-i-calculate-normals-using-a-vertex-and-index-buffer

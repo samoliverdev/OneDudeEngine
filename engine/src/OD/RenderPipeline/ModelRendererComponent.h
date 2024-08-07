@@ -11,12 +11,6 @@ namespace OD{
 
 class StandRenderPipeline;
 
-/*template <class Archive>
-void serialize(Archive& ar, Ref<Model>& model){
-    LogInfo("Ref<Model> Test Serialize");
-}*/
-
-//TODO: Make Serializable
 struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
 
@@ -45,9 +39,9 @@ struct OD_API ModelRendererComponent{
         ArchiveDumpNVP(ar, localTransform);
         ArchiveDumpNVP(ar, subMeshIndex);
 
-        AssetRef<Model> modelRef(model);
+        AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
-        AssetVectorRef<Material> materialVectorRef(materialsOverride);
+        AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
     }
 

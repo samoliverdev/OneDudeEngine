@@ -1,6 +1,5 @@
 #include "ModelRendererComponent.h"
 #include "StandRenderPipeline.h"
-#include "OD/Utils/ImGuiCustomDraw.h"
 #include "OD/Serialization/CerealImGui.h"
 #include <filesystem>
 
@@ -20,12 +19,6 @@ void ModelRendererComponent::OnGui(Entity& e){
 
     ImGui::DrawAsset<Model>(std::string("model"), mesh.model);
 
-    /*if(mesh.model == nullptr){
-        ImGui::Text("Path: None");
-    } else {
-        ImGui::Text("Path: %s", mesh.model->Path().c_str());
-    }*/
-
     int subMeshIndex = mesh.subMeshIndex;
     if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){
         mesh.SetSubMeshIndex(subMeshIndex);
@@ -35,21 +28,21 @@ void ModelRendererComponent::OnGui(Entity& e){
         int index = 0;
         for(auto i: mesh.materialsOverride){
             std::string name = "["+std::to_string(index)+"]";
-            ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
+            ImGui::DrawAsset<Material>(name, mesh.materialsOverride[index], mesh.model->materials[index]);
             index += 1;
         }
 
         ImGui::TreePop();
     }
 
-    ImGui::Spacing(); ImGui::Spacing(); 
+    /*ImGui::Spacing(); ImGui::Spacing(); 
 
     if(mesh.model != nullptr && ImGui::TreeNode("Info")){
         ImGui::Text("Mesh: %zd", mesh.model->meshs.size());
         ImGui::Text("Materials: %zd", mesh.model->materials.size());
         //ImGui::Text("Animations: %zd", mesh.model()->animations.size());
         ImGui::TreePop();
-    }
+    }*/
 }
 
 void ModelRendererComponent::SetModel(Ref<Model> m){
@@ -205,7 +198,8 @@ void SkinnedModelRendererComponent::OnGui(Entity& e){
         int index = 0;
         for(auto i: mesh.materialsOverride){
             std::string name = "["+std::to_string(index)+"]";
-            ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
+            //ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
+            ImGui::DrawAsset<Material>(name, mesh.materialsOverride[index], mesh.model->materials[index]);
             index += 1;
         }
 

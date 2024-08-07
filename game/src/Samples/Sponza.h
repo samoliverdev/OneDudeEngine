@@ -22,7 +22,10 @@ struct SponzaSample: public OD::Module {
         sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+        EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+        envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        envComp.settings.toneMappingPostFX->enable = true;
+        envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
 
         /*Entity e = scene->AddEntity("Sponza");
         //e.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));

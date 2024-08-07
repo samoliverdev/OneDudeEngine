@@ -18,6 +18,16 @@ void NavmeshModuleInit(){
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
 }
 
+void NavmeshComponent::OnGui(Entity& e){
+	NavmeshComponent& navmeshComponent = e.GetComponent<NavmeshComponent>();
+	cereal::ImGuiArchive uiArchive;
+	uiArchive(navmeshComponent);
+
+	if(ImGui::Button("Bake")){
+		if(navmeshComponent.navmesh != nullptr) navmeshComponent.navmesh->Bake(e.GetScene(), AABB(Vector3(0, 0, 0), 100, 100, 100)); 
+	}
+}
+
 class DebugDrawGL : public duDebugDraw{
 public:
     Ref<Shader> shader;

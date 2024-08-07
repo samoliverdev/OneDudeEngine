@@ -30,7 +30,7 @@ public:
     Scene* NewScene();
 
     template<typename T> void RegisterCoreComponent(const char* name);
-    template<typename T> void RegisterCoreComponentSimple(const char* name);
+    //template<typename T> void RegisterCoreComponentSimple(const char* name);
     template<typename T> void RegisterComponent(const char* name);
     template<typename T> void RegisterScript(const char* name);
     template<typename T> void RegisterSystem(const char* name);   
@@ -48,7 +48,7 @@ private:
         std::function<void(ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name)> snapshotIn;
     };
 
-    struct CoreComponent{
+    /*struct CoreComponent{
         std::function<bool(Entity&)> hasComponent;
         std::function<void(Entity&)> addComponent;
         std::function<void(Entity&)> removeComponent;
@@ -56,14 +56,14 @@ private:
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
         std::function<void(ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name)> snapshotOut;
         std::function<void(ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name)> snapshotIn;
-    };
+    };*/
 
     SceneState sceneState;
     bool inEditor;
 
     Scene* activeScene;
 
-    std::unordered_map<const char*, CoreComponent> coreComponentsSerializer;
+    std::unordered_map<const char*, SerializeFuncs> coreComponentsSerializer;
     std::unordered_map<const char*, SerializeFuncs> componentsSerializer;
     std::unordered_map<const char*, SerializeFuncs> scriptsSerializer;
     std::unordered_map<const char*, std::function<void(Scene&)> > addSystemFuncs;

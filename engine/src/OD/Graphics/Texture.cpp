@@ -330,7 +330,11 @@ void Texture2D::OnGui(){
     const char* optionsString[] = {"Nearest", "Linear"};
     const char* curOptionString = optionsString[(int)settings.filter];
 
-    if(ImGui::BeginCombo("filter", curOptionString)){
+    if(ImGui::DrawEnumCombo<TextureFilter>("filter", &settings.filter)){
+        save = true;
+    }
+
+    /*if(ImGui::BeginCombo("filter", curOptionString)){
         for(int i = 0; i < 2; i++){
             bool isSelected = curOptionString == optionsString[i];
             if(ImGui::Selectable(optionsString[i], isSelected)){
@@ -338,12 +342,10 @@ void Texture2D::OnGui(){
                 settings.filter = (TextureFilter)i;
                 save = true;
             }
-
             if(isSelected) ImGui::SetItemDefaultFocus();
         }
-
         ImGui::EndCombo();
-    }
+    }*/
 
     if(ImGui::Checkbox("mipmap", &settings.mipmap)){
         save = true;

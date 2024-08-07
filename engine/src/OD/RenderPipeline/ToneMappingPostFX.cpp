@@ -3,6 +3,7 @@
 namespace OD{
 
 ToneMappingPostFX::ToneMappingPostFX(){
+    enable = false;
     copyPass = Shader::CreateFromFile("res/Engine/Shaders/Blit.glsl");
     toneMappingReinhardPass = Shader::CreateFromFile("res/Engine/Shaders/ToneMappingReinhardPostFX.glsl");
     toneMappingNeutralPass = Shader::CreateFromFile("res/Engine/Shaders/ToneMappingNeutralPostFX.glsl");

@@ -7,16 +7,21 @@ namespace OD{
     
 class OD_API BloomPostFX: public PostFX{
 public:
-    int maxIterations = 5;
-    int downscaleLimit = 5;
+    int maxIterations = 3;
+    int downscaleLimit = 3;
     bool bicubicUpsampling = true;
     float threshold = 0.5f;
-    float thresholdKnee = 0.5f;
+    float thresholdKnee = 1;
     float intensity = 1.0f;
 
     BloomPostFX();
     void OnSetup() override;
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
+
+    inline void OnGui() override {
+        cereal::ImGuiArchive colorGradring;
+        colorGradring(*this);
+    }
 
     template <class Archive>
     void serialize(Archive& ar){

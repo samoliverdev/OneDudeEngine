@@ -13,6 +13,8 @@ const float boundsSize = 200;
 struct BoidComponent{
     Vector3 velocity = Vector3Zero;
 
+    //static inline void OnGui(Entity& e){}
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, velocity);
@@ -94,7 +96,7 @@ struct BoidsSample: public OD::Module {
 
         auto& SceneManager = SceneManager::Get();
         SceneManager.RegisterScript<CameraMovementScript>("CameraMovementScript");
-        SceneManager.RegisterCoreComponentSimple<BoidComponent>("BoidComponent");
+        SceneManager.RegisterComponent<BoidComponent>("BoidComponent");
         SceneManager.RegisterSystem<BoidSystem>("BoidSystem");
         OD::Scene* scene = SceneManager.NewScene();
 
@@ -114,7 +116,7 @@ struct BoidsSample: public OD::Module {
         boidModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Vector3(0.11f,0.16f,0.25f);
+        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0, -(boundsSize/2), 0));
@@ -160,7 +162,7 @@ struct BoidsSample: public OD::Module {
             scene->SetParent(boids, boid);
         }
 
-        //Application::AddModule<Editor>();
+        Application::AddModule<Editor>();
         scene->Start();
     }
 

@@ -3,6 +3,7 @@
 namespace OD{
 
 BloomPostFX::BloomPostFX(){
+    enable = false;
     blitShader = Shader::CreateFromFile("res/Engine/Shaders/Blit.glsl");
     bloomHorizontalPassShader = Shader::CreateFromFile("res/Engine/Shaders/BloomHorizontalPostFX.glsl");
     bloomVerticalPassShader = Shader::CreateFromFile("res/Engine/Shaders/BloomVerticalPostFX.glsl");

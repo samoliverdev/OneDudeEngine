@@ -5,7 +5,6 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Color.h"
 #include "OD/Core/Asset.h"
-#include "OD/Utils/ImGuiCustomDraw.h"
 #include <entt/entt.hpp>
 #include <map>
 #include <string>
@@ -127,12 +126,12 @@ private:
     }
 
     template<class T>
-    void DrawUI(const char* name, OD::AssetRef<T>& value, Options opt = Options()){
+    void DrawUI(const char* name, OD::AssetRefSerialize<T>& value, Options opt = Options()){
         ImGui::DrawAsset<T>(std::string(name), value.asset);
     }
 
     template<class T>
-    void DrawUI(const char* name, OD::AssetVectorRef<T>& value, Options opt = Options()){
+    void DrawUI(const char* name, OD::AssetVectorRefSerialize<T>& value, Options opt = Options()){
         if(ImGui::TreeNodeEx(name)){
             int index = 0;
             for(auto& asset: value.assets){
@@ -286,8 +285,8 @@ private:
 
         std::string currentItem = std::string(magic_enum::enum_name(e));
 
-        ImGui::Text("%s", name.c_str());
-        if(ImGui::BeginCombo("##enum_combo", currentItem.c_str())){
+        /*ImGui::Text("%s", name.c_str());*/
+        if(ImGui::BeginCombo(/*"##enum_combo"*/ name.c_str(), currentItem.c_str())){
             for (int n = 0; n < enumNames->size(); n++) {
                 bool is_selected = (currentItem == enumNames->at(n));
                 if (ImGui::Selectable(enumNames->at(n).c_str(), is_selected)) {

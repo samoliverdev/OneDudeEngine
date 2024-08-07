@@ -41,6 +41,8 @@ public:
     Mesh(const Mesh& mesh);
     ~Mesh() override;
 
+    void OnGui() override;
+
     void CalculateNormals();
 
     void Submit();

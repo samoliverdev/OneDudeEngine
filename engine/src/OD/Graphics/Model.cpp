@@ -1,7 +1,19 @@
 #include "Model.h"
 #include "OD/Loader/AssimpLoader.h"
+#include "OD/Core/ImGui.h"
 
 namespace OD{
+
+void Model::OnGui(){
+	ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_Leaf);
+
+	ImGui::Text("Render Targets Count: %zd", renderTargets.size());
+	ImGui::Text("Meshs Count: %zd", meshs.size());
+	ImGui::Text("Materials Count: %zd", materials.size());
+	ImGui::Text("Textures Count: %zd", textures.size());
+	ImGui::Text("Matrixs Count: %zd", matrixs.size());
+	ImGui::Text("Animation Clips Count: %zd", animationClips.size());
+}
 
 void Model::SetShader(Ref<Shader> shader){
 	for(Ref<Material>& m: materials){

@@ -33,6 +33,7 @@ public:
     Skeleton skeleton;
     std::vector<Ref<Clip>> animationClips;
 
+    void OnGui() override;
 
     inline void SetPath(const std::string& inPath){ path = inPath; }
 

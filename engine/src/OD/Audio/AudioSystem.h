@@ -19,7 +19,7 @@ struct OD_API AudioSourceComponent{
 
     template <class Archive>
     void serialize(Archive& ar){
-        AssetRef<AudioClip> assetRef(clip);
+        AssetRefSerialize<AudioClip> assetRef(clip);
         ArchiveDumpNVP(ar, assetRef);
     }
 

@@ -20,7 +20,7 @@ struct OD_API TextRendererComponent{
     Ref<Font> font = nullptr; //AssetManager::Get().LoadAsset<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     Ref<Material> material = nullptr; //CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
-    static void OnGui(Entity& e);
+    //static void OnGui(Entity& e);
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -29,9 +29,9 @@ struct OD_API TextRendererComponent{
         ArchiveDump(ar, CEREAL_NVP(color));
         ArchiveDump(ar, CEREAL_NVP(is3d));
 
-        AssetRef<Font> fontRef(font);
+        AssetRefSerialize<Font> fontRef(font);
         ArchiveDump(ar, CEREAL_NVP(fontRef));
-        AssetRef<Material> materialRef(material);
+        AssetRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };

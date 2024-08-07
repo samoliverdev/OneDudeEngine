@@ -6,13 +6,13 @@ namespace OD{
 void LightComponent::OnGui(Entity& e){
     LightComponent& light = e.GetComponent<LightComponent>();
 
-    cereal::ImGuiArchive uiArchive;
+    /*cereal::ImGuiArchive uiArchive;
     //cereal::ImGuiArchive::Options colorOpt;
     //colorOpt.colorHDR = true;
     //uiArchive.setOption("color", colorOpt);
     uiArchive.setOption("intensity", cereal::ImGuiArchive::Options().setMinMax(0, 100000));
     uiArchive(light);
-    return;
+    return;*/
 
     /*const char* projectionTypeString[] = {"Directional", "Point", "Spot"};
     const char* curProjectionTypeString = projectionTypeString[(int)light.type];
@@ -29,14 +29,18 @@ void LightComponent::OnGui(Entity& e){
         }
 
         ImGui::EndCombo();
-    }
+    }*/
+
+    ImGui::DrawEnumCombo<LightComponent::Type>("type", &light.type);
 
     ImGui::Spacing();ImGui::Spacing();
 
-    float color[] = {light.color.x, light.color.y, light.color.z};
-    if(ImGui::ColorEdit3("color", color)){
-        light.color = Vector3(color[0], color[1], color[2]);
-    }
+    /*float color[] = {light.color.r, light.color.g, light.color.b, light.color.a};
+    if(ImGui::ColorEdit4("color", color)){
+        light.color = Color{color[0], color[1], color[2], color[3]};
+    }*/
+
+    ImGui::ColorEdit4("color", &light.color);
 
     ImGui::DragFloat("intensity", &light.intensity, 0.025f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::DragFloat("specular", &light.specular, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
@@ -60,7 +64,7 @@ void LightComponent::OnGui(Entity& e){
         
     }
 
-    ImGui::Checkbox("renderShadow", &light.renderShadow);*/
+    ImGui::Checkbox("renderShadow", &light.renderShadow);
 }
 
 }

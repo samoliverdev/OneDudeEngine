@@ -1,6 +1,13 @@
 #include "ImGui.h"
+#include "OD/Editor/Editor.h"
 
 namespace ImGui{
+
+void _SelectionAsset(OD::Ref<OD::Asset> asset){
+    if(OD::Editor::Get() != nullptr){
+        OD::Editor::Get()->SetSelectionAsset(asset);
+    }
+}
 
 void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func){
     if(ImGui::BeginDragDropTarget()){
@@ -11,6 +18,20 @@ void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func){
             func(path);
         }
         ImGui::EndDragDropTarget();
+    }
+}
+
+void ColorEdit3(const char* name, OD::Color* color, ImGuiColorEditFlags flags){
+    float _color[] = {color->r, color->g, color->b};
+    if(ImGui::ColorEdit3("color", _color, flags)){
+        *color = OD::Color{_color[0], _color[1], _color[2], 1};
+    }
+}
+
+void ColorEdit4(const char* name, OD::Color* color, ImGuiColorEditFlags flags){
+    float _color[] = {color->r, color->g, color->b, color->a};
+    if(ImGui::ColorEdit4("color", _color, flags)){
+        *color = OD::Color{_color[0], _color[1], _color[2], _color[3]};
     }
 }
 

@@ -101,10 +101,10 @@ private:
 };
 
 template<class T>
-struct OD_API AssetRef{
+struct OD_API AssetRefSerialize{
     Ref<T>& asset;
 
-    AssetRef(Ref<T>& inAsset):asset(inAsset){}
+    AssetRefSerialize(Ref<T>& inAsset):asset(inAsset){}
 
     template<class Archive>
     void save(Archive& ar) const{
@@ -131,10 +131,10 @@ struct OD_API AssetRef{
 };
 
 template<class T>
-struct OD_API AssetVectorRef{
+struct OD_API AssetVectorRefSerialize{
     std::vector<Ref<T>>& assets;
 
-    AssetVectorRef(std::vector<Ref<T>>&  inAssets):assets(inAssets){}
+    AssetVectorRefSerialize(std::vector<Ref<T>>&  inAssets):assets(inAssets){}
 
     template<class Archive>
     void save(Archive& ar) const{
