@@ -115,21 +115,17 @@ float GetSmoothness(vec2 baseUV){
 }
 
 float GetOcclusion(vec2 baseUV){
-	return 1.0;
-    //return GetMask(baseUV).g;
+	//return 1.0;
 
-    /*float strength = occlusion;
+    float strength = occlusion;
 	float _occlusion = GetMask(baseUV).g;
 	_occlusion = mix(_occlusion, 1.0, strength);
-	return _occlusion;*/
+	return _occlusion;
 }
 
 void main(){
     vec4 base = textureSRGB(mainTex, fsIn.texCoord);
     base = base * color;
-
-    //float gamma = 2.2;
-    //base = pow(base, vec4(gamma));
 
     vec4 normalMap = texture(normal, fsIn.texCoord);
     vec3 _normal = normalize(normalMap.rgb * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
@@ -137,7 +133,7 @@ void main(){
 
     Surface surface;
     surface.position = fsIn.worldPos;
-    surface.normal = _normal; //normalize(fsIn.worldNormal);
+    surface.normal = _normal;
     surface.viewDirection = normalize(viewPos - fsIn.worldPos);
     surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
     surface.color = base.rgb;
@@ -147,21 +143,12 @@ void main(){
     surface.smoothness = GetSmoothness(fsIn.texCoord);
     
     BRDF brdf = GetBRDF(surface);
-    GI gi = GetGI(surface);
-    vec3 color = GetLightingFinal2(surface, brdf, gi);
+    GI gi = GetGI(surface, brdf);
+    vec3 color = GetLighting(surface, brdf, gi);
     color += GetEmission(fsIn.texCoord);
     fragColor = vec4(color, surface.alpha);
 
     if(base.a < cutoff) discard;
-
-    //reinhard tone mapping
-    //fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));
-
-    // exposure tone mapping
-    //float exposure = 1;
-    //fragColor.rgb = vec3(1.0) - exp(-fragColor.rgb * exposure);
-
-    //fragColor.rgb = pow(fragColor.rgb, vec3(1.0/gamma));
 }
 #endif
 

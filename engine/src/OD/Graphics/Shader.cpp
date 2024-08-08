@@ -614,42 +614,29 @@ void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
 
 void Shader::SetMatrix4(const char* name, Matrix4* value, int count){
     //if(curBindShaderRenderId != rendererId) Bind(*this);
-
     glUniformMatrix4fv(GetLocation(name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
     glCheckError();
 }
 
 void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
-    //if(curBindShaderRenderId != rendererId) Bind(*this);
-
+    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Texture2D::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetTexture2DArray(const char* name, Texture2DArray& value, int index){
+    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Texture2DArray::Bind(value, index);
     SetInt(name, index);
 }
 
 void Shader::SetCubemap(const char* name, Cubemap& value, int index){
-    //if(curBindShaderRenderId != rendererId) Bind(*this);
-
+    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Cubemap::Bind(value, index);
     SetInt(name, index);
 }
 
-void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
-    //if(curBindShaderRenderId != rendererId) Bind(*this);
-
-    UniformBuffer::Bind(buffer, index);
-    unsigned int bufferIndex = glGetUniformBlockIndex(rendererId, name);   
-    glUniformBlockBinding(rendererId, bufferIndex, index);
-    glCheckError();
-}
-
 void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
-    //if(curBindShaderRenderId != rendererId) Bind(*this);
-    
     Assert(framebuffer.Specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
     //Assert(framebuffer.specification().sample <= 1);
 
@@ -670,6 +657,15 @@ void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int inde
 
     glCheckError();
     SetInt(name, index);
+}
+
+void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
+    //if(curBindShaderRenderId != rendererId) Bind(*this);
+
+    UniformBuffer::Bind(buffer, index);
+    unsigned int bufferIndex = glGetUniformBlockIndex(rendererId, name);   
+    glUniformBlockBinding(rendererId, bufferIndex, index);
+    glCheckError();
 }
 
 }

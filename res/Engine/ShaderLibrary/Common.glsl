@@ -17,4 +17,8 @@ float saturate(float v){
     return clamp(v, 0.0, 1.0);
 }
 
+float Pow4(float x){
+    return (x * x) * (x * x);
+}
+
 #endif

@@ -3,23 +3,28 @@
 
 namespace OD{
 
-/*int ShadowQualityLookup[] = {512, 1024, 2048, 4096, 8192};
-const char* ShadowQualityLookupNames[] = {"Low", "High", "VeryHigh", "Ultra", "VeryUltra"};
-
-const char* AntiAliasingLookupNames[] = {"None", "MSAA"};
-
-int MSAAQualityLookup[] = {2, 4, 8};
-const char* MSAAQualityLookupNames[] = {"MSAA_2", "MSAA_4", "MSAA_8"};
-
-const char* ColorCorrectionLookupNames[] = {"None", "ColorCorrection"};*/
-
 void EnvironmentComponent::OnGui(Entity& e){
     EnvironmentComponent& environment = e.GetComponent<EnvironmentComponent>();
 
-    ImGui::ColorEdit3("ambient", &environment.settings.ambient);
-    ImGui::ColorEdit3("cleanColor", &environment.settings.cleanColor);
-    
-    ImGui::DrawAsset<Material>(std::string("sky"), environment.settings.sky);
+    ImGui::DrawEnumCombo<EnvironmentSky>("environmentSky", &environment.settings.environmentSky);
+    if(environment.settings.environmentSky == EnvironmentSky::Cubemap){
+        ImGui::DrawAsset<Cubemap>(std::string("skyCubemap"), environment.settings.skyCubemap);
+    }
+    if(environment.settings.environmentSky == EnvironmentSky::Color){
+        ImGui::ColorEdit3("skyColor", &environment.settings.cleanColor);
+    }
+    if(environment.settings.environmentSky == EnvironmentSky::CustomMaterial){
+        ImGui::DrawAsset<Material>(std::string("skyCustomMaterial"), environment.settings.skyCustomMaterial);
+    }
+
+    ImGui::Spacing();ImGui::Spacing();
+
+    ImGui::DrawEnumCombo<EnvironmentLight>("environmentLight", &environment.settings.environmentLight);
+    if(environment.settings.environmentLight == EnvironmentLight::Color){
+        ImGui::ColorEdit3("ambient", &environment.settings.ambient);
+    } else {
+        ImGui::DragFloat("skyLightIntensity", &environment.settings.skyLightIntensity);
+    }
 
     ImGui::Spacing();ImGui::Spacing();
 

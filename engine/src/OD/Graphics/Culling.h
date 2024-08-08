@@ -118,6 +118,7 @@ struct OD_API AABB: public BoundingVolume{
 	//see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 	bool isOnOrForwardPlane(Plane& plane) const override;
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
+	bool isOnFrustum(Frustum& camFrustum);
 	bool isOnAABB(AABB& other);
 
 	//bool isOnFrustum(Frustum& camFrustum);

@@ -43,19 +43,16 @@ enum class ShadowTextureSize{
 };
 
 struct OD_API ShadowSettings{
-    //[Min(0.001f)]
-    float maxDistance = 500.0f;
-    
-    //[Range(0.001f, 1f)]
-	float distanceFade = 0.1f;
+    float maxDistance = 500.0f; //[Min(0.001f)]
+	float distanceFade = 0.1f; //[Range(0.001f, 1f)]
 
-    enum class FilterMode{
+    /*enum class FilterMode{
 		PCF2x2, PCF3x3, PCF5x5, PCF7x7
-	};
+	};*/
 
     struct Directional{
         ShadowTextureSize altasSize;
-        FilterMode filter = FilterMode::PCF2x2;
+        //FilterMode filter = FilterMode::PCF2x2;
 
         int cascadeCount = 4; 
         float cascadeRatio1 = 0.1f;
@@ -63,15 +60,13 @@ struct OD_API ShadowSettings{
         float cascadeRatio3 = 0.5f;
         float cascadeRatio4 = 1.0f;
 
-        //[Range(0.001f, 1f)]
-		float cascadeFade = 0.1f;
-
+		float cascadeFade = 0.1f; //[Range(0.001f, 1f)]
         float shadowBias = 0.001f;
     };
 
     struct Other{
         ShadowTextureSize altasSize;
-        FilterMode filter = FilterMode::PCF2x2;
+        //FilterMode filter = FilterMode::PCF2x2;
     };
 
     Directional directional{ShadowTextureSize::_2048};
@@ -123,14 +118,12 @@ private:
     inline static const char* dirShadowMatricesId = "_DirectionalShadowMatrices";
     inline static const char* cascadeCountId = "_CascadeCount";
 	inline static const char* cascadeCullingSpheresId = "_CascadeCullingSpheres";
-    //inline static const char* cascadeDataId = "_CascadeData";
     inline static const char* shadowDistanceId = "_ShadowDistance";
     inline static const char* shadowAtlasSizeId = "_ShadowAtlasSize";
     inline static const char* shadowDistanceFadeId = "_ShadowDistanceFade";
 
 	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
     inline static float cascadeCullingSpheres[maxCascades];
-    //inline static Vector4 cascadeData[maxShadowedDirectionalLightCount * maxCascades];
 
     inline static const char* otherShadowAltasId = "_OtherShadowAtlas";
     inline static const char* otherShadowMatricesId = "_OtherShadowMatrices";
@@ -206,6 +199,9 @@ private:
     DrawingSettings blendDrawSettings;
 
     PostFXTest* postFXTest;
+
+    Ref<Material> cubemapSkyMaterial = nullptr;
+    Ref<Texture2D> brdfLUT = nullptr;
 
     void RunSetupLoop();
     void OnSetupLoop(RenderData& data);

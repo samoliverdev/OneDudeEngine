@@ -6,6 +6,9 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
 
+#include "MeshRendererComponent.h"
+#include "ModelRendererComponent.h"
+
 namespace OD{
 
 ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
@@ -96,6 +99,7 @@ void Shadows::OnSetupLoop(RenderData& data){
             index += 1;
 
             if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum, data.transform) == false) continue;
+            //if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
@@ -105,6 +109,7 @@ void Shadows::OnSetupLoop(RenderData& data){
         index += 1;
 
         if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum, data.transform) == false) continue;
+        //if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false) continue;
         context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
     } 
 }
@@ -137,10 +142,6 @@ void Shadows::Render(){
 }
 
 void Shadows::RenderDirectionalShadows(){
-    /*for(int i = 0; i < maxShadowedDirectionalLightCount * maxCascades; i++){
-        context->CleanShadow(directionalShadowAtlas, i);
-    }*/
-
     Assert(settings.directional.cascadeCount == 4);
 
     cascadeCullingSpheres[0] = shadowCascadeLevels[0];
@@ -169,16 +170,12 @@ void Shadows::RenderDirectionalShadows(){
     }
 
     Material::SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
-    Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
+    Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, maxShadowedDirectionalLightCount * maxCascades); //FIXME: Revise this 8 propety calculate shadowData size
     Material::SetGlobalFloat(cascadeCullingSpheresId, cascadeCullingSpheres, settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalTexture(dirShadowAtlasId, directionalShadowAtlas, 12, -1);
+    Material::SetGlobalTexture(dirShadowAtlasId, directionalShadowAtlas, -1);
 }
 
 void Shadows::RenderOtherShadows(){
-    /*for(int i = 0; i < maxShadowedOtherLightCount; i++){
-        context->CleanShadow(otherShadowAtlas, i);
-    }*/
-
     int index = 0;
     for(int i = 0; i < shadowedOtherLightCount; i++){
         otherShadowMatrices[index] = shadowOtherLightsSplits[index].projViewMatrix;
@@ -195,7 +192,7 @@ void Shadows::RenderOtherShadows(){
         }
     }
 
-    Material::SetGlobalTexture(otherShadowAltasId, otherShadowAtlas, 15, -1);
+    Material::SetGlobalTexture(otherShadowAltasId, otherShadowAtlas, -1);
     Material::SetGlobalMatrix4(otherShadowMatricesId, otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
 }
 
@@ -239,7 +236,8 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
     int newLightCount = shadowedOtherLightCount + (isPoint ? 6 : 1);
     
     if(newLightCount > maxShadowedOtherLightCount || light.renderShadow == false){
-        return Vector4Zero; //return Vector4(-1, 0, 0, 0);
+        return Vector4Zero; 
+        //return Vector4(-1, 0, 0, 0);
     }
 
     if(isPoint){
@@ -340,20 +338,11 @@ void Lighting::SetupDirectionalLight(){
 }
 
 void Lighting::UpdateGlobalShaders(){
-    //return;
-
-    Material::SetGlobalVector3(ambientLightId, environmentSettings.ambient);
-
     Material::SetGlobalInt(dirLightCountId, curDirLightsCount);
     if(curDirLightsCount > 0){
         Material::SetGlobalVector4(dirLightColorsId, dirLightColors, curDirLightsCount);
         Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, curDirLightsCount);
         Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, curDirLightsCount);
-
-        //Material::SetGlobalInt(Shadows::cascadeCountId, shadows->settings.directional.cascadeCount);
-        //Material::SetGlobalMatrix4(Shadows::dirShadowMatricesId, shadows->dirShadowMatrices, 16); //FIXME: Revise this 8 propety calculate shadowData size
-        //Material::SetGlobalFloat(Shadows::cascadeCullingSpheresId, shadows->cascadeCullingSpheres, shadows->settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
-        //Material::SetGlobalTexture(Shadows::dirShadowAtlasId, shadows->directionalShadowAtlas, 12, -1);
     }
 
     Material::SetGlobalInt(otherLightCountId, curOtherLightsCount);
@@ -363,38 +352,16 @@ void Lighting::UpdateGlobalShaders(){
         Material::SetGlobalVector4(otherLightDirectionId, otherLightDirections, curOtherLightsCount);
         Material::SetGlobalVector4(otherLightSpotAnglesId, otherLightSpotAngles, curOtherLightsCount);
         Material::SetGlobalVector4(otherLightShadowDataId, otherLightShadowData, curOtherLightsCount);
-        //Material::SetGlobalTexture(Shadows::otherShadowAltasId, shadows->otherShadowAtlas, 15, -1);
-        //Material::SetGlobalMatrix4(Shadows::otherShadowMatricesId, shadows->otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
     }
-
-    //i->SetVector4(Shadows::cascadeDataId, shadows->cascadeData, 8); //FIXME: Revise this 8 propety calculate shadowData size
-
-    /*Material::SetGlobalFloat("_ShadowBias", shadows->settings.directional.shadowBias);
-    Material::SetGlobalFloat(Shadows::shadowDistanceId, shadows->settings.maxDistance);
-
-    float f = 1.0f - shadows->settings.directional.cascadeFade;
-    Material::SetGlobalVector4(
-        Shadows::shadowDistanceFadeId,
-        Vector4(
-            1.0f / shadows->settings.maxDistance, 
-            1.0f / shadows->settings.distanceFade, 
-            0, //1.0f / (1.0f - f * f), 
-            1.0f
-        )
-    );
-    
-    float altlasSize = (int)shadows->settings.directional.altasSize;
-    Vector4 altasSizes = Vector4Zero;
-    altasSizes.x = altlasSize;
-    altasSizes.y = 1.0f / altlasSize;
-
-    Material::SetGlobalVector4(Shadows::shadowAtlasSizeId, altasSizes);*/
 }
 #pragma endregion
 
 #pragma region CameraRenderer
 CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
+    cubemapSkyMaterial = CreateRef<Material>();
+    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkyboxCubemap.glsl"));
+    //brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
 }
 
 void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings){
@@ -442,6 +409,7 @@ void CameraRenderer::RunSetupLoop(){
 void CameraRenderer::OnSetupLoop(RenderData& data){
     //TODO: Check Culling
     if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
+    //if(data.aabb.isOnFrustum(camera.frustum) == false) return;
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
@@ -451,8 +419,37 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->BeginDrawToScreen();
     context->ScreenClean();
 
+    Ref<Material> targetSkyMaterial = nullptr;
+    
+    if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
+        cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
+        targetSkyMaterial = cubemapSkyMaterial;
+    }
+    if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
+        targetSkyMaterial = environmentSettings.skyCustomMaterial;
+    }
+
+    if(environmentSettings.environmentLight == EnvironmentLight::Color){
+        Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
+        Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
+    }
+    if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
+        Material::SetGlobalVector3("_AmbientLight", Vector3One);
+        Material::SetGlobalVector3("_IrradianceMapScale", Vector3One);
+        Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+        
+        //Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
+    }
+
     context->SetupCameraProperties(camera);
-    context->RenderSkybox(environmentSettings.skyboxCubemap);
+    
+    if(targetSkyMaterial != nullptr){
+        context->skyMaterial = targetSkyMaterial;
+        context->RenderSkybox();
+    }
+
     if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     context->DrawRenderersBuffer(opaqueDrawTarget);
     context->DrawRenderersBuffer(blendDrawTarget);
@@ -566,10 +563,8 @@ void StandRenderPipeline::Update(){
     //----------Scene Render-------------
     renderContext->Begin();
 
-    renderContext->skyMaterial = environmentSettings.sky;
     shadow.directional.shadowBias = environmentSettings.shadowBias;
     shadow.maxDistance = environmentSettings.shadowDistance;
-
     shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings.directionalshadowQuality];
     shadow.other.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings.othershadowQuality];
 

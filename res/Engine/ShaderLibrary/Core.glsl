@@ -25,4 +25,15 @@ vec4 textureSRGB(sampler2D tex, vec2 uv){
 #endif 
 }
 
+vec4 textureSRGB(samplerCube tex, vec3 uv){
+#if defined(ENABLE_GAMA_CORRECTION)
+    vec4 color = texture(tex, uv);
+    //return pow(color, vec4(gamma));
+    color.rgb = pow(color.rgb, vec3(gamma));
+    return color;
+#else
+    return texture(tex, uv);
+#endif 
+}
+
 #endif

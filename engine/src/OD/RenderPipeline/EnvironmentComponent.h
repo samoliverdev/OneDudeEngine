@@ -14,11 +14,25 @@ enum class ShadowQuality{ VeryLow = 0, Low, Median, High, VeryHigh, Ultra };
 //enum class AntiAliasing{ None, MSAA };
 //enum class MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
 
+enum class EnvironmentSky{
+    Cubemap, Color, CustomMaterial
+};
+
+enum class EnvironmentLight{
+    SkyCubemap, Color
+};
+
 struct OD_API EnvironmentSettings{
+    EnvironmentSky environmentSky = EnvironmentSky::Cubemap;
+    EnvironmentLight environmentLight = EnvironmentLight::Color;
+
     Color ambient = {0.1f, 0.1f, 0.1f, 1};
     Color cleanColor = {0.5f, 0.1f, 0.8f, 1};
-    Ref<Material> sky = nullptr;
-    Ref<Cubemap> skyboxCubemap;
+    Ref<Material> skyCustomMaterial = nullptr;
+    Ref<Cubemap> skyCubemap = nullptr;
+    Ref<Cubemap> skyIrradianceMap = nullptr;
+    Ref<Cubemap> skyPrefilterMap = nullptr;
+    float skyLightIntensity = 1;
 
     ShadowQuality directionalshadowQuality = ShadowQuality::High;
     ShadowQuality othershadowQuality = ShadowQuality::Median;
@@ -35,6 +49,8 @@ struct OD_API EnvironmentSettings{
     
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, environmentSky);
+        ArchiveDumpNVP(ar, environmentLight);
         ArchiveDumpNVP(ar, ambient);
         ArchiveDumpNVP(ar, cleanColor);
         ArchiveDumpNVP(ar, directionalshadowQuality);
@@ -60,7 +76,7 @@ struct OD_API EnvironmentComponent{
     }
 
     EnvironmentComponent(){
-        settings.skyboxCubemap = Cubemap::CreateFromFile(
+        settings.skyCubemap = Cubemap::CreateFromFile(
             "res/Engine/Textures/Skybox/right.jpg",
             "res/Engine/Textures/Skybox/left.jpg",
             "res/Engine/Textures/Skybox/top.jpg",
@@ -68,12 +84,16 @@ struct OD_API EnvironmentComponent{
             "res/Engine/Textures/Skybox/front.jpg",
             "res/Engine/Textures/Skybox/back.jpg"
         );
-        Assert(settings.skyboxCubemap != nullptr);
+        
+        settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(settings.skyCubemap);
+        settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(settings.skyCubemap);
 
-        settings.sky = CreateRef<Material>();
-        settings.sky->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkyboxCubemap.glsl"));
+        Assert(settings.skyCubemap != nullptr);
+
+        settings.skyCustomMaterial = CreateRef<Material>();
+        settings.skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
-        settings.sky->SetCubemap("mainTex", settings.skyboxCubemap);
+        settings.skyCustomMaterial->SetCubemap("mainTex", settings.skyCubemap);
     }
 };
 

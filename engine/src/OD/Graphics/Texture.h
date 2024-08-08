@@ -83,6 +83,7 @@ public:
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings); 
     static Ref<Texture2D> LoadDefautlTexture2D();
+    static Ref<Texture2D> CreateBrdfLUTTexture2D();
     
     static void Destroy(Texture2D& tex);
     static void Bind(Texture2D& tex, int index);

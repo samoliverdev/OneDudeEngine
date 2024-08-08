@@ -147,11 +147,10 @@ void Material::SetTexture(const char* name, Ref<Texture2DArray> tex){
     map.textureArray = tex;
 }
 
-void Material::SetTexture(const char* name, Framebuffer* tex, int bind, int attachment){
+void Material::SetTexture(const char* name, Framebuffer* tex, int attachment){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;
-    map.framebufferBind = bind;
     map.framebufferAttachment = attachment;
 }
 
@@ -226,11 +225,10 @@ void Material::SetGlobalTexture(const char* name, Ref<Texture2D> tex){
     map.texture = tex;
 }
 
-void Material::SetGlobalTexture(const char* name, Framebuffer* tex, int bind, int attachment){
+void Material::SetGlobalTexture(const char* name, Framebuffer* tex, int attachment){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;
-    map.framebufferBind = bind;
     map.framebufferAttachment = attachment;
 }
 
@@ -294,10 +292,9 @@ void Material::SubmitGraphicDatas(Material& material){
         Graphics::SetBlend(false);
     }
 
-    Assert(material.currentTextureSlot < 50);
     ApplyUniformTo(material, *material.GetShader(), material.maps);
     ApplyUniformTo(material, *material.GetShader(), globalMaps);
-
+    Assert(material.currentTextureSlot < 32);
 }
 
 void Material::CleanGlobalUniformsData(){
@@ -582,7 +579,7 @@ void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered
     for(auto i: maps){
         MaterialMap& map = i.second;
 
-        //if(shader.ContainUniformName(i.first) == false) continue;
+        if(shader.ContainUniformName(i.first) == false) continue;
 
         if(map.type == MaterialMap::Type::Int){
             shader.SetInt(i.first.c_str(), map.valueInt);

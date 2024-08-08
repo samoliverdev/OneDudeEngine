@@ -7,7 +7,7 @@ uniform vec4 _DirectionalLightColors[MAX_DIRECTIONAL_LIGHT_COUNT];
 uniform vec4 _DirectionalLightDirections[MAX_DIRECTIONAL_LIGHT_COUNT];
 uniform vec4 _DirectionalLightShadowData[MAX_DIRECTIONAL_LIGHT_COUNT];
 
-#define MAX_OTHER_LIGHT_COUNT 64
+#define MAX_OTHER_LIGHT_COUNT 16
 uniform int _OtherLightCount;
 uniform vec4 _OtherLightColors[MAX_OTHER_LIGHT_COUNT];
 uniform vec4 _OtherLightPositions[MAX_OTHER_LIGHT_COUNT];
@@ -53,26 +53,17 @@ int GetDirectionalLightCount(){
 	return _DirectionalLightCount;
 }
 
-int GetOtherLightCount(){
-	return _OtherLightCount;
-}
-
-/*Light GetDirectionalLight(int index){
-	Light light;
-	light.color = _DirectionalLightColors[index].rgb;
-	light.direction = _DirectionalLightDirections[index].xyz;
-	return light;
-}*/
-
 Light GetDirectionalLight(int index, Surface surfaceWS, ShadowData shadowData){
 	Light light;
 	light.color = _DirectionalLightColors[index].rgb;
 	light.direction = _DirectionalLightDirections[index].xyz;
-	//DirectionalShadowData dirShadowData = GetDirectionalShadowData(index, shadowData);
 	DirectionalShadowData dirShadowData = GetDirectionalShadowData(index, shadowData, surfaceWS);
 	light.attenuation = GetDirectionalShadowAttenuation(dirShadowData, surfaceWS);
-	//light.attenuation = shadowData.cascadeIndex * 0.25;
 	return light;
+}
+
+int GetOtherLightCount(){
+	return _OtherLightCount;
 }
 
 Light GetOtherLight(int index, Surface surfaceWS, ShadowData shadowData){

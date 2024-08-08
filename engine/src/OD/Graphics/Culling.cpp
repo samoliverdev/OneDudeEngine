@@ -284,14 +284,14 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         globalAABB.isOnOrForwardPlane(camFrustum.farFace));
 };
 
-/*bool AABB::isOnFrustum(Frustum& camFrustum){
+bool AABB::isOnFrustum(Frustum& camFrustum){
     return (isOnOrForwardPlane(camFrustum.leftFace) &&
         isOnOrForwardPlane(camFrustum.rightFace) &&
         isOnOrForwardPlane(camFrustum.topFace) &&
         isOnOrForwardPlane(camFrustum.bottomFace) &&
         isOnOrForwardPlane(camFrustum.nearFace) &&
         isOnOrForwardPlane(camFrustum.farFace));
-}*/
+}
 
 bool AABB::isOnAABB(AABB& other){
     Vector3 aMin = GetMin();

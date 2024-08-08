@@ -32,6 +32,8 @@ int drawCalls;
 int vertices;
 int tris;
 
+bool begin = false;
+
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
@@ -137,9 +139,25 @@ void Graphics::Initialize(){
     CreateWiredCubeVAO();
     CreateTextQuadVAO();
 
-    GLint max_layers;
-    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
-    LogInfo("MaxLayer: %d", max_layers);
+    GLint maxLayers;
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
+    LogInfo("MaxArrayTextureLayers: %d", maxLayers);
+
+    GLint maxVertexUniformComponents;
+    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniformComponents);
+    LogInfo("MaxVertexUniformComponents: %d", maxVertexUniformComponents);
+    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxVertexUniformComponents);
+    LogInfo("MaxVertexUniformComponentVectors: %d", maxVertexUniformComponents);
+
+    GLint maxFragmentUniformComponents;
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxFragmentUniformComponents);
+    LogInfo("MaxFragmentUniformComponents: %d", maxFragmentUniformComponents);
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniformComponents);
+    LogInfo("MaxFragmentUniformComponentVectors: %d", maxFragmentUniformComponents);
+
+    GLint maxTextureUnits;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+    LogInfo("MaxTextureUnits: %d", maxTextureUnits);
 }
 
 void Graphics::Shutdown(){
@@ -150,9 +168,16 @@ void Graphics::Begin(){
     drawCalls = 0;
     vertices = 0;
     tris = 0;
+    begin = true;
 }
 
-void Graphics::End(){}
+void Graphics::End(){
+    begin = false;
+}
+
+bool Graphics::HasBegin(){
+    return begin;
+}
 
 void Graphics::Clean(float r, float g, float b, float a){
     glClearColor(r, g, b, a);

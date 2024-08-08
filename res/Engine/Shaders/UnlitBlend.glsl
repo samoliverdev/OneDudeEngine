@@ -38,8 +38,6 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
-#include TestLib.glsl
-
 void main(){
     vec4 texColor = texture(mainTex, texCoord);
     fragColor = texColor * color;

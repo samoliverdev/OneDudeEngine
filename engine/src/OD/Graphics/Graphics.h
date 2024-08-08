@@ -23,6 +23,7 @@ public:
 
     static void Begin();
     static void End();
+    static bool HasBegin();
 
     static void Clean(float r, float g, float b, float a);
 

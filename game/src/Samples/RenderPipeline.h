@@ -66,7 +66,12 @@ struct RenderPipelineSample: public OD::Module {
         sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+        envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("res/Game/HDRIs/victoria_sunset_2k.hdr");
+        envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
+        envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
+        //envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
 
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
@@ -157,16 +162,17 @@ struct RenderPipelineSample: public OD::Module {
         });
 
         scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
-            Ref<Material> material = CreateRef<Material>();
+            Ref<Material> material = CreateRef<Material>(
+                AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl")
+            );
             material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
             material->SetFloat("metallic", 1);
+            material->SetFloat("smoothness", 1);
 
             transform.Position(Vector3(8*6.5f, 2, 8));
             transform.LocalScale(Vector3(4*1, 4*1, 4*1));
             meshRenderer.SetModel(sphereModel);
             meshRenderer.GetMaterialsOverride()[0] = material;
-            meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
-            meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
         });
         //*/
 

@@ -30,7 +30,6 @@ struct OD_API MaterialMap{
         
         struct{
             Framebuffer* framebuffer;
-            int framebufferBind;
             int framebufferAttachment;
         };
         
@@ -95,7 +94,7 @@ public:
     void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture(const char* name, Ref<Texture2D> tex);
     void SetTexture(const char* name, Ref<Texture2DArray> tex);
-    void SetTexture(const char* name, Framebuffer* tex, int bind, int attachment);
+    void SetTexture(const char* name, Framebuffer* tex, int attachment);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 
     static void SetGlobalInt(const char* name, int value);
@@ -108,7 +107,7 @@ public:
     static void SetGlobalMatrix4(const char* name, Matrix4 value);
     static void SetGlobalMatrix4(const char* name, Matrix4* value, int count);
     static void SetGlobalTexture(const char* name, Ref<Texture2D> tex);
-    static void SetGlobalTexture(const char* name, Framebuffer* tex, int bind, int attachment);
+    static void SetGlobalTexture(const char* name, Framebuffer* tex, int attachment);
     static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
 
     void DisableKeyword(std::string keyword);

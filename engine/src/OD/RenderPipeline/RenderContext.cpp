@@ -133,6 +133,7 @@ void RenderContext::ScreenClean(){
 }
 
 void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderData){
+    OD_PROFILE_SCOPE("RenderContext::SetupLoop");
     //globalUniformBuffer->CleanData();
 
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
@@ -149,6 +150,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         data.targetMesh = c.mesh;
         data.targetMatrix =  t.GlobalModelMatrix();
         data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);// c.boundingVolume;
         data.aabb = c.boundingVolume;
 
         onReciveRenderData(data);
@@ -169,6 +171,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = nullptr;
+            //data.aabb = c.GetGlobalAABB(t);
             data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
@@ -193,6 +196,7 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
             data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = &c.posePalette;
+            //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
             data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
@@ -277,6 +281,7 @@ void RenderContext::RenderSkybox(){
 }
 
 void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
+    Assert(false && "Outdate");
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     
     if(skyMaterial != nullptr){

@@ -16,6 +16,10 @@ public:
         const char* bottom, const char* front, const char* back
     ); 
 
+    static Ref<Cubemap> CreateFromFileHDR(const char* hdri);
+    static Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap);  
+    static Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap);  
+
     static void Destroy(Cubemap& cubemap);
     static void Bind(Cubemap& cubemap, int index);
 
