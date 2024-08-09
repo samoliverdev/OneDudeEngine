@@ -9,6 +9,7 @@
 #include "OD/Defines.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Navmesh/Navmesh.h"
+#include "OD/Graphics/Geometry.h"
 
 namespace OD{
 
@@ -132,8 +133,8 @@ void RenderContext::ScreenClean(){
     Graphics::Clean(0, 0, 1, 1);
 }
 
-void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderData){
-    OD_PROFILE_SCOPE("RenderContext::SetupLoop");
+void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
     //globalUniformBuffer->CleanData();
 
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
@@ -144,37 +145,39 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
         if(c.material == nullptr) continue;
 
         RenderData data;
-        data.transform = t.ToTransform();
-        data.distance = math::distance(cam.viewPos, t.Position());
-        data.targetMaterial = c.material;
-        data.targetMesh = c.mesh;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = c.mesh.get();
         data.targetMatrix =  t.GlobalModelMatrix();
         data.posePalette = nullptr;
-        //data.aabb = c.GetGlobalAABB(t);// c.boundingVolume;
-        data.aabb = c.boundingVolume;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
         onReciveRenderData(data);
     }
 
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+    auto meshRenderView = scene->GetRegistry().group<ModelRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
         //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
+        //OD_PROFILE_SCOPE("RenderContext::SetupLoop::1");
+
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.distance = math::distance(cam.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex];
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex];
-            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
+            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
-            data.aabb = c.GetAABB();
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
             onReciveRenderData(data);
@@ -190,16 +193,17 @@ void RenderContext::SetupLoop(std::function<void(RenderData&)> onReciveRenderDat
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
-            data.distance = math::distance(cam.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex];
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex];
-            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
+            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = &c.posePalette;
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
-            data.aabb = c.GetAABB();
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
             onReciveRenderData(data);
@@ -319,6 +323,8 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
 void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
 
 void RenderContext::DrawGizmos(){
+    OD_PROFILE_SCOPE("RenderContext::DrawGizmos"); 
+
     if(SceneManager::Get().GetActiveScene() == nullptr) return;
     if(SceneManager::Get().GetActiveScene()->Running() && settings.enableGizmosRuntime == false) return;
     if(SceneManager::Get().GetActiveScene()->Running() == false && settings.enableGizmos == false) return;
@@ -339,7 +345,7 @@ void RenderContext::DrawGizmos(){
     }
 
     Camera cm = cam;
-    _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
+    //_DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
 
     auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto e: cameraView){

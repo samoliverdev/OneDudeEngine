@@ -160,7 +160,7 @@ void CommandBuffer::Submit(){
     if(setViewport) Graphics::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
     if(clearRenderTarget) Graphics::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
 
-    Ref<Material> lastMat = nullptr;
+    Material* lastMat = nullptr;
 
     //NOTE: This not working why Materials can shared the same shader
     /*
@@ -178,8 +178,8 @@ void CommandBuffer::Submit(){
         }
     }*/
     drawCommands.Each([&](auto& cm){
-        Ref<Material> _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial;
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         if(_mat != lastMat){
             _mat->DisableKeyword("INSTANCING");
@@ -197,8 +197,8 @@ void CommandBuffer::Submit(){
 
     // ---------------Submiting DrawIntancingCommands-----------------
     drawIntancingCommands.Each([&](auto& cm){
-        Ref<Material> _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial;
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         _mat->DisableKeyword("SKINNED");
         _mat->EnableKeyword("INSTANCING");
@@ -232,8 +232,8 @@ void CommandBuffer::Submit(){
         }
     }*/
     skinnedDrawCommands.Each([&](auto& cm){
-        Ref<Material> _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial;
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         if(_mat != lastMat){
             _mat->DisableKeyword("INSTANCING");

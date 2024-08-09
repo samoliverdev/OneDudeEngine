@@ -16,8 +16,8 @@ class Mesh;
 class Framebuffer;
 
 struct OD_API DrawCommand{
-    Ref<Material> material;
-    Ref<Mesh> meshs;
+    Material* material; //Ref<Material> material;
+    Mesh* meshs;// Ref<Mesh> meshs;
     Matrix4 trans;
     float distance;
 
@@ -25,8 +25,8 @@ struct OD_API DrawCommand{
 };
 
 struct OD_API SkinnedDrawCommand{
-    Ref<Material> material;
-    Ref<Mesh> meshs;
+    Material* material;// Ref<Material> material;
+    Mesh* meshs;// Ref<Mesh> meshs;
     Matrix4 trans;
     std::vector<Matrix4>* posePalette;
     float distance;
@@ -35,8 +35,8 @@ struct OD_API SkinnedDrawCommand{
 };
 
 struct OD_API DrawInstancingCommand{
-    Ref<Material> material;
-    Ref<Mesh> meshs;
+    Material* material;// Ref<Material> material;
+    Mesh* meshs;// Ref<Mesh> meshs;
     std::vector<Matrix4> trans;
 
     bool operator<(const DrawCommand& a) const;
@@ -76,7 +76,7 @@ struct OD_API CommandBuffer{
 private:
     CommandBucket0<DrawCommand> drawCommands;
     //CommandBucket1<MaterialBind2, DrawCommand> drawCommands;
-    CommandBucket4<Ref<Material>, Ref<Mesh>, DrawInstancingCommand> drawIntancingCommands;
+    CommandBucket4<Material*, Mesh*, DrawInstancingCommand> drawIntancingCommands;
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
 
     //NOTE: This not working why Materials can shared the same shader

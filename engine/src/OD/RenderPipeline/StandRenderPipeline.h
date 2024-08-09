@@ -79,7 +79,7 @@ public:
     Shadows();
 
     void Setup(RenderContext* context, ShadowSettings settings, Camera cam);
-    void OnSetupLoop(RenderData& data);
+    void AddRenderData(RenderData& data);
     void Render();
 
     Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
@@ -203,8 +203,8 @@ private:
     Ref<Material> cubemapSkyMaterial = nullptr;
     Ref<Texture2D> brdfLUT = nullptr;
 
-    void RunSetupLoop();
-    void OnSetupLoop(RenderData& data);
+    void RunRenderDataLoop();
+    void AddRenderData(RenderData& data);
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
     void RenderUI();
     

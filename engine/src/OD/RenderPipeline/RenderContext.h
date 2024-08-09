@@ -55,12 +55,11 @@ struct OD_API CommandBaseData{
 };
 
 struct OD_API RenderData{
-    Ref<Material> targetMaterial;
-    Ref<Mesh> targetMesh;
+    Material* targetMaterial; //Ref<Material> targetMaterial;
+    Mesh* targetMesh; //Ref<Mesh> targetMesh;
     Matrix4 targetMatrix;
     std::vector<Matrix4>* posePalette = nullptr;
     float distance;
-    Transform transform;
     AABB aabb;
 };
 
@@ -80,7 +79,7 @@ public:
 
     //void SetupRenderers(const std::vector<DrawingTarget*>& targets, const std::vector<ShadowDrawingTarget*>& shadowTargets);
     void SetupCameraProperties(Camera cam);
-    void SetupLoop(std::function<void(RenderData&)> onReciveRenderData);
+    void RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData);
     
     void BeginDrawToScreen();
     void EndDrawToScreen();

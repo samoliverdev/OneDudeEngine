@@ -9,6 +9,8 @@
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
 
+#include <taskflow/taskflow.hpp>
+
 namespace OD{
 
 ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
@@ -88,7 +90,7 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
     }
 }
 
-void Shadows::OnSetupLoop(RenderData& data){
+void Shadows::AddRenderData(RenderData& data){
     //TODO: Check Split data Culling
 
     ShadowDrawingSettings s;
@@ -98,8 +100,7 @@ void Shadows::OnSetupLoop(RenderData& data){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
 
-            if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum, data.transform) == false) continue;
-            //if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false) continue;
+            if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
@@ -108,8 +109,7 @@ void Shadows::OnSetupLoop(RenderData& data){
     for(int i = 0; i < shadowedOtherLightCount; i++){
         index += 1;
 
-        if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum, data.transform) == false) continue;
-        //if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false) continue;
+        if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false) continue;
         context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
     } 
 }
@@ -376,7 +376,7 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     // ----------- Build Render Datas Loop ----------- 
     // Get All RenderData and Building CommandsBuffer to Post Renderer
     // Building the Render Graph
-    RunSetupLoop();
+    RunRenderDataLoop();
     
     // ----------- Rendering ------------
     shadows.Render();
@@ -384,7 +384,9 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     RenderVisibleGeometry(environmentSettings);
 }
 
-void CameraRenderer::RunSetupLoop(){
+void CameraRenderer::RunRenderDataLoop(){
+    OD_PROFILE_SCOPE("CameraRenderer::RunRenderDataLoop");
+
     opaqueDrawTarget.Clean();
     blendDrawTarget.Clean();
 
@@ -400,16 +402,19 @@ void CameraRenderer::RunSetupLoop(){
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = CommandBuffer::SortType::CommonTransparent;
 
-    context->SetupLoop([&](RenderData& data){
-        OnSetupLoop(data);
-        shadows.OnSetupLoop(data);
+    //tf::Taskflow taskflow;
+    //tf::Executor executor;
+
+    context->RenderDataLoop([&](RenderData& data){
+        AddRenderData(data); 
+        shadows.AddRenderData(data); 
     });
+
+    //executor.run(taskflow).wait();
 }
 
-void CameraRenderer::OnSetupLoop(RenderData& data){
-    //TODO: Check Culling
-    if(data.aabb.isOnFrustum(camera.frustum, data.transform) == false) return;
-    //if(data.aabb.isOnFrustum(camera.frustum) == false) return;
+void CameraRenderer::AddRenderData(RenderData& data){
+    if(data.aabb.isOnFrustum(camera.frustum) == false) return;
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
