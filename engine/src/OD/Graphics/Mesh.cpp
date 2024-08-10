@@ -221,6 +221,7 @@ void Mesh::Submit(){
     }
 
     glBindVertexArray(0);
+    glCheckError();
 }
 
 void Mesh::SubmitInstancingModelMatrixs(){

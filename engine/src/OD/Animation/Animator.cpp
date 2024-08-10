@@ -4,6 +4,7 @@
 #include "OD/Core/JobSystem.h"
 #include <taskflow/taskflow.hpp> 
 #include "OD/Scene/SceneManager.h"
+#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 
@@ -29,6 +30,8 @@ SystemType AnimatorSystem::Type(){
 }
 
 void AnimatorSystem::Update(){
+    OD_PROFILE_SCOPE("AnimatorSystem::Update");
+
     auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     tf::Executor executor;
     tf::Taskflow taskflow;

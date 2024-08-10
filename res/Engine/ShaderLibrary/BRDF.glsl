@@ -52,8 +52,11 @@ vec3 DirectBRDF(Surface surface, BRDF brdf, Light light){
 }
 
 vec3 IndirectBRDF(Surface surface, BRDF brdf, vec3 diffuse, vec3 specular){
+	//return diffuse * brdf.diffuse;
+
 	float fresnelStrength = surface.smoothness * Pow4(1.0 - saturate(dot(surface.normal, surface.viewDirection))); //surface.fresnelStrength
 	vec3 reflection = specular * mix(brdf.specular, vec3(brdf.fresnel), fresnelStrength);
+	//reflection = specular * brdf.specular;
 	reflection /= brdf.roughness * brdf.roughness + 1.0;
 	
     return diffuse * brdf.diffuse + reflection;

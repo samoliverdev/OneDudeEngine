@@ -21,6 +21,7 @@
 namespace OD{
 
 GLFWwindow* window;
+//GLFWwindow* offscreenWindow;
 bool vSync;
 
 bool hidden = false;
@@ -230,10 +231,15 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
 
+    //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    //offscreenWindow = glfwCreateWindow(640, 480, "", NULL, NULL);
+
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+
     LogInfo("Glfw creationg windows: %s %d %d", applicationName, width, height);
     window = glfwCreateWindow(width, height, applicationName, NULL, NULL);
 
-    if (!window){
+    if(!window){
         glfwTerminate();
         LogError("Glfw Erro on window creation");
         return false;
@@ -334,5 +340,13 @@ void Platform::ShowWindow(bool show){
 void* Platform::GetInternalData(){
     return window;
 }
+
+/*void Platform::BeginOffscreenContextCurrent(){
+    glfwMakeContextCurrent(offscreenWindow);
+}
+
+void Platform::EndOffscreenContextCurrent(){
+    glfwMakeContextCurrent(nullptr);
+}*/
 
 }

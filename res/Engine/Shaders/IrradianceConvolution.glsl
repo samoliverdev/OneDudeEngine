@@ -28,7 +28,6 @@ void main(){
     // is the radiance of light coming from -Normal direction, which is what
     // we use in the PBR shader to sample irradiance.
     vec3 N = normalize(pos);
-
     vec3 irradiance = vec3(0.0);   
     
     // tangent space calculation from origin point
@@ -45,7 +44,10 @@ void main(){
             // tangent space to world
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N; 
 
-            irradiance += texture(environmentMap, sampleVec).rgb * cos(theta) * sin(theta);
+            vec3 environment = texture(environmentMap, sampleVec).rgb;
+            environment = environment / (environment + vec3(1.0)); //Tone Mapping
+
+            irradiance += environment * cos(theta) * sin(theta);
             nrSamples++;
         }
     }

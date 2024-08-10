@@ -35,16 +35,17 @@ struct SynthCitySample: OD::Module {
 
         camera = scene->AddEntity("Camera");
         CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
+        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(-37.4206, -34.8714, 38.0931));
+        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-21.3550, -30.5680, 0));
         camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 160;
         cam.farClipPlane = 10000;
+        cam.fieldOfView = 60;
 
         Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
-            "res/Game/Models/PolygonCity/FBX_SCENE/City.fbx"
-            //"res/PolygonCity/City.fbx"
+            "res/Game/Models/PolygonCity/City.fbx"
         );
         cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
+        for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
   
         /*Entity floorEntity = scene->AddEntity("City");
         ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();

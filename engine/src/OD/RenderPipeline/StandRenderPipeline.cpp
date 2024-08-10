@@ -67,6 +67,7 @@ Shadows::Shadows(){
 }
 
 void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera inCam){
+    OD_PROFILE_SCOPE("Shadows::Setup");
     context = inContext;
     settings = inSettings;
     cam = inCam;
@@ -115,6 +116,8 @@ void Shadows::AddRenderData(RenderData& data){
 }
 
 void Shadows::Render(){
+    OD_PROFILE_SCOPE("Shadows::Render");
+
     if(shadowedDirectionalLightCount > 0) 
         RenderDirectionalShadows();
     if(shadowedOtherLightCount > 0) 
@@ -273,6 +276,7 @@ struct Light{
 };
 
 void Lighting::Setup(RenderContext* inContext, Shadows* inShadows, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings){
+    OD_PROFILE_SCOPE("Lighting::Setup");
     context = inContext;
     shadows = inShadows;
     environmentSettings = inEnvironmentSettings;
@@ -338,6 +342,7 @@ void Lighting::SetupDirectionalLight(){
 }
 
 void Lighting::UpdateGlobalShaders(){
+    OD_PROFILE_SCOPE("Lighting::UpdateGlobalShaders");
     Material::SetGlobalInt(dirLightCountId, curDirLightsCount);
     if(curDirLightsCount > 0){
         Material::SetGlobalVector4(dirLightColorsId, dirLightColors, curDirLightsCount);
@@ -361,10 +366,11 @@ CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
     cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/SkyboxCubemap.glsl"));
-    //brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
+    brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
 }
 
 void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings){
+    OD_PROFILE_SCOPE("CameraRenderer::Render");
     // ----------- Setup ----------- 
     camera = inCam;
     context = inRenderContext;
@@ -421,6 +427,7 @@ void CameraRenderer::AddRenderData(RenderData& data){
 }
 
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
+    OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
     context->BeginDrawToScreen();
     context->ScreenClean();
 
@@ -436,15 +443,14 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
     if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
-        Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
+        Material::SetGlobalFloat("_SkyLightIntensity", 0);
+        //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
-        Material::SetGlobalVector3("_AmbientLight", Vector3One);
-        Material::SetGlobalVector3("_IrradianceMapScale", Vector3One);
+        Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
         Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
-        
-        //Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
     }
 
@@ -456,8 +462,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
 
     if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    context->DrawRenderersBuffer(opaqueDrawTarget);
-    context->DrawRenderersBuffer(blendDrawTarget);
+    context->DrawRenderersBuffer(opaqueDrawTarget, false);
+    context->DrawRenderersBuffer(blendDrawTarget, true);
     if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     //context->DrawGizmos();

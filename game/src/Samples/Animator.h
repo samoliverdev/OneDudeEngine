@@ -83,7 +83,7 @@ struct AnimatorSample: OD::Module {
         AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
         charAnim.Play(charModel->animationClips[0].get());*/
         
-        const int Size = 3;
+        const int Size = 32*1.5f;
         for(int x = -(Size/2); x <= (Size/2); x++){
             for(int y = -(Size/2); y <= (Size/2); y++){
                 Entity charEntity = scene->AddEntity("Character");
@@ -94,9 +94,9 @@ struct AnimatorSample: OD::Module {
                 
                 SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
                 charRenderer.SetModel(charModel);
-                charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
+                //charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
                 charRenderer.UpdatePosePalette();
-                LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
+                //LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
                 Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
                 
                 AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();

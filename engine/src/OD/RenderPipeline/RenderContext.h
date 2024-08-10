@@ -92,7 +92,7 @@ public:
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, CommandBuffer& target);
-    void DrawRenderersBuffer(CommandBuffer& commandBuffer);
+    void DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort = false);
 
     void CleanShadow(Framebuffer* shadowMap, int layer = 0);
     void BeginDrawShadow(Framebuffer* shadowMap, int layer = 0);

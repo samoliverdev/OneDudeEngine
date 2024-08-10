@@ -21,9 +21,9 @@ void EnvironmentComponent::OnGui(Entity& e){
 
     ImGui::DrawEnumCombo<EnvironmentLight>("environmentLight", &environment.settings.environmentLight);
     if(environment.settings.environmentLight == EnvironmentLight::Color){
-        ImGui::ColorEdit3("ambient", &environment.settings.ambient);
+        ImGui::ColorEdit3("ambient", &environment.settings.ambient, ImGuiColorEditFlags_HDR);
     } else {
-        ImGui::DragFloat("skyLightIntensity", &environment.settings.skyLightIntensity);
+        ImGui::DragFloat("skyLightIntensity", &environment.settings.skyLightIntensity, 1, 0, 10);
     }
 
     ImGui::Spacing();ImGui::Spacing();

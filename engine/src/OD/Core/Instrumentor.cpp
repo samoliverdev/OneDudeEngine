@@ -6,7 +6,6 @@ std::vector<ProfileResult>& Instrumentor::Results(){ return results; }
 
 void Instrumentor::WriteProfile(const ProfileResult& result){
     results.push_back(result);
-    //LogInfo("Instrumentor::WriteProfile: %s", result.name);
 }
 
 Instrumentor& Instrumentor::Get(){

@@ -20,18 +20,18 @@ public:
 
     Matrix4 GetLocalModelMatrix();
 
-    inline Vector3 Forward(){ return localRotation * Vector3Forward; }
-    inline Vector3 Back(){ return localRotation * Vector3Back; }
-    inline Vector3 Left(){ return localRotation * Vector3Left; }
-    inline Vector3 Right(){ return localRotation * Vector3Right; }
-    inline Vector3 Up(){ return localRotation * Vector3Up; }
-    inline Vector3 Down(){ return localRotation * Vector3Down; }
+    inline Vector3 Forward() const { return localRotation * Vector3Forward; }
+    inline Vector3 Back() const { return localRotation * Vector3Back; }
+    inline Vector3 Left() const { return localRotation * Vector3Left; }
+    inline Vector3 Right() const { return localRotation * Vector3Right; }
+    inline Vector3 Up() const { return localRotation * Vector3Up; }
+    inline Vector3 Down() const { return localRotation * Vector3Down; }
 
-    inline Vector3 LocalPosition(){ return localPosition; }
+    inline Vector3 LocalPosition() const { return localPosition; }
     inline void LocalPosition(Vector3 pos){ localPosition = pos; isDirt = true; }
 
-    inline Vector3 LocalEulerAngles(){ 
-        return localEulerAngles;
+    inline Vector3 LocalEulerAngles() const { 
+        return localEulerAngles; 
     }
 
     inline void LocalEulerAngles(Vector3 euler){ 
@@ -40,14 +40,14 @@ public:
         isDirt = true;
     }
 
-    inline Quaternion LocalRotation(){ return localRotation; }
+    inline Quaternion LocalRotation() const { return localRotation; }
     inline void LocalRotation(Quaternion rot){ 
         localRotation = rot; 
         isDirt = true; 
         localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(localRotation));
     }
 
-    inline Vector3 LocalScale(){ return localScale; }
+    inline Vector3 LocalScale() const { return localScale; }
     inline void LocalScale(Vector3 scale){ localScale = scale; isDirt = true; }
 
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
@@ -88,10 +88,26 @@ public:
     }
 
     inline static Transform Inverse(Transform& t){
+        /*Transform inv;
+        inv.LocalRotation(math::inverse(t.LocalRotation()));
+        inv.localScale.x = fabs(t.localScale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.x;
+        inv.localScale.y = fabs(t.localScale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.y;
+        inv.localScale.z = fabs(t.localScale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.z;
+        Vector3 invTranslation = t.LocalPosition() * -1.0f;
+        inv.LocalPosition( inv.LocalRotation() * (inv.LocalScale() * invTranslation) );
+        return inv;*/
+
         return Transform(math::inverse(t.GetLocalModelMatrix()));
     }
 
     inline static Transform Combine(Transform& a, Transform& b){
+        /*Transform out;
+        out.LocalScale(a.LocalScale() * b.LocalScale());
+        out.LocalRotation(b.LocalRotation() * a.LocalRotation());
+        out.LocalPosition(a.LocalRotation() * (a.LocalScale() * b.LocalPosition()));
+        out.LocalPosition(a.LocalPosition() + out.LocalPosition());
+        return out;*/
+
         return Transform(a.GetLocalModelMatrix() * b.GetLocalModelMatrix());
     }
 

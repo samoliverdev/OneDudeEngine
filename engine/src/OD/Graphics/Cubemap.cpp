@@ -257,6 +257,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 }
 
 Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    //FIXME: Destrey gl objects
     Assert(Graphics::HasBegin() == false);
 
     // pbr: setup framebuffer
@@ -321,6 +322,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 }
 
 Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    //FIXME: Destrey gl objects
     Assert(Graphics::HasBegin() == false);
 
     // pbr: setup framebuffer

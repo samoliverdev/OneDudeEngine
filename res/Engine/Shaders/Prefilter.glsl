@@ -102,8 +102,11 @@ void main(){
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
 
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 
+
+            vec3 environment = textureLod(environmentMap, L, mipLevel).rgb;
+            environment = environment / (environment + vec3(1.0)); //Tone Mapping
             
-            prefilteredColor += textureLod(environmentMap, L, mipLevel).rgb * NdotL;
+            prefilteredColor += environment * NdotL;
             totalWeight      += NdotL;
         }
     }

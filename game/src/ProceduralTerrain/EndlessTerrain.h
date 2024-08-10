@@ -83,6 +83,7 @@ private:
     Vector2 viewPos;
     Vector2 lastViewPos;
 
+    int _loadingJobs;
     Ref<std::vector<std::thread>> loadingJobs;
     Ref<std::atomic<bool>> loadingJobsDone;
 
@@ -187,38 +188,41 @@ private:
     }
 
     inline bool WaitingFinishMeshUpdate(){
-        if(loadingJobs->size() > 0){
+        const int maxMeshSubmitByFrame = 10;
+
+        if(loadingJobs->size() > 0 || _loadingJobs < toLoadCoords.size()){
             if(*loadingJobsDone == false) return true; 
             OD_LOG_PROFILE("EndlessTerrain::WaitingFinishMeshUpdate");
             for(auto& i: *loadingJobs) i.join();
+            loadingJobs->clear();
 
-            for(int i = 0; i < toLoadCoords.size(); i++){
-                IVector2 coord = toLoadCoords[i];
+            for(int i = 0; _loadingJobs < toLoadCoords.size(); i++, _loadingJobs++){
+                if(i > maxMeshSubmitByFrame) break;
+
+                IVector2 coord = toLoadCoords[_loadingJobs];
 
                 if(loadedChunks.count(coord)){
                     Entity chunk = loadedChunks[coord];
                     MeshRendererComponent& meshRenderer = chunk.GetComponent<MeshRendererComponent>();
-                    meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
+                    meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
                 } else {
                     Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
-                    Assert(toLoadMesh[i] != nullptr);
+                    Assert(toLoadMesh[_loadingJobs] != nullptr);
 
                     Entity chunk = GetEntity().GetScene()->AddEntity("Chunk");
                     GetEntity().GetScene()->SetParent(GetEntity().Id(), chunk.Id());
                     TransformComponent& trans = chunk.GetComponent<TransformComponent>();
                     trans.LocalPosition(pos);
                     MeshRendererComponent& meshRenderer = chunk.AddComponent<MeshRendererComponent>();
-                    meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
+                    meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
                     
                     loadedChunks[coord] = chunk;
                 }
             }
-
-            loadingJobs->clear();
             return true;
         }
         return false;
@@ -263,14 +267,18 @@ private:
 
         *loadingJobsDone = false;
         loadingJobs->push_back(std::thread([&](){
+            //Platform::BeginOffscreenContextCurrent();
             for(int i = 0; i < toLoadCoords.size(); i++){
                 Vector2 coord = toLoadCoords[i];
                 Vector2 center = {coord.x * chunkSize, coord.y * chunkSize};
 
                 if(toLoadNoise[i] == nullptr) toLoadNoise[i] = Noise::GenerateNoiseMap(mapChunkSize, mapChunkSize, 50, 1, 4, 1, 1, center);
                 toLoadMesh[i] = MeshGenerator::GenerateTerrainMesh(toLoadNoise[i], 50, toLoadLod[i]);
+                //toLoadMesh[i]->out = toLoadMesh[i]->CreateMeshOff();
             }
+            //Platform::EndOffscreenContextCurrent();
             *loadingJobsDone = true;
         }));
+        _loadingJobs = 0;
     }
 };

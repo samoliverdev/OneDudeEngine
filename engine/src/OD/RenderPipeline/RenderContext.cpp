@@ -126,6 +126,10 @@ void RenderContext::SetupCameraProperties(Camera inCam){
         cam.width, 
         cam.height
     );
+
+    Material::SetGlobalMatrix4("view", cam.view);
+    Material::SetGlobalMatrix4("projection", cam.projection);
+    Material::SetGlobalVector3("viewPos", cam.viewPos);
 }
 
 void RenderContext::ScreenClean(){
@@ -310,14 +314,14 @@ void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
     }
 }
 
-void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer){
-    commandBuffer.Sort();
-    commandBuffer.onUpdateMaterial = [&](Material& material){ 
+void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort){
+    if(sort) commandBuffer.Sort();
+    /*commandBuffer.onUpdateMaterial = [&](Material& material){ 
         if(material.GetShader() == nullptr) return;
         SetStandUniforms(cam, *material.GetShader()); 
-    };
+    };*/
     commandBuffer.Submit();
-    commandBuffer.onUpdateMaterial = nullptr;
+    //commandBuffer.onUpdateMaterial = nullptr;
 }
 
 void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
