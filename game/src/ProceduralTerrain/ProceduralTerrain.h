@@ -69,6 +69,7 @@ struct ProceduralTerrain: OD::Module {
 
         //scene->Save("res/scene1.scene");
         scene->Start();
+        //RenderContext::GetSettings().enableGizmosRuntime = true;
         Application::AddModule<Editor>();
     }
 
@@ -77,6 +78,16 @@ struct ProceduralTerrain: OD::Module {
         if(scene->Running() == false) return;
 
         if(Input::IsKeyDown(KeyCode::T)) RenderContext::GetSettings().enableWireframe = !RenderContext::GetSettings().enableWireframe;
+
+        if(Input::IsKeyDown(KeyCode::R)){
+            TransformComponent& cam = scene->GetMainCamera2().GetComponent<TransformComponent>();
+
+            Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
+            e.GetComponent<TransformComponent>().Position(cam.Position() + cam.Back() * 20.0f);
+            //e.GetComponent<TransformComponent>().LocalScale(Vector3(2));
+            PhysicsCubeS* script = e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            //script->timeToDestroy = 1000000;
+        }
 
         /*TransformComponent& camT = camera.GetComponent<TransformComponent>();
         RayResult hit;

@@ -5,20 +5,29 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
+#include "OD/Graphics/Mesh.h"
+
+class btTriangleMesh;
+class btBvhTriangleMeshShape;
 
 namespace OD{
 
 struct Rigidbody;
 struct PhysicsWorld;
 
+using MeshShapeData = btBvhTriangleMeshShape;
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Mesh>& mesh);
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
+
 struct OD_API CollisionShape{
-    enum class Type{Box, Sphere, Capsule};
+    enum class Type{Box, Sphere, Capsule, Mesh};
 
     Type type;
     Vector3 center = {0, 0, 0};
     Vector3 size = {1,1,1};
     float radius = 1;
     float height = 1;
+    Ref<MeshShapeData> mesh;
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -49,6 +58,20 @@ struct OD_API CollisionShape{
         shape.radius = radius;
         shape.height = height;
         shape.center = center;
+        return shape;
+    }
+
+    inline static CollisionShape MeshShape(Ref<Mesh> mesh){
+        CollisionShape shape;
+        shape.type = Type::Mesh;
+        shape.mesh = CreateMeshShapeData(mesh);
+        return shape;
+    }
+
+    inline static CollisionShape MeshShape(Ref<MeshShapeData> mesh){
+        CollisionShape shape;
+        shape.type = Type::Mesh;
+        shape.mesh = mesh;
         return shape;
     }
 };

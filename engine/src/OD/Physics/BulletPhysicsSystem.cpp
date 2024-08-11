@@ -22,6 +22,7 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
 
+
 #pragma region Core
 inline Vector3 FromBullet(btVector3 v){ return Vector3(v.x(), v.y(), v.z()); }
 inline btVector3 ToBullet(Vector3 v){ return btVector3(v.x, v.y, v.z); }
@@ -57,6 +58,32 @@ struct Rigidbody{
 
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
 typedef std::set<CollisionPair> CollisionPairs;
+
+Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
+    btTriangleMesh* out = new btTriangleMesh();
+    for(size_t i = 0; i < mesh->indices.size(); i += 3){
+        out->addTriangle(
+            ToBullet(mesh->vertices[mesh->indices[i]]), 
+            ToBullet(mesh->vertices[mesh->indices[i+1]]), 
+            ToBullet(mesh->vertices[mesh->indices[i+2]])
+        );
+    }
+    Ref<btBvhTriangleMeshShape> out2 = CreateRef<btBvhTriangleMeshShape>(out, true);
+    return out2;
+}
+
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
+    btTriangleMesh* out = new btTriangleMesh();
+    for(size_t i = 0; i < indices.size(); i += 3){
+        out->addTriangle(
+            ToBullet(vertices[indices[i]]), 
+            ToBullet(vertices[indices[i+1]]), 
+            ToBullet(vertices[indices[i+2]])
+        );
+    }
+    Ref<btBvhTriangleMeshShape> out2 = CreateRef<btBvhTriangleMeshShape>(out, true);
+    return out2;
+}
 
 struct PhysicsWorld{
     btBroadphaseInterface* broadphase;
@@ -166,7 +193,13 @@ void RigidbodyComponent::OnGui(Entity& e){
     ImGui::Spacing();
     ImGui::SeparatorText("CollisionShape");
 
-    const char* shapeTypeString[] = {"Box", "Sphere", "Capsule"};
+    CollisionShape::Type _shape = rb.GetShape().type;
+    if(ImGui::DrawEnumCombo<CollisionShape::Type>("CollisionShape", &_shape)){
+        shape.type = _shape;
+        rb.SetShape(shape);
+    }
+
+    /*const char* shapeTypeString[] = {"Box", "Sphere", "Capsule"};
     const char* curShapeTypeString = shapeTypeString[(int)rb.GetShape().type];
     if(ImGui::BeginCombo("CollisionShape", curShapeTypeString)){
         for(int i = 0; i < 2; i++){
@@ -181,7 +214,7 @@ void RigidbodyComponent::OnGui(Entity& e){
         }
 
         ImGui::EndCombo();
-    }
+    }*/
 
     shape = rb.GetShape();
 
@@ -243,9 +276,9 @@ void RigidbodyComponent::OnGui(Entity& e){
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
+    if(data != nullptr && data->shape != nullptr && shape.type != CollisionShape::Type::Mesh) delete data->shape;
     shape = inShape;
     if(data == nullptr) return;
-    if(data->shape != nullptr) delete data->shape;
 
     if(shape.type == CollisionShape::Type::Box){
         auto _shape = new btBoxShape(btVector3(shape.size.x/2, shape.size.y/2, shape.size.z/2));
@@ -280,6 +313,27 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         _shape2->addChildShape(t, _shape);
         
         data->shape = _shape2;
+        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+    }
+
+    if(shape.type == CollisionShape::Type::Mesh){
+        /*btTriangleMesh *mesh = new btTriangleMesh();
+        for(size_t i = 0; i < shape.mesh->indices.size(); i += 3){
+            mesh->addTriangle(
+                ToBullet(shape.mesh->vertices[shape.mesh->indices[i]]), 
+                ToBullet(shape.mesh->vertices[shape.mesh->indices[i+1]]), 
+                ToBullet(shape.mesh->vertices[shape.mesh->indices[i+2]])
+            );
+        }*/
+        
+        //auto _shape = new btBvhTriangleMeshShape(shape.mesh.get(), true);
+        btBvhTriangleMeshShape* _shape = shape.mesh.get();
+        //auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        //_shap2->addChildShape(t, _shape);
+        
+        data->shape = _shape;
         if(data->body != nullptr) data->body->setCollisionShape(data->shape);
     }
 
@@ -734,7 +788,7 @@ void PhysicsSystem::RemoveRigidbody(EntityId entityId, RigidbodyComponent& rb){
         }
     }
 
-    delete data->shape;
+    if(rb.shape.type != CollisionShape::Type::Mesh) delete data->shape;
     delete data->motionState;
     delete data->body;
     delete data;

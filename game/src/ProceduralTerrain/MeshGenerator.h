@@ -1,10 +1,12 @@
 #pragma once
 #include "Noise.h"
+#include "OD/Physics/PhysicsSystem.h"
 
 struct MeshData{
     std::vector<Vector3> vertices;
     std::vector<Vector3> uvs;
     std::vector<unsigned int> triangles;
+    Ref<MeshShapeData> shapeData;
 
     int triangleIndex = 0;
 
@@ -58,6 +60,8 @@ namespace MeshGenerator{
                 vertexIndex += 1;
             }
         }
+
+        meshData->shapeData = CreateMeshShapeData(meshData->vertices, meshData->triangles);
 
         return meshData;
     }

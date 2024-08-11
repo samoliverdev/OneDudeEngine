@@ -31,7 +31,7 @@ public:
 
     inline void OnStart() override{
         chunkSize = mapChunkSize-1;
-        chunkLoadDistance = 8;
+        chunkLoadDistance = 4;
         material = LoadFloorMaterial();
         loadingJobsDone = CreateRef<std::atomic<bool>>();
         loadingJobs = CreateRef<std::vector<std::thread>>();
@@ -161,6 +161,9 @@ private:
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
 
+                RigidbodyComponent& rb = chunk.GetComponent<RigidbodyComponent>();
+                rb.SetShape(CollisionShape::MeshShape(meshRenderer.mesh));
+
                 /*meshRenderer.mesh->vertices.clear();
                 meshRenderer.mesh->uv.clear();
                 meshRenderer.mesh->normals.clear();*/
@@ -177,6 +180,9 @@ private:
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
 
+                RigidbodyComponent& rb = chunk.AddOrGetComponent<RigidbodyComponent>();
+                rb.SetShape(CollisionShape::MeshShape(meshRenderer.mesh));
+
                 /*meshRenderer.mesh->vertices.clear();
                 meshRenderer.mesh->uv.clear();
                 meshRenderer.mesh->normals.clear();*/
@@ -188,7 +194,7 @@ private:
     }
 
     inline bool WaitingFinishMeshUpdate(){
-        const int maxMeshSubmitByFrame = 10;
+        const int maxMeshSubmitByFrame = 2;
 
         if(loadingJobs->size() > 0 || _loadingJobs < toLoadCoords.size()){
             if(*loadingJobsDone == false) return true; 
@@ -207,6 +213,10 @@ private:
                     meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
+
+                    RigidbodyComponent& rb = chunk.GetComponent<RigidbodyComponent>();
+                    rb.SetShape(CollisionShape::MeshShape(toLoadMesh[_loadingJobs]->shapeData /*meshRenderer.mesh*/));
+                    
                 } else {
                     Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
                     Assert(toLoadMesh[_loadingJobs] != nullptr);
@@ -219,6 +229,11 @@ private:
                     meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
+
+                    RigidbodyComponent& rb = chunk.AddOrGetComponent<RigidbodyComponent>();
+                    rb.SetShape(CollisionShape::MeshShape(toLoadMesh[_loadingJobs]->shapeData /*meshRenderer.mesh*/));
+                    rb.SetType(RigidbodyComponent::Type::Static);
+                    rb.Mass(0);
                     
                     loadedChunks[coord] = chunk;
                 }
