@@ -1,6 +1,6 @@
 # My Nameless Game Engine
 
-In developement Game Engine with inspiration in The Unity Engine, write in c++ with focuses on high performace, be small and easy to use 
+In developement Game Engine inspired by The Unity Engine, write in c++ with focuses on high performace, be small and easy to use 
 
 ### Screenshots
 
