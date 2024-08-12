@@ -1,5 +1,6 @@
 #pragma once
 
+#include <taskflow/taskflow.hpp> 
 #include <OD/OD.h>
 #include <OD/RenderPipeline/CommandBuffer.h>
 #include <chrono>
@@ -82,6 +83,10 @@ struct BaseMeshSample: OD::Module {
     Ref<Shader> fontShader;
 
     Ref<Font> font;
+
+    tf::Executor executor;
+    tf::Taskflow taskflow;
+    bool executorEnd = false;
 
     void OnInit() override {
         LogInfo("Game Init");
@@ -203,6 +208,20 @@ struct BaseMeshSample: OD::Module {
         void* module = Platform::LoadDynamicLibrary("build/lib/Release/dynamic_module.dll");
         myFuncDef func = (myFuncDef)Platform::LoadDynamicFunction(module, "CreateInstance");
         Application::AddModule(func());*/
+
+        taskflow.emplace([](){
+            std::this_thread::sleep_for (std::chrono::seconds(5));
+        });
+        taskflow.emplace([](){
+            std::this_thread::sleep_for (std::chrono::seconds(5));
+        });
+        taskflow.emplace([](){
+            std::this_thread::sleep_for (std::chrono::seconds(5));
+        });
+        taskflow.emplace([](){
+            std::this_thread::sleep_for (std::chrono::seconds(5));
+        });
+        executor.run(taskflow, [&](){ executorEnd = true; });
     }
 
     void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
@@ -234,6 +253,11 @@ struct BaseMeshSample: OD::Module {
         if(Input::IsKeyDown(KeyCode::R)){
             LogInfo("Reloading Shader");
             meshShader->Reload();
+        }
+
+        if(executorEnd == true){
+            LogWarning("executorEnd");
+            executor.wait_for_all();
         }
     }   
 

@@ -60,7 +60,7 @@ typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
 typedef std::set<CollisionPair> CollisionPairs;
 
 Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
-    btTriangleMesh* out = new btTriangleMesh();
+    btTriangleMesh* out = new btTriangleMesh();//FIXME: Memory leak
     for(size_t i = 0; i < mesh->indices.size(); i += 3){
         out->addTriangle(
             ToBullet(mesh->vertices[mesh->indices[i]]), 
@@ -73,7 +73,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
 }
 
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
-    btTriangleMesh* out = new btTriangleMesh();
+    btTriangleMesh* out = new btTriangleMesh();//FIXME: Memory leak
     for(size_t i = 0; i < indices.size(); i += 3){
         out->addTriangle(
             ToBullet(vertices[indices[i]]), 
@@ -317,22 +317,7 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
     }
 
     if(shape.type == CollisionShape::Type::Mesh){
-        /*btTriangleMesh *mesh = new btTriangleMesh();
-        for(size_t i = 0; i < shape.mesh->indices.size(); i += 3){
-            mesh->addTriangle(
-                ToBullet(shape.mesh->vertices[shape.mesh->indices[i]]), 
-                ToBullet(shape.mesh->vertices[shape.mesh->indices[i+1]]), 
-                ToBullet(shape.mesh->vertices[shape.mesh->indices[i+2]])
-            );
-        }*/
-        
-        //auto _shape = new btBvhTriangleMeshShape(shape.mesh.get(), true);
         btBvhTriangleMeshShape* _shape = shape.mesh.get();
-        //auto _shape2 = new btCompoundShape();
-        btTransform t;
-        t.setIdentity();
-        //_shap2->addChildShape(t, _shape);
-        
         data->shape = _shape;
         if(data->body != nullptr) data->body->setCollisionShape(data->shape);
     }
@@ -732,7 +717,7 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
 }
 
 void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t){
-    LogInfo("Add Rigidbody");
+    //LogInfo("Add Rigidbody");
     Rigidbody* data = new Rigidbody();
     data->updating = true;
     data->world = physicsWorld->world;
@@ -774,7 +759,7 @@ void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, Trans
 }
 
 void PhysicsSystem::RemoveRigidbody(EntityId entityId, RigidbodyComponent& rb){
-    LogInfo("Remove Rigidbody");
+    //LogInfo("Remove Rigidbody");
     if(rb.data == nullptr) return;
 
     Rigidbody* data = rb.data;

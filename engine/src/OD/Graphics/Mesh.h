@@ -36,6 +36,17 @@ public:
     std::vector<Matrix4> instancingModelMatrixs;
 
     MeshDrawMode drawMode = MeshDrawMode::TRIANGLES;
+
+    inline void ClearRuntimeData(){
+        vertices.clear();
+        uv.clear();
+        normals.clear();
+        colors.clear();
+        tangents.clear();
+        weights.clear();
+        influences.clear();
+        indices.clear();
+    }
     
     Mesh();
     Mesh(const Mesh& mesh);

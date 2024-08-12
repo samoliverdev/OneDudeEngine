@@ -188,6 +188,7 @@ public:
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
     void DestroyEntity(EntityId entity);
+    void DestroyEntityImmediate(EntityId entity);
     bool IsChildOf(EntityId parent, EntityId child);
     void CleanParent(EntityId e);
     void SetParent(EntityId parent, EntityId child);

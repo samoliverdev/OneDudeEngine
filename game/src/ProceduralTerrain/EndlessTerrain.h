@@ -20,8 +20,8 @@ struct LODInfo {
 
 class EndlessTerrain: public Script{
 public:
-    inline static const int mapChunkSize = 241;
-    inline static const int levelOfDetail = 0;
+    inline static const int mapChunkSize = (240*2) + 1;
+    inline static const int levelOfDetail = 1;
     TransformComponent* viewer;
 
     template <class Archive>
@@ -30,7 +30,7 @@ public:
     }
 
     inline void OnStart() override{
-        chunkSize = mapChunkSize-1;
+        chunkSize = mapChunkSize - 1;
         chunkLoadDistance = 4;
         material = LoadFloorMaterial();
         loadingJobsDone = CreateRef<std::atomic<bool>>();
@@ -52,7 +52,7 @@ public:
         viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
         if(math::distance2(viewPos, lastViewPos) > loadDstThreshold*loadDstThreshold || loadedChunks.size() <= 0){
-            UpdateVisibleChunks2();
+            UpdateVisibleChunks();
             lastViewPos = viewPos;
         }
     }
@@ -73,11 +73,16 @@ private:
     std::unordered_map<IVector2, Entity> loadedChunks;
     Ref<Material> material;
 
+    struct ToLoadData{
+        IVector2 coord;
+        //int lod;
+        Ref<NoiseData> noise;
+        Ref<MeshData> mesh;
+    };
+
     std::unordered_map<IVector2, bool> toLoad;
-    std::vector<IVector2> toLoadCoords;
-    std::vector<int> toLoadLod;
-    std::vector<Ref<NoiseData>> toLoadNoise;
-    std::vector<Ref<MeshData>> toLoadMesh;
+    std::vector<ToLoadData> toLoadDatas;
+    int toLoadCount;
 
     IVector2 currentCoord;
     Vector2 viewPos;
@@ -98,144 +103,52 @@ private:
         return lodIndex;
     }
 
-    inline void UpdateVisibleChunks(){
-        currentCoord = IVector2(
-            math::round(viewPos.x / chunkSize), 
-            math::round(viewPos.y / chunkSize)
-        );
-
-        toLoad.clear();
-        toLoadCoords.clear();
-        toLoadLod.clear();
-        toLoadNoise.clear();
-        toLoadMesh.clear();
-
-        for(int yOffset = -chunkLoadDistance; yOffset <= chunkLoadDistance; yOffset++){
-            for(int xOffset = -chunkLoadDistance; xOffset <= chunkLoadDistance; xOffset++){
-                IVector2 viewedChunkCoord(currentCoord.x + xOffset, currentCoord.y + yOffset);
-                toLoad[viewedChunkCoord] = true;
-                
-                //if(loadedChunks.count(viewedChunkCoord) > 0) continue;
-
-                toLoadCoords.push_back(viewedChunkCoord);
-                toLoadLod.push_back(GetLoadInfo(viewPos, Vector2(viewedChunkCoord.x * chunkSize, viewedChunkCoord.y * chunkSize)));
-                toLoadNoise.push_back(nullptr);
-                toLoadMesh.push_back(nullptr);
-            }
-        }
-
-        std::vector<IVector2> toRemove;
-        for(auto i: loadedChunks){
-            if(toLoad.count(i.first) == false){
-                GetEntity().GetScene()->DestroyEntity(i.second.Id());
-                toRemove.push_back(i.first);
-            }
-        }
-        for(auto i: toRemove){
-            loadedChunks.erase(i);
-        }
-
-        JobSystem::Dispatch(toLoadCoords.size(), toLoadCoords.size()/4, [&](JobDispatchArgs args){
-            Vector2 coord = toLoadCoords[args.jobIndex];
-            Vector2 center = {coord.x * chunkSize, coord.y * chunkSize};
-
-            toLoadNoise[args.jobIndex] = Noise::GenerateNoiseMap(mapChunkSize, mapChunkSize, 50, 1, 4, 1, 1, center);
-            toLoadMesh[args.jobIndex] = MeshGenerator::GenerateTerrainMesh(toLoadNoise[args.jobIndex], 50, toLoadLod[args.jobIndex]);
-        });
-        JobSystem::Wait();
-        /*for(int i = 0; i < toLoadCoords.size(); i++){
-            Vector2 coord = toLoadCoords[i];
-            Vector2 center = {coord.x * chunkSize, coord.y * chunkSize};
-
-            toLoadNoise[i] = Noise::GenerateNoiseMap(mapChunkSize, mapChunkSize, 50, 1, 4, 1, 1, center);
-            toLoadMesh[i] = MeshGenerator::GenerateTerrainMesh(toLoadNoise[i], 50, levelOfDetail);
-        }*/
-
-        for(int i = 0; i < toLoadCoords.size(); i++){
-            IVector2 coord = toLoadCoords[i];
-
-            if(loadedChunks.count(coord)){
-                Entity chunk = loadedChunks[coord];
-                MeshRendererComponent& meshRenderer = chunk.GetComponent<MeshRendererComponent>();
-                meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
-                meshRenderer.material = material;
-                meshRenderer.UpdateAABB();
-
-                RigidbodyComponent& rb = chunk.GetComponent<RigidbodyComponent>();
-                rb.SetShape(CollisionShape::MeshShape(meshRenderer.mesh));
-
-                /*meshRenderer.mesh->vertices.clear();
-                meshRenderer.mesh->uv.clear();
-                meshRenderer.mesh->normals.clear();*/
-            } else {
-                Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
-                Assert(toLoadMesh[i] != nullptr);
-
-                Entity chunk = GetEntity().GetScene()->AddEntity("Chunk");
-                GetEntity().GetScene()->SetParent(GetEntity().Id(), chunk.Id());
-                TransformComponent& trans = chunk.GetComponent<TransformComponent>();
-                trans.LocalPosition(pos);
-                MeshRendererComponent& meshRenderer = chunk.AddComponent<MeshRendererComponent>();
-                meshRenderer.mesh = toLoadMesh[i]->CreateMesh();
-                meshRenderer.material = material;
-                meshRenderer.UpdateAABB();
-
-                RigidbodyComponent& rb = chunk.AddOrGetComponent<RigidbodyComponent>();
-                rb.SetShape(CollisionShape::MeshShape(meshRenderer.mesh));
-
-                /*meshRenderer.mesh->vertices.clear();
-                meshRenderer.mesh->uv.clear();
-                meshRenderer.mesh->normals.clear();*/
-                
-                loadedChunks[coord] = chunk;
-                loadedDatas[coord] = toLoadNoise[i];
-            }
-        }
-    }
-
     inline bool WaitingFinishMeshUpdate(){
-        const int maxMeshSubmitByFrame = 2;
+        const int maxMeshSubmitByFrame = 1;
 
-        if(loadingJobs->size() > 0 || _loadingJobs < toLoadCoords.size()){
+        if(loadingJobs->size() > 0 || _loadingJobs < toLoadCount){
             if(*loadingJobsDone == false) return true; 
             OD_LOG_PROFILE("EndlessTerrain::WaitingFinishMeshUpdate");
             for(auto& i: *loadingJobs) i.join();
             loadingJobs->clear();
 
-            for(int i = 0; _loadingJobs < toLoadCoords.size(); i++, _loadingJobs++){
+            for(int i = 0; _loadingJobs < toLoadCount; i++, _loadingJobs++){
                 if(i > maxMeshSubmitByFrame) break;
 
-                IVector2 coord = toLoadCoords[_loadingJobs];
+                IVector2 coord = toLoadDatas[_loadingJobs].coord;
 
                 if(loadedChunks.count(coord)){
                     Entity chunk = loadedChunks[coord];
                     MeshRendererComponent& meshRenderer = chunk.GetComponent<MeshRendererComponent>();
-                    meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
+                    meshRenderer.mesh = toLoadDatas[_loadingJobs].mesh->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
 
                     RigidbodyComponent& rb = chunk.GetComponent<RigidbodyComponent>();
-                    rb.SetShape(CollisionShape::MeshShape(toLoadMesh[_loadingJobs]->shapeData /*meshRenderer.mesh*/));
-                    
+                    rb.SetShape(CollisionShape::MeshShape(toLoadDatas[_loadingJobs].mesh->shapeData /*meshRenderer.mesh*/));
+
+                    meshRenderer.mesh->ClearRuntimeData();
                 } else {
                     Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
-                    Assert(toLoadMesh[_loadingJobs] != nullptr);
+                    Assert(toLoadDatas[_loadingJobs].mesh != nullptr);
 
                     Entity chunk = GetEntity().GetScene()->AddEntity("Chunk");
                     GetEntity().GetScene()->SetParent(GetEntity().Id(), chunk.Id());
                     TransformComponent& trans = chunk.GetComponent<TransformComponent>();
                     trans.LocalPosition(pos);
                     MeshRendererComponent& meshRenderer = chunk.AddComponent<MeshRendererComponent>();
-                    meshRenderer.mesh = toLoadMesh[_loadingJobs]->CreateMesh();
+                    meshRenderer.mesh = toLoadDatas[_loadingJobs].mesh->CreateMesh();
                     meshRenderer.material = material;
                     meshRenderer.UpdateAABB();
 
                     RigidbodyComponent& rb = chunk.AddOrGetComponent<RigidbodyComponent>();
-                    rb.SetShape(CollisionShape::MeshShape(toLoadMesh[_loadingJobs]->shapeData /*meshRenderer.mesh*/));
+                    rb.SetShape(CollisionShape::MeshShape(toLoadDatas[_loadingJobs].mesh->shapeData /*meshRenderer.mesh*/));
                     rb.SetType(RigidbodyComponent::Type::Static);
                     rb.Mass(0);
                     
                     loadedChunks[coord] = chunk;
+
+                    meshRenderer.mesh->ClearRuntimeData();
                 }
             }
             return true;
@@ -243,32 +156,47 @@ private:
         return false;
     }
 
-    inline void UpdateVisibleChunks2(){
+    inline void UpdateVisibleChunks(){
+        //OD_LOG_PROFILE("EndlessTerrain::UpdateVisibleChunks2");
+        
         currentCoord = IVector2(
             math::round(viewPos.x / chunkSize), 
             math::round(viewPos.y / chunkSize)
         );
 
-        toLoad.clear();
-        toLoadCoords.clear();
-        toLoadLod.clear();
-        toLoadNoise.clear();
-        toLoadMesh.clear();
+        {
+        OD_LOG_PROFILE("EndlessTerrain::UpdateVisibleChunks2::1");
+        //toLoad.clear();
+        //toLoadCoords.clear();
+        //toLoadLod.clear();
+        //toLoadNoise.clear();
+        //toLoadMesh.clear();
+        //toLoadDatas.clear();
+        toLoadCount = 0;
+        }
 
+        {
+        OD_LOG_PROFILE("EndlessTerrain::UpdateVisibleChunks2::2");
         for(int yOffset = -chunkLoadDistance; yOffset <= chunkLoadDistance; yOffset++){
             for(int xOffset = -chunkLoadDistance; xOffset <= chunkLoadDistance; xOffset++){
                 IVector2 viewedChunkCoord(currentCoord.x + xOffset, currentCoord.y + yOffset);
-                toLoad[viewedChunkCoord] = true;
                 
-                //if(loadedChunks.count(viewedChunkCoord) > 0) continue;
-
-                toLoadCoords.push_back(viewedChunkCoord);
-                toLoadLod.push_back(GetLoadInfo(viewPos, Vector2(viewedChunkCoord.x * chunkSize, viewedChunkCoord.y * chunkSize)));
-                toLoadNoise.push_back(loadedDatas.count(viewedChunkCoord) ? loadedDatas[viewedChunkCoord] : nullptr);
-                toLoadMesh.push_back(nullptr);
+                if(loadedChunks.count(viewedChunkCoord) > 0) continue;
+                if(toLoadDatas.size() <= toLoadCount) toLoadDatas.push_back(ToLoadData());
+                
+                toLoad[viewedChunkCoord] = true;
+                toLoadDatas[toLoadCount].coord = viewedChunkCoord;
+                //toLoadDatas[toLoadCount].lod = GetLoadInfo(viewPos, Vector2(viewedChunkCoord.x * chunkSize, viewedChunkCoord.y * chunkSize));
+                toLoadDatas[toLoadCount].noise = loadedDatas.count(viewedChunkCoord) ? loadedDatas[viewedChunkCoord] : nullptr;
+                toLoadDatas[toLoadCount].mesh = nullptr;
+                
+                toLoadCount += 1;
             }
         }
+        }
 
+        /*{
+        OD_LOG_PROFILE("EndlessTerrain::UpdateVisibleChunks2::3");
         std::vector<IVector2> toRemove;
         for(auto i: loadedChunks){
             if(toLoad.count(i.first) == false){
@@ -279,21 +207,25 @@ private:
         for(auto i: toRemove){
             loadedChunks.erase(i);
         }
+        }*/
 
+        {
+        OD_LOG_PROFILE("EndlessTerrain::UpdateVisibleChunks2::4");
         *loadingJobsDone = false;
         loadingJobs->push_back(std::thread([&](){
             //Platform::BeginOffscreenContextCurrent();
-            for(int i = 0; i < toLoadCoords.size(); i++){
-                Vector2 coord = toLoadCoords[i];
+            for(int i = 0; i < toLoadCount; i++){
+                Vector2 coord = toLoadDatas[i].coord;
                 Vector2 center = {coord.x * chunkSize, coord.y * chunkSize};
 
-                if(toLoadNoise[i] == nullptr) toLoadNoise[i] = Noise::GenerateNoiseMap(mapChunkSize, mapChunkSize, 50, 1, 4, 1, 1, center);
-                toLoadMesh[i] = MeshGenerator::GenerateTerrainMesh(toLoadNoise[i], 50, toLoadLod[i]);
+                if(toLoadDatas[i].noise == nullptr) toLoadDatas[i].noise = Noise::GenerateNoiseMap(mapChunkSize, mapChunkSize, 50, 1, 4, 1, 1, center);
+                toLoadDatas[i].mesh = MeshGenerator::GenerateTerrainMesh(toLoadDatas[i].noise, 50, levelOfDetail /*toLoadDatas[i].lod*/);
                 //toLoadMesh[i]->out = toLoadMesh[i]->CreateMeshOff();
             }
             //Platform::EndOffscreenContextCurrent();
             *loadingJobsDone = true;
         }));
         _loadingJobs = 0;
+        }
     }
 };

@@ -11,35 +11,37 @@
 * Fix Physics PlayMode In Engine as SharedLib - 
 * Fix All Physic Debug Asserts -
 
+* Refactory/Revisar All Graphic API Code
+
 * Revisar RenderPipeline Code
 * Revisar Physic Impremetation
 * Fast Physic Gizmos
 * Add Joit Physyic To Test
 * Rename
-* Fix Save/Load
+* Fix Save/Load -
 * Fix JointComponent
 * Fix Bloom
 * Add Skeleton Entity Bone Option
 * Revisar Color Space 
-* Gizmos System
+* Gizmos System -
 * DragDrop For All MainTypes
-* Sound
-* HDR Cubemap
+* Sound - 
+* HDR Cubemap -
 * Entity Pickup
 * Finish RenderPipeline Tutorial
 * Particle System
 * UI Panel
 
 * Occlusion Culling
-* Navmesh
+* Navmesh - 
 
 * Game Test
-* Dynamic C++ GameModule
+* Dynamic C++ GameModule -
 * Project System
 * Usable Engine And Publush Engine
 
 * Lua
-* Prefab System
+* Prefab System - 
 * Mod Support
 * Double Precesion
 * Relative Renderer

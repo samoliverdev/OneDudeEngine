@@ -25,11 +25,24 @@ struct MeshData{
 
     Ref<Mesh> CreateMesh(){
         Ref<Mesh> mesh = CreateRef<Mesh>();
+
+        {
+        OD_LOG_PROFILE("MeshData::CreateMesh::1");
         mesh->vertices = vertices;
         mesh->uv = uvs;
         mesh->indices = triangles;
+        }
+
+        {
+        OD_LOG_PROFILE("MeshData::CreateMesh::2");
         mesh->CalculateNormals();
+        }
+        
+        {
+        OD_LOG_PROFILE("MeshData::CreateMesh::3");
         mesh->Submit();
+        }
+        
         return mesh;
     }
 };

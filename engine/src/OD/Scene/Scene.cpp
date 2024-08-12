@@ -201,6 +201,11 @@ void Scene::DestroyEntity(EntityId entity){
     toDestroy.push_back(entity);
 }
 
+void Scene::DestroyEntityImmediate(EntityId entity){
+    if(registry.valid(entity) == false) return;
+    _DestroyEntity(entity);
+}
+
 bool Scene::IsChildOf(EntityId parent, EntityId child){
     TransformComponent& _parent = registry.get<TransformComponent>(parent);
 
