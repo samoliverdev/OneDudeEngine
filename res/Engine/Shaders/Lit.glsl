@@ -2,8 +2,10 @@
 
 #pragma BeginProperties
     Color4 color
+    Vector4 sizeOffset
     Texture2D mainTex White
     Texture2D normal Normal
+    Float normalStrength 1 0 10
     Texture2D emissionMap Black
     Color4 emissionColor
     Texture2D maskMap White
@@ -26,7 +28,7 @@
 
 #ifdef VERTEX
 
-#include res/Engine/ShaderLibrary/Vertex.glsl
+#include ../ShaderLibrary/Vertex.glsl
 
 out VsOut{
     vec3 pos;
@@ -60,14 +62,14 @@ void main(){
 
 uniform mat4 view;
 
-#include res/Engine/ShaderLibrary/Core.glsl
-#include res/Engine/ShaderLibrary/Common.glsl
-#include res/Engine/ShaderLibrary/Surface.glsl
-#include res/Engine/ShaderLibrary/Shadows.glsl
-#include res/Engine/ShaderLibrary/Light.glsl
-#include res/Engine/ShaderLibrary/BRDF.glsl
-#include res/Engine/ShaderLibrary/GI.glsl
-#include res/Engine/ShaderLibrary/Lighting.glsl
+#include ../ShaderLibrary/Core.glsl
+#include ../ShaderLibrary/Common.glsl
+#include ../ShaderLibrary/Surface.glsl
+#include ../ShaderLibrary/Shadows.glsl
+#include ../ShaderLibrary/Light.glsl
+#include ../ShaderLibrary/BRDF.glsl
+#include ../ShaderLibrary/GI.glsl
+#include ../ShaderLibrary/Lighting.glsl
 
 in VsOut{
     vec3 pos;
@@ -81,8 +83,10 @@ in VsOut{
 uniform vec3 viewPos;
 
 uniform vec4 color = vec4(1,1,1,1);
+uniform vec4 sizeOffset = vec4(1, 1, 0, 0);
 uniform sampler2D mainTex;
 uniform sampler2D normal;
+uniform float normalStrength = 1;
 uniform sampler2D emissionMap;
 uniform vec4 emissionColor = vec4(0,0,0,0);
 uniform sampler2D maskMap;
@@ -123,13 +127,24 @@ float GetOcclusion(vec2 baseUV){
 	return _occlusion;
 }
 
+vec3 GetNormal(mat3 TBN, vec2 uv){
+    vec3 n = texture(normal, uv).xyz;
+    n = n * 2.0 - 1.0;
+    n.xy *= normalStrength;
+    n = normalize(n);
+    return normalize(TBN * n);
+}
+
 void main(){
-    vec4 base = textureSRGB(mainTex, fsIn.texCoord);
+    vec2 uv = fsIn.texCoord * sizeOffset.xy + sizeOffset.zw;
+    vec4 base = textureSRGB(mainTex, uv);
     base = base * color;
 
-    vec4 normalMap = texture(normal, fsIn.texCoord);
-    vec3 _normal = normalize(normalMap.rgb * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
-    _normal = normalize(fsIn.TBN * _normal); 
+    /*vec3 normalMap = exture(normal, uv).rgb);
+    vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
+    _normal = normalize(fsIn.TBN * _normal);*/ 
+    
+    vec3 _normal = GetNormal(fsIn.TBN, uv);
 
     Surface surface;
     surface.position = fsIn.worldPos;
@@ -138,14 +153,14 @@ void main(){
     surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
     surface.color = base.rgb;
     surface.alpha = base.a;
-    surface.occlusion = GetOcclusion(fsIn.texCoord);
-    surface.metallic = GetMetallic(fsIn.texCoord);
-    surface.smoothness = GetSmoothness(fsIn.texCoord);
+    surface.occlusion = GetOcclusion(uv);
+    surface.metallic = GetMetallic(uv);
+    surface.smoothness = GetSmoothness(uv);
     
     BRDF brdf = GetBRDF(surface);
     GI gi = GetGI(surface, brdf);
     vec3 color = GetLighting(surface, brdf, gi);
-    color += GetEmission(fsIn.texCoord);
+    color += GetEmission(uv);
     fragColor = vec4(color, surface.alpha);
 
     if(base.a < cutoff) discard;

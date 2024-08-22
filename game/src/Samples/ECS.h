@@ -183,8 +183,8 @@ struct ECSSample: public OD::Module {
 
         Entity audioSourceEntity = scene->AddEntity("AudioSource");
         AudioSourceComponent& audioSource = audioSourceEntity.AddComponent<AudioSourceComponent>();
-        audioSource.clip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/2ne1_2.mp3");
-        audioSource.Play();
+        /*audioSource.clip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/2ne1_2.mp3");
+        audioSource.Play();*/
 
         Application::AddModule<Editor>();
         //scene->Start();

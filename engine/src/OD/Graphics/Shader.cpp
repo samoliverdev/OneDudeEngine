@@ -148,9 +148,9 @@ std::string Shader::load(std::string path){
             lineBuffer.erase(0, includeIndentifier.size());
 
             // The include path is relative to the current shader file path
-            /*std::string pathOfThisFile;
+            std::string pathOfThisFile;
             getFilePath(path, pathOfThisFile);
-            lineBuffer.insert(0, pathOfThisFile);*/
+            lineBuffer.insert(0, pathOfThisFile);
 
             //Remove "\r"
             //lineBuffer.erase(std::remove(lineBuffer.begin(), lineBuffer.end(), "\r"), lineBuffer.cend());
@@ -519,7 +519,7 @@ void Shader::Reload(){
     Create(Path(), enabledKeyworlds);
 }
 
-GLint Shader::GetLocation(const char* name){
+int Shader::GetLocation(const char* name){
     if(uniforms.count(name)) return uniforms[name];
     
     GLint location = glGetUniformLocation(rendererId, name);

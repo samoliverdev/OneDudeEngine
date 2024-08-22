@@ -192,6 +192,9 @@ Entity Scene::AddEntity(std::string name){
     TransformComponent& transform = registry.emplace<TransformComponent>(e);
     transform.registry = &registry;
 
+    Assert(registry.valid(e));
+    Assert(registry.any_of<TransformComponent>(e));
+
     return Entity(e, this);
 }
 
@@ -238,6 +241,11 @@ void Scene::SetParent(EntityId parent, EntityId child){
         LogWarning("ERROR: Trying set parent with itself");
         return;
     }
+
+    Assert(registry.valid(parent));
+    Assert(registry.valid(child));
+    Assert(registry.any_of<TransformComponent>(parent));
+    Assert(registry.any_of<TransformComponent>(child));
 
     TransformComponent& _parent = registry.get<TransformComponent>(parent);
     TransformComponent& _child = registry.get<TransformComponent>(child);
@@ -546,12 +554,16 @@ Entity Scene::InstantiatePrefab(const char* path){
 }
 
 void Scene::_DestroyEntity(EntityId entity){
+    Assert(registry.valid(entity));
+    Assert(registry.any_of<TransformComponent>(entity));
     TransformComponent& transform = registry.get<TransformComponent>(entity);
 
     for(auto i: transform.children){
         _DestroyEntity(i);
     }
+    transform.children.clear();
 
+    /*
     if(transform.hasParent){
         TransformComponent& parent = registry.get<TransformComponent>(transform.parent);
         //parent._children.clear();
@@ -564,6 +576,7 @@ void Scene::_DestroyEntity(EntityId entity){
             parent.children.end()
         );
     }
+    */
 
     registry.destroy(entity);
 }

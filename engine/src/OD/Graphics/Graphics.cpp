@@ -4,6 +4,8 @@
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Camera.h"
 
+//#define ENGINE_RESOURCE_PATH "res/Engine/"
+
 namespace OD{
 
 void GraphicsModuleInit(){
@@ -131,7 +133,7 @@ void Graphics::Initialize(){
 
     fullScreenQuad = Mesh::FullScreenQuad();
     //gismoShader = Shader::CreateFromFiles("res/shaders/gizmos.vert", "res/shaders/gizmos.frag");
-    gismoShader = Shader::CreateFromFile("res/Engine/Shaders/Gizmos.glsl");
+    gismoShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/Gizmos.glsl");
     Assert(gismoShader != nullptr);
 
     CreateLineVAO(&lineVAO, &lineVBO, 2);

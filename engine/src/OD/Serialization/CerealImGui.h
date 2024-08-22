@@ -127,7 +127,8 @@ private:
 
     template<class T>
     void DrawUI(const char* name, OD::AssetRefSerialize<T>& value, Options opt = Options()){
-        ImGui::DrawAsset<T>(std::string(name), value.asset);
+        std::string s(name);
+        ImGui::DrawAsset<T>(s, value.asset);
     }
 
     template<class T>

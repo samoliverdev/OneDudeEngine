@@ -1,6 +1,6 @@
 #pragma once
 
-#include <taskflow/taskflow.hpp> 
+//#include <taskflow/taskflow.hpp> 
 #include <OD/OD.h>
 #include <OD/RenderPipeline/CommandBuffer.h>
 #include <chrono>
@@ -84,9 +84,9 @@ struct BaseMeshSample: OD::Module {
 
     Ref<Font> font;
 
-    tf::Executor executor;
+    /*tf::Executor executor;
     tf::Taskflow taskflow;
-    bool executorEnd = false;
+    bool executorEnd = false;*/
 
     void OnInit() override {
         LogInfo("Game Init");
@@ -209,7 +209,7 @@ struct BaseMeshSample: OD::Module {
         myFuncDef func = (myFuncDef)Platform::LoadDynamicFunction(module, "CreateInstance");
         Application::AddModule(func());*/
 
-        taskflow.emplace([](){
+        /*taskflow.emplace([](){
             std::this_thread::sleep_for (std::chrono::seconds(5));
         });
         taskflow.emplace([](){
@@ -221,7 +221,7 @@ struct BaseMeshSample: OD::Module {
         taskflow.emplace([](){
             std::this_thread::sleep_for (std::chrono::seconds(5));
         });
-        executor.run(taskflow, [&](){ executorEnd = true; });
+        executor.run(taskflow, [&](){ executorEnd = true; });*/
     }
 
     void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
@@ -255,10 +255,10 @@ struct BaseMeshSample: OD::Module {
             meshShader->Reload();
         }
 
-        if(executorEnd == true){
+        /*if(executorEnd == true){
             LogWarning("executorEnd");
             executor.wait_for_all();
-        }
+        }*/
     }   
 
     void OnRender(float deltaTime) override {

@@ -8,13 +8,15 @@ void EnvironmentComponent::OnGui(Entity& e){
 
     ImGui::DrawEnumCombo<EnvironmentSky>("environmentSky", &environment.settings.environmentSky);
     if(environment.settings.environmentSky == EnvironmentSky::Cubemap){
-        ImGui::DrawAsset<Cubemap>(std::string("skyCubemap"), environment.settings.skyCubemap);
+        std::string skyCubemap("skyCubemap");;
+        ImGui::DrawAsset<Cubemap>(skyCubemap, environment.settings.skyCubemap);
     }
     if(environment.settings.environmentSky == EnvironmentSky::Color){
         ImGui::ColorEdit3("skyColor", &environment.settings.cleanColor);
     }
     if(environment.settings.environmentSky == EnvironmentSky::CustomMaterial){
-        ImGui::DrawAsset<Material>(std::string("skyCustomMaterial"), environment.settings.skyCustomMaterial);
+        std::string skyCustomMaterial("skyCustomMaterial");
+        ImGui::DrawAsset<Material>(skyCustomMaterial, environment.settings.skyCustomMaterial);
     }
 
     ImGui::Spacing();ImGui::Spacing();

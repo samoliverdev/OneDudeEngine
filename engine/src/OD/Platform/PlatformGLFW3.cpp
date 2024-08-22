@@ -55,7 +55,7 @@ void imguiOnInit(GLFWwindow* window){
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.FontDefault = io.Fonts->AddFontFromFileTTF("res/Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(ENGINE_RESOURCE_PATH "Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -324,6 +324,12 @@ void Platform::SetVSync(bool enabled){
 }
 
 bool Platform::IsVSync(){ return vSync; }
+
+void Platform::SetCursorState(CursorState state){
+    if(state == CursorState::Normal) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    if(state == CursorState::Hidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    if(state == CursorState::Disabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
 
 void Platform::ShowWindow(bool show){
     hidden = show == false;

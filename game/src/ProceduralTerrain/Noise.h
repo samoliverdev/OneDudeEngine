@@ -35,7 +35,7 @@ inline float Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
     return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
 }
     
-float InverseLerp(float xx, float yy, float value){
+inline float InverseLerp(float xx, float yy, float value){
     return (value - xx)/(yy - xx);
 }
 

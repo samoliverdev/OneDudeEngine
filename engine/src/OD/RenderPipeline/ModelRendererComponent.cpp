@@ -17,7 +17,8 @@ void ModelRendererComponent::OnGui(Entity& e){
         ImGui::TreePop();
     }
 
-    ImGui::DrawAsset<Model>(std::string("model"), mesh.model);
+    std::string ss("model");
+    ImGui::DrawAsset<Model>(ss, mesh.model);
 
     int subMeshIndex = mesh.subMeshIndex;
     if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){

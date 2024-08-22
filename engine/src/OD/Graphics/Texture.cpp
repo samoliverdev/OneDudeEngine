@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "OD/Platform/GL.h"
 #include "OD/Core/ImGui.h"
 #include <stb/stb_image.h>
 #include "OD/Serialization/Serialization.h"
@@ -169,7 +170,7 @@ Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2
 }
 
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
-    return AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/White.jpg");
+    return AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH  "Textures/White.jpg");
 }
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
@@ -208,7 +209,7 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
     glViewport(0, 0, 512, 512);
-    Ref<Shader> brdfShader = Shader::CreateFromFile("res/Engine/Shaders/brdf.glsl");
+    Ref<Shader> brdfShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/brdf.glsl");
     Shader::Bind(*brdfShader);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     renderQuad();

@@ -86,8 +86,8 @@ public:
     inline Transform ToTransform(){ 
         return Transform(GlobalModelMatrix()); 
         //return Transform(Position(), Rotation(), LocalScale()); 
-    } 
-
+    }
+     
 private:
     Transform transform;
     std::vector<EntityId> children;

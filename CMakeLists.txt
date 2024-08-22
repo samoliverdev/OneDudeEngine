@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-enable_testing()
+#----------------Engine------------------
 
 set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -61,8 +61,14 @@ add_subdirectory(engine/vendor/freetype)
 add_subdirectory(engine/vendor/recastnavigation)
 #add_subdirectory(engine/vendor/taskflow)
 
-#----------------Engine------------------
+option(ENGINE_SHARED_LIBRARY "" TRUE)
+set(_ENGINE_RESOURCE_PATH "res/Engine/" CACHE STRING "")
+
+MESSAGE("_ENGINE_RESOURCE_PATH? " ${_ENGINE_RESOURCE_PATH})
+
 project(engine)
+
+#set(_ENGINE_RESOURCE_PATH "res/Engine/")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     #using Clang
@@ -82,11 +88,14 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     engine/vendor/entt/*.cpp
     engine/src/*.cpp
 )
+if(ENGINE_SHARED_LIBRARY)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
-#add_library(engine STATIC ${ENGINE_SOURCE_FILES})
-target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
+else()
+add_library(engine STATIC ${ENGINE_SOURCE_FILES})
+endif()
+#target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
 target_compile_definitions(engine PUBLIC OD_BUILD_DLL)
-
+target_compile_definitions(engine PUBLIC ENGINE_RESOURCE_PATH="${_ENGINE_RESOURCE_PATH}")
 target_include_directories(engine PUBLIC 
     engine/vendor/
     engine/vendor/cgltf/
@@ -107,7 +116,6 @@ target_include_directories(engine PUBLIC
     engine/vendor/taskflow/
     engine/src/
 )
-
 target_link_libraries(engine PUBLIC 
     glfw 
     assimp
@@ -118,6 +126,10 @@ target_link_libraries(engine PUBLIC
 )
 
 #----------------Sandbox------------------
+option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
+
+if(BUILD_SANDBOX)
+
 project(game)
 
 file(GLOB_RECURSE GAME_SOURCE_FILES game/src/*.cpp)
@@ -141,9 +153,12 @@ target_include_directories(dynamic_module PUBLIC engine/src/)
 target_link_libraries(dynamic_module engine)
 target_compile_definitions(dynamic_module PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 
+endif()
 
 # Enable Disable Tests
 if(OFF) 
+
+enable_testing()
 
 project(tests)
 

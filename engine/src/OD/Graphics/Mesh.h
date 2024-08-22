@@ -55,6 +55,7 @@ public:
     void OnGui() override;
 
     void CalculateNormals();
+    void CalculateTangent();
 
     void Submit();
     void SubmitInstancingModelMatrixs();

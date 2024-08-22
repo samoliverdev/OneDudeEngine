@@ -267,7 +267,7 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> cus
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Model.glsl"));
+        out->SetShader(AssetManager::Get().LoadAsset<Shader>(ENGINE_RESOURCE_PATH "Shaders/Model.glsl"));
     } else {
         out->SetShader(customShader);
     }

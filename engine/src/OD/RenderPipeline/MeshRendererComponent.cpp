@@ -6,8 +6,10 @@ namespace OD{
 void MeshRendererComponent::OnGui(Entity& e){
     MeshRendererComponent& mesh = e.GetComponent<MeshRendererComponent>();
 
-    ImGui::DrawAsset<Mesh>(std::string("mesh"), mesh.mesh);
-    ImGui::DrawAsset<Material>(std::string("material"), mesh.material);
+    std::string s1("mesh");
+    std::string s2("material");
+    ImGui::DrawAsset<Mesh>(s1, mesh.mesh);
+    ImGui::DrawAsset<Material>(s2, mesh.material);
 }
 
 }

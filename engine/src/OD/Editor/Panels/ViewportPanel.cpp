@@ -17,6 +17,7 @@ void ViewportPanel::OnGui(){
     bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
     
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+    ImGui::SetNextWindowSize(ImVec2(576, 680));
     ImGui::Begin("Viewport", (bool*)0, sceneRunning ? 0 : ImGuiWindowFlags_MenuBar);
 
     if(sceneRunning == false){

@@ -22,7 +22,7 @@ namespace OD{
 class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
-        _ppShader = Shader::CreateFromFile("res/Engine/Shaders/BasicPostProcessing.glsl");
+        _ppShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BasicPostProcessing.glsl");
         Assert(_ppShader != nullptr);
     }
 

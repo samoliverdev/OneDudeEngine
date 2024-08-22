@@ -8,8 +8,78 @@
 
 using namespace OD;
 
+struct CameraController: public Script{
+    bool autoHiddenCursor = true;
+
+    float upOffset = 1.4f;
+    float distance = 10.0f;
+    float sensivity = 5;
+
+    float yMin = -50.0f;
+    float yMax = 50.0f;
+
+    float currentX = 0.0f;
+    float currentY = 0.0f;
+
+    EntityId lookAtTarget;
+
+    double lastMousePosX = 0.0;
+    double lastMousePosY = 0.0;
+
+    void OnStart() override{
+        if(autoHiddenCursor) Platform::SetCursorState(CursorState::Disabled);
+    }
+
+    void OnUpdate() override{
+        if(autoHiddenCursor){
+            if(Input::IsKeyDown(KeyCode::Escape)) Platform::SetCursorState(CursorState::Normal);
+            if(Input::IsMouseButtonDown(MouseButton::Left)) Platform::SetCursorState(CursorState::Disabled);
+        }
+
+        TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
+
+        Entity target(lookAtTarget, GetEntity().GetScene());
+        TransformComponent& lookAt = target.GetComponent<TransformComponent>();
+        Vector3 lookAtPos = lookAt.Position() + Vector3Up * upOffset;
+
+        double mousePosX;
+        double mousePosY;
+        Input::GetMousePosition(&mousePosX, &mousePosY);
+
+        float mouseXAxis = -(mousePosX - lastMousePosX);
+        float mouseYAxis = -(lastMousePosY - mousePosY);
+        mouseXAxis = math::clamp(mouseXAxis, -1.0f, 1.0f);
+        mouseYAxis = math::clamp(mouseYAxis, -1.0f, 1.0f);
+
+        lastMousePosX = mousePosX;
+        lastMousePosY = mousePosY;
+
+        currentX += mouseXAxis * sensivity;
+        currentY += mouseYAxis * sensivity;
+
+        currentY = math::clamp(currentY, yMin, yMax);
+
+        Vector3 Direction = Vector3(0, 0, -distance);
+        Quaternion rotation = Quaternion(math::radians(Vector3(currentY, currentX, 0)));
+        transform.Position(lookAtPos + rotation * Direction);
+
+        //transform.LookAt(lookAt.Position());
+        transform.Rotation(math::quatLookAt(math::normalize(lookAtPos - transform.Position()), Vector3Up));
+    }
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, autoHiddenCursor);
+        ArchiveDumpNVP(ar, upOffset);
+        ArchiveDumpNVP(ar, distance);
+        ArchiveDumpNVP(ar, sensivity);
+        ArchiveDumpNVP(ar, yMin);
+        ArchiveDumpNVP(ar, yMax);
+    }
+};
+
 struct PlayerController: public Script{
-    float moveSpeed = 1000;
+    float moveSpeed = 600;
     float turnSpeed = 20;
 
     Clip* idleAnimation;
@@ -26,15 +96,32 @@ struct PlayerController: public Script{
         audioSource.clip = shootClip;
     }
 
+    float GetAxisHorizontal(){
+        float x = Input::IsKey(KeyCode::D) ? 1 : 0;
+        float y = Input::IsKey(KeyCode::A) ? 1 : 0;
+        return math::clamp(x - y, -1.0f, 1.0f);
+    }
+
+    float GetAxisVertical(){
+        float x = Input::IsKey(KeyCode::W) ? 1 : 0;
+        float y = Input::IsKey(KeyCode::S) ? 1 : 0;
+        return math::clamp(x - y, -1.0f, 1.0f);
+    }
+
     void OnUpdate() override{
         Vector3 moveDir = Vector3Zero;
         RigidbodyComponent& rb = GetEntity().GetComponent<RigidbodyComponent>();
         AnimatorComponent& anim = GetEntity().GetComponent<AnimatorComponent>();
 
-        if(Input::IsKey(KeyCode::W)) moveDir += Vector3Back;
+        /*if(Input::IsKey(KeyCode::W)) moveDir += Vector3Back;
         if(Input::IsKey(KeyCode::S)) moveDir += Vector3Forward;
         if(Input::IsKey(KeyCode::A)) moveDir += Vector3Left;
         if(Input::IsKey(KeyCode::D)) moveDir += Vector3Right;
+        if(math::length(moveDir) > 1) moveDir = math::normalize(moveDir);*/
+
+        TransformComponent& cam = GetEntity().GetScene()->GetMainCamera2().GetComponent<TransformComponent>();
+        moveDir = cam.Right() * GetAxisHorizontal() + cam.Back() * GetAxisVertical();
+        moveDir.y = 0.0f;
         if(math::length(moveDir) > 1) moveDir = math::normalize(moveDir);
 
         Assert(Mathf::IsNan(moveDir) == false);
@@ -78,6 +165,7 @@ struct CharacterControllerSample: OD::Module {
 
         SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
         SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
+        SceneManager::Get().RegisterScript<CameraController>("CameraController");
         SceneManager::Get().RegisterScript<PlayerController>("PlayerController");
 
         Scene* scene = SceneManager::Get().NewScene();
@@ -90,13 +178,6 @@ struct CharacterControllerSample: OD::Module {
         lightComponent.color = {1,1,1};
         light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
         light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
-
-        camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
-        cam.farClipPlane = 1000;
 
         Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/plane.glb");
         Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/Cube.glb");
@@ -154,6 +235,14 @@ struct CharacterControllerSample: OD::Module {
         Assert(charRenderer.posePalette.size() == charIdleModel->skeleton.GetRestPose().Size());
         AnimatorComponent& charAnim = playerEntity.AddComponent<AnimatorComponent>();
         charAnim.Play(charIdleModel->animationClips[0].get());
+
+        camera = scene->AddEntity("Camera");
+        CameraComponent& cam = camera.AddComponent<CameraComponent>();
+        cam.farClipPlane = 1000;
+        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
+        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
+        //camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+        camera.AddComponent<ScriptComponent>().AddScript<CameraController>()->lookAtTarget = playerEntity.Id();
         
         /*Entity navmeshEntity = scene->AddEntity("Navmesh");
         NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();

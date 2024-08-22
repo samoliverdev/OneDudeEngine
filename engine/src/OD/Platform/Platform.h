@@ -3,6 +3,8 @@
 
 namespace OD{
 
+enum class CursorState{Normal, Disabled, Hidden};
+
 class OD_API Platform{
 public:
     static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
@@ -19,6 +21,8 @@ public:
 
     static void SetVSync(bool enabled);
 	static bool IsVSync();
+
+    static void SetCursorState(CursorState state);
 
     static void ShowWindow(bool show);
     

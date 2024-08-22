@@ -479,7 +479,7 @@ PhysicsSystem::~PhysicsSystem(){
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
-    LogInfo("Removing Rigidbody");
+    //LogInfo("Removing Rigidbody");
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
     physicsSystem->RemoveRigidbody(e, rb);

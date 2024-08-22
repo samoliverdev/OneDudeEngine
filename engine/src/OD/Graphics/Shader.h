@@ -76,16 +76,16 @@ private:
     std::vector<std::string> enabledKeyworlds;
     
     unsigned int rendererId = 0;
-    std::unordered_map<std::string, GLint> uniforms;
+    std::unordered_map<std::string, int> uniforms;
     std::vector<std::string> _uniforms;
     std::vector<std::vector<std::string>> properties;
     std::vector<std::vector<std::string>> pragmas;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
     std::string load(std::string path);
-    GLint GetLocation(const char* name);
-	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source, std::vector<std::string>& keyworlds);
-	void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);
+    int GetLocation(const char* name);
+	std::unordered_map<unsigned int, std::string> PreProcess(const std::string& source, std::vector<std::string>& keyworlds);
+	void Compile(const std::unordered_map<unsigned int, std::string>& shaderSources);
 };
 
 }

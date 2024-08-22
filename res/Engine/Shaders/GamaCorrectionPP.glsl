@@ -16,7 +16,7 @@ void main() {
 
 #if defined(FRAGMENT)
 
-#include res/Engine/ShaderLibrary/Core.glsl
+#include ../ShaderLibrary/Core.glsl
 
 uniform sampler2D mainTex;
 uniform float option;

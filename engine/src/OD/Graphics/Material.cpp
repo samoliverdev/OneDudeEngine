@@ -313,7 +313,8 @@ void Material::OnGui(){
     }*/
 
     Ref<Shader> tempShader = GetShader();
-    if(ImGui::DrawAsset<Shader>(std::string("shader"), tempShader) && tempShader != GetShader()){
+    std::string s("shader");
+    if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != GetShader()){
         SetShader(tempShader);
         toSave = true;
     }
@@ -539,11 +540,11 @@ void Material::UpdateMaps(){
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
             if(i[2] == "White"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/White.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/White.jpg") );
             } else if(i[2] == "Black"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/Black.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/Black.jpg") );
             } else if(i[2] == "Normal"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/Normal.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/Normal.jpg") );
             } else {
                 SetTexture(i[1].c_str(), Texture2D::LoadDefautlTexture2D());
             }

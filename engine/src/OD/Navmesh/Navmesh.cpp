@@ -34,7 +34,7 @@ public:
     Ref<Mesh> mesh;
 
     DebugDrawGL(){
-        shader = Shader::CreateFromFile("res/Engine/Shaders/Gizmos.glsl");
+        shader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/Gizmos.glsl");
         mesh = CreateRef<Mesh>();
     }
 

@@ -56,11 +56,12 @@ void Mesh::OnGui(){
 //Source: https://gamedev.stackexchange.com/questions/152991/how-can-i-calculate-normals-using-a-vertex-and-index-buffer
 void Mesh::CalculateNormals(){
     normals.resize(vertices.size());
+    //tangents.resize(vertices.size());
 
     // Zero-out our normal buffer to start from a clean slate.
-    for(int vertex = 0; vertex < vertices.size(); vertex++){
+    /*for(int vertex = 0; vertex < vertices.size(); vertex++){
         normals[vertex] = Vector3Zero;
-    }
+    }*/
 
     // For each face, compute the face normal, and accumulate it into each vertex.
     for(int index = 0; index < indices.size(); index += 3) {
@@ -88,6 +89,35 @@ void Mesh::CalculateNormals(){
     // Finally, normalize all the sums to get a unit-length, area-weighted average.
     for(int vertex = 0; vertex < vertices.size(); vertex++){  
         normals[vertex] = math::normalize(normals[vertex]);
+    }
+}
+
+void Mesh::CalculateTangent(){
+    tangents.resize(vertices.size());
+    Assert(vertices.size() == uv.size());
+
+    //iterate the indices array
+    for(size_t i = 0; i < indices.size(); i+=3){ //we need to handle 3 vertices --> one triangle
+        //calculate indices
+        unsigned int i1 = indices[i];
+        unsigned int i2 = indices[i + 1];
+        unsigned int i3 = indices[i + 2];
+
+        glm::vec3 edge1 = glm::vec3(vertices[i2].x, vertices[i2].y, vertices[i2].z) - glm::vec3(vertices[i1].x, vertices[i1].y, vertices[i1].z);
+        glm::vec3 edge2 = glm::vec3(vertices[i3].x, vertices[i3].y, vertices[i3].z) - glm::vec3(vertices[i1].x, vertices[i1].y, vertices[i1].z);
+        glm::vec2 deltaUV1 = glm::vec2(uv[i2].x, uv[i2].y) - glm::vec2(uv[i1].x, uv[i1].y);
+        glm::vec2 deltaUV2 = glm::vec2(uv[i3].x, uv[i3].y) - glm::vec2(uv[i1].x, uv[i1].y);
+
+        // calculate tangent.
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+        glm::vec3 tangent = f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+
+        // calculate bitangent.
+        glm::vec3 bitangent = f * (-deltaUV2.x * edge1 + deltaUV1.x * edge2);
+
+        tangents[i1] = tangent;
+        tangents[i2] = tangent;
+        tangents[i3] = tangent;
     }
 }
 
