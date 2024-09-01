@@ -170,18 +170,18 @@ if(OFF)
 
 enable_testing()
 
-project(tests)
+project(Tests)
 
-add_subdirectory(tests/googletest EXCLUDE_FROM_ALL)
+add_subdirectory(Tests/googletest EXCLUDE_FROM_ALL)
 add_library(GTest::GTest INTERFACE IMPORTED)
 target_link_libraries(GTest::GTest INTERFACE gtest_main)
 
-file(GLOB_RECURSE TESTS_SOURCE_FILES tests/src/*.cpp)
-add_executable(tests ${TESTS_SOURCE_FILES})
+file(GLOB_RECURSE TESTS_SOURCE_FILES Tests/src/*.cpp)
+add_executable(Tests ${TESTS_SOURCE_FILES})
 
-target_include_directories(tests PUBLIC engine/src/)
-target_link_libraries(tests GTest::GTest engine)
+target_include_directories(Tests PUBLIC Engine/src/)
+target_link_libraries(Tests GTest::GTest engine)
 
-add_test(tests_gtests tests)
+add_test(tests_gtests Tests)
 
 endif()
