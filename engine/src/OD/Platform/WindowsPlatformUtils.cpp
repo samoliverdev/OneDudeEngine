@@ -1,8 +1,16 @@
 #include "OD/Utils/PlatformUtils.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <string.h>
+#include <Windows.h>
 
 namespace OD{
+
+std::string FileDialogs::OpenFolder(){
+    const char* r = tinyfd_selectFolderDialog("Open Project", NULL);
+    if(r != NULL) return std::string(r);
+    
+    return std::string();
+}
 
 std::string FileDialogs::OpenFile(const char* filter){
     if(strcmp(filter, "") == 0){

@@ -28,8 +28,8 @@ public:
     
     static void* GetInternalData();
 
-    static void* LoadDynamicLibrary(char* dll);
-    static void* LoadDynamicFunction(void* dll, char* funcName);
+    static void* LoadDynamicLibrary(const char* dll);
+    static void* LoadDynamicFunction(void* dll, const char* funcName);
     static bool FreeDynimicLibrary(void* dll);
 
     /*static void BeginOffscreenContextCurrent();

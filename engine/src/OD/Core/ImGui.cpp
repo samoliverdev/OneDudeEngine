@@ -52,7 +52,7 @@ void ImGuiLayer::SetDarkTheme(){
     icons_config.MergeMode = true; 
     icons_config.PixelSnapH = true; 
     icons_config.GlyphMinAdvanceX = iconFontSize;
-    io.Fonts->AddFontFromFileTTF(ENGINE_RESOURCE_PATH "Fonts/fa-solid-900.ttf", iconFontSize, &icons_config, icons_ranges );
+    io.Fonts->AddFontFromFileTTF("Engine/Fonts/fa-solid-900.ttf", iconFontSize, &icons_config, icons_ranges );
     // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
 
     auto& colors = ImGui::GetStyle().Colors;

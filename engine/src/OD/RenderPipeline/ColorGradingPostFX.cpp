@@ -4,7 +4,7 @@ namespace OD{
 
 ColorGradingPostFX::ColorGradingPostFX(){
     enable = false;
-    colorGradingPass = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/ColorGradingPostFX.glsl");
+    colorGradingPass = Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl");
     Assert(colorGradingPass != nullptr);
 }
 

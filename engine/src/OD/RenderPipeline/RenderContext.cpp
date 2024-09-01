@@ -36,7 +36,7 @@ RenderContext::RenderContext(Scene* inScene){
     postFx1 = new Framebuffer(framebufferSpecification);
     postFx2 = new Framebuffer(framebufferSpecification);
 
-    blitShader = AssetManager::Get().LoadAsset<Shader>(ENGINE_RESOURCE_PATH "Shaders/Blit.glsl");
+    blitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl");
 
     skyboxMesh = Mesh::SkyboxCube();
 }

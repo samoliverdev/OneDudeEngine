@@ -18,6 +18,7 @@
 // -- #include <glm/mat3x3.hpp>
 // -- #include <glm/mat4x4.hpp>
 //#include <glm/geometric.hpp>
+#include <glm/gtx/projection.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 //#include <glm/gtx/orthonormalize.hpp>
@@ -28,6 +29,10 @@
 #include <glm/gtx/hash.hpp>
 
 namespace glm{
+
+inline vec3 projectOnPlane(vec3 vector, vec3 planeNormal){
+    return proj(vector, planeNormal);
+}
 
 inline vec3 normalizeSafe(vec3 v){
     if(v == vec3(0, 0, 0)) return v;

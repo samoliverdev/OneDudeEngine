@@ -77,12 +77,12 @@ struct OD_API EnvironmentComponent{
 
     EnvironmentComponent(){
         settings.skyCubemap = Cubemap::CreateFromFile(
-            ENGINE_RESOURCE_PATH "Textures/Skybox/right.jpg",
-            ENGINE_RESOURCE_PATH "Textures/Skybox/left.jpg",
-            ENGINE_RESOURCE_PATH "Textures/Skybox/top.jpg",
-            ENGINE_RESOURCE_PATH "Textures/Skybox/bottom.jpg",
-            ENGINE_RESOURCE_PATH "Textures/Skybox/front.jpg",
-            ENGINE_RESOURCE_PATH "Textures/Skybox/back.jpg"
+            "Engine/Textures/Skybox/right.jpg",
+            "Engine/Textures/Skybox/left.jpg",
+            "Engine/Textures/Skybox/top.jpg",
+            "Engine/Textures/Skybox/bottom.jpg",
+            "Engine/Textures/Skybox/front.jpg",
+            "Engine/Textures/Skybox/back.jpg"
         );
         
         settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(settings.skyCubemap);
@@ -91,7 +91,7 @@ struct OD_API EnvironmentComponent{
         Assert(settings.skyCubemap != nullptr);
 
         settings.skyCustomMaterial = CreateRef<Material>();
-        settings.skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>(ENGINE_RESOURCE_PATH "Shaders/SkyboxCubemap.glsl"));
+        settings.skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
         settings.skyCustomMaterial->SetCubemap("mainTex", settings.skyCubemap);
     }

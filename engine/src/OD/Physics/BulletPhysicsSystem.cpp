@@ -22,7 +22,6 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
 
-
 #pragma region Core
 inline Vector3 FromBullet(btVector3 v){ return Vector3(v.x(), v.y(), v.z()); }
 inline btVector3 ToBullet(Vector3 v){ return btVector3(v.x, v.y, v.z); }
@@ -59,30 +58,45 @@ struct Rigidbody{
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
 typedef std::set<CollisionPair> CollisionPairs;
 
+class MeshShapeData{
+public:
+    btTriangleMesh* triangleMesh;
+    btBvhTriangleMeshShape* triangleMeshShape;
+
+    ~MeshShapeData(){
+        delete triangleMeshShape;
+        delete triangleMesh;
+    }
+};
+
 Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
-    btTriangleMesh* out = new btTriangleMesh();//FIXME: Memory leak
+    Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
+
+    out->triangleMesh = new btTriangleMesh();
     for(size_t i = 0; i < mesh->indices.size(); i += 3){
-        out->addTriangle(
+        out->triangleMesh->addTriangle(
             ToBullet(mesh->vertices[mesh->indices[i]]), 
             ToBullet(mesh->vertices[mesh->indices[i+1]]), 
             ToBullet(mesh->vertices[mesh->indices[i+2]])
         );
     }
-    Ref<btBvhTriangleMeshShape> out2 = CreateRef<btBvhTriangleMeshShape>(out, true);
-    return out2;
+    out->triangleMeshShape = new btBvhTriangleMeshShape(out->triangleMesh, true);
+    return out;
 }
 
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
-    btTriangleMesh* out = new btTriangleMesh();//FIXME: Memory leak
+    Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
+    
+    out->triangleMesh = new btTriangleMesh();
     for(size_t i = 0; i < indices.size(); i += 3){
-        out->addTriangle(
+        out->triangleMesh->addTriangle(
             ToBullet(vertices[indices[i]]), 
             ToBullet(vertices[indices[i+1]]), 
             ToBullet(vertices[indices[i+2]])
         );
     }
-    Ref<btBvhTriangleMeshShape> out2 = CreateRef<btBvhTriangleMeshShape>(out, true);
-    return out2;
+    out->triangleMeshShape = new btBvhTriangleMeshShape(out->triangleMesh, true);
+    return out;
 }
 
 struct PhysicsWorld{
@@ -317,7 +331,7 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
     }
 
     if(shape.type == CollisionShape::Type::Mesh){
-        btBvhTriangleMeshShape* _shape = shape.mesh.get();
+        btBvhTriangleMeshShape* _shape = shape.mesh->triangleMeshShape;
         data->shape = _shape;
         if(data->body != nullptr) data->body->setCollisionShape(data->shape);
     }
@@ -431,6 +445,11 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
     data->body->applyCentralImpulse(ToBullet(v));
 }
 
+void RigidbodyComponent::SetAngularFactor(Vector3 v){
+    if(data == nullptr) return;
+    data->body->setAngularFactor(ToBullet(v));
+}
+
 #pragma endregion
 
 #pragma region PhysicsSystem
@@ -465,8 +484,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 }
 
 PhysicsSystem::~PhysicsSystem(){
-    this->scene->GetRegistry().ctx().erase<PhysicsSystem*>();
-    this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     delete physicsWorld->world;
     delete physicsWorld->solver;
@@ -474,6 +492,9 @@ PhysicsSystem::~PhysicsSystem(){
     delete physicsWorld->dispatcher;
     delete physicsWorld->collisionConfiguration;
     delete physicsWorld;
+
+    this->scene->GetRegistry().ctx().erase<PhysicsSystem*>();
+    this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 
     LogWarningExtra("PhysicsSystem Destructor"); 
 }
@@ -487,6 +508,8 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 
 void PhysicsSystem::Update(){
     if(GetScene()->Running() == false) return;
+
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     physicsWorld->world->stepSimulation(Application::DeltaTime(), ACCURACY);
     //world->synchronizeMotionStates();
@@ -522,6 +545,8 @@ void PhysicsSystem::OnDrawGizmos(){
 }
 
 void PhysicsSystem::CheckForCollisionEvents(){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+
     //return;
     // keep a list of the collision pairs we
 	// found during the current update
@@ -660,11 +685,13 @@ void PhysicsSystem::CheckForCollisionEvents(){
 }
 
 void PhysicsSystem::ShowDebugGizmos(){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     //if(scene()->running()) return;
     physicsWorld->world->debugDrawWorld();
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     //if(world == nullptr) return false;
     Assert(physicsWorld->world != nullptr);
 
@@ -696,6 +723,18 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
     return false;
 }
 
+void PhysicsSystem::Simulate(float step){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+    physicsWorld->world->stepSimulation(step, ACCURACY);
+    //physicsWorld->world->synchronizeMotionStates();
+    //physicsWorld->world->performDiscreteCollisionDetection();
+}
+
+void PhysicsSystem::SynchronizeMotionStates(){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+    physicsWorld->world->synchronizeMotionStates();
+}
+
 void PhysicsSystem::AddOnCollisionEnterCallback(OnCollisionCallback callback){ onCollisionEnterCallbacks.push_back(callback); }
 void PhysicsSystem::RemoveOnCollisionEnterCallback(OnCollisionCallback callback){ 
     onCollisionEnterCallbacks.erase(std::remove(onCollisionEnterCallbacks.begin(), onCollisionEnterCallbacks.end(), callback), onCollisionEnterCallbacks.end()); 
@@ -717,6 +756,8 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
 }
 
 void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+
     //LogInfo("Add Rigidbody");
     Rigidbody* data = new Rigidbody();
     data->updating = true;
@@ -759,6 +800,8 @@ void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, Trans
 }
 
 void PhysicsSystem::RemoveRigidbody(EntityId entityId, RigidbodyComponent& rb){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+    
     //LogInfo("Remove Rigidbody");
     if(rb.data == nullptr) return;
 

@@ -4,11 +4,11 @@ namespace OD{
 
 BloomPostFX::BloomPostFX(){
     enable = false;
-    blitShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/Blit.glsl");
-    bloomHorizontalPassShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BloomHorizontalPostFX.glsl");
-    bloomVerticalPassShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BloomVerticalPostFX.glsl");
-    bloomCombinePassShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BloomCombinePostFX.glsl");
-    bloomPrefilterPassShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BloomPrefilterPostFX.glsl");
+    blitShader = Shader::CreateFromFile("Engine/Shaders/Blit.glsl");
+    bloomHorizontalPassShader = Shader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl");
+    bloomVerticalPassShader = Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl");
+    bloomCombinePassShader = Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl");
+    bloomPrefilterPassShader = Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl");
 }
 
 void BloomPostFX::OnSetup(){

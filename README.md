@@ -4,9 +4,9 @@ In developement Game Engine inspired by The Unity Engine, write in c++ with focu
 
 ### Screenshots
 
-![Screenshots 1](/screenshots/Screenshots_01.png)
-![Screenshots 2](/screenshots/Screenshots_02.png)
-![Screenshots 3](/screenshots/Screenshots_03.png)
+![Screenshots 1](/Screenshots/Screenshots_01.png)
+![Screenshots 2](/Screenshots/Screenshots_02.png)
+![Screenshots 3](/Screenshots/Screenshots_03.png)
 
 ### How Compiler And Run with Visual Studio Compiler
 
@@ -14,7 +14,7 @@ cmake -S . -B build
 
 cmake --build build --config Release
 
-./build/Release/game
+./build/Release/Sandbox
 
 ### Current Features
 * ECS 

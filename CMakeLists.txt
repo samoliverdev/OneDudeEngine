@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -53,22 +55,21 @@ set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
 #set(TF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 #set(TF_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(engine/vendor/glfw)
-add_subdirectory(engine/vendor/assimp)
-add_subdirectory(engine/vendor/bullet3)
-add_subdirectory(engine/vendor/soloud)
-add_subdirectory(engine/vendor/freetype)
-add_subdirectory(engine/vendor/recastnavigation)
+add_subdirectory(Engine/vendor/glfw)
+add_subdirectory(Engine/vendor/assimp)
+add_subdirectory(Engine/vendor/bullet3)
+add_subdirectory(Engine/vendor/soloud)
+add_subdirectory(Engine/vendor/freetype)
+add_subdirectory(Engine/vendor/recastnavigation)
 #add_subdirectory(engine/vendor/taskflow)
 
 option(ENGINE_SHARED_LIBRARY "" TRUE)
-set(_ENGINE_RESOURCE_PATH "res/Engine/" CACHE STRING "")
 
-MESSAGE("_ENGINE_RESOURCE_PATH? " ${_ENGINE_RESOURCE_PATH})
+set(DEFAULT_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Sandbox" CACHE STRING "")
 
-project(engine)
+MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
 
-#set(_ENGINE_RESOURCE_PATH "res/Engine/")
+project(Engine)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     #using Clang
@@ -78,45 +79,44 @@ else()
 endif()
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
-    engine/vendor/tinyfiledialogs/*.c
-    engine/vendor/glad/*.c 
-    engine/vendor/stb/*.c 
-    engine/vendor/cgltf/*.c
+    Engine/vendor/tinyfiledialogs/*.c
+    Engine/vendor/glad/*.c 
+    Engine/vendor/stb/*.c 
+    Engine/vendor/cgltf/*.c
     #engine/vendor/glm/*.cpp
-    engine/vendor/imgui/*.cpp 
-    engine/vendor/ImGuizmo/*.cpp 
-    engine/vendor/entt/*.cpp
-    engine/src/*.cpp
+    Engine/vendor/imgui/*.cpp 
+    Engine/vendor/ImGuizmo/*.cpp 
+    Engine/vendor/entt/*.cpp
+    Engine/src/*.cpp
 )
 if(ENGINE_SHARED_LIBRARY)
-add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()
-add_library(engine STATIC ${ENGINE_SOURCE_FILES})
+add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
 #target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
-target_compile_definitions(engine PUBLIC OD_BUILD_DLL)
-target_compile_definitions(engine PUBLIC ENGINE_RESOURCE_PATH="${_ENGINE_RESOURCE_PATH}")
-target_include_directories(engine PUBLIC 
-    engine/vendor/
-    engine/vendor/cgltf/
-    engine/vendor/cereal/include/
-    engine/vendor/magic_enum/include/
-    engine/vendor/imgui/
-    engine/vendor/ImGuizmo/
-    engine/vendor/glfw/include/
-    engine/vendor/assimp/include/
-    engine/vendor/bullet3/src
-    engine/vendor/entt/
-    engine/vendor/soloud/include/
-    engine/vendor/freetype/include/
-    engine/vendor/recastnavigation/Recast/Include/
-    engine/vendor/recastnavigation/Detour/Include/
-    engine/vendor/recastnavigation/DetourCrowd/Include/
-    engine/vendor/recastnavigation/Detour/Include/
-    engine/vendor/taskflow/
-    engine/src/
+target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
+target_include_directories(Engine PUBLIC 
+    Engine/vendor/
+    Engine/vendor/cgltf/
+    Engine/vendor/cereal/include/
+    Engine/vendor/magic_enum/include/
+    Engine/vendor/imgui/
+    Engine/vendor/ImGuizmo/
+    Engine/vendor/glfw/include/
+    Engine/vendor/assimp/include/
+    Engine/vendor/bullet3/src
+    Engine/vendor/entt/
+    Engine/vendor/soloud/include/
+    Engine/vendor/freetype/include/
+    Engine/vendor/recastnavigation/Recast/Include/
+    Engine/vendor/recastnavigation/Detour/Include/
+    Engine/vendor/recastnavigation/DetourCrowd/Include/
+    Engine/vendor/recastnavigation/Detour/Include/
+    Engine/vendor/taskflow/
+    Engine/src/
 )
-target_link_libraries(engine PUBLIC 
+target_link_libraries(Engine PUBLIC 
     glfw 
     assimp
     soloud
@@ -126,32 +126,42 @@ target_link_libraries(engine PUBLIC
 )
 
 #----------------Sandbox------------------
+project(Editor)
+
+file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/src/*.cpp)
+add_executable(Editor ${EDITOR_SOURCE_FILES})
+target_include_directories(Editor PUBLIC Engine/src/)
+target_include_directories(Editor PUBLIC Editor/src/)
+target_link_libraries(Editor Engine)
+target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+
+#----------------Sandbox------------------
 option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
 
 if(BUILD_SANDBOX)
 
-project(game)
+project(Sandbox)
 
-file(GLOB_RECURSE GAME_SOURCE_FILES game/src/*.cpp)
-add_executable(game ${GAME_SOURCE_FILES})
-target_include_directories(game PUBLIC engine/src/)
-target_include_directories(game PUBLIC game/src/)
-target_link_libraries(game engine)
-target_compile_definitions(game PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-#target_compile_definitions(game PUBLIC RESOURCES_PATH="../../res/")
+file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/src/*.cpp)
+add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
+target_include_directories(Sandbox PUBLIC Engine/src/)
+target_include_directories(Sandbox PUBLIC Sandbox/src/)
+target_link_libraries(Sandbox Engine)
+target_compile_definitions(Sandbox PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
 
 #----------------Dynamic module------------------
 
-project(dynamic_module)
-file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES dynamic_module/src/*.cpp)
-add_library(dynamic_module SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
+project(DynamicModule)
+file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/src/*.cpp)
+add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
 #target_include_directories(dynamic_module PUBLIC engine/vendor/)
 #target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
 #target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)
-target_include_directories(dynamic_module PUBLIC engine/src/)
+#target_include_directories(DynamicModule PUBLIC Engine/vendor/taskflow/)
+target_include_directories(DynamicModule PUBLIC Engine/src/)
 #target_include_directories(dynamic_module PUBLIC game/src/)
-target_link_libraries(dynamic_module engine)
-target_compile_definitions(dynamic_module PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(DynamicModule Engine)
+#target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 
 endif()
 

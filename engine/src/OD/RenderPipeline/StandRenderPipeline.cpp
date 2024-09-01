@@ -38,7 +38,7 @@ public:
     GamaCorrectionPP(){}
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
-        if(gamaCorrection == nullptr) gamaCorrection = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/GamaCorrectionPP.glsl");
+        if(gamaCorrection == nullptr) gamaCorrection = Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl");
         Graphics::BlitQuadPostProcessing(src, dst, *gamaCorrection);
     }
 
@@ -62,7 +62,7 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(specification);
 
     shadowPass = CreateRef<Material>();
-    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>(ENGINE_RESOURCE_PATH "Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera inCam){
@@ -364,7 +364,7 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>(ENGINE_RESOURCE_PATH "Shaders/SkyboxCubemap.glsl"));
+    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
 }
 
@@ -538,10 +538,10 @@ StandRenderPipeline::~StandRenderPipeline(){
     
 }
 
-System* StandRenderPipeline::Clone(Scene* inScene) const { 
+/*System* StandRenderPipeline::Clone(Scene* inScene) const { 
     //LogInfo("Clone StandRenderPipeline2");
     return new StandRenderPipeline(inScene); 
-} 
+}*/ 
 
 void StandRenderPipeline::SetOverrideFrameBuffer(Framebuffer* out){
     renderContext->overrideFramebuffer = out; 

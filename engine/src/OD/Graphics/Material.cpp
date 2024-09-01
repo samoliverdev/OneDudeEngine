@@ -540,11 +540,11 @@ void Material::UpdateMaps(){
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
             if(i[2] == "White"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/White.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg") );
             } else if(i[2] == "Black"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/Black.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Black.jpg") );
             } else if(i[2] == "Normal"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>(ENGINE_RESOURCE_PATH "Textures/Normal.jpg") );
+                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Normal.jpg") );
             } else {
                 SetTexture(i[1].c_str(), Texture2D::LoadDefautlTexture2D());
             }

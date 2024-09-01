@@ -34,10 +34,10 @@ public:
     AudioSystem(Scene* scene);
     ~AudioSystem() override;
 
-    AudioSystem* Clone(Scene* inScene) const override{ 
+    /*AudioSystem* Clone(Scene* inScene) const override{ 
         AudioSystem* system = new AudioSystem(inScene);
         return system; 
-    }
+    }*/
     
     virtual SystemType Type() override { return SystemType::Stand; }
     virtual void Update() override;

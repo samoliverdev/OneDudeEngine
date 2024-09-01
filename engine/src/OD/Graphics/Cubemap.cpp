@@ -194,7 +194,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent
     // ----------------------------------------------------------------------
-    Ref<Shader> equirectangularToCubemapShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/EquirectangularToCubemap.glsl");
+    Ref<Shader> equirectangularToCubemapShader = Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl");
     Shader::Bind(*equirectangularToCubemapShader);
     equirectangularToCubemapShader->SetInt("equirectangularMap", 0);
     equirectangularToCubemapShader->SetMatrix4("projection", captureProjection);
@@ -232,7 +232,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
-    Ref<Shader> irradianceShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/IrradianceConvolution.glsl");
+    Ref<Shader> irradianceShader = Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
     Shader::Bind(*irradianceShader);
     irradianceShader->SetInt("environmentMap", 0);
     irradianceShader->SetMatrix4("projection", captureProjection);
@@ -296,7 +296,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
-    Ref<Shader> irradianceShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/IrradianceConvolution.glsl");
+    Ref<Shader> irradianceShader = Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
     Shader::Bind(*irradianceShader);
     irradianceShader->SetInt("environmentMap", 0);
     irradianceShader->SetMatrix4("projection", captureProjection);
@@ -358,7 +358,7 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
 
     // pbr: run a quasi monte-carlo simulation on the environment lighting to create a prefilter (cube)map.
     // ----------------------------------------------------------------------------------------------------
-    Ref<Shader> prefilterShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/Prefilter.glsl");
+    Ref<Shader> prefilterShader = Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl");
     Shader::Bind(*prefilterShader);
     prefilterShader->SetInt("environmentMap", 0);
     prefilterShader->SetMatrix4("projection", captureProjection);

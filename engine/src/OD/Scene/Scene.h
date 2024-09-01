@@ -159,8 +159,6 @@ public:
     System(Scene* inScene):scene(inScene){}
     virtual ~System(){}
 
-    virtual System* Clone(Scene* inScene) const = 0;
-
     virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
     virtual void OnRender(){}
@@ -181,8 +179,6 @@ public:
     Scene();
     Scene(Scene& other);
     ~Scene();
-
-    static Scene* Copy(Scene* other);
 
     Entity AddEntity(std::string name = "Entity");
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
@@ -230,6 +226,7 @@ private:
     std::vector<System*> rendererSystems;
     std::vector<System*> physicsSystems;
     std::unordered_map<Type, System*> systems;
+    std::unordered_map<Type, std::function<void(Scene&)>> systemsAdd;
     std::vector<EntityId> toDestroy;
 
     entt::registry registry;

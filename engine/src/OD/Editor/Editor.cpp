@@ -14,6 +14,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Utils/File.h"
 #include <filesystem>
 
 namespace OD{
@@ -156,7 +157,8 @@ void Editor::PlayScene(){
     UnselectAll();
     lastScene = SceneManager::Get().GetActiveScene();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
-    Scene* s = Scene::Copy(lastScene);
+    //Scene* s = Scene::Copy(lastScene);
+    Scene* s = new Scene(*lastScene);
     SceneManager::Get().SetActiveScene(s);
     s->Start();
 }
@@ -302,6 +304,21 @@ void Editor::DrawMainMenuBar(){
 
     if(ImGui::BeginMainMenuBar()){
         if(ImGui::BeginMenu("File")){
+            if(ImGui::MenuItem("OpenProject")){
+                std::string path = FileDialogs::OpenFolder(); 
+                if(path.empty() == false){
+                    auto exe = GetAbsExePath();
+                    LogInfo("Project Dir: %s", path.c_str());
+                    LogInfo("EditorPath: %s", exe.string().c_str());
+
+                    std::string cmd = exe.string() + " " + path.c_str();
+                    //ExecultCmd(cmd.c_str());
+                    WinExec(cmd.c_str(), SW_HIDE); 
+
+                    Application::Quit();
+                }
+            }
+
             if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();

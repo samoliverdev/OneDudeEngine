@@ -55,7 +55,7 @@ void imguiOnInit(GLFWwindow* window){
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(ENGINE_RESOURCE_PATH "Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();

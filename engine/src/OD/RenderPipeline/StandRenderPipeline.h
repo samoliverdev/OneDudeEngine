@@ -22,7 +22,7 @@ namespace OD{
 class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
-        _ppShader = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/BasicPostProcessing.glsl");
+        _ppShader = Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl");
         Assert(_ppShader != nullptr);
     }
 
@@ -215,7 +215,7 @@ class StandRenderPipeline: public BaseRenderPipeline{
 public:
     StandRenderPipeline(Scene* _scene);
     ~StandRenderPipeline();
-    System* Clone(Scene* inScene) const override;
+    //System* Clone(Scene* inScene) const override;
 
     void SetOverrideFrameBuffer(Framebuffer* out) override;
     void SetOverrideCamera(Camera* cam, Transform trans) override;

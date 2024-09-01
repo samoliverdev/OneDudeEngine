@@ -4,10 +4,10 @@ namespace OD{
 
 ToneMappingPostFX::ToneMappingPostFX(){
     enable = false;
-    copyPass = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/Blit.glsl");
-    toneMappingReinhardPass = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/ToneMappingReinhardPostFX.glsl");
-    toneMappingNeutralPass = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/ToneMappingNeutralPostFX.glsl");
-    toneMappingACESPass = Shader::CreateFromFile(ENGINE_RESOURCE_PATH "Shaders/ToneMappingACESPostFX.glsl");
+    copyPass = Shader::CreateFromFile("Engine/Shaders/Blit.glsl");
+    toneMappingReinhardPass = Shader::CreateFromFile("Engine/Shaders/ToneMappingReinhardPostFX.glsl");
+    toneMappingNeutralPass = Shader::CreateFromFile("Engine/Shaders/ToneMappingNeutralPostFX.glsl");
+    toneMappingACESPass = Shader::CreateFromFile("Engine/Shaders/ToneMappingACESPostFX.glsl");
 }
 
 void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){

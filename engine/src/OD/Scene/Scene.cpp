@@ -106,13 +106,8 @@ Scene::Scene(){
 }
 
 Scene::Scene(Scene& other){
-    for(auto i: other.systems){
-        System* newSystem = i.second->Clone(this);
-
-        systems[i.first] = newSystem;
-        if(newSystem->Type() == SystemType::Stand) standSystems.push_back(newSystem);
-        if(newSystem->Type() == SystemType::Renderer) rendererSystems.push_back(newSystem);
-        if(newSystem->Type() == SystemType::Physics) physicsSystems.push_back(newSystem);
+    for(auto i: other.systemsAdd){
+        i.second(*this);
     }
 
     auto view = other.registry.view<entt::entity>();
@@ -140,46 +135,6 @@ Scene::~Scene(){
     for(auto i: standSystems) delete i;
     for(auto i: rendererSystems) delete i;
     for(auto i: physicsSystems) delete i;
-}
-
-Scene* Scene::Copy(Scene* other){
-    return new Scene(*other); 
-
-    Scene* scene = new Scene();
-
-    auto view = other->registry.view<entt::entity>();
-    for(auto it = view.begin(); it != view.end(); ++it){
-        entt::entity e = scene->registry.create(*it);
-
-        auto& c = other->registry.get<TransformComponent>(*it);
-        TransformComponent& nt = scene->registry.emplace_or_replace<TransformComponent>(e, c);
-        nt.registry = &scene->registry;
-
-        auto& c2 = other->registry.get<InfoComponent>(*it);
-        scene->registry.emplace_or_replace<InfoComponent>(e, c2);
-    }
-
-    /*auto view = other->_registry.view<InfoComponent, TransformComponent>();
-    view.use<InfoComponent>();
-    for(auto i: view){
-        entt::entity e = scene->_registry.create(i);
-
-        auto& c = view.get<TransformComponent>(i);
-        TransformComponent& nt = scene->_registry.emplace_or_replace<TransformComponent>(e, c);
-        nt._registry = &scene->_registry;
-
-        auto& c2 = view.get<InfoComponent>(i);
-        scene->_registry.emplace_or_replace<InfoComponent>(e, c2);
-    }*/
-
-    for(auto i: SceneManager::Get().coreComponentsSerializer){
-        i.second.copy(scene->registry, other->registry);
-    }
-    for(auto i: SceneManager::Get().componentsSerializer){
-        i.second.copy(scene->registry, other->registry);
-    }
-
-    return scene;
 }
 
 Entity Scene::AddEntity(std::string name){

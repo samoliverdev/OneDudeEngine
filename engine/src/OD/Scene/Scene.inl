@@ -84,6 +84,8 @@ void Scene::AddSystem(){
     //newSystem->Init(this);
 
     systems[GetType<T>()] = newSystem;
+    systemsAdd[GetType<T>()] = [](Scene& s){ s.AddSystem<T>(); };
+
     if(newSystem->Type() == SystemType::Stand) standSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Renderer) rendererSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Physics) physicsSystems.push_back(newSystem);
@@ -97,6 +99,8 @@ void Scene::RemoveSystem(){
     System* s = systems[GetType<T>()];
 
     systems.erase(GetType<T>());
+    systemsAdd.erase(GetType<T>());
+
     standSystems.erase(std::remove(standSystems.begin(), standSystems.end(), s), standSystems.end());
     rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
     physicsSystems.erase(std::remove(physicsSystems.begin(), physicsSystems.end(), s), physicsSystems.end());

@@ -214,7 +214,7 @@ public:
 	NavmeshSystem(Scene* scene);
     ~NavmeshSystem() override;
     
-	NavmeshSystem* Clone(Scene* inScene) const override{ return new NavmeshSystem(inScene); }
+	//NavmeshSystem* Clone(Scene* inScene) const override{ return new NavmeshSystem(inScene); }
     virtual SystemType Type() override { return SystemType::Physics; }
 
     virtual void Update() override;

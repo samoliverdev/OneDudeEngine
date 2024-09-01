@@ -22,9 +22,28 @@ int heigth;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; 
 
-bool Application::Create(Module* inMainModule, ApplicationConfig appConfig){
+ProjectSettings settings;
+
+bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
+
+    std::string projectSettingsPath = std::string(projectPath) + "/ProjectSettings.json";
+    if(projectPath[0] == '\0') projectSettingsPath = "ProjectSettings.json";
+
+    //cereal::JSONInputArchive ar2(std::strstream(NULL, 0));
+
+    std::ifstream stream(projectSettingsPath);
+    if(stream.fail()){
+        std::ofstream os(projectSettingsPath);
+        cereal::JSONOutputArchive ar(os);
+        ArchiveDumpNamed(ar, "ProjectSettings", settings);
+    } else {
+        cereal::JSONInputArchive ar{stream};
+        ArchiveDumpNamed(ar, "ProjectSettings", settings);
+    }
+    std::filesystem::current_path(projectPath);
+    LogInfo("Project Path: %s", projectPath);
 
     if(Platform::SystemStartup(
         appConfig.name.c_str(), 
@@ -105,6 +124,10 @@ void Application::_OnResize(int inWidth, int inHeight){
     for(auto i: modules) i->OnResize(width, heigth);
 }
 
+ProjectSettings& Application::GetProjectSettings(){
+    return settings;
+}
+
 void Application::RemoveModule(Module* module){
     if(std::find(modules.begin(), modules.end(), module) == modules.end()){
         LogError("Trying remove module with has not added");
@@ -118,6 +141,10 @@ void Application::RemoveModule(Module* module){
 void Application::AddModule(Module* module){
     modules.push_back(module);
     modules.back()->OnInit();
+}
+
+const std::vector<Module*>& Application::GetAllModules(){
+    return modules;
 }
 
 std::vector<std::string>& Application::GetArgs(){

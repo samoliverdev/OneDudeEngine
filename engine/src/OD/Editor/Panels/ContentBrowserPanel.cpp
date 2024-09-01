@@ -7,14 +7,17 @@
 
 namespace OD{
 
-std::filesystem::path _assetsDirectory = "res/";
+std::filesystem::path _assetsDirectory;
 std::filesystem::path _curDragDrop;
 
 ContentBrowserPanel::ContentBrowserPanel(){
     name = "ContentBrowserPanel";
     show = true;
 
+    _assetsDirectory = std::filesystem::current_path();
+
     _curDirectory = _assetsDirectory;
+    LogInfo("ContentBrowserPanel CurDirectory: %s", _curDirectory.string().c_str());
 }
 
 void ContentBrowserPanel::OnGui(){

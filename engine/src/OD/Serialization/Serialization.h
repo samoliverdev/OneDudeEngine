@@ -28,6 +28,7 @@
 
 #define ArchiveDump(archive, data) try{ archive(data); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
 #define ArchiveDumpNVP(archive, data) try{ archive(CEREAL_NVP(data)); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
+#define ArchiveDumpNamed(archive, name, data) try{ archive(cereal::make_nvp(name, data)); }catch(...){ LogWarning("ErrorOnTrySerialize"); }
 
 /*
 namespace cereal {

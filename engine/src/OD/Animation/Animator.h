@@ -25,7 +25,7 @@ struct OD_API AnimatorComponent{
 
 struct OD_API AnimatorSystem: public System{
     AnimatorSystem(Scene* scene);
-    inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
+    //inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 
     virtual SystemType Type() override;
     virtual void Update() override;

@@ -15,7 +15,9 @@ namespace OD{
 struct Rigidbody;
 struct PhysicsWorld;
 
-using MeshShapeData = btBvhTriangleMeshShape;
+//using MeshShapeData = btBvhTriangleMeshShape;
+class MeshShapeData;
+
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Mesh>& mesh);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
 
@@ -108,6 +110,8 @@ struct OD_API RigidbodyComponent{
     void ApplyTorque(Vector3 v);
     void ApplyImpulse(Vector3 v);
 
+    void SetAngularFactor(Vector3 v);
+
     friend class cereal::access;
     template <class Archive>
     void serialize(Archive & ar){
@@ -144,23 +148,25 @@ struct OD_API PhysicsSystem: public System{
     PhysicsSystem(Scene* scene);
     ~PhysicsSystem() override;
 
-    System* Clone(Scene* inScene) const override{ 
+    /*System* Clone(Scene* inScene) const override{ 
         PhysicsSystem* system = new PhysicsSystem(inScene);
         system->onCollisionEnterCallbacks = onCollisionEnterCallbacks;
         system->onCollisionExitCallbacks = onCollisionExitCallbacks;
         system->onTriggerEnterCallbacks = onTriggerEnterCallbacks;
         system->onTriggerExitCallbacks = onTriggerExitCallbacks;
         return system; 
-    }
+    }*/
     
     virtual SystemType Type() override { return SystemType::Physics; }
     virtual void Update() override;
     virtual void OnDrawGizmos() override;
 
     void ShowDebugGizmos();
-    
+
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
     bool IsSimulationEnable();
+    void Simulate(float step);
+    void SynchronizeMotionStates();
 
     void AddOnCollisionEnterCallback(OnCollisionCallback callback);
     void RemoveOnCollisionEnterCallback(OnCollisionCallback callback);
