@@ -2,19 +2,29 @@
 
 namespace OD{
 
-std::vector<ProfileResult>& Instrumentor::Results(){ return results; }
+std::vector<ProfileResult> last;
+std::vector<ProfileResult> results;
+std::vector<int> nodesStack;
 
-void Instrumentor::WriteProfile(const ProfileResult& result){
-    results.push_back(result);
+void Instrumentor::BeginLoop(){
+    results.clear();
+    nodesStack.clear();
 }
 
-Instrumentor& Instrumentor::Get(){
-    static Instrumentor instance;
-    return instance;
+void Instrumentor::EndLoop(){
+    last = results;
 }
+
+const std::vector<ProfileResult>& Instrumentor::Results(){ return last; }
 
 InstrumentationTimer::InstrumentationTimer(const char* _name): name(_name), stopped(false){
     startTimepoint = std::chrono::high_resolution_clock::now();
+
+    results.push_back({
+        _name, 0, 0, 0, nodesStack.empty() ? -1 : nodesStack[nodesStack.size()-1]
+    });
+    nodesStack.push_back(results.size()-1);
+    index = results.size()-1;
 }
 
 InstrumentationTimer::~InstrumentationTimer(){
@@ -29,7 +39,12 @@ void InstrumentationTimer::Stop(){
 
     uint32_t threadID = std::hash<std::thread::id>{}(std::this_thread::get_id());
     //Instrumentor::Get().WriteProfile({ _name, start, end, threadID });
-    Instrumentor::Get().WriteProfile({ name, start, end, threadID });
+    //Instrumentor::Get().WriteProfile({ name, start, end, threadID });
+
+    results[index].start = start;
+    results[index].end = end;
+    results[index].threadID = threadID;
+    nodesStack.pop_back();
 
     stopped = true;
 }

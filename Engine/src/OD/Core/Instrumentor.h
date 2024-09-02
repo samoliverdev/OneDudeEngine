@@ -12,15 +12,20 @@ struct OD_API ProfileResult{
     const char* name;
     long long start, end;
     uint32_t threadID;
+    int parent = -1;
 };
 
 class OD_API Instrumentor{
+    friend class InstrumentationTimer;
 public:
-    std::vector<ProfileResult>& Results();
-    void WriteProfile(const ProfileResult& _result);
-    static Instrumentor& Get();
-private:
-    std::vector<ProfileResult> results;
+    static void BeginLoop();
+    static void EndLoop();
+
+    static const std::vector<ProfileResult>& Results();
+    //static Instrumentor& Get();
+//private:
+    //std::vector<ProfileResult> results;
+    //std::vector<int> nodesStack;
 };
 
 class OD_API InstrumentationTimer{
@@ -30,6 +35,7 @@ public:
     void Stop();
 private:
     const char* name;
+    int index;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTimepoint;
     bool stopped = false;
 };

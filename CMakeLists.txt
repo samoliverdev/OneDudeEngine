@@ -180,7 +180,7 @@ file(GLOB_RECURSE TESTS_SOURCE_FILES Tests/src/*.cpp)
 add_executable(Tests ${TESTS_SOURCE_FILES})
 
 target_include_directories(Tests PUBLIC Engine/src/)
-target_link_libraries(Tests GTest::GTest engine)
+target_link_libraries(Tests GTest::GTest Engine)
 
 add_test(tests_gtests Tests)
 

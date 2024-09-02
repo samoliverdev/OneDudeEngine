@@ -67,6 +67,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
 bool Application::Run(){
     while(running){
+        Instrumentor::BeginLoop();
+
         float currentFrame = Platform::GetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame; 
@@ -91,6 +93,8 @@ bool Application::Run(){
 
         Platform::LateUpdate();
         Platform::SwapBuffers();
+
+        Instrumentor::EndLoop();
     }
 
     OnExit();
