@@ -28,14 +28,19 @@ void InfoComponent::serialize(Archive& ar){
 HAS_MEM_FUNC(OnCreate, HasOnCreate);
 
 //-----------Entity---------
+
+template <typename T, typename... Args>
+T& Entity::AddComponent(Args&&... args){
+    T& c = scene->registry.emplace<T>(id, std::forward<Args>( args )...);
+    if constexpr(HasOnCreate<T>::value) c.OnCreate(*this);
+    return c;
+}
+
 template<typename T>
 T& Entity::AddComponent(){
     T& c = scene->registry.emplace<T>(id);
     if constexpr(HasOnCreate<T>::value) c.OnCreate(*this);
-
     return c;
-
-    //return scene->registry.emplace<T>(id);
 }
 
 template <typename T>
@@ -63,6 +68,40 @@ template<typename T>
 void Entity::RemoveComponent(){
     Assert(HasComponent<T>() && "Entity does not have component!");
     scene->registry.remove<T>(id);
+}
+
+template<typename T>
+auto _AddComponent(Entity& entity, const sol::table& comp, sol::this_state s){
+    auto& component = entity.AddComponent<T>(comp.valid() ? std::move(comp.as<T&&>()) : T{});
+    //auto& component = entity.AddComponent<T>();
+    return sol::make_reference(s, std::ref(component));
+}
+
+template<typename T>
+bool _HasComponent(Entity& entity){
+    return entity.HasComponent<T>();
+}
+
+template<typename T>
+auto _GetComponent(Entity& entity, sol::this_state s){
+    auto& comp = entity.GetComponent<T>();
+    return sol::make_reference(s, std::ref(comp));
+}
+
+template<typename T>
+void _RemoveComponent(Entity& entity){
+    entity.RemoveComponent<T>();
+}
+
+template<typename T>
+inline void Entity::RegisterMetaComponent(){
+    using namespace entt::literals;
+    entt::meta<T>()
+        .type(entt::type_hash<T>::value())
+        .template func<&_AddComponent<T>>("_AddComponent"_hs)
+        .template func<&_HasComponent<T>>("_HasComponent"_hs)
+        .template func<&_GetComponent<T>>("_GetComponent"_hs)
+        .template func<&_RemoveComponent<T>>("_RemoveComponent"_hs);
 }
 
 //-----------Scene---------

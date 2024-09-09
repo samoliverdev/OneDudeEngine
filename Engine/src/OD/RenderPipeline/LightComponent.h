@@ -1,11 +1,11 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Core/Color.h"
 #include "OD/Core/Math.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Lua.h"
 
 namespace OD{
 
@@ -47,6 +47,8 @@ struct OD_API LightComponent{
         ArchiveDump(ar, CEREAL_NVP(shadowBias));
         ArchiveDump(ar, CEREAL_NVP(shadowNormalBias));
     }
+
+    static void CreateLuaBind(sol::state& lua);
 };
 
 }

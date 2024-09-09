@@ -2,8 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
-//#include "OD/Graphics/Font.h"
-//#include "OD/Graphics/Material.h"
+#include "OD/Core/Lua.h"
 
 namespace OD{
 

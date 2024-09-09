@@ -28,7 +28,7 @@
 
 #ifdef VERTEX
 
-#include ../ShaderLibrary/Vertex.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 out VsOut{
     vec3 pos;
@@ -62,14 +62,14 @@ void main(){
 
 uniform mat4 view;
 
-#include ../ShaderLibrary/Core.glsl
-#include ../ShaderLibrary/Common.glsl
-#include ../ShaderLibrary/Surface.glsl
-#include ../ShaderLibrary/Shadows.glsl
-#include ../ShaderLibrary/Light.glsl
-#include ../ShaderLibrary/BRDF.glsl
-#include ../ShaderLibrary/GI.glsl
-#include ../ShaderLibrary/Lighting.glsl
+#include Engine/ShaderLibrary/Core.glsl
+#include Engine/ShaderLibrary/Common.glsl
+#include Engine/ShaderLibrary/Surface.glsl
+#include Engine/ShaderLibrary/Shadows.glsl
+#include Engine/ShaderLibrary/Light.glsl
+#include Engine/ShaderLibrary/BRDF.glsl
+#include Engine/ShaderLibrary/GI.glsl
+#include Engine/ShaderLibrary/Lighting.glsl
 
 in VsOut{
     vec3 pos;

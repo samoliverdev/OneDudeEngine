@@ -10,6 +10,7 @@
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/Module.h"
+#include "OD/Core/Lua.h"
 #include <unordered_map>
 #include <string>
 #include <entt/entt.hpp>
@@ -87,6 +88,8 @@ public:
         return Transform(GlobalModelMatrix()); 
         //return Transform(Position(), Rotation(), LocalScale()); 
     }
+
+    static void CreateLuaBind(sol::state& lua);
      
 private:
     Transform transform;
@@ -116,6 +119,8 @@ struct OD_API InfoComponent{
     template <class Archive>
     void serialize(Archive & ar);
 
+    static void CreateLuaBind(sol::state& lua);
+
 private:
     bool active;
     EntityId id;
@@ -130,6 +135,7 @@ public:
     Entity():isValid(false){}
     Entity(EntityId _id, Scene* _scene):id(_id), scene(_scene), isValid(true){}
 
+    template<typename T, typename... Args> T& AddComponent(Args&&... args);
     template<typename T> T& AddComponent();
     template<typename T> T& GetComponent();
     template<typename T> T* TryGetComponent();
@@ -144,11 +150,27 @@ public:
     inline bool operator==(const Entity& other) const { return id == other.id && scene == other.scene; }
     inline bool operator!=(const Entity& other) const { return !(*this == other); }
 
+    static void CreateLuaBind(sol::state& lua);
+
+    template<typename T> inline static void RegisterMetaComponent();
+
 private:
     EntityId id;
     Scene* scene;
     bool isValid = false;
 };
+
+template<typename T>
+auto _AddComponent(Entity& entity, const sol::table& comp, sol::this_state s);
+
+template<typename T>
+bool _HasComponent(Entity& entity);
+
+template<typename T>
+auto _GetComponent(Entity& entity, sol::this_state s);
+
+template<typename T>
+void _RemoveComponent(Entity& entity);
 
 enum class SystemType{
     Stand, Renderer, Physics

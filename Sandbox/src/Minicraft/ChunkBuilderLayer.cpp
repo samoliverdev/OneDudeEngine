@@ -44,14 +44,14 @@ struct MeshBuildHelper{
 };
 
 const std::vector<std::string> texturePaths = {
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/gravel_stone.png", //0
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/dirt.png", //1
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/dirt_grass.png", //2
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/leaves.png", //3
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/water.png", //4
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/trunk_side.png", //5
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/trunk_top.png", //6
-    "res/Game/Textures/kenney_voxel-pack/PNG/Tiles/leaves.png", //7
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/gravel_stone.png", //0
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/dirt.png", //1
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/dirt_grass.png", //2
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/leaves.png", //3
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/water.png", //4
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/trunk_side.png", //5
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/trunk_top.png", //6
+    "Sandbox/Textures/kenney_voxel-pack/PNG/Tiles/leaves.png", //7
 };
 
 const BlockInfo blockTextureLookups[] = {
@@ -70,10 +70,10 @@ float Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
 ChunkBuilderLayer::ChunkBuilderLayer(WorldManagerSystem* inWorldManagerSystem){
     texture = CreateRef<Texture2DArray>(texturePaths);
 
-    materialOpaque = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/Minicraft.glsl"));
+    materialOpaque = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/Minicraft.glsl"));
     materialOpaque->SetTexture("mainTex", texture);
 
-    materialWater = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("res/Game/Shaders/MinicraftWater.glsl"));
+    materialWater = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/MinicraftWater.glsl"));
     materialWater->SetTexture("mainTex", texture);
     materialWater->SetVector4("color", Vector4{1, 1, 1, 0.85f});
     materialWater->SetFloat("smoothness", 0.55f);

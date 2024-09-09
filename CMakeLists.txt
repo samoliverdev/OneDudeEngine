@@ -55,6 +55,10 @@ set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
 #set(TF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 #set(TF_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
+set(SOL2_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(Engine/vendor/lua-5.1.5)
+add_subdirectory(Engine/vendor/sol2)
 add_subdirectory(Engine/vendor/glfw)
 add_subdirectory(Engine/vendor/assimp)
 add_subdirectory(Engine/vendor/bullet3)
@@ -98,6 +102,8 @@ endif()
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_include_directories(Engine PUBLIC 
     Engine/vendor/
+    Engine/vendor/lua-5.1.5/src/
+    Engine/vendor/sol2/include/
     Engine/vendor/cgltf/
     Engine/vendor/cereal/include/
     Engine/vendor/magic_enum/include/
@@ -117,6 +123,8 @@ target_include_directories(Engine PUBLIC
     Engine/src/
 )
 target_link_libraries(Engine PUBLIC 
+    LUA
+    sol2
     glfw 
     assimp
     soloud

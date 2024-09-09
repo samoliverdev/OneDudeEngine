@@ -10,6 +10,7 @@ namespace OD{
 //int curBindShaderRenderId = 0;
 
 void getFilePath(const std::string& fullPath, std::string& pathWithoutFileName){
+    return;
     //LogInfo("FullPath: %s", fullPath.c_str());
     // Remove the file name and store the path to this folder
     size_t found = fullPath.find_last_of("/\\");

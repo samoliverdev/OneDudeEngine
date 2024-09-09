@@ -4,6 +4,7 @@
 #include "OD/OD.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/RenderPipeline/CameraComponent.h"
+#include "OD/LuaScripting/LuaMetaUltis.h"
 
 namespace OD{
 
@@ -89,12 +90,69 @@ Vector3 TransformComponent::Scale(){
     return t.LocalScale();
 }
 
+void TransformComponent::CreateLuaBind(sol::state& lua){
+    lua.new_usertype<TransformComponent>(
+        "Transform",
+        "TypeId", &entt::type_hash<TransformComponent>::value,
+        "LocalPosition", [](TransformComponent& t){ return t.LocalPosition(); },
+        "SetLocalPosition", [](TransformComponent& t, Vector3 v){ t.LocalPosition(v); },
+        "LocalEulerAngles", [](TransformComponent& t){ return t.LocalEulerAngles(); },
+        "SetLocalEulerAngles", [](TransformComponent& t, Vector3 v){ t.LocalEulerAngles(v); },
+        "LocalRotation", [](TransformComponent& t){ return t.LocalRotation(); },
+        "SetLocalRotation", [](TransformComponent& t, Quaternion v){ t.LocalRotation(v); },
+        "LocalScale", [](TransformComponent& t){ return t.LocalScale(); },
+        "SetLocalScale", [](TransformComponent& t, Vector3 v){ t.LocalScale(v); }
+    );
+}
+
 #pragma endregion
 
 #pragma region InfoComponent
+
+void InfoComponent::CreateLuaBind(sol::state& lua){
+    lua.new_usertype<InfoComponent>(
+        "InfoComponent",
+        "TypeId", &entt::type_hash<InfoComponent>::value,
+        sol::call_constructor,
+        sol::factories([](){ return InfoComponent(); }),
+        "name", &InfoComponent::name,
+        "tag", &InfoComponent::tag,
+        //"Id", [](InfoComponent& cmp){ return cmp.Id(); }
+        "Id", &InfoComponent::Id
+    );
+}
+
 #pragma endregion
 
+#pragma region Entity
 bool Entity::IsValid(){ return isValid && scene->registry.valid(id); }
+
+void Entity::CreateLuaBind(sol::state& lua){
+    using namespace entt::literals;
+    lua.new_usertype<Entity>(
+        "Entity",
+        "GetInfoComponent", &Entity::GetComponent<InfoComponent>,
+        "GetTransformComponent", &Entity::GetComponent<TransformComponent>,
+        "AddComponent", [](Entity& e, const sol::table& comp, sol::this_state s) -> sol::object{
+            if(!comp.valid()) return sol::lua_nil_t{};
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_AddComponent"_hs, e, comp, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "HasComponent", [](Entity& e, const sol::table& comp){
+            const auto hasComp = InvokeMetaFunction(GetIdType(comp), "_HasComponent"_hs, e);
+            return hasComp ? hasComp.cast<bool>() : false;
+        },
+        "GetComponent", [](Entity& e, const sol::table& comp, sol::this_state s){
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_GetComponent"_hs, e, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "RemoveComponent", [](Entity& e, const sol::table& comp){
+            InvokeMetaFunction(GetIdType(comp), "_RemoveComponent"_hs, e);
+        }
+    );
+}
+
+#pragma endregion
 
 #pragma region Scene
 

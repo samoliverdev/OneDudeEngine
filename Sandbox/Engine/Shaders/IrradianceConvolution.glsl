@@ -44,10 +44,11 @@ void main(){
             // tangent space to world
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N; 
 
-            vec3 environment = texture(environmentMap, sampleVec).rgb;
-            environment = environment / (environment + vec3(1.0)); //Tone Mapping
+            vec3 environment = texture(environmentMap, sampleVec).rgb * cos(theta) * sin(theta);
+            //environment = environment / (environment + vec3(1.0)); //Tone Mapping
+            environment = min(environment, vec3(10)); //500 eliminate fireflies Source: https://github.com/furkansarihan/enigine/blob/master/src/assets/shaders/irradiance.fs
 
-            irradiance += environment * cos(theta) * sin(theta);
+            irradiance += environment;
             nrSamples++;
         }
     }

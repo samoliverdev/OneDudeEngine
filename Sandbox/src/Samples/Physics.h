@@ -5,6 +5,8 @@
 #include <assert.h>
 #include "Ultis/Ultis.h"
 #include <entt/entt.hpp>
+#include <sol/sol.hpp>
+#include <OD/LuaScripting/LuaScripts.h>
 
 using namespace OD;
 
@@ -13,6 +15,12 @@ struct PhysicsCubeS: public Script{
     float timeToDestroy = 5;
 
     void OnStart() override{
+        sol::state lua;
+        int x = 0;
+        lua.set_function("beep", [&x]{ ++x; });
+        lua.script("beep()");
+        Assert(x == 1);
+
         LogInfo("PhysicsCubeS OnStart");
         
         Assert(GetEntity().IsValid() == true);
@@ -145,6 +153,14 @@ struct PhysicsSample: OD::Module {
             LogInfo("OnTrigger");
             other.GetComponent<RigidbodyComponent>().ApplyImpulse(Vector3Up * 25.0f);
         });
+
+        Entity luaScript = scene->AddEntity("LuaScript");
+        LuaScriptComponent& _luaScript = luaScript.AddComponent<LuaScriptComponent>();
+        _luaScript.scriptPath = "Sandbox/LuaScripts/Test.lua";
+
+        Entity luaScript2 = scene->AddEntity("LuaScript2");
+        LuaScriptComponent& _luaScript2 = luaScript2.AddComponent<LuaScriptComponent>();
+        _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";
 
         //scene->Save("res/scene1.scene");
         //scene->Start();

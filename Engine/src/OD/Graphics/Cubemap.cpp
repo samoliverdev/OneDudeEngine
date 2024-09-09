@@ -260,6 +260,8 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     //FIXME: Destrey gl objects
     Assert(Graphics::HasBegin() == false);
 
+    int size = 32*4;
+
     // pbr: setup framebuffer
     // ----------------------
     unsigned int captureFBO;
@@ -280,7 +282,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     glGenTextures(1, &irradianceMap);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
     for (unsigned int i = 0; i < 6; ++i){
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -291,7 +293,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
     glCheckError();
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
@@ -304,7 +306,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->renderId);
     glCheckError();
 
-    glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+    glViewport(0, 0, size, size); // don't forget to configure the viewport to the capture dimensions.
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     for(unsigned int i = 0; i < 6; ++i){
         irradianceShader->SetMatrix4("view", captureViews[i]);

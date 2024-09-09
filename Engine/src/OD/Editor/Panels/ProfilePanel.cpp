@@ -41,12 +41,14 @@ void ProfilePanel::OnGui(){
     if(ImGui::Begin("Profile", &show)){
         ImGui::DrawEnumCombo<ViewMode>("ViewMode", &viewMode);
 
-        ImGui::Text("Profile Count:: %zd", Instrumentor::Results().size());
+        ImGui::Text("Results Count:: %zd", Instrumentor::Results().size());
+
+        ImGui::Separator();
 
         if(viewMode == ViewMode::List){
             for(auto i: Instrumentor::Results()){ 
                 float durration = (i.end - i.start) * 0.001f;
-                ImGui::Text("%s: %.3f.ms %d", i.name, durration, i.parent);
+                ImGui::Text("%s: %.3f.ms", i.name, durration);
             }
         }
 

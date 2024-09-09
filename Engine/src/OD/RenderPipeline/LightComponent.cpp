@@ -67,4 +67,15 @@ void LightComponent::OnGui(Entity& e){
     ImGui::Checkbox("renderShadow", &light.renderShadow);
 }
 
+void LightComponent::CreateLuaBind(sol::state& lua){
+    lua.new_usertype<LightComponent>(
+        "LightComponent",
+        "TypeId", &entt::type_hash<LightComponent>::value,
+        sol::call_constructor,
+        sol::factories(
+            [](){ return LightComponent(); }
+        )
+    );
+}
+
 }

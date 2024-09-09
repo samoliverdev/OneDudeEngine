@@ -23,7 +23,7 @@
 #ifdef VERTEX
 
 #define UV3
-#include res/Engine/ShaderLibrary/Vertex.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 out VsOut{
     vec3 pos;
@@ -53,13 +53,13 @@ void main(){
 
 uniform mat4 view;
 
-#include res/Engine/ShaderLibrary/Common.glsl
-#include res/Engine/ShaderLibrary/Surface.glsl
-#include res/Engine/ShaderLibrary/Shadows.glsl
-#include res/Engine/ShaderLibrary/Light.glsl
-#include res/Engine/ShaderLibrary/BRDF.glsl
-#include res/Engine/ShaderLibrary/GI.glsl
-#include res/Engine/ShaderLibrary/Lighting.glsl
+#include Engine/ShaderLibrary/Common.glsl
+#include Engine/ShaderLibrary/Surface.glsl
+#include Engine/ShaderLibrary/Shadows.glsl
+#include Engine/ShaderLibrary/Light.glsl
+#include Engine/ShaderLibrary/BRDF.glsl
+#include Engine/ShaderLibrary/GI.glsl
+#include Engine/ShaderLibrary/Lighting.glsl
 
 in VsOut{
     vec3 pos;
@@ -131,8 +131,8 @@ void main(){
     surface.smoothness = GetSmoothness(fsIn.texCoord.xy);
     
     BRDF brdf = GetBRDF(surface);
-    GI gi = GetGI(surface);
-    vec3 color = GetLightingFinal2(surface, brdf, gi);
+    GI gi = GetGI(surface, brdf);
+    vec3 color = GetLighting(surface, brdf, gi);
     color += GetEmission(fsIn.texCoord.xy);
     fragColor = vec4(color, surface.alpha);
 

@@ -10,6 +10,7 @@
 #include "OD/Audio/AudioClip.h"
 #include "OD/Audio/AudioSystem.h"
 #include "OD/Navmesh/Navmesh.h"
+#include "OD/LuaScripting/LuaScripts.h"
 #include <filesystem>
 
 namespace OD{
@@ -24,6 +25,7 @@ void CoreModulesStartup(){
     AudioModuleInit();
     NavmeshModuleInit();
     SceneManagerModuleInit();
+    LuaScriptModuleInit();
 }
 
 }

@@ -60,7 +60,7 @@ struct RenderPipelineSample: public OD::Module {
         floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
         Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-        cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("res/Engine/Shaders/Lit.glsl"));
+        cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
         Ref<Model> sphereModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sphere.glb");
         sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
@@ -68,10 +68,10 @@ struct RenderPipelineSample: public OD::Module {
         Entity env = scene->AddEntity("Env");
         EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
         envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-        envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/victoria_sunset_2k.hdr");
+        envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/kloofendal_43d_clear_puresky_2k.hdr");
         envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
         envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
-        //envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
+        envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
 
         Entity e = scene->AddEntity("Floor");
         e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
