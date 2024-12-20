@@ -1,0 +1,13 @@
+prefix=C:/Program Files (x86)/GLFW
+exec_prefix=C:/Program Files (x86)/GLFW
+libdir=
+sharedlibdir=
+includedir=
+
+Name: zlib
+Description: zlib compression library
+Version: 
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

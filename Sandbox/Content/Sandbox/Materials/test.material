@@ -1,0 +1,178 @@
+{
+    "Material": {
+        "enableInstancing": false,
+        "shaderPath": "res/Engine/Shaders/Lit.glsl",
+        "maps": [
+            {
+                "key": "color",
+                "value": {
+                    "type": 4,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vectorIsColor": true,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "emissionMap",
+                "value": {
+                    "type": 6,
+                    "texPath": "res/Engine/Textures/Black.jpg",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "metallic",
+                "value": {
+                    "type": 1,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 1.0
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 6,
+                    "texPath": "res/Game\\Textures\\rockman.png",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "emissionColor",
+                "value": {
+                    "type": 4,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vectorIsColor": true,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "normal",
+                "value": {
+                    "type": 6,
+                    "texPath": "res/Engine/Textures/Normal.jpg",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "occlusion",
+                "value": {
+                    "type": 1,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 1.0,
+                    "valueMin": 0.0,
+                    "valueMax": 1.0
+                }
+            },
+            {
+                "key": "maskMap",
+                "value": {
+                    "type": 6,
+                    "texPath": "res/Engine/Textures/White.jpg",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.0,
+                    "valueMin": 0.0,
+                    "valueMax": 0.0
+                }
+            },
+            {
+                "key": "smoothness",
+                "value": {
+                    "type": 1,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.5,
+                    "valueMin": 0.0,
+                    "valueMax": 1.0
+                }
+            },
+            {
+                "key": "cutoff",
+                "value": {
+                    "type": 1,
+                    "texPath": "",
+                    "vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vectorIsColor": false,
+                    "value": 0.5,
+                    "valueMin": 0.0,
+                    "valueMax": 1.0
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,229 @@
+{
+    "Entities": [
+        0,
+        1,
+        2
+    ],
+    "InfoComponents": [
+        {
+            "name": "Env",
+            "tag": "",
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Light",
+            "tag": "",
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Camera",
+            "tag": "",
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        2
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -2.0,
+                "v.y": 4.0,
+                "v.z": -1.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.1767035573720932,
+                "q.y": -0.8194911479949951,
+                "q.z": 0.3394443988800049,
+                "q.w": 0.42660006880760195
+            },
+            "transform.localEulerAngles": {
+                "v.x": 45.0,
+                "v.y": -125.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 15.0,
+                "v.z": 15.0
+            },
+            "transform.localRotation": {
+                "q.x": -0.2164396196603775,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.9762960076332092
+            },
+            "transform.localEulerAngles": {
+                "v.x": -25.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        }
+    ],
+    "TransformComponentEntities": [
+        0,
+        1,
+        2
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
+                "ambient": {
+                    "r": 0.10999999940395355,
+                    "g": 0.1599999964237213,
+                    "b": 0.25,
+                    "a": 1.0
+                },
+                "cleanColor": {
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
+                },
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 150.0,
+                "shadowBias": 0.000009999999747378752,
+                "toneMappingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "enable": false,
+                            "mode": -1,
+                            "exposure": 1.0
+                        }
+                    }
+                },
+                "colorGradingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "enable": false,
+                            "postExposure": 0.0,
+                            "contrast": 0.0,
+                            "colorFilter": {
+                                "v.x": 1.0,
+                                "v.y": 1.0,
+                                "v.z": 1.0,
+                                "v.w": 1.0
+                            },
+                            "hueShift": 0.0,
+                            "saturation": 0.0
+                        }
+                    }
+                },
+                "bloomPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "enable": false,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
+                            "bicubicUpsampling": true,
+                            "threshold": 0.5,
+                            "thresholdKnee": 1.0,
+                            "intensity": 1.0
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        0
+    ],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 45.0,
+            "nearClipPlane": 0.10000000149011612,
+            "farClipPlane": 1000.0,
+            "renderingPath": 0
+        }
+    ],
+    "CameraComponentEntities": [
+        2
+    ],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "intensity": 1.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": false,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
+        }
+    ],
+    "LightComponentEntities": [
+        1
+    ]
+}

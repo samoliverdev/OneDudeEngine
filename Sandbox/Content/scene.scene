@@ -1,0 +1,238 @@
+{
+    "Entities": [
+        0,
+        1,
+        3,
+        5
+    ],
+    "InfoComponents": [
+        {
+            "name": "Enviroment",
+            "tag": "",
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 1,
+            "prefabPath": "Sandbox/test.prefab"
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 1,
+            "prefabPath": "Sandbox/test.prefab"
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 1,
+            "prefabPath": "Sandbox/test.prefab"
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        3,
+        5
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                1,
+                3,
+                5
+            ],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 2.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                2
+            ],
+            "parent": 0,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 43.5,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                4
+            ],
+            "parent": 0,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -116.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                6
+            ],
+            "parent": 0,
+            "hasParent": true
+        }
+    ],
+    "TransformComponentEntities": [
+        0,
+        1,
+        3,
+        5
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
+                "ambient": {
+                    "r": 0.10000000149011612,
+                    "g": 0.10000000149011612,
+                    "b": 0.10000000149011612,
+                    "a": 1.0
+                },
+                "cleanColor": {
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
+                },
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 150.0,
+                "shadowBias": 0.000009999999747378752,
+                "toneMappingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "enable": false,
+                            "mode": -1,
+                            "exposure": 1.0
+                        }
+                    }
+                },
+                "colorGradingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "enable": false,
+                            "postExposure": 0.0,
+                            "contrast": 0.0,
+                            "colorFilter": {
+                                "v.x": 1.0,
+                                "v.y": 1.0,
+                                "v.z": 1.0,
+                                "v.w": 1.0
+                            },
+                            "hueShift": 0.0,
+                            "saturation": 0.0
+                        }
+                    }
+                },
+                "bloomPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "enable": false,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
+                            "bicubicUpsampling": true,
+                            "threshold": 0.5,
+                            "thresholdKnee": 1.0,
+                            "intensity": 1.0
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        0
+    ]
+}

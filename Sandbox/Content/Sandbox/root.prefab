@@ -1,0 +1,608 @@
+{
+    "Entities": [
+        0,
+        1,
+        6,
+        2,
+        5,
+        3,
+        4
+    ],
+    "InfoComponents": [
+        {
+            "name": "Enviroment",
+            "tag": "",
+            "active": false,
+            "entityType": 1,
+            "prefabPath": "C:\\Users\\sam\\Desktop\\cpp\\OneDudeEngine\\Sandbox\\Content\\Sandbox\\root.prefab"
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        },
+        {
+            "name": "Empty Entity",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        },
+        {
+            "name": "Empty Entity",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        },
+        {
+            "name": "MainCube",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        },
+        {
+            "name": "Empty Entity",
+            "tag": "",
+            "active": false,
+            "entityType": 2,
+            "prefabPath": ""
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        6,
+        2,
+        5,
+        3,
+        4
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                1,
+                2,
+                3
+            ],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 2.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                6
+            ],
+            "parent": 0,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 1,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 43.5,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                5
+            ],
+            "parent": 0,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 2,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -116.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                4
+            ],
+            "parent": 0,
+            "hasParent": true
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 3,
+            "hasParent": true
+        }
+    ],
+    "TransformComponentEntities": [
+        0,
+        1,
+        6,
+        2,
+        5,
+        3,
+        4
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
+                "ambient": {
+                    "r": 0.10000000149011612,
+                    "g": 0.10000000149011612,
+                    "b": 0.10000000149011612,
+                    "a": 1.0
+                },
+                "cleanColor": {
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
+                },
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 150.0,
+                "shadowBias": 0.000009999999747378752,
+                "toneMappingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "enable": false,
+                            "mode": -1,
+                            "exposure": 1.0
+                        }
+                    }
+                },
+                "colorGradingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "enable": false,
+                            "postExposure": 0.0,
+                            "contrast": 0.0,
+                            "colorFilter": {
+                                "v.x": 1.0,
+                                "v.y": 1.0,
+                                "v.z": 1.0,
+                                "v.w": 1.0
+                            },
+                            "hueShift": 0.0,
+                            "saturation": 0.0
+                        }
+                    }
+                },
+                "bloomPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "enable": false,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
+                            "bicubicUpsampling": true,
+                            "threshold": 0.5,
+                            "thresholdKnee": 1.0,
+                            "intensity": 1.0
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        0
+    ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Memory"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Memory"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Memory"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        1,
+        2,
+        3
+    ],
+    "ComponentTest_01s": [
+        {
+            "speed": 0.0,
+            "test": {
+                "a": "",
+                "b": 0
+            },
+            "tests": [
+                {
+                    "a": "",
+                    "b": 0
+                },
+                {
+                    "a": "",
+                    "b": 0
+                }
+            ]
+        },
+        {
+            "speed": 0.0,
+            "test": {
+                "a": "",
+                "b": 0
+            },
+            "tests": [
+                {
+                    "a": "",
+                    "b": 0
+                },
+                {
+                    "a": "",
+                    "b": 0
+                }
+            ]
+        },
+        {
+            "speed": 0.0,
+            "test": {
+                "a": "",
+                "b": 0
+            },
+            "tests": [
+                {
+                    "a": "",
+                    "b": 0
+                },
+                {
+                    "a": "",
+                    "b": 0
+                }
+            ]
+        }
+    ],
+    "ComponentTest_01Entities": [
+        6,
+        5,
+        4
+    ],
+    "GizmosDrawComponents": [
+        {},
+        {},
+        {}
+    ],
+    "GizmosDrawComponentEntities": [
+        6,
+        5,
+        4
+    ],
+    "RigidbodyComponents": [
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        }
+    ],
+    "RigidbodyComponentEntities": [
+        1,
+        2,
+        3
+    ]
+}

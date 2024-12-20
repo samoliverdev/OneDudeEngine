@@ -1,0 +1,8 @@
+{
+    "ProjectSettings": {
+        "name": "Game",
+        "startScene": "",
+        "assetDirectory": "",
+        "scriptModulePath": "../Bin/Game.dll"
+    }
+}

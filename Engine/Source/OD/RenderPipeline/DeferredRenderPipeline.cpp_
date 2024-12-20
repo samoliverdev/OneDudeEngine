@@ -1,0 +1,192 @@
+#include "DeferredRenderPipeline.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
+#include "OD/Core/Application.h"
+#include "CameraComponent.h"
+#include "MeshRendererComponent.h"
+#include "ModelRendererComponent.h"
+#include "LightComponent.h"
+#include "EnvironmentComponent.h"
+
+namespace OD{
+
+DeferredRenderPipeline::DeferredRenderPipeline(Scene* _scene):BaseRenderPipeline(_scene){
+    FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}, {FramebufferTextureFormat::RED_INTEGER}};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+    framebufferSpecification.sample = 2;
+    outColor = new Framebuffer(framebufferSpecification);
+
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}};
+    framebufferSpecification.sample = 1;
+    finalColor = new Framebuffer(framebufferSpecification);
+
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}, {FramebufferTextureFormat::RGBA16F}, {FramebufferTextureFormat::RGBA8}};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+    framebufferSpecification.sample = 1;
+    gbufferColor = new Framebuffer(framebufferSpecification);
+
+    blitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl");
+    deferredGBufferShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl");
+    deferredLightPassShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPass.glsl");
+
+    cubeMesh = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+    unlitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl");
+}
+
+DeferredRenderPipeline::~DeferredRenderPipeline(){
+    delete outColor;
+    delete finalColor;
+}
+
+void DeferredRenderPipeline::SetOverrideFrameBuffer(Framebuffer* out){
+    overrideFramebuffer = out; 
+}
+
+void DeferredRenderPipeline::SetOverrideCamera(Camera* cam, Transform trans){
+    overrideCamera = cam; 
+    overrideCameraTrans = trans; 
+}
+
+Framebuffer* DeferredRenderPipeline::FinalColor(){
+    return finalColor;
+}
+
+struct Light{
+    Vector3 pos;
+    Vector3 color;
+};
+
+void DeferredRenderPipeline::Update(){
+    OD_PROFILE_SCOPE("DeferredRenderPipeline::Update");
+
+    int width = Application::ScreenWidth();
+    int height = Application::ScreenHeight();
+    if(overrideFramebuffer != nullptr){
+        width = overrideFramebuffer->Width();
+        height = overrideFramebuffer->Height();
+    }
+    gbufferColor->Resize(width, height);
+    outColor->Resize(width, height);
+    finalColor->Resize(width, height);
+
+    Camera curCamera;
+    if(overrideCamera != nullptr){
+        curCamera = *overrideCamera;
+    } else {
+        auto camView = GetScene()->GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>();
+        for(auto entity: camView){
+            CameraComponent& cam = camView.get<CameraComponent>(entity);
+            TransformComponent& trans = camView.get<TransformComponent>(entity);
+            InfoComponent& info = camView.get<InfoComponent>(entity);
+
+            cam.UpdateCameraData(trans, finalColor->Width(), finalColor->Height());
+            curCamera = cam.GetCamera();
+            
+            break;
+        }
+    }
+
+    Graphics::SetCamera(curCamera);
+    Graphics::SetViewport(0, 0, curCamera.width, curCamera.height);
+
+    /////////////////////////////////
+    Framebuffer::Bind(*gbufferColor);
+    Graphics::Clean(1, 0, 0, 1);
+
+    //Graphics::SetCullFace(deferredGBufferShader->GetCullFace());
+    //Graphics::SetDepthTest(deferredGBufferShader->GetDepthTest());
+    //Graphics::SetDepthMask(deferredGBufferShader->IsDepthMask());
+    //Graphics::SetBlend(false);
+
+    Shader::Bind(*deferredGBufferShader);
+    deferredGBufferShader->SetTexture2D("mainTex", *Texture2D::LoadDefautlTexture2D(), 0);
+
+    auto modelComponentView = scene->GetRegistry().view<TransformComponent, ModelRendererComponent>();
+    for(auto e: modelComponentView){
+        TransformComponent& t = modelComponentView.get<TransformComponent>(e);
+        ModelRendererComponent& c = modelComponentView.get<ModelRendererComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+
+        for(auto i: c.GetModel()->renderTargets){
+            auto targetMesh = c.GetModel()->meshs[i.meshIndex].get();
+            auto targetMatrix =  t.GlobalModelMatrix();
+            auto targetMaterial = c.GetModel()->materials[i.materialIndex].get();
+            Material::SubmitGraphicDatasCustomShader(*targetMaterial, *deferredGBufferShader);
+            Graphics::DrawMesh(*targetMesh, *deferredGBufferShader, targetMatrix);
+        }
+    }
+
+    auto meshComponentView = scene->GetRegistry().view<TransformComponent, MeshRendererComponent>();
+    for(auto e: meshComponentView){
+        TransformComponent& t = meshComponentView.get<TransformComponent>(e);
+        MeshRendererComponent& c = meshComponentView.get<MeshRendererComponent>(e);
+        if(c.mesh == nullptr) continue;
+
+        auto targetMesh = c.mesh.get();
+        auto targetMatrix =  t.GlobalModelMatrix();
+        auto targetMaterial = c.material.get();
+        Material::SubmitGraphicDatasCustomShader(*targetMaterial, *deferredGBufferShader);
+        Graphics::DrawMesh(*targetMesh, *deferredGBufferShader, targetMatrix);
+    }   
+
+    Framebuffer::Bind(*outColor);
+    Graphics::Clean(0, 1, 0, 1);
+    
+    std::vector<Light> lights;
+    auto lightComponentView = scene->GetRegistry().view<TransformComponent, LightComponent>();
+    for(auto e: lightComponentView){
+        TransformComponent& t = lightComponentView.get<TransformComponent>(e);
+        LightComponent& l = lightComponentView.get<LightComponent>(e);
+        if(l.type != LightComponent::Type::Point) continue;
+
+        lights.push_back(Light{t.Position(), l.color});
+    }
+
+    Shader::Bind(*deferredLightPassShader);
+    for(unsigned int i = 0; i < lights.size(); i++){
+        deferredLightPassShader->SetVector3(("lights[" + std::to_string(i) + "].Position").c_str(), lights[i].pos);
+        deferredLightPassShader->SetVector3(("lights[" + std::to_string(i) + "].Color").c_str(), lights[i].pos);
+    }
+    deferredLightPassShader->SetInt("lightsCount", lights.size());
+    deferredLightPassShader->SetVector3("viewPos", curCamera.viewPos);
+    deferredLightPassShader->SetFramebuffer("gPosition", *gbufferColor, 0, 0);
+    deferredLightPassShader->SetFramebuffer("gNormal", *gbufferColor, 1, 1);
+    deferredLightPassShader->SetFramebuffer("gAlbedoSpec", *gbufferColor, 2, 2);
+    Graphics::BlitQuadPostProcessingRaw(outColor);
+    Graphics::SetDepthTest(DepthTest::LESS); 
+
+    Graphics::BlitFramebuffer(gbufferColor, outColor, -1);
+    Framebuffer::Bind(*outColor);
+
+    for(unsigned int i = 0; i < lights.size(); i++){
+        Transform t;
+        t.LocalPosition(lights[i].pos);
+        t.LocalScale(Vector3One * 0.5f);
+        Shader::Bind(*unlitShader);
+        unlitShader->SetTexture2D("mainTex", *Texture2D::LoadDefautlTexture2D(), 0);
+        unlitShader->SetVector4("color", Vector4(lights[i].color.x, lights[i].color.y, lights[i].color.z, 1));
+        Graphics::DrawMesh(*cubeMesh->meshs[0], *unlitShader, t.GetLocalModelMatrix());
+    }
+
+    /////////////////////////////////
+    //Graphics::BlitFramebuffer(outColor, finalColor);
+    Graphics::BlitQuadPostProcessing(outColor, finalColor, *blitShader);
+
+    if(overrideFramebuffer != nullptr){
+        Graphics::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
+    } else {
+        Graphics::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
+    }
+
+    Framebuffer::Unbind(); 
+
+    Material::CleanGlobalUniformsData();
+}
+
+}

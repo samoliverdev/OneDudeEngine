@@ -1,0 +1,40 @@
+#pragma once
+#include "OD/Defines.h"
+#include "OD/Scene/Scene.h"
+#include "OD/Scene/BaseRenderPipeline.h"
+
+namespace OD{
+
+class Framebuffer;
+class Shader;
+class Mesh;
+class Model;
+
+class OD_API DeferredRenderPipeline: public BaseRenderPipeline{
+public:
+    DeferredRenderPipeline(Scene* _scene);
+    ~DeferredRenderPipeline();
+
+    void SetOverrideFrameBuffer(Framebuffer* out) override;
+    void SetOverrideCamera(Camera* cam, Transform trans) override;
+    Framebuffer* FinalColor() override;
+
+    SystemType Type() override { return SystemType::Renderer; }
+    void Update() override;
+
+private:
+    Camera* overrideCamera = nullptr;
+    Transform overrideCameraTrans;
+    Framebuffer* overrideFramebuffer = nullptr;
+    Framebuffer* gbufferColor = nullptr;
+    Framebuffer* outColor = nullptr;
+    Framebuffer* finalColor = nullptr;
+    Ref<Shader> blitShader = nullptr;
+    Ref<Shader> deferredGBufferShader = nullptr;
+    Ref<Shader> deferredLightPassShader = nullptr;
+
+    Ref<Model> cubeMesh;
+    Ref<Shader> unlitShader;
+};
+
+}

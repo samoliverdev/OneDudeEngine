@@ -1,0 +1,619 @@
+#include "Texture.h"
+#include "Shader.h"
+#include "Graphics.h"
+#include "OD/Core/Lua.h"
+#include "OD/Core/ImGui.h"
+#include "OD/Core/Package.h"
+#include "OD/Platform/GL.h"
+#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationFull.h"
+#include <fstream>
+#include <stb/stb_image.h>
+
+namespace OD{
+
+// renderQuad() renders a 1x1 XY quad in NDC
+// -----------------------------------------
+void renderQuad(unsigned int& quadVAO, unsigned int& quadVBO){
+    if(quadVAO == 0){
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+const int TextureFilterLookup[] = {
+    GL_NEAREST,
+    GL_LINEAR
+};
+
+const int TextureFilterLookupMipmap[] = {
+    GL_NEAREST_MIPMAP_NEAREST,
+    GL_LINEAR_MIPMAP_LINEAR
+};
+
+const int TextureWrappingLookupMipmap[] = {
+    GL_REPEAT,
+    GL_MIRRORED_REPEAT,
+    GL_CLAMP_TO_EDGE,
+    GL_CLAMP_TO_BORDER
+};
+
+const int TextureFormatLookupMipmap[] = {
+    GL_NONE,
+    GL_RGB,
+    GL_RGBA,
+    //GL_RGB,
+    //GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+
+    GL_RED,
+    GL_RGB,
+    GL_RGBA,
+};
+
+const int TextureInternalFormatLookupMipmap[] = {
+    GL_NONE,
+    GL_RGB,
+    GL_RGBA,
+    //GL_SRGB,
+    //GL_SRGB_ALPHA,
+
+    GL_R8,
+    GL_RGB8,
+    GL_RGBA8,
+
+    GL_R16,
+    GL_RGB16,
+    GL_RGBA16,
+
+    GL_R16F,
+    GL_RGB16F,
+    GL_RGBA16F,
+
+    GL_R32F,
+    GL_RGB32F,
+    GL_RGBA32F,
+};
+
+const int TextureDataTypeFormatLookupMipmap[] = {
+    GL_UNSIGNED_BYTE,
+    GL_UNSIGNED_INT,
+    GL_INT,
+    GL_FLOAT
+};
+
+Texture2D::Texture2D(Texture2DSetting inSettings){
+    settings = inSettings;
+}
+
+Texture2D::Texture2D(const std::string& filePath, Texture2DSetting settings){
+    if(Create(path, settings) == false){
+        Destroy(*this);
+    }
+}
+
+Texture2D::Texture2D(void* data, size_t size, Texture2DSetting settings){
+    if(Create(data, size, settings) == false){
+        Destroy(*this);
+    }
+} 
+
+Texture2D::Texture2D(void* data, size_t size, int width, int height,  TextureDataType dataType, Texture2DSetting settings){
+    if(Create(data, size, width, height, dataType, settings) == false){
+        Destroy(*this);
+    }
+}
+
+bool Texture2D::LoadFromFile(const std::string& path){
+    if(Create(path, settings) == false){
+        Destroy(*this);
+        return false;
+    }
+
+    return true;
+}
+
+std::vector<std::string> Texture2D::GetFileAssociations(){ 
+    return std::vector<std::string>{
+        ".jpg",
+        ".png"
+    }; 
+}
+
+void LoadSettings(const char* filePath, Texture2DSetting& settings);
+
+Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    if(tex->Create(filePath, settings) == false){
+        Destroy(*tex);
+        return nullptr;
+    }
+
+    return tex;
+}
+
+Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSetting settings){
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    if(tex->Create(data, size, settings) == false){
+        Destroy(*tex);
+        return nullptr;
+    }
+
+    return tex;
+}
+
+Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, Texture2DSetting settings){
+    void* data = nullptr;
+    size_t size;
+    if(package.ReadFile(path, data, size) == false) return nullptr;
+
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    if(tex->Create(data, size, settings) == false){
+        Destroy(*tex);
+        return nullptr;
+    }
+
+    return tex;
+}
+
+Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
+    return AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+}
+
+Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
+    Assert(Graphics::HasBegin() == false);
+
+    // pbr: setup framebuffer
+    // ----------------------
+    unsigned int captureFBO;
+    unsigned int captureRBO;
+    glGenFramebuffers(1, &captureFBO);
+    glGenRenderbuffers(1, &captureRBO);
+    glCheckError();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+    glCheckError();
+    
+    // pbr: generate a 2D LUT from the BRDF equations used.
+    // ----------------------------------------------------
+    unsigned int brdfLUTTexture;
+    glGenTextures(1, &brdfLUTTexture);
+    glCheckError();
+
+    // pre-allocate enough memory for the LUT texture.
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+    // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCheckError();
+
+    // then re-configure capture framebuffer object and render screen-space quad with BRDF shader.
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
+    glCheckError();
+
+    
+    Ref<Shader> brdfShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/brdf.glsl");// Shader::CreateFromFile("Engine/Shaders/brdf.glsl");
+    Shader::Bind(*brdfShader);
+
+    glViewport(0, 0, 512, 512);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glCheckError();
+
+    unsigned int quadVAO = 0;
+    unsigned int quadVBO = 0;
+    renderQuad(quadVAO, quadVBO);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
+
+    Ref<Texture2D> out = CreateRef<Texture2D>();
+    out->id = brdfLUTTexture;
+    out->width = 512;
+    out->height = 512;
+    return out;
+}
+
+void Texture2D::Destroy(Texture2D& tex){
+    if(tex.IsValid() == false) return;
+
+    glDeleteTextures(1, &tex.id);
+    tex.id = 0;
+    glCheckError();
+}
+
+void Texture2D::Bind(Texture2D& tex, int index){
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, tex.id);
+    glCheckError();
+}
+
+Texture2D::~Texture2D(){
+    Texture2D::Destroy(*this);
+}
+
+bool Texture2D::IsValid(){
+    return id != 0;
+}
+
+bool Texture2D::Create(const std::string path, Texture2DSetting settings){
+    Destroy(*this);
+
+    this->path = std::string(path);
+    this->settings = settings;
+    LoadSettings(this->path.c_str(), this->settings);
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    this->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    this->mipmap = settings.mipmap;
+
+    stbi_set_flip_vertically_on_load(1);
+
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char* data = stbi_load(this->path.c_str(), &width, &height, &nrChannels, 0);
+
+    //LogInfo("Chennels %d", nrChannels);
+
+    if(!data){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", this->path.c_str(), stbi_failure_reason());
+        return false;
+    }
+
+    bool alpha = false;
+    if(nrChannels > 3) alpha = true;
+
+    if(settings.textureFormat == TextureFormat::Auto){
+        if(alpha){
+            this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGBA;
+        } else {
+            this->internalFormat = GL_RGB; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGB;
+        }
+    } else {
+        this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+        this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+    }
+    
+    this->texture2DGenerate(width, height, TextureDataType::UnsignedByte, data);
+    stbi_image_free(data);
+
+    return true;
+}
+
+bool Texture2D::Create(void* data, size_t size, Texture2DSetting settings){
+    Destroy(*this);
+
+    this->path = "Memory";
+    this->settings = settings;
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    this->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    this->mipmap = settings.mipmap;
+
+    stbi_set_flip_vertically_on_load(1);
+
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char* _data = stbi_load_from_memory((const stbi_uc*)data, size, &width, &height, &nrChannels, 0);
+
+    //LogInfo("Chennels %d", nrChannels);
+
+    if(!_data){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", this->path.c_str(), stbi_failure_reason());
+        return false;
+    }
+
+    bool alpha = false;
+    if(nrChannels > 3) alpha = true;
+
+    if(settings.textureFormat == TextureFormat::Auto){
+        if(alpha){
+            this->internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGBA;
+        } else {
+            this->internalFormat = GL_RGB; //GL_SRGB_ALPHA; //GL_RGBA;
+            this->imageFormat = GL_RGB;
+        }
+    } else {
+        this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+        this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+    }
+
+    
+    this->texture2DGenerate(width, height, TextureDataType::UnsignedByte, _data);
+    stbi_image_free(_data);
+
+    return true;
+}
+
+bool Texture2D::Create(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
+    Destroy(*this);
+
+    this->path = "Memory";
+    this->settings = settings;
+    this->wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
+    this->filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(settings.mipmap){
+        this->filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    }
+    this->filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    this->mipmap = settings.mipmap;
+
+    Assert(settings.textureFormat != TextureFormat::Auto);
+
+    this->internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
+    this->imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+    this->texture2DGenerate(width, height, dataType, data);
+
+    return true;
+}
+
+void Texture2D::texture2DGenerate(unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
+    width = inWidth;
+    height = inHeight;
+    
+    glGenTextures(1, &id);
+    glCheckError();
+
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
+    glCheckError();
+    
+    if(mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
+    glCheckError();
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterMin);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filterMax);
+    glCheckError();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glCheckError();
+}
+
+void Texture2D::OnGui(){
+    bool save = false;
+
+    //ImGui::Text("--------Texture2D--------");
+    //ImGui::Text("Path: %s", path().c_str());
+
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+    float aspect = width / height;
+    ImGui::Image((void*)(uint64_t)id, ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+
+    ImGui::Spacing();
+
+    const char* optionsString[] = {"Nearest", "Linear"};
+    const char* curOptionString = optionsString[(int)settings.filter];
+
+    if(ImGui::DrawEnumCombo<TextureFilter>("filter", &settings.filter)){
+        save = true;
+    }
+
+    if(ImGui::DrawEnumCombo<TextureWrapping>("wrap", &settings.wrap)){
+        save = true;
+    }
+
+    /*if(ImGui::BeginCombo("filter", curOptionString)){
+        for(int i = 0; i < 2; i++){
+            bool isSelected = curOptionString == optionsString[i];
+            if(ImGui::Selectable(optionsString[i], isSelected)){
+                curOptionString = optionsString[i];
+                settings.filter = (TextureFilter)i;
+                save = true;
+            }
+            if(isSelected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }*/
+
+    if(ImGui::Checkbox("mipmap", &settings.mipmap)){
+        save = true;
+    }
+
+    //if(ImGui::DrawEnumCombo<TextureFormat>("textureFormat", &settings.textureFormat)){
+    //    save = true;
+    //}
+
+    ImGui::Spacing();
+
+    ImGui::Text("Path: %s", Path().c_str());
+    ImGui::Text("Width: %d Height: %d", width, height);
+
+    if(save){
+        Save();
+    }
+}
+
+void Texture2D::Reload(){
+    if(path == "Memory"){
+        LogError("Can Not Reload Texture2d From Memory");
+        return;
+    }
+
+    CreateFromFile(path, settings);
+}
+
+void Texture2D::Save(){
+
+    if(path.empty() == false && path != "Memory"){
+        std::ofstream os(path + ".meta");
+        cereal::JSONOutputArchive archive{os};
+        archive(CEREAL_NVP(settings));
+    }
+
+    //Destroy(*this);
+    Reload();
+}
+
+void Texture2D::CreateLuaBind(sol::state& lua){
+    lua.new_usertype<Texture2DSetting>(
+        "Texture2DSetting",
+        sol::call_constructor,
+        sol::constructors<void()>(),
+        "filter", &Texture2DSetting::filter,
+        "wrap", &Texture2DSetting::filter,
+        "mipmap", &Texture2DSetting::filter,
+        "textureFormat", &Texture2DSetting::filter
+    );
+
+    lua.new_usertype<Texture2D>(
+        "Texture2D",
+        "CreateFromFile", Texture2D::CreateFromFile,
+        "CreateFromMemory", Texture2D::CreateFromMemory,
+        "CreateFromPackage", Texture2D::CreateFromPackage,
+        "LoadDefautlTexture2D", Texture2D::LoadDefautlTexture2D,
+        "CreateBrdfLUTTexture2D", Texture2D::CreateBrdfLUTTexture2D,
+        "Destroy", Texture2D::Destroy,
+        "Bind", Texture2D::Bind,
+        "IsValid", &Texture2D::IsValid,
+        "Width", &Texture2D::Width,
+        "Height", &Texture2D::Height,
+        "RenderId", &Texture2D::RenderId
+    );
+}
+
+void LoadSettings(const char* filePath, Texture2DSetting& settings){
+    std::ifstream stream(std::string(filePath) + ".meta");
+    if(stream.fail()) return;
+
+    cereal::JSONInputArchive archive{stream};
+    archive(CEREAL_NVP(settings));
+}
+
+Texture2DArray::Texture2DArray(const std::vector<std::string>& filePaths){
+    stbi_set_flip_vertically_on_load(1);
+
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+    glCheckError();
+
+    std::vector<unsigned char*> datas;
+    
+    int width, height, nrComponents;
+    unsigned int internalFormat = GL_RGB8;
+    unsigned int imageFormat = GL_RGB;
+    unsigned int mipLevelCount = 8;
+    for(auto& i: filePaths){
+        unsigned char* data = stbi_load(i.c_str(), &width, &height, &nrComponents, 0);   // Load the first Image of size 512   X   512  (RGB))
+
+        if(!data){
+            LogError("Cannot load file image %s\nSTB Reason: %s\n", this->path.c_str(), stbi_failure_reason());
+        }
+
+        if(nrComponents > 3){
+            internalFormat = GL_RGBA8; //GL_SRGB_ALPHA; //GL_RGBA;
+            imageFormat = GL_RGBA;
+            //mipLevelCount = 1;
+        }
+
+        datas.push_back(data);
+    }
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
+    glCheckError();
+   
+    int _i = 0;
+    for(auto i: datas){
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, _i, width, height, 1, imageFormat, GL_UNSIGNED_BYTE, i);
+        glCheckError();
+        _i += 1;
+    }
+
+    if(mipLevelCount > 1) glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
+    glCheckError();
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glCheckError();
+
+    for(auto i: datas){
+        stbi_image_free(i);
+    }
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glCheckError();
+}
+
+Texture2DArray::~Texture2DArray(){
+    Texture2DArray::Destroy(*this);
+}
+
+void Texture2DArray::Destroy(Texture2DArray& tex){
+    if(tex.IsValid() == false) return;
+
+    glDeleteTextures(1, &tex.id);
+    tex.id = 0;
+    glCheckError();
+}
+
+void Texture2DArray::Bind(Texture2DArray& tex, int index){
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, tex.id);
+    glCheckError();
+}
+
+bool Texture2DArray::IsValid(){
+    return id != 0;
+}
+
+void Texture2DArray::OnGui(){
+
+}
+
+}
