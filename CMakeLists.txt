@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 #set(CMAKE_MSVC_RUNTIME_LIBRARY)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -72,6 +72,27 @@ option(ENGINE_SHARED_LIBRARY "" TRUE)
 set(DEFAULT_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/" CACHE STRING "")
 
 MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
+
+set(CMAKE_DEBUG_POSTFIX "")
+set(CMAKE_RELEASE_POSTFIX "")
+set(CMAKE_RELWITHDEBINFO_POSTFIX "")
+set(CMAKE_MINSIZEREL_POSTFIX "")
+set(RUN_TREE ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${RUN_TREE})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${RUN_TREE})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RUN_TREE})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${RUN_TREE})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${RUN_TREE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${RUN_TREE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${RUN_TREE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${RUN_TREE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${RUN_TREE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${RUN_TREE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${RUN_TREE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${RUN_TREE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${RUN_TREE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${RUN_TREE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${RUN_TREE})
 
 project(Engine)
 
@@ -142,6 +163,10 @@ target_include_directories(Editor PUBLIC Engine/Source/)
 target_include_directories(Editor PUBLIC Editor/Source/)
 target_link_libraries(Editor Engine)
 target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+add_custom_command(
+    TARGET Editor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content
+)
 
 #----------------Sandbox------------------
 option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
@@ -156,6 +181,10 @@ target_include_directories(Sandbox PUBLIC Engine/Source/)
 target_include_directories(Sandbox PUBLIC Sandbox/Source/)
 target_link_libraries(Sandbox Engine)
 target_compile_definitions(Sandbox PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+add_custom_command(
+    TARGET Sandbox POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
+)
 
 #----------------Dynamic module------------------
 
@@ -170,26 +199,5 @@ target_include_directories(DynamicModule PUBLIC Engine/Source/)
 #target_include_directories(dynamic_module PUBLIC game/src/)
 target_link_libraries(DynamicModule Engine)
 #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-
-endif()
-
-# Enable Disable Tests
-if(OFF) 
-
-enable_testing()
-
-project(Tests)
-
-add_subdirectory(Tests/googletest EXCLUDE_FROM_ALL)
-add_library(GTest::GTest INTERFACE IMPORTED)
-target_link_libraries(GTest::GTest INTERFACE gtest_main)
-
-file(GLOB_RECURSE TESTS_SOURCE_FILES Tests/src/*.cpp)
-add_executable(Tests ${TESTS_SOURCE_FILES})
-
-target_include_directories(Tests PUBLIC Engine/Source/)
-target_link_libraries(Tests GTest::GTest Engine)
-
-add_test(tests_gtests Tests)
 
 endif()

@@ -10,6 +10,7 @@
     Texture2D tex4 White
     Texture2D mainTex White
     Texture2D heightMap Back
+    Texture2D heightMapNormal Back
     Texture2D normal Normal
     Texture2D emissionMap Black
     Color4 emissionColor
@@ -109,6 +110,7 @@ uniform vec3 viewPos;
 
 uniform float heightScale;
 uniform sampler2D heightMap;
+uniform sampler2D heightMapNormal;
 uniform sampler2D heightMapNorth;
 uniform sampler2D heightMapWest;
 
@@ -183,14 +185,10 @@ float GetOcclusion(vec2 baseUV){
 	return _occlusion;*/
 }
 
-vec3 toNormalmap(vec3 n){
-    n *= vec3(1.0, 1.0, -1.0);
-    n = n / 2.0 + 0.5;
-    n = vec3(n.x, n.z, n.y);
-    return n;
-}
+vec3 GetNormal(mat3 TBN, vec2 uv){
+    vec3 n = texture(heightMapNormal, uv).xyz;
+    //return fsIn.normalMatrix * n;
 
-vec3 GetNormalMap(mat3 TBN, vec3 n){
     n = n * 2.0 - 1.0;
     //n.xy *= normalStrength;
     n = normalize(n);
@@ -236,6 +234,7 @@ void main(){
     surface.position = fsIn.worldPos;
     //surface.normal = normalize(fsIn.worldNormal);
     surface.normal = NormalStrength(filterNormalLod(fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
+    //surface.normal = NormalStrength(GetNormal(fsIn.TBN, fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
     surface.viewDirection = normalize(viewPos - fsIn.worldPos);
     surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
     surface.color = base.rgb;

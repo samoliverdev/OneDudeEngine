@@ -170,6 +170,11 @@ void Terrain1::OnUpdate(){
                 "heightMapWest", loadedChunks[i.first + IVector2(1, 0)].heightmap
             );
         }
+        if(loadedChunks.count(i.first + IVector2(-1, 0))){
+            loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().material->SetTexture(
+                "heightMapLeft", loadedChunks[i.first + IVector2(-1, 0)].heightmap
+            );
+        }
         if(loadedChunks.count(i.first + IVector2(0, 1))){
             loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().material->SetTexture(
                 "heightMapNorth", loadedChunks[i.first + IVector2(0, 1)].heightmap
@@ -199,7 +204,7 @@ void Terrain1::LoadCood(IVector2 coord){
     int heightmapSize2 = heightmapSize-1;
     Ref<NoiseData> dataTest = Noise::GenerateNoiseMap(heightmapSize, heightmapSize, 50, 0.25f/1, 4, 0.5f, 2.0f, Vector2(coord.x * heightmapSize2, coord.y * heightmapSize2));
     //dataTest->Invert();
-    chunkData.heightmap = CreateRef<Texture2D>(
+    chunkData.heightmap = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
         (void*)&dataTest->data[0],
         (size_t)(dataTest->data.size() * sizeof(float)),
         heightmapSize, heightmapSize,

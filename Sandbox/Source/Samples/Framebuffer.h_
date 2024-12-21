@@ -4,18 +4,23 @@
 
 using namespace OD;
 
-struct LightSample: OD::Module {
+struct FramebufferSample: OD::Module {
+    OD::Scene scene;
+    Framebuffer* framebuffer;
+    Framebuffer* tempFramebuffer;
+    Mesh postProcessingMesh;
+    Ref<Shader> postProcessingShader;
+
     Ref<Model> model;
-    Ref<Shader> shader;
-    Transform modelTransform;
-    Transform camTransform;
-    Camera cam;
-    CameraMovement camMove;
+    //CameraMovement camMove;
 
-    Ref<Model> lightModel;
-    Transform lightTransform;
+    Entity mainEntity;
+    Entity camera;
+    Entity otherEntity;
 
-    Vector3 cubePositions[10] = {
+    Transform gismoTransform;
+
+    Vector3 cubePositions[9] = {
         //Vector3( 0.0f,  0.0f,  0.0f), 
         Vector3( 2.0f,  5.0f, -15.0f), 
         Vector3(-1.5f, -2.2f, -2.5f),  
@@ -25,11 +30,11 @@ struct LightSample: OD::Module {
         Vector3( 1.3f, -2.0f, -2.5f),  
         Vector3( 1.5f,  2.0f, -2.5f), 
         Vector3( 1.5f,  0.2f, -1.5f), 
-        Vector3(-1.3f,  1.0f, -1.5f)  
+        Vector3(-4, 2.0f, -1.5f)  
     };
 
     void OnInit() override;
-    void OnUpdate(float deltaTime) override;
+    void OnUpdate(float deltaTime) override;  
     void OnRender(float deltaTime) override;
     void OnGUI() override;
     void OnResize(int width, int height) override;

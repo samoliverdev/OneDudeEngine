@@ -158,6 +158,7 @@ private:
 
     Ref<Heightmap> heightmap = nullptr;
     Ref<Texture2D> heightmapTex = nullptr;
+    Ref<Texture2D> normalTex = nullptr;
     
     Entity meshsRoot;
     Entity collider;

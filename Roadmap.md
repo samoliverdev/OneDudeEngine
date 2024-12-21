@@ -56,6 +56,7 @@
     - [x] Forward Rendering
     - [ ] Deffered Rendering
     - [ ] Decal
+    - [ ] Terrain
 - [x] Scripting
     - [x] Native Scripting
     - [ ] Lua Scripting
@@ -83,5 +84,5 @@
     - [ ] Multi Sound Listen
 - [x] Profile
     - [x] Simple View
-    - [ ] Tree View
+    - [x] Tree View
 - [x] Editor

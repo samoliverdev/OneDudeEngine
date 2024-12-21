@@ -11,13 +11,14 @@
 * Fix Physics PlayMode In Engine as SharedLib - 
 * Fix All Physic Debug Asserts -
 
-* Refactory/Revisar All Graphic API Code
+* Fix Link Erro on Debug Compile
+* Finish Terrain(Normal, Shader, Shadow, Navmesh)
 
+* Refactory/Revisar All Graphic API Code
 * Revisar RenderPipeline Code
 * Revisar Physic Impremetation
 * Fast Physic Gizmos
 * Add Joit Physyic To Test
-* Rename
 * Fix Save/Load -
 * Fix JointComponent
 * Fix Bloom
@@ -34,13 +35,14 @@
 
 * Occlusion Culling
 * Navmesh - 
+* Navmesh Tile Bake
 
 * Game Test
 * Dynamic C++ GameModule -
-* Project System
+* Project System -
 * Usable Engine And Publush Engine
 
-* Lua
+* Lua - 
 * Prefab System - 
 * Mod Support
 * Double Precesion

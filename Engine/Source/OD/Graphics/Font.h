@@ -11,6 +11,7 @@ namespace OD{
 
 class Graphics;
 
+//Fixme opengl texture memory leak
 struct OD_API Character {
     unsigned int textureID;  // ID handle of the glyph texture
     glm::ivec2   size;       // Size of glyph
@@ -21,10 +22,11 @@ struct OD_API Character {
 struct OD_API Font: public Asset{
     friend class Graphics;
 
-    Font() = default;
-    Font(const std::string& inPath);
+    //Font() = default;
+    //Font(const std::string& inPath);
     
-    //static Ref<Font> CreateFromFile(const char* path);
+    static Ref<Font> CreateFromFile(const std::string& filepath);
+    
     bool LoadFromFile(const std::string& path) override;
 
     inline std::vector<std::string> GetFileAssociations() override { 
@@ -41,7 +43,7 @@ struct OD_API Font: public Asset{
     }*/
 
 private:
-    std::map<char, Character> characters;
+    std::map<char, Character> characters; //Fixme opengl texture memory leak
 };
 
 }

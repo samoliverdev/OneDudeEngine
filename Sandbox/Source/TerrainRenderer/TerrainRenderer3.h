@@ -24,7 +24,7 @@ struct TerrainRenderer3: OD::Module {
         TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
-        textRenderer.font = CreateRef<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
@@ -55,7 +55,7 @@ struct TerrainRenderer3: OD::Module {
         int _size = 512;
 
         Ref<NoiseData> dataTest = Noise::GenerateNoiseMap(_size, _size, 50, 0.5f, 4, 1, 1, Vector2(0, 0));
-        Ref<Texture2D> heightMap = CreateRef<Texture2D>(
+        Ref<Texture2D> heightMap = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
             (void*)&dataTest->data[0],
             (size_t)(dataTest->data.size() * sizeof(float)),
             _size, _size,

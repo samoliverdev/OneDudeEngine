@@ -111,7 +111,7 @@ const int TextureDataTypeFormatLookupMipmap[] = {
     GL_FLOAT
 };
 
-Texture2D::Texture2D(Texture2DSetting inSettings){
+/*Texture2D::Texture2D(Texture2DSetting inSettings){
     settings = inSettings;
 }
 
@@ -131,25 +131,7 @@ Texture2D::Texture2D(void* data, size_t size, int width, int height,  TextureDat
     if(Create(data, size, width, height, dataType, settings) == false){
         Destroy(*this);
     }
-}
-
-bool Texture2D::LoadFromFile(const std::string& path){
-    if(Create(path, settings) == false){
-        Destroy(*this);
-        return false;
-    }
-
-    return true;
-}
-
-std::vector<std::string> Texture2D::GetFileAssociations(){ 
-    return std::vector<std::string>{
-        ".jpg",
-        ".png"
-    }; 
-}
-
-void LoadSettings(const char* filePath, Texture2DSetting& settings);
+}*/
 
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
@@ -171,6 +153,16 @@ Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSet
     return tex;
 }
 
+Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
+    Ref<Texture2D> tex = CreateRef<Texture2D>();
+    if(tex->Create(data, size, width, height, dataType, settings) == false){
+        Destroy(*tex);
+        return nullptr;
+    }
+
+    return tex;
+}
+
 Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, Texture2DSetting settings){
     void* data = nullptr;
     size_t size;
@@ -184,6 +176,25 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
 
     return tex;
 }
+
+bool Texture2D::LoadFromFile(const std::string& path){
+    if(Create(path, settings) == false){
+        Destroy(*this);
+        return false;
+    }
+
+    return true;
+}
+
+std::vector<std::string> Texture2D::GetFileAssociations(){ 
+    return std::vector<std::string>{
+        ".jpg",
+        ".png"
+    }; 
+}
+
+void LoadSettings(const char* filePath, Texture2DSetting& settings);
+
 
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
     return AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");

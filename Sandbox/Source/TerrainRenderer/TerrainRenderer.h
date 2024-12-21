@@ -24,7 +24,7 @@ struct TerrainRenderer: OD::Module {
         TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
-        textRenderer.font = CreateRef<Font>("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        textRenderer.font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
@@ -46,7 +46,7 @@ struct TerrainRenderer: OD::Module {
 
         Ref<Model> clipmapMesh = AssetManager::Get().LoadAsset<Model>("res/Game/Models/ClipmapMesh_High1.glb");
         
-        Ref<Texture2D> heightMap = AssetManager::Get().LoadAsset<Texture2D>(
+        Ref<Texture2D> heightMap = Texture2D::CreateFromFile( //AssetManager::Get().LoadAsset<Texture2D>(
             //"res/Game/Textures/043-ue4-heightmap-guide-02.jpg", 
             "res/Game/Textures/heightmap-2.jpg",
             Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true}

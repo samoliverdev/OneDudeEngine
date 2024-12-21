@@ -185,11 +185,12 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         Assert(mat->Get(AI_MATKEY_TEXTURE(type, i), str) == AI_SUCCESS);
 
         if(paiTexture){
-            Ref<Texture2D> texture = CreateRef<Texture2D>(
+            Ref<Texture2D> texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
                 (void*)paiTexture->pcData, 
                 (size_t)paiTexture->mWidth, 
                 Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
             );
+            Assert(texture != nullptr);
             Assert(texture->IsValid() != false);
             
             textures.push_back(texture);

@@ -28,7 +28,7 @@ struct ProceduralTerrain: OD::Module {
         TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
-        textRenderer.font = CreateRef<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
+        textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");

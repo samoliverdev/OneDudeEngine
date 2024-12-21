@@ -16,7 +16,6 @@ public:
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back
     ); 
-
     static Ref<Cubemap> CreateFromFileHDR(const char* hdri);
     static Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap);  
     static Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap);  

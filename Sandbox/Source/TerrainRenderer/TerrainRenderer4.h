@@ -48,7 +48,7 @@ struct TerrainRenderer4: OD::Module {
         );*/
 
         Ref<NoiseData> dataTest = Noise::GenerateNoiseMap(512, 512, 50, 0.25f, 4, 1, 1, Vector2(0, 0));
-        Ref<Texture2D> heightMap = CreateRef<Texture2D>(
+        Ref<Texture2D> heightMap = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
             (void*)&dataTest->data[0],
             (size_t)(dataTest->data.size() * sizeof(float)),
             512, 512,
@@ -75,7 +75,7 @@ struct TerrainRenderer4: OD::Module {
         terrainMeshRenderer.material = terrainMaterial;*/
 
         terrain = scene->AddEntity("Terrain");
-        Terrain2* terrainScript = terrain.AddComponent<ScriptComponent>().AddScript<Terrain2>();
+        auto* terrainScript = terrain.AddComponent<ScriptComponent>().AddScript<Terrain1>();
         //terrainScript->viewer = &camera.GetComponent<TransformComponent>();
 
         scene->Start();

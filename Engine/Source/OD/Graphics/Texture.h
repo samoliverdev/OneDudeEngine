@@ -74,24 +74,26 @@ class OD_API Texture2D: public Asset{
     friend class Graphics;
 public:
     Texture2D() = default;
+    ~Texture2D();
+
+    /*Texture2D() = default;
     Texture2D(Texture2DSetting settings);
     Texture2D(const std::string& filePath, Texture2DSetting settings); 
     Texture2D(void* data, size_t size, Texture2DSetting settings); 
-    Texture2D(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings); 
-    
-    bool LoadFromFile(const std::string& path) override;
-    std::vector<std::string> GetFileAssociations() override;
+    Texture2D(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings);*/ 
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromMemory(void* data, size_t size, Texture2DSetting settings); 
+    static Ref<Texture2D> CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromPackage(const char* path, Package& package, Texture2DSetting settings); 
     static Ref<Texture2D> LoadDefautlTexture2D();
     static Ref<Texture2D> CreateBrdfLUTTexture2D();
-    
+
     static void Destroy(Texture2D& tex);
     static void Bind(Texture2D& tex, int index);
     
-    ~Texture2D();
+    bool LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
 
     bool IsValid();
     inline unsigned int Width(){ return width; }

@@ -125,6 +125,7 @@ uniform float heightScale;
 uniform sampler2D heightMap;
 uniform sampler2D heightMapNorth;
 uniform sampler2D heightMapWest;
+uniform sampler2D heightMapLeft;
 
 uniform vec2 uvOffset = vec2(0);
 
@@ -249,6 +250,24 @@ vec3 filterNormalLod(vec2 uv){
     return normalize(vec3(h1 - h2, 2, h0 - h3));
 }
 
+float getHeight(vec2 uv){
+    if(uv.x > 1.0) return texture(heightMapWest, vec2(uv.x-1.0, uv.y)).r;
+    if(uv.x < 0) return texture(heightMapLeft, vec2(uv.x+1.0, uv.y)).r;
+    return texture(heightMap, uv).r;
+}
+
+vec3 filterNormalLod2(vec2 uv){
+    vec2 texSize = textureSize(heightMap, 0);
+    vec2 texelSize = vec2(1.0 / texSize.x, 1.0 / texSize.y);
+    
+    float h0 = getHeight(uv + ( vec2( 0,-1) * texelSize) ) * (heightScale/1);
+    float h1 = getHeight(uv + ( vec2(-1, 0) * texelSize) ) * (heightScale/1);
+    float h2 = getHeight(uv + ( vec2( 1, 0) * texelSize) ) * (heightScale/1);
+    float h3 = getHeight(uv + ( vec2( 0, 1) * texelSize) ) * (heightScale/1);
+
+    return normalize(vec3(h1 - h2, 2, h0 - h3));
+}
+
 vec3 GetEmission(vec2 baseUV){
 	vec4 map = texture(emissionMap, baseUV);
 	return map.rgb * emissionColor.rgb;
@@ -300,7 +319,7 @@ uniform vec2 heightmapOffset = vec2(0, 0);
 void main(){
     vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
     base = base * color;
-    //base = color;
+    base = color;
 
     float height = texture(heightMap, fsIn.texCoord + fsIn.uvOffset_).r * 1;
     //base = vec4(height, height, height, 1);

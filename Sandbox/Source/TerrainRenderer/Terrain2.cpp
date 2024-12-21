@@ -58,7 +58,7 @@ void Terrain2::OnStart(){
     int heightmapSize = 1024;
     int heightmapSize2 = heightmapSize-1;
     heightmap = Noise::GenerateNoiseMap(heightmapSize, heightmapSize, 50, 0.25f/4, 4, 0.5f, 2.0f, Vector2(0, 0));
-    heightmapTex = CreateRef<Texture2D>(
+    heightmapTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
         (void*)&heightmap->data[0],
         (size_t)(heightmap->data.size() * sizeof(float)),
         heightmapSize, heightmapSize,

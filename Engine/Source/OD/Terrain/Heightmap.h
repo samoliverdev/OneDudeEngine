@@ -15,6 +15,10 @@ struct OD_API Heightmap{
         data.resize(width * height);
     }
 
+    inline int ToFlatCoord(int x, int y){
+        return y * width + x;
+    }
+
     inline void Set(int x, int y, float value){
         data[y * width + x] = value;  
         //data[x * width + y] = value;  

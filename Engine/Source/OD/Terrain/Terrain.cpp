@@ -148,7 +148,9 @@ void TerrainComponent::SetHeightmap(Ref<Heightmap> inHeightmap){
 }
 
 void TerrainComponent::SubmitHeightmap(){
-    heightmapTex = CreateRef<Texture2D>(
+    Assert(false);
+
+    heightmapTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
         (void*)&heightmap->data[0],
         (size_t)(heightmap->data.size() * sizeof(float)),
         heightmap->width, heightmap->height,
@@ -162,6 +164,7 @@ void TerrainComponent::SubmitHeightmap(){
         terrainMeshRenderer.UpdateAABB();
         terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
         terrainMeshRenderer.material->SetTexture("heightMap", heightmapTex);
+        terrainMeshRenderer.material->SetTexture("heightMapNormal", normalTex);
         float offset = 1.0f / (float)chunkWidthCount;
         terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
         terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
@@ -204,9 +207,9 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
         {1, 200}, 
         {3, 300},
         {7, 400},
-        //{15, 500},
-        //{31, 600},
-        //{63, 700}
+        {15, 500},
+        {31, 600},
+        {63, 700}
     };
 
     for(int i = 0; i < terrain.lods.size(); i++){
@@ -215,13 +218,47 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
 
     int heightmapSize = 1024;
     if(terrain.heightmap == nullptr) terrain.heightmap = CreateRef<Heightmap>(heightmapSize, heightmapSize);// Noise::GenerateNoiseMap(heightmapSize, heightmapSize, 50, 0.25f/4, 4, 0.5f, 2.0f, Vector2(0, 0));
-    terrain.heightmapTex = CreateRef<Texture2D>(
+    terrain.heightmapTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
         (void*)&terrain.heightmap->data[0],
         (size_t)(terrain.heightmap->data.size() * sizeof(float)),
         terrain.heightmap->width, terrain.heightmap->height,
         TextureDataType::Float,
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
     );
+
+    auto GenerateVertex = [&](int x, int y){
+        x = math::clamp<int>(x, 0, terrain.heightmap->width);
+        y = math::clamp<int>(y, 0, terrain.heightmap->height);
+        float h = terrain.heightmap->Get(x, y) * terrain.terrainHeight;
+        return Vector3(x, h, -y);
+    };
+    auto GetNormalFromFace = [&](Vector3 pointA, Vector3 pointB, Vector3 pointC){
+        Vector3 sideAB = pointB - pointA;
+		Vector3 sideAC = pointC - pointA;
+		return math::normalize(math::cross(sideAB, sideAC));
+    };
+    auto ToNormalMap = [](Vector3 normal){
+        return normal * 0.5f + 0.5f;
+    };
+    Vector3* normal = new Vector3[terrain.heightmap->data.size()];
+    for(int x = 0; x < terrain.heightmap->width; x++){
+        for(int y = 0; y < terrain.heightmap->height; y++){
+            //normal[heightmap->ToFlatCoord(x, y)] = Vector3Up;
+            Vector3 a = GenerateVertex(x-1, y-1);
+            Vector3 b = GenerateVertex(x, y);
+            Vector3 c = GenerateVertex(x-1, y);
+            normal[terrain.heightmap->ToFlatCoord(x, y)] = GetNormalFromFace(a, b, c);
+            normal[terrain.heightmap->ToFlatCoord(x, y)] = ToNormalMap(GetNormalFromFace(a, b, c));
+        }
+    }
+    terrain.normalTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
+        (void*)normal,
+        (size_t)(terrain.heightmap->data.size() * sizeof(Vector3)),
+        terrain.heightmap->width, terrain.heightmap->height,
+        TextureDataType::Float,
+        Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true, TextureFormat::RGB16F}
+    );
+    delete normal;
 
     terrain.collider = GetScene()->AddEntity("Collider");
     GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
@@ -376,6 +413,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
 
     terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
+    terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
     float offset = 1.0f / (float)terrain.chunkWidthCount;
     terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
@@ -452,6 +490,7 @@ Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBor
 
     meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
     meshData->mesh->CalculateNormals();
+    meshData->mesh->CalculateTangent();
     meshData->mesh->Submit();
 
     return meshData->mesh;
