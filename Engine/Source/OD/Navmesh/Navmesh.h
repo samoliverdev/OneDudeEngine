@@ -56,6 +56,9 @@ struct OD_API BuildSettings{
 	// Size of the tiles in voxels
 	float tileSize;
 
+	//int maxTiles;
+	//int maxPolysPerTile;
+
 	template<class Archive>
     void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, cellSize);
@@ -134,8 +137,15 @@ class OD_API Navmesh{
 public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
+	bool useTile = false;
 
 	bool Bake(Scene* scene, AABB bounds);
+
+	bool TileInit(Scene* scene, AABB bounds);
+	bool BakeAllTiles(Scene* scene, AABB bounds);
+	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos);
+	bool RemoveTile(Scene* scene, AABB bounds, const Vector3 pos);
+
 	void Cleanup();
 	void DrawDebug();
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
@@ -164,7 +174,12 @@ private:
 	int m_nstraightPath = 0;
 	int m_npolys = 0;
 
+	float m_lastBuiltTileBmin[3];
+	float m_lastBuiltTileBmax[3];
+
 	bool RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh);
+	void GetTilePos(const float* pos, int& tx, int& ty);
+	unsigned char* BuildTileMesh(Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize);
 };
 
 struct OD_API NavmeshComponent{

@@ -57,11 +57,15 @@ void NavmeshSample::OnInit(){
     Entity root = scene->Instantiate(enviromentModel);
     TransformComponent& rootTransform = root.GetComponent<TransformComponent>();
     rootTransform.LocalEulerAngles(Vector3(-90, 0, 0));
+    rootTransform.LocalScale(Vector3(20, 20, 5));
 
+        
     Entity navmeshEntity = scene->AddEntity("Navmesh");
     NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();
     navmeshComp.navmesh = CreateRef<Navmesh>();
+    navmeshComp.navmesh->useTile = true;
     navmeshComp.navmesh->buildSettings.cellSize = 0.3f;
+    navmeshComp.navmesh->buildSettings.tileSize = 128;
     navmeshComp.navmesh->buildSettings.cellHeight = 0.2f;
     navmeshComp.navmesh->buildSettings.agentHeight = 2.0f;
     navmeshComp.navmesh->buildSettings.agentRadius = 0.6f;
@@ -75,7 +79,39 @@ void NavmeshSample::OnInit(){
     navmeshComp.navmesh->buildSettings.detailSampleDist = 6.0f;
     navmeshComp.navmesh->buildSettings.detailSampleMaxError = 1.0f;
     navmeshComp.navmesh->buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
-    navmeshComp.navmesh->Bake(scene, AABB(Vector3(0, 0, 0), 100, 100, 100));
+    
+    float tileSize = navmeshComp.navmesh->buildSettings.tileSize * navmeshComp.navmesh->buildSettings.cellSize;
+    float halfTileSize = tileSize/2;
+
+    AABB navmeshBounds = AABB(Vector3(0, 0, 0), 1000, 1000, 1000);
+    Vector3 boundsSize(tileSize);
+    
+    if(navmeshComp.navmesh->useTile == false){
+        navmeshComp.navmesh->Bake(scene, navmeshBounds);
+    } else {
+        navmeshComp.navmesh->TileInit(scene, navmeshBounds);
+        navmeshComp.navmesh->BakeAllTiles(scene, navmeshBounds);
+        /*navmeshComp.navmesh->BakeTile(
+            scene, 
+            navmeshBounds, 
+            Vector3(0,0,0)
+        );
+        navmeshComp.navmesh->BakeTile(
+            scene, 
+            navmeshBounds, 
+            Vector3(tileSize*1, 0, 0)
+        );
+        navmeshComp.navmesh->BakeTile(
+            scene, 
+            navmeshBounds,
+            Vector3(tileSize*-1, 0, 0)
+        );
+        navmeshComp.navmesh->BakeTile(
+            scene, 
+            navmeshBounds, 
+            Vector3(0,0,tileSize*-1)
+        );*/
+    }
 
     Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
     NavmeshAgentComponent& agent = navmeshAgent.AddComponent<NavmeshAgentComponent>();
