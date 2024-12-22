@@ -65,7 +65,7 @@ void NavmeshSample::OnInit(){
     navmeshComp.navmesh = CreateRef<Navmesh>();
     navmeshComp.navmesh->useTile = true;
     navmeshComp.navmesh->buildSettings.cellSize = 0.3f;
-    navmeshComp.navmesh->buildSettings.tileSize = 128;
+    navmeshComp.navmesh->buildSettings.tileSize = 256;
     navmeshComp.navmesh->buildSettings.cellHeight = 0.2f;
     navmeshComp.navmesh->buildSettings.agentHeight = 2.0f;
     navmeshComp.navmesh->buildSettings.agentRadius = 0.6f;

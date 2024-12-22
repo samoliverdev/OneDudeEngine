@@ -127,6 +127,7 @@ private:
     Ref<Shader> deferredLightPassShader;
     Ref<Material> deferredLightPass;
     Ref<Mesh> skyboxMesh;
+    Ref<Mesh> spriteMesh;
     
     Camera cam;
     Scene* scene;

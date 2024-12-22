@@ -454,6 +454,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
         Material::SetGlobalFloat("_SkyLightIntensity", 0);
         //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
+        //Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
         Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
@@ -472,7 +473,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         
         context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        RenderSprites();
+        Graphics::SetDepthMask(true);
+        //RenderSprites();
     } else {
         context->BeginDeferredPass();
         
@@ -483,20 +485,17 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndDeferredPassAndCopyToForwardPass();
         context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        RenderSprites();
+        Graphics::SetDepthMask(true);
+        //RenderSprites();
     }
 
     //context->RenderSkyboxLater();
+    //context->DrawGizmos();
     
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
-
     context->DrawGizmos();
-
-    for(System* s: context->GetScene()->GetStandSystems()){
-        s->OnRender();
-    }
-
+    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     RenderUI();
 
     context->EndDrawToScreen();
@@ -603,6 +602,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 }
 
 void CameraRenderer::RenderSprites(){
+    Assert(false && "Outdate");
+
     auto spriteView = context->GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent>();
     for(auto entity: spriteView){
         TransformComponent& trans = spriteView.get<TransformComponent>(entity);
@@ -626,6 +627,7 @@ void CameraRenderer::RenderSprites(){
 void CameraRenderer::RenderUI(){
     Graphics::SetBlend(true);
     Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+    Graphics::SetDepthMask(false);
 
     //Camera cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
     Camera cam2d = {Matrix4Identity, math::ortho(0.0f, (float)camera.width, 0.0f, (float)camera.height, -10.0f, 10.0f)};
@@ -730,6 +732,9 @@ void CameraRenderer::RenderUI(){
         Graphics::DrawMesh(*spriteMesh, *_mat->GetShader(), m);
     }
 
+    Graphics::SetBlend(true);
+    Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+    Graphics::SetDepthMask(false);
     auto uiTextView = context->GetScene()->GetRegistry().view<TransformComponent, RectTransformComponet, UITextComponent>();
     for(auto entity: uiTextView){
         Entity e(entity, context->GetScene());
@@ -759,6 +764,7 @@ void CameraRenderer::RenderUI(){
         auto _mat = uiText.material;
         Shader::Bind(*_mat->GetShader());
         //Material::SubmitGraphicDatas(*_mat);
+
         _mat->GetShader()->SetVector4("color", uiText.color);
         Graphics::DrawText(
             *uiText.font, 

@@ -31,19 +31,28 @@ void RenderPipelineSample::OnInit(){
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<StandRenderPipeline2>();
 
+    std::string defaultShaderPath = "Engine/Shaders/Lit.glsl";
+
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Ref<Model> sphereModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sphere.glb");
-    sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    envComp.settings.toneMappingPostFX->enable = true;
+    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
+    envComp.settings.colorGradingPostFX->enable = true;
+    envComp.settings.colorGradingPostFX->contrast = 18;
+    //envComp.settings.bloomPostFX->enable = true;
+    //envComp.settings.bloomPostFX->intensity = 0.5f;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/kloofendal_43d_clear_puresky_2k.hdr");
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
     envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
     //envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
@@ -54,7 +63,7 @@ void RenderPipelineSample::OnInit(){
     ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
     _meshRenderer.SetModel(floorModel);
     _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity e2 = scene->AddEntity("Cube");
     e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
@@ -62,7 +71,7 @@ void RenderPipelineSample::OnInit(){
     ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
     _meshRenderer2.SetModel(cubeModel);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     /*Entity e3 = scene->AddEntity("Sphere");
     e3.GetComponent<TransformComponent>().Position(Vector3(8, 2, 8));
@@ -77,7 +86,7 @@ void RenderPipelineSample::OnInit(){
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("Plane", [&](auto& transform, auto& meshRenderer){
         Ref<Material> m = CreateRef<Material>();
-        m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+        m->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         m->SetVector4("color", Vector4(1, 1, 1, 1));
         m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg"));
         m->SetTexture("normal", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall_normal.jpg"));
@@ -94,7 +103,7 @@ void RenderPipelineSample::OnInit(){
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
@@ -108,7 +117,7 @@ void RenderPipelineSample::OnInit(){
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = material;
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
@@ -132,19 +141,32 @@ void RenderPipelineSample::OnInit(){
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = material;
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
         Ref<Material> material = CreateRef<Material>(
-            AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl")
+            AssetManager::Get().LoadAsset<Shader>(defaultShaderPath)
         );
-        material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
+        //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
         material->SetFloat("metallic", 1);
-        material->SetFloat("smoothness", 1);
+        material->SetFloat("smoothness", 0.7f);
 
         transform.Position(Vector3(8*6.5f, 2, 8));
+        transform.LocalScale(Vector3(4*1, 4*1, 4*1));
+        meshRenderer.SetModel(sphereModel);
+        meshRenderer.GetMaterialsOverride()[0] = material;
+    });
+    scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetali2", [&](auto& transform, auto& meshRenderer){
+        Ref<Material> material = CreateRef<Material>(
+            AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl")
+        );
+        //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
+        material->SetFloat("metallic", 1);
+        material->SetFloat("smoothness", 0.7f);
+
+        transform.Position(Vector3(8*7.5f, 2, 8));
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = material;

@@ -1,7 +1,6 @@
 #version 330 core
 
 #pragma SupportInstancing false
-
 #pragma CullFace NONE
 #pragma DepthTest LESS
 #pragma Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA

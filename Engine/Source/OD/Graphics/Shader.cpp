@@ -125,10 +125,10 @@ std::string Shader::load(std::string path){
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "DepthMask"){
             Assert(pragmaLine.size() == 2);
-            if(pragmaLine[1] == "true"){
+            if(pragmaLine[1] == "True"){
                 depthMask = true;
             }
-            if(pragmaLine[1] == "false"){
+            if(pragmaLine[1] == "False"){
                 depthMask = false;
             }
         }
@@ -240,7 +240,6 @@ std::vector<std::string> Shader::GetFileAssociations(){
         ".glsl"
     }; 
 }
-
 
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     std::vector<std::string> keyworlds;
@@ -476,6 +475,8 @@ void Shader::OnGui(){
 
     std::string cullFace(magic_enum::enum_name(GetCullFace()));
     ImGui::Text("CullFace: %s", cullFace.c_str());
+    
+    ImGui::Text("DepthMask: %s", depthMask == true ? "True" : "False");
 
     std::string depthTest(magic_enum::enum_name(GetDepthTest()));
     ImGui::Text("DepthTest: %s", depthTest.c_str());

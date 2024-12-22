@@ -11,8 +11,10 @@
 * Fix Physics PlayMode In Engine as SharedLib - 
 * Fix All Physic Debug Asserts -
 
+* Fix strange bug using Lit2 Shader in the RenderPipeline
 * Fix Link Erro on Debug Compile
 * Finish Terrain(Normal, Shader, Shadow, Navmesh)
+* Create Same Type of "MaterialPropertyBlock" for the mainTex and color of the SpriteRendererComponent
 
 * Refactory/Revisar All Graphic API Code
 * Revisar RenderPipeline Code
@@ -35,7 +37,7 @@
 
 * Occlusion Culling
 * Navmesh - 
-* Navmesh Tile Bake
+* Navmesh Tile Bake -
 
 * Game Test
 * Dynamic C++ GameModule -

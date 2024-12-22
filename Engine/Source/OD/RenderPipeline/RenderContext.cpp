@@ -2,6 +2,7 @@
 #include "CameraComponent.h"
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
+#include "SpriteRendererComponent.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Asset.h"
@@ -53,9 +54,10 @@ RenderContext::RenderContext(Scene* inScene){
     blitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl");
     deferredGBufferShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl");
     deferredLightPassShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl");
-    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit2.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
+    spriteMesh = Mesh::CenterQuad(false);
 }
 
 RenderContext::~RenderContext(){
@@ -274,6 +276,32 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
             onReciveRenderData(data);
         }
+    }
+
+    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent>();
+    for(auto entity: spriteView){
+        TransformComponent& t = spriteView.get<TransformComponent>(entity);
+        SpriteRendererComponent& c = spriteView.get<SpriteRendererComponent>(entity);
+        //if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        AABB aabb(Vector3(0), c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1);
+        Transform scale;
+        scale.LocalScale(Vector3(c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1));
+
+        c.material->SetVector4("color", c.color);
+        c.material->SetTexture("mainTex", c.sprite);
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = spriteMesh.get();
+        data.targetMatrix =  t.GlobalModelMatrix() * scale.GetLocalModelMatrix();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(aabb, data.targetMatrix);
+
+        onReciveRenderData(data);
     }
 }
 
@@ -612,7 +640,6 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
 void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
     commandBuffer.Sort();
-
     commandBuffer.SetOverrideMaterial(shadowPass);
 
     Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
