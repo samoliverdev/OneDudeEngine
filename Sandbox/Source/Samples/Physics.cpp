@@ -231,7 +231,7 @@ void PhysicsSample::OnUpdate(float deltaTime){
         Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
         e.GetComponent<TransformComponent>().Position({2, 13, 0});
         e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
-        e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+        e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>()->timeToDestroy = 100000000;
     }
 
     if(Input::IsKeyDown(KeyCode::T)){

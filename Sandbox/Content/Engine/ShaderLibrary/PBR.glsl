@@ -1,12 +1,6 @@
 #ifndef PBR_INCLUDED
 #define PBR_INCLUDED
 
-#include Engine/ShaderLibrary/Core.glsl
-#include Engine/ShaderLibrary/Common.glsl
-#include Engine/ShaderLibrary/Surface.glsl
-#include Engine/ShaderLibrary/Shadows.glsl
-#include Engine/ShaderLibrary/Light.glsl
-
 const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 4.0;
 
@@ -94,6 +88,8 @@ float PerceptualRoughnessToMipmapLevel(float perceptualRoughness){
 }
 
 vec3 AmbientLight(Surface surfaceWS){
+    //return _AmbientLight * surfaceWS.occlusion;
+
 	vec3 F0 = vec3(0.04); 
     F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
 	vec3 R = reflect(-surfaceWS.viewDirection, surfaceWS.normal); 
@@ -112,7 +108,7 @@ vec3 AmbientLight(Surface surfaceWS){
     vec2 brdf = texture(_BrdfLUT, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), surfaceWS.smoothness)).rg;
     vec3 specular = _AmbientLight + (prefilteredColor * (F * brdf.x + brdf.y));
 
-    return (kD * diffuse + specular) * surfaceWS.occlusion;;
+    return (kD * diffuse + specular) * surfaceWS.occlusion;
 }
 
 vec3 GetFinalColor(Surface surfaceWS){

@@ -29,6 +29,11 @@ out vec4 FragColor;
 uniform vec3 viewPos;
 uniform mat4 view;
 
+#include Engine/ShaderLibrary/Core.glsl
+#include Engine/ShaderLibrary/Common.glsl
+#include Engine/ShaderLibrary/Surface.glsl
+#include Engine/ShaderLibrary/Shadows.glsl
+#include Engine/ShaderLibrary/Light.glsl
 #include Engine/ShaderLibrary/PBR.glsl
 
 void main(){

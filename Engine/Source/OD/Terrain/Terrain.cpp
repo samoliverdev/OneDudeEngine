@@ -161,14 +161,20 @@ void TerrainComponent::SubmitHeightmap(){
     for(auto& i: loadedChunks){
         IVector2 coord = i.first;
         MeshRendererComponent& terrainMeshRenderer =  i.second.entity.AddComponent<MeshRendererComponent>();
+        float offset = 1.0f / (float)chunkWidthCount;
+
         terrainMeshRenderer.UpdateAABB();
         terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
         terrainMeshRenderer.material->SetTexture("heightMap", heightmapTex);
         terrainMeshRenderer.material->SetTexture("heightMapNormal", normalTex);
-        float offset = 1.0f / (float)chunkWidthCount;
         terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
         terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
         terrainMeshRenderer.material->SetFloat("heightScale", terrainHeight);
+
+        terrainMeshRenderer.customShadowPass->SetTexture("heightMap", heightmapTex);
+        terrainMeshRenderer.customShadowPass->SetVector2("heightmapTilling", Vector2(offset, offset));
+        terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
+        terrainMeshRenderer.customShadowPass->SetFloat("heightScale", terrainHeight);
     }
 }
 
@@ -194,6 +200,118 @@ void TerrainSystem::Update(){
             UpdateTerrain(terrain);
         }
     }
+}
+
+struct TerrainMeshData{
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<MeshShapeData> shapeData;
+
+    int triangleIndex = 0;
+
+    TerrainMeshData(int meshWidth, int meshHeight){
+        mesh->vertices.resize(meshWidth * meshHeight);
+        mesh->uv.resize(meshWidth * meshHeight);
+        mesh->indices.resize((meshWidth-1)*(meshHeight-1)*6);
+    }
+
+    void AddTriangle(int a, int b, int c){
+        mesh->indices[triangleIndex] = a;
+        mesh->indices[triangleIndex+1] = b;
+        mesh->indices[triangleIndex+2] = c;
+        triangleIndex += 3;
+    }
+
+    Ref<Mesh> CreateMesh(){
+        mesh->Submit();
+        return mesh;
+    }
+};
+
+float _Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
+    return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
+}
+
+Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBorders toColaps){
+    float topLeftX = (width - 1) / -2.0f;
+    float topLeftZ = (height - 1) / 2.0f;
+
+    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+    int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
+
+    Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    int vertexIndex = 0;
+
+    for(int y = 0; y < height; y += meshSimplificationIncrement){
+        for(int x = 0; x < width; x += meshSimplificationIncrement){
+            //meshData->mesh->vertices[vertexIndex] = Vector3(x+topLeftX, 0, -(y-topLeftZ));
+            int _x = x;
+            int _y = y;
+            if(toColaps.left && y % 2 != 0 && x == 0) _y -= 1;
+            if(toColaps.right && y % 2 != 0 && x == (width - 1)) _y -= 1;
+            if(toColaps.bottom && x % 2 != 0 && y == 0) _x -= 1;
+            if(toColaps.top && x % 2 != 0 && y == (height-1)) _x -= 1;
+
+            meshData->mesh->vertices[vertexIndex] = Vector3(_x+topLeftX, 0, -(_y-topLeftZ));
+            //meshData->mesh->uv[vertexIndex] = Vector3((float)_x/(float)width, (float)_y/(float)height, 0);
+            meshData->mesh->uv[vertexIndex] = Vector3(
+                math::clamp(_Remap(_x, Vector2(0, width-1), Vector2(0, 1)), 0.0f, 1.0f), 
+                math::clamp(_Remap(_y, Vector2(0, height-1), Vector2(0, 1)), 0.0f, 1.0f), 
+                0
+            );
+            
+            if(x < width-1 && y < height-1){
+                meshData->AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
+                meshData->AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
+            }
+
+            vertexIndex += 1;
+        }
+    }
+
+    meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
+    meshData->mesh->CalculateNormals();
+    meshData->mesh->CalculateTangent();
+    meshData->mesh->Submit();
+
+    return meshData->mesh;
+}
+
+Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDetail){
+    int width = heightmap->width;
+    int height = heightmap->height;
+
+    float topLeftX = (width - 1) / -2.0f;
+    float topLeftZ = (height - 1) / 2.0f;
+
+    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+    int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
+
+    Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    int vertexIndex = 0;
+
+    for(int y = 0; y < height; y += meshSimplificationIncrement){
+        for(int x = 0; x < width; x += meshSimplificationIncrement){
+            //meshData->mesh->vertices[vertexIndex] = Vector3(x+topLeftX, 0, -(y-topLeftZ));
+            int _x = x;
+            int _y = y;
+
+            meshData->mesh->vertices[vertexIndex] = Vector3(_x+topLeftX, heightmap->Get(_x, _y), -(_y-topLeftZ));
+            
+            if(x < width-1 && y < height-1){
+                meshData->AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
+                meshData->AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
+            }
+
+            vertexIndex += 1;
+        }
+    }
+
+    meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
+    //meshData->mesh->CalculateNormals();
+    //meshData->mesh->CalculateTangent();
+    meshData->mesh->Submit();
+
+    return meshData->mesh;
 }
 
 void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
@@ -292,6 +410,25 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
             LoadCood(terrain, IVector2(x, y));
         }
     }
+
+    terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
+    GetScene()->SetParent(terrain.meshsRoot.Id(), terrain.meshToNavmesh.Id());
+    MeshRendererComponent& meshToNavmesh = terrain.meshToNavmesh.AddComponent<MeshRendererComponent>();
+    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, 8);
+    meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    TransformComponent& meshToNavmeshTrans = terrain.meshToNavmesh.GetComponent<TransformComponent>();
+    meshToNavmeshTrans.LocalScale(Vector3(
+        terrainMeshWidth / (float)terrain.heightmap->width,
+        terrain.terrainHeight, 
+        terrainMeshWidth / (float)terrain.heightmap->height
+    ));
+    meshToNavmeshTrans.LocalPosition(
+        Vector3(
+            terrainMeshWidth / 2.0f,
+            0,
+            -(terrainMeshWidth / 2.0f)
+        )
+    );
 }
 
 void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
@@ -359,6 +496,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             (terrain.chunkSize / terrain.lodsMesh[lod].scale.z) / 2
         );
         meshComponent.material->SetFloat("heightScale", terrain.terrainHeight);
+        meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
     }
 
     terrain.meshsRoot.GetComponent<TransformComponent>().LocalScale(
@@ -412,88 +550,21 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
 
     terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
 
+    float offset = 1.0f / (float)terrain.chunkWidthCount;
+    
     terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
     terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
-    float offset = 1.0f / (float)terrain.chunkWidthCount;
     terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
     terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);
 
+    terrainMeshRenderer.customShadowPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
+    terrainMeshRenderer.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
+    terrainMeshRenderer.customShadowPass->SetVector2("heightmapTilling", Vector2(offset, offset));
+    terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
+    terrainMeshRenderer.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
+
     terrain.loadedChunks[coord] = chunkData;
-}
-
-float _Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
-    return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
-}
-
-struct TerrainMeshData{
-    Ref<Mesh> mesh = CreateRef<Mesh>();
-    Ref<MeshShapeData> shapeData;
-
-    int triangleIndex = 0;
-
-    TerrainMeshData(int meshWidth, int meshHeight){
-        mesh->vertices.resize(meshWidth * meshHeight);
-        mesh->uv.resize(meshWidth * meshHeight);
-        mesh->indices.resize((meshWidth-1)*(meshHeight-1)*6);
-    }
-
-    void AddTriangle(int a, int b, int c){
-        mesh->indices[triangleIndex] = a;
-        mesh->indices[triangleIndex+1] = b;
-        mesh->indices[triangleIndex+2] = c;
-        triangleIndex += 3;
-    }
-
-    Ref<Mesh> CreateMesh(){
-        mesh->Submit();
-        return mesh;
-    }
-};
-
-Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBorders toColaps){
-    float topLeftX = (width - 1) / -2.0f;
-    float topLeftZ = (height - 1) / 2.0f;
-
-    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
-    int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
-
-    Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
-    int vertexIndex = 0;
-
-    for(int y = 0; y < height; y += meshSimplificationIncrement){
-        for(int x = 0; x < width; x += meshSimplificationIncrement){
-            //meshData->mesh->vertices[vertexIndex] = Vector3(x+topLeftX, 0, -(y-topLeftZ));
-            int _x = x;
-            int _y = y;
-            if(toColaps.left && y % 2 != 0 && x == 0) _y -= 1;
-            if(toColaps.right && y % 2 != 0 && x == (width - 1)) _y -= 1;
-            if(toColaps.bottom && x % 2 != 0 && y == 0) _x -= 1;
-            if(toColaps.top && x % 2 != 0 && y == (height-1)) _x -= 1;
-
-            meshData->mesh->vertices[vertexIndex] = Vector3(_x+topLeftX, 0, -(_y-topLeftZ));
-            //meshData->mesh->uv[vertexIndex] = Vector3((float)_x/(float)width, (float)_y/(float)height, 0);
-            meshData->mesh->uv[vertexIndex] = Vector3(
-                math::clamp(_Remap(_x, Vector2(0, width-1), Vector2(0, 1)), 0.0f, 1.0f), 
-                math::clamp(_Remap(_y, Vector2(0, height-1), Vector2(0, 1)), 0.0f, 1.0f), 
-                0
-            );
-            
-            if(x < width-1 && y < height-1){
-                meshData->AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
-                meshData->AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
-            }
-
-            vertexIndex += 1;
-        }
-    }
-
-    meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
-    meshData->mesh->CalculateNormals();
-    meshData->mesh->CalculateTangent();
-    meshData->mesh->Submit();
-
-    return meshData->mesh;
 }
 
 void Combine2(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){

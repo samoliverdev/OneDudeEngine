@@ -215,6 +215,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
         data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
         data.targetMesh = c.mesh.get();
         data.targetMatrix =  t.GlobalModelMatrix();
         data.posePalette = nullptr;
@@ -613,7 +614,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
-            data.targetMaterial,
+            data.customShadowPass, //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix,
             data.posePalette
@@ -623,14 +624,14 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(isInstancing){
         commandBuffer.AddDrawInstancingCommand({
-            data.targetMaterial,
+            data.customShadowPass, //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix
         });
 
     } else {
         commandBuffer.AddDrawCommand({
-            data.targetMaterial,
+            data.customShadowPass, //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix,
             data.distance
@@ -640,7 +641,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
 void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
     commandBuffer.Sort();
-    commandBuffer.SetOverrideMaterial(shadowPass);
+    //commandBuffer.SetOverrideMaterial(shadowPass);
 
     Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
  

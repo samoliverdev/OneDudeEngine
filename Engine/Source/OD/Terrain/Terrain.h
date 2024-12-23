@@ -162,6 +162,7 @@ private:
     
     Entity meshsRoot;
     Entity collider;
+    Entity meshToNavmesh;
 
     int chunkSize;
     std::unordered_map<IVector2, ChunkData> loadedChunks;

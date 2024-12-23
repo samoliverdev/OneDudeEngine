@@ -11,6 +11,8 @@ struct OD_API MeshRendererComponent{
     Ref<Material> material;
     AABB boundingVolume;
 
+    Ref<Material> customShadowPass;
+
     static void OnGui(Entity& e);
 
     template<class Archive>

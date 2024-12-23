@@ -16,6 +16,8 @@ vec3 SampleEnvironmentDiffuse(Surface surfaceWS){
 }
 
 float PerceptualRoughnessToMipmapLevel(float perceptualRoughness){
+    return perceptualRoughness * MAX_REFLECTION_LOD;
+
     perceptualRoughness = perceptualRoughness * (1.7 - 0.7 * perceptualRoughness);
     return perceptualRoughness * MAX_REFLECTION_LOD;
 }

@@ -59,7 +59,9 @@ void TerrainSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    envComp.settings.shadowDistance = 1000;
 
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = light.AddComponent<LightComponent>();
@@ -76,12 +78,22 @@ void TerrainSample::OnInit(){
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
+    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+
+    Entity cube = scene->AddEntity("Cube");
+    TransformComponent& cubeTrans = cube.GetComponent<TransformComponent>();
+    cubeTrans.LocalScale(Vector3(50, 200, 50));
+    cubeTrans.LocalPosition(Vector3(256, 100, -256));
+    ModelRendererComponent& cubeModelRenderer = cube.AddComponent<ModelRendererComponent>();
+    cubeModelRenderer.SetModel(cubeModel);
+
     Entity terrain = scene->AddEntity("Terrain");
     TerrainComponent& terrainComponent = terrain.AddComponent<TerrainComponent>();
     //terrainComponent.terrainWidth = 1000;
     //terrainComponent.terrainLength = 500;
-    terrainComponent.terrainHeight = 100;
-    int heightmapSize = 1024 * 1;
+    terrainComponent.terrainHeight = 420;
+    int heightmapSize = (1024 * 1)+1;
     terrainComponent.SetHeightmap(
         GenerateHeightmap(heightmapSize, heightmapSize, 50, 0.25f/(4*1), 4, 0.5f, 2.0f, Vector2(0, 0))
     );

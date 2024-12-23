@@ -96,6 +96,8 @@ void Shadows::AddRenderData(RenderData& data){
 
     ShadowDrawingSettings s;
 
+    if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass.get();
+
     int index = -1;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){

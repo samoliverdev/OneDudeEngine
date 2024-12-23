@@ -63,6 +63,11 @@ void main(){
 
 uniform mat4 view;
 
+#include Engine/ShaderLibrary/Core.glsl
+#include Engine/ShaderLibrary/Common.glsl
+#include Engine/ShaderLibrary/Surface.glsl
+#include Engine/ShaderLibrary/Shadows.glsl
+#include Engine/ShaderLibrary/Light.glsl
 #include Engine/ShaderLibrary/PBR.glsl
 
 in VsOut{

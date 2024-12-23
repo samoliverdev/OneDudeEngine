@@ -24,7 +24,13 @@ void NavmeshComponent::OnGui(Entity& e){
 	uiArchive(navmeshComponent);
 
 	if(ImGui::Button("Bake")){
-		if(navmeshComponent.navmesh != nullptr) navmeshComponent.navmesh->Bake(e.GetScene(), AABB(Vector3(0, 0, 0), 100, 100, 100)); 
+		if(navmeshComponent.navmesh == nullptr) navmeshComponent.navmesh = CreateRef<Navmesh>();
+		if(navmeshComponent.navmesh != nullptr){
+			navmeshComponent.navmesh->Bake(
+				e.GetScene(), AABB(Vector3(0, 0, 0), 
+				navmeshComponent.size.x, navmeshComponent.size.y, navmeshComponent.size.z
+			)); 
+		}
 	}
 }
 
