@@ -122,7 +122,9 @@ void RenderPipelineSample::OnInit(){
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> material = CreateRef<Material>();
+        Ref<Material> material = CreateRef<Material>(
+            AssetManager::Get().LoadAsset<Shader>(defaultShaderPath)
+        );
         material->SetTexture(
             "mainTex", 
             AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Materials/Complex/circuitry-albedo.png")
@@ -136,13 +138,14 @@ void RenderPipelineSample::OnInit(){
             AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Materials/Complex/circuitry-mask-mods.png")
         );
         material->SetFloat("metallic", 1);
+        material->SetEnableInstancing(true);
 
         transform.Position(Vector3(8*4.5f, 2, 8));
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = material;
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
-        meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        //meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
+        //meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){

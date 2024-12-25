@@ -69,6 +69,12 @@ void Material::SetInt(const char* name, int value){
     map.valueInt = value;
 }
 
+void Material::SetFloat(const char* name, float value){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Float;
+    map.valueFloat = value;
+}
+
 void Material::SetFloat(const char* name, float value, float min, float max){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Float;
@@ -167,12 +173,12 @@ void Material::SetGlobalInt(const char* name, int value){
     map.valueInt = value;
 }
 
-void Material::SetGlobalFloat(const char* name, float value, float min, float max){
+void Material::SetGlobalFloat(const char* name, float value/*, float min, float max*/){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Float;
     map.valueFloat = value;
-    map.valueFloatMin = min;
-    map.valueFloatMax = max;
+    //map.valueFloatMin = min;
+    //map.valueFloatMax = max;
 }
 
 void Material::SetGlobalFloat(const char* name, float* value, int count){
@@ -348,7 +354,7 @@ void Material::OnGui(){
                     toSave = true;
                 }
             } else {
-                if(ImGui::DragFloat(name.c_str(), &map.valueFloat, 1, map.valueFloatMin, map.valueFloatMax)){
+                if(ImGui::DragFloat(name.c_str(), &map.valueFloat, 1/*, map.valueFloatMin, map.valueFloatMax*/)){
                     toSave = true;
                 }
             }

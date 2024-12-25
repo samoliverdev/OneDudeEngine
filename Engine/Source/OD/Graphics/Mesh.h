@@ -70,6 +70,16 @@ public:
     void CalculateTangent();
 
     void Submit();
+    void Submit(
+        std::vector<unsigned int>* indices,
+        std::vector<Vector3>* vertices,
+        std::vector<Vector3>* uv = nullptr,
+        std::vector<Vector3>* normals = nullptr,
+        std::vector<Vector4>* colors = nullptr,
+        std::vector<Vector3>* tangents = nullptr,
+        std::vector<Vector4>* weights = nullptr,
+        std::vector<IVector4>* influences = nullptr
+    );
     void SubmitInstancingModelMatrixs();
     void SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
 

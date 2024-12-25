@@ -124,6 +124,18 @@ void Mesh::CalculateTangent(){
 void Mesh::Submit(){
     Assert(isReadable == true && "Only can Update isReadable Mesh");
 
+    Submit(
+        &indices,
+        &vertices,
+        &uv,
+        &normals,
+        &colors,
+        &tangents,
+        &weights,
+        &influences
+    );
+    return;
+
     if(vao == 0){
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
@@ -246,6 +258,148 @@ void Mesh::Submit(){
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights.size(), &weights[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    glBindVertexArray(0);
+    glCheckError();
+}
+
+void Mesh::Submit(
+    std::vector<unsigned int>* indices,
+    std::vector<Vector3>* vertices,
+    std::vector<Vector3>* uv,
+    std::vector<Vector3>* normals,
+    std::vector<Vector4>* colors,
+    std::vector<Vector3>* tangents,
+    std::vector<Vector4>* weights,
+    std::vector<IVector4>* influences
+){
+    //Assert(isReadable == true && "Only can Update isReadable Mesh");
+
+    if(vao == 0){
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glCheckError();
+    } else {
+        glBindVertexArray(vao);
+    }
+    
+    if(vertexVbo == 0){
+        glGenBuffers(1, &vertexVbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+        glCheckError();
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
+    }
+    vertexCount = vertices->size();
+
+    if(indices->size() > 0){
+        if(ebo == 0){
+            glGenBuffers(1, &ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_DYNAMIC_DRAW);
+        }
+    }
+    indiceCount = indices->size();
+
+    if(uv != nullptr && uv->size() == vertices->size()){
+        if(uvVbo == 0){
+            glGenBuffers(1, &uvVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    if(normals != nullptr && normals->size() == vertices->size()){
+        if(normalVbo == 0){
+            glGenBuffers(1, &normalVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, normalVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, normalVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    if(colors != nullptr && colors->size() == vertices->size()){
+        if(colorVbo == 0){
+            glGenBuffers(1, &colorVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    if(tangents != nullptr && tangents->size() == vertices->size()){
+        if(tangentVbo == 0){
+            glGenBuffers(1, &tangentVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, tangentVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    if(influences != nullptr && influences->empty() == false) Assert(influences->size() == vertices->size());
+    if(influences != nullptr && influences->size() == vertices->size()){
+        if(jointVbo == 0){
+            glGenBuffers(1, &jointVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, jointVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(5);
+            glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, jointVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_DYNAMIC_DRAW);
+            glCheckError();
+        }
+    }
+
+    if(weights != nullptr && weights->empty() == false) Assert(weights->size() == vertices->size());
+    if(weights != nullptr && weights->size() == vertices->size()){
+        if(weightsVbo == 0){
+            glGenBuffers(1, &weightsVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, weightsVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(6);
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
+            glCheckError();
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, weightsVbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_DYNAMIC_DRAW);
             glCheckError();
         }
     }

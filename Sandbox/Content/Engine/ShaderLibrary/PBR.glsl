@@ -104,9 +104,9 @@ vec3 AmbientLight(Surface surfaceWS){
     
 	//float mip = PerceptualRoughnessToMipmapLevel(surfaceWS.smoothness); //surfaceWS.smoothness * MAX_REFLECTION_LOD
 	float mip = surfaceWS.smoothness * MAX_REFLECTION_LOD;
-    vec3 prefilteredColor = /*_AmbientLight +*/ textureLod(_PrefilterMap, R, mip).rgb * _SkyLightIntensity;    
+    vec3 prefilteredColor = _AmbientLight + textureLod(_PrefilterMap, R, mip).rgb * _SkyLightIntensity;    
     vec2 brdf = texture(_BrdfLUT, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), surfaceWS.smoothness)).rg;
-    vec3 specular = _AmbientLight + (prefilteredColor * (F * brdf.x + brdf.y));
+    vec3 specular = /*_AmbientLight +*/ (prefilteredColor * (F * brdf.x + brdf.y));
 
     return (kD * diffuse + specular) * surfaceWS.occlusion;
 }

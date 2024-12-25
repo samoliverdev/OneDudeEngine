@@ -51,57 +51,6 @@ public:
 
 namespace OD{
 
-class OD_API QuadTree{
-public:    
-    struct OD_API Node{
-        std::vector<Ref<Node>> childen;
-        int depth = 0;
-        
-        inline void Split(){
-            auto a = CreateRef<Node>();
-            auto b = CreateRef<Node>();
-            auto c = CreateRef<Node>();
-            auto d = CreateRef<Node>();
-
-            a->depth = depth + 1;
-            b->depth = depth + 1;
-            c->depth = depth + 1;
-            d->depth = depth + 1;
-
-            childen.push_back(a);
-            childen.push_back(b);
-            childen.push_back(c);
-            childen.push_back(d);
-        }
-    };
-
-    Ref<Node> root = nullptr;
-};
-
-struct OD_API QuadTreeTerrainComponent{
-    friend class QuadTreeTerrainSystem;
-
-    static inline void OnGui(Entity& e){}
-    template <class Archive> void serialize(Archive& ar){}
-
-private:
-    float terrainWidth = 1000;
-    float terrainLength = 1000;
-    float terrainHeight = 500;
-
-    QuadTree quadtree;
-};
-
-class OD_API QuadTreeTerrainSystem: public System{
-public:
-    QuadTreeTerrainSystem(Scene* scene);
-    ~QuadTreeTerrainSystem() override;
-
-    virtual SystemType Type() override { return SystemType::Physics; }
-    virtual void Update() override;
-    virtual void OnDrawGizmos() override;
-};
-
 struct OD_API TerrainComponent{
     friend class TerrainSystem;
 
@@ -142,18 +91,12 @@ private:
         MeshBorders borders;
     };
 
-    struct LODDef {
-        int lod;
-        float visibleDstThreshold;
-    };
-
     struct ChunkData{
         Entity entity;
         LodInfo lodInfo;
     };
 
     int mapChunkSize = (128*1) + 1;
-    int lodCounts = 4;
     int chunkWidthCount = 4*2;
 
     Ref<Heightmap> heightmap = nullptr;
@@ -166,8 +109,10 @@ private:
 
     int chunkSize;
     std::unordered_map<IVector2, ChunkData> loadedChunks;
-    std::vector<LODDef> lods;
+    std::vector<int> lods;
     std::vector<TerrainLod> lodsMesh;
+
+    bool isDirt = true;
 };
 
 class OD_API TerrainSystem: public System{
@@ -179,6 +124,7 @@ public:
     virtual void Update() override;
 
 private:
+    void DestroyTerrain(TerrainComponent& terrain);
     void CreateTerrain(TerrainComponent& terrain, EntityId e);
     void UpdateTerrain(TerrainComponent& terrain);
     void LoadCood(TerrainComponent& terrain, IVector2 coor);

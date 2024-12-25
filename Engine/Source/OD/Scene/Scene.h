@@ -242,7 +242,7 @@ public:
 private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
-    void _DestroyEntity(EntityId entity);
+    void _DestroyEntity(EntityId entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     
     bool running = false;

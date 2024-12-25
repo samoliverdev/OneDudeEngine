@@ -475,7 +475,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         
         context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        Graphics::SetDepthMask(true);
+        //Graphics::SetDepthMask(true);
         //RenderSprites();
     } else {
         context->BeginDeferredPass();
@@ -487,7 +487,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndDeferredPassAndCopyToForwardPass();
         context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        Graphics::SetDepthMask(true);
+        //Graphics::SetDepthMask(true);
         //RenderSprites();
     }
 
@@ -626,6 +626,7 @@ void CameraRenderer::RenderSprites(){
     }
 }
 
+//Fixme: Shadow Bug
 void CameraRenderer::RenderUI(){
     Graphics::SetBlend(true);
     Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
@@ -775,6 +776,7 @@ void CameraRenderer::RenderUI(){
             m
         );
     }
+    Graphics::SetDepthMask(true);// Temp Fix Shadow Bug
 }
 
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){

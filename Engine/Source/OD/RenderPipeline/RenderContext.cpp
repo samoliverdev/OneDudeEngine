@@ -614,7 +614,8 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
-            data.customShadowPass, //data.targetMaterial,
+            data.customShadowPass, 
+            //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix,
             data.posePalette
@@ -624,14 +625,16 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(isInstancing){
         commandBuffer.AddDrawInstancingCommand({
-            data.customShadowPass, //data.targetMaterial,
+            data.customShadowPass, 
+            //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix
         });
 
     } else {
         commandBuffer.AddDrawCommand({
-            data.customShadowPass, //data.targetMaterial,
+            data.customShadowPass, 
+            //data.targetMaterial,
             data.targetMesh,
             data.targetMatrix,
             data.distance
@@ -640,7 +643,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 }
 
 void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
-    commandBuffer.Sort();
+    //commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);
 
     Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);

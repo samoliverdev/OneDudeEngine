@@ -86,7 +86,7 @@ public:
     bool SupportInstancing();
 
     void SetInt(const char* name, int value);
-    void SetFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
+    void SetFloat(const char* name, float value);
     void SetFloat(const char* name, float* value, int count);
     void SetVector2(const char* name, Vector2 value);
     void SetVector3(const char* name, Vector3 value);
@@ -100,7 +100,7 @@ public:
     void SetCubemap(const char* name, Ref<Cubemap> tex);
 
     static void SetGlobalInt(const char* name, int value);
-    static void SetGlobalFloat(const char* name, float value, float min = 0.0f, float max = 0.0f);
+    static void SetGlobalFloat(const char* name, float value);
     static void SetGlobalFloat(const char* name, float* value, int count);
     static void SetGlobalVector2(const char* name, Vector2 value);
     static void SetGlobalVector3(const char* name, Vector3 value);
@@ -153,6 +153,7 @@ private:
     uint32_t id;
     static uint32_t baseId;
 
+    void SetFloat(const char* name, float value, float min, float max);
     void SetColor3(const char* name, Vector3 value);
     void SetColor4(const char* name, Vector4 value);
 

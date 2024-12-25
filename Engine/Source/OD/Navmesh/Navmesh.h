@@ -177,9 +177,15 @@ private:
 	float m_lastBuiltTileBmin[3];
 	float m_lastBuiltTileBmax[3];
 
+	void RasterizeScene(Scene& scene, AABB& bounds);
 	bool RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh);
 	void GetTilePos(const float* pos, int& tx, int& ty);
 	unsigned char* BuildTileMesh(Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize);
+};
+
+struct OD_API NavmeshSkipTag{
+	int id = 0;
+	template<class Archive> void serialize(Archive& ar){}
 };
 
 struct OD_API NavmeshComponent{

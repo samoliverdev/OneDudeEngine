@@ -2,129 +2,14 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/Navmesh/Navmesh.h"
 
 namespace OD{
 
 void TerrainModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<QuadTreeTerrainComponent>("QuadTreeTerrainComponent");
-    SceneManager::Get().RegisterSystem<QuadTreeTerrainSystem>("QuadTreeTerrainSystem");
-
     SceneManager::Get().RegisterCoreComponent<TerrainComponent>("TerrainComponent");
     SceneManager::Get().RegisterSystem<TerrainSystem>("TerrainSystem");
 }
-
-/////////////////////////////////////////////////////////////////////////////
-
-QuadTreeTerrainSystem::QuadTreeTerrainSystem(Scene* inScene):System(inScene){
-
-}
-
-QuadTreeTerrainSystem::~QuadTreeTerrainSystem(){
-
-}
-
-void SplitQuadTreeBaseOnPosition(Vector3 camPos, QuadTree::Node& node, Vector3 pos, int width, int length){
-    float radius = ((width + length)/2)/2;
-    radius *= 1.5f;
-    int halfWidth2 = (width/2)/2;
-    int halfLength2 = (length/2)/2;
-
-    if(math::distance(pos, camPos) <= radius){
-        node.Split();
-        SplitQuadTreeBaseOnPosition(camPos, *node.childen[0], Vector3(pos.x-halfWidth2, 0, pos.z-halfLength2), width/2, length/2);
-        SplitQuadTreeBaseOnPosition(camPos, *node.childen[1], Vector3(pos.x+halfWidth2, 0, pos.z-halfLength2), width/2, length/2);
-        SplitQuadTreeBaseOnPosition(camPos, *node.childen[2], Vector3(pos.x-halfWidth2, 0, pos.z+halfLength2), width/2, length/2);
-        SplitQuadTreeBaseOnPosition(camPos, *node.childen[3], Vector3(pos.x+halfWidth2, 0, pos.z+halfLength2), width/2, length/2);
-    }
-}
-
-int GetMinDepth(QuadTree::Node& node){
-    if(node.childen.size() > 0){
-        std::vector<int> depths;
-        depths.push_back(GetMinDepth(*node.childen[0]));
-        depths.push_back(GetMinDepth(*node.childen[1]));
-        depths.push_back(GetMinDepth(*node.childen[2]));
-        depths.push_back(GetMinDepth(*node.childen[3]));
-        int depth = 0;
-        for(int i: depths){
-            if(i > depth) depth = i;
-        }
-        return depth;
-    }
-    return node.depth;
-}
-
-void SplitQuadTreeBaseStillMaxDepth(QuadTree::Node& node, int maxDepth){
-    if(node.depth >= (maxDepth-1)) return;
-
-    for(auto& i: node.childen){
-        if(i->childen.size() == 0){
-            i->Split();
-        } else {
-            SplitQuadTreeBaseStillMaxDepth(*i, maxDepth);
-        }
-    }
-}
-
-void QuadTreeTerrainSystem::Update(){
-    OD_PROFILE_SCOPE("QuadTreeTerrainSystem::Update");
-
-    Entity cam = GetScene()->GetMainCamera();
-    if(cam.IsValid() == false) return;
-
-    TransformComponent& camTrans = cam.GetComponent<TransformComponent>();
-    Vector2 viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
-
-    auto terrainView = GetScene()->GetRegistry().view<TransformComponent, QuadTreeTerrainComponent>();
-    for(auto e: terrainView){
-        TransformComponent& transform = terrainView.get<TransformComponent>(e);
-        QuadTreeTerrainComponent& terrain = terrainView.get<QuadTreeTerrainComponent>(e);
-
-        if(terrain.quadtree.root == nullptr){
-            terrain.quadtree.root = CreateRef<QuadTree::Node>();
-            /*terrain.quadtree.root->Split();
-            terrain.quadtree.root->childen[0]->Split();
-            terrain.quadtree.root->childen[0]->childen[0]->Split();
-            terrain.quadtree.root->childen[0]->childen[0]->childen[0]->Split();*/
-        } else {
-            terrain.quadtree.root->childen.clear();
-        }
-        SplitQuadTreeBaseOnPosition(camTrans.Position(), *terrain.quadtree.root, transform.Position(), terrain.terrainWidth, terrain.terrainLength);
-        //int maxDepth = GetMinDepth(*terrain.quadtree.root);
-        //SplitQuadTreeBaseStillMaxDepth(*terrain.quadtree.root, maxDepth);
-    }
-}
-
-void DrawQuadTreeNode(QuadTree::Node& node, int depth, int width, int length, Vector3 pos = Vector3Zero){
-    int halfWidth2 = (width/2)/2;
-    int halfLength2 = (length/2)/2;
-
-    Transform gizmosTrans;
-    gizmosTrans.LocalPosition(pos);
-    gizmosTrans.LocalScale(Vector3(width, 0, length));
-
-    Graphics::DrawWireCube(gizmosTrans.GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
-
-    if(node.childen.size() > 0){
-        DrawQuadTreeNode(*node.childen[0], depth + 1, width/2, length/2, Vector3(pos.x-halfWidth2, 0, pos.z-halfLength2));
-        DrawQuadTreeNode(*node.childen[1], depth + 1, width/2, length/2, Vector3(pos.x+halfWidth2, 0, pos.z-halfLength2));
-        DrawQuadTreeNode(*node.childen[2], depth + 1, width/2, length/2, Vector3(pos.x-halfWidth2, 0, pos.z+halfLength2));
-        DrawQuadTreeNode(*node.childen[3], depth + 1, width/2, length/2, Vector3(pos.x+halfWidth2, 0, pos.z+halfLength2));
-    }
-}
-
-void QuadTreeTerrainSystem::OnDrawGizmos(){
-    auto terrainView = GetScene()->GetRegistry().view<TransformComponent, QuadTreeTerrainComponent>();
-    for(auto e: terrainView){
-        TransformComponent& transform = terrainView.get<TransformComponent>(e);
-        QuadTreeTerrainComponent& terrain = terrainView.get<QuadTreeTerrainComponent>(e);
-        if(terrain.quadtree.root == nullptr) continue;
-
-        DrawQuadTreeNode(*terrain.quadtree.root, 0, terrain.terrainWidth, terrain.terrainLength);
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
 
 int ManhattanDistance(IVector2 a, IVector2 b){
     return math::abs(a.x - b.x) + math::abs(a.y - b.y);
@@ -141,16 +26,23 @@ void TerrainComponent::OnGui(Entity e){
     ImGui::DragFloat("terrainWidth", &terrain.terrainWidth);
     ImGui::DragFloat("terrainLength", &terrain.terrainLength);
     ImGui::DragFloat("terrainHeight", &terrain.terrainHeight);
+    ImGui::DragInt("chunkWidthCount", &terrain.chunkWidthCount);
+
+    if(ImGui::Button("Rebuild")) terrain.isDirt = true;
 }
 
 void TerrainComponent::SetHeightmap(Ref<Heightmap> inHeightmap){
     heightmap = inHeightmap;
+    //isDirt = true;
+    ///SubmitHeightmap();
 }
 
 void TerrainComponent::SubmitHeightmap(){
     Assert(false);
-
-    heightmapTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
+    
+    int heightmapSize = 1024;
+    if(heightmap == nullptr) heightmap = CreateRef<Heightmap>(heightmapSize, heightmapSize);
+    heightmapTex = Texture2D::CreateFromRaw(
         (void*)&heightmap->data[0],
         (size_t)(heightmap->data.size() * sizeof(float)),
         heightmap->width, heightmap->height,
@@ -166,7 +58,7 @@ void TerrainComponent::SubmitHeightmap(){
         terrainMeshRenderer.UpdateAABB();
         terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
         terrainMeshRenderer.material->SetTexture("heightMap", heightmapTex);
-        terrainMeshRenderer.material->SetTexture("heightMapNormal", normalTex);
+        //terrainMeshRenderer.material->SetTexture("heightMapNormal", normalTex);
         terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
         terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
         terrainMeshRenderer.material->SetFloat("heightScale", terrainHeight);
@@ -194,7 +86,7 @@ void TerrainSystem::Update(){
         TransformComponent& trans = terrainView.get<TransformComponent>(e);
         TerrainComponent& terrain = terrainView.get<TerrainComponent>(e);
 
-        if(terrain.meshsRoot.IsValid() == false){
+        if(terrain.meshsRoot.IsValid() == false || terrain.isDirt == true){
             CreateTerrain(terrain, e);
         } else {
             UpdateTerrain(terrain);
@@ -227,9 +119,43 @@ struct TerrainMeshData{
     }
 };
 
+struct TerrainMeshData2{
+    std::vector<unsigned int> indices;
+    std::vector<Vector3> vertices;
+    std::vector<Vector3> uv;
+    int triangleIndex = 0;
+    bool useUv = true;
+
+    void Reset(int meshWidth, int meshHeight){
+        triangleIndex = 0;
+        vertices.resize(meshWidth * meshHeight);
+        if(useUv) uv.resize(meshWidth * meshHeight);
+        indices.resize((meshWidth-1)*(meshHeight-1)*6);
+    }
+
+    void AddTriangle(int a, int b, int c){
+        indices[triangleIndex] = a;
+        indices[triangleIndex+1] = b;
+        indices[triangleIndex+2] = c;
+        triangleIndex += 3;
+    }
+
+    Ref<Mesh> CreateMesh(){
+        Ref<Mesh> mesh = CreateRef<Mesh>();
+        mesh->Submit(
+            &indices, 
+            &vertices,
+            useUv ? &uv : nullptr
+        );
+        return mesh;
+    }
+};
+
 float _Remap(float In, Vector2 InMinMax, Vector2 OutMinMax){
     return OutMinMax.x + (In - InMinMax.x) * (OutMinMax.y - OutMinMax.x) / (InMinMax.y - InMinMax.x);
 }
+
+TerrainMeshData2 meshGenData;
 
 Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBorders toColaps){
     float topLeftX = (width - 1) / -2.0f;
@@ -238,7 +164,10 @@ Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBor
     int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
 
-    Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    //Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    auto meshData = &meshGenData;
+    meshData->useUv = true;
+    meshData->Reset(verticesPerLine, verticesPerLine);
     int vertexIndex = 0;
 
     for(int y = 0; y < height; y += meshSimplificationIncrement){
@@ -251,9 +180,9 @@ Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBor
             if(toColaps.bottom && x % 2 != 0 && y == 0) _x -= 1;
             if(toColaps.top && x % 2 != 0 && y == (height-1)) _x -= 1;
 
-            meshData->mesh->vertices[vertexIndex] = Vector3(_x+topLeftX, 0, -(_y-topLeftZ));
+            meshData->vertices[vertexIndex] = Vector3(_x+topLeftX, 0, -(_y-topLeftZ));
             //meshData->mesh->uv[vertexIndex] = Vector3((float)_x/(float)width, (float)_y/(float)height, 0);
-            meshData->mesh->uv[vertexIndex] = Vector3(
+            meshData->uv[vertexIndex] = Vector3(
                 math::clamp(_Remap(_x, Vector2(0, width-1), Vector2(0, 1)), 0.0f, 1.0f), 
                 math::clamp(_Remap(_y, Vector2(0, height-1), Vector2(0, 1)), 0.0f, 1.0f), 
                 0
@@ -268,12 +197,13 @@ Ref<Mesh> GenerateTerrainMesh1(int width, int height, int levelOfDetail, MeshBor
         }
     }
 
-    meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
+    return meshData->CreateMesh();
+
+    /*//meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
     meshData->mesh->CalculateNormals();
     meshData->mesh->CalculateTangent();
     meshData->mesh->Submit();
-
-    return meshData->mesh;
+    return meshData->mesh;*/
 }
 
 Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDetail){
@@ -286,7 +216,10 @@ Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDeta
     int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
 
-    Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    //Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    auto meshData = &meshGenData;
+    meshData->useUv = false;
+    meshData->Reset(verticesPerLine, verticesPerLine);
     int vertexIndex = 0;
 
     for(int y = 0; y < height; y += meshSimplificationIncrement){
@@ -295,7 +228,7 @@ Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDeta
             int _x = x;
             int _y = y;
 
-            meshData->mesh->vertices[vertexIndex] = Vector3(_x+topLeftX, heightmap->Get(_x, _y), -(_y-topLeftZ));
+            meshData->vertices[vertexIndex] = Vector3(_x+topLeftX, heightmap->Get(_x, _y), -(_y-topLeftZ));
             
             if(x < width-1 && y < height-1){
                 meshData->AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
@@ -306,37 +239,57 @@ Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDeta
         }
     }
 
-    meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
+    return meshData->CreateMesh();
+
+    //meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
     //meshData->mesh->CalculateNormals();
     //meshData->mesh->CalculateTangent();
-    meshData->mesh->Submit();
+    //meshData->mesh->Submit();
+    //return meshData->mesh;
+}
 
-    return meshData->mesh;
+void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
+    if(terrain.meshsRoot.IsValid()){
+        scene->DestroyEntity(terrain.meshsRoot.Id());
+        terrain.meshsRoot = Entity();
+        terrain.collider = Entity();
+        terrain.meshToNavmesh = Entity();
+    }
+
+    terrain.loadedChunks.clear();
+    terrain.lods.clear();
+    terrain.lodsMesh.clear();
 }
 
 void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
-    terrain.meshsRoot = GetScene()->AddEntity("Root");
-    Assert(terrain.meshsRoot.IsValid() == true);
-    GetScene()->SetParent(e, terrain.meshsRoot.Id());
+    DestroyTerrain(terrain);
 
+    terrain.meshsRoot = GetScene()->AddEntity("Root");
+    terrain.meshsRoot.GetComponent<InfoComponent>().hidden = true;
+    GetScene()->SetParent(e, terrain.meshsRoot.Id());
+    
     terrain.chunkSize = terrain.mapChunkSize - 1;
-    terrain.lods = std::vector<TerrainComponent::LODDef>{
-        {0, 100}, 
-        {1, 200}, 
-        {3, 300},
-        {7, 400},
-        {15, 500},
-        {31, 600},
-        {63, 700}
+    terrain.lods = std::vector<int>{
+        0, 
+        1, 
+        3,
+        7,
+        15,
+        31,
+        63
     };
 
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GetTerrainLod");    
     for(int i = 0; i < terrain.lods.size(); i++){
-        terrain.lodsMesh.push_back(GetTerrainLod(terrain.chunkSize, terrain.lods[i].lod));
+        terrain.lodsMesh.push_back(GetTerrainLod(terrain.chunkSize, terrain.lods[i]));
+    }
     }
 
+    // Create HeightmapTex
     int heightmapSize = 1024;
-    if(terrain.heightmap == nullptr) terrain.heightmap = CreateRef<Heightmap>(heightmapSize, heightmapSize);// Noise::GenerateNoiseMap(heightmapSize, heightmapSize, 50, 0.25f/4, 4, 0.5f, 2.0f, Vector2(0, 0));
-    terrain.heightmapTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
+    if(terrain.heightmap == nullptr) terrain.heightmap = CreateRef<Heightmap>(heightmapSize, heightmapSize);
+    terrain.heightmapTex = Texture2D::CreateFromRaw( 
         (void*)&terrain.heightmap->data[0],
         (size_t)(terrain.heightmap->data.size() * sizeof(float)),
         terrain.heightmap->width, terrain.heightmap->height,
@@ -344,7 +297,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
     );
 
-    auto GenerateVertex = [&](int x, int y){
+    /*auto GenerateVertex = [&](int x, int y){
         x = math::clamp<int>(x, 0, terrain.heightmap->width);
         y = math::clamp<int>(y, 0, terrain.heightmap->height);
         float h = terrain.heightmap->Get(x, y) * terrain.terrainHeight;
@@ -369,18 +322,18 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
             normal[terrain.heightmap->ToFlatCoord(x, y)] = ToNormalMap(GetNormalFromFace(a, b, c));
         }
     }
-    terrain.normalTex = Texture2D::CreateFromRaw( //CreateRef<Texture2D>(
+    terrain.normalTex = Texture2D::CreateFromRaw(
         (void*)normal,
         (size_t)(terrain.heightmap->data.size() * sizeof(Vector3)),
         terrain.heightmap->width, terrain.heightmap->height,
         TextureDataType::Float,
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true, TextureFormat::RGB16F}
     );
-    delete normal;
+    delete normal;*/
 
+    //Create Collider
     terrain.collider = GetScene()->AddEntity("Collider");
     GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
-
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = terrain.collider.GetComponent<TransformComponent>();
     colliderTrans.LocalScale(Vector3(
@@ -395,9 +348,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
             -(terrainMeshWidth / 2.0f)
         )
     );
-    
     HeightmapColliderComponent& heightmapCollider = terrain.collider.AddComponent<HeightmapColliderComponent>();
-
     heightmapCollider.width = terrain.heightmap->width;
     heightmapCollider.length = terrain.heightmap->height;
     heightmapCollider.scale = heightmapSize;
@@ -405,17 +356,12 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
     heightmapCollider.maxHeight = 1; //terrainHeight;
     terrain.heightmap->TransposeTo(heightmapCollider.heights);
 
-    for(int x = 0; x < terrain.chunkWidthCount; x++){
-        for(int y = 0; y < terrain.chunkWidthCount; y++){
-            LoadCood(terrain, IVector2(x, y));
-        }
-    }
-
+    //Create Mesh To Navmesh
     terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
     GetScene()->SetParent(terrain.meshsRoot.Id(), terrain.meshToNavmesh.Id());
     MeshRendererComponent& meshToNavmesh = terrain.meshToNavmesh.AddComponent<MeshRendererComponent>();
     meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, 8);
-    meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    //meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = terrain.meshToNavmesh.GetComponent<TransformComponent>();
     meshToNavmeshTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)terrain.heightmap->width,
@@ -429,15 +375,25 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, EntityId e){
             -(terrainMeshWidth / 2.0f)
         )
     );
+
+    // Load Coords
+    for(int x = 0; x < terrain.chunkWidthCount; x++){
+        for(int y = 0; y < terrain.chunkWidthCount; y++){
+            LoadCood(terrain, IVector2(x, y));
+        }
+    }
+
+    terrain.isDirt = false;
 }
 
 void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     //TODO: Revise this design
     terrain.meshsRoot.scene = scene;
     terrain.collider.scene = scene;
+    terrain.meshToNavmesh.scene = scene;
 
     TransformComponent& camTrans = GetScene()->GetMainCamera().GetComponent<TransformComponent>();
-    //Vector2 viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
+
     Vector3 viewPos = Vector3(camTrans.Position().x, camTrans.Position().y, -camTrans.Position().z);
     auto currentCoord = IVector3(
         math::round(viewPos.x / terrain.chunkSize), 
@@ -448,24 +404,13 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     for(auto& i: terrain.loadedChunks){
         TransformComponent& trans = i.second.entity.GetComponent<TransformComponent>();
 
-        //Vector3 pos(i.first.x * (float)chunkSize, 0, -(i.first.y * (float)chunkSize));
         Vector3 pos = trans.Position();
         i.second.lodInfo.lod = terrain.lods.size()-1;
 
-        //int d = ManhattanDistance(currentCoord, IVector3(i.first.x, 0, i.first.y));
-        //LogInfo("%d", d);
-
-        for(int j = 0; j < terrain.lods.size(); j++){
-            if(math::distance(camTrans.Position(), pos) <= terrain.lods[j].visibleDstThreshold){
-                i.second.lodInfo.lod = j;
-                break;
-            }
-        }
         auto p1 = camTrans.Position() / Vector3(terrain.chunkSize);
         auto p2 = pos / Vector3(terrain.chunkSize);
-        //i.second.lodInfo.lod = math::clamp<int>(d, 0, terrain.lods.size()-1);
+
         i.second.lodInfo.lod = math::clamp<int>(
-            //ManhattanDistance(IVector3(p1), IVector3(p2)) * terrain.lodBias, 
             math::distance(p1, p2) * terrain.lodBias, 
             0, 
             terrain.lods.size()-1
@@ -534,7 +479,9 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     chunkData.entity.GetComponent<TransformComponent>().LocalPosition(pos);
 
     InfoComponent& info = chunkData.entity.GetComponent<InfoComponent>();
-    //info.hidden = true;
+    info.hidden = true;
+
+    chunkData.entity.AddComponent<NavmeshSkipTag>();
 
     MeshRendererComponent& terrainMeshRenderer = chunkData.entity.AddComponent<MeshRendererComponent>();
     terrainMeshRenderer.UpdateAABB();
@@ -553,7 +500,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     float offset = 1.0f / (float)terrain.chunkWidthCount;
     
     terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
-    terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
+    //terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
     terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
     terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);

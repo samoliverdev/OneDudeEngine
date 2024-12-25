@@ -231,7 +231,7 @@ void Scene::DestroyEntity(EntityId entity){
 
 void Scene::DestroyEntityImmediate(EntityId entity){
     if(registry.valid(entity) == false) return;
-    _DestroyEntity(entity);
+    _DestroyEntity(entity, true);
 }
 
 bool Scene::IsChildOf(EntityId parent, EntityId child){
@@ -343,7 +343,7 @@ void Scene::Update(){
     OD_PROFILE_SCOPE("Scene::Update");
 
     for(auto e: toDestroy){
-        _DestroyEntity(e);
+        _DestroyEntity(e, true);
     }
     toDestroy.clear();
 
@@ -581,7 +581,7 @@ Entity Scene::InstantiatePrefab(const char* path){
     return root;
 }
 
-void Scene::_DestroyEntity(EntityId entity){
+void Scene::_DestroyEntity(EntityId entity, bool removeFromParent){
     Assert(registry.valid(entity));
     Assert(registry.any_of<TransformComponent>(entity));
     TransformComponent& transform = registry.get<TransformComponent>(entity);
@@ -591,8 +591,8 @@ void Scene::_DestroyEntity(EntityId entity){
     }
     transform.children.clear();
 
-    /*
-    if(transform.hasParent){
+    
+    if(transform.hasParent && removeFromParent){
         TransformComponent& parent = registry.get<TransformComponent>(transform.parent);
         //parent._children.clear();
         parent.children.erase(
@@ -604,7 +604,6 @@ void Scene::_DestroyEntity(EntityId entity){
             parent.children.end()
         );
     }
-    */
 
     registry.destroy(entity);
 }

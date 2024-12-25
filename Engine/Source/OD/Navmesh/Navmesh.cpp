@@ -13,6 +13,7 @@
 namespace OD{
 
 void NavmeshModuleInit(){
+	SceneManager::Get().RegisterCoreComponent<NavmeshSkipTag>("NavmeshSkipTag");
 	SceneManager::Get().RegisterCoreComponent<NavmeshComponent>("NavmeshComponent");
 	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent");
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
@@ -179,6 +180,33 @@ void Navmesh::Cleanup(){
 	}
 }
 
+void Navmesh::RasterizeScene(Scene& scene, AABB& bounds){
+	auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent>(entt::exclude<NavmeshSkipTag>);
+    for(auto e: meshView){
+        auto& c = meshView.get<MeshRendererComponent>(e);
+        auto& t = meshView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+        //if(c.material == nullptr) continue;
+
+        RasterizeMesh(t.GlobalModelMatrix(), c.mesh);
+    }
+
+    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent>(entt::exclude<NavmeshSkipTag>);
+    for(auto e: meshRenderView){
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        auto& t = meshRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
+
+        for(auto i: c.GetModel()->renderTargets){
+            auto targetMesh = c.GetModel()->meshs[i.meshIndex];
+            auto targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            RasterizeMesh(targetMatrix, targetMesh);
+        }
+    }
+}
+
 bool Navmesh::RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh){
     std::vector<float> _verts;
     std::vector<int> _tris;
@@ -275,8 +303,10 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
         LogError("buildNavigation: Could not create solid heightfield.");
 		return false;
 	}
+
+	RasterizeScene(*scene, AABB(Vector3Zero, 10, 10, 10));
 	
-	auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+	/*auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshView){
         auto& c = meshView.get<MeshRendererComponent>(e);
         auto& t = meshView.get<TransformComponent>(e);
@@ -299,7 +329,7 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
 
             RasterizeMesh(targetMatrix, targetMesh);
         }
-    }
+    }*/
 	
 	// Once all geoemtry is rasterized, we do initial pass of filtering to
 	// remove unwanted overhangs caused by the conservative rasterization
@@ -831,6 +861,8 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 		return 0;
 	}
 
+	RasterizeScene(*scene, AABB(Vector3Zero, 10, 10, 10));
+	/*
 	auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshView){
         auto& c = meshView.get<MeshRendererComponent>(e);
@@ -854,7 +886,7 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 
             RasterizeMesh(targetMatrix, targetMesh);
         }
-    }
+    }*/
 	
 	// Allocate array that can hold triangle flags.
 	// If you have multiple meshes you need to process, allocate
