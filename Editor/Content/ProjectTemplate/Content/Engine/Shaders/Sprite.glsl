@@ -1,5 +1,10 @@
 #version 330 core
 
+#pragma CullFace NONE
+#pragma DepthTest LESS
+#pragma Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+#pragma DepthMask False
+
 #if defined(VERTEX)
 layout (location = 0) in vec3 _pos;
 layout (location = 1) in vec2 _texCoord;
@@ -24,7 +29,7 @@ uniform vec4 color;
 
 void main() {
     vec4 texColor = texture(mainTex, texCoord);
-    if(texColor.a < 0.1) discard;
+    //if(texColor.a < 0.1) discard;
 
     fragColor = texColor * vec4(color.rgb, 1.0);
 }

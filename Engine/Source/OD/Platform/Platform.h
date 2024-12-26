@@ -23,6 +23,8 @@ public:
     static void SetVSync(bool enabled);
 	static bool IsVSync();
 
+    static void SetWindowSize(int width, int height);
+
     static void SetCursorState(CursorState state);
 
     static void ShowWindow(bool show);

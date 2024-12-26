@@ -1,5 +1,9 @@
 #version 330 core
 
+#pragma CullFace BACK
+#pragma DepthTest LESS_EQUAL
+#pragma Blend Off
+
 #if defined(VERTEX)
 layout (location = 0) in vec3 inPos;
 
@@ -10,11 +14,15 @@ uniform mat4 projection;
 
 void main() {
     texCoords = inPos;
-    gl_Position = projection * view * vec4(inPos, 1.0);
+    
+    //gl_Position = projection * view * vec4(inPos, 1.0);
 
     //mat4 rotView = mat4(mat3(view)); // remove translation from the view matrix
     //vec4 clipPos = projection * rotView * vec4(inPos, 1.0);
     //gl_Position = clipPos.xyww;
+
+    vec4 pos = projection * view * vec4(inPos, 1.0);
+    gl_Position = pos.xyww;
 }
 #endif
 
@@ -26,8 +34,9 @@ uniform samplerCube mainTex;
 
 #include Engine/ShaderLibrary/Core.glsl
 
-void main() {
+void main(){
     fragColor = texture(mainTex, texCoords);
+    //fragColor = vec4(1, 0, 0, 1);
     //fragColor = textureLod(mainTex, texCoords, 0);
 }
 #endif

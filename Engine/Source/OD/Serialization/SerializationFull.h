@@ -18,3 +18,35 @@
 
 #define ODOutputArchive cereal::JSONOutputArchive
 #define ODInputArchive cereal::JSONInputArchive
+
+namespace OD{
+
+template<class Archive>
+void LoadArchive(const char* path, Archive& data){
+    std::ifstream os(projectSettingsPath);
+    cereal::JSONOutputArchive ar(os);
+    ArchiveDumpNVP(ar, data);
+}
+
+template<class Archive>
+void LoadOrCreateArchive(const char* path, Archive& data){
+    std::ifstream stream(path);
+    if(stream.fail()){
+        std::ofstream os(path);
+        cereal::JSONOutputArchive ar(os);
+        ArchiveDumpNVP(ar, data);
+    } else {
+        cereal::JSONInputArchive ar{stream};
+        ArchiveDumpNVP(ar, data);
+    }
+}
+
+
+template<class Archive>
+void SaveArchive(const char* path, Archive& data){
+    std::ofstream os(path);
+    cereal::JSONOutputArchive ar(os);
+    ArchiveDumpNVP(ar, data);
+}
+
+}

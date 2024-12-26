@@ -68,9 +68,7 @@ uniform mat4 view;
 #include Engine/ShaderLibrary/Surface.glsl
 #include Engine/ShaderLibrary/Shadows.glsl
 #include Engine/ShaderLibrary/Light.glsl
-#include Engine/ShaderLibrary/BRDF.glsl
-#include Engine/ShaderLibrary/GI.glsl
-#include Engine/ShaderLibrary/Lighting.glsl
+#include Engine/ShaderLibrary/PBR.glsl
 
 in VsOut{
     vec3 pos;
@@ -180,9 +178,8 @@ void main(){
     
     #else
     
-    BRDF brdf = GetBRDF(surface);
-    GI gi = GetGI(surface, brdf);
-    vec3 color = GetLighting(surface, brdf, gi);
+    surface.smoothness = 1 - surface.smoothness;
+    vec3 color = GetFinalColor(surface);
     color += GetEmission(uv);
     fragColor = vec4(color, surface.alpha);
     

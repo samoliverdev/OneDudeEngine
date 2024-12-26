@@ -63,7 +63,7 @@ void NavmeshSample::OnInit(){
     Entity navmeshEntity = scene->AddEntity("Navmesh");
     NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();
     navmeshComp.navmesh = CreateRef<Navmesh>();
-    navmeshComp.navmesh->useTile = true;
+    navmeshComp.navmesh->buildSettings.useTile = true;
     navmeshComp.navmesh->buildSettings.cellSize = 0.3f;
     navmeshComp.navmesh->buildSettings.tileSize = 256;
     navmeshComp.navmesh->buildSettings.cellHeight = 0.2f;
@@ -85,12 +85,14 @@ void NavmeshSample::OnInit(){
 
     AABB navmeshBounds = AABB(Vector3(0, 0, 0), 1000, 1000, 1000);
     Vector3 boundsSize(tileSize);
+
+    navmeshComp.navmesh->Bake(scene, navmeshBounds);
     
-    if(navmeshComp.navmesh->useTile == false){
-        navmeshComp.navmesh->Bake(scene, navmeshBounds);
-    } else {
-        navmeshComp.navmesh->TileInit(scene, navmeshBounds);
-        navmeshComp.navmesh->BakeAllTiles(scene, navmeshBounds);
+    //if(navmeshComp.navmesh->useTile == false){
+        //navmeshComp.navmesh->Bake(scene, navmeshBounds);
+    //} else {
+        //navmeshComp.navmesh->TileInit(scene, navmeshBounds);
+        //navmeshComp.navmesh->BakeAllTiles(scene, navmeshBounds);
         /*navmeshComp.navmesh->BakeTile(
             scene, 
             navmeshBounds, 
@@ -111,7 +113,7 @@ void NavmeshSample::OnInit(){
             navmeshBounds, 
             Vector3(0,0,tileSize*-1)
         );*/
-    }
+    //}
 
     Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
     NavmeshAgentComponent& agent = navmeshAgent.AddComponent<NavmeshAgentComponent>();

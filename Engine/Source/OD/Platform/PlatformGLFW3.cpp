@@ -325,6 +325,10 @@ void Platform::SetVSync(bool enabled){
 
 bool Platform::IsVSync(){ return vSync; }
 
+void Platform::SetWindowSize(int width, int height){
+    glfwSetWindowSize(window, width, height);
+}
+
 void Platform::SetCursorState(CursorState state){
     if(state == CursorState::Normal) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     if(state == CursorState::Hidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);

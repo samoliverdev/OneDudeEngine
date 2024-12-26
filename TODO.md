@@ -14,7 +14,7 @@
 * Finish Terrain(Normal, Shader, Shadow, Navmesh)
 * Finish Navmesh
 * Finish ProjectSystem/EditorLauncer
-* Fix strange bug using Lit2 Shader in the RenderPipeline
+* Fix strange bug using Lit2 Shader in the RenderPipeline -
 
 * Revisar Perfomace da StandRenderPipeline
 * Revisar StandRenderPipeline Shadow

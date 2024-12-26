@@ -34,9 +34,7 @@ uniform mat4 view;
 #include Engine/ShaderLibrary/Surface.glsl
 #include Engine/ShaderLibrary/Shadows.glsl
 #include Engine/ShaderLibrary/Light.glsl
-#include Engine/ShaderLibrary/BRDF.glsl
-#include Engine/ShaderLibrary/GI.glsl
-#include Engine/ShaderLibrary/Lighting.glsl
+#include Engine/ShaderLibrary/PBR.glsl
 
 void main(){
     // retrieve data from G-buffer
@@ -54,15 +52,19 @@ void main(){
     surface.viewDirection = normalize(viewPos - FragPos);
     surface.depth = -(view * vec4(FragPos, 1)).z;
     surface.color = Albedo.rgb;
-    surface.alpha = AO;
-    surface.occlusion = 1;
+    surface.alpha = 1;
+    surface.occlusion = AO;
     surface.metallic = Metallic;
-    surface.smoothness = Specular;
+    surface.smoothness = 1 - Specular;
 
-    BRDF brdf = GetBRDF(surface);
+    /*BRDF brdf = GetBRDF(surface);
     GI gi = GetGI(surface, brdf);
     vec3 color = GetLighting(surface, brdf, gi);
     color += Emission; //GetEmission(uv);
+    FragColor = vec4(color, surface.alpha);*/
+
+    vec3 color = GetFinalColor(surface);
+    color += Emission;
     FragColor = vec4(color, surface.alpha);
 }
 #endif

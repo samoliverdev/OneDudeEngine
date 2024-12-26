@@ -2,6 +2,8 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Project.h"
+#include <OD/Serialization/Serialization.h>
+#include <OD/Serialization/SerializationFull.h>
 #include <OD/Editor/Editor.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/Platform/Platform.h>
@@ -69,7 +71,38 @@ private:
     std::streambuf* old;
 };
 
+struct LauncherSettings{
+    char defaultProjectPath[128] = "";
+    std::vector<std::string> projectsPath; 
+    
+    template<class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, defaultProjectPath);
+        ArchiveDumpNVP(ar, projectsPath);
+    }
+};
+
+OD::ApplicationConfig GetLauncherConfig(){
+    return OD::ApplicationConfig{
+        0, 0,
+        600, 400,
+        "Launcher"
+    };
+}
+
 class Launcher: public OD::Module{
+    LauncherSettings launcherSettings;
+    bool inNewProjectTab = false;
+    char projectName[128] = "Project";
+
+    void LoadSettings(){
+        OD::LoadOrCreateArchive("LauncherSettings.json", launcherSettings);
+    }
+
+    void SaveSettings(){
+        OD::SaveArchive("LauncherSettings.json", launcherSettings);
+    }
+
     void OpenProject(){
         using namespace OD;
         std::string p = Platform::OpenFolder();// Platform::OpenFile("*.proj");
@@ -79,10 +112,21 @@ class Launcher: public OD::Module{
         }
     }
 
+    void OpenProject(std::string& path){
+        if(std::find(launcherSettings.projectsPath.begin(), launcherSettings.projectsPath.end(), path) == launcherSettings.projectsPath.end()){
+            launcherSettings.projectsPath.push_back(path);
+        }
+
+        projectPath = path + "/";
+        OD::Application::Quit();
+    }
+
     void NewProject(){
         using namespace OD;
         std::string p = Platform::OpenFolder();// Platform::OpenFile("*.proj");
         if(p.empty() == false){
+            std::replace(p.begin(), p.end(), '\\', '/');
+
             std::string projectName = "NewProject";
 
             std::string templat = defaultProjectPath+"Content/ProjectTemplate";
@@ -95,12 +139,54 @@ class Launcher: public OD::Module{
                 //| std::filesystem::copy_options::directories_only
             );
 
-            //system("cmake -S ProjectTemplate -B ProjectTemplate/build -DENGINE_PATH:STRING=\"C:/Users/sam/Desktop/cpp/OneDudeEngine\"");
+            char str[512];
+            sprintf(
+                str, 
+                "cmake -S %s -B %s/build -DENGINE_PATH:STRING=%s",
+                _projectPath.c_str(),
+                _projectPath.c_str(),
+                defaultProjectPath.c_str()
+            );
+
+            system(str);
         }
     }
 
+    void NewProject(const char* projectName, const char* path){
+        std::string templat = defaultProjectPath + "Content/ProjectTemplate";
+        std::string _projectPath = std::string(path) + "/" + projectName;
+        std::filesystem::copy(
+            templat, 
+            _projectPath, 
+            std::filesystem::copy_options::update_existing 
+            | std::filesystem::copy_options::recursive
+            //| std::filesystem::copy_options::directories_only
+        );
+
+        char str[512];
+        sprintf(
+            str, 
+            "cmake -S %s -B %s/build -DENGINE_PATH:STRING=%s",
+            _projectPath.c_str(),
+            _projectPath.c_str(),
+            "C:/Users/sam/Desktop/cpp/OneDudeEngine/" //defaultProjectPath.c_str()
+        );
+        //cmake -S . -B build -DENGINE_PATH:STRING="C:/Users/sam/Desktop/cpp/OneDudeEngine/"
+
+        if(std::find(launcherSettings.projectsPath.begin(), launcherSettings.projectsPath.end(), _projectPath) == launcherSettings.projectsPath.end()){
+            launcherSettings.projectsPath.push_back(_projectPath);
+        }
+
+        system(str);
+    }
+
     void OnInit() override {
+        LoadSettings();
+
         using namespace OD;
+
+        //Platform::SetWindowSize(600, 400);
+
         Scene* scene = OD::SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
@@ -132,54 +218,128 @@ class Launcher: public OD::Module{
         //_popen("C:/Users/sam/Desktop/cpp/OneDudeEngine/Bin/Sandbox.exe", "rt");
     }
 
-    void OnExit() override {}
+    void OnExit() override {
+        SaveSettings();
+    }
 
     void OnUpdate(float deltaTime) override {}
     void OnRender(float deltaTime) override {}
-    
+
+    void DrawNewProjectTab(){
+        ImGui::InputText("Project Name", projectName, 128);
+
+        ImGui::InputText("Location", launcherSettings.defaultProjectPath, 128);
+        ImGui::SameLine();
+        //ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - widthNeeded);
+        if(ImGui::SmallButton("...")){
+            std::string p = OD::Platform::OpenFolder();// Platform::OpenFile("*.proj");
+            if(p.empty() == false){
+                std::replace(p.begin(), p.end(), '\\', '/');
+                strcpy_s(launcherSettings.defaultProjectPath, p.c_str());
+            }
+        }
+
+        if(ImGui::Button("Create Project")){
+            NewProject(projectName, launcherSettings.defaultProjectPath);
+            inNewProjectTab = false;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel")) inNewProjectTab = false;
+    }
+
+    void DrawProjectSelectionTab(){
+        int i = 0;
+        static int m_selectedItem = -1;
+        for(auto& it: launcherSettings.projectsPath){
+            std::string itemid = "##" + std::to_string(i);
+            if(ImGui::Selectable(itemid.c_str(), i == m_selectedItem)){
+                //m_selectedItem = i;
+                OpenProject(it);
+            }
+            ImGui::SameLine();
+            ImGui::Text("Item: ");
+            ImGui::SameLine();
+            ImGui::Text(it.c_str());
+            i++;
+        }
+    }
+
     void OnGUI() override {
         using namespace OD;
 
-        ImGui::Begin("Launcher");
-        if(ImGui::Button("Open Project")) OpenProject();
-        if(ImGui::Button("New Project")) NewProject();
+        const char* openProjectLabel = "Open Project";
+        const char* newProjectLabel = "New Project";
+
+        ImGui::SetNextWindowPos({0, 0});
+        ImGui::SetNextWindowSize({(float)Application::ScreenWidth(), (float)Application::ScreenHeight()});
+        ImGui::Begin("Launcher", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+
+        //if(ImGui::Button("Open Project")) OpenProject();
+        //if(ImGui::Button("New Project")) NewProject();
+
+        auto& style = ImGui::GetStyle();
+        float buttonWidth1 = ImGui::CalcTextSize(openProjectLabel).x + style.FramePadding.x * 2.f;
+        float buttonWidth2 = ImGui::CalcTextSize(newProjectLabel).x + style.FramePadding.x * 2.f;
+        float widthNeeded = buttonWidth1 + style.ItemSpacing.x + buttonWidth2;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - widthNeeded);
+        if(ImGui::Button(openProjectLabel)) OpenProject();
+        ImGui::SameLine();
+        if(ImGui::Button(newProjectLabel)) inNewProjectTab = !inNewProjectTab;
+
+        //ImGui::PushStyleColor(ImGuiCol_Separator, ImColor(0, 189, 0).Value);
+        ImGui::Separator();
+        //ImGui::PopStyleColor();
+
+        if(inNewProjectTab){
+            DrawNewProjectTab();
+        } else {
+            DrawProjectSelectionTab();
+        }
+
+
+        if(ImGui::Button("Delete..")) ImGui::OpenPopup("Delete?");
+        if(ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize)){
+            ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
+            ImGui::Separator();
+
+            //static int unused_i = 0;
+            //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
+
+            static bool dont_ask_me_next_time = false;
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
+            ImGui::PopStyleVar();
+
+            if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+
         ImGui::End();
 
-        /*ImGui::Begin("Splitter test");
-
-        static float w = 200.0f;
-        static float h = 300.0f;
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-        ImGui::BeginChild("child1", ImVec2(w, h), true);
-        ImGui::EndChild();
-        
-        ImGui::SameLine();
-        ImGui::InvisibleButton("vsplitter", ImVec2(8.0f,h)); 
-        if(ImGui::IsItemActive()) w += ImGui::GetIO().MouseDelta.x;
-        ImGui::SameLine();
-        
-        ImGui::BeginChild("child2", ImVec2(0, h), true);
-        ImGui::EndChild();
-        
-        ImGui::InvisibleButton("hsplitter", ImVec2(-1,8.0f));
-        if(ImGui::IsItemActive()) h += ImGui::GetIO().MouseDelta.y;
-        
-        ImGui::BeginChild("child3", ImVec2(0,0), true);
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
-
-        ImGui::End();*/
-
-        bool t = true;
-        ImGui::ShowDemoWindow(&t);
+        //bool t = true;
+        //ImGui::ShowDemoWindow(&t);
     }
     
     void OnResize(int width, int height) override {}
 };
 
+OD::ApplicationConfig GetEditorConfig(){
+    return OD::ApplicationConfig{
+        0, 0,
+        800, 600,
+        "Editor"
+    };
+}
+
 class Editor: public OD::Module{
     OD::FuncModule dllModule;
     bool toReload = false;
+    FILE* pipe = nullptr;
+    std::vector<std::string> console;
+    char con[1024*2];
 
     void LoadProjectDLL(){
         using namespace OD;
@@ -194,36 +354,47 @@ class Editor: public OD::Module{
             return;
         }
 
+        std::string modulePathCopy = modulePath + "_Copy";
+        std::filesystem::copy_file(modulePath, modulePathCopy, std::filesystem::copy_options::update_existing);
+
         typedef Module* (*CreateInstanceFunc)();
-        currentDll = OD::Platform::LoadDynamicLibrary(modulePath.c_str());
-        
+        currentDll = OD::Platform::LoadDynamicLibrary(modulePathCopy.c_str());
         auto dllModule = new FuncModule();
         dllModule->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
         dllModule->onExit = (OD::_OnExit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnExit");
         dllModule->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
         currentModule = dllModule;
-
         OD::Application::AddModule(currentModule);
     }
 
     void ReloadProjectDLL(){
+        strcpy_s(con, "");
+        console.clear();
+        ImGui::OpenPopup("HotReload?");
+        pipe = _popen("cmake --build ../build --config Release", "r");
+        return;
+
         using namespace OD;
 
         SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
         //SceneManager::Get().DestroyActiveScene();
         SceneManager::Get().NewScene();
 
-        ((OD::FuncModule*)currentModule)->onInit = nullptr;
-        ((OD::FuncModule*)currentModule)->onExit = nullptr;
-        ((OD::FuncModule*)currentModule)->onUpdate = nullptr;
+        if(currentModule != nullptr){
+            ((OD::FuncModule*)currentModule)->onInit = nullptr;
+            ((OD::FuncModule*)currentModule)->onExit = nullptr;
+            ((OD::FuncModule*)currentModule)->onUpdate = nullptr;
+            Application::RemoveModule(currentModule);
+            Platform::FreeDynimicLibrary(currentDll);
+        }
 
-        Application::RemoveModule(currentModule);
-        Platform::FreeDynimicLibrary(currentDll);
         //delete currentModule; //Fixme memory leak
         currentModule = nullptr;
         currentDll = nullptr;
 
         system("cmake --build ../build --config Release");
+
+        //pipe = _popen("cmake --build ../build --config Release", "r");
 
         typedef Module* (*CreateInstanceFunc)();
         currentDll = Platform::LoadDynamicLibrary(ProjectManager::GetActiveProject()->scriptModulePath.c_str());
@@ -235,6 +406,43 @@ class Editor: public OD::Module{
         currentModule = c;
 
         toReload = true;
+        //OD::Application::AddModule(currentModule);
+        //SceneManager::Get().NewScene()->Load("tempHotReload.scene");
+    }
+
+    void _ReloadProjectDLL(){
+        using namespace OD;
+
+        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
+        //SceneManager::Get().DestroyActiveScene();
+        SceneManager::Get().NewScene();
+
+        if(currentModule != nullptr){
+            ((OD::FuncModule*)currentModule)->onInit = nullptr;
+            ((OD::FuncModule*)currentModule)->onExit = nullptr;
+            ((OD::FuncModule*)currentModule)->onUpdate = nullptr;
+            Application::RemoveModule(currentModule);
+            Platform::FreeDynimicLibrary(currentDll);
+        }
+
+        //delete currentModule; //Fixme memory leak
+        currentModule = nullptr;
+        currentDll = nullptr;
+
+        std::string modulePathCopy = ProjectManager::GetActiveProject()->scriptModulePath + "_Copy";
+        std::filesystem::copy_file(ProjectManager::GetActiveProject()->scriptModulePath, modulePathCopy, std::filesystem::copy_options::update_existing);
+
+        typedef Module* (*CreateInstanceFunc)();
+        currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str());
+
+        auto c = new OD::FuncModule();
+        c->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
+        c->onExit = (OD::_OnExit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnExit");
+        c->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
+        currentModule = c;
+
+        toReload = true;
+
         //OD::Application::AddModule(currentModule);
         //SceneManager::Get().NewScene()->Load("tempHotReload.scene");
     }
@@ -346,17 +554,74 @@ class Editor: public OD::Module{
     }
 
     void OnRender(float deltaTime) override {}
-    void OnGUI() override {}
+    void OnGUI() override {
+        if(pipe == nullptr) return;
+
+        //if(ImGui::Button("Delete..")) ImGui::OpenPopup("HotReload?");
+
+        ImGui::OpenPopup("HotReload?");
+
+        auto& io = ImGui::GetIO();
+        //ImGui::SetNextWindowPos({io.DisplaySize.x/2-150, io.DisplaySize.y/2-100});
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+        //ImGui::SetNextWindowSize({250, 250});
+        if(ImGui::BeginPopupModal("HotReload?", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+            ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
+            ImGui::Separator();
+
+            ImGui::Text("Compilling");
+
+            char buffer[512];
+            if(fgets(buffer, sizeof(buffer), pipe) != NULL){
+                strcat_s(con, buffer);
+                //LogWarning("%s", buffer);
+            }
+            ImGui::InputTextMultiline("", con, sizeof(con), {600, 250});
+
+            //static int unused_i = 0;
+            //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
+            if(feof(pipe)){
+                int result = _pclose(pipe);
+                if(result == 0){
+                    /*if (project.state == Project::GENERATING)
+                        project.state = Project::GENERATED;
+                    else if (project.state == Project::BUILDING)
+                        project.state = Project::READY;*/
+                    
+                    LogWarning("HotReload Success");
+                    _ReloadProjectDLL();
+                } else {
+                    /*if (project.state == Project::GENERATING)
+                        project.state = Project::FAIL_GENERATE;
+                    else if (project.state == Project::BUILDING)
+                        project.state = Project::FAIL_BUILD;*/
+
+                    LogWarning("HotReload Fails");
+                }
+
+                /*exitCode = result;
+                project.externalCommandPipe = nullptr;
+                return true;*/
+
+                ImGui::CloseCurrentPopup();
+                pipe = nullptr;
+            }
+            //return false;
+
+            /*static bool dont_ask_me_next_time = false;
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
+            ImGui::PopStyleVar();
+
+            if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();*/
+        }
+    }
     void OnResize(int width, int height) override {}
 };
-
-OD::ApplicationConfig GetStartAppConfig(){
-    return OD::ApplicationConfig{
-        0, 0,
-        800, 600,
-        "Editor"
-    };
-}
 
 int main(int argc, char *argv[]){
     for(int i = 0; i < argc; i++) OD::Application::GetArgs().push_back(std::string(argv[i]));
@@ -367,8 +632,8 @@ int main(int argc, char *argv[]){
 
     Launcher* launcer = new Launcher();
     Editor* editor = new Editor();
-    //OD::Editor* odEditor = new OD::Editor();
-    /*std::string*/ defaultProjectPath = RESOURCES_PATH "";
+
+    defaultProjectPath = RESOURCES_PATH "";
     std::string targetProjectPath = argc > 1 ? argv[1] : "";
     
     if(useLauncher){
@@ -377,14 +642,14 @@ int main(int argc, char *argv[]){
 
             if(targetProjectPath.empty() == false){
                 OD::CoreModulesStartup();
-                OD::Application::Create(editor, GetStartAppConfig(), targetProjectPath.c_str());   
+                OD::Application::Create(editor, GetEditorConfig(), targetProjectPath.c_str());   
                 OD::Application::Run();
                 EditorOnExit();
                 continue;
             }
 
             OD::CoreModulesStartup();
-            OD::Application::Create(launcer, GetStartAppConfig(), defaultProjectPath.c_str());
+            OD::Application::Create(launcer, GetLauncherConfig(), defaultProjectPath.c_str());
             OD::Application::Run();
             
             //OD::Application::RemoveModule(launcer);
@@ -392,7 +657,7 @@ int main(int argc, char *argv[]){
             if(projectPath.empty() == true) break;
 
             OD::CoreModulesStartup();
-            OD::Application::Create(editor, GetStartAppConfig(), projectPath.c_str());   
+            OD::Application::Create(editor, GetEditorConfig(), projectPath.c_str());   
             OD::Application::Run();
             EditorOnExit();
             projectPath = "";
@@ -401,7 +666,7 @@ int main(int argc, char *argv[]){
         OD::CoreModulesStartup();
         OD::Application::Create(
             editor, 
-            GetStartAppConfig(), 
+            GetEditorConfig(), 
             targetProjectPath.empty() ? defaultProjectPath.c_str() : targetProjectPath.c_str()
         );   
         OD::Application::Run();

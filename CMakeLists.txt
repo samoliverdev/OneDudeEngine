@@ -162,10 +162,14 @@ add_executable(Editor ${EDITOR_SOURCE_FILES})
 target_include_directories(Editor PUBLIC Engine/Source/)
 target_include_directories(Editor PUBLIC Editor/Source/)
 target_link_libraries(Editor Engine)
-target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Editor/")
 add_custom_command(
     TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content
+)
+add_custom_command(
+    TARGET Editor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
 )
 
 #----------------Sandbox------------------

@@ -492,8 +492,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
 
     //context->RenderSkyboxLater();
-    //context->DrawGizmos();
-    
+    //context->DrawGizmos();    
+
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     context->DrawGizmos();

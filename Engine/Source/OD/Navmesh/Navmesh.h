@@ -21,6 +21,8 @@ enum SamplePartitionType{
 };
 
 struct OD_API BuildSettings{
+	bool useTile = false;
+
 	// Cell size in world units
 	float cellSize = 0.3f;
 	// Cell height in world units
@@ -61,6 +63,7 @@ struct OD_API BuildSettings{
 
 	template<class Archive>
     void serialize(Archive& ar){
+		ArchiveDumpNVP(ar, useTile);
 		ArchiveDumpNVP(ar, cellSize);
 		ArchiveDumpNVP(ar, cellHeight);
 		ArchiveDumpNVP(ar, agentHeight);
@@ -137,11 +140,12 @@ class OD_API Navmesh{
 public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
-	bool useTile = false;
+	//bool useTile = false;
+
+	~Navmesh();
 
 	bool Bake(Scene* scene, AABB bounds);
-
-	bool TileInit(Scene* scene, AABB bounds);
+	bool BakeSingle(Scene* scene, AABB bounds);
 	bool BakeAllTiles(Scene* scene, AABB bounds);
 	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos);
 	bool RemoveTile(Scene* scene, AABB bounds, const Vector3 pos);
@@ -151,7 +155,11 @@ public:
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
 
 private:
+	bool TileInit(Scene* scene, AABB bounds);
+
 	static const int MAX_POLYS = 256*2;
+
+	bool hasInitTile = false;
 
     unsigned char* m_triareas;
 	rcHeightfield* m_solid;
@@ -190,7 +198,7 @@ struct OD_API NavmeshSkipTag{
 
 struct OD_API NavmeshComponent{
 	BuildSettings buildSettings;
-	Vector3 size;
+	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
 	
     static inline void OnGui(Entity& e);

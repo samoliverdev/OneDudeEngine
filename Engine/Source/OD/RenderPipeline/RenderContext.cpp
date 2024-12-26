@@ -459,6 +459,7 @@ void RenderContext::DrawGizmos(){
     Graphics::SetDepthTest(DepthTest::LESS);
     Graphics::SetCullFace(CullFace::BACK);
     Graphics::SetBlend(false);
+    //Graphics::SetDepthMask(true);
 
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
@@ -572,6 +573,7 @@ void RenderContext::DrawGizmos(){
     auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
     for(auto e: navmeshView){
         auto& n = navmeshView.get<NavmeshComponent>(e);
+        if(n.navmesh == nullptr) continue;
         n.navmesh->DrawDebug();
     }
 }

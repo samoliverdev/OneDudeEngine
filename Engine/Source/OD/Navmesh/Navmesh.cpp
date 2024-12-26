@@ -20,6 +20,8 @@ void NavmeshModuleInit(){
 }
 
 void NavmeshComponent::OnGui(Entity& e){
+	TransformComponent& trans = e.GetComponent<TransformComponent>();
+
 	NavmeshComponent& navmeshComponent = e.GetComponent<NavmeshComponent>();
 	cereal::ImGuiArchive uiArchive;
 	uiArchive(navmeshComponent);
@@ -27,10 +29,14 @@ void NavmeshComponent::OnGui(Entity& e){
 	if(ImGui::Button("Bake")){
 		if(navmeshComponent.navmesh == nullptr) navmeshComponent.navmesh = CreateRef<Navmesh>();
 		if(navmeshComponent.navmesh != nullptr){
+			navmeshComponent.navmesh->buildSettings = navmeshComponent.buildSettings;
 			navmeshComponent.navmesh->Bake(
-				e.GetScene(), AABB(Vector3(0, 0, 0), 
-				navmeshComponent.size.x, navmeshComponent.size.y, navmeshComponent.size.z
-			)); 
+				e.GetScene(), 
+				AABB(
+					trans.Position(), 
+					navmeshComponent.size.x, navmeshComponent.size.y, navmeshComponent.size.z
+				)
+			); 
 		}
 	}
 }
@@ -149,7 +155,6 @@ inline unsigned int ilog2(unsigned int v){
 	return r;
 }
 
-
 enum SamplePolyFlags{
 	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
 	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
@@ -158,6 +163,25 @@ enum SamplePolyFlags{
 	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
 	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
 };
+
+Navmesh::~Navmesh(){
+	delete [] m_triareas;
+	m_triareas = 0;
+	rcFreeHeightField(m_solid);
+	m_solid = 0;
+	rcFreeCompactHeightfield(m_chf);
+	m_chf = 0;
+	rcFreeContourSet(m_cset);
+	m_cset = 0;
+	rcFreePolyMesh(m_pmesh);
+	m_pmesh = 0;
+	rcFreePolyMeshDetail(m_dmesh);
+	m_dmesh = 0;
+	
+	dtFreeNavMesh(m_navMesh);
+	m_navMesh = 0;
+	delete m_ctx;
+}
 
 void Navmesh::Cleanup(){
     delete [] m_triareas;
@@ -173,7 +197,7 @@ void Navmesh::Cleanup(){
 	rcFreePolyMeshDetail(m_dmesh);
 	m_dmesh = 0;
 	
-	if(useTile == false){
+	if(buildSettings.useTile == false){
 		dtFreeNavMesh(m_navMesh);
 		m_navMesh = 0;
 		delete m_ctx;
@@ -253,7 +277,15 @@ bool Navmesh::RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh){
 }
 
 bool Navmesh::Bake(Scene* scene, AABB bounds){
+	if(buildSettings.useTile) return BakeAllTiles(scene, bounds);
+	return BakeSingle(scene, bounds);
+}
+
+bool Navmesh::BakeSingle(Scene* scene, AABB bounds){
+	if(buildSettings.useTile == true) return false;
+
 	Cleanup();
+	hasInitTile = false;
 
     m_ctx = new rcContext();
     m_navQuery = dtAllocNavMeshQuery();
@@ -595,6 +627,7 @@ bool Navmesh::Bake(Scene* scene, AABB bounds){
 
 bool Navmesh::TileInit(Scene* scene, AABB bounds){
 	Cleanup();
+	hasInitTile = true;
 
     m_ctx = new rcContext();
     m_navQuery = dtAllocNavMeshQuery();
@@ -652,6 +685,8 @@ bool Navmesh::TileInit(Scene* scene, AABB bounds){
 }
 
 bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds){
+	if(buildSettings.useTile == false) return false;
+	if(hasInitTile == false) TileInit(scene, bounds); 
 	//if (!m_geom) return;
 	//if (!m_navMesh) return;
 	
@@ -666,7 +701,6 @@ bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds){
 	const int th = (gh + ts-1) / ts;
 	const float tcs = buildSettings.tileSize*buildSettings.cellSize;
 
-	
 	// Start the build process.
 	m_ctx->startTimer(RC_TIMER_TEMP);
 
@@ -704,6 +738,9 @@ bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds){
 }
 
 bool Navmesh::BakeTile(Scene* scene, AABB bounds, const Vector3 pos){
+	if(buildSettings.useTile == false) return false;
+	if(hasInitTile == false) TileInit(scene, bounds); 
+
 	//if (!m_geom) return;
 	if(!m_navMesh) return false;
 
@@ -1167,6 +1204,8 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 }
 
 void Navmesh::DrawDebug(){
+	if(m_navMesh == nullptr) return;
+
     if(m_dd == nullptr) m_dd = new DebugDrawGL();
 
 	glEnable(GL_BLEND);
