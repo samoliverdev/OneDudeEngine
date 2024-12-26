@@ -51,13 +51,14 @@ void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,ent
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
 
     }catch(...){ 
-        LogWarning("ErrorOnTrySerialize: %s", componentName.c_str()); 
+        //LogWarning("ErrorOnTrySerialize: %s", componentName.c_str()); 
         components.clear();
         componentsEntities.clear();
     }
 
     for(int i = 0; i < components.size(); i++){
         //registry.get_or_emplace<T>(loadLookup[componentsEntities[i]], components[i]);
+        //continue;
 
         if(registry.any_of<T>(loadLookup[componentsEntities[i]])){
             T& t = registry.get<T>(loadLookup[componentsEntities[i]]);
@@ -111,6 +112,13 @@ void SceneManager::RegisterCoreComponent(const char* name){
     };
     
     coreComponentsSerializer[name] = funcs;
+}
+
+template<typename T>
+void SceneManager::UnRegisterCoreComponent(const char* name){
+    //coreComponentsSerializer[name] = funcs;
+    LogWarning("UnRegisterCoreComponent: %s", name);
+    coreComponentsSerializer.erase(name); 
 }
 
 /*template<typename T>

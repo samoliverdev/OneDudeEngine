@@ -18,6 +18,8 @@ public:
     void DestroyActiveScene();
 
     template<typename T> void RegisterCoreComponent(const char* name);
+    template<typename T> void UnRegisterCoreComponent(const char* name);
+
     //template<typename T> void RegisterCoreComponentSimple(const char* name);
     template<typename T> void RegisterComponent(const char* name);
     template<typename T> void RegisterScript(const char* name);

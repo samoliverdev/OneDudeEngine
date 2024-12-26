@@ -372,6 +372,7 @@ class Editor: public OD::Module{
         console.clear();
         ImGui::OpenPopup("HotReload?");
         pipe = _popen("cmake --build ../build --config Release", "r");
+        //pipe = _popen("cmake --build ../build --config RelWithDebInfo", "r");
         return;
 
         using namespace OD;
@@ -418,9 +419,9 @@ class Editor: public OD::Module{
         SceneManager::Get().NewScene();
 
         if(currentModule != nullptr){
-            ((OD::FuncModule*)currentModule)->onInit = nullptr;
-            ((OD::FuncModule*)currentModule)->onExit = nullptr;
-            ((OD::FuncModule*)currentModule)->onUpdate = nullptr;
+            //((OD::FuncModule*)currentModule)->onInit = nullptr;
+            //((OD::FuncModule*)currentModule)->onExit = nullptr;
+            //((OD::FuncModule*)currentModule)->onUpdate = nullptr;
             Application::RemoveModule(currentModule);
             Platform::FreeDynimicLibrary(currentDll);
         }
@@ -441,15 +442,20 @@ class Editor: public OD::Module{
         c->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
         currentModule = c;
 
-        toReload = true;
+        OD::Editor::Get()->UnselectAll();
 
-        //OD::Application::AddModule(currentModule);
-        //SceneManager::Get().NewScene()->Load("tempHotReload.scene");
+        //toReload = true;
+
+        OD::Application::AddModule(currentModule);
+        SceneManager::Get().NewScene()->Load("tempHotReload.scene");
     }
 
     void ReloadModuleScene(){
         if(toReload == false) return;
         toReload = false;
+
+        _ReloadProjectDLL();
+        return;
 
         OD::Application::AddModule(currentModule);
         OD::SceneManager::Get().NewScene()->Load("tempHotReload.scene");
@@ -574,7 +580,7 @@ class Editor: public OD::Module{
             char buffer[512];
             if(fgets(buffer, sizeof(buffer), pipe) != NULL){
                 strcat_s(con, buffer);
-                //LogWarning("%s", buffer);
+                LogWarning("%s", buffer);
             }
             ImGui::InputTextMultiline("", con, sizeof(con), {600, 250});
 
@@ -589,7 +595,8 @@ class Editor: public OD::Module{
                         project.state = Project::READY;*/
                     
                     LogWarning("HotReload Success");
-                    _ReloadProjectDLL();
+                    toReload = true;
+                    //_ReloadProjectDLL();
                 } else {
                     /*if (project.state == Project::GENERATING)
                         project.state = Project::FAIL_GENERATE;

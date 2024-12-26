@@ -42,6 +42,12 @@ public:
         selectionOnAsset = true;
     }
 
+    inline void UnselectAll(){
+        selectionEntity = Entity();
+        selectionAsset = nullptr;
+        selectionOnAsset = false;;
+    }
+
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, sceneHierarchyPanel.show);
@@ -83,13 +89,7 @@ private:
         selectionEntity = entity;
         selectionOnAsset = false;
     }
-
-    inline void UnselectAll(){
-        selectionEntity = Entity();
-        selectionAsset = nullptr;
-        selectionOnAsset = false;;
-    }
-
+    
     void HandleShotcuts();
     void PlayScene();
     void StopScene();
