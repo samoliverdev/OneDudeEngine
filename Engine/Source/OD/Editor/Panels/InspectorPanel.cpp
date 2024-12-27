@@ -24,7 +24,7 @@ void InspectorPanel::OnGui(){
 
     //if(ImGui::Begin("Inspector")){
     ImGui::Begin("Inspector");
-    if(editor->selectionEntity.IsValid() && editor->selectionOnAsset == false){
+    if(scene->IsValid(editor->selectionEntity) && editor->selectionOnAsset == false){
         DrawComponents(editor->selectionEntity);
         ImGui::Separator();
         ImGui::Spacing();
@@ -44,7 +44,7 @@ void DrawComponent(Entity e, const char* name){
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
 
-    if(e.HasComponent<T>()){
+    if(scene->HasComponent<T>(e)){
         bool removeComponent = false;
 
         //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
@@ -69,18 +69,18 @@ void DrawComponent(Entity e, const char* name){
         }
 
         if(open){
-            T::OnGui(e);
+            T::OnGui(e, *scene);
             ImGui::TreePop();
         }
 
         if(removeComponent){
-            e.RemoveComponent<T>();
+            scene->RemoveComponent<T>(e);
         }
     }
 }
 
 template<typename T, typename UIFunction>
-void DrawComponent(Entity e, const char* name, UIFunction function){
+void DrawComponent(Entity e, Scene& scene, const char* name, UIFunction function){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 
         | ImGuiTreeNodeFlags_Framed 
@@ -88,11 +88,11 @@ void DrawComponent(Entity e, const char* name, UIFunction function){
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
 
-    if(e.HasComponent<T>()){
+    if(scene.HasComponent<T>(e)){
         bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, name);
 
         if(open){
-            function(e);
+            function(e, scene);
             ImGui::TreePop();
         }
     }
@@ -108,7 +108,7 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
 
-    if(f.hasComponent(e)){
+    if(f.hasComponent(e, *scene)){
         bool removeComponent = false;
 
         bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
@@ -121,9 +121,9 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
         }
 
         if(open){
-            auto entityType = e.GetComponent<InfoComponent>().Type();
+            auto entityType = scene->GetComponent<InfoComponent>(e).Type();
             if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
-            f.onGui(e);
+            f.onGui(e, *scene);
             if(entityType != EntityType::Stand) ImGui::EndDisabled();
 
             ImGui::TreePop();
@@ -131,7 +131,7 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
 
         if(removeComponent){
             //e.RemoveComponent<T>();
-            f.removeComponent(e);
+            f.removeComponent(e, *scene);
         }
     }
 }
@@ -144,7 +144,7 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
 
-    if(sf.hasComponent(e)){
+    if(sf.hasComponent(e, *scene)){
         bool removeComponent = false;
         std::hash<std::string> hasher;
 
@@ -158,9 +158,9 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
         }
 
         if(open){
-            auto entityType = e.GetComponent<InfoComponent>().Type();
+            auto entityType = scene->GetComponent<InfoComponent>(e).Type();
             if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
-            sf.onGui(e);
+            sf.onGui(e, *scene);
             if(entityType != EntityType::Stand) ImGui::EndDisabled();
 
             ImGui::TreePop();
@@ -168,7 +168,7 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
 
         if(removeComponent){
             //e.RemoveComponent<T>();
-            sf.removeComponent(e);
+            sf.removeComponent(e, *scene);
         }
     }
 }
@@ -180,11 +180,11 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
 #endif
 
 void InspectorPanel::DrawComponents(Entity entity){
-    TransformComponent& transform = entity.GetComponent<TransformComponent>();
-    InfoComponent& info = entity.GetComponent<InfoComponent>();
-    EntityType entityType = entity.GetComponent<InfoComponent>().Type();
+    TransformComponent& transform = scene->GetComponent<TransformComponent>(entity);
+    InfoComponent& info = scene->GetComponent<InfoComponent>(entity);
+    EntityType entityType = scene->GetComponent<InfoComponent>(entity).Type();
 
-    DrawComponent<InfoComponent>(entity, "Info", [&](Entity e){
+    DrawComponent<InfoComponent>(entity, *scene, "Info", [&](Entity e, Scene& scene){
         if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
@@ -199,13 +199,13 @@ void InspectorPanel::DrawComponents(Entity entity){
             info.tag = std::string(buffer);
         }
 
-        ImGui::Text("Id: %zd", (size_t)e.Id());
+        ImGui::Text("Id: %zd", (size_t)e);
         //ImGui::Text("Type: %d", info.Type());
 
         if(entityType != EntityType::Stand) ImGui::EndDisabled();
     });
 
-    DrawComponent<TransformComponent>(entity, "Transform", [&](Entity e){
+    DrawComponent<TransformComponent>(entity, *scene, "Transform", [&](Entity e, Scene& scene){
         if(entityType == EntityType::PrefabChild) ImGui::BeginDisabled(true);
         /*if(e.HasComponent<RigidbodyComponent>()){
             RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
@@ -261,7 +261,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
     if(ImGui::BeginPopup("AddComponent")){
         for(auto& i: SceneManager::Get().coreComponentsSerializer){
             if(ImGui::MenuItem(i.first)){
-                i.second.addComponent(editor->selectionEntity);
+                i.second.addComponent(editor->selectionEntity, *scene);
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -272,7 +272,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
 
         for(auto& i: SceneManager::Get().componentsSerializer){
             if(ImGui::MenuItem(i.first)){
-                i.second.addComponent(editor->selectionEntity);
+                i.second.addComponent(editor->selectionEntity, *scene);
                 ImGui::CloseCurrentPopup();
             }
         }

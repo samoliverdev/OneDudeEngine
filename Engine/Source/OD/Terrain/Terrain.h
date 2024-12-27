@@ -67,9 +67,9 @@ struct OD_API TerrainComponent{
     Ref<Texture2D> layer4 = nullptr;
 
     void SetHeightmap(Ref<Heightmap> heightmap);
-    void SubmitHeightmap();
+    //void SubmitHeightmap();
 
-    static void OnGui(Entity e);
+    static void OnGui(Entity e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -103,9 +103,9 @@ private:
     Ref<Texture2D> heightmapTex = nullptr;
     Ref<Texture2D> normalTex = nullptr;
     
-    Entity meshsRoot;
-    Entity collider;
-    Entity meshToNavmesh;
+    Entity meshsRoot = EntityNull;
+    Entity collider = EntityNull;
+    Entity meshToNavmesh = EntityNull;
 
     int chunkSize;
     std::unordered_map<IVector2, ChunkData> loadedChunks;
@@ -125,7 +125,7 @@ public:
 
 private:
     void DestroyTerrain(TerrainComponent& terrain);
-    void CreateTerrain(TerrainComponent& terrain, EntityId e);
+    void CreateTerrain(TerrainComponent& terrain, Entity e);
     void UpdateTerrain(TerrainComponent& terrain);
     void LoadCood(TerrainComponent& terrain, IVector2 coor);
     TerrainComponent::TerrainLod GetTerrainLod(int chunkSize, int lod);

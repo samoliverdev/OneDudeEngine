@@ -13,7 +13,7 @@ struct OD_API MeshRendererComponent{
 
     Ref<Material> customShadowPass;
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     template<class Archive>
     void serialize(Archive& ar){

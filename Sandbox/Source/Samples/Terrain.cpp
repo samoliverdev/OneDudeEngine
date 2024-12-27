@@ -59,22 +59,22 @@ void TerrainSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+    EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     envComp.settings.shadowDistance = 1000;
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
     lightComponent.renderShadow = true;
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(-37.4206, 0, 38.0931));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(0, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 160;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(-37.4206, 0, 38.0931));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(0, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 160;
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
@@ -82,14 +82,14 @@ void TerrainSample::OnInit(){
     cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity cube = scene->AddEntity("Cube");
-    TransformComponent& cubeTrans = cube.GetComponent<TransformComponent>();
+    TransformComponent& cubeTrans = scene->GetComponent<TransformComponent>(cube);
     cubeTrans.LocalScale(Vector3(50, 200, 50));
     cubeTrans.LocalPosition(Vector3(256, 100, -256));
-    ModelRendererComponent& cubeModelRenderer = cube.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& cubeModelRenderer = scene->AddComponent<ModelRendererComponent>(cube);
     cubeModelRenderer.SetModel(cubeModel);
 
     Entity terrain = scene->AddEntity("Terrain");
-    TerrainComponent& terrainComponent = terrain.AddComponent<TerrainComponent>();
+    TerrainComponent& terrainComponent = scene->AddComponent<TerrainComponent>(terrain);
     //terrainComponent.terrainWidth = 1000;
     //terrainComponent.terrainLength = 500;
     terrainComponent.terrainHeight = 420;

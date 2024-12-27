@@ -19,10 +19,10 @@ void NavmeshModuleInit(){
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
 }
 
-void NavmeshComponent::OnGui(Entity& e){
-	TransformComponent& trans = e.GetComponent<TransformComponent>();
+void NavmeshComponent::OnGui(Entity& e, Scene& scene){
+	TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
 
-	NavmeshComponent& navmeshComponent = e.GetComponent<NavmeshComponent>();
+	NavmeshComponent& navmeshComponent = scene.GetComponent<NavmeshComponent>(e);
 	cereal::ImGuiArchive uiArchive;
 	uiArchive(navmeshComponent);
 
@@ -31,7 +31,7 @@ void NavmeshComponent::OnGui(Entity& e){
 		if(navmeshComponent.navmesh != nullptr){
 			navmeshComponent.navmesh->buildSettings = navmeshComponent.buildSettings;
 			navmeshComponent.navmesh->Bake(
-				e.GetScene(), 
+				&scene, 
 				AABB(
 					trans.Position(), 
 					navmeshComponent.size.x, navmeshComponent.size.y, navmeshComponent.size.z

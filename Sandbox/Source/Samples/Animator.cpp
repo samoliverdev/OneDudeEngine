@@ -14,31 +14,31 @@ void AnimatorSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     cam.farClipPlane = 1000;
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
 
     Entity floorEntity = scene->AddEntity("Floor");
-    TransformComponent& floorTransform = floorEntity.GetComponent<TransformComponent>();
+    TransformComponent& floorTransform = scene->GetComponent<TransformComponent>(floorEntity);
     floorTransform.LocalScale(Vector3(5));
-    ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
     floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
     floorEntityP.Mass(0);
     floorEntityP.SetType(RigidbodyComponent::Type::Static);
@@ -79,18 +79,18 @@ void AnimatorSample::OnInit(){
         for(int y = -(Size/2); y <= (Size/2); y++){
             Entity charEntity = scene->AddEntity("Character");
             
-            TransformComponent& charTrans = charEntity.GetComponent<TransformComponent>();
+            TransformComponent& charTrans = scene->GetComponent<TransformComponent>(charEntity);
             charTrans.Position(Vector3(x*2, 0, y*2));
             charTrans.LocalScale(Vector3(1));
             
-            SkinnedModelRendererComponent& charRenderer = charEntity.AddComponent<SkinnedModelRendererComponent>();
+            SkinnedModelRendererComponent& charRenderer = scene->AddComponent<SkinnedModelRendererComponent>(charEntity);
             charRenderer.SetModel(charModel);
             //charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
             charRenderer.UpdatePosePalette();
             //LogInfo("CharModel Skeleton RestPose Size: %d", charModel->skeleton.GetRestPose().Size());
             Assert(charRenderer.posePalette.size() == charModel->skeleton.GetRestPose().Size());
             
-            AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
+            AnimatorComponent& charAnim = scene->AddComponent<AnimatorComponent>(charEntity);
             charAnim.Play(charModel->animationClips[0].get() /*&clips[0]*/);
         }
     }

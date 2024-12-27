@@ -24,28 +24,28 @@ struct ProceduralTerrain: OD::Module {
         Scene* scene = SceneManager::Get().NewScene();
 
         Entity text = scene->AddEntity("Text");
-        text.GetComponent<TransformComponent>().LocalPosition(Vector3(25.0f, 25.0f, 0));
-        TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
+        scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
+        TextRendererComponent& textRenderer = scene->AddComponent<TextRendererComponent>(text);
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
         textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
-        LightComponent& lightComponent = light.AddComponent<LightComponent>();
+        LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
         lightComponent.color = {1,1,1};
-        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+        scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+        scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
 
         camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 100, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+        CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+        scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 100, 15));
+        scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+        scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
         cam.farClipPlane = 50000;
 
         int mapChunkSize = 241;
@@ -64,8 +64,8 @@ struct ProceduralTerrain: OD::Module {
         floorRenderer.UpdateAABB();*/
 
         Entity endlessTerrain = scene->AddEntity("endlessTerrain");
-        EndlessTerrain* endlessTerrainScript = endlessTerrain.AddComponent<ScriptComponent>().AddScript<EndlessTerrain>();
-        endlessTerrainScript->viewer = &camera.GetComponent<TransformComponent>();
+        EndlessTerrain* endlessTerrainScript = scene->AddComponent<ScriptComponent>(endlessTerrain).AddScript<EndlessTerrain>();
+        endlessTerrainScript->viewer = &scene->GetComponent<TransformComponent>(camera);
 
         //scene->Save("res/scene1.scene");
         scene->Start();
@@ -80,12 +80,12 @@ struct ProceduralTerrain: OD::Module {
         if(Input::IsKeyDown(KeyCode::T)) RenderContext::GetSettings().enableWireframe = !RenderContext::GetSettings().enableWireframe;
 
         if(Input::IsKeyDown(KeyCode::R)){
-            TransformComponent& cam = scene->GetMainCamera().GetComponent<TransformComponent>();
+            TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
 
             Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
-            e.GetComponent<TransformComponent>().Position(cam.Position() + cam.Back() * 20.0f);
+            scene->GetComponent<TransformComponent>(e).Position(cam.Position() + cam.Back() * 20.0f);
             //e.GetComponent<TransformComponent>().LocalScale(Vector3(2));
-            PhysicsCubeS* script = e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            PhysicsCubeS* script = scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>();
             //script->timeToDestroy = 1000000;
         }
 

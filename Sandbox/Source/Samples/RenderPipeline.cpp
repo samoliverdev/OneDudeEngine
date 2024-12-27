@@ -6,10 +6,13 @@
 //#include <OD/AnimationSystem/Animator.h>
 
 void RenderPipelineSample::AddTransparent(Vector3 pos){
-    Entity et = SceneManager::Get().GetActiveScene()->AddEntity("Transparent");
-    et.GetComponent<TransformComponent>().Position(pos);
-    et.GetComponent<TransformComponent>().LocalScale(Vector3(10, 10, 10));
-    ModelRendererComponent& _meshRenderer3 = et.AddComponent<ModelRendererComponent>();
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    auto& scene = *SceneManager::Get().GetActiveScene();
+
+    Entity et = scene.AddEntity("Transparent");
+    scene.GetComponent<TransformComponent>(et).Position(pos);
+    scene.GetComponent<TransformComponent>(et).LocalScale(Vector3(10, 10, 10));
+    ModelRendererComponent& _meshRenderer3 = scene.AddComponent<ModelRendererComponent>(et);
     _meshRenderer3.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/plane.obj"));
 
     for(auto i: _meshRenderer3.GetModel()->materials){
@@ -43,7 +46,7 @@ void RenderPipelineSample::OnInit(){
     sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity env = scene->AddEntity("Env");
-    EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+    EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
     envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
@@ -58,17 +61,17 @@ void RenderPipelineSample::OnInit(){
     //envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
 
     Entity e = scene->AddEntity("Floor");
-    e.GetComponent<TransformComponent>().Position(Vector3(0,-2, 0));
-    e.GetComponent<TransformComponent>().LocalScale(Vector3(10, 1, 10));
-    ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e).Position(Vector3(0,-2, 0));
+    scene->GetComponent<TransformComponent>(e).LocalScale(Vector3(10, 1, 10));
+    ModelRendererComponent& _meshRenderer = scene->AddComponent<ModelRendererComponent>(e);
     _meshRenderer.SetModel(floorModel);
     _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
     _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity e2 = scene->AddEntity("Cube");
-    e2.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
-    e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
-    ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e2).Position(Vector3(-8, 0, -4));
+    scene->GetComponent<TransformComponent>(e2).LocalScale(Vector3(4*1, 4*1, 4*1));
+    ModelRendererComponent& _meshRenderer2 = scene->AddComponent<ModelRendererComponent>(e2);
     _meshRenderer2.SetModel(cubeModel);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
     _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
@@ -187,28 +190,28 @@ void RenderPipelineSample::OnInit(){
     camera2.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));*/
 
     Entity camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 2, 4));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 2, 4));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     //camMove.transform = &camera->GetComponent<TransformComponent>()();
     //camMove.moveSpeed = 60;
     cam.farClipPlane = 1000;
 
     mainEntity = scene->AddEntity("Main");
-    mainEntity.GetComponent<TransformComponent>().LocalPosition(Vector3(2, 0, 0));
-    mainEntity.AddComponent<ScriptComponent>().AddScript<RotateScript>();
+    scene->GetComponent<TransformComponent>(mainEntity).LocalPosition(Vector3(2, 0, 0));
+    scene->AddComponent<ScriptComponent>(mainEntity).AddScript<RotateScript>();
 
     ///*
     light = scene->AddEntity("Directional Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     lightComponent.intensity = 1.5f;
     lightComponent.renderShadow = true;
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
     //*/
 
     /*
@@ -232,7 +235,7 @@ void RenderPipelineSample::OnInit(){
     */
 
     Entity light2 = scene->AddEntity("Spot Light");
-    LightComponent& lightComponent2 = light2.AddComponent<LightComponent>();
+    LightComponent& lightComponent2 = scene->AddComponent<LightComponent>(light2);
     lightComponent2.type = LightComponent::Type::Spot;
     lightComponent2.color = {0.25f, 0.25f, 1};
     lightComponent2.intensity = 1000;
@@ -240,17 +243,17 @@ void RenderPipelineSample::OnInit(){
     lightComponent2.coneAngleInner = 80;
     lightComponent2.coneAngleOuter = 85;
     lightComponent2.renderShadow = true;
-    light2.GetComponent<TransformComponent>().Position(Vector3(8, 10, 0));
-    light2.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, 0, 0));
+    scene->GetComponent<TransformComponent>(light2).Position(Vector3(8, 10, 0));
+    scene->GetComponent<TransformComponent>(light2).LocalEulerAngles(Vector3(45, 0, 0));
 
     Entity light3 = scene->AddEntity("Point Light");
-    LightComponent& lightComponent3 = light3.AddComponent<LightComponent>();
+    LightComponent& lightComponent3 = scene->AddComponent<LightComponent>(light3);
     lightComponent3.type = LightComponent::Type::Point;
     lightComponent3.color = {1, 0.25f, 0.25f};
     lightComponent3.intensity = 1000;
     lightComponent3.radius = 100; 
     lightComponent3.renderShadow = true;
-    light3.GetComponent<TransformComponent>().Position(Vector3(36, 17, 0));
+    scene->GetComponent<TransformComponent>(light3).Position(Vector3(36, 17, 0));
     
     /*
     Entity pointLight = scene->AddEntity("Point Light");
@@ -275,18 +278,18 @@ void RenderPipelineSample::OnInit(){
         float posRange = 200;
 
         Entity e = scene->AddEntity("Entity" + std::to_string(random(0, 200)));
-        e.AddComponent<ScriptComponent>().AddScript<RotateScript>();
-        ModelRendererComponent& mr = e.AddComponent<ModelRendererComponent>();
+        scene->AddComponent<ScriptComponent>(e).AddScript<RotateScript>();
+        ModelRendererComponent& mr = scene->AddComponent<ModelRendererComponent>(e);
         mr.SetModel(cubeModel);
         mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
         mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     
         float angle = 20.0f * i; 
-        e.GetComponent<TransformComponent>().LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
-        e.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+        scene->GetComponent<TransformComponent>(e).LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
+        scene->GetComponent<TransformComponent>(e).LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
         otherEntity = e;
 
-        scene->SetParent(mainEntity.Id(), e.Id());
+        scene->SetParent(mainEntity, e);
     }
     //*/
 

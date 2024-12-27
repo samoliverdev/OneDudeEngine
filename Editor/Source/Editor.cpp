@@ -190,19 +190,19 @@ class Launcher: public OD::Module{
         Scene* scene = OD::SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
-        LightComponent& lightComponent = light.AddComponent<LightComponent>();
+        LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
         lightComponent.color = {1,1,1};
-        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+        scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+        scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
 
         Entity camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
+        CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+        scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+        scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
         cam.farClipPlane = 1000;
 
         //OD::Application::AddModule<OD::Editor>();
@@ -484,19 +484,19 @@ class Editor: public OD::Module{
         Scene* scene = OD::SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
-        LightComponent& lightComponent = light.AddComponent<LightComponent>();
+        LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
         lightComponent.color = {1,1,1};
-        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+        scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+        scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
 
         Entity camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
+        CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+        scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+        scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
         cam.farClipPlane = 1000;
     }
 

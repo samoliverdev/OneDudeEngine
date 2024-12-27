@@ -20,9 +20,10 @@
 
 namespace OD {
 
-using EntityId = entt::entity;
+using Entity = entt::entity;
+#define EntityNull entt::null
 
-struct Entity;
+//struct Entity;
 struct System;
 struct Scene;
 
@@ -73,9 +74,9 @@ public:
     inline void LocalScale(Vector3 scale){ transform.LocalScale(scale); }
     inline void SetLocalModelMatrix(Matrix4 matrix){ transform = Transform(matrix); }
 
-    inline EntityId Parent(){ return parent; }
+    inline Entity Parent(){ return parent; }
     inline bool HasParent(){ /*return parent != entt::null;*/ return hasParent; }
-    inline std::vector<EntityId> Children(){ return children; }
+    inline std::vector<Entity> Children(){ return children; }
 
     template <class Archive>
     void serialize(Archive & ar);
@@ -94,9 +95,9 @@ public:
 
 private:
     Transform transform;
-    std::vector<EntityId> children;
+    std::vector<Entity> children;
 
-    EntityId parent = entt::null;
+    Entity parent = entt::null;
     bool hasParent;
 
     entt::registry* registry;
@@ -116,7 +117,7 @@ struct OD_API InfoComponent{
     bool hidden = false;
     bool notSave = false;
 
-    inline EntityId Id() const { return id; }
+    //inline EntityId Id() const { return id; }
     inline EntityType Type() const { return entityType; }
 
     template <class Archive>
@@ -126,12 +127,12 @@ struct OD_API InfoComponent{
 
 private:
     bool active;
-    EntityId id;
+    //EntityId id;
     EntityType entityType = EntityType::Stand;
     std::string prefabPath;
 };
 
-struct OD_API Entity{
+/*struct OD_API Entity{
     friend struct Scene;
 public:
 
@@ -157,24 +158,24 @@ public:
 
     static void CreateLuaBind(sol::state& lua);
 
-    template<typename T> inline static void RegisterMetaComponent();
+    //template<typename T> inline static void RegisterMetaComponent();
 
 //private: //TODO: Revise this design
     EntityId id = entt::null;
     Scene* scene = nullptr;
-};
+};*/
 
 template<typename T>
-auto _AddComponent(Entity& entity, const sol::table& comp, sol::this_state s);
+auto _AddComponent(Scene* scene, Entity entity, const sol::table& comp, sol::this_state s);
 
 template<typename T>
-bool _HasComponent(Entity& entity);
+bool _HasComponent(Scene* scene, Entity entity);
 
 template<typename T>
-auto _GetComponent(Entity& entity, sol::this_state s);
+auto _GetComponent(Scene* scene, Entity entity, sol::this_state s);
 
 template<typename T>
-void _RemoveComponent(Entity& entity);
+void _RemoveComponent(Scene* scene, Entity entity);
 
 enum class SystemType{
     Stand, Renderer, Physics
@@ -198,7 +199,7 @@ protected:
 
 class OD_API Scene: public Asset {
 public:
-    friend struct Entity;
+    friend struct EntityHandle;
 
     inline bool Running(){ return running; }
 
@@ -206,15 +207,32 @@ public:
     Scene(Scene& other);
     ~Scene();
 
+    //Entity AddEntity(std::string name = "Entity");
+    //template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
+
     Entity AddEntity(std::string name = "Entity");
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
-    void DestroyEntity(EntityId entity);
-    void DestroyEntityImmediate(EntityId entity);
-    bool IsChildOf(EntityId parent, EntityId child);
-    void CleanParent(EntityId e);
-    void SetParent(EntityId parent, EntityId child);
-    inline void SetParent(Entity& parent, Entity& child){ SetParent(parent.Id(), child.Id()); }
+    void DestroyEntity(Entity entity);
+    void DestroyEntityImmediate(Entity entity);
+    bool IsChildOf(Entity parent, Entity child);
+    void CleanParent(Entity e);
+    void SetParent(Entity parent, Entity child);
+    //inline void SetParent(Entity& parent, Entity& child){ SetParent(parent.Id(), child.Id()); }
+
+    template<typename T, typename... Args> T& AddComponent(Entity entity, Args&&... args);
+    template<typename T> T& AddComponent(Entity entity);
+    template<typename T> T& GetComponent(Entity entity);
+    template<typename T> T* TryGetComponent(Entity entity);
+    template<typename T> T* TryGetComponentInParent(Entity entity);
+    template<typename T> T* TryGetComponentInChildren(Entity entity);
+    template<typename T> bool HasComponent(Entity entity);
+    template<typename T> T& AddOrGetComponent(Entity entity);
+    template<typename T> void RemoveComponent(Entity entity);
+
+    template<typename T> inline static void RegisterMetaComponent();
+
+    bool IsValid(Entity entity);
 
     Entity Instantiate(const Ref<Model> model);
     Entity InstantiatePrefab(const char* prefabPath);
@@ -242,7 +260,7 @@ public:
 private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
-    void _DestroyEntity(EntityId entity, bool removeFromParent = false);
+    void _DestroyEntity(Entity entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     
     bool running = false;
@@ -252,9 +270,40 @@ private:
     std::vector<System*> physicsSystems;
     std::unordered_map<Type, System*> systems;
     std::unordered_map<Type, std::function<void(Scene&)>> systemsAdd;
-    std::vector<EntityId> toDestroy;
+    std::vector<Entity> toDestroy;
 
     entt::registry registry;
+};
+
+struct OD_API EntityHandle{
+public:
+    friend struct Scene;
+
+    EntityHandle() = default;
+    EntityHandle(Entity _entity, Scene* _scene):entity(_entity), scene(_scene){}
+
+    //template<typename T, typename... Args> T& AddComponent(Args&&... args);
+    template<typename T> inline T& AddComponent(){ return scene->AddComponent<T>(entity); }
+    template<typename T> inline T& GetComponent(){ return scene->GetComponent<T>(entity); }
+    template<typename T> inline T* TryGetComponent(){ return scene->TryGetComponent<T>(entity); }
+    template<typename T> inline T* TryGetComponentInParent(){ return scene->TryGetComponentInParent<T>(entity); }
+    template<typename T> inline T* TryGetComponentInChildren(){ return scene->TryGetComponentInChildren<T>(entity); }
+    template<typename T> inline bool HasComponent(){ return scene->HasComponent<T>(entity); }
+    template<typename T> inline T& AddOrGetComponent(){ return scene->AddOrGetComponent<T>(entity); }
+    template<typename T> inline void RemoveComponent(){ return scene->RemoveComponent<T>(entity); }
+
+    inline bool IsValid(){ return scene != nullptr && scene->registry.valid(entity); }
+    inline Entity GetEntity(){ return entity; }
+    inline Scene* GetScene(){ return scene; }
+
+    inline bool operator==(const EntityHandle& other) const { return entity == other.entity && scene == other.scene; }
+    inline bool operator!=(const EntityHandle& other) const { return !(*this == other); }
+
+    static void CreateLuaBind(sol::state& lua);
+
+private:
+    Entity entity = entt::null;
+    Scene* scene = nullptr;
 };
 
 }

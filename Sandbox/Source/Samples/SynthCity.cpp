@@ -16,20 +16,20 @@ void SynthCitySample::OnInit(){
     //scene->AddSystem<StandRenderPipeline2>();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
     lightComponent.renderShadow = true;
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(-37.4206, -34.8714, 38.0931));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-21.3550, -30.5680, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 160;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(-37.4206, -34.8714, 38.0931));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-21.3550, -30.5680, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 160;
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
@@ -46,7 +46,7 @@ void SynthCitySample::OnInit(){
     cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));*/
 
     Entity city = scene->Instantiate(cityModel);
-    city.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
+    scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(0.01f));
 
     Application::AddModule<Editor>();
     //scene->Start();

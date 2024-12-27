@@ -11,24 +11,24 @@ void Minicraft::OnInit(){
     OD::Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     //env.GetComponent<EnvironmentComponent>().settings.shadowQuality = ShadowQuality::Low;
 
     Entity camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 192+25, 4));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 20;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 192+25, 4));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 20;
     cam.farClipPlane = 10000;
     cam.fieldOfView = 70;
 
     Entity light = scene->AddEntity("Directional Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     lightComponent.intensity = 1;
     lightComponent.renderShadow = false;
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
     scene->AddSystem<WorldManagerSystem>();
 

@@ -40,14 +40,14 @@ void CameraMovement::OnUpdate(){
 }
 
 void CameraMovementScript::OnStart(){
-    TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
+    TransformComponent& transform = scene->GetComponent<TransformComponent>(entity);
 
     pitch = transform.LocalEulerAngles().x;
     yaw = transform.LocalEulerAngles().y;
 }
 
 void CameraMovementScript::OnUpdate(){
-    TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
+    TransformComponent& transform = scene->GetComponent<TransformComponent>(entity);
 
     Vector3 pos = transform.LocalPosition();
 

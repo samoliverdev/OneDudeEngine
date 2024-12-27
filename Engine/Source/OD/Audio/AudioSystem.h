@@ -15,7 +15,7 @@ struct OD_API AudioSourceComponent{
     void Play();
     void Stop();
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive& ar){

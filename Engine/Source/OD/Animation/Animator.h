@@ -16,7 +16,7 @@ struct OD_API AnimatorComponent{
     template <class Archive>
     void serialize(Archive & ar){}
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
 //private:
     //std::vector<Matrix4> posePalette;

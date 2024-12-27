@@ -11,8 +11,8 @@ void LuaScriptModuleInit(){
     SceneManager::Get().RegisterSystem<LuaScriptSystem>("LuaScriptSystem");
 }
 
-void LuaScriptComponent::OnGui(Entity& e){
-    LuaScriptComponent& script = e.GetComponent<LuaScriptComponent>();
+void LuaScriptComponent::OnGui(Entity& e, Scene& scene){
+    LuaScriptComponent& script = scene.GetComponent<LuaScriptComponent>(e);
     
     ImGui::DrawPath(std::string("scriptPath"), script.scriptPath, std::vector<std::string>{".lua"});
 }
@@ -31,9 +31,12 @@ void LuaScriptSystem::Update(){
         LuaScriptComponent& luaScript = scriptView.get<LuaScriptComponent>(e);
 
         if(luaScript.scriptPath.empty() == false && luaScript.hasInited == false){
+            //sol::table result = lua->script_file(luaScript.scriptPath);
             auto result = lua->script_file(luaScript.scriptPath);
+
+            //sol::table f = lua->load_file("").call();
                                   
-            sol::function OnStart = (*lua)["OnStart"];
+            sol::function OnStart = (*lua)["OnStart"]; // result["OnStart"];
             sol::function OnDestroy = (*lua)["OnDestroy"];
             sol::function OnUpdate = (*lua)["OnUpdate"];
 
@@ -47,7 +50,8 @@ void LuaScriptSystem::Update(){
             if(luaScript.hasStarted == false){
                 luaScript.hasStarted = true;
 
-                (*lua)["entity"] = Entity(e, GetScene());
+                (*lua)["entity"] = e; //Entity(e, GetScene());
+                (*lua)["scene"] = scene;
                 auto error2 = luaScript.OnStart();
 
                 if(error2.valid() == false){
@@ -56,7 +60,8 @@ void LuaScriptSystem::Update(){
                 }
             }
 
-            (*lua)["entity"] = Entity(e, GetScene());    
+            (*lua)["entity"] = e; //Entity(e, GetScene());   
+            (*lua)["scene"] = scene; 
             auto error = luaScript.OnUpdate();
 
             if(error.valid() == false){

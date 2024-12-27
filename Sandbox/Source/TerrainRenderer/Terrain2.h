@@ -46,7 +46,7 @@ public:
         ArchiveDumpNVP(ar, terrainHeight);
     }
 
-    static inline void OnGui(Entity e){}
+    static inline void OnGui(Entity e, Scene& scene){}
 
 private:
     Ref<NoiseData> heightmap;

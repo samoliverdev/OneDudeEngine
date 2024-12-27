@@ -84,7 +84,7 @@ struct OD_API RigidbodyComponent{
 
     enum class Type{Dynamic, Static, Kinematic, Trigger};
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     inline RigidbodyComponent::Type GetType(){ return type; }
     void SetType(RigidbodyComponent::Type t);
@@ -161,7 +161,7 @@ struct OD_API RayResult{
     Vector3 hitNormal;
 };
 
-using OnCollisionCallback = void(*)(Entity, Entity);
+using OnCollisionCallback = void(*)(Scene&, Entity, Entity);
 //using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
 struct OD_API PhysicsSystem: public System{
@@ -206,8 +206,8 @@ private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
 
     void CheckForCollisionEvents();
-    void AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t);
-    void RemoveRigidbody(EntityId entityId, RigidbodyComponent& c);
+    void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t);
+    void RemoveRigidbody(Entity entity, RigidbodyComponent& c);
 
     PhysicsWorld* physicsWorld;
     

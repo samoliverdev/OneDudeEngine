@@ -28,7 +28,7 @@ WorldManagerSystem::WorldManagerSystem(Scene* inScene):System(inScene){
 void WorldManagerSystem::Update(){
     OD_PROFILE_SCOPE("WorldManagerSystem::Update");
 
-    camPos = scene->GetMainCamera().GetComponent<TransformComponent>().Position();
+    camPos = scene->GetComponent<TransformComponent>(scene->GetMainCamera()).Position();
     camPos.y = 0;
 
     /*if(loadedChunks.size() == 0) LoadChunk(IVector3(0, 0, 0)); 
@@ -50,7 +50,7 @@ void WorldManagerSystem::OnRender(){
 
 void WorldManagerSystem::OnDrawGizmos(){
     return;
-    TransformComponent& camTrans = scene->GetMainCamera().GetComponent<TransformComponent>();
+    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
     Vector3 editVoxelPos = camTrans.Position() + (-camTrans.Forward() * 2.0f);
     editVoxelPos.x = math::floor(editVoxelPos.x);
     editVoxelPos.y = math::floor(editVoxelPos.y);
@@ -110,7 +110,7 @@ void WorldManagerSystem::OnDrawGizmos(){
 }
 
 void WorldManagerSystem::HandleChunkEdit(){
-    TransformComponent& camTrans = scene->GetMainCamera().GetComponent<TransformComponent>();
+    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
 
     float checkIncrement = 0.1f;
     float step = checkIncrement;
@@ -207,7 +207,7 @@ ChunkComponent* WorldManagerSystem::GetChunkFromWorldPos(Vector3 worldPos){
     worldPos.z = -worldPos.z;
     if(loadedChunksB.count(chunkCoord) <= 0) return nullptr;
 
-    return loadedChunks[chunkCoord].TryGetComponent<ChunkComponent>();
+    return scene->TryGetComponent<ChunkComponent>(loadedChunks[chunkCoord]);
     
     //return loadedChunksB[chunkCoord];
 }
@@ -219,13 +219,13 @@ void WorldManagerSystem::LoadChunk(IVector3 coord){
 
 Entity WorldManagerSystem::BuildChunkMeshEntity(Entity chunkRoot, Ref<Mesh>& mesh, Ref<Material>& material){
     Entity subChunk = scene->AddEntity("SubChunk");
-    scene->SetParent(chunkRoot.Id(), subChunk.Id());
+    scene->SetParent(chunkRoot, subChunk);
     
-    TransformComponent& trans = subChunk.GetComponent<TransformComponent>();
+    TransformComponent& trans = scene->GetComponent<TransformComponent>(subChunk);
     trans.LocalPosition(Vector3Zero);
     trans.LocalEulerAngles(Vector3Zero);
 
-    MeshRendererComponent& meshComponent = subChunk.AddComponent<MeshRendererComponent>();
+    MeshRendererComponent& meshComponent = scene->AddComponent<MeshRendererComponent>(subChunk);
     meshComponent.material = material;
     meshComponent.mesh = mesh;
     meshComponent.mesh->Submit();
@@ -240,7 +240,7 @@ Entity WorldManagerSystem::BuildChunkMeshEntity(Entity chunkRoot, Ref<Mesh>& mes
 }
 
 void WorldManagerSystem::UpdateChunkMeshEntity(Entity subChunk, Ref<Mesh>& mesh, Ref<Material>& material){
-    MeshRendererComponent& meshComponent = subChunk.GetComponent<MeshRendererComponent>();
+    MeshRendererComponent& meshComponent = scene->GetComponent<MeshRendererComponent>(subChunk);
     meshComponent.material = material;
     meshComponent.mesh = mesh;
     meshComponent.mesh->Submit();
@@ -251,7 +251,7 @@ void WorldManagerSystem::UnLoadChunk(IVector3 coord){
     OD_PROFILE_SCOPE("WorldManagerSystem::UnLoadChunk"); 
 
     //LogWarning("Destroing Chunk Entity: %d Coord(%d, %d, %d)", loadedChunks[coord].Id(), coord.x, coord.y, coord.z);
-    scene->DestroyEntity(loadedChunks[coord].Id());
+    scene->DestroyEntity(loadedChunks[coord]);
 }
 
 void WorldManagerSystem::HandleLoadUnload(){
@@ -299,8 +299,8 @@ void WorldManagerSystem::HandleLoadUnload(){
 
         for(int i = 0; i < toLoadCoordsA.size(); i++){
             Entity _chunk = scene->AddEntity("Chunk");
-            ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
-            TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
+            ChunkComponent& chunk = scene->AddComponent<ChunkComponent>(_chunk);
+            TransformComponent& trans = scene->GetComponent<TransformComponent>(_chunk);
             
             chunk.opaqueMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].opaqueMesh, chunkBuilderLayer->materialOpaque);
             chunk.waterMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].waterMesh, chunkBuilderLayer->materialWater);
@@ -438,8 +438,8 @@ void WorldManagerSystem::HandleLoadUnload2(){
         }
         for(int i = 0; i < toLoadCoordsA.size(); i++){
             Entity _chunk = scene->AddEntity("Chunk");
-            ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
-            TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
+            ChunkComponent& chunk = scene->AddComponent<ChunkComponent>(_chunk);
+            TransformComponent& trans = scene->GetComponent<TransformComponent>(_chunk);
             
             chunk.opaqueMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].opaqueMesh, chunkBuilderLayer->materialOpaque);
             chunk.waterMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].waterMesh, chunkBuilderLayer->materialWater);
@@ -466,8 +466,8 @@ void WorldManagerSystem::HandleLoadUnload3(){
         for(int i = 0; i < toLoadCoordsA.size(); i++){
             if(toLoadCoordsB[i].skipMeshGen) continue;
             Entity _chunk = scene->AddEntity("Chunk");
-            ChunkComponent& chunk = _chunk.AddComponent<ChunkComponent>();
-            TransformComponent& trans = _chunk.GetComponent<TransformComponent>();
+            ChunkComponent& chunk = scene->AddComponent<ChunkComponent>(_chunk);
+            TransformComponent& trans = scene->GetComponent<TransformComponent>(_chunk);
             
             chunk.opaqueMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].opaqueMesh, chunkBuilderLayer->materialOpaque);
             chunk.waterMesh = BuildChunkMeshEntity(_chunk, toLoadCoordsB[i].waterMesh, chunkBuilderLayer->materialWater);

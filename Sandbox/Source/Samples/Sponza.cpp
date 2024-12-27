@@ -20,7 +20,7 @@ void SponzaSample::OnInit(){
     sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene->AddEntity("Env");
-    EnvironmentComponent& envComp = env.AddComponent<EnvironmentComponent>();
+    EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
@@ -41,41 +41,41 @@ void SponzaSample::OnInit(){
     _meshRenderer2.SetModel(cubeModel);*/
 
     Entity camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     cam.renderingPath = CameraComponent::RenderingPath::Deferred;
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(7, 2.5, 0));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-8, 90, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 10;
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(7, 2.5, 0));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-8, 90, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 10;
     //camMove.transform = &camera->GetComponent<TransformComponent>()();
     //camMove.moveSpeed = 60;
     cam.farClipPlane = 1000;
 
     Entity light = scene->AddEntity("Directional Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     lightComponent.intensity = 1.5f;
     lightComponent.renderShadow = true;
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(95, 95, -30));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
     Entity pointLight = scene->AddEntity("Point Light");
-    LightComponent& lightComponent2 = pointLight.AddComponent<LightComponent>();
+    LightComponent& lightComponent2 = scene->AddComponent<LightComponent>(pointLight);
     lightComponent2.color = {1,1,0.8f};
     lightComponent2.type = LightComponent::Type::Point;
     lightComponent2.intensity = 5.0f;
     lightComponent2.radius = 100.0f;
     lightComponent2.renderShadow = true;
-    pointLight.GetComponent<TransformComponent>().Position(Vector3(0, 4, 0));
+    scene->GetComponent<TransformComponent>(pointLight).Position(Vector3(0, 4, 0));
 
     Entity pointLight2 = scene->AddEntity("Point Light 2");
-    LightComponent& lightComponent3 = pointLight2.AddComponent<LightComponent>();
+    LightComponent& lightComponent3 = scene->AddComponent<LightComponent>(pointLight2);
     lightComponent3.color = {1,1,0.8f};
     lightComponent3.type = LightComponent::Type::Point;
     lightComponent3.intensity = 3;
     lightComponent3.radius = 5;
     lightComponent3.renderShadow = false;
-    pointLight2.GetComponent<TransformComponent>().Position(Vector3(3, 0.02f, 0));
+    scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));
 
     Application::AddModule<Editor>();
     //scene->Start();

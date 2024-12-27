@@ -11,11 +11,11 @@ struct OD_API LuaScriptComponent{
 
     friend class cereal::access;
     template <class Archive>
-    void serialize(Archive & ar){
+    void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scriptPath);
     }
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     std::string scriptPath;
 private:

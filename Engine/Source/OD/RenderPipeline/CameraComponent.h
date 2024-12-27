@@ -33,7 +33,7 @@ struct OD_API CameraComponent{
     
     void UpdateCameraData(TransformComponent& transform, int width, int height);
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
     static void CreateLuaBind(sol::state& lua);
 
     template <class Archive>

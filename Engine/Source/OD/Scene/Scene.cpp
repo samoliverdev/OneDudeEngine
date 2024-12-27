@@ -91,7 +91,7 @@ Vector3 TransformComponent::Scale(){
 }
 
 void TransformComponent::CreateLuaBind(sol::state& lua){
-    Entity::RegisterMetaComponent<TransformComponent>();
+    Scene::RegisterMetaComponent<TransformComponent>();
     lua.new_usertype<TransformComponent>(
         "TransformComponent",
         "TypeId", &entt::type_hash<TransformComponent>::value,
@@ -117,24 +117,24 @@ void TransformComponent::CreateLuaBind(sol::state& lua){
 #pragma region InfoComponent
 
 void InfoComponent::CreateLuaBind(sol::state& lua){
-    Entity::RegisterMetaComponent<InfoComponent>();
+    Scene::RegisterMetaComponent<InfoComponent>();
     lua.new_usertype<InfoComponent>(
         "InfoComponent",
         "TypeId", &entt::type_hash<InfoComponent>::value,
         sol::call_constructor,
         sol::factories([](){ return InfoComponent(); }),
         "name", &InfoComponent::name,
-        "tag", &InfoComponent::tag,
+        "tag", &InfoComponent::tag//,
         //"Id", [](InfoComponent& cmp){ return cmp.Id(); }
-        "Id", &InfoComponent::Id
+        //"Id", &InfoComponent::Id
     );
 }
 
 #pragma endregion
 
 #pragma region Entity
-bool Entity::IsValid(){ return /*isValid*/ scene != nullptr && scene->registry.valid(id); }
-
+//bool Entity::IsValid(){ return /*isValid*/ scene != nullptr && scene->registry.valid(id); }
+/*
 void Entity::CreateLuaBind(sol::state& lua){
     using namespace entt::literals;
     lua.new_usertype<Entity>(
@@ -162,7 +162,7 @@ void Entity::CreateLuaBind(sol::state& lua){
         "IsValid", &Entity::IsValid
     );
 }
-
+*/
 #pragma endregion
 
 #pragma region Scene
@@ -207,7 +207,7 @@ Scene::~Scene(){
     for(auto i: physicsSystems) delete i;
 }
 
-Entity Scene::AddEntity(std::string name){
+/*Entity Scene::AddEntity(std::string name){
     EntityId e = registry.create();
     
     InfoComponent& info = registry.emplace<InfoComponent>(e);
@@ -221,20 +221,36 @@ Entity Scene::AddEntity(std::string name){
     Assert(registry.any_of<TransformComponent>(e));
 
     return Entity(e, this);
+}*/
+
+Entity Scene::AddEntity(std::string name){
+    Entity e = registry.create();
+    
+    InfoComponent& info = registry.emplace<InfoComponent>(e);
+    info.name = name;
+    //info.id = e;
+    
+    TransformComponent& transform = registry.emplace<TransformComponent>(e);
+    transform.registry = &registry;
+
+    Assert(registry.valid(e));
+    Assert(registry.any_of<TransformComponent>(e));
+
+    return e;
 }
 
-void Scene::DestroyEntity(EntityId entity){
+void Scene::DestroyEntity(Entity entity){
     //if(registry.valid(entity) == false) return;
     //_DestroyEntity(entity);
     toDestroy.push_back(entity);
 }
 
-void Scene::DestroyEntityImmediate(EntityId entity){
+void Scene::DestroyEntityImmediate(Entity entity){
     if(registry.valid(entity) == false) return;
     _DestroyEntity(entity, true);
 }
 
-bool Scene::IsChildOf(EntityId parent, EntityId child){
+bool Scene::IsChildOf(Entity parent, Entity child){
     TransformComponent& _parent = registry.get<TransformComponent>(parent);
 
     for(auto i: _parent.children){
@@ -246,7 +262,7 @@ bool Scene::IsChildOf(EntityId parent, EntityId child){
     return false;
 }
 
-void Scene::CleanParent(EntityId e){
+void Scene::CleanParent(Entity e){
     TransformComponent& entity = registry.get<TransformComponent>(e);
 
     if(entity.HasParent()){
@@ -261,7 +277,7 @@ void Scene::CleanParent(EntityId e){
     entity.hasParent = false;
 }
 
-void Scene::SetParent(EntityId parent, EntityId child){
+void Scene::SetParent(Entity parent, Entity child){
     if(parent == child){
         LogWarning("ERROR: Trying set parent with itself");
         return;
@@ -293,6 +309,10 @@ void Scene::SetParent(EntityId parent, EntityId child){
     _child.hasParent = true;
 }
 
+bool Scene::IsValid(Entity id){
+    return registry.valid(id); 
+}
+
 Entity Scene::Instantiate(const Ref<Model> model){
     if(model == nullptr){
         LogWarning("Trying instantiate a null model");
@@ -303,8 +323,8 @@ Entity Scene::Instantiate(const Ref<Model> model){
 
     for(auto i: model->renderTargets){
         Entity mesh = AddEntity(model->skeleton.GetJointName(i.bindPoseIndex));
-        MeshRendererComponent& meshRenderer = mesh.AddComponent<MeshRendererComponent>();
-        TransformComponent& transform = mesh.GetComponent<TransformComponent>();
+        MeshRendererComponent& meshRenderer = AddComponent<MeshRendererComponent>(mesh);
+        TransformComponent& transform = GetComponent<TransformComponent>(mesh);
 
         meshRenderer.material = model->materials[i.materialIndex];
         meshRenderer.mesh = model->meshs[i.meshIndex];
@@ -315,7 +335,7 @@ Entity Scene::Instantiate(const Ref<Model> model){
         transform.LocalScale(targetMatrix.LocalScale());
         meshRenderer.UpdateAABB();
 
-        SetParent(root.id, mesh.id);
+        SetParent(root, mesh);
     }
 
     return root;
@@ -330,9 +350,9 @@ Entity Scene::GetMainCamera(){
     for(auto e: camView){
         CameraComponent& cam = camView.get<CameraComponent>(e);
         if(cam.isMain == false) continue;
-        return Entity(e, this);
+        return e; //Entity(e, this);
     }
-    return Entity();
+    return EntityNull; //Entity();
 }
 
 void Scene::Start(){
@@ -552,7 +572,7 @@ Entity Scene::InstantiatePrefab(const char* path){
 
     for(auto i: entities){
         loadLookup[i] = registry.create();
-        if(i == entities[0]) root = Entity(loadLookup[i], this);
+        if(i == entities[0]) root = loadLookup[i]; //Entity(loadLookup[i], this);
     } 
 
     _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
@@ -581,7 +601,7 @@ Entity Scene::InstantiatePrefab(const char* path){
     return root;
 }
 
-void Scene::_DestroyEntity(EntityId entity, bool removeFromParent){
+void Scene::_DestroyEntity(Entity entity, bool removeFromParent){
     Assert(registry.valid(entity));
     Assert(registry.any_of<TransformComponent>(entity));
     TransformComponent& transform = registry.get<TransformComponent>(entity);
@@ -609,6 +629,8 @@ void Scene::_DestroyEntity(EntityId entity, bool removeFromParent){
 }
 
 void Scene::CreateLuaBind(sol::state& lua){
+    using namespace entt::literals;
+    //lua["EntityNull"] = [](){ return 10; };
     lua.new_usertype<Scene>(
         "Scene",
         "Running", &Scene::Running,
@@ -617,10 +639,54 @@ void Scene::CreateLuaBind(sol::state& lua){
         "DestroyEntityImmediate", &Scene::DestroyEntityImmediate,
         "IsChildOf", &Scene::IsChildOf, 
         "CleanParent", &Scene::CleanParent,
-        "SetParent", sol::overload(
-            [](Scene& s, EntityId parent, EntityId child){ s.SetParent(parent, child);},
-            [](Scene& s, Entity& parent, Entity& child){ s.SetParent(parent, child);}
-        )
+        "SetParent", &Scene::SetParent, //[](Scene& s, Entity parent, Entity child){ s.SetParent(parent, child); },
+        "GetInfoComponent", &Scene::GetComponent<InfoComponent>,
+        "GetTransformComponent", &Scene::GetComponent<TransformComponent>,
+        "AddComponent", [](Scene& scene, Entity e, const sol::table& comp, sol::this_state s) -> sol::object{
+            if(!comp.valid()) return sol::lua_nil_t{};
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_AddComponent"_hs, &scene, e, comp, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "HasComponent", [](Scene& scene, Entity e, const sol::table& comp){
+            const auto hasComp = InvokeMetaFunction(GetIdType(comp), "_HasComponent"_hs, &scene, e);
+            return hasComp ? hasComp.cast<bool>() : false;
+        },
+        "GetComponent", [](Scene& scene, Entity e, const sol::table& comp, sol::this_state s){
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_GetComponent"_hs, &scene, e, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "RemoveComponent", [](Scene& scene, Entity e, const sol::table& comp){
+            InvokeMetaFunction(GetIdType(comp), "_RemoveComponent"_hs, &scene, e);
+        },
+        "IsValid", &Scene::IsValid
+    );
+}
+
+void EntityHandle::CreateLuaBind(sol::state& lua){
+    using namespace entt::literals;
+    lua.new_usertype<EntityHandle>(
+        "EntityHandle",
+        "GetInfoComponent", &EntityHandle::GetComponent<InfoComponent>,
+        "GetTransformComponent", &EntityHandle::GetComponent<TransformComponent>,
+        "AddComponent", [](EntityHandle& e, const sol::table& comp, sol::this_state s) -> sol::object{
+            if(!comp.valid()) return sol::lua_nil_t{};
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_AddComponent"_hs, e.scene, e.entity, comp, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "HasComponent", [](EntityHandle& e, const sol::table& comp){
+            const auto hasComp = InvokeMetaFunction(GetIdType(comp), "_HasComponent"_hs, e.scene, e.entity);
+            return hasComp ? hasComp.cast<bool>() : false;
+        },
+        "GetComponent", [](EntityHandle& e, const sol::table& comp, sol::this_state s){
+            const auto component = InvokeMetaFunction(GetIdType(comp), "_GetComponent"_hs, e.scene, e.entity, s);
+            return component ? component.cast<sol::reference>() : sol::lua_nil_t{};
+        },
+        "RemoveComponent", [](EntityHandle& e, const sol::table& comp){
+            InvokeMetaFunction(GetIdType(comp), "_RemoveComponent"_hs, e.scene, e.entity);
+        },
+        "GetScene", &EntityHandle::GetScene,
+        "GetEntity", &EntityHandle::GetEntity,
+        "IsValid", &EntityHandle::IsValid
     );
 }
 

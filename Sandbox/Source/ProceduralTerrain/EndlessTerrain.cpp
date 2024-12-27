@@ -28,7 +28,7 @@ void EndlessTerrain::OnUpdate(){
 
     float loadDstThreshold = 50;
 
-    TransformComponent& camTrans = GetEntity().GetScene()->GetMainCamera().GetComponent<TransformComponent>();
+    TransformComponent& camTrans = GetScene()->GetComponent<TransformComponent>(GetScene()->GetMainCamera());
     viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
     if(math::distance2(viewPos, lastViewPos) > loadDstThreshold*loadDstThreshold || loadedChunks.size() <= 0){
@@ -76,12 +76,12 @@ bool EndlessTerrain::WaitingFinishMeshUpdate(){
 
             if(loadedChunks.count(coord)){
                 Entity chunk = loadedChunks[coord];
-                MeshRendererComponent& meshRenderer = chunk.GetComponent<MeshRendererComponent>();
+                MeshRendererComponent& meshRenderer = GetScene()->GetComponent<MeshRendererComponent>(chunk);
                 meshRenderer.mesh = toLoadDatas[_loadingJobs].mesh->CreateMesh();
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
 
-                RigidbodyComponent& rb = chunk.GetComponent<RigidbodyComponent>();
+                RigidbodyComponent& rb = GetScene()->GetComponent<RigidbodyComponent>(chunk);
                 rb.SetShape(CollisionShape::MeshShape(toLoadDatas[_loadingJobs].mesh->shapeData /*meshRenderer.mesh*/));
 
                 //meshRenderer.mesh->ClearRuntimeData();
@@ -89,16 +89,16 @@ bool EndlessTerrain::WaitingFinishMeshUpdate(){
                 Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
                 Assert(toLoadDatas[_loadingJobs].mesh != nullptr);
 
-                Entity chunk = GetEntity().GetScene()->AddEntity("Chunk");
-                GetEntity().GetScene()->SetParent(GetEntity().Id(), chunk.Id());
-                TransformComponent& trans = chunk.GetComponent<TransformComponent>();
+                Entity chunk = GetScene()->AddEntity("Chunk");
+                GetScene()->SetParent(GetEntity(), chunk);
+                TransformComponent& trans = GetScene()->GetComponent<TransformComponent>(chunk);
                 trans.LocalPosition(pos);
-                MeshRendererComponent& meshRenderer = chunk.AddComponent<MeshRendererComponent>();
+                MeshRendererComponent& meshRenderer = GetScene()->AddComponent<MeshRendererComponent>(chunk);
                 meshRenderer.mesh = toLoadDatas[_loadingJobs].mesh->CreateMesh();
                 meshRenderer.material = material;
                 meshRenderer.UpdateAABB();
 
-                RigidbodyComponent& rb = chunk.AddOrGetComponent<RigidbodyComponent>();
+                RigidbodyComponent& rb = GetScene()->AddOrGetComponent<RigidbodyComponent>(chunk);
                 rb.SetShape(CollisionShape::MeshShape(toLoadDatas[_loadingJobs].mesh->shapeData /*meshRenderer.mesh*/));
                 rb.SetType(RigidbodyComponent::Type::Static);
                 rb.Mass(0);

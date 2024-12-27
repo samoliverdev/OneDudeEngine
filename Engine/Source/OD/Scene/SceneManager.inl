@@ -79,16 +79,16 @@ void SceneManager::RegisterCoreComponent(const char* name){
 
     SerializeFuncs funcs;
 
-    funcs.hasComponent = [](Entity& e){ return e.HasComponent<T>(); };
-    funcs.addComponent = [](Entity& e){ e.AddOrGetComponent<T>(); };
-    funcs.removeComponent = [](Entity& e){ e.RemoveComponent<T>(); };
+    funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
+    funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
+    funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
 
-    funcs.onGui = [](Entity& e){
+    funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){
-            e.AddOrGetComponent<T>();
-            T::OnGui(e);
+            scene.AddOrGetComponent<T>(e);
+            T::OnGui(e, scene);
         } else {
-            T& c = e.AddOrGetComponent<T>();
+            T& c = scene.AddOrGetComponent<T>(e);
             cereal::ImGuiArchive uiArchive;
             uiArchive(c);
         }
@@ -163,16 +163,16 @@ void SceneManager::RegisterComponent(const char* name){
 
     SerializeFuncs funcs;
 
-    funcs.hasComponent = [](Entity& e){ return e.HasComponent<T>(); };
-    funcs.addComponent = [](Entity& e){ e.AddOrGetComponent<T>(); };
-    funcs.removeComponent = [](Entity& e){ e.RemoveComponent<T>(); };
+    funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
+    funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
+    funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
 
-    funcs.onGui = [](Entity& e){
+    funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){
-            e.AddOrGetComponent<T>();
-            T::OnGui(e);
+            scene.AddOrGetComponent<T>(e);
+            T::OnGui(e, scene);
         } else {
-            T& c = e.AddOrGetComponent<T>();
+            T& c = scene.AddOrGetComponent<T>(e);
             cereal::ImGuiArchive uiArchive;
             uiArchive(c);
         }
@@ -203,23 +203,23 @@ void SceneManager::RegisterScript(const char* name){
 
     SerializeFuncs funcs;
 
-    funcs.hasComponent = [](Entity& e){
-        if(e.HasComponent<ScriptComponent>() == false) return false;
+    funcs.hasComponent = [](Entity& e, Scene& scene){
+        if(scene.HasComponent<ScriptComponent>(e) == false) return false;
 
-        auto& c = e.GetComponent<ScriptComponent>();
+        auto& c = scene.GetComponent<ScriptComponent>(e);
         return c.HasScript<T>();
     };
 
-    funcs.onGui = [](Entity& e){
+    funcs.onGui = [](Entity& e, Scene& scene){
         /*auto& c = e.GetComponent<ScriptComponent>();
         T* script = c.GetScript<T>();
         cereal::ImGuiArchive uiArchive;
         uiArchive(*script);*/
 
         if constexpr(HasOnGui<T>::value){
-            T::OnGui(e);
+            T::OnGui(e, scene);
         } else {
-            auto& c = e.GetComponent<ScriptComponent>();
+            auto& c = scene.GetComponent<ScriptComponent>(e);
             T* script = c.GetScript<T>();
             cereal::ImGuiArchive uiArchive;
             uiArchive(*script);

@@ -24,7 +24,7 @@ struct RotateScript: public Script{
    float speed = 40;
 
    inline void OnUpdate() override {
-      TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
+      TransformComponent& transform = scene->GetComponent<TransformComponent>(entity);
       transform.LocalEulerAngles(Vector3(transform.LocalEulerAngles().x, Platform::GetTime() * speed, transform.LocalEulerAngles().z));
    }
 

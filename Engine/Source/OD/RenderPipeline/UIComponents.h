@@ -61,7 +61,7 @@ struct OD_API RectTransformComponet{
     Vector2 anchors = {0, 0};
     Vector2 size = {100, 100};
 
-    EntityId canvasRoot;
+    Entity canvasRoot;
 
     template <class Archive>
     void serialize(Archive& ar){

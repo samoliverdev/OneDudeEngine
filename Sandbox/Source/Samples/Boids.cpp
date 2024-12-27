@@ -111,47 +111,47 @@ void BoidsSample::OnInit(){
     boidModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity e = scene->AddEntity("Floor");
-    e.GetComponent<TransformComponent>().Position(Vector3(0, -(boundsSize/2), 0));
-    e.GetComponent<TransformComponent>().LocalScale(Vector3(15, 1, 15));
-    ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e).Position(Vector3(0, -(boundsSize/2), 0));
+    scene->GetComponent<TransformComponent>(e).LocalScale(Vector3(15, 1, 15));
+    ModelRendererComponent& _meshRenderer = scene->AddComponent<ModelRendererComponent>(e);
     _meshRenderer.SetModel(floorModel);
     _meshRenderer.GetMaterialsOverride()[0] = floorMaterial;
 
     Entity camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 150, 150));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 150, 150));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     //camMove.transform = &camera->GetComponent<TransformComponent>()();
     //camMove.moveSpeed = 60;
     cam.farClipPlane = 1000;
 
     Entity light = scene->AddEntity("Directional Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     lightComponent.intensity = 1.5f;
     lightComponent.renderShadow = true;
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
     float posRange = 200;
     Entity boids = scene->AddEntity("Boids");
     
     for(int i = 0; i < 1000; i++){
         Entity boid = scene->AddEntity("Boid" + std::to_string(random(0, 200)));
-        ModelRendererComponent& mr = boid.AddComponent<ModelRendererComponent>();
+        ModelRendererComponent& mr = scene->AddComponent<ModelRendererComponent>(boid);
         mr.SetModel(boidModel);
         mr.GetMaterialsOverride()[0] = boidMaterial;
 
-        TransformComponent& trans = boid.GetComponent<TransformComponent>();
+        TransformComponent& trans = scene->GetComponent<TransformComponent>(boid);
         trans.LocalPosition(Vector3(random(-posRange, posRange), random(-posRange, posRange), random(-posRange, posRange)));
         trans.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
 
-        BoidComponent& boidComponet = boid.AddComponent<BoidComponent>();
+        BoidComponent& boidComponet = scene->AddComponent<BoidComponent>(boid);
         boidComponet.velocity = trans.Forward();
     
         scene->SetParent(boids, boid);

@@ -54,7 +54,7 @@ struct Rigidbody{
     btDynamicsWorld* world = nullptr;
     btDefaultMotionState* motionState = nullptr;
 
-    EntityId entityId;
+    Entity entity;
 };
 
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
@@ -122,7 +122,7 @@ public:
         return;
 
         if(scene != nullptr){
-            TransformComponent& cam = scene->GetMainCamera().GetComponent<TransformComponent>();
+            TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
             if(math::distance(cam.Position(), FromBullet(from)) > 50) return;
         }
 
@@ -175,8 +175,8 @@ Debuger debuger;
 
 #pragma region RigidbodyComponent
 
-void RigidbodyComponent::OnGui(Entity& e){
-    RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
+void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
+    RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
 
     const char* optionsString[] = {"Dynamic", "Static", "Kinematic", "Trigger"};
     const char* curOptionString = optionsString[(int)rb.GetType()];
@@ -642,29 +642,29 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 Assert(r1 != nullptr);
                 Assert(r2 != nullptr);
                 
-                Entity e1 = Entity(r1->entityId, scene);
-                Entity e2 = Entity(r2->entityId, scene);
-                Assert(e1.HasComponent<InfoComponent>());
-                Assert(e2.HasComponent<InfoComponent>());
+                Entity e1 = r1->entity; //Entity(r1->entityId, scene);
+                Entity e2 = r2->entity; //Entity(r2->entityId, scene);
+                Assert(scene->HasComponent<InfoComponent>(e1));
+                Assert(scene->HasComponent<InfoComponent>(e2));
 
-                LogInfo("OnCollision %s <==> %s", e1.GetComponent<InfoComponent>().name.c_str(), e2.GetComponent<InfoComponent>().name.c_str());
+                LogInfo("OnCollision %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
                 //LogInfo("OnTriggerCallbacks: %zd", onTriggerCallbacks.size());
 
                 for(auto i: onCollisionEnterCallbacks){
-                    i(e1, e2);
+                    i(*scene, e1, e2);
                 }
 
-                RigidbodyComponent& _r1 = e1.GetComponent<RigidbodyComponent>();
-                RigidbodyComponent& _r2 = e2.GetComponent<RigidbodyComponent>();
+                RigidbodyComponent& _r1 = scene->GetComponent<RigidbodyComponent>(e1);
+                RigidbodyComponent& _r2 = scene->GetComponent<RigidbodyComponent>(e2);
                 
                 if(_r1.GetType() == RigidbodyComponent::Type::Trigger){
                     for(auto i: onTriggerEnterCallbacks){
-                        i(e1, e2);
+                        i(*scene, e1, e2);
                     }
                 }
                 if(_r2.GetType() == RigidbodyComponent::Type::Trigger){
                     for(auto i: onTriggerEnterCallbacks){
-                        i(e2, e1);
+                        i(*scene, e2, e1);
                     }
                 }
 			}
@@ -700,27 +700,27 @@ void PhysicsSystem::CheckForCollisionEvents(){
         Assert(r1 != nullptr);
         Assert(r2 != nullptr);
 
-        Entity e1 = Entity(r1->entityId, scene);
-        Entity e2 = Entity(r2->entityId, scene);
-        Assert(e1.HasComponent<InfoComponent>());
-        Assert(e2.HasComponent<InfoComponent>());
-        LogInfo("OnSeparation %s <==> %s", e1.GetComponent<InfoComponent>().name.c_str(), e2.GetComponent<InfoComponent>().name.c_str());
+        Entity e1 = r1->entity; //Entity(r1->entityId, scene);
+        Entity e2 = r2->entity;// Entity(r2->entityId, scene);
+        Assert(scene->HasComponent<InfoComponent>(e1));
+        Assert(scene->HasComponent<InfoComponent>(e2));
+        LogInfo("OnSeparation %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
 
         for(auto i: onCollisionExitCallbacks){
-            i(e1, e2);
+            i(*scene, e1, e2);
         }
 
-        RigidbodyComponent& _r1 = e1.GetComponent<RigidbodyComponent>();
-        RigidbodyComponent& _r2 = e2.GetComponent<RigidbodyComponent>();
+        RigidbodyComponent& _r1 = scene->GetComponent<RigidbodyComponent>(e1);
+        RigidbodyComponent& _r2 = scene->GetComponent<RigidbodyComponent>(e2);
         
         if(_r1.GetType() == RigidbodyComponent::Type::Trigger){
             for(auto i: onTriggerExitCallbacks){
-                i(e1, e2);
+                i(*scene, e1, e2);
             }
         }
         if(_r2.GetType() == RigidbodyComponent::Type::Trigger){
             for(auto i: onTriggerExitCallbacks){
-                i(e2, e1);
+                i(*scene, e2, e1);
             }
         }
 	}
@@ -757,11 +757,11 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
         // like the ground plane
         //if(pBody->isStaticObject() || pBody->isKinematicObject()) return false;
 
-        EntityId entityId = static_cast<Rigidbody*>(pBody->getUserPointer())->entityId;
+        Entity entity = static_cast<Rigidbody*>(pBody->getUserPointer())->entity;
 
         // set the result data
         //hit.pBody = pBody;
-        hit.entity = Entity(entityId, scene);
+        hit.entity = entity; //Entity(entityId, scene);
         hit.hitPoint = FromBullet(rayCallback.m_hitPointWorld);
         hit.hitNormal = FromBullet(rayCallback.m_hitNormalWorld);
         return true;
@@ -802,7 +802,7 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
     onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
 }
 
-void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, TransformComponent& t){
+void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     //LogInfo("Add Rigidbody");
@@ -811,7 +811,7 @@ void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, Trans
     data->world = physicsWorld->world;
     
     c.data = data;
-    c.data->entityId = entityId;
+    c.data->entity = entity;
 
     Vector3 pos = t.Position();
     Quaternion rot = t.Rotation();
@@ -846,7 +846,7 @@ void PhysicsSystem::AddRigidbody(EntityId entityId, RigidbodyComponent& c, Trans
     data->updating = false;
 }
 
-void PhysicsSystem::RemoveRigidbody(EntityId entityId, RigidbodyComponent& rb){
+void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     
     //LogInfo("Remove Rigidbody");
@@ -869,7 +869,6 @@ void PhysicsSystem::RemoveRigidbody(EntityId entityId, RigidbodyComponent& rb){
     delete data;
     rb.data = nullptr;
 }
-
 
 #pragma endregion
 

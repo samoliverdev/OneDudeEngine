@@ -17,7 +17,7 @@ struct CameraController: public Script{
     float currentX = 0.0f;
     float currentY = 0.0f;
 
-    EntityId lookAtTarget;
+    Entity lookAtTarget;
 
     double lastMousePosX = 0.0;
     double lastMousePosY = 0.0;
@@ -32,10 +32,10 @@ struct CameraController: public Script{
             if(Input::IsMouseButtonDown(MouseButton::Left)) Platform::SetCursorState(CursorState::Disabled);
         }
 
-        TransformComponent& transform = GetEntity().GetComponent<TransformComponent>();
+        TransformComponent& transform = GetScene()->GetComponent<TransformComponent>(GetEntity());
 
-        Entity target(lookAtTarget, GetEntity().GetScene());
-        TransformComponent& lookAt = target.GetComponent<TransformComponent>();
+        //Entity target(lookAtTarget, GetEntity().GetScene());
+        TransformComponent& lookAt = GetScene()->GetComponent<TransformComponent>(lookAtTarget); //target.GetComponent<TransformComponent>();
         Vector3 lookAtPos = lookAt.Position() + Vector3Up * upOffset;
 
         double mousePosX;
@@ -88,7 +88,7 @@ struct PlayerController: public Script{
         Assert(runningAnimation != nullptr);
 
         shootClip = AssetManager::Get().LoadAsset<AudioClip>("Sandbox/Sounds/633250__aesterial-arts__arcade-shoot.wav");
-        AudioSourceComponent& audioSource = GetEntity().AddComponent<AudioSourceComponent>();
+        AudioSourceComponent& audioSource = GetScene()->AddComponent<AudioSourceComponent>(GetEntity());
         audioSource.clip = shootClip;
     }
 
@@ -106,8 +106,8 @@ struct PlayerController: public Script{
 
     void OnUpdate() override{
         Vector3 moveDir = Vector3Zero;
-        RigidbodyComponent& rb = GetEntity().GetComponent<RigidbodyComponent>();
-        AnimatorComponent& anim = GetEntity().GetComponent<AnimatorComponent>();
+        RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(entity);
+        AnimatorComponent& anim = scene->GetComponent<AnimatorComponent>(entity);
 
         /*if(Input::IsKey(KeyCode::W)) moveDir += Vector3Back;
         if(Input::IsKey(KeyCode::S)) moveDir += Vector3Forward;
@@ -115,7 +115,7 @@ struct PlayerController: public Script{
         if(Input::IsKey(KeyCode::D)) moveDir += Vector3Right;
         if(math::length(moveDir) > 1) moveDir = math::normalize(moveDir);*/
 
-        TransformComponent& cam = GetEntity().GetScene()->GetMainCamera().GetComponent<TransformComponent>();
+        TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
         moveDir = cam.Right() * GetAxisHorizontal() + cam.Back() * GetAxisVertical();
         moveDir.y = 0.0f;
         if(math::length(moveDir) > 1) moveDir = math::normalize(moveDir);
@@ -135,7 +135,7 @@ struct PlayerController: public Script{
             if(anim.controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, 0.1f);
         }
 
-        AudioSourceComponent& audioSource = GetEntity().GetComponent<AudioSourceComponent>();
+        AudioSourceComponent& audioSource = scene->GetComponent<AudioSourceComponent>(entity);
         if(Input::IsKeyDown(KeyCode::Space)){
             audioSource.Play();
         }
@@ -161,22 +161,22 @@ void CharacterControllerSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
 
     Entity floorEntity = scene->AddEntity("Floor");
-    ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
     floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
     floorEntityP.Mass(0);
     floorEntityP.SetType(RigidbodyComponent::Type::Static);
@@ -184,18 +184,18 @@ void CharacterControllerSample::OnInit(){
     //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
     Entity e2 = scene->AddEntity("Cube");
-    e2.GetComponent<TransformComponent>().Position(Vector3(8, 0, 4));
-    e2.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
-    ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e2).Position(Vector3(8, 0, 4));
+    scene->GetComponent<TransformComponent>(e2).LocalScale(Vector3(4*1, 4*1, 4*1));
+    ModelRendererComponent& _meshRenderer2 = scene->AddComponent<ModelRendererComponent>(e2);
     Assert(cubeModel != nullptr); 
     _meshRenderer2.SetModel(cubeModel);
     Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
     
     Entity e3 = scene->AddEntity("Cube2");
-    e3.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -4));
-    e3.GetComponent<TransformComponent>().LocalScale(Vector3(4*1, 4*1, 4*1));
-    ModelRendererComponent& _meshRenderer3 = e3.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e3).Position(Vector3(-8, 0, -4));
+    scene->GetComponent<TransformComponent>(e3).LocalScale(Vector3(4*1, 4*1, 4*1));
+    ModelRendererComponent& _meshRenderer3 = scene->AddComponent<ModelRendererComponent>(e3);
     Assert(cubeModel != nullptr); 
     _meshRenderer3.SetModel(cubeModel);
     Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
@@ -206,33 +206,33 @@ void CharacterControllerSample::OnInit(){
     charIdleModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity playerEntity = scene->AddEntity("PlayerController");
-    TransformComponent& charTrans = playerEntity.GetComponent<TransformComponent>();
+    TransformComponent& charTrans = scene->GetComponent<TransformComponent>(playerEntity);
     //charTrans.LocalScale(Vector3(0.01f));
-    SkinnedModelRendererComponent& charRenderer = playerEntity.AddComponent<SkinnedModelRendererComponent>();
+    SkinnedModelRendererComponent& charRenderer = scene->AddComponent<SkinnedModelRendererComponent>(playerEntity);
     charRenderer.localTransform.LocalScale(Vector3(200));
     charRenderer.skeletonTransform.LocalScale(Vector3(0.01f));
     charRenderer.SetModel(charIdleModel);
     charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
     charRenderer.UpdatePosePalette();
-    RigidbodyComponent& rb = playerEntity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& rb = scene->AddComponent<RigidbodyComponent>(playerEntity);
     rb.NeverSleep(true);
     rb.SetShape(CollisionShape::CapsuleShape(0.5f, 2.5f, Vector3(0, 1.25f, 0)));
-    PlayerController* playerController = playerEntity.AddComponent<ScriptComponent>().AddScript<PlayerController>();
+    PlayerController* playerController = scene->AddComponent<ScriptComponent>(playerEntity).AddScript<PlayerController>();
     playerController->idleAnimation = charIdleModel->animationClips[0].get();
     playerController->runningAnimation = charRunningModel->animationClips[0].get();
     //rb.SetType(RigidbodyComponent::Type::Kinematic);
     LogInfo("CharModel Skeleton RestPose Size: %d", charIdleModel->skeleton.GetRestPose().Size());
     Assert(charRenderer.posePalette.size() == charIdleModel->skeleton.GetRestPose().Size());
-    AnimatorComponent& charAnim = playerEntity.AddComponent<AnimatorComponent>();
+    AnimatorComponent& charAnim = scene->AddComponent<AnimatorComponent>(playerEntity);
     charAnim.Play(charIdleModel->animationClips[0].get());
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.farClipPlane = 1000;
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     //camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
-    camera.AddComponent<ScriptComponent>().AddScript<CameraController>()->lookAtTarget = playerEntity.Id();
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraController>()->lookAtTarget = playerEntity;
     
     /*Entity navmeshEntity = scene->AddEntity("Navmesh");
     NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();

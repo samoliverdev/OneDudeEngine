@@ -5,8 +5,8 @@
 
 namespace OD{
 
-void LightComponent::OnGui(Entity& e){
-    LightComponent& light = e.GetComponent<LightComponent>();
+void LightComponent::OnGui(Entity& e, Scene& scene){
+    LightComponent& light = scene.GetComponent<LightComponent>(e);
 
     /*cereal::ImGuiArchive uiArchive;
     //cereal::ImGuiArchive::Options colorOpt;
@@ -77,7 +77,7 @@ void LightComponent::CreateLuaBind(sol::state& lua){
         "Spot", LightComponent::Type::Spot
     );
 
-    Entity::RegisterMetaComponent<LightComponent>();
+    Scene::RegisterMetaComponent<LightComponent>();
     lua.new_usertype<LightComponent>(
         "LightComponent",
         "TypeId", &entt::type_hash<LightComponent>::value,

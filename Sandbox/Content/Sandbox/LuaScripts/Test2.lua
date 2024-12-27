@@ -2,19 +2,22 @@ local text = "Script2"
 
 function OnStart()
     print("Lua OnStart 2", text)
-    LogInfo(entity:GetInfoComponent().name)
+    LogInfo(scene:GetInfoComponent(entity).name) --LogInfo(entity:GetInfoComponent().name)
 
-    local transform = entity:GetTransformComponent()
+    local transform = scene:GetTransformComponent(entity) --entity:GetTransformComponent()
     transform:LocalPosition(Vector3(0, 10, 20))
 
     Application.Vsync(false)
+
+    --local invalidEntity = EntityNull();
+    --print(scene:IsValid(invalidEntity));
     
-    local fromLua = entity:GetScene():AddEntity("From Lua")
-    local light = fromLua:AddComponent(LightComponent())
+    local fromLua = scene:AddEntity("From Lua") --entity:GetScene():AddEntity("From Lua")
+    local light = scene:AddComponent(fromLua, LightComponent()) --fromLua:AddComponent(LightComponent())
     light.color = Color(0, 0, 1, 0)
     light.type = LightComponentType.Point
     light.renderShadow = true
-    local lightT = fromLua:GetComponent(TransformComponent())
+    local lightT =  scene:GetComponent(fromLua, TransformComponent()) --fromLua:GetComponent(TransformComponent())
     lightT:LocalPosition(Vector3(0, 1, 0))
 
     local tex = Texture2D.CreateFromFile("Engine/Textures/White.jpg", Texture2DSetting())

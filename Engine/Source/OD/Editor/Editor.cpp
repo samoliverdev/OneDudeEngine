@@ -259,7 +259,7 @@ void Editor::NewScene(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity e = scene->AddEntity("Enviroment");
-    e.AddComponent<EnvironmentComponent>();
+    scene->AddComponent<EnvironmentComponent>(e);
 
     UnselectAll();
     curScenePath = "";
@@ -528,16 +528,19 @@ void Editor::DrawMainWorkspace(){
 }
 
 void Editor::DrawGizmos(){
-    if(selectionEntity.IsValid() == false) return;
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    Scene& scene = *SceneManager::Get().GetActiveScene();
+
+    if(scene.IsValid(selectionEntity) == false) return;
     if(gizmoType == Editor::GizmosType::None) return;
 
     Camera cam = editorCam.cam;
 
     if(SceneManager::Get().GetActiveScene()->Running()){
-        Entity camE = SceneManager::Get().GetActiveScene()->GetMainCamera();
-        if(camE.IsValid() == false) return;
+        Entity camE = scene.GetMainCamera();
+        if(scene.IsValid(camE) == false) return;
 
-        CameraComponent& cameraComponent = camE.GetComponent<CameraComponent>();
+        CameraComponent& cameraComponent = scene.GetComponent<CameraComponent>(camE);
         cam = cameraComponent.GetCamera();
     }
     
@@ -553,7 +556,7 @@ void Editor::DrawGizmos(){
     Matrix4 view = cam.view;
     Matrix4 projection = cam.projection;
 
-    TransformComponent& tc = selectionEntity.GetComponent<TransformComponent>();
+    TransformComponent& tc = scene.GetComponent<TransformComponent>(selectionEntity);
     Matrix4 trans = tc.GlobalModelMatrix();
 
     bool snap = Input::IsKey(KeyCode::Control);

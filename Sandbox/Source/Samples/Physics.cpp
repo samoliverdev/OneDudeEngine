@@ -15,9 +15,7 @@ void PhysicsCubeS::OnStart(){
 
     LogInfo("PhysicsCubeS OnStart");
     
-    Assert(GetEntity().IsValid() == true);
-
-    Entity& entity = GetEntity();
+    Assert(scene->IsValid(entity) == true);
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
     //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
@@ -25,10 +23,10 @@ void PhysicsCubeS::OnStart(){
     //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
     cubeModel->materials[0] = LoadMaterial1();
 
-    ModelRendererComponent& renderer = entity.AddOrGetComponent<ModelRendererComponent>();
+    ModelRendererComponent& renderer = scene->AddOrGetComponent<ModelRendererComponent>(entity);
     renderer.SetModel(cubeModel);
 
-    RigidbodyComponent& physicObject = entity.AddOrGetComponent<RigidbodyComponent>();
+    RigidbodyComponent& physicObject = scene->AddOrGetComponent<RigidbodyComponent>(entity);
     physicObject.NeverSleep(true);
     
     //physicObject->boxShapeSize = {1,1,1};
@@ -42,7 +40,7 @@ void PhysicsCubeS::OnUpdate(){
     ///*
     t += Application::DeltaTime();
     if(t > timeToDestroy){
-        GetEntity().GetScene()->DestroyEntity(GetEntity().Id());
+        scene->DestroyEntity(entity);
         //LogInfo("ToDestroy");
     }
     //*/
@@ -61,59 +59,59 @@ void PhysicsSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity text = scene->AddEntity("Text");
-    text.GetComponent<TransformComponent>().LocalPosition(Vector3(25.0f, 25.0f, 0));
-    TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
+    scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
+    TextRendererComponent& textRenderer = scene->AddComponent<TextRendererComponent>(text);
     textRenderer.text = "Ai meu cu!!!";
     textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 
     Entity sprite = scene->AddEntity("Sprite");
-    sprite.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 2, 0));
-    SpriteRendererComponent& spriteRenderer = sprite.AddComponent<SpriteRendererComponent>();
+    scene->GetComponent<TransformComponent>(sprite).LocalPosition(Vector3(0, 2, 0));
+    SpriteRendererComponent& spriteRenderer = scene->AddComponent<SpriteRendererComponent>(sprite);
     spriteRenderer.sprite = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/character_1.png"); 
     spriteRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     //spriteRenderer.texture = CreateRef<Texture2D>("Sandbox/Textures/character_1.png", Texture2DSetting()); // Erro 
     spriteRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
 
     Entity canvas = scene->AddEntity("Canvas");
-    CanvasComponent& can = canvas.AddComponent<CanvasComponent>();
+    CanvasComponent& can = scene->AddComponent<CanvasComponent>(canvas);
 
     Entity uiImage = scene->AddEntity("UIImage");
-    RectTransformComponet& rect = uiImage.AddComponent<RectTransformComponet>();
+    RectTransformComponet& rect = scene->AddComponent<RectTransformComponet>(uiImage);
     rect.pos = {250, 250};
     rect.size = Vector2(300, 200);
     rect.anchors = Vector2(-1, -1);
-    UIImageComponent& uiImageRenderer = uiImage.AddComponent<UIImageComponent>();
+    UIImageComponent& uiImageRenderer = scene->AddComponent<UIImageComponent>(uiImage);
     uiImageRenderer.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.jpg"); 
     uiImageRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(canvas, uiImage);
 
     Entity uiImage2 = scene->AddEntity("UIImage2");
-    RectTransformComponet& rect2 = uiImage2.AddComponent<RectTransformComponet>();
+    RectTransformComponet& rect2 = scene->AddComponent<RectTransformComponet>(uiImage2);
     rect2.size = Vector2(100, 100);
     rect2.anchors = Vector2(1, 1);
-    UIImageComponent& uiImageRenderer2 = uiImage2.AddComponent<UIImageComponent>();
+    UIImageComponent& uiImageRenderer2 = scene->AddComponent<UIImageComponent>(uiImage2);
     uiImageRenderer2.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"); 
     uiImageRenderer2.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(uiImage, uiImage2);
 
     Entity uiImage3 = scene->AddEntity("UIImage3");
-    RectTransformComponet& rect3 = uiImage3.AddComponent<RectTransformComponet>();
+    RectTransformComponet& rect3 = scene->AddComponent<RectTransformComponet>(uiImage3);
     rect3.pos = {25, 25};
     rect3.size = Vector2(100/2, 100/2);
     rect3.anchors = Vector2(1, 1);
-    UIImageComponent& uiImageRenderer3 = uiImage3.AddComponent<UIImageComponent>();
+    UIImageComponent& uiImageRenderer3 = scene->AddComponent<UIImageComponent>(uiImage3);
     uiImageRenderer3.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg"); 
     uiImageRenderer3.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(uiImage2, uiImage3);
 
     Entity uiText = scene->AddEntity("UiText");
-    RectTransformComponet& rect4 = uiText.AddComponent<RectTransformComponet>();
+    RectTransformComponet& rect4 = scene->AddComponent<RectTransformComponet>(uiText);
     rect4.pos = {0, 0};
     rect4.size = Vector2(2, 2);
     rect4.anchors = Vector2(1, 1);
-    UITextComponent& uiTextRenderer = uiText.AddComponent<UITextComponent>();
+    UITextComponent& uiTextRenderer = scene->AddComponent<UITextComponent>(uiText);
     uiTextRenderer.text = "Lolo";
     uiTextRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     uiTextRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
@@ -122,20 +120,20 @@ void PhysicsSample::OnInit(){
     
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
     lightComponent.renderShadow = false;
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     //camMove.transform = &camera->transform();
     //camMove.moveSpeed = 60;
     //camMove.OnInit();
@@ -145,10 +143,10 @@ void PhysicsSample::OnInit(){
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
 
     Entity floorEntity = scene->AddEntity("Floor");
-    ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
     floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
     floorEntityP.Mass(0);
     floorEntityP.SetType(RigidbodyComponent::Type::Static);
@@ -156,15 +154,15 @@ void PhysicsSample::OnInit(){
     //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
     Entity character2Entity = scene->AddEntity("MainCube");
-    ModelRendererComponent& character2Renderer = character2Entity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& character2Renderer = scene->AddComponent<ModelRendererComponent>(character2Entity);
     character2Renderer.SetModel(cubeModel);
     character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
-    RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& physicObject = scene->AddComponent<RigidbodyComponent>(character2Entity);
     physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
     physicObject.Mass(1);
     physicObject.NeverSleep(true);
-    character2Entity.GetComponent<TransformComponent>().Position({2, 13, 0});
-    character2Entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+    scene->GetComponent<TransformComponent>(character2Entity).Position({2, 13, 0});
+    scene->GetComponent<TransformComponent>(character2Entity).Rotation(QuaternionIdentity);
 
     /*Entity character2Entity2 = scene->AddEntity("MainCube2");
     ModelRendererComponent& character2Renderer2 = character2Entity2.AddComponent<ModelRendererComponent>();
@@ -181,22 +179,24 @@ void PhysicsSample::OnInit(){
     joint.rb = character2Entity2.Id();*/
 
     Entity trigger = scene->AddEntity("Trigger");
-    RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& _trigger = scene->AddComponent<RigidbodyComponent>(trigger);
     _trigger.SetShape(CollisionShape::BoxShape({4,1,4}));
     _trigger.SetType(RigidbodyComponent::Type::Trigger);
     _trigger.NeverSleep(true);
 
-    scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Entity trigger, Entity other){
-        LogInfo("OnTrigger");
-        other.GetComponent<RigidbodyComponent>().ApplyImpulse(Vector3Up * 25.0f);
+    // Fixme: Not Work why play mode clone the scene and theirs system, Work only if Start Scene now
+    scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Scene& scene, Entity trigger, Entity other){
+        LogWarning("OnTrigger");
+        scene.GetComponent<RigidbodyComponent>(other).ApplyImpulse(Vector3Up * 25.0f);
+        //scene->GetComponent<RigidbodyComponent>(other).ApplyImpulse(Vector3Up * 25.0f);
     });
 
     Entity luaScript = scene->AddEntity("LuaScript");
-    LuaScriptComponent& _luaScript = luaScript.AddComponent<LuaScriptComponent>();
+    LuaScriptComponent& _luaScript = scene->AddComponent<LuaScriptComponent>(luaScript);
     _luaScript.scriptPath = "Sandbox/LuaScripts/Test.lua";
 
     Entity luaScript2 = scene->AddEntity("LuaScript2");
-    LuaScriptComponent& _luaScript2 = luaScript2.AddComponent<LuaScriptComponent>();
+    LuaScriptComponent& _luaScript2 = scene->AddComponent<LuaScriptComponent>(luaScript2);
     _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";
 
     //scene->Save("res/scene1.scene");
@@ -214,11 +214,11 @@ void PhysicsSample::OnUpdate(float deltaTime){
     //scene->Update();
     if(scene->Running() == false) return;
 
-    TransformComponent& camT = camera.GetComponent<TransformComponent>();
+    TransformComponent& camT = scene->GetComponent<TransformComponent>(camera);
     RayResult hit;
     //Throwing a Possible Null Expection Pointer Here
     if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
-        LogInfo("Hitting: %s", hit.entity.GetComponent<InfoComponent>().name.c_str());
+        LogInfo("Hitting: %s", scene->GetComponent<InfoComponent>(hit.entity).name.c_str());
     }
 
     /*Assert(scene->GetRegistry().ctx().get<PhysicsSystem*>() == scene->GetSystem<PhysicsSystem>());
@@ -229,16 +229,16 @@ void PhysicsSample::OnUpdate(float deltaTime){
 
     if(Input::IsKeyDown(KeyCode::R)){
         Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
-        e.GetComponent<TransformComponent>().Position({2, 13, 0});
-        e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
-        e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>()->timeToDestroy = 100000000;
+        scene->GetComponent<TransformComponent>(e).Position({2, 13, 0});
+        scene->GetComponent<TransformComponent>(e).Rotation(QuaternionIdentity);
+        scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>()->timeToDestroy = 100000000;
     }
 
     if(Input::IsKeyDown(KeyCode::T)){
         Entity e = SceneManager::Get().GetActiveScene()->InstantiatePrefab("Sandbox/test.prefab");
-        e.GetComponent<TransformComponent>().Position({2, 13, 0});
-        e.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
-        e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+        scene->GetComponent<TransformComponent>(e).Position({2, 13, 0});
+        scene->GetComponent<TransformComponent>(e).Rotation(QuaternionIdentity);
+        scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>();
     }
 }   
 

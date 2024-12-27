@@ -30,48 +30,48 @@ void DynamicModuleSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
     lightComponent.renderShadow = false;
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     cam.farClipPlane = 1000;
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
 
     Entity floorEntity = scene->AddEntity("Floor");
-    ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
     floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    RigidbodyComponent& floorEntityP = floorEntity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
     floorEntityP.Mass(0);
     floorEntityP.SetType(RigidbodyComponent::Type::Static);
     floorEntityP.NeverSleep(true);
 
     Entity character2Entity = scene->AddEntity("MainCube");
-    ModelRendererComponent& character2Renderer = character2Entity.AddComponent<ModelRendererComponent>();
+    ModelRendererComponent& character2Renderer = scene->AddComponent<ModelRendererComponent>(character2Entity);
     character2Renderer.SetModel(cubeModel);
     character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
-    RigidbodyComponent& physicObject = character2Entity.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& physicObject = scene->AddComponent<RigidbodyComponent>(character2Entity);
     physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
     physicObject.Mass(1);
     physicObject.NeverSleep(true);
-    character2Entity.GetComponent<TransformComponent>().Position({2, 13, 0});
-    character2Entity.GetComponent<TransformComponent>().Rotation(QuaternionIdentity);
+    scene->GetComponent<TransformComponent>(character2Entity).Position({2, 13, 0});
+    scene->GetComponent<TransformComponent>(character2Entity).Rotation(QuaternionIdentity);
 
     Entity trigger = scene->AddEntity("Trigger");
-    RigidbodyComponent& _trigger = trigger.AddComponent<RigidbodyComponent>();
+    RigidbodyComponent& _trigger = scene->AddComponent<RigidbodyComponent>(trigger);
     _trigger.SetShape(CollisionShape::BoxShape({4,1,4}));
     _trigger.SetType(RigidbodyComponent::Type::Trigger);
     _trigger.NeverSleep(true);

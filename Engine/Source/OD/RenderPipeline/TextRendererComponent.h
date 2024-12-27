@@ -8,7 +8,6 @@ namespace sol{ class state; }
 
 namespace OD{
 
-struct Entity;
 class Font;
 class Material;
 

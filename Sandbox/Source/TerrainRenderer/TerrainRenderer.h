@@ -20,28 +20,28 @@ struct TerrainRenderer: OD::Module {
         Scene* scene = SceneManager::Get().NewScene();
 
         Entity text = scene->AddEntity("Text");
-        text.GetComponent<TransformComponent>().LocalPosition(Vector3(25.0f, 25.0f, 0));
-        TextRendererComponent& textRenderer = text.AddComponent<TextRendererComponent>();
+        scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
+        TextRendererComponent& textRenderer = scene->AddComponent<TextRendererComponent>(text);
         textRenderer.text = "ProceduralTerrain";
         textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
         textRenderer.font = Font::CreateFromFile("res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
         textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("res/Engine/Shaders/Font.glsl"));
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
-        LightComponent& lightComponent = light.AddComponent<LightComponent>();
+        LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
         lightComponent.color = {1,1,1};
-        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+        scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+        scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
 
         camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 1000, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60*4;
+        CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+        scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 1000, 15));
+        scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+        scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60*4;
         cam.farClipPlane = 50000;
 
         Ref<Model> clipmapMesh = AssetManager::Get().LoadAsset<Model>("res/Game/Models/ClipmapMesh_High1.glb");
@@ -71,9 +71,9 @@ struct TerrainRenderer: OD::Module {
         Assert(clipmapMesh->meshs[0]->tangents.size() > 0);
 
         terrain = scene->AddEntity("Terrain");
-        terrain.GetComponent<TransformComponent>().LocalScale(Vector3(100));
-        terrain.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(0, 90, 0));
-        MeshRendererComponent& terrainMeshRenderer = terrain.AddComponent<MeshRendererComponent>();
+        scene->GetComponent<TransformComponent>(terrain).LocalScale(Vector3(100));
+        scene->GetComponent<TransformComponent>(terrain).LocalEulerAngles(Vector3(0, 90, 0));
+        MeshRendererComponent& terrainMeshRenderer = scene->AddComponent<MeshRendererComponent>(terrain);
         terrainMeshRenderer.mesh = clipmapMesh->meshs[0];
         terrainMeshRenderer.UpdateAABB();
         terrainMeshRenderer.material = terrainMaterial;
@@ -99,19 +99,19 @@ struct TerrainRenderer: OD::Module {
         float snapStep = 100;
         int div = 256*100;
 
-        Vector3 camPos = scene->GetMainCamera().GetComponent<TransformComponent>().Position();
+        Vector3 camPos = scene->GetComponent<TransformComponent>(scene->GetMainCamera()).Position();
         Vector3 snapCamera = Vector3(math::round(camPos.x * (1 / snapStep))*snapStep, 0, math::round(camPos.z * (1/snapStep))*snapStep);
         //Vector3 snapCamera = Vector3(camPos.x, 0, camPos.z);
 
-        terrain.GetComponent<TransformComponent>().Position(snapCamera);
+        scene->GetComponent<TransformComponent>(terrain).Position(snapCamera);
         terrainMaterial->SetVector2("uvOffset", Vector2((snapCamera.x/div), -(snapCamera.z/div)));      
 
         if(Input::IsKeyDown(KeyCode::R)){
-            TransformComponent& cam = scene->GetMainCamera().GetComponent<TransformComponent>();
+            TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
 
             Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
-            e.GetComponent<TransformComponent>().Position(cam.Position() + cam.Back() * 10.0f);
-            PhysicsCubeS* script = e.AddComponent<ScriptComponent>().AddScript<PhysicsCubeS>();
+            scene->GetComponent<TransformComponent>(e).Position(cam.Position() + cam.Back() * 10.0f);
+            PhysicsCubeS* script = scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>();
             script->timeToDestroy = 1000000;
         }
     } 

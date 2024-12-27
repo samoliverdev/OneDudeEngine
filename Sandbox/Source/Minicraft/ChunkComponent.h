@@ -13,5 +13,5 @@ struct ChunkComponent{
     template<class Archive>
     void serialize(Archive& a){}
 
-    inline static void OnGui(Entity& e){}
+    inline static void OnGui(Entity& e, Scene& scene){}
 };

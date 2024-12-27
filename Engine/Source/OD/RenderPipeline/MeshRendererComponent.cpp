@@ -3,8 +3,8 @@
 
 namespace OD{
 
-void MeshRendererComponent::OnGui(Entity& e){
-    MeshRendererComponent& mesh = e.GetComponent<MeshRendererComponent>();
+void MeshRendererComponent::OnGui(Entity& e, Scene& scene){
+    MeshRendererComponent& mesh = scene.GetComponent<MeshRendererComponent>(e);
 
     std::string s1("mesh");
     std::string s2("material");

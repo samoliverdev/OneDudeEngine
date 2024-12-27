@@ -15,7 +15,7 @@ struct OD_API ModelRendererComponent{
 
     Transform localTransform;
     
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     inline Ref<Model> GetModel(){ return model; }
     void SetModel(Ref<Model> m);
@@ -101,11 +101,11 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     std::vector<Matrix4> posePalette;
     std::vector<Entity> skeletonEntities;
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
     
     //INFO: Bug if is called in editor scene the skeletonEntities are linked with editor scene not the running scene
-    void CreateSkeletonEntites(Entity& selfEntity);
-    void UpdateSkeletonEntites(Pose& animatedPose);
+    void CreateSkeletonEntites(Entity& selfEntity, Scene& scene);
+    void UpdateSkeletonEntites(Pose& animatedPose, Scene& scene);
 
     inline void UpdatePosePalette(){
         GetModel()->skeleton.GetRestPose().GetMatrixPalette(posePalette, model->skeleton.GetInvBindPose());
@@ -115,7 +115,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
 struct OD_API GizmosDrawComponent{
     Vector3 globalScale = {0.05f, 0.05f, 0.05f};
 
-    inline static void OnGui(Entity& e){}
+    inline static void OnGui(Entity& e, Scene& scene){}
     template <class Archive> void serialize(Archive& ar){}
 };
 

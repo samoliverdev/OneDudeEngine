@@ -31,7 +31,7 @@ struct OD_API LightComponent{
     float shadowBias;
     float shadowNormalBias;
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive & ar){

@@ -16,9 +16,13 @@ struct OD_API Script{
     //virtual void OnDraw(){}
 
     inline Entity& GetEntity(){ return entity; }
+    inline Scene* GetScene(){ return scene; }
     
-private:
+protected:
     Entity entity;
+    Scene* scene;
+
+private:
     bool hasStarted = false;
 };
 
@@ -31,7 +35,7 @@ struct OD_API ScriptComponent{
     template <class Archive>
     void serialize(Archive & ar){}
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     ScriptComponent() = default;
     ScriptComponent(const ScriptComponent& s);
@@ -84,7 +88,7 @@ private:
 
     std::unordered_map<Type, ScriptHolder> instances;
 
-    void _Update(Entity e);
+    void _Update(Entity e, Scene& scene);
 };
 
 struct OD_API ScriptSystem: public System{

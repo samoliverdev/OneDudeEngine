@@ -134,7 +134,7 @@ void Terrain1::OnDestroy(){
 void Terrain1::OnUpdate(){
     OD_PROFILE_SCOPE("Terrain1::OnUpdate");
 
-    TransformComponent& camTrans = GetEntity().GetScene()->GetMainCamera().GetComponent<TransformComponent>();
+    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
     Vector2 viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
     for(auto& i: loadedChunks){
@@ -149,7 +149,7 @@ void Terrain1::OnUpdate(){
         }
 
         //loadedCoords[i.first].GetComponent<MeshRendererComponent>().mesh = lodsMesh[i.second.lod].mesh;
-        loadedChunks[i.first].entity.GetComponent<TransformComponent>().LocalScale(
+        scene->GetComponent<TransformComponent>(loadedChunks[i.first].entity).LocalScale(
             lodsMesh[i.second.lodInfo.lod].scale
         );
     }  
@@ -166,17 +166,17 @@ void Terrain1::OnUpdate(){
         if(loadedChunks.count(i.first + IVector2(0, -1))) borders.bottom = lod < loadedChunks[i.first + IVector2(0, -1)].lodInfo.lod;
 
         if(loadedChunks.count(i.first + IVector2(1, 0))){
-            loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().material->SetTexture(
+            scene->GetComponent<MeshRendererComponent>(loadedChunks[i.first].entity).material->SetTexture(
                 "heightMapWest", loadedChunks[i.first + IVector2(1, 0)].heightmap
             );
         }
         if(loadedChunks.count(i.first + IVector2(-1, 0))){
-            loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().material->SetTexture(
+            scene->GetComponent<MeshRendererComponent>(loadedChunks[i.first].entity).material->SetTexture(
                 "heightMapLeft", loadedChunks[i.first + IVector2(-1, 0)].heightmap
             );
         }
         if(loadedChunks.count(i.first + IVector2(0, 1))){
-            loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().material->SetTexture(
+            scene->GetComponent<MeshRendererComponent>(loadedChunks[i.first].entity).material->SetTexture(
                 "heightMapNorth", loadedChunks[i.first + IVector2(0, 1)].heightmap
             );
         }
@@ -184,7 +184,7 @@ void Terrain1::OnUpdate(){
         //MeshBorderColaps t = i.second.borders;
         //LogInfo("%d %d %d %d", t.left ? 1 : 0, t.right ? 1 : 0, t.top ? 1 : 0, t.bottom ? 1 : 0);
 
-        loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>().mesh = lodsMesh[lod].meshs[borders];
+        scene->GetComponent<MeshRendererComponent>(loadedChunks[i.first].entity).mesh = lodsMesh[lod].meshs[borders];
     }
 }
 
@@ -192,11 +192,11 @@ void Terrain1::LoadCood(IVector2 coord){
     ChunkData chunkData;
     chunkData.lodInfo = LodInfo();
 
-    chunkData.entity = this->GetEntity().GetScene()->AddEntity("Chunk");
-    this->GetEntity().GetScene()->SetParent(this->GetEntity(), chunkData.entity);
+    chunkData.entity = scene->AddEntity("Chunk");
+    scene->SetParent(entity, chunkData.entity);
 
     Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
-    chunkData.entity.GetComponent<TransformComponent>().LocalPosition(pos);
+    scene->GetComponent<TransformComponent>(chunkData.entity).LocalPosition(pos);
     //terrain.GetComponent<TransformComponent>().LocalScale(Vector3(256, 1, 256));
     //chunkData.entity.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(0, 90, 0));
 
@@ -212,7 +212,7 @@ void Terrain1::LoadCood(IVector2 coord){
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
     );
 
-    MeshRendererComponent& terrainMeshRenderer = chunkData.entity.AddComponent<MeshRendererComponent>();
+    MeshRendererComponent& terrainMeshRenderer = scene->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.mesh = meshTest;
     terrainMeshRenderer.UpdateAABB();
     //terrainMeshRenderer.material = terrainMaterial;
@@ -222,7 +222,7 @@ void Terrain1::LoadCood(IVector2 coord){
     terrainMeshRenderer.material->SetTexture("heightMap", chunkData.heightmap);
     terrainMeshRenderer.material->SetFloat("heightScale", 100);
 
-    HeightmapColliderComponent& heightmapCollider = chunkData.entity.AddComponent<HeightmapColliderComponent>();
+    HeightmapColliderComponent& heightmapCollider = scene->AddComponent<HeightmapColliderComponent>(chunkData.entity);
     heightmapCollider.width = heightmapSize;
     heightmapCollider.length = heightmapSize;
     heightmapCollider.scale = heightmapSize;

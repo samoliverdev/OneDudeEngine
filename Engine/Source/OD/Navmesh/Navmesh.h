@@ -201,7 +201,7 @@ struct OD_API NavmeshComponent{
 	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
 	
-    static inline void OnGui(Entity& e);
+    static inline void OnGui(Entity& e, Scene& scene);
 
 	template<class Archive> 
 	void serialize(Archive& ar){

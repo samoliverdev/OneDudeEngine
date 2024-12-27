@@ -47,8 +47,8 @@ void SceneHierarchyPanel::OnGui(){
         auto view = scene->GetRegistry().view<TransformComponent, InfoComponent>();
         view.use<InfoComponent>();
         for(auto e: view){
-            Entity _e(e, scene);
-            DrawEntityNode(_e, true);
+            //Entity _e(e, scene);
+            DrawEntityNode(e, true);
         }
 
         /*auto v = _scene->GetRegistry().view<entt::entity>();
@@ -119,9 +119,9 @@ void SceneHierarchyPanel::OnGui(){
                 const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
                 if(payload != nullptr){
                     Entity* targetEntity = (Entity*)payload->Data;
-                    LogInfo("this: %s", targetEntity->GetComponent<InfoComponent>().name.c_str());
-                    if(targetEntity->IsValid() && targetEntity->GetComponent<InfoComponent>().Type() != EntityType::PrefabChild){
-                        scene->CleanParent(targetEntity->Id());
+                    LogInfo("this: %s", scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
+                    if(scene->IsValid(*targetEntity) && scene->GetComponent<InfoComponent>(*targetEntity).Type() != EntityType::PrefabChild){
+                        scene->CleanParent(*targetEntity);
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -136,12 +136,12 @@ void SceneHierarchyPanel::OnGui(){
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
-    Assert(entity.IsValid());
+    Assert(scene->IsValid(entity));
 
-    TransformComponent& transform = entity.GetComponent<TransformComponent>();
-    InfoComponent& info = entity.GetComponent<InfoComponent>();
+    TransformComponent& transform = scene->GetComponent<TransformComponent>(entity);
+    InfoComponent& info = scene->GetComponent<InfoComponent>(entity);
 
-    Entity children;
+    Entity children = EntityNull;
 
     if(info.hidden) return;    
     if(root && transform.HasParent()) return;
@@ -150,8 +150,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     int validChildren = 0;
     for(auto i: transform.Children()){
-        Entity e(i, entity.GetScene());
-        if(e.GetComponent<InfoComponent>().hidden == false) validChildren += 1;
+        //Entity e(i, entity.GetScene());
+        if(scene->GetComponent<InfoComponent>(i).hidden == false) validChildren += 1;
     }
 
     ImGuiTreeNodeFlags flags = 
@@ -164,11 +164,11 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     if(entityType == EntityType::PrefabRoot) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 125, 205)));
     if(entityType == EntityType::PrefabChild) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 155, 205)));
 
-    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.Id(), flags, info.name.c_str());
+    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, info.name.c_str());
     
     if(entityType != EntityType::Stand) ImGui::PopStyleColor();
     
-    if(entity.IsValid() && ImGui::BeginDragDropSource()){
+    if(scene->IsValid(entity) && ImGui::BeginDragDropSource()){
         ImGui::SetDragDropPayload("EntityMoveDragDrop", &entity, sizeof(Entity), ImGuiCond_Once);
         ImGui::EndDragDropSource();
     }
@@ -182,8 +182,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
         if(payload != nullptr){
             Entity* targetEntity = (Entity*)payload->Data;
-            LogInfo("this: %s to: %s", entity.GetComponent<InfoComponent>().name.c_str(), targetEntity->GetComponent<InfoComponent>().name.c_str());
-            if(entity.IsValid() && targetEntity->IsValid() && entity.Id() != targetEntity->Id()){
+            LogInfo("this: %s to: %s", scene->GetComponent<InfoComponent>(entity).name.c_str(), scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
+            if(scene->IsValid(entity) && scene->IsValid(*targetEntity) && entity != *targetEntity){
                 children = *targetEntity;
             }
         }
@@ -198,11 +198,11 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
             //_toDestroy = true;
             //_toDestroyEntity = entity.id();
         }
-        if(entity.GetComponent<InfoComponent>().Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){
+        if(scene->GetComponent<InfoComponent>(entity).Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){
             std::string path = Platform::SaveFile("*.prefab");
             if(path.empty() == false){
                 Scene* scene = SceneManager::Get().GetActiveScene();
-                scene->Save(path.c_str(), entity.Id());
+                scene->Save(path.c_str(), entity);
             } 
         }
         ImGui::EndPopup();
@@ -210,25 +210,25 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     if(opened){
         for(auto i: transform.Children()){
-            DrawEntityNode(Entity(i, entity.GetScene()), false);
+            DrawEntityNode(i, false);
         }
 
         ImGui::TreePop();
     }
 
     if(entityDeleted){
-        LogInfo("To Destroy Entity: %d", entity.Id());
+        LogInfo("To Destroy Entity: %d", entity);
 
-        scene->DestroyEntity(entity.Id());
-        editor->SetSelectionEntity(Entity());
+        scene->DestroyEntity(entity);
+        editor->SetSelectionEntity(EntityNull);
 
         //toDestroy = entity;
     } else if(
-        children.IsValid() 
-        && entity.GetComponent<InfoComponent>().Type() == EntityType::Stand 
-        && children.GetComponent<InfoComponent>().Type() != EntityType::PrefabChild
+        scene->IsValid(children) 
+        && scene->GetComponent<InfoComponent>(entity).Type() == EntityType::Stand 
+        && scene->GetComponent<InfoComponent>(children).Type() != EntityType::PrefabChild
     ){
-        scene->SetParent(entity.Id(), children.Id());
+        scene->SetParent(entity, children);
     }
 }
 }

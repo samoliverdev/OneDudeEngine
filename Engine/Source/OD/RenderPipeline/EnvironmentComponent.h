@@ -91,7 +91,7 @@ struct OD_API EnvironmentComponent{
 
     EnvironmentSettings settings;
 
-    static void OnGui(Entity& e);
+    static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive & ar){

@@ -6,8 +6,8 @@
 
 namespace OD{
 
-void ModelRendererComponent::OnGui(Entity& e){
-    ModelRendererComponent& mesh = e.GetComponent<ModelRendererComponent>();
+void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
+    ModelRendererComponent& mesh = scene.GetComponent<ModelRendererComponent>(e);
 
     /*cereal::ImGuiArchive uiArchive;
     uiArchive(mesh);
@@ -129,36 +129,36 @@ void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
     }
 }
 
-void SkinnedModelRendererComponent::CreateSkeletonEntites(Entity& selfEntity){
+void SkinnedModelRendererComponent::CreateSkeletonEntites(Entity& selfEntity, Scene& scene){
     skeletonEntities.clear();
     UpdatePosePalette();
     Pose& pose = model->skeleton.GetBindPose();
-    TransformComponent& selfTransform = selfEntity.GetComponent<TransformComponent>();
+    TransformComponent& selfTransform = scene.GetComponent<TransformComponent>(selfEntity);
 
     for(int i = 0; i < pose.Size(); i++){
-        Entity e = selfEntity.GetScene()->AddEntity(model->skeleton.GetJointName(i));
-        e.AddComponent<GizmosDrawComponent>();
+        Entity e = scene.AddEntity(model->skeleton.GetJointName(i));
+        scene.AddComponent<GizmosDrawComponent>(e);
         skeletonEntities.push_back(e);
     }
 
     for(int i = 0; i < pose.Size(); i++){
-        TransformComponent& trans = skeletonEntities[i].GetComponent<TransformComponent>();
+        TransformComponent& trans = scene.GetComponent<TransformComponent>(skeletonEntities[i]);
         int parent = pose.GetParent(i);
 
         if(parent < 0){
-            selfEntity.GetScene()->SetParent(selfEntity.Id(), skeletonEntities[i].Id());
+            scene.SetParent(selfEntity, skeletonEntities[i]);
             trans.SetLocalModelMatrix(localTransform.GetLocalModelMatrix() * skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(i));
         } else {
-            selfEntity.GetScene()->SetParent(skeletonEntities[parent].Id(), skeletonEntities[i].Id());
+            scene.SetParent(skeletonEntities[parent], skeletonEntities[i]);
             trans.SetLocalModelMatrix(pose.GetLocalMatrix(i));
         }  
     }
 }
 
-void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose){
+void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose, Scene& scene){
     for(int i = 0; i < skeletonEntities.size(); i++){
-        TransformComponent& trans = skeletonEntities[i].GetComponent<TransformComponent>();
-        InfoComponent& info = skeletonEntities[i].GetComponent<InfoComponent>();
+        TransformComponent& trans = scene.GetComponent<TransformComponent>(skeletonEntities[i]);
+        InfoComponent& info = scene.GetComponent<InfoComponent>(skeletonEntities[i]);
         int parent = pose.GetParent(i);
         
         if(parent < 0){
@@ -175,8 +175,8 @@ void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose){
     }
 }
 
-void SkinnedModelRendererComponent::OnGui(Entity& e){
-    SkinnedModelRendererComponent& mesh = e.GetComponent<SkinnedModelRendererComponent>();
+void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
+    SkinnedModelRendererComponent& mesh = scene.GetComponent<SkinnedModelRendererComponent>(e);
 
     if(ImGui::TreeNode("localTransform")){
         Transform::OnGui(mesh.localTransform);

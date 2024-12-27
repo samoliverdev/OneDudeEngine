@@ -670,8 +670,8 @@ void CameraRenderer::RenderUI(){
 
     auto uiTransView = context->GetScene()->GetRegistry().view<TransformComponent, RectTransformComponet>();
     for(auto entity: uiTransView){
-        Entity e(entity, context->GetScene());
-        CanvasComponent* canvas = e.TryGetComponentInParent<CanvasComponent>();
+        //Entity e(entity, context->GetScene());
+        CanvasComponent* canvas = context->GetScene()->TryGetComponentInParent<CanvasComponent>(entity);
         if(canvas == nullptr) continue;
 
         //Vector2 resulutionOffset = {(float)camera.width/canvas->size.x, (float)camera.height/canvas->size.y};
@@ -685,9 +685,9 @@ void CameraRenderer::RenderUI(){
         Vector2 anchors = rectTrans.anchors + Vector2(1, 1);
 
         if(trans.HasParent()){
-            Entity parent(trans.Parent(), context->GetScene());
-            if(parent.HasComponent<RectTransformComponet>()){
-                RectTransformComponet& parentRect = parent.GetComponent<RectTransformComponet>();
+            Entity parent = trans.Parent(); //(trans.Parent(), context->GetScene());
+            if(context->GetScene()->HasComponent<RectTransformComponet>(parent)){
+                RectTransformComponet& parentRect = context->GetScene()->GetComponent<RectTransformComponet>(parent);
                 parentSize = {parentRect.size.x * resulutionScale.x, parentRect.size.y * resulutionScale.y};
                 anchors = rectTrans.anchors;
             }
@@ -707,8 +707,8 @@ void CameraRenderer::RenderUI(){
 
     auto uiImageView = context->GetScene()->GetRegistry().view<TransformComponent, RectTransformComponet, UIImageComponent>();
     for(auto entity: uiImageView){
-        Entity e(entity, context->GetScene());
-        CanvasComponent* canvas = e.TryGetComponentInParent<CanvasComponent>();
+        //Entity e(entity, context->GetScene());
+        CanvasComponent* canvas = context->GetScene()->TryGetComponentInParent<CanvasComponent>(entity);
         if(canvas == nullptr) continue;
 
         //Vector2 resulutionOffset = {(float)camera.width/canvas->size.x, (float)camera.height/canvas->size.y};
@@ -740,8 +740,8 @@ void CameraRenderer::RenderUI(){
     Graphics::SetDepthMask(false);
     auto uiTextView = context->GetScene()->GetRegistry().view<TransformComponent, RectTransformComponet, UITextComponent>();
     for(auto entity: uiTextView){
-        Entity e(entity, context->GetScene());
-        CanvasComponent* canvas = e.TryGetComponentInParent<CanvasComponent>();
+        //Entity e(entity, context->GetScene());
+        CanvasComponent* canvas = context->GetScene()->TryGetComponentInParent<CanvasComponent>(entity);
         if(canvas == nullptr) continue;
 
         //Vector2 resulutionOffset = {(float)camera.width/canvas->size.x, (float)camera.height/canvas->size.y};
@@ -848,8 +848,8 @@ void StandRenderPipeline::Update(){
     if(overrideCamera != nullptr){
         Entity mainCamera = GetScene()->GetMainCamera();
         auto targetRenderPath = CameraRenderer::RenderingPath::Forward;
-        if(mainCamera.IsValid()){
-            auto& cam = mainCamera.GetComponent<CameraComponent>();
+        if(GetScene()->IsValid(mainCamera)){
+            auto& cam = GetScene()->GetComponent<CameraComponent>(mainCamera);
             targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? CameraRenderer::RenderingPath::Deferred : CameraRenderer::RenderingPath::Forward;
         }
 

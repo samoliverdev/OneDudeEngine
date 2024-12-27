@@ -43,7 +43,7 @@ public:
     }
 
     inline void UnselectAll(){
-        selectionEntity = Entity();
+        selectionEntity = EntityNull;
         selectionAsset = nullptr;
         selectionOnAsset = false;;
     }

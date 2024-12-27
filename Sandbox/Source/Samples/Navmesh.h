@@ -6,8 +6,8 @@ using namespace OD;
 
 struct NavmeshSample: OD::Module {
     Entity camera;
-    EntityId navmeshAgentEntity;
-    EntityId targetPosEntity;
+    Entity navmeshAgentEntity;
+    Entity targetPosEntity;
 
     void OnInit() override;
     void OnUpdate(float deltaTime) override;  

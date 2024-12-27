@@ -9,7 +9,7 @@ void SceneManagerModuleInit(){
 
     LuaBindsDB::Get().RegisterLuaBind<TransformComponent>();
     LuaBindsDB::Get().RegisterLuaBind<InfoComponent>();
-    LuaBindsDB::Get().RegisterLuaBind<Entity>();
+    LuaBindsDB::Get().RegisterLuaBind<EntityHandle>();
     LuaBindsDB::Get().RegisterLuaBind<Scene>();
 }
 

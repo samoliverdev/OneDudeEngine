@@ -45,8 +45,8 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
     //camera.frustum = CreateFrustumFromMatrix2(camera.view * camera.projection);
 }
 
-void CameraComponent::OnGui(Entity& e){
-    CameraComponent& cam = e.GetComponent<CameraComponent>();
+void CameraComponent::OnGui(Entity& e, Scene& scene){
+    CameraComponent& cam = scene.GetComponent<CameraComponent>(e);
 
     ImGui::DrawEnumCombo<CameraComponent::Type>("projection", &cam.type);
     ImGui::DrawEnumCombo<CameraComponent::RenderingPath>("renderingPath", &cam.renderingPath);
@@ -69,7 +69,7 @@ void CameraComponent::CreateLuaBind(sol::state& lua){
             "Orthographic", CameraComponent::Type::Orthographic,
             "Perspective", CameraComponent::Type::Perspective
         );
-        Entity::RegisterMetaComponent<CameraComponent>();
+        Scene::RegisterMetaComponent<CameraComponent>();
         lua.new_usertype<CameraComponent>(
             "CameraComponent",
             sol::call_constructor,

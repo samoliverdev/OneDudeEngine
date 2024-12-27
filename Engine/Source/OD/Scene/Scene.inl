@@ -29,6 +29,7 @@ HAS_MEM_FUNC(OnCreate, HasOnCreate);
 
 //-----------Entity---------
 
+/*
 template <typename T, typename... Args>
 T& Entity::AddComponent(Args&&... args){
     T& c = scene->registry.emplace<T>(id, std::forward<Args>( args )...);
@@ -86,33 +87,33 @@ template<typename T>
 void Entity::RemoveComponent(){
     Assert(HasComponent<T>() && "Entity does not have component!");
     scene->registry.remove<T>(id);
-}
+}*/
 
 template<typename T>
-auto _AddComponent(Entity& entity, const sol::table& comp, sol::this_state s){
-    auto& component = entity.AddComponent<T>(comp.valid() ? std::move(comp.as<T&&>()) : T{});
+auto _AddComponent(Scene* scene, Entity entity, const sol::table& comp, sol::this_state s){
+    auto& component = scene->AddComponent<T>(entity, comp.valid() ? std::move(comp.as<T&&>()) : T{});
     //auto& component = entity.AddComponent<T>();
     return sol::make_reference(s, std::ref(component));
 }
 
 template<typename T>
-bool _HasComponent(Entity& entity){
-    return entity.HasComponent<T>();
+bool _HasComponent(Scene* scene, Entity entity){
+    return scene->HasComponent<T>(entity);
 }
 
 template<typename T>
-auto _GetComponent(Entity& entity, sol::this_state s){
-    auto& comp = entity.GetComponent<T>();
+auto _GetComponent(Scene* scene, Entity entity, sol::this_state s){
+    auto& comp = scene->GetComponent<T>(entity);
     return sol::make_reference(s, std::ref(comp));
 }
 
 template<typename T>
-void _RemoveComponent(Entity& entity){
-    entity.RemoveComponent<T>();
+void _RemoveComponent(Scene* scene, Entity entity){
+    scene->RemoveComponent<T>(entity);
 }
 
 template<typename T>
-inline void Entity::RegisterMetaComponent(){
+inline void Scene::RegisterMetaComponent(){
     using namespace entt::literals;
     entt::meta<T>()
         .type(entt::type_hash<T>::value())
@@ -124,12 +125,78 @@ inline void Entity::RegisterMetaComponent(){
 
 //-----------Scene---------
 
-template<typename... T, typename Func> 
+/*template<typename... T, typename Func> 
 Entity Scene::AddEntityWith(std::string name, Func func){
     Entity e = AddEntity(name);
     (e.AddOrGetComponent<T>(), ...);
     func( std::forward<T&>(e.GetComponent<T>())... );
     return e;
+}*/
+
+template<typename... T, typename Func> 
+Entity Scene::AddEntityWith(std::string name, Func func){
+    Entity e = AddEntity(name);
+    (AddOrGetComponent<T>(e), ...);
+    func( std::forward<T&>(GetComponent<T>(e))... );
+    return e;
+}
+
+template <typename T, typename... Args>
+T& Scene::AddComponent(Entity id, Args&&... args){
+    T& c = registry.emplace<T>(id, std::forward<Args>( args )...);
+    if constexpr(HasOnCreate<T>::value) c.OnCreate(*this);
+    return c;
+}
+
+template<typename T>
+T& Scene::AddComponent(Entity id){
+    T& c = registry.emplace<T>(id);
+    if constexpr(HasOnCreate<T>::value) c.OnCreate(id, *this);
+    return c;
+}
+
+template <typename T>
+T& Scene::GetComponent(Entity id){
+    return registry.get<T>(id);
+}
+
+template <typename T>
+T* Scene::TryGetComponent(Entity id){
+    return registry.try_get<T>(id);
+}
+
+template<typename T> 
+T* Scene::TryGetComponentInParent(Entity id){
+    if(HasComponent<T>(id) == false){
+        TransformComponent& t = GetComponent<TransformComponent>(id);
+        if(t.HasParent()){
+            return TryGetComponentInParent<T>(t.Parent());
+        }
+    }
+
+    return TryGetComponent<T>(id);
+}
+    
+template<typename T>  
+T* Scene::TryGetComponentInChildren(Entity id){
+    return nullptr;
+}
+
+template<typename T>
+bool Scene::HasComponent(Entity id){
+    return registry.any_of<T>(id);
+}
+
+template<typename T>
+T& Scene::AddOrGetComponent(Entity id){
+    if(HasComponent<T>(id) == false) return AddComponent<T>(id);
+    return GetComponent<T>(id);
+}
+
+template<typename T>
+void Scene::RemoveComponent(Entity id){
+    Assert(HasComponent<T>(id) && "Entity does not have component!");
+    registry.remove<T>(id);
 }
 
 template <typename T>

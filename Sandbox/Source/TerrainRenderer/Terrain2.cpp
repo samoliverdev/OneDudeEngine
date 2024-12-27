@@ -66,11 +66,11 @@ void Terrain2::OnStart(){
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
     );
 
-    Entity collider = GetEntity().GetScene()->AddEntity("Collider");
-    this->GetEntity().GetScene()->SetParent(this->GetEntity(), collider);
+    Entity collider = scene->AddEntity("Collider");
+    scene->SetParent(this->GetEntity(), collider);
 
     float terrainMeshWidth = (float)(chunkSize * chunkWidthCount);
-    TransformComponent& colliderTrans = collider.GetComponent<TransformComponent>();
+    TransformComponent& colliderTrans = scene->GetComponent<TransformComponent>(collider);
     colliderTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)heightmapSize,
         terrainHeight, 
@@ -84,7 +84,7 @@ void Terrain2::OnStart(){
         )
     );
     
-    HeightmapColliderComponent& heightmapCollider = collider.AddComponent<HeightmapColliderComponent>();
+    HeightmapColliderComponent& heightmapCollider = scene->AddComponent<HeightmapColliderComponent>(collider);
     heightmapCollider.width = heightmapSize;
     heightmapCollider.length = heightmapSize;
     heightmapCollider.scale = heightmapSize;
@@ -120,11 +120,11 @@ void Terrain2::OnDestroy(){
 void Terrain2::OnUpdate(){
     OD_PROFILE_SCOPE("Terrain1::OnUpdate");
 
-    TransformComponent& camTrans = GetEntity().GetScene()->GetMainCamera().GetComponent<TransformComponent>();
+    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
     Vector2 viewPos = Vector2(camTrans.Position().x, -camTrans.Position().z);
 
     for(auto& i: loadedChunks){
-        TransformComponent& trans = i.second.entity.GetComponent<TransformComponent>();
+        TransformComponent& trans = scene->GetComponent<TransformComponent>(i.second.entity);
 
         //Vector3 pos(i.first.x * (float)chunkSize, 0, -(i.first.y * (float)chunkSize));
         Vector3 pos = trans.Position();
@@ -137,7 +137,7 @@ void Terrain2::OnUpdate(){
             }
         }
 
-        loadedChunks[i.first].entity.GetComponent<TransformComponent>().LocalScale(
+        scene->GetComponent<TransformComponent>(loadedChunks[i.first].entity).LocalScale(
             lodsMesh[i.second.lodInfo.lod].scale
         );
     }  
@@ -153,7 +153,7 @@ void Terrain2::OnUpdate(){
         if(loadedChunks.count(i.first + IVector2(0, 1))) borders.top = lod < loadedChunks[i.first + IVector2(0, 1)].lodInfo.lod;
         if(loadedChunks.count(i.first + IVector2(0, -1))) borders.bottom = lod < loadedChunks[i.first + IVector2(0, -1)].lodInfo.lod;
 
-        MeshRendererComponent& meshComponent = loadedChunks[i.first].entity.GetComponent<MeshRendererComponent>();
+        MeshRendererComponent& meshComponent = scene->GetComponent<MeshRendererComponent>(loadedChunks[i.first].entity);
         meshComponent.mesh = lodsMesh[lod].meshs[borders];
         meshComponent.boundingVolume = AABB(
             Vector3(0, terrainHeight/2, 0), 
@@ -163,7 +163,7 @@ void Terrain2::OnUpdate(){
         );
     }
 
-    GetEntity().GetComponent<TransformComponent>().LocalScale(
+    scene->GetComponent<TransformComponent>(entity).LocalScale(
         Vector3(
             terrainWidth / (float)(chunkSize * chunkWidthCount),
             1, 
@@ -176,17 +176,17 @@ void Terrain2::LoadCood(IVector2 coord){
     ChunkData chunkData;
     chunkData.lodInfo = LodInfo();
 
-    chunkData.entity = this->GetEntity().GetScene()->AddEntity("Chunk");
-    this->GetEntity().GetScene()->SetParent(this->GetEntity(), chunkData.entity);
+    chunkData.entity = scene->AddEntity("Chunk");
+    scene->SetParent(this->GetEntity(), chunkData.entity);
 
     Vector3 pos(coord.x * (float)chunkSize, 0, -(coord.y * (float)chunkSize));
     pos += Vector3((float)chunkSize/2.0f, 0, -(chunkSize/2.0f));
-    chunkData.entity.GetComponent<TransformComponent>().LocalPosition(pos);
+    scene->GetComponent<TransformComponent>(chunkData.entity).LocalPosition(pos);
 
-    InfoComponent& info = chunkData.entity.GetComponent<InfoComponent>();
+    InfoComponent& info = scene->GetComponent<InfoComponent>(chunkData.entity);
     //info.hidden = true;
 
-    MeshRendererComponent& terrainMeshRenderer = chunkData.entity.AddComponent<MeshRendererComponent>();
+    MeshRendererComponent& terrainMeshRenderer = scene->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
     terrainMeshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/TerrainClipmapMesh.glsl"));
     terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"));

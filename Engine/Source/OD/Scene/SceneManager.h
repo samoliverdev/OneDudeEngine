@@ -37,10 +37,10 @@ private:
     SceneManager(){}
 
     struct SerializeFuncs{
-        std::function<bool(Entity&)> hasComponent;
-        std::function<void(Entity&)> addComponent;
-        std::function<void(Entity&)> removeComponent;
-        std::function<void(Entity&)> onGui;
+        std::function<bool(Entity&,Scene&)> hasComponent;
+        std::function<void(Entity&,Scene&)> addComponent;
+        std::function<void(Entity&,Scene&)> removeComponent;
+        std::function<void(Entity&,Scene&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
         std::function<void(ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name)> snapshotOut;
         std::function<void(ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name)> snapshotIn;

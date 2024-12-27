@@ -12,21 +12,21 @@ void NavmeshSample::OnInit(){
     Scene* scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
-    env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
     Entity light = scene->AddEntity("Light");
-    LightComponent& lightComponent = light.AddComponent<LightComponent>();
+    LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-    light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+    scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+    scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
     camera = scene->AddEntity("Camera");
-    CameraComponent& cam = camera.AddComponent<CameraComponent>();
-    camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 15, 15));
-    camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-    camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60;
+    CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.farClipPlane = 1000;
-
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+    scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
+    
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
 
@@ -55,13 +55,13 @@ void NavmeshSample::OnInit(){
         enviromentModel->materials[i] = LoadFloorMaterial();
     }
     Entity root = scene->Instantiate(enviromentModel);
-    TransformComponent& rootTransform = root.GetComponent<TransformComponent>();
+    TransformComponent& rootTransform = scene->GetComponent<TransformComponent>(root);
     rootTransform.LocalEulerAngles(Vector3(-90, 0, 0));
     rootTransform.LocalScale(Vector3(20, 20, 5));
 
         
     Entity navmeshEntity = scene->AddEntity("Navmesh");
-    NavmeshComponent& navmeshComp = navmeshEntity.AddComponent<NavmeshComponent>();
+    NavmeshComponent& navmeshComp = scene->AddComponent<NavmeshComponent>(navmeshEntity);
     navmeshComp.navmesh = CreateRef<Navmesh>();
     navmeshComp.navmesh->buildSettings.useTile = true;
     navmeshComp.navmesh->buildSettings.cellSize = 0.3f;
@@ -116,23 +116,23 @@ void NavmeshSample::OnInit(){
     //}
 
     Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
-    NavmeshAgentComponent& agent = navmeshAgent.AddComponent<NavmeshAgentComponent>();
+    NavmeshAgentComponent& agent = scene->AddComponent<NavmeshAgentComponent>(navmeshAgent);
     agent.SetDestination(Vector3(-8, 0, -11));
-    navmeshAgentEntity = navmeshAgent.Id();
+    navmeshAgentEntity = navmeshAgent;
 
     Entity e2 = scene->AddEntity("Cube");
-    e2.GetComponent<TransformComponent>().Position(Vector3(0, 1, 0));
-    e2.GetComponent<TransformComponent>().LocalScale(Vector3(0.5f, 2, 0.5f));
-    ModelRendererComponent& _meshRenderer2 = e2.AddComponent<ModelRendererComponent>();
+    scene->GetComponent<TransformComponent>(e2).Position(Vector3(0, 1, 0));
+    scene->GetComponent<TransformComponent>(e2).LocalScale(Vector3(0.5f, 2, 0.5f));
+    ModelRendererComponent& _meshRenderer2 = scene->AddComponent<ModelRendererComponent>(e2);
     Assert(cubeModel != nullptr); 
     _meshRenderer2.SetModel(cubeModel);
     Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
-    scene->SetParent(navmeshAgent.Id(), e2.Id());
+    scene->SetParent(navmeshAgent, e2);
 
     Entity target = scene->AddEntity("target");
-    target.GetComponent<TransformComponent>().Position(Vector3(-8, 0, -11));
-    targetPosEntity = target.Id();
+    scene->GetComponent<TransformComponent>(target).Position(Vector3(-8, 0, -11));
+    targetPosEntity = target;
 
     /*NavMeshPath path;
     bool result = navmeshComp.navmesh->FindPath(Vector3(0, 0, 0), Vector3(-8, 0, -11), path);
@@ -161,12 +161,13 @@ void NavmeshSample::OnInit(){
 
 void NavmeshSample::OnUpdate(float deltaTime){
     if(SceneManager::Get().GetActiveScene()->Running() == false) return;
+    auto& scene = *SceneManager::Get().GetActiveScene();
 
-    Entity target(targetPosEntity, SceneManager::Get().GetActiveScene());
-    Entity navmeshAgent(navmeshAgentEntity, SceneManager::Get().GetActiveScene());
+    //Entity target(targetPosEntity, SceneManager::Get().GetActiveScene());
+    //Entity navmeshAgent(navmeshAgentEntity, SceneManager::Get().GetActiveScene());
 
-    NavmeshAgentComponent& navmeshAgentComp = navmeshAgent.GetComponent<NavmeshAgentComponent>();
-    navmeshAgentComp.SetDestination(target.GetComponent<TransformComponent>().Position());
+    NavmeshAgentComponent& navmeshAgentComp = scene.GetComponent<NavmeshAgentComponent>(navmeshAgentEntity);
+    navmeshAgentComp.SetDestination(scene.GetComponent<TransformComponent>(targetPosEntity).Position());
 }   
 
 void NavmeshSample::OnRender(float deltaTime){}

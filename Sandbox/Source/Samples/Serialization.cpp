@@ -77,8 +77,8 @@ struct ComponentTest_02{
     SphereShape _object;
     std::vector<SphereShape> _list = {SphereShape(), SphereShape()};
 
-    void OnCreate(Entity& e){
-        LogWarning("ComponentTest_02 OnCreate %s", e.GetComponent<InfoComponent>().name.c_str());
+    void OnCreate(Entity& e, Scene& scene){
+        LogWarning("ComponentTest_02 OnCreate %s", scene.GetComponent<InfoComponent>(e).name.c_str());
     }
     
     template<class Archive>
@@ -180,11 +180,11 @@ void SerializationSample::OnInit(){
     scene = SceneManager::Get().NewScene();
 
     Entity e = scene->AddEntity("Test");
-    e.AddComponent<ComponentTest_01>();
+    scene->AddComponent<ComponentTest_01>(e);
 
     Entity e2 = scene->AddEntity("Test2");
-    e2.AddComponent<ComponentTest_02>();
-    e2.AddComponent<ScriptComponent>().AddScript<RotateScript>();
+    scene->AddComponent<ComponentTest_02>(e2);
+    scene->AddComponent<ScriptComponent>(e2).AddScript<RotateScript>();
 
     Application::AddModule<Editor>();
 

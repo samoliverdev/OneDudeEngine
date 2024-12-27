@@ -23,20 +23,20 @@ struct TerrainRenderer4: OD::Module {
         Scene* scene = SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
-        env.AddComponent<EnvironmentComponent>().settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+        scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
 
         Entity light = scene->AddEntity("Light");
-        LightComponent& lightComponent = light.AddComponent<LightComponent>();
+        LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
         lightComponent.color = {1,1,1};
-        light.GetComponent<TransformComponent>().Position(Vector3(-2, 4, -1));
-        light.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(45, -125, 0));
+        scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
+        scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
         lightComponent.renderShadow = false;
 
         camera = scene->AddEntity("Camera");
-        CameraComponent& cam = camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().LocalPosition(Vector3(0, 100, 15));
-        camera.GetComponent<TransformComponent>().LocalEulerAngles(Vector3(-25, 0, 0));
-        camera.AddComponent<ScriptComponent>().AddScript<CameraMovementScript>()->moveSpeed = 60*2;
+        CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+        scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 100, 15));
+        scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
+        scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60*2;
         cam.farClipPlane = 50000;
 
         Ref<Model> clipmapMesh = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/TerrainTesselationMesh.glb");
@@ -75,7 +75,7 @@ struct TerrainRenderer4: OD::Module {
         terrainMeshRenderer.material = terrainMaterial;*/
 
         terrain = scene->AddEntity("Terrain");
-        auto* terrainScript = terrain.AddComponent<ScriptComponent>().AddScript<Terrain1>();
+        auto* terrainScript = scene->AddComponent<ScriptComponent>(terrain).AddScript<Terrain1>();
         //terrainScript->viewer = &camera.GetComponent<TransformComponent>();
 
         scene->Start();

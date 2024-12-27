@@ -3,8 +3,8 @@
 
 namespace OD{
 
-void EnvironmentComponent::OnGui(Entity& e){
-    EnvironmentComponent& environment = e.GetComponent<EnvironmentComponent>();
+void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
+    EnvironmentComponent& environment = scene.GetComponent<EnvironmentComponent>(e);
 
     ImGui::DrawEnumCombo<EnvironmentSky>("environmentSky", &environment.settings.environmentSky);
     if(environment.settings.environmentSky == EnvironmentSky::Cubemap){

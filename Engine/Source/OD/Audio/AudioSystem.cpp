@@ -35,7 +35,7 @@ void AudioSourceComponent::Stop(){
     }
 }
 
-void AudioSourceComponent::OnGui(Entity& e){}
+void AudioSourceComponent::OnGui(Entity& e, Scene& scene){}
 
 AudioSystem::AudioSystem(Scene* inScene):System(inScene){
     //soloud.init(); 

@@ -10,7 +10,7 @@ void ScriptModuleInit(){
     SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
 }
 
-void ScriptComponent::OnGui(Entity& e){
+void ScriptComponent::OnGui(Entity& e, Scene& scene){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 
         | ImGuiTreeNodeFlags_Framed 
@@ -20,14 +20,14 @@ void ScriptComponent::OnGui(Entity& e){
 
     
     std::hash<std::string> hasher;
-    ScriptComponent& script = e.GetComponent<ScriptComponent>();
+    ScriptComponent& script = scene.GetComponent<ScriptComponent>(e);
 
     for(auto i: SceneManager::Get().scriptsSerializer){
-        if(i.second.hasComponent(e) == false) continue;
+        if(i.second.hasComponent(e, scene) == false) continue;
 
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first);
         if(open){
-            i.second.onGui(e);
+            i.second.onGui(e, scene);
         }
         ImGui::TreePop();
     }
@@ -55,14 +55,15 @@ void ScriptComponent::RemoveAllScripts(){
     instances.clear();
 }
     
-void ScriptComponent::_Update(Entity e){
+void ScriptComponent::_Update(Entity e, Scene& scene){
     for(auto i: instances){
         if(i.second.instance == nullptr){
             i.second.instance = i.second.InstantiateScript(i.second);
         }
 
         i.second.instance->entity = e;
-        Assert(i.second.instance->entity.IsValid() == true);
+        i.second.instance->scene = &scene;
+        Assert(scene.IsValid(i.second.instance->entity) == true);
 
         if(i.second.instance->hasStarted == false){
             i.second.instance->OnStart();
@@ -87,7 +88,7 @@ void ScriptSystem::Update(){
 
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
-        c._Update(Entity(entity, GetScene()));
+        c._Update(entity, *GetScene());
     }
 }
 

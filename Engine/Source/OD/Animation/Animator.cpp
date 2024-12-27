@@ -13,7 +13,7 @@ void AnimatorModuleInit(){
     SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
 }
 
-void AnimatorComponent::OnGui(Entity& e){}
+void AnimatorComponent::OnGui(Entity& e, Scene& scene){}
 
 void AnimatorComponent::Play(Clip* clip){
     controller.Play(clip);
