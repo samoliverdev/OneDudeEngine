@@ -43,7 +43,7 @@ AudioSystem::AudioSystem(Scene* inScene):System(inScene){
 }
 
 AudioSystem::~AudioSystem(){
-    LogWarningExtra("AudioSystem::~AudioSystem");
+    //LogWarningExtra("AudioSystem::~AudioSystem");
     if(hasInited == true){
         soloud.deinit();
         hasInited = false;

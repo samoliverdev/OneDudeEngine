@@ -79,42 +79,10 @@ void NavmeshSample::OnInit(){
     navmeshComp.navmesh->buildSettings.detailSampleDist = 6.0f;
     navmeshComp.navmesh->buildSettings.detailSampleMaxError = 1.0f;
     navmeshComp.navmesh->buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
-    
-    float tileSize = navmeshComp.navmesh->buildSettings.tileSize * navmeshComp.navmesh->buildSettings.cellSize;
-    float halfTileSize = tileSize/2;
 
     AABB navmeshBounds = AABB(Vector3(0, 0, 0), 1000, 1000, 1000);
-    Vector3 boundsSize(tileSize);
-
     navmeshComp.navmesh->Bake(scene, navmeshBounds);
     
-    //if(navmeshComp.navmesh->useTile == false){
-        //navmeshComp.navmesh->Bake(scene, navmeshBounds);
-    //} else {
-        //navmeshComp.navmesh->TileInit(scene, navmeshBounds);
-        //navmeshComp.navmesh->BakeAllTiles(scene, navmeshBounds);
-        /*navmeshComp.navmesh->BakeTile(
-            scene, 
-            navmeshBounds, 
-            Vector3(0,0,0)
-        );
-        navmeshComp.navmesh->BakeTile(
-            scene, 
-            navmeshBounds, 
-            Vector3(tileSize*1, 0, 0)
-        );
-        navmeshComp.navmesh->BakeTile(
-            scene, 
-            navmeshBounds,
-            Vector3(tileSize*-1, 0, 0)
-        );
-        navmeshComp.navmesh->BakeTile(
-            scene, 
-            navmeshBounds, 
-            Vector3(0,0,tileSize*-1)
-        );*/
-    //}
-
     Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
     NavmeshAgentComponent& agent = scene->AddComponent<NavmeshAgentComponent>(navmeshAgent);
     agent.SetDestination(Vector3(-8, 0, -11));
@@ -133,26 +101,6 @@ void NavmeshSample::OnInit(){
     Entity target = scene->AddEntity("target");
     scene->GetComponent<TransformComponent>(target).Position(Vector3(-8, 0, -11));
     targetPosEntity = target;
-
-    /*NavMeshPath path;
-    bool result = navmeshComp.navmesh->FindPath(Vector3(0, 0, 0), Vector3(-8, 0, -11), path);
-    LogWarning("Path Corneis: %zd", path.corners.size());*/
-
-    /*navmesh.buildSettings.cellSize = 0.3f;
-    navmesh.buildSettings.cellHeight = 0.2f;
-    navmesh.buildSettings.agentHeight = 2.0f;
-    navmesh.buildSettings.agentRadius = 0.6f;
-    navmesh.buildSettings.agentMaxClimb = 0.9f;
-    navmesh.buildSettings.agentMaxSlope = 45.0f;
-    navmesh.buildSettings.regionMinSize = 8;
-    navmesh.buildSettings.regionMergeSize = 20;
-    navmesh.buildSettings.edgeMaxLen = 12.0f;
-    navmesh.buildSettings.edgeMaxError = 1.3f;
-    navmesh.buildSettings.vertsPerPoly = 6.0f;
-    navmesh.buildSettings.detailSampleDist = 6.0f;
-    navmesh.buildSettings.detailSampleMaxError = 1.0f;
-    navmesh.buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
-    navmesh.Bake(scene, AABB(Vector3Zero, Vector3One * 200.0f));*/
     
     //RenderContext::GetSettings().enableGizmosRuntime = true;
     //scene->Start();

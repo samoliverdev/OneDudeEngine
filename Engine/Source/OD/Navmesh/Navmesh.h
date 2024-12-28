@@ -140,7 +140,6 @@ class OD_API Navmesh{
 public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
-	//bool useTile = false;
 
 	~Navmesh();
 
@@ -153,6 +152,11 @@ public:
 	void Cleanup();
 	void DrawDebug();
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
+
+	template<class Archive> 
+	void serialize(Archive& ar){
+		ArchiveDumpNVP(ar, buildSettings);
+	}
 
 private:
 	bool TileInit(Scene* scene, AABB bounds);
@@ -197,7 +201,7 @@ struct OD_API NavmeshSkipTag{
 };
 
 struct OD_API NavmeshComponent{
-	BuildSettings buildSettings;
+	//BuildSettings buildSettings;
 	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
 	
@@ -205,8 +209,9 @@ struct OD_API NavmeshComponent{
 
 	template<class Archive> 
 	void serialize(Archive& ar){
-		ArchiveDumpNVP(ar, buildSettings);
+		//ArchiveDumpNVP(ar, buildSettings);
 		ArchiveDumpNVP(ar, size);
+		ArchiveDumpNVP(ar, navmesh);
 	}
 };
 

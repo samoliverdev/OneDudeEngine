@@ -140,6 +140,16 @@ void CreateTextQuadVAO(){
 void Graphics::Initialize(){
     glEnable(GL_DEPTH_TEST); 
 
+    auto defaultSkybox = Cubemap::CreateFromFile(
+        "Engine/Textures/Skybox/right.jpg",
+        "Engine/Textures/Skybox/left.jpg",
+        "Engine/Textures/Skybox/top.jpg",
+        "Engine/Textures/Skybox/bottom.jpg",
+        "Engine/Textures/Skybox/front.jpg",
+        "Engine/Textures/Skybox/back.jpg"
+    );
+    AssetManager::Get().AddAsset("DefaultSkyboxCubemap", defaultSkybox);
+
     fullScreenQuad = Mesh::FullScreenQuad();
     gismoShader = Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
     Assert(gismoShader != nullptr);

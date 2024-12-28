@@ -16,6 +16,7 @@
 
 bool useLauncher = true;
 bool openLauncher = true;
+std::string enginePath;
 std::string defaultProjectPath;
 std::string projectPath = "";
 OD::Editor* editor = nullptr;
@@ -163,19 +164,19 @@ class Launcher: public OD::Module{
             //| std::filesystem::copy_options::directories_only
         );
 
+        if(std::find(launcherSettings.projectsPath.begin(), launcherSettings.projectsPath.end(), _projectPath) == launcherSettings.projectsPath.end()){
+            launcherSettings.projectsPath.push_back(_projectPath);
+        }
+
         char str[512];
         sprintf(
             str, 
             "cmake -S %s -B %s/build -DENGINE_PATH:STRING=%s",
             _projectPath.c_str(),
             _projectPath.c_str(),
-            "C:/Users/sam/Desktop/cpp/OneDudeEngine/" //defaultProjectPath.c_str()
+            enginePath.c_str() //"C:/Users/sam/Desktop/cpp/OneDudeEngine/" //defaultProjectPath.c_str()
         );
         //cmake -S . -B build -DENGINE_PATH:STRING="C:/Users/sam/Desktop/cpp/OneDudeEngine/"
-
-        if(std::find(launcherSettings.projectsPath.begin(), launcherSettings.projectsPath.end(), _projectPath) == launcherSettings.projectsPath.end()){
-            launcherSettings.projectsPath.push_back(_projectPath);
-        }
 
         system(str);
     }
@@ -187,7 +188,7 @@ class Launcher: public OD::Module{
 
         //Platform::SetWindowSize(600, 400);
 
-        Scene* scene = OD::SceneManager::Get().NewScene();
+        /*Scene* scene = OD::SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
         scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
@@ -203,7 +204,7 @@ class Launcher: public OD::Module{
         CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
         scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
         scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
-        cam.farClipPlane = 1000;
+        cam.farClipPlane = 1000;*/
 
         //OD::Application::AddModule<OD::Editor>();
 
@@ -297,7 +298,7 @@ class Launcher: public OD::Module{
         }
 
 
-        if(ImGui::Button("Delete..")) ImGui::OpenPopup("Delete?");
+        /*if(ImGui::Button("Delete..")) ImGui::OpenPopup("Delete?");
         if(ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize)){
             ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
             ImGui::Separator();
@@ -315,7 +316,7 @@ class Launcher: public OD::Module{
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
             ImGui::EndPopup();
-        }
+        }*/
 
         ImGui::End();
 
@@ -367,51 +368,15 @@ class Editor: public OD::Module{
         OD::Application::AddModule(currentModule);
     }
 
-    void ReloadProjectDLL(){
+    void StartReloadProjectDLL(){
         strcpy_s(con, "");
         console.clear();
         ImGui::OpenPopup("HotReload?");
         pipe = _popen("cmake --build ../build --config Release", "r");
         //pipe = _popen("cmake --build ../build --config RelWithDebInfo", "r");
-        return;
-
-        using namespace OD;
-
-        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
-        //SceneManager::Get().DestroyActiveScene();
-        SceneManager::Get().NewScene();
-
-        if(currentModule != nullptr){
-            ((OD::FuncModule*)currentModule)->onInit = nullptr;
-            ((OD::FuncModule*)currentModule)->onExit = nullptr;
-            ((OD::FuncModule*)currentModule)->onUpdate = nullptr;
-            Application::RemoveModule(currentModule);
-            Platform::FreeDynimicLibrary(currentDll);
-        }
-
-        //delete currentModule; //Fixme memory leak
-        currentModule = nullptr;
-        currentDll = nullptr;
-
-        system("cmake --build ../build --config Release");
-
-        //pipe = _popen("cmake --build ../build --config Release", "r");
-
-        typedef Module* (*CreateInstanceFunc)();
-        currentDll = Platform::LoadDynamicLibrary(ProjectManager::GetActiveProject()->scriptModulePath.c_str());
-
-        auto c = new OD::FuncModule();
-        c->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
-        c->onExit = (OD::_OnExit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnExit");
-        c->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
-        currentModule = c;
-
-        toReload = true;
-        //OD::Application::AddModule(currentModule);
-        //SceneManager::Get().NewScene()->Load("tempHotReload.scene");
     }
 
-    void _ReloadProjectDLL(){
+    void ReloadProjectDLL(){
         using namespace OD;
 
         SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
@@ -423,10 +388,10 @@ class Editor: public OD::Module{
             //((OD::FuncModule*)currentModule)->onExit = nullptr;
             //((OD::FuncModule*)currentModule)->onUpdate = nullptr;
             Application::RemoveModule(currentModule);
+            delete currentModule;
             Platform::FreeDynimicLibrary(currentDll);
         }
 
-        //delete currentModule; //Fixme memory leak
         currentModule = nullptr;
         currentDll = nullptr;
 
@@ -436,15 +401,16 @@ class Editor: public OD::Module{
         typedef Module* (*CreateInstanceFunc)();
         currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str());
 
-        auto c = new OD::FuncModule();
+        /*auto c = new OD::FuncModule();
         c->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
         c->onExit = (OD::_OnExit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnExit");
         c->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
-        currentModule = c;
+        currentModule = c;*/
 
-        OD::Editor::Get()->UnselectAll();
+        CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(currentDll, "CreateInstance");
+        currentModule = func();
 
-        //toReload = true;
+        //OD::Editor::Get()->UnselectAll();
 
         OD::Application::AddModule(currentModule);
         SceneManager::Get().NewScene()->Load("tempHotReload.scene");
@@ -453,12 +419,7 @@ class Editor: public OD::Module{
     void ReloadModuleScene(){
         if(toReload == false) return;
         toReload = false;
-
-        _ReloadProjectDLL();
-        return;
-
-        OD::Application::AddModule(currentModule);
-        OD::SceneManager::Get().NewScene()->Load("tempHotReload.scene");
+        ReloadProjectDLL();
     }
 
     void AddODEditor(){
@@ -467,7 +428,7 @@ class Editor: public OD::Module{
         //OD::Application::AddModule<OD::Editor>();
         editor = new OD::Editor();
         editor->AddMenuCommand("lolo/comands/AiMeuCu", [](){ LogWarning("Ai meu cu!!!1"); });
-        editor->AddMenuCommand("CurrentProject/ReloadDllModule", [this](){ ReloadProjectDLL(); });
+        editor->AddMenuCommand("CurrentProject/ReloadDllModule", [this](){ StartReloadProjectDLL(); });
 
         if(useLauncher){
             editor->AddMenuCommand("File/GoBackToLauncher", GoBackToLauncher);
@@ -640,6 +601,7 @@ int main(int argc, char *argv[]){
     Launcher* launcer = new Launcher();
     Editor* editor = new Editor();
 
+    enginePath = ENGINE_PATH "";
     defaultProjectPath = RESOURCES_PATH "";
     std::string targetProjectPath = argc > 1 ? argv[1] : "";
     

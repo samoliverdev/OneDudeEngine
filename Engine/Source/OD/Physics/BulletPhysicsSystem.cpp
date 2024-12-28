@@ -482,7 +482,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 
-    LogWarning("PhysicsSystem Contructor");
+    //LogWarning("PhysicsSystem Contructor");
 }
 
 PhysicsSystem::~PhysicsSystem(){
@@ -498,7 +498,7 @@ PhysicsSystem::~PhysicsSystem(){
     this->scene->GetRegistry().ctx().erase<PhysicsSystem*>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 
-    LogWarningExtra("PhysicsSystem Destructor"); 
+    //LogWarningExtra("PhysicsSystem Destructor"); 
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){

@@ -168,9 +168,9 @@ void Entity::CreateLuaBind(sol::state& lua){
 #pragma region Scene
 
 Scene::Scene(){
-    LogInfo("NewScene");
+    //LogInfo("NewScene");
     for(auto i: SceneManager::Get().addSystemFuncs){
-        LogInfo("Adding system: %s", i.first);
+        //LogInfo("Adding system: %s", i.first);
         i.second(*this);
     }
 }

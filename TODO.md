@@ -12,13 +12,14 @@
 * Fix All Physic Debug Asserts -
 
 * Finish Terrain(Normal, Shader, Shadow, Navmesh)
-* Finish Navmesh
+* Finish Navmesh -
 * Finish ProjectSystem/EditorLauncer
 * Fix strange bug using Lit2 Shader in the RenderPipeline -
 
 * Revisar Perfomace da StandRenderPipeline
 * Revisar StandRenderPipeline Shadow
-* Add Duplicate Entity
+* Add Duplicate Entity -
+* Maybe Add again the Clone in system
 * Fix Link Erro on Debug Compile
 * Create Same Type of "MaterialPropertyBlock" for the mainTex and color of the SpriteRendererComponent
 

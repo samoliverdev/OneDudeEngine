@@ -90,6 +90,13 @@ public:
         return std::static_pointer_cast<T>(d);
     }
 
+    template<class T, typename ... Args>
+    inline void AddAsset(const std::string& path, Ref<T> asset){
+        auto& db = data[std::type_index(typeid(T))];
+        LogInfo("AddAsset: %s", path.c_str());
+        db[path] = asset;
+    }
+
     inline void UnloadAll(){
         data.clear();
     }

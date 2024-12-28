@@ -65,14 +65,15 @@ struct OD_API EnvironmentSettings{
     //bool hasInited = false;
 
     EnvironmentSettings(){
-        skyCubemap = Cubemap::CreateFromFile(
+        /*skyCubemap = Cubemap::CreateFromFile(
             "Engine/Textures/Skybox/right.jpg",
             "Engine/Textures/Skybox/left.jpg",
             "Engine/Textures/Skybox/top.jpg",
             "Engine/Textures/Skybox/bottom.jpg",
             "Engine/Textures/Skybox/front.jpg",
             "Engine/Textures/Skybox/back.jpg"
-        );
+        );*/
+        skyCubemap = AssetManager::Get().LoadAsset<Cubemap>("DefaultSkyboxCubemap");
         
         skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
         skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);

@@ -29,7 +29,7 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 	if(ImGui::Button("Bake")){
 		if(navmeshComponent.navmesh == nullptr) navmeshComponent.navmesh = CreateRef<Navmesh>();
 		if(navmeshComponent.navmesh != nullptr){
-			navmeshComponent.navmesh->buildSettings = navmeshComponent.buildSettings;
+			//navmeshComponent.navmesh->buildSettings = navmeshComponent.buildSettings;
 			navmeshComponent.navmesh->Bake(
 				&scene, 
 				AABB(
