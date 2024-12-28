@@ -13,6 +13,8 @@
 #include "OD/Graphics/Geometry.h"
 #include "OD/Scene/SceneManager.h"
 
+#include "OD/Editor/Editor.h"
+
 namespace OD{
 
 RenderContextSettings settings;
@@ -54,7 +56,7 @@ RenderContext::RenderContext(Scene* inScene){
     blitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl");
     deferredGBufferShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl");
     deferredLightPassShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl");
-    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit2.glsl"));
+    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
@@ -149,6 +151,8 @@ void RenderContext::EndDrawToScreen(){
 }
 
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
+    Graphics::SetDepthMask(false);
+
     bool step = false;
     Framebuffer* finalFramebuffer = postFx1;
     Graphics::BlitFramebuffer(forwardOutColor, postFx1);
@@ -456,22 +460,28 @@ void RenderContext::DrawGizmos(){
     if(SceneManager::Get().GetActiveScene()->Running() == false && settings.enableGizmos == false) return;
 
     //Renderer::SetCamera(cam);
+    Graphics::SetDepthMask(false);
     Graphics::SetDepthTest(DepthTest::LESS);
     Graphics::SetCullFace(CullFace::BACK);
     Graphics::SetBlend(false);
-    //Graphics::SetDepthMask(true);
-
-    //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
-
-    for(System* s: scene->GetPhysicsSystems()){
-        s->OnDrawGizmos();
-    }
-    
-    for(System* s: scene->GetStandSystems()){
-        s->OnDrawGizmos();
-    }
 
     Camera cm = cam;
+    
+    //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
+
+    for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmos(cm);
+    for(System* s: scene->GetStandSystems()) s->OnDrawGizmos(cm);
+    for(System* s: scene->GetRendererSystems()) s->OnDrawGizmos(cm);
+
+    Editor* editor = Application::GetModuleByType<Editor>();
+    if(editor != nullptr){
+        if(scene->IsValid(editor->GetSelectionEntity())){
+            for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+            for(System* s: scene->GetStandSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+            for(System* s: scene->GetRendererSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+        }
+    }
+
     //_DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
 
     auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
@@ -484,7 +494,7 @@ void RenderContext::DrawGizmos(){
         _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
     }
 
-    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    /*auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
@@ -569,13 +579,14 @@ void RenderContext::DrawGizmos(){
         auto& t = drawGizmosView.get<TransformComponent>(e);
         Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
     }
+    */
 
-    auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
+    /*auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
     for(auto e: navmeshView){
         auto& n = navmeshView.get<NavmeshComponent>(e);
         if(n.navmesh == nullptr) continue;
         n.navmesh->DrawDebug();
-    }
+    }*/
 }
 
 void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){

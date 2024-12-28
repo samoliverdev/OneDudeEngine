@@ -24,7 +24,7 @@ namespace OD{
 // To minimize the 8 dot products, it is sufficient to minimize the set of intermediate multiplies before adding
 // The same is true for maximizing the 8 dot products
 // On AMD GCN, gives a series of instructions taking 48 cycles for both mat3 and mat4, and slightly reduces register pressure.
-AABB transform_aabb_optimized_min_max(AABB box, Matrix4 m){
+inline AABB transform_aabb_optimized_min_max(AABB box, Matrix4 m){
   // compute column multiplies for the AABB min
   Vector3 min_c1 = m[0] * box.GetMin().x;
   Vector3 min_c2 = m[1] * box.GetMin().y;
@@ -66,7 +66,7 @@ AABB transform_aabb_optimized_min_max(AABB box, Matrix4 m){
 // To minimize the 8 dot products, it is sufficient to negate the maximum dot product
 // On AMD GCN, it is free to take the absolute value of the input to an operation
 // On AMD GCN, this gives a series of instructions taking 30 cycles for both mat3 and mat4 and significantly reduces register pressure (about 10-12VGPR).
-AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
+inline AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
   // transform to center/extents box representation
   Vector3 center = (box.GetMax() + box.GetMin()) * 0.5f;
   Vector3 extents = box.GetMax() - center;

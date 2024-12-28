@@ -37,6 +37,8 @@ public:
 
     void AddMenuCommand(const std::string path, std::function<void()> command);
 
+    inline Entity GetSelectionEntity(){ return selectionEntity; }
+
     inline void SetSelectionAsset(Ref<Asset> asset){
         selectionAsset = asset;
         selectionOnAsset = true;

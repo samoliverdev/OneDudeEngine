@@ -3,10 +3,12 @@
 #include "OD/Core/Lua.h"
 #include "TextRendererComponent.h"
 #include "OD/Scene/SceneManager.h"
+#include "OD/Graphics/Geometry.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
+#include "OD/Animation/Animator.h"
 #include "OD/Platform/GL.h"
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
@@ -905,6 +907,181 @@ void StandRenderPipeline::Update(){
 
     renderContext->End();
 }
+
+void StandRenderPipeline::OnDrawGizmos(Camera& cm){
+    return;
+
+    auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto e: meshRenderView){
+        auto& c = meshRenderView.get<MeshRendererComponent>(e);
+        auto& t = meshRenderView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+
+        AABB aabb = c.boundingVolume;
+        AABB globalAABB = c.GetGlobalAABB(t);
+
+        Vector3 color = Vector3(0,0,1);
+        Transform _t = t.ToTransform();
+        if(aabb.isOnFrustum(cm.frustum, _t)) color = Vector3(1, 0, 0);
+
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+    }
+
+    auto modelRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+    for(auto e: modelRenderView){
+        auto& c = modelRenderView.get<ModelRendererComponent>(e);
+        auto& t = modelRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+
+        Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+
+        AABB aabb = c.GetAABB();
+        AABB globalAABB = c.GetGlobalAABB(globalTransform);
+
+        Vector3 color = Vector3(0,0,1);
+        if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
+
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+    }
+
+    auto skinnedModelRenderView = scene->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
+    for(auto e: skinnedModelRenderView){
+        auto& c = skinnedModelRenderView.get<SkinnedModelRendererComponent>(e);
+        auto& t = skinnedModelRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+
+        Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+
+        AABB aabb = c.GetAABB();
+        AABB globalAABB = c.GetGlobalAABB(globalTransform);
+
+        Vector3 color = Vector3(0,0,1);
+        if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
+
+        Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+    }
+
+    auto animView = scene->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent, TransformComponent>();
+    for(auto e: animView){
+        auto& s = animView.get<SkinnedModelRendererComponent>(e);
+        auto& c = animView.get<AnimatorComponent>(e);
+        auto& t = animView.get<TransformComponent>(e);
+        if(s.GetModel() == nullptr) continue;
+
+        Transform globalTransform = Transform(
+            t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.skeletonTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
+        );
+
+        Pose pose;
+        if(scene->Running()){ 
+            pose = c.controller.GetCurrentPose();
+        } else {
+            pose = s.GetModel()->skeleton.GetBindPose(); 
+        }
+
+        for(int i = 0; i < pose.Size(); i++){
+            if(pose.GetParent(i) < 0) continue;
+            Vector3 p0 = globalTransform.TransformPoint( pose.GetGlobalTransform(i).LocalPosition() );
+            Vector3 p1 = globalTransform.TransformPoint( pose.GetGlobalTransform(pose.GetParent(i)).LocalPosition() );
+            Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
+
+            Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+            Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
+        }
+    }
+
+    auto drawGizmosView = scene->GetRegistry().view<GizmosDrawComponent, TransformComponent>();
+    for(auto e: drawGizmosView){
+        auto& g = drawGizmosView.get<GizmosDrawComponent>(e);
+        auto& t = drawGizmosView.get<TransformComponent>(e);
+        Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+    }
+}
+
+void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
+    if(scene->HasComponent<MeshRendererComponent>(e)){
+        auto& c = scene->GetComponent<MeshRendererComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+        if(c.mesh != nullptr){
+            AABB aabb = c.boundingVolume;
+            AABB globalAABB = c.GetGlobalAABB(t);
+
+            Vector3 color = Vector3(0,0,1);
+            Transform _t = t.ToTransform();
+            if(aabb.isOnFrustum(cm.frustum, _t)) color = Vector3(1, 0, 0);
+
+            Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        }
+    }
+
+    if(scene->HasComponent<ModelRendererComponent>(e)){
+        auto& c = scene->GetComponent<ModelRendererComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+        if(c.GetModel() != nullptr){
+
+            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+
+            AABB aabb = c.GetAABB();
+            AABB globalAABB = c.GetGlobalAABB(globalTransform);
+
+            Vector3 color = Vector3(0,0,1);
+            if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
+
+            Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        }
+    }
+
+    if(scene->HasComponent<SkinnedModelRendererComponent>(e)){
+        auto& c = scene->GetComponent<SkinnedModelRendererComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+        if(c.GetModel() != nullptr){
+            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+
+            AABB aabb = c.GetAABB();
+            AABB globalAABB = c.GetGlobalAABB(globalTransform);
+
+            Vector3 color = Vector3(0,0,1);
+            if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
+
+            Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+        }
+    }
+
+    if(scene->HasComponent<SkinnedModelRendererComponent>(e) && scene->HasComponent<AnimatorComponent>(e)){
+        auto& s = scene->GetComponent<SkinnedModelRendererComponent>(e);
+        auto& c = scene->GetComponent<AnimatorComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+        if(s.GetModel() != nullptr){
+            Transform globalTransform = Transform(
+                t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.skeletonTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
+            );
+
+            Pose pose;
+            if(scene->Running()){ 
+                pose = c.controller.GetCurrentPose();
+            } else {
+                pose = s.GetModel()->skeleton.GetBindPose(); 
+            }
+
+            for(int i = 0; i < pose.Size(); i++){
+                if(pose.GetParent(i) < 0) continue;
+                Vector3 p0 = globalTransform.TransformPoint( pose.GetGlobalTransform(i).LocalPosition() );
+                Vector3 p1 = globalTransform.TransformPoint( pose.GetGlobalTransform(pose.GetParent(i)).LocalPosition() );
+                Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
+
+                Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+                Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
+            }
+        }
+    }
+
+    if(scene->HasComponent<GizmosDrawComponent>(e)){
+        auto& g = scene->GetComponent<GizmosDrawComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+        Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+    }
+}
+
 #pragma endregion
 
 }

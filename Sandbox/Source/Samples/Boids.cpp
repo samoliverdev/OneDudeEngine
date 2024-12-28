@@ -77,7 +77,7 @@ struct BoidSystem: public OD::System{
         }
     }
 
-    void OnDrawGizmos() override{
+    void OnDrawGizmos(Camera& cam) override{
         Transform trans;
         trans.LocalScale(Vector3(boundsSize));
         Graphics::DrawWireCube(trans.GetLocalModelMatrix(), Vector3(0, 1, 0), 1);

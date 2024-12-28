@@ -1358,7 +1358,8 @@ void NavmeshSystem::Update(){
 	}
 }
 
-void NavmeshSystem::OnDrawGizmos(){
+void NavmeshSystem::OnDrawGizmos(Camera& cam){
+	return;
 	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent>();
 	for(auto e: navmeshAgentView){
 		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
@@ -1374,6 +1375,15 @@ void NavmeshSystem::OnDrawGizmos(){
 			);
 		}
 	}
+}
+
+void NavmeshSystem::OnDrawGizmosSelected(Camera& cam, Entity entity){
+	if(scene->HasComponent<NavmeshComponent>(entity) == false) return;
+
+	auto& n = scene->GetComponent<NavmeshComponent>(entity);
+	if(n.navmesh == nullptr) return;
+    
+	n.navmesh->DrawDebug();
 }
 
 }

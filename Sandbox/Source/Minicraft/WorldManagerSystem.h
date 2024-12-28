@@ -22,7 +22,7 @@ public:
     //System* Clone(Scene* inScene) const override { return new WorldManagerSystem(inScene); }
     virtual void Update() override;
     virtual void OnRender() override;
-    virtual void OnDrawGizmos() override;
+    virtual void OnDrawGizmos(Camera& cam) override;
 
     bool CheckForVoxelNotEmpty(Vector3 worldPos, bool invertZ = true);
     bool CheckForVoxelIsEmpty(Vector3 worldPos, bool invertZ = true);

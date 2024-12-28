@@ -251,6 +251,9 @@ public:
     SystemType Type() override { return SystemType::Renderer; }
     void Update() override;
 
+    void OnDrawGizmos(Camera& cam) override;
+    void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+
 private:
     ShadowSettings shadow;
 

@@ -48,7 +48,7 @@ void WorldManagerSystem::OnRender(){
     Graphics::DrawWireCube(Transform(placeBlockPos+Vector3(0.5f, 0.5f, 0.5f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
 }
 
-void WorldManagerSystem::OnDrawGizmos(){
+void WorldManagerSystem::OnDrawGizmos(Camera& cam){
     return;
     TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
     Vector3 editVoxelPos = camTrans.Position() + (-camTrans.Forward() * 2.0f);

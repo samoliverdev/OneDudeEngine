@@ -189,7 +189,8 @@ public:
     virtual SystemType Type(){ return SystemType::Stand; }
     virtual void Update(){}
     virtual void OnRender(){}
-    virtual void OnDrawGizmos(){}
+    virtual void OnDrawGizmos(Camera& cam){}
+    virtual void OnDrawGizmosSelected(Camera& cam, Entity entity){}
     
     Scene* GetScene(){ return scene; }
 
@@ -247,6 +248,7 @@ public:
     inline entt::registry& GetRegistry(){ return registry; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
     inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
+    inline const std::vector<System*>& GetRendererSystems(){ return rendererSystems; }
 
     void Start();
     void Update();

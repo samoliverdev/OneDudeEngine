@@ -247,7 +247,8 @@ public:
     virtual SystemType Type() override { return SystemType::Physics; }
 
     virtual void Update() override;
-	virtual void OnDrawGizmos() override;
+	virtual void OnDrawGizmos(Camera& cam) override;
+	virtual void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
 };
 
 void NavmeshModuleInit();

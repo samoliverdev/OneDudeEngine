@@ -587,7 +587,7 @@ void PhysicsSystem::Update(){
     CheckForCollisionEvents();
 }
 
-void PhysicsSystem::OnDrawGizmos(){
+void PhysicsSystem::OnDrawGizmos(Camera& cam){
     ShowDebugGizmos();
 }
 
