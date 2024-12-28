@@ -4,6 +4,7 @@
 #pragma CullFace NONE
 #pragma DepthTest LESS
 #pragma Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+#pragma DepthMask False
 
 #if defined(VERTEX)
 layout (location = 0) in vec3 _pos;

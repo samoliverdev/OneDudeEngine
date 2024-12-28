@@ -214,13 +214,15 @@ public:
     Entity AddEntity(std::string name = "Entity");
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
+    Entity DuplicateEntity(Entity e);
+
     void DestroyEntity(Entity entity);
     void DestroyEntityImmediate(Entity entity);
     bool IsChildOf(Entity parent, Entity child);
     void CleanParent(Entity e);
     void SetParent(Entity parent, Entity child);
     //inline void SetParent(Entity& parent, Entity& child){ SetParent(parent.Id(), child.Id()); }
-
+    
     template<typename T, typename... Args> T& AddComponent(Entity entity, Args&&... args);
     template<typename T> T& AddComponent(Entity entity);
     template<typename T> T& GetComponent(Entity entity);

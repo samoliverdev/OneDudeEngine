@@ -82,6 +82,7 @@ void SceneManager::RegisterCoreComponent(const char* name){
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ scene.GetRegistry().emplace_or_replace<T>(other, scene.GetComponent<T>(e)); };
 
     funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){
@@ -166,6 +167,7 @@ void SceneManager::RegisterComponent(const char* name){
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ scene.GetRegistry().emplace_or_replace<T>(other, scene.GetComponent<T>(e)); };
 
     funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){

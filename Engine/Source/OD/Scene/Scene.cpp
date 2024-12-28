@@ -239,6 +239,33 @@ Entity Scene::AddEntity(std::string name){
     return e;
 }
 
+Entity Scene::DuplicateEntity(Entity e){
+    Assert(IsValid(e) == true);
+
+    TransformComponent& trans = registry.get<TransformComponent>(e);
+
+    Entity other = registry.create();
+    
+    auto& t = registry.emplace_or_replace<TransformComponent>(other, trans);
+    t.children.clear();
+
+    registry.emplace_or_replace<InfoComponent>(other, registry.get<InfoComponent>(e));
+    
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this);
+    }
+    for(auto i: SceneManager::Get().componentsSerializer){
+        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this);
+    }
+
+    for(auto i: trans.children){
+        auto ne = DuplicateEntity(i);
+        SetParent(other, ne);
+    }
+
+    return other;
+}
+
 void Scene::DestroyEntity(Entity entity){
     //if(registry.valid(entity) == false) return;
     //_DestroyEntity(entity);

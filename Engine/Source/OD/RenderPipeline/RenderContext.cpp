@@ -464,7 +464,9 @@ void RenderContext::DrawGizmos(){
     Graphics::SetDepthTest(DepthTest::LESS);
     Graphics::SetCullFace(CullFace::BACK);
     Graphics::SetBlend(false);
-
+    //Graphics::SetBlendFunc(BlendMode::ONE, BlendMode::ONE_MINUS_SRC_ALPHA);
+    //Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
+     
     Camera cm = cam;
     
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();

@@ -193,6 +193,10 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     bool entityDeleted = false;
     if(ImGui::BeginPopupContextItem()){
+        if(ImGui::MenuItem("Duplicate Entity")){
+            scene->DuplicateEntity(entity);
+        }
+
         if(info.Type() != EntityType::PrefabChild && ImGui::MenuItem("Delete Entity")){
             entityDeleted = true;
             //_toDestroy = true;

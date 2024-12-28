@@ -909,7 +909,7 @@ void StandRenderPipeline::Update(){
 }
 
 void StandRenderPipeline::OnDrawGizmos(Camera& cm){
-    return;
+    //return;
 
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
@@ -999,6 +999,8 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
 }
 
 void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
+    return;
+    
     if(scene->HasComponent<MeshRendererComponent>(e)){
         auto& c = scene->GetComponent<MeshRendererComponent>(e);
         auto& t = scene->GetComponent<TransformComponent>(e);
