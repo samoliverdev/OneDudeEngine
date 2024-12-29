@@ -3,6 +3,9 @@
 #include "CommandBuffer.h"
 #include "LightComponent.h"
 
+#include "MeshRendererComponent.h"
+#include "ModelRendererComponent.h"
+
 namespace OD{
 
 class Scene;
@@ -132,6 +135,9 @@ private:
     
     Camera cam;
     Scene* scene;
+
+    //entt::view<entt::get_t<MeshRendererComponent, TransformComponent>> meshView;
+    //entt::view<entt::get_t<ModelRendererComponent, TransformComponent>> meshRenderView;
 
     //void SetupDrawTarget(CommandBaseData& cmd, DrawingTarget& target);
     //void SetupShadowDrawTarget(CommandBaseData& cmd, ShadowDrawingTarget& target);

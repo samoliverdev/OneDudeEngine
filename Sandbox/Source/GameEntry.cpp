@@ -25,6 +25,7 @@
 #include "TerrainRenderer/TerrainRenderer3.h"
 #include "TerrainRenderer/TerrainRenderer4.h"
 #include "Samples/Terrain.h"
+#include "Samples/ProceduralTerrain2.h"
 
 #include <string>
 
@@ -37,7 +38,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 21;
+    int i = 27;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMeshSample();
@@ -65,6 +66,7 @@ OD::Module* CreateMainModule(){
     if(i == 24) return new TerrainRenderer3();
     if(i == 25) return new TerrainRenderer4();
     if(i == 26) return new TerrainSample();
+    if(i == 27) return new ProceduralTerrain2();
 
     return new BaseMeshSample();
 }

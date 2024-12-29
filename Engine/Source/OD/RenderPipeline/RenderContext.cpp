@@ -60,6 +60,9 @@ RenderContext::RenderContext(Scene* inScene){
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
+
+    //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
 }
 
 RenderContext::~RenderContext(){
@@ -215,6 +218,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         auto& t = meshView.get<TransformComponent>(e);
         if(c.mesh == nullptr) continue;
         if(c.material == nullptr) continue;
+        //if(transform_aabb_optimized_abs_center_extents(c.boundingVolume, t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
@@ -225,16 +229,17 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+        //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
 
         onReciveRenderData(data);
     }
 
-    auto meshRenderView = scene->GetRegistry().group<ModelRendererComponent, TransformComponent>();
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
+        //if(transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
 
         //OD_PROFILE_SCOPE("RenderContext::SetupLoop::1");
 
@@ -248,6 +253,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
+
             //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
@@ -436,6 +443,8 @@ void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
 }
 
 void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort, bool deferred){
+    OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
+
     if(sort) commandBuffer.Sort();
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //if(material.GetShader() == nullptr) return;
@@ -658,6 +667,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 }
 
 void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
+    OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     //commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);
 

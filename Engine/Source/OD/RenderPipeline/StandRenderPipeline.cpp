@@ -428,6 +428,60 @@ void CameraRenderer::RunRenderDataLoop(){
         shadows.AddRenderData(data); 
     });
 
+    /*auto meshView = context->GetScene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    for(auto e: meshView){
+        auto& c = meshView.get<MeshRendererComponent>(e);
+        auto& t = meshView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+        //if(transform_aabb_optimized_abs_center_extents(c.boundingVolume, t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
+
+        RenderData data;
+        data.distance = math::distance2(camera.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  t.GlobalModelMatrix();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+        //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
+
+        AddRenderData(data); 
+        shadows.AddRenderData(data); 
+    }
+
+    auto meshRenderView = context->GetScene()->GetRegistry().group<ModelRendererComponent, TransformComponent>();
+    for(auto e: meshRenderView){
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        auto& t = meshRenderView.get<TransformComponent>(e);
+        if(c.GetModel() == nullptr) continue;
+        //if(transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
+
+        //OD_PROFILE_SCOPE("RenderContext::SetupLoop::1");
+
+        for(auto i: c.GetModel()->renderTargets){
+            RenderData data;
+            data.distance = math::distance2(camera.viewPos, t.Position());
+            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
+            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            data.posePalette = nullptr;
+            //data.aabb = c.GetGlobalAABB(t);
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
+
+            //data.aabb = c.GetAABB();
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            AddRenderData(data); 
+            shadows.AddRenderData(data); 
+        }
+    }*/
+
     //executor.run(taskflow).wait();
 }
 

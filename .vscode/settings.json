@@ -101,6 +101,7 @@
         "alignedvector3": "cpp",
         "memory_resource": "cpp",
         "scoped_allocator": "cpp",
-        "fft": "cpp"
+        "fft": "cpp",
+        "mprealsupport": "cpp"
     }
 }

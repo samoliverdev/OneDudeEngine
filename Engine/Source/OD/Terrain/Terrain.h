@@ -66,6 +66,10 @@ struct OD_API TerrainComponent{
     Ref<Texture2D> layer3 = nullptr;
     Ref<Texture2D> layer4 = nullptr;
 
+    int mapChunkSize = (128*1) + 1;
+    int chunkWidthCount = 4*2;
+    int meshToNavmeshLod = 8;
+    
     void SetHeightmap(Ref<Heightmap> heightmap);
     //void SubmitHeightmap();
 
@@ -96,9 +100,6 @@ private:
         LodInfo lodInfo;
     };
 
-    int mapChunkSize = (128*1) + 1;
-    int chunkWidthCount = 4*2;
-
     Ref<Heightmap> heightmap = nullptr;
     Ref<Texture2D> heightmapTex = nullptr;
     Ref<Texture2D> normalTex = nullptr;
@@ -113,6 +114,7 @@ private:
     std::vector<TerrainLod> lodsMesh;
 
     bool isDirt = true;
+    bool heightMapIsDirt = false;
 };
 
 class OD_API TerrainSystem: public System{
@@ -126,6 +128,7 @@ public:
 private:
     void DestroyTerrain(TerrainComponent& terrain);
     void CreateTerrain(TerrainComponent& terrain, Entity e);
+    void UpdateTerrainData(TerrainComponent& terrain);
     void UpdateTerrain(TerrainComponent& terrain);
     void LoadCood(TerrainComponent& terrain, IVector2 coor);
     TerrainComponent::TerrainLod GetTerrainLod(int chunkSize, int lod);

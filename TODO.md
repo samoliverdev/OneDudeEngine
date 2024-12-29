@@ -17,7 +17,7 @@
 * Fix strange bug using Lit2 Shader in the RenderPipeline -
 
 * Revisar Perfomace da StandRenderPipeline
-* Revisar StandRenderPipeline Shadow
+* Revisar StandRenderPipeline Shadow -
 * Add Duplicate Entity -
 * Maybe Add again the Clone in system
 * Fix Link Erro on Debug Compile

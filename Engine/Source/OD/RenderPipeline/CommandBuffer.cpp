@@ -97,8 +97,15 @@ void CommandBuffer::Clean(){
     camera = Camera();
 
     drawCommands.Clear();
-    drawIntancingCommands.Clear();
+    //drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
+
+    for(auto& i: drawIntancingCommands.commands){
+        for(auto& j: i.second){
+            j.second.trans.clear();
+        }
+    }
+
 
     /*drawCommandsMaterials.clear();
     drawIntancingCommandsMaterials.clear();
@@ -197,6 +204,8 @@ void CommandBuffer::Submit(){
 
     // ---------------Submiting DrawIntancingCommands-----------------
     drawIntancingCommands.Each([&](auto& cm){
+        if(cm.trans.size() == 0) return;
+
         auto _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
@@ -205,11 +214,12 @@ void CommandBuffer::Submit(){
         _mat->EnableKeyword("INSTANCING");
         Material::SubmitGraphicDatas(*_mat);
         
-        cm.meshs->instancingModelMatrixs.clear();
+        /*cm.meshs->instancingModelMatrixs.clear();
         for(auto j: cm.trans){
             cm.meshs->instancingModelMatrixs.push_back(j);
         }
-        cm.meshs->SubmitInstancingModelMatrixs();
+        cm.meshs->SubmitInstancingModelMatrixs();*/
+        cm.meshs->SubmitInstancingCustomModelMatrixs(&cm.trans[0], cm.trans.size());
         
         Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
     });

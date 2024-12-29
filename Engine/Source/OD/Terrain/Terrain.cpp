@@ -33,6 +33,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
 
 void TerrainComponent::SetHeightmap(Ref<Heightmap> inHeightmap){
     heightmap = inHeightmap;
+    heightMapIsDirt = true;
     //isDirt = true;
     ///SubmitHeightmap();
 }
@@ -80,6 +81,7 @@ TerrainSystem::~TerrainSystem(){
 
 void TerrainSystem::Update(){
     OD_PROFILE_SCOPE("TerrainSystem::Update");
+    //OD_LOG_PROFILE("TerrainSystem::Update");
 
     auto terrainView = GetScene()->GetRegistry().view<TransformComponent, TerrainComponent>();
     for(auto e: terrainView){
@@ -91,6 +93,10 @@ void TerrainSystem::Update(){
         if(GetScene()->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
             CreateTerrain(terrain, e);
         } else {
+            if(terrain.heightMapIsDirt){
+                terrain.heightMapIsDirt = false;
+                UpdateTerrainData(terrain);
+            }
             UpdateTerrain(terrain);
         }
     }
@@ -264,6 +270,8 @@ void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
 }
 
 void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain");
+
     DestroyTerrain(terrain);
 
     terrain.meshsRoot = GetScene()->AddEntity("Root");
@@ -288,9 +296,13 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     }
     }
 
+    
     // Create HeightmapTex
     int heightmapSize = 1024;
     if(terrain.heightmap == nullptr) terrain.heightmap = CreateRef<Heightmap>(heightmapSize, heightmapSize);
+
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenHeightmapTex");    
     terrain.heightmapTex = Texture2D::CreateFromRaw( 
         (void*)&terrain.heightmap->data[0],
         (size_t)(terrain.heightmap->data.size() * sizeof(float)),
@@ -298,6 +310,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         TextureDataType::Float,
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
     );
+    }
 
     /*auto GenerateVertex = [&](int x, int y){
         x = math::clamp<int>(x, 0, terrain.heightmap->width);
@@ -356,13 +369,19 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     heightmapCollider.scale = heightmapSize;
     heightmapCollider.minHeight = 0;
     heightmapCollider.maxHeight = 1; //terrainHeight;
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::TransposeTo");    
     terrain.heightmap->TransposeTo(heightmapCollider.heights);
+    }
 
     //Create Mesh To Navmesh
     terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
     GetScene()->SetParent(terrain.meshsRoot, terrain.meshToNavmesh);
     MeshRendererComponent& meshToNavmesh = GetScene()->AddComponent<MeshRendererComponent>(terrain.meshToNavmesh);
-    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, 8);
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
+    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, terrain.meshToNavmeshLod);
+    }
     //meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = GetScene()->GetComponent<TransformComponent>(terrain.meshToNavmesh);
     meshToNavmeshTrans.LocalScale(Vector3(
@@ -379,16 +398,55 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     );
 
     // Load Coords
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::LoadCoods");  
     for(int x = 0; x < terrain.chunkWidthCount; x++){
         for(int y = 0; y < terrain.chunkWidthCount; y++){
             LoadCood(terrain, IVector2(x, y));
         }
     }
+    }
 
     terrain.isDirt = false;
+    terrain.heightMapIsDirt = false;
+}
+
+void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
+    int heightmapSize = terrain.heightmap->width;
+    float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
+
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenHeightmapTex");    
+    terrain.heightmapTex = Texture2D::CreateFromRaw( 
+        (void*)&terrain.heightmap->data[0],
+        (size_t)(terrain.heightmap->data.size() * sizeof(float)),
+        terrain.heightmap->width, terrain.heightmap->height,
+        TextureDataType::Float,
+        Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
+    );
+    }
+
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::TransposeTo");  
+    HeightmapColliderComponent& heightmapCollider = GetScene()->GetComponent<HeightmapColliderComponent>(terrain.collider);
+    heightmapCollider.width = terrain.heightmap->width;
+    heightmapCollider.length = terrain.heightmap->height;
+    heightmapCollider.scale = heightmapSize;
+    heightmapCollider.minHeight = 0;
+    heightmapCollider.maxHeight = 1; //terrainHeight;
+    terrain.heightmap->TransposeTo(heightmapCollider.heights);
+    }
+
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
+    MeshRendererComponent& meshToNavmesh = GetScene()->GetComponent<MeshRendererComponent>(terrain.meshToNavmesh);
+    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, terrain.meshToNavmeshLod);
+    }
 }
 
 void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
+    OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain");
+
     //TODO: Revise this design
     //terrain.meshsRoot.scene = scene;
     //terrain.collider.scene = scene;
@@ -403,6 +461,8 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         math::round(viewPos.z / terrain.chunkSize) 
     );
 
+    {
+    OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::1");
     for(auto& i: terrain.loadedChunks){
         TransformComponent& trans = GetScene()->GetComponent<TransformComponent>(i.second.entity);
 
@@ -422,7 +482,10 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             terrain.lodsMesh[i.second.lodInfo.lod].scale
         );
     }  
+    }
 
+    {
+    OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::2");
     for(auto& i: terrain.loadedChunks){
         MeshBorders& borders = i.second.lodInfo.borders;
         int& lod = i.second.lodInfo.lod;
@@ -442,7 +505,9 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             terrain.terrainHeight/2, 
             (terrain.chunkSize / terrain.lodsMesh[lod].scale.z) / 2
         );
+        meshComponent.material->SetTexture("heightMap", terrain.heightmapTex);
         meshComponent.material->SetFloat("heightScale", terrain.terrainHeight);
+        meshComponent.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
         meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
     }
 
@@ -453,6 +518,10 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             terrain.terrainLength / (float)(terrain.chunkSize * terrain.chunkWidthCount)
         )
     );
+    }
+
+    {
+    OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::3");
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
     colliderTrans.LocalScale(Vector3(
@@ -467,6 +536,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             -(terrainMeshWidth / 2.0f)
         )
     );
+    }
 }
 
 void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
@@ -485,22 +555,20 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
 
     GetScene()->AddComponent<NavmeshSkipTag>(chunkData.entity);
 
+    float offset = 1.0f / (float)terrain.chunkWidthCount;
+
     MeshRendererComponent& terrainMeshRenderer = GetScene()->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
     terrainMeshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
     terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"));
-
     terrainMeshRenderer.material->SetTexture("splatmap", terrain.splatmap);
     terrainMeshRenderer.material->SetTexture("tex0", terrain.layer0);
     terrainMeshRenderer.material->SetTexture("tex1", terrain.layer1);
     terrainMeshRenderer.material->SetTexture("tex2", terrain.layer2);
     terrainMeshRenderer.material->SetTexture("tex3", terrain.layer3);
     terrainMeshRenderer.material->SetTexture("tex4", terrain.layer4);
-
     terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
 
-    float offset = 1.0f / (float)terrain.chunkWidthCount;
-    
     terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
     //terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
     terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
