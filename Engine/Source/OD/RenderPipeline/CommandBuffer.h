@@ -12,18 +12,18 @@ class Mesh;
 class Framebuffer;
 
 struct OD_API DrawCommand{
+    Matrix4 trans;
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
-    Matrix4 trans;
     float distance;
 
     bool operator<(const DrawCommand& a) const;
 };
 
 struct OD_API SkinnedDrawCommand{
+    Matrix4 trans;
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
-    Matrix4 trans;
     std::vector<Matrix4>* posePalette;
     float distance;
 
@@ -34,7 +34,7 @@ struct OD_API DrawInstancingCommand{
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     std::vector<Matrix4> trans;
-
+    
     bool operator<(const DrawCommand& a) const;
 };
 

@@ -229,7 +229,7 @@ void ProceduralTerrain2::OnInit(){
 
     AreaSpawnSettings spawnSettings{
         objectsBucks["Rocks"],
-        30000
+        30000*2
     };
     spawnSettings.maxScale = {25, 50, 25};
     std::vector<ObjectsRef> toSpawn;

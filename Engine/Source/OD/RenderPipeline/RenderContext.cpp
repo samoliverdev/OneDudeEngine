@@ -334,9 +334,9 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 
     if(data.posePalette != nullptr){
         target.AddSkinnedDrawCommand({
+            data.targetMatrix,
             data.targetMaterial,
             data.targetMesh,
-            data.targetMatrix,
             data.posePalette
         }, data.distance);
         return;
@@ -344,16 +344,16 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 
     if(isInstancing){
         target.AddDrawInstancingCommand({
+            data.targetMatrix,
             data.targetMaterial,
             data.targetMesh,
-            data.targetMatrix
         });
 
     } else {
         target.AddDrawCommand({
+            data.targetMatrix,
             data.targetMaterial,
             data.targetMesh,
-            data.targetMatrix,
             data.distance
         }, data.distance);
     } 
@@ -638,10 +638,10 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
+            data.targetMatrix,
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
-            data.targetMatrix,
             data.posePalette
         }, data.distance);
         return;
@@ -649,18 +649,18 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
     if(isInstancing){
         commandBuffer.AddDrawInstancingCommand({
+            data.targetMatrix,
             data.customShadowPass, 
             //data.targetMaterial,
-            data.targetMesh,
-            data.targetMatrix
+            data.targetMesh
         });
 
     } else {
         commandBuffer.AddDrawCommand({
+            data.targetMatrix,
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
-            data.targetMatrix,
             data.distance
         }, data.distance);
     } 
