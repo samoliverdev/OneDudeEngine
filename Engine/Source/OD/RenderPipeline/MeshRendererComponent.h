@@ -7,10 +7,9 @@
 namespace OD{
 
 struct OD_API MeshRendererComponent{
+    AABB boundingVolume;
     Ref<Mesh> mesh;
     Ref<Material> material;
-    AABB boundingVolume;
-
     Ref<Material> customShadowPass;
 
     static void OnGui(Entity& e, Scene& scene);
@@ -71,6 +70,18 @@ struct OD_API MeshRendererComponent{
         result.Expand(transform.Scale());
         return result;
     }
+};
+
+struct OD_API StaticMeshRendererComponent: public MeshRendererComponent{
+    struct OD_API StaticData{
+        Matrix4 m;
+        AABB aabb;
+        bool isDirt = true;
+    };
+
+    StaticData staticData;
+
+    static void OnGui(Entity& e, Scene& scene);
 };
 
 }

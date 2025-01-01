@@ -4,6 +4,7 @@
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
+#include <EASTL/vector.h>
 
 namespace OD{
 

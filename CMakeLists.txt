@@ -65,6 +65,7 @@ add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
+add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
 
 option(ENGINE_SHARED_LIBRARY "" TRUE)
@@ -141,6 +142,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/recastnavigation/DetourCrowd/Include/
     Engine/ThirdParty/recastnavigation/Detour/Include/
     Engine/ThirdParty/taskflow/
+    Engine/ThirdParty/EASTL/include/
     Engine/Source/
 )
 target_link_libraries(Engine PUBLIC 
@@ -152,6 +154,7 @@ target_link_libraries(Engine PUBLIC
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
+    EASTL
 )
 
 #----------------Sandbox------------------

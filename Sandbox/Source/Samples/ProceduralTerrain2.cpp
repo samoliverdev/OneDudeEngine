@@ -83,7 +83,7 @@ inline void SpawnObjectsRef(/*PhysicsSystem& physicsSystem,*/ Scene& scene, Enti
             trans.Position(hit.hitPoint);
         }*/
 
-        ModelRendererComponent& modelRenderer = scene.AddComponent<ModelRendererComponent>(e);
+        auto& modelRenderer = scene.AddComponent<StaticModelRendererComponent>(e);
         modelRenderer.SetModel(objectsBuck.models[or.objectsIndex]);
     }
 }

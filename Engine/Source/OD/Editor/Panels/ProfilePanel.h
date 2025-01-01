@@ -7,7 +7,7 @@ namespace OD{
 class OD_API ProfilePanel: public EditorPanel{
 public:
     enum class ViewMode{List, Tree};
-    ViewMode viewMode;
+    ViewMode viewMode = ViewMode::Tree;
 
     ProfilePanel();
     void OnGui() override;

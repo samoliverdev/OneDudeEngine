@@ -86,12 +86,26 @@ struct OD_API ModelRendererComponent{
     AABB GetGlobalAABB(Transform& transform);
 
 protected:
+    AABB boundingVolume;
+    std::vector<Ref<Material>> materialsOverride;
     Ref<Model> model = nullptr;
     int subMeshIndex = -1;
-    std::vector<Ref<Material>> materialsOverride;
-    AABB boundingVolume;
-    Sphere boundingVolumeSphere;
+    //Sphere boundingVolumeSphere;
     bool boundingVolumeIsDirty = true;
+};
+
+struct OD_API StaticModelRendererComponent: public ModelRendererComponent{
+    friend class StandRenderPipeline;
+
+    struct OD_API StaticData{
+        Matrix4 m;
+        AABB aabb;
+        bool isDirt = true;
+    };
+
+    std::vector<StaticData> staticDatas;
+
+    static void OnGui(Entity& e, Scene& scene);
 };
 
 struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{

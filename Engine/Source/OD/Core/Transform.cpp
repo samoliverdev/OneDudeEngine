@@ -24,7 +24,7 @@ Matrix4 Transform::GetLocalModelMatrix(){
     isDirt = false;
     return localModelMatrix;
 
-    //return Mathf::TRS(_localPosition, _localRotation, _localScale);
+    //return Mathf::TRS(localPosition, localRotation, localScale);
 }
 
 Vector3 Transform::InverseTransformDirection(Vector3 dir){

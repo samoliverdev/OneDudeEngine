@@ -350,8 +350,8 @@ Entity Scene::Instantiate(const Ref<Model> model){
 
     for(auto i: model->renderTargets){
         Entity mesh = AddEntity(model->skeleton.GetJointName(i.bindPoseIndex));
-        MeshRendererComponent& meshRenderer = AddComponent<MeshRendererComponent>(mesh);
-        TransformComponent& transform = GetComponent<TransformComponent>(mesh);
+        auto& meshRenderer = AddComponent<StaticMeshRendererComponent>(mesh);
+        auto& transform = GetComponent<TransformComponent>(mesh);
 
         meshRenderer.material = model->materials[i.materialIndex];
         meshRenderer.mesh = model->meshs[i.meshIndex];

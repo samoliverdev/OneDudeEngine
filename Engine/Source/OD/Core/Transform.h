@@ -122,12 +122,12 @@ public:
     }
 
 protected:
-    bool isDirt = true;
+    Matrix4 localModelMatrix = Matrix4Identity;
+    Quaternion localRotation = QuaternionIdentity;
     Vector3 localPosition = Vector3Zero;
     Vector3 localScale = Vector3One;
-    Quaternion localRotation = QuaternionIdentity;
     Vector3 localEulerAngles = Vector3Zero;
-    Matrix4 localModelMatrix = Matrix4Identity;
+    bool isDirt = true;
 };
 
 }

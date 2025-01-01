@@ -1,17 +1,23 @@
 #pragma once
 
-//#include "Defines.h"
+#include "Defines.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <memory>
 #include <typeinfo>
 #include <typeindex>
 
+//#include <new>
+//#include <cstddef>
+
 #undef NDEBUG
 #include <assert.h>
 
 // runtime assertion
 #define Assert assert
+
+OD_API void* __cdecl operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
+OD_API void* __cdecl operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
 
 static const char* LogColors[] = {
     "\033[\033[0m",    //Reset Info

@@ -55,7 +55,7 @@ void ModelRendererComponent::SetModel(Ref<Model> m){
     materialsOverride.resize(model->materials.size());
 
     boundingVolume = Model::GenerateAABB(*model);
-    boundingVolumeSphere = Model::GenerateSphereBV(*model);
+    //boundingVolumeSphere = Model::GenerateSphereBV(*model);
 }
 
 AABB ModelRendererComponent::GetAABB(){
@@ -125,6 +125,34 @@ void DrawPoseNode(Skeleton& skeleton, Pose& pose, int index){
         for(auto i: ch){
             DrawPoseNode(skeleton, pose, i);
         }
+        ImGui::TreePop();
+    }
+}
+
+void StaticModelRendererComponent::OnGui(Entity& e, Scene& scene){
+    StaticModelRendererComponent& mesh = scene.GetComponent<StaticModelRendererComponent>(e);
+
+    if(ImGui::TreeNode("localTransform")){
+        Transform::OnGui(mesh.localTransform);
+        ImGui::TreePop();
+    }
+
+    std::string ss("model");
+    ImGui::DrawAsset<Model>(ss, mesh.model);
+
+    int subMeshIndex = mesh.subMeshIndex;
+    if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){
+        mesh.SetSubMeshIndex(subMeshIndex);
+    }
+
+    if(ImGui::TreeNode("materialSlots")){
+        int index = 0;
+        for(auto i: mesh.materialsOverride){
+            std::string name = "["+std::to_string(index)+"]";
+            ImGui::DrawAsset<Material>(name, mesh.materialsOverride[index], mesh.model->materials[index]);
+            index += 1;
+        }
+
         ImGui::TreePop();
     }
 }
