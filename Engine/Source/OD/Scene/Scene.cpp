@@ -340,7 +340,7 @@ bool Scene::IsValid(Entity id){
     return registry.valid(id); 
 }
 
-Entity Scene::Instantiate(const Ref<Model> model){
+Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer){
     if(model == nullptr){
         LogWarning("Trying instantiate a null model");
         return Entity();
@@ -350,8 +350,9 @@ Entity Scene::Instantiate(const Ref<Model> model){
 
     for(auto i: model->renderTargets){
         Entity mesh = AddEntity(model->skeleton.GetJointName(i.bindPoseIndex));
-        auto& meshRenderer = AddComponent<StaticMeshRendererComponent>(mesh);
+        auto& meshRenderer = AddComponent<MeshRendererComponent>(mesh);
         auto& transform = GetComponent<TransformComponent>(mesh);
+        if(staticRenderer) AddComponent<StaticRendererComponent>(mesh);
 
         meshRenderer.material = model->materials[i.materialIndex];
         meshRenderer.mesh = model->meshs[i.meshIndex];

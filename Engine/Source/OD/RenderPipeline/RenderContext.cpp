@@ -12,8 +12,8 @@
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/Graphics/Geometry.h"
 #include "OD/Scene/SceneManager.h"
-
 #include "OD/Editor/Editor.h"
+#include <taskflow/taskflow.hpp> 
 
 namespace OD{
 
@@ -211,18 +211,19 @@ void RenderContext::ScreenClean(){
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
-    auto staticMeshView = scene->GetRegistry().view<StaticMeshRendererComponent, TransformComponent>();
+    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent>();
     for(auto e: staticMeshView){
-        auto& c = staticMeshView.get<StaticMeshRendererComponent>(e);
+        auto& c = staticMeshView.get<MeshRendererComponent>(e);
         auto& t = staticMeshView.get<TransformComponent>(e);
+        auto& s = staticMeshView.get<StaticRendererComponent>(e);
         if(c.mesh == nullptr) continue;
         if(c.material == nullptr) continue;
-        //if(transform_aabb_optimized_abs_center_extents(c.boundingVolume, t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
 
-        if(c.staticData.isDirt){
-            c.staticData.isDirt = false;
-            c.staticData.m = t.GlobalModelMatrix();
-            c.staticData.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, c.staticData.m);
+        if(s.staticDatas.size() != 0) s.staticDatas.resize(1);
+        if(s.staticDatas[0].isDirt){
+            s.staticDatas[0].isDirt = false;
+            s.staticDatas[0].m = t.GlobalModelMatrix();
+            s.staticDatas[0].aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, s.staticDatas[0].m);
         }
 
         RenderData data;
@@ -230,40 +231,41 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.targetMaterial = c.material.get();
         data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
         data.targetMesh = c.mesh.get();
-        data.targetMatrix =  c.staticData.m;
+        data.targetMatrix =  s.staticDatas[0].m;
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
-        data.aabb = c.staticData.aabb;
-        //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
+        data.aabb = s.staticDatas[0].aabb;
 
         onReciveRenderData(data);
     }
 
-    auto meshStaticRenderView = scene->GetRegistry().view<StaticModelRendererComponent, TransformComponent>();
+    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent>();
     for(auto e: meshStaticRenderView){
-        auto& c = meshStaticRenderView.get<StaticModelRendererComponent>(e);
+        auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
         auto& t = meshStaticRenderView.get<TransformComponent>(e);
+        auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
         if(c.GetModel() == nullptr) continue;
 
-        if(c.staticDatas.size() != c.GetModel()->renderTargets.size()) c.staticDatas.resize(c.GetModel()->renderTargets.size());
+        if(s.staticDatas.size() != c.GetModel()->renderTargets.size()){
+            s.staticDatas.resize(c.GetModel()->renderTargets.size());
+            for(auto& i: s.staticDatas) i.isDirt = true;
+        }
 
         int _i = 0;
         for(auto i: c.GetModel()->renderTargets){
-            RenderData data;
-            data.distance = math::distance2(cam.viewPos, t.Position());
-
-            if(c.staticDatas[_i].isDirt){
-                c.staticDatas[_i].isDirt = false;
-                c.staticDatas[_i].m = t.GlobalModelMatrix();
-                c.staticDatas[_i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), c.staticDatas[_i].m);
+            if(s.staticDatas[_i].isDirt){
+                s.staticDatas[_i].isDirt = false;
+                s.staticDatas[_i].m = t.GlobalModelMatrix();
+                s.staticDatas[_i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), s.staticDatas[_i].m);
             }
 
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
             data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  c.staticDatas[_i].m;
-            data.aabb = c.staticDatas[_i].aabb;
+            data.targetMatrix =  s.staticDatas[_i].m;
+            data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
-
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
@@ -275,13 +277,14 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     //////////////////////////////////////////////////////////
 
-    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
+    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>(
+        entt::exclude<StaticRendererComponent>
+    );
     for(auto e: meshView){
         auto& c = meshView.get<MeshRendererComponent>(e);
         auto& t = meshView.get<TransformComponent>(e);
         if(c.mesh == nullptr) continue;
         if(c.material == nullptr) continue;
-        //if(transform_aabb_optimized_abs_center_extents(c.boundingVolume, t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
@@ -292,36 +295,27 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
-        //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
 
         onReciveRenderData(data);
     }
 
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>(
+        entt::exclude<StaticRendererComponent>
+    );
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        //if(transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
-
-        //if(math::distance2(cam.viewPos, t.Position()) > 2000*2000) continue;
-
-        //OD_PROFILE_SCOPE("RenderContext::SetupLoop::1");
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-
             data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
             data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
             data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
-            //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
-
-            //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
@@ -335,7 +329,6 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
         TransformComponent& t = skinnedView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
-        //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
         for(auto i: c.GetModel()->renderTargets){
             RenderData data;
@@ -347,7 +340,6 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.posePalette = &c.posePalette;
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
-            //data.aabb = c.GetAABB();
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }

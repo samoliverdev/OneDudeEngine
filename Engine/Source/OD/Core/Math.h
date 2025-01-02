@@ -7,7 +7,11 @@
 //#define GLM_FORCE_INTRINSICS
 //#define GLM_FORCE_PURE
 
-#define GLM_ENABLE_EXPERIMENTAL
+//#define GLM_FORCE_ALIGNED
+//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+//#define GLM_FORCE_AVX2
+
+//#define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -28,7 +32,7 @@
 // -- #include <glm/gtc/matrix_access.hpp>
 //#include <glm/gtx/matrix_query.hpp>
 
-//#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 namespace glm{

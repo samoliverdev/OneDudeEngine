@@ -237,7 +237,7 @@ public:
 
     bool IsValid(Entity entity);
 
-    Entity Instantiate(const Ref<Model> model);
+    Entity Instantiate(const Ref<Model> model, bool staticRenderer = false);
     Entity InstantiatePrefab(const char* prefabPath);
     
     Entity GetMainCamera();

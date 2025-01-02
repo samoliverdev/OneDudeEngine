@@ -58,14 +58,6 @@ struct OD_API CommandBaseData{
 };
 
 struct OD_API RenderData{
-    /*Material* targetMaterial; //Ref<Material> targetMaterial;
-    Material* customShadowPass = nullptr;
-    Mesh* targetMesh; //Ref<Mesh> targetMesh;
-    Matrix4 targetMatrix;
-    std::vector<Matrix4>* posePalette = nullptr;
-    float distance;
-    AABB aabb;*/
-
     Matrix4 targetMatrix;
     AABB aabb;
     Material* targetMaterial;

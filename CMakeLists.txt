@@ -102,6 +102,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 else() 
     add_compile_options(/bigobj)
     add_compile_options(/MP)
+    #add_compile_options(/arch:AVX2)
 endif()
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 

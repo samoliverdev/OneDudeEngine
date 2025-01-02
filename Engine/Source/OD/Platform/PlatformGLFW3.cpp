@@ -214,7 +214,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 }
 
 bool Platform::SystemStartup(const char* applicationName, int x, int y, int width, int height){
-    if (!glfwInit()) {
+    if(!glfwInit()){
         LogError("Glfw Erro to init");
         return false;
     }

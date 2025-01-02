@@ -45,7 +45,7 @@ void SynthCitySample::OnInit(){
     TransformComponent& cityTransform = floorEntity.GetComponent<TransformComponent>();
     cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));*/
 
-    Entity city = scene->Instantiate(cityModel);
+    Entity city = scene->Instantiate(cityModel, false);
     scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(0.01f));
 
     Application::AddModule<Editor>();

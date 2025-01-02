@@ -56,7 +56,9 @@ void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
         comand
     );*/
 
+    //m.lock();
     drawCommands.Add(comand);
+    //m.unlock();
     //drawCommandsMaterials.insert(comand.material);
     
     /*if(std::find(drawCommandsMaterials.begin(), drawCommandsMaterials.end(), comand.material) == drawCommandsMaterials.end()){
@@ -71,7 +73,9 @@ void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
     DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
     c.material = comand.material;
     c.meshs = comand.meshs;
+    //m.lock();
     c.trans.push_back(comand.trans);
+    //m.unlock();
 
     //drawIntancingCommandsMaterials.insert(comand.material);
 } 
@@ -80,10 +84,12 @@ void CommandBuffer::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float dista
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
+    //m.lock();
     skinnedDrawCommands.Add(
         {distance, comand.material->MaterialId()}, 
         comand
     );
+    //m.unlock();
     //skinnedDrawCommandsMaterials.insert(comand.material);
 }
 

@@ -72,16 +72,4 @@ struct OD_API MeshRendererComponent{
     }
 };
 
-struct OD_API StaticMeshRendererComponent: public MeshRendererComponent{
-    struct OD_API StaticData{
-        Matrix4 m;
-        AABB aabb;
-        bool isDirt = true;
-    };
-
-    StaticData staticData;
-
-    static void OnGui(Entity& e, Scene& scene);
-};
-
 }

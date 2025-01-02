@@ -10,6 +10,17 @@ namespace OD{
 
 class StandRenderPipeline;
 
+struct OD_API StaticRendererComponent{
+    struct OD_API StaticData{
+        Matrix4 m;
+        AABB aabb;
+        bool isDirt = true;
+    };
+    std::vector<StaticData> staticDatas;
+
+    template <class Archive> void serialize(Archive& ar){}
+};
+
 struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
 
@@ -92,20 +103,6 @@ protected:
     int subMeshIndex = -1;
     //Sphere boundingVolumeSphere;
     bool boundingVolumeIsDirty = true;
-};
-
-struct OD_API StaticModelRendererComponent: public ModelRendererComponent{
-    friend class StandRenderPipeline;
-
-    struct OD_API StaticData{
-        Matrix4 m;
-        AABB aabb;
-        bool isDirt = true;
-    };
-
-    std::vector<StaticData> staticDatas;
-
-    static void OnGui(Entity& e, Scene& scene);
 };
 
 struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
