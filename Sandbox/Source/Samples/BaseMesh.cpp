@@ -96,6 +96,7 @@ void Combine(std::vector<std::vector<std::string>> terms, std::string accum, std
 
 void BaseMeshSample::OnInit(){
     LogInfo("Game Init");
+    OD::Application::Vsync(false);
 
     //OD::TarPackage t((const void*)DATA);
     OD::TarPackage tarPackage("assets.tar");

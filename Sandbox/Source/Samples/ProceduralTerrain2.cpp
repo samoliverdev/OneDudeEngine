@@ -25,7 +25,7 @@ struct AreaSpawnSettings{
     Vector2 minMaxZAngle;
 
     Vector3 minScale = {1, 1, 1};
-    Vector3 maxScale = {5*5, 20*5, 5*5};
+    Vector3 maxScale = {2,2,2}; //{5*5, 20*5, 5*5};
 };
 
 inline void GenerateByArea(const AreaSpawnSettings& areaSpawnSettings, const Ref<Heightmap> heightmap, float heightScale, std::vector<ObjectsRef>& out){
@@ -39,6 +39,8 @@ inline void GenerateByArea(const AreaSpawnSettings& areaSpawnSettings, const Ref
 
         int tx = random(0, heightmap->width-1);
         int ty = random(0, heightmap->height-1);
+        float height = heightmap->Get(tx, ty);
+        if(height <= 0.3f) continue;
         Vector3 targetPos(
             tx,
             heightmap->Get(tx, ty) * heightScale,
@@ -71,7 +73,7 @@ inline void SpawnObjectsRef(/*PhysicsSystem& physicsSystem,*/ Scene& scene, Enti
 
         TransformComponent& terrainTrans = scene.GetComponent<TransformComponent>(terrain);
         TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
-        float scale = 8000.0f / ((1024.0f*4.0f)+1.0f);
+        float scale = 5000.0f / ((1024.0f*2.0f)+1.0f);
         trans.Position(terrainTrans.TransformPoint(or.pos * Vector3(scale, 1, scale)));
         //trans.LocalPosition(or.pos);
         trans.LocalEulerAngles(or.euler);
@@ -121,7 +123,17 @@ Ref<Heightmap> ProceduralTerrain2::GenerateHeightmap(int mapWidth, int mapHeight
 
     for(int y = 0; y < mapHeight; y++){
         for(int x = 0; x < mapWidth; x++){
-            noiseMap->Set(x, y, noise2.GetNoise((x+offset.x)*scale, (y+offset.y)*scale) * 0.5f + 0.5f);
+            float _x = x / (float)mapWidth * 2 - 1;
+			float _y = y / (float)mapHeight * 2 - 1;
+            float falloff = max(math::abs(_x), math::abs(_y));
+            float a = 3;
+		    float b = 2.2f;
+		    falloff = 1 - math::pow(falloff, a) / (math::pow(falloff, a) + math::pow(b - b * falloff, a));
+
+            noiseMap->Set(
+                x, y, 
+                (noise2.GetNoise((x+offset.x)*scale, (y+offset.y)*scale) * 0.5f + 0.5f) * falloff
+            );
         }
     }
 
@@ -144,8 +156,20 @@ void ProceduralTerrain2::OnInit(){
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
+    envComp.settings.toneMappingPostFX->enable = true;
+    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
+    envComp.settings.colorGradingPostFX->enable = true;
+    envComp.settings.colorGradingPostFX->contrast = 45;
+    envComp.settings.colorGradingPostFX->saturation = 15;
+    envComp.settings.bloomPostFX->enable = true;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    envComp.settings.shadowDistance = 5000;
+    envComp.settings.shadowDistance = 2500;
+    envComp.settings.directionalshadowQuality = ShadowQuality::VeryHigh;
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    //envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/Textures/Free Sky Backgrounds/Stylized Sky Background (15).png");
+    envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
 
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
@@ -174,18 +198,18 @@ void ProceduralTerrain2::OnInit(){
 
     terrain = scene->AddEntity("Terrain");
     TransformComponent& terrainTrans = scene->GetComponent<TransformComponent>(terrain);
-    terrainTrans.LocalPosition({-5000, 0, 5000});
+    terrainTrans.LocalPosition({-2500, 0, 2500});
     TerrainComponent& terrainComponent = scene->AddComponent<TerrainComponent>(terrain);
-    terrainComponent.terrainWidth = 8000;
-    terrainComponent.terrainLength = 8000;
+    terrainComponent.terrainWidth = 5000;
+    terrainComponent.terrainLength = 5000;
     terrainComponent.terrainHeight = 600;
     terrainComponent.chunkWidthCount = 10;
     terrainComponent.mapChunkSize = (512 * 1) + 1;
     terrainComponent.lodBias = 1;
     
-    heightmapSize = (1024 * 4)+1;
+    heightmapSize = (1024 * 2)+1;
     seed = 50;
-    scale = 0.25f/(4*1);
+    scale = 0.25f/(2*1);
     octaves = 4;
     persistance = 0.5f;
     lacunarity = 2.0f;
@@ -201,17 +225,17 @@ void ProceduralTerrain2::OnInit(){
     );
     }
     terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
-    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
-    terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg");
-    terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
-    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
+    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (31).png");
+    terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (37).png");
+    terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (58).png");
+    terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (56).png");
+    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (49).png");
 
     std::unordered_map<std::string, ObjectsBuck> objectsBucks;
     objectsBucks["Rocks"] = {
         "Rock",
         std::vector<Ref<Model>>{
-            AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb"),
+            AssetManager::Get().LoadAsset<Model>("Sandbox/Models/low-poly-tree-pack/Models/Tree Type1 05.dae"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingA.glb"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingB.glb"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingC.glb"),
@@ -223,16 +247,27 @@ void ProceduralTerrain2::OnInit(){
         for(auto& j: i->materials){
             j->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
             j->SetEnableInstancing(true);
+            j->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Models/low-poly-tree-pack/Textures/Colorsheet Tree Normal.png"));
         }
     }
+
+    Entity water = scene->AddEntity("Water");
+    auto& waterModel = scene->AddComponent<ModelRendererComponent>(water);
+    waterModel.SetModel(AssetManager::Get().LoadAsset<Model>("Sandbox/Models/TerrainPlane.glb"));
+    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    waterModel.GetMaterialsOverride()[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/water.png"));
+    auto& waterTrans = scene->GetComponent<TransformComponent>(water);
+    waterTrans.LocalScale(Vector3One * 5000.0f);
+    waterTrans.LocalPosition(Vector3Up * 10.0f);
 
     Entity spawnObjects = scene->AddEntity("SpawnObjects");
 
     AreaSpawnSettings spawnSettings{
         objectsBucks["Rocks"],
-        30000*2
+        30000*1
     };
     spawnSettings.maxScale = {25, 50, 25};
+    spawnSettings.maxScale = {1.5f, 2, 1.5f};
     std::vector<ObjectsRef> toSpawn;
     GenerateByArea(spawnSettings, heighmap, terrainComponent.terrainHeight, toSpawn);
     SpawnObjectsRef(*scene, spawnObjects, terrain, objectsBucks["Rocks"], toSpawn);

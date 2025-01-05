@@ -33,6 +33,7 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; 
 
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
+    //return true;
     /*std::string _projectPath = std::string(projectPath);
 
     //std::filesystem::current_path(projectPath);
@@ -81,7 +82,34 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     return true;
 }
 
+#include "OD/Platform/GL.h"
+#include <GLFW/glfw3.h>
+
 bool Application::Run(){
+    // GLFW init
+    /*glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    GLFWwindow* glfw_window = glfwCreateWindow(800, 600, "OpenGL experiment", NULL, NULL);
+    //glfwSetKeyCallback(glfw_window, key_callback);
+    //glfwSetScrollCallback(glfw_window, scroll_callback);
+    //glfwSetMouseButtonCallback(glfw_window, mouse_button_callback);
+    //glfwSetCursorPosCallback(glfw_window, cursor_position_callback);
+    //glfwSetWindowSizeCallback(glfw_window, window_size_callback);
+    glfwMakeContextCurrent(glfw_window);
+    gladLoadGL();
+    //glfwSwapInterval(1);
+    LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
+
+    while(!glfwWindowShouldClose(glfw_window)){
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glfwSwapBuffers(glfw_window);
+        glfwPollEvents();
+    }
+    return false;*/
+    
     while(running){
         Instrumentor::BeginLoop();
 
@@ -89,13 +117,14 @@ bool Application::Run(){
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame; 
 
-        for(auto i: modulesToAdd) _AddModule(i);
-        modulesToAdd.clear();
-
         //Input::Update();
         Platform::PumpMessages();
         Platform::PreUpdate();
+        Graphics::_Begin();
         Input::Update();
+
+        for(auto i: modulesToAdd) _AddModule(i);
+        modulesToAdd.clear();
 
         inUpdate = true;
         {
@@ -112,13 +141,13 @@ bool Application::Run(){
         }
         inUpdate = false;
 
-        Platform::LateUpdate();
-        Platform::SwapBuffers();
-
         for(auto i: modulesToRemove) _RemoveModule(i);
         modulesToRemove.clear();
-
         onFrameEnd.Invoke();
+
+        Graphics::_End();
+        Platform::LateUpdate();
+        Platform::SwapBuffers();
 
         Instrumentor::EndLoop();
     }

@@ -73,7 +73,7 @@ int GetNodeIndex(LoadData& loadData, aiNode* node){
 void ReadSkeleton(LoadData& loadData, aiNode* node, int parent = -1){
     Transform t(AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation));
 
-    LogInfo("Skeleton Bones -> Name: %s, Id: %d: Parent: %d", node->mName.C_Str(), (int)loadData.bindPose.Size(), parent);
+    //LogInfo("Skeleton Bones -> Name: %s, Id: %d: Parent: %d", node->mName.C_Str(), (int)loadData.bindPose.Size(), parent);
 
     int boneId = loadData.names.size();
 
@@ -422,7 +422,7 @@ void LoadAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
         std::string boneName = channel->mNodeName.data;
 
         int nodeId = GetNodeIndex(loadData, boneName);
-        LogInfo("Channel -> BoneName: %s BoneId: %d", channel->mNodeName.C_Str(), nodeId);
+        //LogInfo("Channel -> BoneName: %s BoneId: %d", channel->mNodeName.C_Str(), nodeId);
         Assert(nodeId != -1);
 
         VectorTrack& posTrack = outClip[nodeId].GetPositionTrack();

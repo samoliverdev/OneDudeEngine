@@ -23,6 +23,8 @@ void GraphicsModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Texture2D>();
 }
 
+unsigned int globalVAO;
+
 unsigned int lineVAO;
 unsigned int lineVBO;
 unsigned int lineCommandsVAO;
@@ -34,6 +36,8 @@ unsigned int textQuadVAO;
 unsigned int textQuadVBO;
 
 unsigned int wiredCubeVAO;
+unsigned int wiredCubeVBO;
+unsigned int wiredCubeEBO;
 
 Ref<Shader> gismoShader;
 Ref<Mesh> fullScreenQuad;
@@ -57,9 +61,11 @@ int Graphics::GetVerticesCount(){ return vertices; }
 int Graphics::GetTrisCount(){ return tris; }
 
 void CreateLineVAO(unsigned int* vao, unsigned int* vbo, int vertexCount){
+    #ifdef USE_VAO
     glGenVertexArrays(1, vao);
 	glBindVertexArray(*vao);
     glCheckError();
+    #endif
     
 	glGenBuffers(1, vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
@@ -71,9 +77,11 @@ void CreateLineVAO(unsigned int* vao, unsigned int* vbo, int vertexCount){
 	glEnableVertexAttribArray(0);
     glCheckError();
 
+    #ifdef USE_VAO
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
     glCheckError();
+    #endif
 }
 
 void CreateWiredCubeVAO(){
@@ -88,20 +96,20 @@ void CreateWiredCubeVAO(){
         0, 4, 1, 5, 2, 6, 3, 7
     };
 
+    #ifdef USE_VAO
     glGenVertexArrays(1, &wiredCubeVAO);
 	glBindVertexArray(wiredCubeVAO);
     glCheckError();
+    #endif
     
-    unsigned int vbo;
-    unsigned int ebo;
 
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glGenBuffers(1, &wiredCubeEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wiredCubeEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glCheckError();
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glGenBuffers(1, &wiredCubeVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, wiredCubeVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
     glCheckError();
 
@@ -109,17 +117,21 @@ void CreateWiredCubeVAO(){
 	glEnableVertexAttribArray(0);
     glCheckError();
 
+    #ifdef USE_VAO
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
     glCheckError();
+    #endif
 }
 
 void CreateTextQuadVAO(){
+    #ifdef USE_VAO
     glGenVertexArrays(1, &textQuadVAO);
-    glGenBuffers(1, &textQuadVBO);
-    glCheckError();
-
     glBindVertexArray(textQuadVAO);
+    glCheckError();
+    #endif
+
+    glGenBuffers(1, &textQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 5, NULL, GL_DYNAMIC_DRAW);
     glCheckError();
@@ -132,13 +144,21 @@ void CreateTextQuadVAO(){
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glCheckError();
 
+    #ifdef USE_VAO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);   
     glCheckError();
+    #endif
 }
 
 void Graphics::Initialize(){
     glEnable(GL_DEPTH_TEST); 
+
+    #ifndef USE_VAO
+    glGenVertexArrays(1, &globalVAO);
+	glBindVertexArray(globalVAO);
+    glCheckError();
+    #endif
 
     auto defaultSkybox = Cubemap::CreateFromFile(
         "Engine/Textures/Skybox/right.jpg",
@@ -163,6 +183,7 @@ void Graphics::Initialize(){
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
     LogInfo("MaxArrayTextureLayers: %d", maxLayers);
 
+    //#if OPENGL_DEBUG
     GLint maxVertexUniformComponents;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniformComponents);
     LogInfo("MaxVertexUniformComponents: %d", maxVertexUniformComponents);
@@ -174,6 +195,7 @@ void Graphics::Initialize(){
     LogInfo("MaxFragmentUniformComponents: %d", maxFragmentUniformComponents);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniformComponents);
     LogInfo("MaxFragmentUniformComponentVectors: %d", maxFragmentUniformComponents);
+    //#endif
 
     GLint maxTextureSize;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
@@ -198,6 +220,20 @@ void Graphics::Begin(){
 
 void Graphics::End(){
     begin = false;
+}
+
+void Graphics::_Begin(){
+    #ifndef USE_VAO
+    glBindVertexArray(globalVAO);
+    glCheckError();
+    #endif
+}
+
+void Graphics::_End(){
+    #ifndef USE_VAO
+    glBindVertexArray(0);
+    glCheckError();
+    #endif
 }
 
 bool Graphics::HasBegin(){
@@ -263,8 +299,12 @@ void Graphics::DrawMeshRaw(Mesh& mesh){
     vertices += mesh.vertexCount;
     tris += mesh.indiceCount;
     
+    #ifdef USE_VAO
     glBindVertexArray(mesh.vao);
     glCheckError();
+    #else
+    mesh.Bind();
+    #endif
 
     if(mesh.ebo != 0){
         glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
@@ -293,7 +333,11 @@ void Graphics::DrawMeshInstancingRaw(Mesh& mesh, int count){
     shader.SetMatrix4("projection", camera.projection);
     */
 
+    #ifdef USE_VAO
     glBindVertexArray(mesh.vao);
+    #else
+    mesh.Bind();
+    #endif
 
     if(mesh.ebo != 0){
         glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
@@ -358,9 +402,16 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
 	glLineWidth(lineWidth);
     glCheckError();
 
+    #ifdef USE_VAO
 	glBindVertexArray(lineCommandsVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, lineCommandsVBO);
     glCheckError();
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, lineCommandsVBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+	glEnableVertexAttribArray(0);
+    glCheckError();
+    #endif
     
     /*glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * lineCommandsData.size(), &lineCommandsData[0]);
 	glCheckError();
@@ -395,7 +446,15 @@ void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
 
     float line[6] = {start.x, start.y, start.z, end.x, end.y, end.z};
 
+    #ifdef USE_VAO
 	glBindVertexArray(lineVAO);
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+	glEnableVertexAttribArray(0);
+    glCheckError();
+    #endif
+
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
 	glDrawArrays(GL_LINES, 0, 2);
@@ -423,7 +482,15 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
 
     float line[6] = {start.x, start.y, start.z, end.x, end.y, end.z};
 
+    #ifdef USE_VAO
 	glBindVertexArray(lineVAO);
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+	glEnableVertexAttribArray(0);
+    glCheckError();
+    #endif
+
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
 	glDrawArrays(GL_LINES, 0, 2);
@@ -443,9 +510,18 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     gismoShader->SetMatrix4("model", modelMatrix);
     gismoShader->SetMatrix4("view", camera.view);
     gismoShader->SetMatrix4("projection", camera.projection);
+
+    #ifdef USE_VAO
+    glBindVertexArray(wiredCubeVAO);
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, wiredCubeVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+	glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wiredCubeEBO);
+    glCheckError();
+    #endif
     
     glLineWidth(lineWidth);
-    glBindVertexArray(wiredCubeVAO);
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
     glCheckError();
 
@@ -464,8 +540,18 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
     s.SetMatrix4("model", t.GetLocalModelMatrix());
 
     glActiveTexture(GL_TEXTURE0);
+
+    #ifdef USE_VAO
     glBindVertexArray(textQuadVAO);
     glCheckError();
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glCheckError();
+    #endif
 
     int x = 0; //pos.x;
     int y = 0; //pos.y;
@@ -508,9 +594,11 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
         x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
 
+    #ifdef USE_VAO
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glCheckError();
+    #endif
 }
 
 void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model){
@@ -521,8 +609,18 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model){
     s.SetMatrix4("model", model);
 
     glActiveTexture(GL_TEXTURE0);
+
+    #ifdef USE_VAO
     glBindVertexArray(textQuadVAO);
     glCheckError();
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glCheckError();
+    #endif
 
     int x = 0; //pos.x;
     int y = 0; //pos.y;
@@ -566,9 +664,11 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model){
         x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
 
+    #ifdef USE_VAO
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glCheckError();
+    #endif
 }
 
 void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
@@ -718,6 +818,7 @@ void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     Shader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
+
     Graphics::DrawMeshRaw(*fullScreenQuad);
     glCheckError();
 }

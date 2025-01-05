@@ -335,7 +335,7 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
         shaderSources[GL_GEOMETRY_SHADER] = ss;
     }
 
-    if(_source.find("TESS_CONTROL") != std::string::npos){
+    /*if(_source.find("TESS_CONTROL") != std::string::npos){
         std::string ss = _source;
         ss.insert(pos, "\n#define TESS_CONTROL\n");
         shaderSources[GL_TESS_CONTROL_SHADER] = ss;
@@ -345,7 +345,7 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
         std::string ss = _source;
         ss.insert(pos, "\n#define TESS_EVALUATION\n");
         shaderSources[GL_TESS_EVALUATION_SHADER] = ss;
-    }
+    }*/
 
     //LogInfo("%s", _source.c_str());
 

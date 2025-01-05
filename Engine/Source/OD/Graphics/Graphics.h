@@ -73,6 +73,9 @@ public:
 private:
     static void Initialize();
     static void Shutdown();
+
+    static void _Begin();
+    static void _End();
 };
 
 void GraphicsModuleInit();

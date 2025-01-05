@@ -1,10 +1,10 @@
 #include "Texture.h"
 #include "Shader.h"
-#include "Graphics.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Package.h"
 #include "OD/Platform/GL.h"
+#include "Graphics.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include <fstream>
@@ -15,7 +15,7 @@ namespace OD{
 // renderQuad() renders a 1x1 XY quad in NDC
 // -----------------------------------------
 void renderQuad(unsigned int& quadVAO, unsigned int& quadVBO){
-    if(quadVAO == 0){
+    if(quadVBO == 0){
         float quadVertices[] = {
             // positions        // texture Coords
             -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
@@ -24,9 +24,11 @@ void renderQuad(unsigned int& quadVAO, unsigned int& quadVBO){
              1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
         };
         // setup plane VAO
+        #ifdef USE_VAO
         glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
         glBindVertexArray(quadVAO);
+        #endif
+        glGenBuffers(1, &quadVBO);
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
@@ -34,9 +36,22 @@ void renderQuad(unsigned int& quadVAO, unsigned int& quadVBO){
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     }
+    
+    #ifdef USE_VAO
     glBindVertexArray(quadVAO);
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    #endif
+    
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+    #ifdef USE_VAO
     glBindVertexArray(0);
+    #endif
 }
 
 const int TextureFilterLookup[] = {
@@ -574,7 +589,9 @@ Texture2DArray::Texture2DArray(const std::vector<std::string>& filePaths){
 
         datas.push_back(data);
     }
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
+    //Fixme: make this complatible with opengl 3.3
+    Assert(false);
+    //glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
     glCheckError();
    
     int _i = 0;

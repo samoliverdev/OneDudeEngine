@@ -211,22 +211,23 @@ void CommandBuffer::Submit(){
     // ---------------Submiting DrawIntancingCommands-----------------
     drawIntancingCommands.Each([&](auto& cm){
         if(cm.trans.size() == 0) return;
-
         auto _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
-        if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
-        //_mat->DisableKeyword("SKINNED");
-        _mat->EnableKeyword("INSTANCING");
-        Material::SubmitGraphicDatas(*_mat);
+        if(_mat != lastMat){
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
+            //_mat->DisableKeyword("SKINNED");
+            _mat->EnableKeyword("INSTANCING");
+            Material::SubmitGraphicDatas(*_mat);
+        }
         
         /*cm.meshs->instancingModelMatrixs.clear();
         for(auto j: cm.trans){
             cm.meshs->instancingModelMatrixs.push_back(j);
         }
         cm.meshs->SubmitInstancingModelMatrixs();*/
+        lastMat = _mat;
         cm.meshs->SubmitInstancingCustomModelMatrixs(&cm.trans[0], cm.trans.size());
-        
         Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
     });
     lastMat = nullptr;

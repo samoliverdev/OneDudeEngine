@@ -27,7 +27,11 @@ RenderContext::RenderContext(Scene* inScene){
     scene = inScene;
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}, {FramebufferTextureFormat::RED_INTEGER}};
+    framebufferSpecification.colorAttachments = {
+        {FramebufferTextureFormat::RGBA16F}, 
+        //{FramebufferTextureFormat::RGBA8}, 
+        {FramebufferTextureFormat::RED_INTEGER}
+    };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 2;

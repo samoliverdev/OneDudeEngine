@@ -22,7 +22,7 @@ glm::mat4 captureViews[] = {
 
 void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO){
     // initialize (if necessary)
-    if(cubeVAO == 0){
+    if(cubeVBO == 0){
         float vertices[] = {
             // back face
             -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
@@ -67,15 +67,19 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO){
             -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
             -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
         };
+        #ifdef USE_VAO
         glGenVertexArrays(1, &cubeVAO);
+        glBindVertexArray(cubeVAO);
+        glCheckError();
+        #endif
+
         glGenBuffers(1, &cubeVBO);
         glCheckError();
-        // fill buffer
         glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
         glCheckError();
         // link vertex attributes
-        glBindVertexArray(cubeVAO);
+
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
@@ -83,13 +87,32 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO){
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCheckError();
+
+        #ifdef USE_VAO
         glBindVertexArray(0);
         glCheckError();
+        #endif
     }
     // render Cube
+    #ifdef USE_VAO
     glBindVertexArray(cubeVAO);
+    #else
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    #endif
+    
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    
+    #ifdef USE_VAO
     glBindVertexArray(0);
+    #endif
+    
     glCheckError();
 }
 

@@ -94,12 +94,14 @@ public:
     static Ref<Mesh> SkyboxCube();
     static Ref<Mesh> CenterQuad(bool useIndices);
 
-    inline unsigned int RendererId(){ return vao; }
+    //inline unsigned int RendererId(){ return vao; }
 
 private:
     bool isReadable = false;
 
+    //#ifdef USE_VAO
     unsigned int vao = 0;
+    //#endif
 
     unsigned int vertexVbo = 0;
     unsigned int uvVbo = 0;
@@ -116,6 +118,8 @@ private:
 
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
+
+    void Bind();
 };
 
 }

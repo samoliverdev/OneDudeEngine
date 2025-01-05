@@ -121,7 +121,7 @@ add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()
 add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
-#target_precompile_headers(engine INTERFACE engine/src/OD/pch.h)
+target_precompile_headers(Engine INTERFACE Engine/Source/OD/pch.h)
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
@@ -183,7 +183,6 @@ option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
 if(BUILD_SANDBOX)
 
 project(Sandbox)
-
 file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
 add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
 target_include_directories(Sandbox PUBLIC Engine/Source/)

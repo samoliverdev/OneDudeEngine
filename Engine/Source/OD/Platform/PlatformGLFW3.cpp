@@ -26,7 +26,7 @@ bool vSync;
 
 bool hidden = false;
 
-void UpdateFpsCounter(GLFWwindow* window) {
+void UpdateFpsCounter(GLFWwindow* window){
     static double previous_seconds;
     static int frame_count;
     double current_seconds = glfwGetTime();
@@ -72,7 +72,7 @@ void imguiOnInit(GLFWwindow* window){
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+    ImGui_ImplOpenGL3_Init("#version 150");
 }
 
 void imguiOnPreUpdate(){
@@ -130,6 +130,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset){
     //Input::ProcessMouseWheel(xoffset);
 }
 
+#if OPENGL_DEBUG
 void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param) {
 	
 	std::string sourceStr;
@@ -212,6 +213,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
     LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
 }
+#endif
 
 bool Platform::SystemStartup(const char* applicationName, int x, int y, int width, int height){
     if(!glfwInit()){
@@ -222,22 +224,25 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenglMajorVer);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenglMinorVer);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
     #if OPENGL_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     #endif
-    
-    if(hidden) glfwWindowHint(GLFW_VISIBLE , GL_FALSE);
+    glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GL_FALSE);
 
     //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
 
     //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     //offscreenWindow = glfwCreateWindow(640, 480, "", NULL, NULL);
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    //glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
     LogInfo("Glfw creationg windows: %s %d %d", applicationName, width, height);
     window = glfwCreateWindow(width, height, applicationName, NULL, NULL);
+
+    /*const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    width = mode->width;
+    height = mode->height;
+    window = glfwCreateWindow(width, height, applicationName, glfwGetPrimaryMonitor(), nullptr);*/
 
     if(!window){
         glfwTerminate();
@@ -263,6 +268,9 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     imguiOnInit(window);
 
     LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
+    LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));
+    LogInfo("GL_RENDERER: %s", glGetString(GL_RENDERER));
+    LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     return true;
 }

@@ -4,6 +4,7 @@
 #include <functional>
 
 #define OPENGL_CHECK_ERRORS 1
+//#define USE_VAO 1
 
 GLenum glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 
