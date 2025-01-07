@@ -33,29 +33,6 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; 
 
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
-    //return true;
-    /*std::string _projectPath = std::string(projectPath);
-
-    //std::filesystem::current_path(projectPath);
-    LogInfo("Project Path: %s", projectPath);
-    LogWarning("Cur Path: %s", std::filesystem::current_path().string().c_str());
-
-    std::string projectSettingsPath = _projectPath + "ProjectSettings.proj";
-
-    std::ifstream stream(projectSettingsPath);
-    if(stream.fail()){
-        std::ofstream os(projectSettingsPath);
-        cereal::JSONOutputArchive ar(os);
-        ArchiveDumpNamed(ar, "ProjectSettings", settings);
-    } else {
-        cereal::JSONInputArchive ar{stream};
-        ArchiveDumpNamed(ar, "ProjectSettings", settings);
-    }
-
-    std::filesystem::current_path(_projectPath + "Content");
-
-    LogWarning("Cur Path2: %s", std::filesystem::current_path().string().c_str());*/
-
     auto project = ProjectManager::LoadProject(projectPath);
     if(project == nullptr) return false;
 
@@ -111,13 +88,14 @@ bool Application::Run(){
     return false;*/
     
     while(running){
+        #if OD_PROFILE
         Instrumentor::BeginLoop();
+        #endif
 
         float currentFrame = Platform::GetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame; 
 
-        //Input::Update();
         Platform::PumpMessages();
         Platform::PreUpdate();
         Graphics::_Begin();
@@ -149,7 +127,9 @@ bool Application::Run(){
         Platform::LateUpdate();
         Platform::SwapBuffers();
 
+        #if OD_PROFILE
         Instrumentor::EndLoop();
+        #endif
     }
 
     OnExit();

@@ -2,6 +2,7 @@
 #include "Math.h"
 #include "Lua.h"
 #include <vector>
+#include "OD/Core/Instrumentor.h"
 
 namespace OD {
 
@@ -97,6 +98,8 @@ bool Input::IsKeyUp(KeyCode key){
 }
 
 void Input::Update(){
+    OD_PROFILE_SCOPE("Platform::Update");
+    
     for(auto i: allKeys){
         keysStates[(int)i].lastPressed = keysStates[(int)i].pressed;
         keysStates[(int)i].pressed = IsKey(i);

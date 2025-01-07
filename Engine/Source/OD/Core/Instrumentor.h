@@ -60,4 +60,6 @@ private:
 #else
 #define OD_PROFILE_SCOPE(name)
 #define OD_PROFILE_FUNCTION()
+#define OD_LOG_PROFILE(name)
+#define OD_LOG_PROFILE2(name, str)
 #endif

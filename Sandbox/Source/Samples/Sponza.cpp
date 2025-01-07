@@ -55,7 +55,7 @@ void SponzaSample::OnInit(){
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     lightComponent.intensity = 1.5f;
-    lightComponent.renderShadow = true;
+    lightComponent.renderShadow = false;
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
@@ -65,7 +65,7 @@ void SponzaSample::OnInit(){
     lightComponent2.type = LightComponent::Type::Point;
     lightComponent2.intensity = 5.0f;
     lightComponent2.radius = 100.0f;
-    lightComponent2.renderShadow = true;
+    lightComponent2.renderShadow = false;
     scene->GetComponent<TransformComponent>(pointLight).Position(Vector3(0, 4, 0));
 
     Entity pointLight2 = scene->AddEntity("Point Light 2");
@@ -77,8 +77,8 @@ void SponzaSample::OnInit(){
     lightComponent3.renderShadow = false;
     scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));
 
-    Application::AddModule<Editor>();
-    //scene->Start();
+    //Application::AddModule<Editor>();
+    scene->Start();
 }
 
 void SponzaSample::OnUpdate(float deltaTime){

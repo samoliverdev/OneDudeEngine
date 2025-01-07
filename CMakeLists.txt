@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-#set(CMAKE_MSVC_RUNTIME_LIBRARY)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -50,7 +50,6 @@ set(FT_WITH_ZLIB OFF CACHE BOOL "" FORCE)
 set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
 set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "" FORCE)
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
 
 #set(TF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 #set(TF_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -65,7 +64,7 @@ add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
-add_subdirectory(Engine/ThirdParty/EASTL)
+#add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
 
 option(ENGINE_SHARED_LIBRARY "" TRUE)
@@ -143,7 +142,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/recastnavigation/DetourCrowd/Include/
     Engine/ThirdParty/recastnavigation/Detour/Include/
     Engine/ThirdParty/taskflow/
-    Engine/ThirdParty/EASTL/include/
+    #Engine/ThirdParty/EASTL/include/
     Engine/Source/
 )
 target_link_libraries(Engine PUBLIC 
@@ -155,7 +154,7 @@ target_link_libraries(Engine PUBLIC
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
-    EASTL
+    #EASTL
 )
 
 #----------------Sandbox------------------

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Instrumentor.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -14,7 +15,7 @@
 #include "OD/Core/Input.h"
 #include "OD/Core/Application.h"
 
-#define OPENGL_DEBUG 1
+#define OPENGL_DEBUG 0
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6
 
@@ -22,8 +23,7 @@ namespace OD{
 
 GLFWwindow* window;
 //GLFWwindow* offscreenWindow;
-bool vSync;
-
+bool vSync = false;
 bool hidden = false;
 
 void UpdateFpsCounter(GLFWwindow* window){
@@ -251,7 +251,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); //vsync on
+    glfwSwapInterval(0); //vsync on
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     #if OPENGL_DEBUG
@@ -276,11 +276,13 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 }
 
 void Platform::PreUpdate(){
+    OD_PROFILE_SCOPE("Platform::PreUpdate");
     UpdateFpsCounter(window);
     imguiOnPreUpdate();
 }
 
 void Platform::LateUpdate(){
+    OD_PROFILE_SCOPE("Platform::LateUpdate");
     imguiOnUpdate(window);
 }
 
@@ -307,6 +309,8 @@ void Input::GetMousePosition(double* x, double* y){
 }
 
 bool Platform::PumpMessages(){ 
+    OD_PROFILE_SCOPE("Platform::PumpMessages");
+    
     if(glfwWindowShouldClose(window)){
         Application::Quit();
         return false;
@@ -315,6 +319,7 @@ bool Platform::PumpMessages(){
 }
 
 void Platform::SwapBuffers(){
+    OD_PROFILE_SCOPE("Platform::SwapBuffers");
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
@@ -323,7 +328,7 @@ float Platform::GetTime(){ return glfwGetTime(); }
 void Platform::Sleep(double ms){}
 
 void Platform::SetVSync(bool enabled){
-    if (enabled)
+    if(enabled)
         glfwSwapInterval(1);
     else
         glfwSwapInterval(0);

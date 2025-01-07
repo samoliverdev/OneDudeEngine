@@ -324,14 +324,6 @@ void Graphics::DrawMeshInstancingRaw(Mesh& mesh, int count){
     drawCalls += 1;
     vertices += mesh.vertexCount * count;
     tris += mesh.indiceCount * count;
-    
-    /*
-    shader.Bind();
-    shader.SetFloat("useInstancing", 1.0f); 
-    //if(shader._uniforms.count("useInstancing") > 0) shader.SetFloat("useInstancing", 1.0f);
-    shader.SetMatrix4("view", camera.view);
-    shader.SetMatrix4("projection", camera.projection);
-    */
 
     #ifdef USE_VAO
     glBindVertexArray(mesh.vao);
@@ -428,7 +420,6 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     }
 
     lineCommandsData.clear();
-
 }
 
 void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){

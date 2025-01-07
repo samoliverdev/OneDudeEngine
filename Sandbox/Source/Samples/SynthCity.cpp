@@ -7,7 +7,7 @@
 void SynthCitySample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-    Application::Vsync(false);
+    //Application::Vsync(false);
 
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
