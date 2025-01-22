@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/MultiCompileShader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
@@ -18,6 +18,11 @@ struct OD_API MaterialMap{
 
     Type type;
 
+    //Dont call destructor if has inside the union
+    Ref<Texture2D> texture;
+    Ref<Texture2DArray> textureArray;
+    Ref<Cubemap> cubemap;
+
     union{
         struct{
             Vector4 vector;
@@ -26,9 +31,9 @@ struct OD_API MaterialMap{
 
         Matrix4 matrix;
 
-        Ref<Texture2D> texture;
+        /*Ref<Texture2D> texture;
         Ref<Texture2DArray> textureArray;
-        Ref<Cubemap> cubemap;
+        Ref<Cubemap> cubemap;*/
         
         struct{
             Framebuffer* framebuffer;
@@ -73,10 +78,10 @@ private:
 class OD_API Material: public Asset{
 public:
     Material();
-    Material(Ref<Shader> s);
+    Material(Ref<SubShader> s);
 
-    Ref<Shader> GetShader();
-    void SetShader(Ref<Shader> s);
+    Ref<SubShader> GetShader();
+    void SetShader(Ref<SubShader> s);
 
     uint32_t MaterialId();
 
@@ -158,7 +163,7 @@ private:
     void SetColor4(const char* name, Vector4 value);
 
     void UpdateMaps();
-    static void ApplyUniformTo(Material& material, Shader& shader, std::unordered_map<std::string, MaterialMap>& maps);
+    static void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
 };
 
 ////////////////////////////////////////
@@ -242,7 +247,7 @@ void Material::load(Archive& ar){
     );
 
     if(shaderPath.empty() == false){
-        SetShader(AssetManager::Get().LoadAsset<Shader>(shaderPath));
+        SetShader(AssetManager::Get().LoadAsset<SubShader>(shaderPath));
     }
 }
 

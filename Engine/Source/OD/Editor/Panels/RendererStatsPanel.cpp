@@ -12,6 +12,8 @@ RendererStatsPanel::RendererStatsPanel(){
 void RendererStatsPanel::OnGui() {
     ImGui::Begin("Renderer Stats");
     ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
+    ImGui::Text("UniformSets: %d", Graphics::GetUniformSet());
+    ImGui::Text("ShaderBinds: %d", Graphics::GetShaderBinds());
     
     if(Graphics::GetVerticesCount() >= 1000000){
         ImGui::Text("Vertices: %.1fM", Graphics::GetVerticesCount() / 1000000.0f);

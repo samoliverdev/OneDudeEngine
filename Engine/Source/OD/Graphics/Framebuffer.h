@@ -6,7 +6,7 @@ namespace sol{ class state; }
 
 namespace OD{
 
-class Shader;
+class SubShader;
 
 enum class OD_API_IMPORT FramebufferTextureFormat{
     None, RGB, RGBA8, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT

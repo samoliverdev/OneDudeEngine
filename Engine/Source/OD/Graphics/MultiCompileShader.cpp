@@ -65,18 +65,18 @@ std::string GetKey(const std::set<std::string>& keyworlds){
 }
 
 MultiCompileShader::MultiCompileShader(std::string source){
-    Ref<Shader> shader = Shader::CreateFromFile(source);
+    Ref<SubShader> shader = SubShader::CreateFromFile(source);
     Init(shader, source);
 }
 
-MultiCompileShader::MultiCompileShader(Ref<Shader> shader){
+MultiCompileShader::MultiCompileShader(Ref<SubShader> shader){
     Assert(shader != nullptr);
     Assert(shader->Path() != "Memory");
 
     Init(shader, shader->Path());
 }
 
-void MultiCompileShader::Init(Ref<Shader> baseShader, std::string path){
+void MultiCompileShader::Init(Ref<SubShader> baseShader, std::string path){
     shaders[""] = baseShader;
     currentShader = baseShader;
     sourcePath = path;
@@ -176,7 +176,7 @@ void MultiCompileShader::SetCurrentShader(){
     UpdateCurrentShader();
 }
 
-Ref<Shader> MultiCompileShader::GetCurrentShader(){
+Ref<SubShader> MultiCompileShader::GetCurrentShader(){
     return currentShader;
 }
 
@@ -194,7 +194,7 @@ void MultiCompileShader::UpdateCurrentShader(){
 
 void MultiCompileShader::AddShaderVaring(std::string key, const std::set<std::string>& keywords){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());
-    Ref<Shader> shader = Shader::CreateFromFile(sourcePath, _enabledKeywords);
+    Ref<SubShader> shader = SubShader::CreateFromFile(sourcePath, _enabledKeywords);
     shaders[key] = shader;
     currentShader = shader;
 }

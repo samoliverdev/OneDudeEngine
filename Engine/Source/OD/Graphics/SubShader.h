@@ -10,20 +10,43 @@
 
 namespace OD {
 
-class OD_API Shader: public Asset{
+struct OD_API ShaderPassData{
+    std::string name;
+    CullFace cullFace = CullFace::BACK;
+    DepthTest depthTest = DepthTest::LESS;
+    bool depthMask = true;
+    bool blend = false;
+    BlendMode srcBlend;
+    BlendMode dstBlend;
+    bool supportInstancing;
+    std::vector<std::vector<std::string>> properties;
+
+    void UpdateProperties();
+};
+
+struct OD_API ShaderSourceData{
+    std::vector<std::vector<std::string>> properties;
+    std::vector<std::vector<std::string>> pragmas;
+    std::vector<ShaderPassData> passes;
+    std::string baseSource;
+};
+
+bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);
+
+class OD_API SubShader: public Asset{
     friend class Graphics;
 public:
-    static Ref<Shader> CreateFromFile(const std::string& filepath);
-    static Ref<Shader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
+    static Ref<SubShader> CreateFromFile(const std::string& filepath);
+    static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
 
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
-    static void Destroy(Shader& shader);
-    static void Bind(Shader& shader);
+    static void Destroy(SubShader& shader);
+    static void Bind(SubShader& shader);
     static void Unbind();
 
-    virtual ~Shader();
+    virtual ~SubShader();
 
     bool IsValid();
 

@@ -28,13 +28,13 @@ RenderContext::RenderContext(Scene* inScene){
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGBA16F}, 
-        //{FramebufferTextureFormat::RGBA8}, 
-        {FramebufferTextureFormat::RED_INTEGER}
+        //{FramebufferTextureFormat::RGBA16F}, 
+        {FramebufferTextureFormat::RGBA8}//, 
+        //{FramebufferTextureFormat::RED_INTEGER}
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
-    framebufferSpecification.sample = 2;
+    framebufferSpecification.sample = 1;
     forwardOutColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.colorAttachments = {
@@ -51,16 +51,19 @@ RenderContext::RenderContext(Scene* inScene){
     deferredOutColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F}};
+    framebufferSpecification.colorAttachments = {
+        //{FramebufferTextureFormat::RGBA16F}
+        {FramebufferTextureFormat::RGBA8}
+    };
     framebufferSpecification.sample = 1;
     finalColor = new Framebuffer(framebufferSpecification);
     postFx1 = new Framebuffer(framebufferSpecification);
     postFx2 = new Framebuffer(framebufferSpecification);
 
-    blitShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl");
-    deferredGBufferShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl");
-    deferredLightPassShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl");
-    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    blitShader = AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Blit.glsl");
+    deferredGBufferShader = AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/DeferredGBuffer.glsl");
+    deferredLightPassShader = AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/DeferredLightPassLit.glsl");
+    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
@@ -102,11 +105,16 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::BeginForwardPass(){
+    //Framebuffer::Unbind(); 
+    //ScreenClean();
+    //return;
     Framebuffer::Bind(*forwardOutColor);
+    //Framebuffer::Unbind(); 
     ScreenClean();
 }
 
 void RenderContext::BeginDeferredPass(){
+    //Assert(false);
     Framebuffer::Bind(*deferredOutColor);
     ScreenClean();
 }
@@ -145,6 +153,9 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
+    //Framebuffer::Unbind(); 
+    //return;
+
     Graphics::BlitFramebuffer(forwardOutColor, finalColor);
     Graphics::BlitQuadPostProcessing(forwardOutColor, finalColor, *blitShader);
 
@@ -421,7 +432,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     } 
 }
 
-void RenderContext::SetStandUniforms(Camera& cam, Shader& shader){
+void RenderContext::SetStandUniforms(Camera& cam, SubShader& shader){
     //Shader::Bind(shader);
     shader.SetMatrix4("view", cam.view);
     shader.SetMatrix4("projection", cam.projection);
@@ -466,7 +477,7 @@ void RenderContext::RenderSkybox(){
         Graphics::SetCullFace(CullFace::BACK);
         Graphics::SetDepthMask(false);
         Graphics::SetBlend(false);
-        Shader::Bind(*skyMaterial->GetShader());
+        SubShader::Bind(*skyMaterial->GetShader());
         
         //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
@@ -492,7 +503,7 @@ void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
         Graphics::SetCullFace(CullFace::BACK);
         Graphics::SetDepthMask(false);
         Graphics::SetBlend(false);
-        Shader::Bind(*skyMaterial->GetShader());
+        SubShader::Bind(*skyMaterial->GetShader());
         
         //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
         skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
@@ -511,6 +522,9 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort,
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //if(material.GetShader() == nullptr) return;
         //SetStandUniforms(cam, *material.GetShader()); 
+
+        Graphics::SetDepthTest(DepthTest::EQUAL);
+
         if(deferred){
             material.EnableKeyword("Deferred");
         } else {
@@ -519,6 +533,23 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort,
     };
     commandBuffer.Submit();
     //commandBuffer.onUpdateMaterial = nullptr;
+}
+
+void RenderContext::DrawZPreePassRenderersBuffer(CommandBuffer& commandBuffer, bool sort, bool post){
+    OD_PROFILE_SCOPE("RenderContext::DrawZPreePassRenderersBuffer");
+
+    if(sort) commandBuffer.Sort();
+    commandBuffer.postUpdateMaterial = [&](Material& material){ 
+        if(post){
+            Graphics::SetColorMask(1, 1, 1, 1);
+            Graphics::SetDepthTest(DepthTest::EQUAL);
+        } else {
+            Graphics::SetColorMask(0, 0, 0, 0);
+            Graphics::SetDepthTest(DepthTest::LESS);
+        }
+    };
+    commandBuffer.Submit();
+    commandBuffer.postUpdateMaterial = nullptr;
 }
 
 void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);

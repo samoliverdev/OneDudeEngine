@@ -11,6 +11,8 @@ public:
     virtual void OnRender(float deltaTime) = 0;
     virtual void OnGUI() = 0;
     virtual void OnResize(int width, int height) = 0;
+
+    inline virtual bool DeleteOnExit(){ return true; }
 };  
 
 typedef void (*_OnInit)();

@@ -1,5 +1,5 @@
 #include "Cubemap.h"
-#include "Shader.h"
+#include "SubShader.h"
 #include "Graphics.h"
 #include "OD/Platform/GL.h"
 #include "OD/Core/Lua.h"
@@ -227,8 +227,8 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent
     // ----------------------------------------------------------------------
-    Ref<Shader> equirectangularToCubemapShader = Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl");
-    Shader::Bind(*equirectangularToCubemapShader);
+    Ref<SubShader> equirectangularToCubemapShader = SubShader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl");
+    SubShader::Bind(*equirectangularToCubemapShader);
     equirectangularToCubemapShader->SetInt("equirectangularMap", 0);
     equirectangularToCubemapShader->SetMatrix4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
@@ -276,8 +276,8 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
-    Ref<Shader> irradianceShader = Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
-    Shader::Bind(*irradianceShader);
+    Ref<SubShader> irradianceShader = SubShader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
+    SubShader::Bind(*irradianceShader);
     irradianceShader->SetInt("environmentMap", 0);
     irradianceShader->SetMatrix4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
@@ -347,8 +347,8 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
-    Ref<Shader> irradianceShader = Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
-    Shader::Bind(*irradianceShader);
+    Ref<SubShader> irradianceShader = SubShader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
+    SubShader::Bind(*irradianceShader);
     
     /*glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->renderId);
@@ -410,7 +410,7 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification filter to mip_linear 
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification filter to mip_linear 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // generate mipmaps for the cubemap so OpenGL automatically allocates the required memory.
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
@@ -418,8 +418,8 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
 
     // pbr: run a quasi monte-carlo simulation on the environment lighting to create a prefilter (cube)map.
     // ----------------------------------------------------------------------------------------------------
-    Ref<Shader> prefilterShader = Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl");
-    Shader::Bind(*prefilterShader);
+    Ref<SubShader> prefilterShader = SubShader::CreateFromFile("Engine/Shaders/Prefilter.glsl");
+    SubShader::Bind(*prefilterShader);
     prefilterShader->SetInt("environmentMap", 0);
     prefilterShader->SetMatrix4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
@@ -465,7 +465,7 @@ void Cubemap::Destroy(Cubemap& cubemap){
 }
 
 void Cubemap::Bind(Cubemap& cubemap, int index){
-    //glActiveTexture(GL_TEXTURE0 + index);
+    glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.renderId);
     glCheckError();
 }

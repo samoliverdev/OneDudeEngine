@@ -13,7 +13,7 @@ void UniformBufferSample::OnInit(){
     cBuffer = UniformBuffer::Create();
 
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.glb");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/UniformBufferInstancing.glsl"));
+    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>("Sandbox/Shaders/UniformBufferInstancing.glsl"));
     model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
 
     for(int i = 0; i < 100; i++){
@@ -57,7 +57,7 @@ void UniformBufferSample::OnRender(float deltaTime){
     model->materials[0]->GetShader()->SetUniforBuffer("Model", *cBuffer, 0);
     
     //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
-    Shader::Bind(*model->materials[0]->GetShader());
+    SubShader::Bind(*model->materials[0]->GetShader());
     Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
     Graphics::DrawMeshInstancingRaw(*model->meshs[0], transforms.size());
     

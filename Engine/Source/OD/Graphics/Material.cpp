@@ -25,18 +25,18 @@ Material::Material(){
     baseId += 1;
 }
 
-Material::Material(Ref<Shader> s){
+Material::Material(Ref<SubShader> s){
     SetShader(s);
     id = baseId;
     baseId += 1;
 }
 
-Ref<Shader> Material::GetShader(){ 
+Ref<SubShader> Material::GetShader(){ 
     //return shader;
     return shaderHandler->GetCurrentShader(); 
 }
 
-void Material::SetShader(Ref<Shader> s){ 
+void Material::SetShader(Ref<SubShader> s){ 
     //shader = s; 
     shaderHandler = CreateRef<MultiCompileShader>(s);
     UpdateMaps(); 
@@ -299,6 +299,7 @@ void Material::SubmitGraphicDatas(Material& material){
         Graphics::SetBlend(false);
     }
 
+    SubShader::Bind(*material.GetShader());
     ApplyUniformTo(material, *material.GetShader(), material.maps);
     ApplyUniformTo(material, *material.GetShader(), globalMaps);
     Assert(material.currentTextureSlot < 32);
@@ -319,9 +320,9 @@ void Material::OnGui(){
         toSave = true;
     }*/
 
-    Ref<Shader> tempShader = GetShader();
+    Ref<SubShader> tempShader = GetShader();
     std::string s("shader");
-    if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != GetShader()){
+    if(ImGui::DrawAsset<SubShader>(s, tempShader, nullptr) && tempShader != GetShader()){
         SetShader(tempShader);
         toSave = true;
     }
@@ -584,10 +585,10 @@ void Material::UpdateMaps(){
 
 }
 
-void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered_map<std::string, MaterialMap>& maps){
-    Shader::Bind(shader);
+void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
+    //Shader::Bind(shader);
 
-    for(auto i: maps){
+    for(auto& i: maps){
         MaterialMap& map = i.second;
 
         if(shader.ContainUniformName(i.first) == false) continue;
@@ -611,6 +612,7 @@ void Material::ApplyUniformTo(Material& material, Shader& shader, std::unordered
             shader.SetMatrix4(i.first.c_str(), i.second.matrix);
         }
         if(map.type == MaterialMap::Type::Texture){
+            Assert(i.second.texture != nullptr);
             shader.SetTexture2D(i.first.c_str(), *i.second.texture, material.currentTextureSlot);
             material.currentTextureSlot += 1;
         }

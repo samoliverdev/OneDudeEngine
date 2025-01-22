@@ -34,7 +34,7 @@ void UberShaderSample::OnRender(float deltaTime){
     uberShader->EnableKeyword("COLOR1");
     uberShader->SetCurrentShader();
     //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m1);
-    Shader::Bind(*uberShader->GetCurrentShader());
+    SubShader::Bind(*uberShader->GetCurrentShader());
     Graphics::SetProjectionViewMatrix(*uberShader->GetCurrentShader());
     Graphics::SetModelMatrix(*uberShader->GetCurrentShader(), m1);
     Graphics::DrawMeshRaw(*model->meshs[0]);
@@ -42,7 +42,7 @@ void UberShaderSample::OnRender(float deltaTime){
     uberShader->DisableKeyword("COLOR1");
     uberShader->SetCurrentShader();
     //Graphics::SetDefaultShaderData(*uberShader->GetCurrentShader(), m2);
-    Shader::Bind(*uberShader->GetCurrentShader());
+    SubShader::Bind(*uberShader->GetCurrentShader());
     Graphics::SetProjectionViewMatrix(*uberShader->GetCurrentShader());
     Graphics::SetModelMatrix(*uberShader->GetCurrentShader(), m2);
     Graphics::DrawMeshRaw(*model->meshs[0]);

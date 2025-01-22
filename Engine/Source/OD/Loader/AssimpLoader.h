@@ -6,12 +6,12 @@
 
 namespace OD{
 
-class Shader;
+class SubShader;
 
 bool OD_API AssimpLoadModel(
     Model& model, 
     std::string const &path, 
-    Ref<Shader> customShader, 
+    Ref<SubShader> customShader, 
     std::vector<Clip>* outClips = nullptr
 );
 

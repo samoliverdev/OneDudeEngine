@@ -203,7 +203,7 @@ void CharacterControllerSample::OnInit(){
 
     Ref<Model> charIdleModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Animations/Idle.dae");
     Ref<Model> charRunningModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Animations/Running.dae");
-    charIdleModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    charIdleModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
 
     Entity playerEntity = scene->AddEntity("PlayerController");
     TransformComponent& charTrans = scene->GetComponent<TransformComponent>(playerEntity);

@@ -2,7 +2,7 @@
 #include "OD/Platform/GL.h"
 #include "OD/Core/Lua.h"
 #include "OD/Defines.h"
-#include "Shader.h"
+#include "SubShader.h"
 
 namespace OD{
 
@@ -179,9 +179,9 @@ bool Framebuffer::IsValid(){
 }
 
 void Framebuffer::Destroy(){
-    //if(renderId == 0) return;
+    if(renderId == 0) return;
 
-    Assert(renderId > 0);
+    //Assert(renderId > 0);
     //LogInfo("Framebuffer::Destroy %d", _framebuffer);
     
     glDeleteFramebuffers(1, &renderId);
@@ -216,7 +216,8 @@ void Framebuffer::Resize(int width, int height){
 
 void Framebuffer::Invalidate(){
     //Clean Framebuffer
-    if(renderId) Destroy();
+    //if(renderId) 
+        Destroy();
     
     //Gen Framebuffer
     glGenFramebuffers(1, &renderId);

@@ -6,7 +6,7 @@ using namespace OD;
 
 struct LightSample: OD::Module {
     Ref<Model> model;
-    Ref<Shader> shader;
+    Ref<SubShader> shader;
     Transform modelTransform;
     Transform camTransform;
     Camera cam;

@@ -199,6 +199,7 @@ void CommandBuffer::Submit(){
             _mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("SKINNED");
             Material::SubmitGraphicDatas(*_mat);
+            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 
         lastMat = _mat;
@@ -219,6 +220,7 @@ void CommandBuffer::Submit(){
             //_mat->DisableKeyword("SKINNED");
             _mat->EnableKeyword("INSTANCING");
             Material::SubmitGraphicDatas(*_mat);
+            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
         
         /*cm.meshs->instancingModelMatrixs.clear();

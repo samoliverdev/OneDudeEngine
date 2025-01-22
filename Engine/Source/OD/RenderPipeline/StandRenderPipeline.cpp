@@ -61,7 +61,7 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(specification);
 
     shadowPass = CreateRef<Material>();
-    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 Shadows::~Shadows(){
@@ -123,9 +123,9 @@ void Shadows::AddRenderData(RenderData& data){
 void Shadows::Render(){
     OD_PROFILE_SCOPE("Shadows::Render");
 
-    if(shadowedDirectionalLightCount > 0) 
+    //if(shadowedDirectionalLightCount > 0) 
         RenderDirectionalShadows();
-    if(shadowedOtherLightCount > 0) 
+    //if(shadowedOtherLightCount > 0) 
         RenderOtherShadows();
 
     Material::SetGlobalFloat("_ShadowBias", settings.directional.shadowBias);
@@ -370,7 +370,7 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
     gamaCorrectionPP = new GamaCorrectionPP();
@@ -513,7 +513,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
         Material::SetGlobalFloat("_SkyLightIntensity", 0);
         //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
-        //Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
         Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
@@ -527,16 +528,23 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->BeginForwardPass();
         
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        context->DrawRenderersBuffer(opaqueDrawTarget, false);
+        
+        //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, false);
+        //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, true);
+        //Graphics::SetDepthTest(DepthTest::LESS);
+
+        //Graphics::SetColorMask(0,0,0,0);
+        context->DrawRenderersBuffer(opaqueDrawTarget, true);
+        
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
-        context->RenderSkyboxLater();
+        //context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
         //Graphics::SetDepthMask(true);
         //RenderSprites();
     } else {
         context->BeginDeferredPass();
-        
+    
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         context->DrawRenderersBuffer(opaqueDrawTarget, false, true);
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -548,8 +556,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //RenderSprites();
     }
 
-    //context->RenderSkyboxLater();
-    //context->DrawGizmos();    
+    context->RenderSkyboxLater();
+    context->DrawGizmos();    
 
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
@@ -707,7 +715,7 @@ void CameraRenderer::RenderUI(){
         }
 
         //Graphics::SetDefaultShaderData(*text.material->GetShader(), trans.GlobalModelMatrix());
-        Shader::Bind(*text.material->GetShader());
+        SubShader::Bind(*text.material->GetShader());
         //Graphics::SetProjectionViewMatrix(*text.material->GetShader());
         //Graphics::SetModelMatrix(*text.material->GetShader(), trans.GlobalModelMatrix());
         text.material->GetShader()->SetVector4("color", text.color);
@@ -822,7 +830,7 @@ void CameraRenderer::RenderUI(){
         Matrix4 m = trans.GlobalModelMatrix() * scale.GetLocalModelMatrix();
 
         auto _mat = uiText.material;
-        Shader::Bind(*_mat->GetShader());
+        SubShader::Bind(*_mat->GetShader());
         //Material::SubmitGraphicDatas(*_mat);
 
         _mat->GetShader()->SetVector4("color", uiText.color);
@@ -855,7 +863,7 @@ StandRenderPipeline::StandRenderPipeline(Scene* inScene):BaseRenderPipeline(inSc
 }
 
 StandRenderPipeline::~StandRenderPipeline(){
-    
+    delete renderContext;
 }
 
 void StandRenderPipeline::SetOverrideFrameBuffer(Framebuffer* out){

@@ -9,19 +9,25 @@ layout (location = 1) in vec2 texCoord;
 #endif
 layout (location = 2) in vec3 normal;
 layout (location = 4) in vec3 tangents;
+
+#ifdef SKINNED
 layout (location = 5) in ivec4 boneIds;
 layout (location = 6) in vec4 weights;
+#endif
+
+#ifdef INSTANCING
 layout (location = 10) in mat4 modelInstancing;
+#endif
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform float useInstancing = 0;
-uniform float isSkinned = 0;
 
+#ifdef SKINNED
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 animated[MAX_BONES];
+#endif
 
 /*
 #ifdef SKINNED

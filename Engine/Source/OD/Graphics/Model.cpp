@@ -15,7 +15,7 @@ void Model::OnGui(){
 	ImGui::Text("Animation Clips Count: %zd", animationClips.size());
 }
 
-void Model::SetShader(Ref<Shader> shader){
+void Model::SetShader(Ref<SubShader> shader){
 	for(Ref<Material>& m: materials){
 		m->SetShader(shader);
 	}
@@ -36,7 +36,7 @@ std::vector<std::string> Model::GetFileAssociations(){
 	};
 }
 
-bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
+bool Model::CreateFromFile(Model& model, std::string const &path, Ref<SubShader> customShader){
     return AssimpLoadModel(model, path, customShader);
 }
 

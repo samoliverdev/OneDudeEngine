@@ -3,7 +3,7 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/Graphics/Culling.h"
-#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Framebuffer.h"
 #include "OD/Graphics/Material.h"
@@ -22,25 +22,25 @@ namespace OD{
 class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
-        _ppShader = Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl");
+        _ppShader = SubShader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl");
         Assert(_ppShader != nullptr);
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
-        Shader::Bind(*_ppShader);
+        SubShader::Bind(*_ppShader);
         _ppShader->SetFloat("option", _option);
         Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
     int _option;
-    Ref<Shader> _ppShader;
+    Ref<SubShader> _ppShader;
 };
 
 class OD_API GamaCorrectionPP: public PostFX{
 public:
     GamaCorrectionPP(){
-        gamaCorrection = Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl");
+        gamaCorrection = SubShader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl");
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
@@ -48,7 +48,7 @@ public:
     }
 
 private:
-    Ref<Shader> gamaCorrection = nullptr;
+    Ref<SubShader> gamaCorrection = nullptr;
 };
 
 enum class ShadowTextureSize{

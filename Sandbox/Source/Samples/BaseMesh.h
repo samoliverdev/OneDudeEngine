@@ -6,8 +6,8 @@ using namespace OD;
 
 struct BaseMeshSample: OD::Module {
     Mesh mesh;
-    Ref<Shader> meshShader;
-    Ref<Shader> fontShader;
+    Ref<SubShader> meshShader;
+    Ref<SubShader> fontShader;
     Ref<Font> font;
 
     /*tf::Executor executor;

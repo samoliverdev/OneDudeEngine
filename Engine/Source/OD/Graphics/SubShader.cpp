@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "SubShader.h"
 #include "OD/Defines.h"
 #include "OD/Platform/GL.h"
 #include "OD/Core/ImGui.h"
@@ -12,6 +12,48 @@ namespace OD{
 
 //int curBindShaderRenderId = 0;
 
+void ShaderPassData::UpdateProperties(){
+    for(auto& line: properties){
+        if(line.size() > 1 && line[0] == "SupportInstancing" && line[1] == "true"){
+            supportInstancing = true;
+        }
+
+        if(line.size() > 1 && line[0] == "Blend" && line[1] != "Off"){
+            Assert(line.size() == 3);
+            auto value1 = magic_enum::enum_cast<BlendMode>(line[1]);
+            auto value2 = magic_enum::enum_cast<BlendMode>(line[2]);
+            if(value1.has_value() && value2.has_value()){
+                blend = true;
+                srcBlend = value1.value();
+                dstBlend = value2.value();
+            }
+        }
+
+        if(line.size() > 1 && line[0] == "Name"){
+            Assert(line.size() == 2);
+            name = line[1];
+        }
+
+        if(line.size() > 1 && line[0] == "CullFace"){
+            Assert(line.size() == 2);
+            auto value1 = magic_enum::enum_cast<CullFace>(line[1]);
+            if(value1.has_value()) cullFace = value1.value();
+        }
+
+        if(line.size() > 1 && line[0] == "DepthTest"){
+            Assert(line.size() == 2);
+            auto value1 = magic_enum::enum_cast<DepthTest>(line[1]);
+            if(value1.has_value()) depthTest = value1.value(); 
+        }
+
+        if(line.size() > 1 && line[0] == "DepthMask"){
+            Assert(line.size() == 2);
+            if(line[1] == "True") depthMask = true;
+            if(line[1] == "False") depthMask = false;
+        }
+    }
+}
+
 void getFilePath(const std::string& fullPath, std::string& pathWithoutFileName){
     return;
     //LogInfo("FullPath: %s", fullPath.c_str());
@@ -20,7 +62,110 @@ void getFilePath(const std::string& fullPath, std::string& pathWithoutFileName){
     pathWithoutFileName = fullPath.substr(0, found + 1);
 }
 
-bool Shader::Create(const std::string& filepath, std::vector<std::string>& keyworlds){
+std::string _load(std::string path, ShaderSourceData& out){
+    std::string includeIndentifier = "#include ";
+    static bool isRecursiveCall = false;
+
+    std::string fullSourceCode = "";
+    std::ifstream file(path);
+
+    if(!file.is_open()){
+        std::cerr << "ERROR: could not open the shader at: " << path << "\n" << std::endl;
+        return fullSourceCode;
+    }
+
+    bool beginProperties = false;
+    bool beginPass = false;
+
+    std::string lineBuffer;
+    while(std::getline(file, lineBuffer)){
+        std::vector<std::string> pragmaLine;
+        std::stringstream ss(lineBuffer);
+        std::string _out;
+        int index = 0;
+
+        if(lineBuffer.find("#pragma") != lineBuffer.npos){
+            pragmaLine.clear();
+            while(ss >> _out){
+                if(index != 0) pragmaLine.push_back(_out);
+                index += 1;
+            }
+        }
+
+        if(beginProperties == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginProperties"){
+            beginProperties = true;
+            continue;
+        }
+        if(beginProperties == true && pragmaLine.size() > 0 && pragmaLine[0] == "EndProperties"){
+            beginProperties = false;
+            continue;
+        }
+        if(beginProperties){
+            pragmaLine.clear();
+            while(ss >> _out){
+                pragmaLine.push_back(_out);
+                index += 1;
+            }
+            out.properties.push_back(pragmaLine);
+            //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
+            continue;
+        }
+
+        if(beginPass == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginPassDef"){
+            beginPass = true;
+            out.passes.push_back(ShaderPassData());
+            continue;
+        }
+        if(beginPass == true && pragmaLine.size() > 0 && pragmaLine[0] == "EndPassDef"){
+            beginPass = false;
+            out.passes[out.passes.size()-1].UpdateProperties();
+            continue;
+        }
+        if(beginPass){
+            pragmaLine.clear();
+            while(ss >> _out){
+                pragmaLine.push_back(_out);
+                index += 1;
+            }
+            out.passes[out.passes.size()-1].properties.push_back(pragmaLine);
+            //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
+            continue;
+        }
+
+        if(pragmaLine.size() > 0) out.pragmas.push_back(pragmaLine);
+
+        if(lineBuffer.find(includeIndentifier) != lineBuffer.npos){
+            lineBuffer.erase(0, includeIndentifier.size());
+
+            std::string pathOfThisFile;
+            getFilePath(path, pathOfThisFile);
+            lineBuffer.insert(0, pathOfThisFile);
+
+            if(lineBuffer[lineBuffer.size()-1] == '\r') lineBuffer.erase(lineBuffer.length()-1);
+
+            isRecursiveCall = true;
+            fullSourceCode += _load(lineBuffer, out);
+            continue;
+        }
+
+        fullSourceCode += lineBuffer + '\n';
+    }
+    if(!isRecursiveCall) fullSourceCode += '\0';
+
+    file.close();
+
+    return fullSourceCode;
+}
+
+bool ShaderLoadFile(const std::string& path, ShaderSourceData& out){
+    out.baseSource = _load(path, out);
+    return true;
+}
+
+extern int shaderBinds;
+extern int uniformSet;
+
+bool SubShader::Create(const std::string& filepath, std::vector<std::string>& keyworlds){
     Destroy(*this);
 
     enabledKeyworlds = keyworlds;
@@ -38,11 +183,10 @@ bool Shader::Create(const std::string& filepath, std::vector<std::string>& keywo
     auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
     //out->name = filepath.substr(lastSlash, count);
 
-    
     return true;
 }
 
-std::string Shader::load(std::string path){
+std::string SubShader::load(std::string path){
     //LogWarning("Path: %s", path.c_str());
 
     std::string includeIndentifier = "#include ";
@@ -86,6 +230,18 @@ std::string Shader::load(std::string path){
         }
         if(beginProperties == true && pragmaLine.size() > 0 && pragmaLine[0] == "EndProperties"){
             beginProperties = false;
+            continue;
+        }
+
+        if(beginProperties){
+            pragmaLine.clear();
+            while(ss >> _out){
+                pragmaLine.push_back(_out);
+                index += 1;
+            }
+            properties.push_back(pragmaLine);
+
+            //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
             continue;
         }
 
@@ -133,19 +289,7 @@ std::string Shader::load(std::string path){
             }
         }
 
-        if(beginProperties){
-            pragmaLine.clear();
-            while(ss >> _out){
-                pragmaLine.push_back(_out);
-                index += 1;
-            }
-            properties.push_back(pragmaLine);
-
-            //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
-
-            continue;
-        }
-
+    
         // Look for the new shader include identifier
         if (lineBuffer.find(includeIndentifier) != lineBuffer.npos){
             // Remove the include identifier, this will cause the path to remain
@@ -229,22 +373,22 @@ GLenum ShaderTypeFromString(const std::string& type){
     return 0;
 }
 
-bool Shader::LoadFromFile(const std::string& path){
+bool SubShader::LoadFromFile(const std::string& path){
     std::vector<std::string> keyworlds;
     return Create(path, keyworlds);
 }
 
-std::vector<std::string> Shader::GetFileAssociations(){ 
+std::vector<std::string> SubShader::GetFileAssociations(){ 
     return std::vector<std::string>{
         ".shader",
         ".glsl"
     }; 
 }
 
-Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
+Ref<SubShader> SubShader::CreateFromFile(const std::string& filepath){
     std::vector<std::string> keyworlds;
 
-    Ref<Shader> out = CreateRef<Shader>();
+    Ref<SubShader> out = CreateRef<SubShader>();
     if(out->Create(filepath, keyworlds) == false){
         return nullptr;
     }
@@ -270,29 +414,31 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     */
 }
 
-Ref<Shader> Shader::CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds){
-    Ref<Shader> out = CreateRef<Shader>();
+Ref<SubShader> SubShader::CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds){
+    Ref<SubShader> out = CreateRef<SubShader>();
     if(out->Create(filepath, keyworlds) == false){
         return nullptr;
     }
     return out;
 }
 
-void Shader::Bind(Shader& shader){
+void SubShader::Bind(SubShader& shader){
     //curBindShaderRenderId = shader.rendererId;
 
     glUseProgram(shader.rendererId);
     glCheckError();
+    
+    shaderBinds += 1;
 }
 
-void Shader::Unbind(){
+void SubShader::Unbind(){
     //curBindShaderRenderId = 0;
 
     glUseProgram(0);
     glCheckError();
 }
 
-void Shader::Destroy(Shader& shader){
+void SubShader::Destroy(SubShader& shader){
     if(shader.IsValid() == false) return;
 
     glDeleteProgram(shader.rendererId);
@@ -300,11 +446,11 @@ void Shader::Destroy(Shader& shader){
     shader.rendererId = 0;
 }
 
-Shader::~Shader(){
+SubShader::~SubShader(){
     Destroy(*this);
 }
 
-std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& source, std::vector<std::string>& keyworlds){
+std::unordered_map<GLenum, std::string> SubShader::PreProcess(const std::string& source, std::vector<std::string>& keyworlds){
     std::unordered_map<GLenum, std::string> shaderSources;
 
     std::string _source = source;
@@ -352,7 +498,7 @@ std::unordered_map<GLenum, std::string> Shader::PreProcess(const std::string& so
     return shaderSources;
 }
 
-void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources){
+void SubShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources){
     Assert(shaderSources.size() <= 3 && "We only support 3 shaders for now");
 
     GLuint program = glCreateProgram();
@@ -462,11 +608,11 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& shaderSource
     }
 }
 
-bool Shader::IsValid(){
+bool SubShader::IsValid(){
     return rendererId != 0;
 }
 
-void Shader::OnGui(){
+void SubShader::OnGui(){
     ImGui::CollapsingHeader("Shader", ImGuiTreeNodeFlags_Leaf);
 
     std::string supportInstancing = "false";
@@ -520,11 +666,11 @@ void Shader::OnGui(){
     }
 }
 
-void Shader::Reload(){
+void SubShader::Reload(){
     Create(Path(), enabledKeyworlds);
 }
 
-int Shader::GetLocation(const char* name){
+int SubShader::GetLocation(const char* name){
     if(uniforms.count(name)) return uniforms[name];
     
     GLint location = glGetUniformLocation(rendererId, name);
@@ -534,7 +680,8 @@ int Shader::GetLocation(const char* name){
     return location;
 }
 
-void Shader::SetFloat(const char* name, float value){
+void SubShader::SetFloat(const char* name, float value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform1f(GetLocation(name), value);
@@ -543,7 +690,8 @@ void Shader::SetFloat(const char* name, float value){
     });
 }
 
-void Shader::SetFloat(const char* name, float* value, int count){
+void SubShader::SetFloat(const char* name, float* value, int count){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     //glUniform1f(GetLocation(name), value);
@@ -551,7 +699,8 @@ void Shader::SetFloat(const char* name, float* value, int count){
     glCheckError();
 }
 
-void Shader::SetInt(const char* name, int value){
+void SubShader::SetInt(const char* name, int value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform1i(GetLocation(name), value);
@@ -561,14 +710,16 @@ void Shader::SetInt(const char* name, int value){
     });
 }
 
-void Shader::SetVector2(const char* name, Vector2 value){
+void SubShader::SetVector2(const char* name, Vector2 value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform2f(GetLocation(name), value.x, value.y);
     glCheckError();
 }
 
-void Shader::SetVector3(const char* name, Vector3 value){
+void SubShader::SetVector3(const char* name, Vector3 value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform3f(GetLocation(name), value.x, value.y, value.z);
@@ -578,21 +729,24 @@ void Shader::SetVector3(const char* name, Vector3 value){
     });
 }
 
-void Shader::SetVector4(const char* name, Vector4 value){
+void SubShader::SetVector4(const char* name, Vector4 value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4f(GetLocation(name), value.x, value.y, value.z, value.w);
     glCheckError();
 }
 
-void Shader::SetVector4(const char* name, Vector4* value, int count){
+void SubShader::SetVector4(const char* name, Vector4* value, int count){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
     glCheckError();
 }
 
-void Shader::SetMatrix4(const char* name, Matrix4 value){
+void SubShader::SetMatrix4(const char* name, Matrix4 value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
@@ -603,10 +757,12 @@ void Shader::SetMatrix4(const char* name, Matrix4 value){
 }
 
 void Set(unsigned int slot, Matrix4* inputArray, unsigned int arrayLength) {
+    uniformSet += 1;
 	glUniformMatrix4fv(slot, (GLsizei)arrayLength, false, (float*)&inputArray[0]);
 }
 
-void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
+void SubShader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(GetLocation(name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
@@ -617,31 +773,32 @@ void Shader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
     });
 }
 
-void Shader::SetMatrix4(const char* name, Matrix4* value, int count){
+void SubShader::SetMatrix4(const char* name, Matrix4* value, int count){
+    uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
     glUniformMatrix4fv(GetLocation(name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
     glCheckError();
 }
 
-void Shader::SetTexture2D(const char* name, Texture2D& value, int index){
-    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
+void SubShader::SetTexture2D(const char* name, Texture2D& value, int index){
+    //glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Texture2D::Bind(value, index);
     SetInt(name, index);
 }
 
-void Shader::SetTexture2DArray(const char* name, Texture2DArray& value, int index){
-    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
+void SubShader::SetTexture2DArray(const char* name, Texture2DArray& value, int index){
+    //glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Texture2DArray::Bind(value, index);
     SetInt(name, index);
 }
 
-void Shader::SetCubemap(const char* name, Cubemap& value, int index){
-    glActiveTexture(GL_TEXTURE0 + index); glCheckError();
+void SubShader::SetCubemap(const char* name, Cubemap& value, int index){
+    //glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Cubemap::Bind(value, index);
     SetInt(name, index);
 }
 
-void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
+void SubShader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
     Assert(framebuffer.Specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
     //Assert(framebuffer.specification().sample <= 1);
 
@@ -664,7 +821,7 @@ void Shader::SetFramebuffer(const char* name, Framebuffer& framebuffer, int inde
     SetInt(name, index);
 }
 
-void Shader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
+void SubShader::SetUniforBuffer(const char* name, UniformBuffer& buffer, int index){
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     UniformBuffer::Bind(buffer, index);

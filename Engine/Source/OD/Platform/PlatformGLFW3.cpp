@@ -15,7 +15,7 @@
 #include "OD/Core/Input.h"
 #include "OD/Core/Application.h"
 
-#define OPENGL_DEBUG 0
+#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6
 
@@ -208,7 +208,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 		sevStr = "UNK";
 	}
 
-    if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER) return;
+    //if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER) return;
 
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
     LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
@@ -272,6 +272,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     LogInfo("GL_RENDERER: %s", glGetString(GL_RENDERER));
     LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+    //glEnable(GL_POLYGON_SMOOTH);
+
     return true;
 }
 
@@ -318,10 +320,25 @@ bool Platform::PumpMessages(){
     return true; 
 }
 
+#include <windows.h>
+
 void Platform::SwapBuffers(){
+    {
+    /*OD_PROFILE_SCOPE("Platform::glFlush");
+    glFinish();
+    Sleep(1);*/
+    }
+
+    {
     OD_PROFILE_SCOPE("Platform::SwapBuffers");
     glfwSwapBuffers(window);
+    }
+
+    {
+    OD_PROFILE_SCOPE("Platform::glfwPollEvents");
     glfwPollEvents();
+    //glfwWaitEvents();
+    }
 }
 
 float Platform::GetTime(){ return glfwGetTime(); }

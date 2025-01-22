@@ -16,7 +16,7 @@ void AnimationSample::OnInit(){
     camMove.OnStart();
 
     texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Models/gltf/Woman.png");
-    shader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkinnedModel.glsl");
+    shader = AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/SkinnedModel.glsl");
     
     cgltf_data* char1 = OD::LoadGLTFFile("Sandbox/Models/gltf/Woman.gltf");
     //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");
@@ -147,13 +147,13 @@ void AnimationSample::OnRender(float deltaTime){
         char1Anim.mPosePalette[i] = char1Anim.mPosePalette[i] * invBindPose[i];
     }
 
-    Shader::Bind(*shader);
+    SubShader::Bind(*shader);
     shader->SetMatrix4("animated", char1Anim.mPosePalette);
     shader->SetTexture2D("mainTex", *texture, 0);
 
     for(auto i: char1Meshs){
         //Graphics::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
-        Shader::Bind(*shader);
+        SubShader::Bind(*shader);
         Graphics::SetProjectionViewMatrix(*shader);
         Graphics::SetModelMatrix(*shader, char1Anim.mModel.GetLocalModelMatrix());
         Graphics::DrawMeshRaw(*i);
@@ -169,7 +169,7 @@ void AnimationSample::OnRender(float deltaTime){
     //char2Model->materials[0]->UpdateDatas();
     Material::SubmitGraphicDatas(*char2Model->materials[0]);
 
-    Shader::Bind(*char2Model->materials[0]->GetShader());
+    SubShader::Bind(*char2Model->materials[0]->GetShader());
     char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);
 
     /*for(auto i: char2Model->meshs){
@@ -190,7 +190,7 @@ void AnimationSample::OnRender(float deltaTime){
         //LogInfo("Bind Pose Index: %d", i.bindPoseIndex);
 
         //Graphics::SetDefaultShaderData(*char2Model->materials[i.materialIndex]->GetShader(), m);
-        Shader::Bind(*char2Model->materials[i.materialIndex]->GetShader());
+        SubShader::Bind(*char2Model->materials[i.materialIndex]->GetShader());
         Graphics::SetProjectionViewMatrix(*char2Model->materials[i.materialIndex]->GetShader());
         Graphics::SetModelMatrix(*char2Model->materials[i.materialIndex]->GetShader(), m);
         Graphics::DrawMeshRaw(*char2Model->meshs[i.meshIndex]);

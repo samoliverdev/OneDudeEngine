@@ -7,7 +7,7 @@
 void SynthCitySample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-    //Application::Vsync(false);
+    //Application::Vsync(true);
 
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
@@ -16,14 +16,25 @@ void SynthCitySample::OnInit(){
     //scene->AddSystem<StandRenderPipeline2>();
 
     Entity env = scene->AddEntity("Env");
-    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    envComp.settings.toneMappingPostFX->enable = true;
+    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
+    envComp.settings.colorGradingPostFX->enable = true;
+    envComp.settings.colorGradingPostFX->contrast = 18;
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
+    envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
+    
 
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
-    lightComponent.renderShadow = true;
+    lightComponent.renderShadow = false;
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
@@ -36,7 +47,7 @@ void SynthCitySample::OnInit(){
     Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
         "Sandbox/Models/PolygonCity/City.fbx"
     );
-    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cityModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Unlit.glsl"));
     for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
 
     /*Entity floorEntity = scene->AddEntity("City");
@@ -48,8 +59,8 @@ void SynthCitySample::OnInit(){
     Entity city = scene->Instantiate(cityModel, false);
     scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(0.01f));
 
-    Application::AddModule<Editor>();
-    //scene->Start();
+    //Application::AddModule<Editor>();
+    scene->Start();
 }
 
 void SynthCitySample::OnUpdate(float deltaTime){

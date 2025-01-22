@@ -187,7 +187,7 @@ void ProceduralTerrain2::OnInit(){
     cam.fieldOfView = 60;
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
 
     Entity cube = scene->AddEntity("Cube");
     TransformComponent& cubeTrans = scene->GetComponent<TransformComponent>(cube);
@@ -245,7 +245,7 @@ void ProceduralTerrain2::OnInit(){
     };
     for(auto& i: objectsBucks["Rocks"].models){
         for(auto& j: i->materials){
-            j->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+            j->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
             j->SetEnableInstancing(true);
             j->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Models/low-poly-tree-pack/Textures/Colorsheet Tree Normal.png"));
         }
@@ -254,7 +254,7 @@ void ProceduralTerrain2::OnInit(){
     Entity water = scene->AddEntity("Water");
     auto& waterModel = scene->AddComponent<ModelRendererComponent>(water);
     waterModel.SetModel(AssetManager::Get().LoadAsset<Model>("Sandbox/Models/TerrainPlane.glb"));
-    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
     waterModel.GetMaterialsOverride()[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/water.png"));
     auto& waterTrans = scene->GetComponent<TransformComponent>(water);
     waterTrans.LocalScale(Vector3One * 5000.0f);

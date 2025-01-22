@@ -102,6 +102,7 @@ public:
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, CommandBuffer& target);
     void DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort = false, bool deferred = false);
+    void DrawZPreePassRenderersBuffer(CommandBuffer& commandBuffer, bool sort = false, bool post = false);
 
     void CleanShadow(Framebuffer* shadowMap, int layer = 0);
     void BeginDrawShadow(Framebuffer* shadowMap, int layer = 0);
@@ -126,9 +127,9 @@ private:
     Framebuffer* postFx1;
     Framebuffer* postFx2;
 
-    Ref<Shader> blitShader;
-    Ref<Shader> deferredGBufferShader;
-    Ref<Shader> deferredLightPassShader;
+    Ref<SubShader> blitShader;
+    Ref<SubShader> deferredGBufferShader;
+    Ref<SubShader> deferredLightPassShader;
     Ref<Material> deferredLightPass;
     Ref<Mesh> skyboxMesh;
     Ref<Mesh> spriteMesh;
@@ -141,7 +142,7 @@ private:
 
     //void SetupDrawTarget(CommandBaseData& cmd, DrawingTarget& target);
     //void SetupShadowDrawTarget(CommandBaseData& cmd, ShadowDrawingTarget& target);
-    static void SetStandUniforms(Camera& cam, Shader& shader);
+    static void SetStandUniforms(Camera& cam, SubShader& shader);
 };
 
 

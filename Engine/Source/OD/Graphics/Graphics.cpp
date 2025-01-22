@@ -2,7 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Platform/GL.h"
 #include "OD/Core/Lua.h"
-#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Camera.h"
 
 //#define ENGINE_RESOURCE_PATH "res/Engine/"
@@ -39,13 +39,15 @@ unsigned int wiredCubeVAO;
 unsigned int wiredCubeVBO;
 unsigned int wiredCubeEBO;
 
-Ref<Shader> gismoShader;
+Ref<SubShader> gismoShader;
 Ref<Mesh> fullScreenQuad;
 Camera camera;
 
 int drawCalls;
 int vertices;
 int tris;
+int shaderBinds;
+int uniformSet;
 
 bool begin = false;
 
@@ -53,12 +55,14 @@ GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
     GL_POINTS,
-    GL_QUADS
+    //GL_QUADS
 };  
 
 int Graphics::GetDrawCallsCount(){ return drawCalls; }
 int Graphics::GetVerticesCount(){ return vertices; }
 int Graphics::GetTrisCount(){ return tris; }
+int Graphics::GetShaderBinds(){ return shaderBinds; }
+int Graphics::GetUniformSet(){ return uniformSet; }
 
 void CreateLineVAO(unsigned int* vao, unsigned int* vbo, int vertexCount){
     #ifdef USE_VAO
@@ -171,7 +175,7 @@ void Graphics::Initialize(){
     AssetManager::Get().AddAsset("DefaultSkyboxCubemap", defaultSkybox);
 
     fullScreenQuad = Mesh::FullScreenQuad();
-    gismoShader = Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
+    gismoShader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
     Assert(gismoShader != nullptr);
 
     CreateLineVAO(&lineVAO, &lineVBO, 2);
@@ -187,14 +191,14 @@ void Graphics::Initialize(){
     GLint maxVertexUniformComponents;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniformComponents);
     LogInfo("MaxVertexUniformComponents: %d", maxVertexUniformComponents);
-    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxVertexUniformComponents);
-    LogInfo("MaxVertexUniformComponentVectors: %d", maxVertexUniformComponents);
+    //glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxVertexUniformComponents);
+    //LogInfo("MaxVertexUniformComponentVectors: %d", maxVertexUniformComponents);
 
     GLint maxFragmentUniformComponents;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxFragmentUniformComponents);
     LogInfo("MaxFragmentUniformComponents: %d", maxFragmentUniformComponents);
-    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniformComponents);
-    LogInfo("MaxFragmentUniformComponentVectors: %d", maxFragmentUniformComponents);
+    //glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniformComponents);
+    //LogInfo("MaxFragmentUniformComponentVectors: %d", maxFragmentUniformComponents);
     //#endif
 
     GLint maxTextureSize;
@@ -211,11 +215,18 @@ void Graphics::Shutdown(){
     gismoShader = nullptr;
 }
 
+GLsync sync = nullptr;
+
 void Graphics::Begin(){
     drawCalls = 0;
     vertices = 0;
     tris = 0;
+    shaderBinds = 0;
+    uniformSet = 0;
     begin = true;
+
+    //if(sync != nullptr) glClientWaitSync(sync, 0, 0);
+    //sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 
 void Graphics::End(){
@@ -253,12 +264,12 @@ Camera Graphics::GetCamera(){
     return camera;
 }
 
-void Graphics::SetProjectionViewMatrix(Shader& shader){
+void Graphics::SetProjectionViewMatrix(SubShader& shader){
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
 }
 
-void Graphics::SetModelMatrix(Shader& shader, Matrix4 modelMatrix){
+void Graphics::SetModelMatrix(SubShader& shader, Matrix4 modelMatrix){
     shader.SetMatrix4("model", modelMatrix);
 }
 
@@ -343,17 +354,17 @@ void Graphics::DrawMeshInstancingRaw(Mesh& mesh, int count){
     //glCheckError();
 }
 
-void Graphics::DrawMesh(Mesh& mesh, Shader& shader, Matrix4 modelMatrix){
-    Shader::Bind(shader);
+void Graphics::DrawMesh(Mesh& mesh, SubShader& shader, Matrix4 modelMatrix){
+    SubShader::Bind(shader);
     shader.SetMatrix4("projection", camera.projection);
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("model", modelMatrix);
     Graphics::DrawMeshRaw(mesh);
 }
 
-void Graphics::DrawMeshInstancing(Mesh& mesh, Shader& shader, Matrix4* modelMatrixs, int count){
+void Graphics::DrawMeshInstancing(Mesh& mesh, SubShader& shader, Matrix4* modelMatrixs, int count){
     mesh.SubmitInstancingCustomModelMatrixs(modelMatrixs, count);
-    Shader::Bind(shader);
+    SubShader::Bind(shader);
     shader.SetMatrix4("projection", camera.projection);
     shader.SetMatrix4("view", camera.view);
     Graphics::DrawMeshInstancingRaw(mesh, count);
@@ -385,7 +396,7 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     vertices += lineCommandsData.size()/3;
     tris += 0;
 
-    Shader::Bind(*gismoShader);
+    SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity);
     gismoShader->SetMatrix4("view", camera.view);
@@ -427,7 +438,7 @@ void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
     vertices += 2;
     tris += 0;
 
-    Shader::Bind(*gismoShader);
+    SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity);
     gismoShader->SetMatrix4("view", camera.view);
@@ -463,7 +474,7 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
     start = Vector3(model * Vector4(start.x, start.y, start.z, 1));
     end = Vector3(model * Vector4(end.x, end.y, end.z, 1));
 
-    Shader::Bind(*gismoShader);
+    SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity); //gismoShader->SetMatrix4("model", model);
     gismoShader->SetMatrix4("view", camera.view);
@@ -496,7 +507,7 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     vertices += 8;
     tris += 24;
 
-    Shader::Bind(*gismoShader);
+    SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", modelMatrix);
     gismoShader->SetMatrix4("view", camera.view);
@@ -520,8 +531,8 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     //glCheckError();
 }
 
-void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float scale){
-    Shader::Bind(s);
+void Graphics::DrawText(Font& f, SubShader& s, std::string text, Vector3 pos, float scale){
+    SubShader::Bind(s);
     //s.SetVector4("color", color);
     s.SetMatrix4("projection", camera.projection);
     s.SetMatrix4("view", camera.view);
@@ -592,8 +603,8 @@ void Graphics::DrawText(Font& f, Shader& s, std::string text, Vector3 pos, float
     #endif
 }
 
-void Graphics::DrawText(Font& f, Shader& s, std::string text, Matrix4 model){
-    Shader::Bind(s);
+void Graphics::DrawText(Font& f, SubShader& s, std::string text, Matrix4 model){
+    SubShader::Bind(s);
     //s.SetVector4("color", color);
     s.SetMatrix4("projection", camera.projection);
     s.SetMatrix4("view", camera.view);
@@ -674,6 +685,10 @@ void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
     *w = value[2]; 
     *h = value[3];
 }
+
+void Graphics::SetColorMask(float r, float g, float b, float a){
+    glColorMask(r, g, b, a);
+}   
 
 void Graphics::SetRenderMode(RenderMode mode){
     if(mode == RenderMode::SHADED) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -791,7 +806,7 @@ void Graphics::BeginFramebuffer(Framebuffer* framebuffer){
     Framebuffer::Bind(*framebuffer);
 }
 
-void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader& shader, int pass){
+void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, SubShader& shader, int pass){
     Assert(src != nullptr);
 
     if(dst == nullptr){
@@ -806,7 +821,7 @@ void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Shader
     Graphics::SetDepthTest(DepthTest::DISABLE); 
     glCheckError();
 
-    Shader::Bind(shader);
+    SubShader::Bind(shader);
     shader.SetFramebuffer("mainTex", *src, 0, pass);
     //src->BindColorAttachmentTexture(shader, 0);
 
@@ -917,8 +932,8 @@ void Graphics::CreateLuaBind(sol::state& lua){
             [](Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth){ Graphics::DrawLine(model, start, end, color, lineWidth);}
         ),
         "DrawText", sol::overload(
-            [](Font& f, Shader& s, std::string text, Vector3 pos, float scale){ Graphics::DrawText(f, s, text, pos, scale); },
-            [](Font& f, Shader& s, std::string text, Matrix4 model){ Graphics::DrawText(f, s, text, model); }
+            [](Font& f, SubShader& s, std::string text, Vector3 pos, float scale){ Graphics::DrawText(f, s, text, pos, scale); },
+            [](Font& f, SubShader& s, std::string text, Matrix4 model){ Graphics::DrawText(f, s, text, model); }
         ),
         "SetViewport", Graphics::SetViewport,
         "GetViewport", Graphics::GetViewport,

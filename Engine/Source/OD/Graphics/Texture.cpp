@@ -1,5 +1,5 @@
 #include "Texture.h"
-#include "Shader.h"
+#include "SubShader.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Package.h"
@@ -256,8 +256,8 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     glCheckError();
 
     
-    Ref<Shader> brdfShader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/brdf.glsl");// Shader::CreateFromFile("Engine/Shaders/brdf.glsl");
-    Shader::Bind(*brdfShader);
+    Ref<SubShader> brdfShader = AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/brdf.glsl");// Shader::CreateFromFile("Engine/Shaders/brdf.glsl");
+    SubShader::Bind(*brdfShader);
 
     glViewport(0, 0, 512, 512);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

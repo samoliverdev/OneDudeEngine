@@ -33,6 +33,8 @@ public:
     void OnGUI() override;
     void OnResize(int width, int height) override;
 
+    inline bool DeleteOnExit() override { return false; }
+
 private:
     SceneManager(){}
 

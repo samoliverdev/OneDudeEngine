@@ -12,7 +12,7 @@ void LoadModelSample::OnInit(){
     camMove.transform = &camTransform;
 
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.glb");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
+    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Unlit.glsl"));
     model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
 
     for(int i = 0; i < 100000; i++){

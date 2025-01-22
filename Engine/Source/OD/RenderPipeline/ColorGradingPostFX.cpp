@@ -4,12 +4,12 @@ namespace OD{
 
 ColorGradingPostFX::ColorGradingPostFX(){
     enable = false;
-    colorGradingPass = Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl");
+    colorGradingPass = SubShader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl");
     Assert(colorGradingPass != nullptr);
 }
 
 void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
-    Shader::Bind(*colorGradingPass);
+    SubShader::Bind(*colorGradingPass);
     colorGradingPass->SetVector4("_ColorAdjustments", Vector4(
         math::pow(2.0f, postExposure),
         contrast * 0.01f + 1.0f,

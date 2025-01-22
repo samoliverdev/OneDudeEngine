@@ -4,7 +4,7 @@
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
 #include "Mesh.h"
-#include "Shader.h"
+#include "SubShader.h"
 #include "Material.h"
 #include "Culling.h"
 #include "OD/Animation/Skeleton.h"
@@ -40,9 +40,9 @@ public:
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
-    void SetShader(Ref<Shader> customShader);
+    void SetShader(Ref<SubShader> customShader);
     
-    static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
+    static bool CreateFromFile(Model& model, std::string const &path, Ref<SubShader> customShader = nullptr);
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
 };

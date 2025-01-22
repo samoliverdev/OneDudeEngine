@@ -1,6 +1,6 @@
 #include "AssimpLoader.h"
 #include "OD/Core/Asset.h"
-#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/SubShader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -268,11 +268,11 @@ int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
     return out;
 }*/
 
-Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> customShader){
+Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<SubShader> customShader){
     Ref<Material> out = CreateRef<Material>();
 
     if(customShader == nullptr){
-        out->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Model.glsl"));
+        out->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Model.glsl"));
     } else {
         out->SetShader(customShader);
     }
@@ -573,7 +573,7 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
     }
 }
 
-bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
+bool AssimpLoadModel(Model& out, std::string const &path, Ref<SubShader> customShader, std::vector<Clip>* outClips){
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(

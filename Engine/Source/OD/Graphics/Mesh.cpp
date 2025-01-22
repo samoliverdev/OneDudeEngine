@@ -352,6 +352,8 @@ void Mesh::Submit(
 ){
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
 
+    //Destroy();
+
     #ifdef USE_VAO
     if(vao == 0){
         glGenVertexArrays(1, &vao);

@@ -43,11 +43,11 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 
 class DebugDrawGL : public duDebugDraw{
 public:
-    Ref<Shader> shader;
+    Ref<SubShader> shader;
     Ref<Mesh> mesh;
 
     DebugDrawGL(){
-        shader = Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
+        shader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
         mesh = CreateRef<Mesh>();
     }
 
@@ -123,7 +123,7 @@ public:
         //glPointSize(1.0f);
         if(mesh->vertices.size() == 0) return;
 
-		Shader::Bind(*shader);
+		SubShader::Bind(*shader);
 		shader->SetFloat("alpha", 0.5f);
 
         mesh->Submit();

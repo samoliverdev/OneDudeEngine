@@ -6,7 +6,7 @@ using namespace OD;
 
 struct LoadModelSample: OD::Module {
     Ref<Model> model;
-    Ref<Shader> shader;
+    Ref<SubShader> shader;
     Transform camTransform;
     Camera cam;
     CameraMovement camMove;

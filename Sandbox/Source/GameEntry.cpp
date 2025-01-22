@@ -18,12 +18,6 @@
 #include "Samples/Navmesh.h"
 #include "Samples/Boids.h"
 #include "Samples/Sponza.h"
-#include "Minicraft/Minicraft.h"
-#include "ProceduralTerrain/ProceduralTerrain.h"
-#include "TerrainRenderer/TerrainRenderer.h"
-#include "TerrainRenderer/TerrainRenderer2.h"
-#include "TerrainRenderer/TerrainRenderer3.h"
-#include "TerrainRenderer/TerrainRenderer4.h"
 #include "Samples/Terrain.h"
 #include "Samples/ProceduralTerrain2.h"
 
@@ -38,7 +32,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 9;
+    int i = 23;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMeshSample();
@@ -54,17 +48,11 @@ OD::Module* CreateMainModule(){
     if(i == 11) return new UniformBufferSample();
     if(i == 12) return new RenderPipelineSample();
     if(i == 14) return new UberShaderSample();
-    if(i == 15) return new Minicraft();
     if(i == 16) return new DynamicModuleSample();
-    if(i == 17) return new ProceduralTerrain();
-    if(i == 18) return new TerrainRenderer();
-    if(i == 19) return new TerrainRenderer2();
     if(i == 20) return new CharacterControllerSample();
     if(i == 21) return new NavmeshSample();
     if(i == 22) return new BoidsSample();
     if(i == 23) return new SponzaSample();
-    if(i == 24) return new TerrainRenderer3();
-    if(i == 25) return new TerrainRenderer4();
     if(i == 26) return new TerrainSample();
     if(i == 27) return new ProceduralTerrain2();
 

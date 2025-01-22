@@ -1,4 +1,5 @@
-#version 330 core
+#version 450 core 
+//330 core
 
 #pragma BeginProperties
     Color4 color

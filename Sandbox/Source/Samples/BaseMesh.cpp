@@ -193,8 +193,8 @@ void BaseMeshSample::OnInit(){
     std::vector<std::string> keywords{
         "Fade", "Skinned"
     };
-    meshShader = Shader::CreateFromFile("Sandbox/Shaders/test.glsl", keywords);
-    fontShader = Shader::CreateFromFile("Engine/Shaders/Font.glsl");
+    meshShader = SubShader::CreateFromFile("Sandbox/Shaders/test.glsl", keywords);
+    fontShader = SubShader::CreateFromFile("Engine/Shaders/Font.glsl");
 
     font = Font::CreateFromFile( //CreateRef<Font>(
         "Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf"
@@ -248,6 +248,10 @@ void BaseMeshSample::OnInit(){
         std::this_thread::sleep_for (std::chrono::seconds(5));
     });
     executor.run(taskflow, [&](){ executorEnd = true; });*/
+
+    ShaderSourceData shaderSource;
+    ShaderLoadFile("Sandbox/Shaders/NewShaderTest.glsl", shaderSource);
+    LogWarning("%s", shaderSource.baseSource.c_str());
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){
@@ -278,7 +282,7 @@ void BaseMeshSample::OnRender(float deltaTime){
     //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
 
     //Graphics::SetDefaultShaderData(*meshShader, Matrix4Identity);
-    Shader::Bind(*meshShader);
+    SubShader::Bind(*meshShader);
     Graphics::SetProjectionViewMatrix(*meshShader);
     Graphics::SetModelMatrix(*meshShader, Matrix4Identity);
     Graphics::DrawMeshRaw(mesh);
@@ -291,7 +295,7 @@ void BaseMeshSample::OnRender(float deltaTime){
     cam = {Matrix4Identity, math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
     Graphics::SetCamera(cam);
 
-    Shader::Bind(*fontShader);
+    SubShader::Bind(*fontShader);
     fontShader->SetVector4("color", Color{0.5f, 0.8f, 0.2f});
     //Graphics::DrawText(*font, *fontShader, "This is sample text", Vector3(25.0f, 25.0f, 0), 1.0f);
     //LogInfo: Compile Error Strange

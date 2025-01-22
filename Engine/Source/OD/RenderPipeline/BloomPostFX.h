@@ -39,11 +39,11 @@ public:
     }
 
 private:
-    Ref<Shader> blitShader;
-    Ref<Shader> bloomHorizontalPassShader;
-    Ref<Shader> bloomVerticalPassShader;
-    Ref<Shader> bloomCombinePassShader;
-    Ref<Shader> bloomPrefilterPassShader;
+    Ref<SubShader> blitShader;
+    Ref<SubShader> bloomHorizontalPassShader;
+    Ref<SubShader> bloomVerticalPassShader;
+    Ref<SubShader> bloomCombinePassShader;
+    Ref<SubShader> bloomPrefilterPassShader;
 };
 
 }

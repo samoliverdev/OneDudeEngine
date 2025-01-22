@@ -8,7 +8,7 @@ using namespace OD;
 
 struct UniformBufferSample: OD::Module {
     Ref<Model> model;
-    Ref<Shader> shader;
+    Ref<SubShader> shader;
     Ref<UniformBuffer> cBuffer;
 
     Transform camTransform;

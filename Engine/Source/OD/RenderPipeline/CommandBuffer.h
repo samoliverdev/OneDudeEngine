@@ -53,6 +53,7 @@ struct OD_API CommandBuffer{
 
     std::string name = "CommandBuffer";
     std::function<void(Material& material)> onUpdateMaterial = nullptr;
+    std::function<void(Material& material)> postUpdateMaterial = nullptr;
     SortType sortType;
 
     void SetCamera(Camera inCamera);

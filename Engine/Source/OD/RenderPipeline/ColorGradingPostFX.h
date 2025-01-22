@@ -52,7 +52,7 @@ public:
     }
 
 private:
-    Ref<Shader> colorGradingPass;
+    Ref<SubShader> colorGradingPass;
 };
 
 }

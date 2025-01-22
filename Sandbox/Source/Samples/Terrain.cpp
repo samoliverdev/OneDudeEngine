@@ -79,7 +79,7 @@ void TerrainSample::OnInit(){
     cam.fieldOfView = 60;
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
 
     Entity cube = scene->AddEntity("Cube");
     TransformComponent& cubeTrans = scene->GetComponent<TransformComponent>(cube);
