@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Base.h"
 #include "OD/Core/Math.h"
 #include <magic_enum/magic_enum.hpp>

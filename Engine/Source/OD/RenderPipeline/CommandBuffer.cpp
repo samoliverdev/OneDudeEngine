@@ -2,6 +2,7 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Graphics.h"
 #include "MeshRendererComponent.h"
 #include <algorithm>
 

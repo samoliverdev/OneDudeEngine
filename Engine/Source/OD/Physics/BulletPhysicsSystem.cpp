@@ -3,6 +3,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
+#include "OD/Graphics/Graphics.h"
 #include <set>
 #include <algorithm>
 #include <btBulletCollisionCommon.h>

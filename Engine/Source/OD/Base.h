@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Defines.h"
 #include <stdio.h>
 #include <stdarg.h>

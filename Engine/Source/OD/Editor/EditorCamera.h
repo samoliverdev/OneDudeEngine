@@ -1,8 +1,6 @@
 #pragma once
-
 #include "OD/Core/Transform.h"
 #include "OD/Graphics/Camera.h"
-#include "OD/RenderPipeline/StandRenderPipeline.h"
 
 namespace OD{
 

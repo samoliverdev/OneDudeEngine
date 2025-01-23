@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Serialization.h"
 #include "OD/Defines.h"
 #include "OD/Core/ImGui.h"

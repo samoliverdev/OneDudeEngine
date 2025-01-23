@@ -3,9 +3,6 @@
 #include "CommandBuffer.h"
 #include "LightComponent.h"
 
-#include "MeshRendererComponent.h"
-#include "ModelRendererComponent.h"
-
 namespace OD{
 
 class Scene;

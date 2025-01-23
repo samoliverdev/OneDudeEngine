@@ -1,5 +1,4 @@
 #pragma once
-
 #include "OD/Defines.h"
 #include "OD/Core/Transform.h"
 #include "OD/Core/Asset.h"
@@ -7,9 +6,7 @@
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Core/ImGui.h"
-#include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
-#include "OD/Core/Instrumentor.h"
 #include "OD/Core/Module.h"
 #include "OD/Core/Lua.h"
 #include <unordered_map>
@@ -24,8 +21,9 @@ using Entity = entt::entity;
 #define EntityNull entt::null
 
 //struct Entity;
-struct System;
-struct Scene;
+class System;
+class Scene;
+class Model;
 
 class OD_API TransformComponent{
     friend struct Scene;
@@ -132,39 +130,6 @@ private:
     std::string prefabPath;
 };
 
-/*struct OD_API Entity{
-    friend struct Scene;
-public:
-
-    Entity() = default;
-    Entity(EntityId _id, Scene* _scene):id(_id), scene(_scene){}
-
-    template<typename T, typename... Args> T& AddComponent(Args&&... args);
-    template<typename T> T& AddComponent();
-    template<typename T> T& GetComponent();
-    template<typename T> T* TryGetComponent();
-    template<typename T> T* TryGetComponentInParent();
-    template<typename T> T* TryGetComponentInChildren();
-    template<typename T> bool HasComponent();
-    template<typename T> T& AddOrGetComponent();
-    template<typename T> void RemoveComponent();
-
-    bool IsValid();
-    inline EntityId Id(){ return id; }
-    inline Scene* GetScene(){ return scene; }
-
-    inline bool operator==(const Entity& other) const { return id == other.id && scene == other.scene; }
-    inline bool operator!=(const Entity& other) const { return !(*this == other); }
-
-    static void CreateLuaBind(sol::state& lua);
-
-    //template<typename T> inline static void RegisterMetaComponent();
-
-//private: //TODO: Revise this design
-    EntityId id = entt::null;
-    Scene* scene = nullptr;
-};*/
-
 template<typename T>
 auto _AddComponent(Scene* scene, Entity entity, const sol::table& comp, sol::this_state s);
 
@@ -207,9 +172,6 @@ public:
     Scene();
     Scene(Scene& other);
     ~Scene();
-
-    //Entity AddEntity(std::string name = "Entity");
-    //template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
     Entity AddEntity(std::string name = "Entity");
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);

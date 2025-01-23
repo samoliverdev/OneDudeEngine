@@ -2,7 +2,6 @@
 #include "OD/Defines.h"
 #include "CrossFadeTarget.h"
 #include "Skeleton.h"
-#include <vector>
 
 namespace OD{
 

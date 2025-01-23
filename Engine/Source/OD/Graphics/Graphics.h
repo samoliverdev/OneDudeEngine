@@ -2,17 +2,18 @@
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Color.h"
-#include "Mesh.h"
-#include "Model.h"
-#include "SubShader.h"
 #include "Camera.h"
-#include "Framebuffer.h"
-#include "Font.h"
 #include "RendererTypes.h"
 
 namespace sol{ class state; }
 
 namespace OD {
+
+class SubShader;
+class Mesh;
+class Model;
+class Framebuffer;
+class Font;
 
 class OD_API Graphics {
     friend class Application;

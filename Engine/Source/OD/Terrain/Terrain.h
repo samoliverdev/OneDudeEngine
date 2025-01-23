@@ -51,6 +51,8 @@ public:
 
 namespace OD{
 
+class Mesh;
+
 struct OD_API TerrainComponent{
     friend class TerrainSystem;
 

@@ -1,13 +1,13 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Color.h"
+#include "OD/Core/Asset.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Platform/Platform.h"
 #include <imgui/imgui.h>
 #include <filesystem>
 #include <IconFontCppHeaders/IconsFontAwesome5.h>
 #include <magic_enum/magic_enum.hpp>
-#include "OD/Core/Asset.h"
-#include "OD/Graphics/Material.h"
-#include "OD/Platform/Platform.h"
 
 namespace ImGui{
     void OD_API _SelectionAsset(OD::Ref<OD::Asset> asset);

@@ -1,4 +1,5 @@
 #include "BloomPostFX.h"
+#include "OD/Graphics/Graphics.h"
 
 namespace OD{
 

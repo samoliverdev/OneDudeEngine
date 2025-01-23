@@ -4,18 +4,12 @@
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
 #include "Mesh.h"
-#include "SubShader.h"
 #include "Material.h"
 #include "Culling.h"
 #include "OD/Animation/Skeleton.h"
 #include "OD/Animation/Clip.h"
 
 namespace OD{
-
-/*
-struct AABB;
-struct Sphere;
-*/
 
 class OD_API Model: public Asset{
 public:

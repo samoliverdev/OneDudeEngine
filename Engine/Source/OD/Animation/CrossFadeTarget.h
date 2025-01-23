@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Clip.h"
 #include "Pose.h"
 

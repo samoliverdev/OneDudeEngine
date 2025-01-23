@@ -1,9 +1,9 @@
 #pragma once
 #include "OD/Defines.h"
-#include <vector>
 #include "OD/Core/Math.h"
 #include "Frame.h"
 #include "Interpolation.h"
+#include <vector>
 
 namespace OD{
 

@@ -3,6 +3,7 @@
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/Navmesh/Navmesh.h"
+#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 

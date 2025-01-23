@@ -1,6 +1,9 @@
 #include "Navmesh.h"
 #include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
+#include "OD/Graphics/Graphics.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Scene/SceneManager.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Platform/GL.h"
@@ -8,7 +11,6 @@
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
 #include <DetourCommon.h>
-#include "OD/Scene/SceneManager.h"
 
 namespace OD{
 

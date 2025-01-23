@@ -1,5 +1,6 @@
 #include "ViewportPanel.h"
 #include "OD/Editor/Editor.h"
+#include "OD/RenderPipeline/StandRenderPipeline.h"
 
 namespace OD{
 

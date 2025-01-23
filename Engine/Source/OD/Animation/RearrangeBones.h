@@ -2,8 +2,6 @@
 #include "OD/Defines.h"
 #include <map>
 #include "Clip.h"
-//#include "Skeleton.h"
-//#include "OD/Graphics/Mesh.h"
 
 namespace OD{
 

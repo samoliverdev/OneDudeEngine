@@ -11,6 +11,7 @@
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/Graphics/Geometry.h"
+#include "OD/Graphics/Graphics.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Editor.h"
 #include <taskflow/taskflow.hpp> 

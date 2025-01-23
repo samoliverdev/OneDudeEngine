@@ -19,7 +19,8 @@ struct OD_API Character {
     unsigned int advance;    // Offset to advance to next glyph
 };
     
-struct OD_API Font: public Asset{
+class OD_API Font: public Asset{
+public:
     friend class Graphics;
 
     //Font() = default;

@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-//#include "OD/Core/Lua.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace sol{ class state; }

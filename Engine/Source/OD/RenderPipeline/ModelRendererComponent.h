@@ -1,8 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Scene/Scene.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
 
