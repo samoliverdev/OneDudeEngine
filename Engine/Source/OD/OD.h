@@ -24,6 +24,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/SubShader.h"
+#include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Graphics/Camera.h"

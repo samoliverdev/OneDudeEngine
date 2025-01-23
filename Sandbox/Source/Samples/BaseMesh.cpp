@@ -249,9 +249,11 @@ void BaseMeshSample::OnInit(){
     });
     executor.run(taskflow, [&](){ executorEnd = true; });*/
 
-    ShaderSourceData shaderSource;
+    /*ShaderSourceData shaderSource;
     ShaderLoadFile("Sandbox/Shaders/NewShaderTest.glsl", shaderSource);
-    LogWarning("%s", shaderSource.baseSource.c_str());
+    LogWarning("%s", shaderSource.baseSource.c_str());*/
+
+    Ref<Shader> shaderTest = CreateRef<Shader>("Sandbox/Shaders/NewShaderTest.glsl");
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){

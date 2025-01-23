@@ -39,6 +39,8 @@ public:
     static Ref<SubShader> CreateFromFile(const std::string& filepath);
     static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
 
+    static Ref<SubShader> CreateFromBaseSource(std::string& filepath, std::vector<std::string>& keyworlds);
+
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
@@ -104,6 +106,8 @@ private:
     std::vector<std::vector<std::string>> pragmas;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
+    bool CreateBaseSource(std::string& source, std::vector<std::string>& keyworlds);
+
     std::string load(std::string path);
     int GetLocation(const char* name);
 	std::unordered_map<unsigned int, std::string> PreProcess(const std::string& source, std::vector<std::string>& keyworlds);

@@ -186,6 +186,129 @@ bool SubShader::Create(const std::string& filepath, std::vector<std::string>& ke
     return true;
 }
 
+bool SubShader::CreateBaseSource(std::string& source, std::vector<std::string>& keyworlds){
+    Destroy(*this);
+    enabledKeyworlds = keyworlds;
+
+    std::string vertexToInsert = "#version 330 core\n#define VERTEX\n";
+    std::string fragToInsert = "#version 330 core\n#define FRAGMENT\n";
+
+    auto CompileShader = [](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
+        baseSource.insert(0, toInsert);
+        //LogWarning("%s", baseSource.c_str());
+
+        shader = glCreateShader(type);
+
+        const GLchar* sourceCStr = baseSource.c_str();
+        glShaderSource(shader, 1, &sourceCStr, 0);
+        glCompileShader(shader);
+        glCheckError();
+
+        GLint isCompiled = 0;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+        if(isCompiled == GL_FALSE){
+            GLint maxLength = 0;
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+            glCheckError();
+
+            std::vector<GLchar> infoLog(maxLength);
+            glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+            glCheckError();
+
+            glDeleteShader(shader);
+            glCheckError();
+
+            //printf("%s", infoLog.data());
+            //Assert(false && "Shader compilation failure!");
+            LogError("Shader compilation failure!");
+            LogError("%s", infoLog.data());
+            baseSource.erase(0, toInsert.size());
+            return false;
+        }
+
+        glAttachShader(program, shader);
+        glCheckError();
+        baseSource.erase(0, toInsert.size());
+        return true;
+    };
+
+    GLuint program = glCreateProgram();
+    glCheckError();
+    
+    GLenum glShaderIDs[2] = {0, 0};
+    //int glShaderIDIndex = 0;
+
+    if(CompileShader(source, vertexToInsert, GL_VERTEX_SHADER, program, glShaderIDs[0]) == false) return false;
+    if(CompileShader(source, fragToInsert, GL_FRAGMENT_SHADER, program, glShaderIDs[1]) == false) return false;
+    
+    rendererId = program;
+
+    // Link our program
+    glLinkProgram(program);
+    glCheckError();
+
+    // Note the different functions here: glGetProgram* instead of glGetShader*.
+    GLint isLinked = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+    glCheckError();
+
+    if (isLinked == GL_FALSE){
+        GLint maxLength = 0;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+        glCheckError();
+
+        // The maxLength includes the NULL character
+        std::vector<GLchar> infoLog(maxLength);
+        glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+        glCheckError();
+
+        // We don't need the program anymore.
+        glDeleteProgram(program);
+        glCheckError();
+        
+        for(auto id : glShaderIDs){
+            glDeleteShader(id);
+            glCheckError();
+        }
+
+        printf("%s", infoLog.data());
+        LogError("Shader link failure! %s", path.c_str());
+        Assert(false && "Shader link failure!");
+        return false;
+    }
+
+    for(auto id: glShaderIDs){
+        if(id == 0) continue;
+        glDetachShader(program, id);
+        glCheckError();
+    }
+
+    glCheckError();
+
+    GLint count;
+    GLint size; // size of the variable
+    GLenum type; // type of the variable (float, vec3 or mat4, etc)
+    const GLsizei bufSize = 64; // maximum name length
+    GLchar name[bufSize]; // variable name in GLSL
+    GLsizei length; // name length
+    glGetProgramiv(rendererId, GL_ACTIVE_UNIFORMS, &count);
+    //printf("Active Uniforms: %d\n", count);
+    for(int i = 0; i < count; i++){
+        glGetActiveUniform(rendererId, (GLuint)i, bufSize, &length, &size, &type, name);
+        
+        std::string t = std::string(name);
+        std::string s = "[0]";
+        std::string::size_type _i = t.find(s);
+        if (_i != std::string::npos)
+        t.erase(_i, s.length());
+
+        _uniforms.push_back(std::string(t));
+        //printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+    }
+
+    return true;
+}
+
 std::string SubShader::load(std::string path){
     //LogWarning("Path: %s", path.c_str());
 
@@ -417,6 +540,14 @@ Ref<SubShader> SubShader::CreateFromFile(const std::string& filepath){
 Ref<SubShader> SubShader::CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds){
     Ref<SubShader> out = CreateRef<SubShader>();
     if(out->Create(filepath, keyworlds) == false){
+        return nullptr;
+    }
+    return out;
+}
+
+Ref<SubShader> SubShader::CreateFromBaseSource(std::string& source, std::vector<std::string>& keyworlds){
+    Ref<SubShader> out = CreateRef<SubShader>();
+    if(out->CreateBaseSource(source, keyworlds) == false){
         return nullptr;
     }
     return out;

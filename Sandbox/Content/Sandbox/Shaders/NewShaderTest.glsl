@@ -35,22 +35,24 @@
     
 #include Engine/ShaderLibrary/Base.glsl
 
-BeginPass(MainPass)
-    BeginPassVertex
+#if defined(MainPass)
+    #if defined(VERTEX)
         void main(){
             
         }
-    EndVertex
-
-    BeginFragment
+    #endif
+    #if defined(FRAGMENT)
         void main(){
 
         }
-    EndFragment
-EndPass
+    #endif
+#endif
 
-BeginPassVertex(ShadowmapPass)
+#if defined(ShadowmapPass) && defined(VERTEX)
     void main(){
 
     }
-EndPass
+#endif
+#if defined(ShadowmapPass) && defined(FRAGMENT)
+    void main(){}
+#endif
