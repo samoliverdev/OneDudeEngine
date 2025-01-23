@@ -24,18 +24,12 @@
     MultiCompile Forward Deferred
 #pragma EndPassDef
 
-#pragma BeginPassDef
-    Name ShadowmapPass
-    CullFace BACK
-    DepthTest LESS
-    Blend Off
-    SupportInstancing true
-    MultiCompile _ SKINNED INSTANCING
-#pragma EndPassDef
-    
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/DepthPrePassDef.glsl
 
-#if defined(MainPass)
+uniform float test;
+
+#if defined(MainPass) || defined(DepthPrePass1) || defined(DepthPrePass2)
     #if defined(VERTEX)
         void main(){
             
@@ -48,11 +42,4 @@
     #endif
 #endif
 
-#if defined(ShadowmapPass) && defined(VERTEX)
-    void main(){
-
-    }
-#endif
-#if defined(ShadowmapPass) && defined(FRAGMENT)
-    void main(){}
-#endif
+#include Engine/Shaders/DefaultShadowmap.glsl

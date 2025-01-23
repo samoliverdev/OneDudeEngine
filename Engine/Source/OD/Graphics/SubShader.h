@@ -10,8 +10,7 @@
 
 namespace OD {
 
-struct OD_API ShaderPassData{
-    std::string name;
+struct OD_API ShaderPipeline{
     CullFace cullFace = CullFace::BACK;
     DepthTest depthTest = DepthTest::LESS;
     bool depthMask = true;
@@ -19,8 +18,12 @@ struct OD_API ShaderPassData{
     BlendMode srcBlend;
     BlendMode dstBlend;
     bool supportInstancing;
-    std::vector<std::vector<std::string>> properties;
+};
 
+struct OD_API ShaderPassData{
+    std::string name;
+    ShaderPipeline pipeline;
+    std::vector<std::vector<std::string>> properties;
     void UpdateProperties();
 };
 
@@ -39,7 +42,12 @@ public:
     static Ref<SubShader> CreateFromFile(const std::string& filepath);
     static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
 
-    static Ref<SubShader> CreateFromBaseSource(std::string& filepath, std::vector<std::string>& keyworlds);
+    static Ref<SubShader> CreateFromBaseSource(
+        std::string& filepath, 
+        std::vector<std::string>& keyworlds, 
+        ShaderPipeline pipeline, 
+        std::vector<std::string>& errors
+    );
 
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
@@ -74,13 +82,13 @@ public:
 
     inline unsigned int RendererId(){ return rendererId; }
 
-    inline bool SupportInstancing(){ return supportInstancing; }
-    inline CullFace GetCullFace(){ return cullFace; }
-    inline DepthTest GetDepthTest(){ return depthTest; }
-    inline bool IsDepthMask(){ return depthMask; }
-    inline bool IsBlend(){ return blend; }
-    inline BlendMode GetSrcBlend(){ return srcBlend; }
-    inline BlendMode GetDstBlend(){ return dstBlend; }
+    inline bool SupportInstancing(){ return pipeline.supportInstancing; }
+    inline CullFace GetCullFace(){ return pipeline.cullFace; }
+    inline DepthTest GetDepthTest(){ return pipeline.depthTest; }
+    inline bool IsDepthMask(){ return pipeline.depthMask; }
+    inline bool IsBlend(){ return pipeline.blend; }
+    inline BlendMode GetSrcBlend(){ return pipeline.srcBlend; }
+    inline BlendMode GetDstBlend(){ return pipeline.dstBlend; }
 
     inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
 
@@ -88,14 +96,15 @@ public:
     inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
 
 private:
-    bool supportInstancing = false;
-    
+    /*bool supportInstancing = false;
     CullFace cullFace = CullFace::BACK;
     DepthTest depthTest = DepthTest::LESS;
     bool depthMask = true;
     bool blend = false;
     BlendMode srcBlend;
-    BlendMode dstBlend;
+    BlendMode dstBlend;*/
+
+    ShaderPipeline pipeline;
 
     std::vector<std::string> enabledKeyworlds;
     
@@ -106,7 +115,11 @@ private:
     std::vector<std::vector<std::string>> pragmas;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
-    bool CreateBaseSource(std::string& source, std::vector<std::string>& keyworlds);
+    bool CreateBaseSource(
+        std::string& source, 
+        std::vector<std::string>& keyworlds,
+        std::vector<std::string>& errors
+    );
 
     std::string load(std::string path);
     int GetLocation(const char* name);

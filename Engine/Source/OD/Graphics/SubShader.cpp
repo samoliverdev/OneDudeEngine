@@ -15,7 +15,7 @@ namespace OD{
 void ShaderPassData::UpdateProperties(){
     for(auto& line: properties){
         if(line.size() > 1 && line[0] == "SupportInstancing" && line[1] == "true"){
-            supportInstancing = true;
+            pipeline.supportInstancing = true;
         }
 
         if(line.size() > 1 && line[0] == "Blend" && line[1] != "Off"){
@@ -23,9 +23,9 @@ void ShaderPassData::UpdateProperties(){
             auto value1 = magic_enum::enum_cast<BlendMode>(line[1]);
             auto value2 = magic_enum::enum_cast<BlendMode>(line[2]);
             if(value1.has_value() && value2.has_value()){
-                blend = true;
-                srcBlend = value1.value();
-                dstBlend = value2.value();
+                pipeline.blend = true;
+                pipeline.srcBlend = value1.value();
+                pipeline.dstBlend = value2.value();
             }
         }
 
@@ -37,19 +37,19 @@ void ShaderPassData::UpdateProperties(){
         if(line.size() > 1 && line[0] == "CullFace"){
             Assert(line.size() == 2);
             auto value1 = magic_enum::enum_cast<CullFace>(line[1]);
-            if(value1.has_value()) cullFace = value1.value();
+            if(value1.has_value()) pipeline.cullFace = value1.value();
         }
 
         if(line.size() > 1 && line[0] == "DepthTest"){
             Assert(line.size() == 2);
             auto value1 = magic_enum::enum_cast<DepthTest>(line[1]);
-            if(value1.has_value()) depthTest = value1.value(); 
+            if(value1.has_value()) pipeline.depthTest = value1.value(); 
         }
 
         if(line.size() > 1 && line[0] == "DepthMask"){
             Assert(line.size() == 2);
-            if(line[1] == "True") depthMask = true;
-            if(line[1] == "False") depthMask = false;
+            if(line[1] == "True") pipeline.depthMask = true;
+            if(line[1] == "False") pipeline.depthMask = false;
         }
     }
 }
@@ -186,14 +186,14 @@ bool SubShader::Create(const std::string& filepath, std::vector<std::string>& ke
     return true;
 }
 
-bool SubShader::CreateBaseSource(std::string& source, std::vector<std::string>& keyworlds){
+bool SubShader::CreateBaseSource(std::string& source, std::vector<std::string>& keyworlds, std::vector<std::string>& errors){
     Destroy(*this);
     enabledKeyworlds = keyworlds;
 
     std::string vertexToInsert = "#version 330 core\n#define VERTEX\n";
     std::string fragToInsert = "#version 330 core\n#define FRAGMENT\n";
 
-    auto CompileShader = [](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
+    auto CompileShader = [&](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
         baseSource.insert(0, toInsert);
         //LogWarning("%s", baseSource.c_str());
 
@@ -217,6 +217,8 @@ bool SubShader::CreateBaseSource(std::string& source, std::vector<std::string>& 
 
             glDeleteShader(shader);
             glCheckError();
+
+            errors.push_back(std::string(&infoLog[0]));
 
             //printf("%s", infoLog.data());
             //Assert(false && "Shader compilation failure!");
@@ -369,7 +371,7 @@ std::string SubShader::load(std::string path){
         }
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "SupportInstancing" && pragmaLine[1] == "true"){
-            supportInstancing = true;
+            pipeline.supportInstancing = true;
         }
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "Blend" && pragmaLine[1] != "Off"){
@@ -379,9 +381,9 @@ std::string SubShader::load(std::string path){
             auto value2 = magic_enum::enum_cast<BlendMode>(pragmaLine[2]);
 
             if(value1.has_value() && value2.has_value()){
-                blend = true;
-                srcBlend = value1.value();
-                dstBlend = value2.value();
+                pipeline.blend = true;
+                pipeline.srcBlend = value1.value();
+                pipeline.dstBlend = value2.value();
             }
         }
 
@@ -389,7 +391,7 @@ std::string SubShader::load(std::string path){
             Assert(pragmaLine.size() == 2);
             auto value1 = magic_enum::enum_cast<CullFace>(pragmaLine[1]);
             if(value1.has_value()){
-                cullFace = value1.value();
+                pipeline.cullFace = value1.value();
             }
         }
 
@@ -398,17 +400,17 @@ std::string SubShader::load(std::string path){
 
             auto value1 = magic_enum::enum_cast<DepthTest>(pragmaLine[1]);
             if(value1.has_value()){
-                depthTest = value1.value(); 
+                pipeline.depthTest = value1.value(); 
             }
         }
 
         if(pragmaLine.size() > 1 && pragmaLine[0] == "DepthMask"){
             Assert(pragmaLine.size() == 2);
             if(pragmaLine[1] == "True"){
-                depthMask = true;
+                pipeline.depthMask = true;
             }
             if(pragmaLine[1] == "False"){
-                depthMask = false;
+                pipeline.depthMask = false;
             }
         }
 
@@ -545,9 +547,10 @@ Ref<SubShader> SubShader::CreateFromFile(const std::string& filepath, std::vecto
     return out;
 }
 
-Ref<SubShader> SubShader::CreateFromBaseSource(std::string& source, std::vector<std::string>& keyworlds){
+Ref<SubShader> SubShader::CreateFromBaseSource(std::string& source, std::vector<std::string>& keyworlds, ShaderPipeline pipeline, std::vector<std::string>& errors){
     Ref<SubShader> out = CreateRef<SubShader>();
-    if(out->CreateBaseSource(source, keyworlds) == false){
+    out->pipeline = pipeline;
+    if(out->CreateBaseSource(source, keyworlds, errors) == false){
         return nullptr;
     }
     return out;
@@ -753,7 +756,7 @@ void SubShader::OnGui(){
     std::string cullFace(magic_enum::enum_name(GetCullFace()));
     ImGui::Text("CullFace: %s", cullFace.c_str());
     
-    ImGui::Text("DepthMask: %s", depthMask == true ? "True" : "False");
+    ImGui::Text("DepthMask: %s", pipeline.depthMask == true ? "True" : "False");
 
     std::string depthTest(magic_enum::enum_name(GetDepthTest()));
     ImGui::Text("DepthTest: %s", depthTest.c_str());

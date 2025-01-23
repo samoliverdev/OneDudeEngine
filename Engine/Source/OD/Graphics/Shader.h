@@ -11,6 +11,10 @@ namespace OD{
 class OD_API Shader{
 public:
     Shader(std::string sourcePath);
+    Shader(){}
+
+    void Create(std::string path);
+    void Destroy();
 
     //Need Call Disable First
     void DisableKeyword(std::string keyword);
@@ -19,6 +23,8 @@ public:
 
     void SetCurrentShader();
     Ref<SubShader> GetCurrentShader();
+
+    inline bool IsComplete(){ return isComplete; }
 
 private:
     struct KeyworldSpace{
@@ -36,11 +42,13 @@ private:
 
     ShaderSourceData shaderSourceData;
     std::vector<Pass> passes;
+    std::vector<std::string> errors;
     std::string sourcePath;
     int curPass = 0;
     Ref<SubShader> currentShader;
+    bool isComplete = false;
 
-    void InitPass(std::string path, int pass);
+    bool InitPass(int pass);
     void UpdateCurrentShader();
     void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass);
     std::set<std::string> GetEnabledKeywords();

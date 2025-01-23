@@ -64,22 +64,46 @@ std::string GetKey_(const std::set<std::string>& keyworlds){
     return std::accumulate(keyworlds.begin(), keyworlds.end(), std::string(""));
 }
 
-Shader::Shader(std::string source){
-    sourcePath = source;
+Shader::Shader(std::string path){
+    Create(path);
+}
 
-    ShaderLoadFile(source, shaderSourceData);
+void Shader::Create(std::string path){
+    Destroy();
+    errors.clear();
+    isComplete = true;
+    sourcePath = path;
+    ShaderLoadFile(path, shaderSourceData);
     passes.resize(shaderSourceData.passes.size());
     for(int i = 0; i < passes.size(); i++){
         passes[i].name = shaderSourceData.passes[i].name;
-        InitPass(source, i);
+        bool r = InitPass(i);
+        if(r == false) break;
     }
+
+    if(isComplete == false){
+        LogError("Error To Compile Shader: %s", path.c_str());
+        Destroy();
+    } 
 }
 
-void Shader::InitPass(std::string path, int pass){
+void Shader::Destroy(){
+    for(auto& i: passes){
+        for(auto& j: i.shaders){
+            if(j.second == nullptr) continue;
+            SubShader::Destroy(*j.second);
+        }
+    }
+    passes.clear();
+    isComplete = false;
+}
+
+bool Shader::InitPass(int pass){
     //passes[pass].shaders[""] = baseShader;
     //currentShader = baseShader;
 
     AddShaderVaring("", std::set<std::string>(), pass);
+    if(isComplete == false) return false;
 
     std::vector<std::vector<std::string>> multCompile;
     std::vector<std::string> combinations;
@@ -108,7 +132,7 @@ void Shader::InitPass(std::string path, int pass){
         if(c == false) i.push_back("_");
     }
     
-    if(multCompile.size() < 1) return;
+    if(multCompile.size() < 1) return true;
 
     _Combine_(multCompile, std::string(""), combinations);
     //LogInfo("-----------All Shader Varing-------------");
@@ -120,7 +144,10 @@ void Shader::InitPass(std::string path, int pass){
             LogInfo("SplitValue: %s", j.c_str());
         }*/
         //LogInfo("Shader Varing Key: \"%s\" Original: \"%s\" KeywordsCount: %zd", key.c_str(), s.c_str(), keywords.size());
-        if(passes[pass].shaders.count(key) == false) AddShaderVaring(key, keywords, pass);
+        if(passes[pass].shaders.count(key) == false) {
+            AddShaderVaring(key, keywords, pass);
+            if(isComplete == false) return false;
+        }
 
         /*std::string shaderVaring = baseShader->Path();
         std::string suffix = ".glsl";
@@ -128,6 +155,8 @@ void Shader::InitPass(std::string path, int pass){
         shaderVaring += key + ".shader";
         LogInfo("%s", shaderVaring.c_str());*/
     }
+
+    return true;
 }
 
 void Shader::DisableKeyword(std::string keyword){
@@ -210,7 +239,15 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     //LogWarning("%s", shaderSourceData.baseSource.c_str());
 
-    Ref<SubShader> shader = SubShader::CreateFromBaseSource(shaderSourceData.baseSource, _enabledKeywords);
+    Ref<SubShader> shader = SubShader::CreateFromBaseSource(
+        shaderSourceData.baseSource, 
+        _enabledKeywords, 
+        shaderSourceData.passes[pass].pipeline,
+        errors
+    );
+    if(shader == nullptr){
+        isComplete = false;
+    }
     passes[pass].shaders[key] = shader;
     //currentShader = shader;
 

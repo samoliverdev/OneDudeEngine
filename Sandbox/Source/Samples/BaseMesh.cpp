@@ -253,7 +253,11 @@ void BaseMeshSample::OnInit(){
     ShaderLoadFile("Sandbox/Shaders/NewShaderTest.glsl", shaderSource);
     LogWarning("%s", shaderSource.baseSource.c_str());*/
 
-    Ref<Shader> shaderTest = CreateRef<Shader>("Sandbox/Shaders/NewShaderTest.glsl");
+    //Ref<Shader> shaderTest = CreateRef<Shader>("Sandbox/Shaders/NewShaderTest.glsl");
+
+    Shader shaderTest;
+    shaderTest.Create("Sandbox/Shaders/NewShaderTest.glsl");
+    shaderTest.Destroy();
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){
