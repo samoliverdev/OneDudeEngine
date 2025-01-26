@@ -5,6 +5,8 @@
 
 namespace OD{
     
+class Material;
+
 class OD_API BloomPostFX: public PostFX{
 public:
     int maxIterations = 3;
@@ -39,11 +41,11 @@ public:
     }
 
 private:
-    Ref<SubShader> blitShader;
-    Ref<SubShader> bloomHorizontalPassShader;
-    Ref<SubShader> bloomVerticalPassShader;
-    Ref<SubShader> bloomCombinePassShader;
-    Ref<SubShader> bloomPrefilterPassShader;
+    Ref<Material> blitShader;
+    Ref<Material> bloomHorizontalPassShader;
+    Ref<Material> bloomVerticalPassShader;
+    Ref<Material> bloomCombinePassShader;
+    Ref<Material> bloomPrefilterPassShader;
 };
 
 }

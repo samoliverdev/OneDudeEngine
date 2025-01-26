@@ -38,6 +38,7 @@ bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);
 
 class OD_API SubShader: public Asset{
     friend class Graphics;
+    friend class Material;
 public:
     static Ref<SubShader> CreateFromFile(const std::string& filepath);
     static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
@@ -61,24 +62,7 @@ public:
     bool IsValid();
 
     void OnGui() override;
-
     void Reload() override;
-
-    void SetFloat(const char* name, float value);
-    void SetFloat(const char* name, float* value, int count);
-    void SetInt(const char* name, int value);
-    void SetVector2( const char* name, Vector2 value);
-    void SetVector3(const char* name, Vector3 value);
-    void SetVector4(const char* name, Vector4 value);
-    void SetVector4(const char* name, Vector4* value, int count);
-    void SetMatrix4(const char* name, Matrix4 value);
-    void SetMatrix4(const char* name, std::vector<Matrix4>& value);
-    void SetMatrix4(const char* name, Matrix4* value, int count);
-    void SetTexture2D(const char* name, Texture2D& value, int index);
-    void SetTexture2DArray(const char* name, Texture2DArray& value, int index);
-    void SetCubemap(const char* name, Cubemap& value, int index);
-    void SetUniforBuffer(const char* name, UniformBuffer& buffer, int index);
-    void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
 
     inline unsigned int RendererId(){ return rendererId; }
 
@@ -96,13 +80,21 @@ public:
     inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
 
 private:
-    /*bool supportInstancing = false;
-    CullFace cullFace = CullFace::BACK;
-    DepthTest depthTest = DepthTest::LESS;
-    bool depthMask = true;
-    bool blend = false;
-    BlendMode srcBlend;
-    BlendMode dstBlend;*/
+    void SetFloat(const char* name, float value);
+    void SetFloat(const char* name, float* value, int count);
+    void SetInt(const char* name, int value);
+    void SetVector2( const char* name, Vector2 value);
+    void SetVector3(const char* name, Vector3 value);
+    void SetVector4(const char* name, Vector4 value);
+    void SetVector4(const char* name, Vector4* value, int count);
+    void SetMatrix4(const char* name, Matrix4 value);
+    void SetMatrix4(const char* name, std::vector<Matrix4>& value);
+    void SetMatrix4(const char* name, Matrix4* value, int count);
+    void SetTexture2D(const char* name, Texture2D& value, int index);
+    void SetTexture2DArray(const char* name, Texture2DArray& value, int index);
+    void SetCubemap(const char* name, Cubemap& value, int index);
+    void SetUniforBuffer(const char* name, UniformBuffer& buffer, int index);
+    void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
 
     ShaderPipeline pipeline;
 

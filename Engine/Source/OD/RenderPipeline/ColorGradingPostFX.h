@@ -7,6 +7,8 @@
 
 namespace OD{
 
+class Material;
+
 class OD_API ColorGradingPostFX: public PostFX{
 public:
 
@@ -52,7 +54,7 @@ public:
     }
 
 private:
-    Ref<SubShader> colorGradingPass;
+    Ref<Material> colorGradingPass;
 };
 
 }

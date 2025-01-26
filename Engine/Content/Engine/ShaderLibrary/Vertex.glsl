@@ -1,6 +1,8 @@
 #ifndef VERTEX_INCLUDED
 #define VERTEX_INCLUDED
 
+#if defined(VERTEX)
+
 layout (location = 0) in vec3 pos;
 #ifdef UV3
 layout (location = 1) in vec3 texCoord;
@@ -54,5 +56,7 @@ vec4 GetLocalPos(){
     return vec4(pos, 1.0);
 #endif
 }
+
+#endif
 
 #endif

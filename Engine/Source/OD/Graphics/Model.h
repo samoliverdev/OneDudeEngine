@@ -34,9 +34,9 @@ public:
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
 
-    void SetShader(Ref<SubShader> customShader);
+    void SetShader(Ref<Shader> customShader);
     
-    static bool CreateFromFile(Model& model, std::string const &path, Ref<SubShader> customShader = nullptr);
+    static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
 };

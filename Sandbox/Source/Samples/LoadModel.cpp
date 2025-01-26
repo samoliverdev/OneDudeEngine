@@ -8,12 +8,12 @@ void LoadModelSample::OnInit(){
 
     camTransform.LocalPosition(Vector3(0, 10, 70));
     camTransform.LocalEulerAngles(Vector3(0, 0, 0));
-
     camMove.transform = &camTransform;
 
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.glb");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Unlit.glsl"));
+    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
     model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
+    model->materials[0]->SetVector4("color", {1,1,1,1});
 
     for(int i = 0; i < 100000; i++){
         float posRange = 25;
@@ -43,52 +43,19 @@ void LoadModelSample::OnRender(float deltaTime){
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
-    //Renderer::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-
     if(useInstancing){  
         //model->materials[0]->SetEnableInstancing(true);
         model->materials[0]->DisableKeyword("SKINNED");
         model->materials[0]->EnableKeyword("INSTANCING");
-        Material::SubmitGraphicDatas(*model->materials[0]);
-
-        /*
-        model->meshs[0]->instancingModelMatrixs.clear();
-        for(auto i: transforms){
-            model->meshs[0]->instancingModelMatrixs.push_back(i);
-        }
-        model->meshs[0]->UpdateMeshInstancingModelMatrixs();*/
-
-        //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), Matrix4Identity, true);
-        /*Shader::Bind(*model->materials[0]->GetShader());
-        Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
-        Graphics::DrawMeshInstancingRaw(*model->meshs[0], transforms.size());*/
-        
-        Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0]->GetShader(), &transforms[0], transforms.size());
-
+        Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], &transforms[0], transforms.size());
     } else {
         model->materials[0]->DisableKeyword("SKINNED");
         model->materials[0]->DisableKeyword("INSTANCING");
-        Material::SubmitGraphicDatas(*model->materials[0]);
-
         for(auto i: transforms){
-            //Graphics::SetDefaultShaderData(*model->materials[0]->GetShader(), i, false);
-            /*Shader::Bind(*model->materials[0]->GetShader());
-            Graphics::SetProjectionViewMatrix(*model->materials[0]->GetShader());
-            Graphics::SetModelMatrix(*model->materials[0]->GetShader(), i);
-            Graphics::DrawMeshRaw(*model->meshs[0]);*/
-            Graphics::DrawMesh(*model->meshs[0], *model->materials[0]->GetShader(), i);
+            Graphics::DrawMesh(*model->meshs[0], *model->materials[0], i);
         }
     }
     
-    /*for(int i = 0; i < 10; i++){
-        modelTransform.localPosition(cubePositions[i]);
-        float angle = 20.0f * i; 
-        modelTransform.localEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
-        Renderer::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-    }*/
-    
-
     Graphics::End();
 }
 
@@ -101,24 +68,24 @@ void LoadModelSample::OnGUI(){
     ImGui::Checkbox("Use Instancing", &useInstancing);
     ImGui::Spacing();
     
-    ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
+    ImGui::Text("DrawCalls: %d", Graphics::GetStats().drawCalls);
     //ImGui::Text("Vertices: %dk", Graphics::GetVerticesCount() / 1000);
     //ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);
     
-    if(Graphics::GetVerticesCount() >= 1000000){
-        ImGui::Text("Vertices: %.1fM", Graphics::GetVerticesCount() / 1000000.0f);
-    } else if(Graphics::GetVerticesCount() >= 1000){
-        ImGui::Text("Vertices: %.1fk", Graphics::GetVerticesCount() / 1000.0f);
+    if(Graphics::GetStats().vertices >= 1000000){
+        ImGui::Text("Vertices: %.1fM", Graphics::GetStats().vertices / 1000000.0f);
+    } else if(Graphics::GetStats().vertices >= 1000){
+        ImGui::Text("Vertices: %.1fk", Graphics::GetStats().vertices / 1000.0f);
     } else {
-        ImGui::Text("Vertices: %d", Graphics::GetVerticesCount());
+        ImGui::Text("Vertices: %d", Graphics::GetStats().vertices);
     }
 
-    if(Graphics::GetTrisCount() >= 1000000){
-        ImGui::Text("Tris: %.1fM", Graphics::GetTrisCount() / 1000000.0f);
-    } else if(Graphics::GetTrisCount() >= 1000){
-        ImGui::Text("Tris: %.1fk", Graphics::GetTrisCount() / 1000.0f);
+    if(Graphics::GetStats().tris >= 1000000){
+        ImGui::Text("Tris: %.1fM", Graphics::GetStats().tris / 1000000.0f);
+    } else if(Graphics::GetStats().tris >= 1000){
+        ImGui::Text("Tris: %.1fk", Graphics::GetStats().tris / 1000.0f);
     } else {
-        ImGui::Text("Tris: %d", Graphics::GetTrisCount());
+        ImGui::Text("Tris: %d", Graphics::GetStats().tris);
     }
     
     ImGui::End();

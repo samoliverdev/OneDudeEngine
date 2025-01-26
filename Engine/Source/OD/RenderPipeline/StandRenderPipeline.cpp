@@ -63,7 +63,7 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(specification);
 
     shadowPass = CreateRef<Material>();
-    shadowPass->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 Shadows::~Shadows(){
@@ -372,7 +372,7 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
     gamaCorrectionPP = new GamaCorrectionPP();
@@ -559,13 +559,13 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
 
     context->RenderSkyboxLater();
-    context->DrawGizmos();    
-
+    
+    /*context->DrawGizmos();    
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     context->DrawGizmos();
     for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
-    RenderUI();
+    RenderUI();*/
 
     context->EndDrawToScreen();
 
@@ -672,6 +672,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
 void CameraRenderer::RenderSprites(){
     Assert(false && "Outdate");
+    /*
 
     auto spriteView = context->GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent>();
     for(auto entity: spriteView){
@@ -690,11 +691,12 @@ void CameraRenderer::RenderSprites(){
         _mat->GetShader()->SetTexture2D("mainTex", *sprite.sprite, 0);
         _mat->GetShader()->SetMatrix4("model", m);
         Graphics::DrawMeshRaw(*spriteMesh);
-    }
+    }*/
 }
 
 //Fixme: Shadow Bug
 void CameraRenderer::RenderUI(){
+    /*
     Graphics::SetBlend(true);
     Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
     Graphics::SetDepthMask(false);
@@ -710,7 +712,7 @@ void CameraRenderer::RenderUI(){
         if(text.font == nullptr) continue;
         if(text.material == nullptr) continue;
 
-        if(/*camera.isDebug*/ text.is3d){
+        if(text.is3d){
             Graphics::SetCamera(camera);
         } else {
             Graphics::SetCamera(cam2d);
@@ -844,6 +846,7 @@ void CameraRenderer::RenderUI(){
         );
     }
     Graphics::SetDepthMask(true);// Temp Fix Shadow Bug
+    */
 }
 
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){

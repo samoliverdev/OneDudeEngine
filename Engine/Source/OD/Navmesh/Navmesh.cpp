@@ -1,6 +1,8 @@
 #include "Navmesh.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Model.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
@@ -45,17 +47,17 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 
 class DebugDrawGL : public duDebugDraw{
 public:
-    Ref<SubShader> shader;
+    Ref<Material> shader;
     Ref<Mesh> mesh;
 
     DebugDrawGL(){
-        shader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
+        shader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
         mesh = CreateRef<Mesh>();
     }
 
 	virtual void depthMask(bool state){
         //glDepthMask(state ? GL_TRUE : GL_FALSE);
-        Graphics::SetDepthMask(state);
+        //Graphics::SetDepthMask(state);
     }
 	
     virtual void texture(bool state){
@@ -125,8 +127,8 @@ public:
         //glPointSize(1.0f);
         if(mesh->vertices.size() == 0) return;
 
-		SubShader::Bind(*shader);
-		shader->SetFloat("alpha", 0.5f);
+		//SubShader::Bind(*shader);
+		//shader->SetFloat("alpha", 0.5f);
 
         mesh->Submit();
         Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);

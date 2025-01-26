@@ -96,19 +96,19 @@ void BoidsSample::OnInit(){
     OD::Scene* scene = SceneManager.NewScene();
 
     Ref<Material> floorMaterial = CreateRef<Material>();
-    floorMaterial->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    floorMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     floorMaterial->SetVector4("color", Vector4(0.8f, 0.8f, 0.8f, 1));
 
     Ref<Material> boidMaterial = CreateRef<Material>();
-    boidMaterial->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    boidMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
     boidMaterial->SetEnableInstancing(true);
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Ref<Model> boidModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Boid.glb");
-    boidModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    boidModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene->AddEntity("Env");
     scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};

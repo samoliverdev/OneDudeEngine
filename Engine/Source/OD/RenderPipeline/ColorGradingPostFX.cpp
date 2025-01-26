@@ -1,16 +1,17 @@
 #include "ColorGradingPostFX.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Shader.h"
 
 namespace OD{
 
 ColorGradingPostFX::ColorGradingPostFX(){
     enable = false;
-    colorGradingPass = SubShader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl");
+    colorGradingPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl"));
     Assert(colorGradingPass != nullptr);
 }
 
 void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
-    SubShader::Bind(*colorGradingPass);
     colorGradingPass->SetVector4("_ColorAdjustments", Vector4(
         math::pow(2.0f, postExposure),
         contrast * 0.01f + 1.0f,
@@ -18,7 +19,6 @@ void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
         saturation * 0.01f + 1.0f
     ));
     colorGradingPass->SetVector4("_ColorFilter", colorFilter);
-
     Graphics::BlitQuadPostProcessing(src, dst, *colorGradingPass);
 }
 

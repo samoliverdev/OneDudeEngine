@@ -11,24 +11,24 @@ RendererStatsPanel::RendererStatsPanel(){
 
 void RendererStatsPanel::OnGui() {
     ImGui::Begin("Renderer Stats");
-    ImGui::Text("DrawCalls: %d", Graphics::GetDrawCallsCount());
-    ImGui::Text("UniformSets: %d", Graphics::GetUniformSet());
-    ImGui::Text("ShaderBinds: %d", Graphics::GetShaderBinds());
+    ImGui::Text("DrawCalls: %d", Graphics::GetStats().drawCalls);
+    ImGui::Text("UniformSets: %d", Graphics::GetStats().uniformSet);
+    ImGui::Text("ShaderBinds: %d", Graphics::GetStats().shaderBinds);
     
-    if(Graphics::GetVerticesCount() >= 1000000){
-        ImGui::Text("Vertices: %.1fM", Graphics::GetVerticesCount() / 1000000.0f);
-    } else if(Graphics::GetVerticesCount() >= 1000){
-        ImGui::Text("Vertices: %.1fk", Graphics::GetVerticesCount() / 1000.0f);
+    if(Graphics::GetStats().vertices >= 1000000){
+        ImGui::Text("Vertices: %.1fM", Graphics::GetStats().vertices / 1000000.0f);
+    } else if(Graphics::GetStats().vertices >= 1000){
+        ImGui::Text("Vertices: %.1fk", Graphics::GetStats().vertices / 1000.0f);
     } else {
-        ImGui::Text("Vertices: %d", Graphics::GetVerticesCount());
+        ImGui::Text("Vertices: %d", Graphics::GetStats().vertices);
     }
 
-    if(Graphics::GetTrisCount() >= 1000000){
-        ImGui::Text("Tris: %.1fM", Graphics::GetTrisCount() / 1000000.0f);
-    } else if(Graphics::GetTrisCount() >= 1000){
-        ImGui::Text("Tris: %.1fk", Graphics::GetTrisCount() / 1000.0f);
+    if(Graphics::GetStats().tris >= 1000000){
+        ImGui::Text("Tris: %.1fM", Graphics::GetStats().tris / 1000000.0f);
+    } else if(Graphics::GetStats().tris >= 1000){
+        ImGui::Text("Tris: %.1fk", Graphics::GetStats().tris / 1000.0f);
     } else {
-        ImGui::Text("Tris: %d", Graphics::GetTrisCount());
+        ImGui::Text("Tris: %d", Graphics::GetStats().tris);
     }
 
     //ImGui::Text("Tris: %dk", Graphics::GetTrisCount() / 1000);

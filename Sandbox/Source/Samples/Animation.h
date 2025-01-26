@@ -15,7 +15,8 @@ struct AnimationInstance{
 };
 
 struct AnimationSample: public OD::Module{
-    Ref<SubShader> shader;
+    Ref<Shader> shader;
+    Ref<Material> mat;
     Ref<Texture2D> texture;
     
     Transform camTransform;

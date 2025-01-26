@@ -48,11 +48,10 @@ Ref<SubShader> gismoShader;
 Ref<Mesh> fullScreenQuad;
 Camera camera;
 
-int drawCalls;
-int vertices;
-int tris;
-int shaderBinds;
-int uniformSet;
+GraphicsStats stats;
+
+Material* lastMat = nullptr;
+SubShader* lastShader = nullptr;
 
 bool begin = false;
 
@@ -63,11 +62,9 @@ GLenum meshDrawModeLookup[] = {
     //GL_QUADS
 };  
 
-int Graphics::GetDrawCallsCount(){ return drawCalls; }
-int Graphics::GetVerticesCount(){ return vertices; }
-int Graphics::GetTrisCount(){ return tris; }
-int Graphics::GetShaderBinds(){ return shaderBinds; }
-int Graphics::GetUniformSet(){ return uniformSet; }
+const GraphicsStats& Graphics::GetStats(){ 
+    return stats; 
+}
 
 void CreateLineVAO(unsigned int* vao, unsigned int* vbo, int vertexCount){
     #ifdef USE_VAO
@@ -223,12 +220,15 @@ void Graphics::Shutdown(){
 GLsync sync = nullptr;
 
 void Graphics::Begin(){
-    drawCalls = 0;
-    vertices = 0;
-    tris = 0;
-    shaderBinds = 0;
-    uniformSet = 0;
+    stats.drawCalls = 0;
+    stats.vertices = 0;
+    stats.tris = 0;
+    stats.shaderBinds = 0;
+    stats.uniformSet = 0;
     begin = true;
+
+    lastMat = nullptr;
+    lastShader = nullptr;
 
     //if(sync != nullptr) glClientWaitSync(sync, 0, 0);
     //sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -269,14 +269,14 @@ Camera Graphics::GetCamera(){
     return camera;
 }
 
-void Graphics::SetProjectionViewMatrix(SubShader& shader){
+/*void Graphics::SetProjectionViewMatrix(SubShader& shader){
     shader.SetMatrix4("view", camera.view);
     shader.SetMatrix4("projection", camera.projection);
 }
 
 void Graphics::SetModelMatrix(SubShader& shader, Matrix4 modelMatrix){
     shader.SetMatrix4("model", modelMatrix);
-}
+}*/
 
 /*void Renderer::DrawMeshRaw(Mesh& mesh){
     Assert(mesh.IsValid() && "Mesh is not vali!");
@@ -300,7 +300,7 @@ void Graphics::SetModelMatrix(SubShader& shader, Matrix4 modelMatrix){
     glCheckError();
 }*/
 
-void Graphics::DrawMeshRaw(Mesh& mesh){
+/*void Graphics::DrawMeshRaw(Mesh& mesh){
     if(mesh.IsValid() == false){
         #ifdef GRAPHIC_LOG_ERROR
         LogError("DrawMesh::InvalidMesh");
@@ -382,7 +382,109 @@ void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){
         Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
         Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
         Material::SubmitGraphicDatas(*targetMaterial);
-        DrawMesh(*targetMesh, *targetMaterial->GetShader(), targetMatrix);
+        DrawMesh(*targetMesh, *targetMaterial->currentShader, targetMatrix);
+    }
+}*/
+
+void Graphics::BindMaterial(Material& mat){
+    Assert(mat.currentShader != nullptr && "Shader is not vali!");
+    Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
+
+    if(&mat != lastMat || mat.keywordsIdDirty == true){
+        Material::SubmitGraphicDatas(mat);
+        mat.keywordsIdDirty = false;
+    }
+    lastMat = &mat;
+    
+    if(mat.currentShader.get() != lastShader){
+        SubShader::Bind(*mat.currentShader);
+        mat.currentShader->SetMatrix4("projection", camera.projection);
+        mat.currentShader->SetMatrix4("view", camera.view);
+    }
+    lastShader = mat.currentShader.get();
+}  
+
+void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
+    if(mesh.IsValid() == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
+    Assert(mesh.IsValid() && "Mesh is not vali!");
+
+    lastShader->SetMatrix4("model", modelMatrix);
+    
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount;
+    stats.tris += mesh.indiceCount;
+    
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.vao);
+    glCheckError();
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.ebo != 0){
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
+        glCheckError();
+    }
+}
+
+void Graphics::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
+    Assert(mesh.IsValid() && "Mesh is not vali!");
+
+    mesh.SubmitInstancingCustomModelMatrixs(modelMatrixs, count);
+
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount * count;
+    stats.tris += mesh.indiceCount * count;
+
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.vao);
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.ebo != 0){
+        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
+        glCheckError();
+    } else {
+        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
+        glCheckError();
+    }
+
+    //glBindVertexArray(0);
+    //glCheckError();
+}
+
+void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
+    BindMaterial(mat);
+    DrawMesh(mesh, modelMatrix);
+}
+
+void Graphics::DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4* modelMatrix, int count){
+
+}
+
+void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
+    BindMaterial(mat);
+    DrawMeshInstancing(mesh, modelMatrixs, count);
+}
+
+void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){
+    int index = 0;
+    for(auto i: model.renderTargets){
+        Ref<Material> targetMaterial = model.materials[i.materialIndex];
+        Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
+        Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+        BindMaterial(*targetMaterial);
+        DrawMesh(*targetMesh, targetMatrix);
     }
 }
 
@@ -398,8 +500,8 @@ void Graphics::AddDrawLineCommand(Vector3 start, Vector3 end){
 
 void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     //drawCalls += 1;
-    vertices += lineCommandsData.size()/3;
-    tris += 0;
+    stats.vertices += lineCommandsData.size()/3;
+    stats.tris += 0;
 
     SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
@@ -427,7 +529,7 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     glCheckError();*/
 
     for (int i = 0; i < lineCommandsData.size(); i += 2 * MAX_LINES_VERTEX_DRAWCALL * 3){
-        drawCalls += 1;
+        stats.drawCalls += 1;
         int batchVertexCount = std::min<int>(lineCommandsData.size() - i, 2 * MAX_LINES_VERTEX_DRAWCALL * 3);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * batchVertexCount, &lineCommandsData[i]);
 	    glCheckError();
@@ -439,9 +541,9 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
 }
 
 void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
-    drawCalls += 1;
-    vertices += 2;
-    tris += 0;
+    stats.drawCalls += 1;
+    stats.vertices += 2;
+    stats.tris += 0;
 
     SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
@@ -472,9 +574,9 @@ void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
 }
 
 void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int width){
-    drawCalls += 1;
-    vertices += 2;
-    tris += 0;
+    stats.drawCalls += 1;
+    stats.vertices += 2;
+    stats.tris += 0;
 
     start = Vector3(model * Vector4(start.x, start.y, start.z, 1));
     end = Vector3(model * Vector4(end.x, end.y, end.z, 1));
@@ -508,9 +610,9 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
 }
 
 void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
-    drawCalls += 1;
-    vertices += 8;
-    tris += 24;
+    stats.drawCalls += 1;
+    stats.vertices += 8;
+    stats.tris += 24;
 
     SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
@@ -536,6 +638,7 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     //glCheckError();
 }
 
+/*
 void Graphics::DrawText(Font& f, SubShader& s, std::string text, Vector3 pos, float scale){
     SubShader::Bind(s);
     //s.SetVector4("color", color);
@@ -677,6 +780,7 @@ void Graphics::DrawText(Font& f, SubShader& s, std::string text, Matrix4 model){
     glCheckError();
     #endif
 }
+*/
 
 void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
     glViewport(x, y, w, h);
@@ -811,6 +915,7 @@ void Graphics::BeginFramebuffer(Framebuffer* framebuffer){
     Framebuffer::Bind(*framebuffer);
 }
 
+/*
 void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, SubShader& shader, int pass){
     Assert(src != nullptr);
 
@@ -850,6 +955,14 @@ void Graphics::BlitQuadPostProcessingRaw(Framebuffer* dst){
     //src->BindColorAttachmentTexture(shader, 0);
     Graphics::DrawMeshRaw(*fullScreenQuad);
     glCheckError();
+}*/
+
+void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass){
+
+}
+
+void Graphics::BlitQuadPostProcessing(Framebuffer* dst, Material& shader, int pass){
+
 }
 
 void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
@@ -871,6 +984,8 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
 }
 
 void Graphics::CreateLuaBind(sol::state& lua){
+    return;
+    /*
     lua.new_enum(
         "DepthTest",
         "DISABLE", DepthTest::DISABLE,
@@ -923,10 +1038,10 @@ void Graphics::CreateLuaBind(sol::state& lua){
         "Clean", Graphics::Clean,
         "SetCamera", Graphics::SetCamera,
         "GetCamera", Graphics::GetCamera,
-        "SetProjectionViewMatrix", Graphics::SetProjectionViewMatrix,
-        "SetModelMatrix", Graphics::SetModelMatrix,
-        "DrawMeshRaw", Graphics::DrawMeshRaw,
-        "DrawMeshInstancingRaw", Graphics::DrawMeshInstancingRaw,
+        //"SetProjectionViewMatrix", Graphics::SetProjectionViewMatrix,
+        //"SetModelMatrix", Graphics::SetModelMatrix,
+        //"DrawMeshRaw", Graphics::DrawMeshRaw,
+        //"DrawMeshInstancingRaw", Graphics::DrawMeshInstancingRaw,
         "DrawMesh", Graphics::DrawMesh,
         "DrawMeshInstancing", Graphics::DrawMeshInstancing,
         "DrawModel", Graphics::DrawModel,
@@ -952,6 +1067,7 @@ void Graphics::CreateLuaBind(sol::state& lua){
         "BlitQuadPostProcessing", Graphics::BlitQuadPostProcessing,
         "BlitFramebuffer", Graphics::BlitFramebuffer
     );
+    */
 }
 
 }

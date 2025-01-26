@@ -1,23 +1,22 @@
-#version 330 core
-
-#pragma MultiCompile _ SKINNED INSTANCING
-#pragma CullFace BACK
-#pragma DepthTest LESS
-#pragma Blend Off
-
-#if defined(VERTEX)
-uniform mat4 lightSpaceMatrix;
+#pragma BeginPassDef
+    Name MainPass
+    MultiCompile _ SKINNED INSTANCING
+    CullFace BACK
+    DepthTest LESS
+    Blend Off
+#pragma EndPassDef
 
 #include Engine/ShaderLibrary/Vertex.glsl
 
-void main(){
-    //gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
-    gl_Position = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
-}
+#if defined(VERTEX) && defined(MainPass)
+    uniform mat4 lightSpaceMatrix;
+    void main(){
+        gl_Position = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
+    }
 #endif
 
-#if defined(FRAGMENT)
-void main(){            
-    // gl_FragDepth = gl_FragCoord.z;
-} 
+#if defined(FRAGMENT) && defined(MainPass)
+    void main(){            
+        // gl_FragDepth = gl_FragCoord.z;
+    } 
 #endif

@@ -29,10 +29,10 @@ public:
     }
 
 private:
-    Ref<SubShader> copyPass;
-    Ref<SubShader> toneMappingReinhardPass;
-    Ref<SubShader> toneMappingNeutralPass;
-    Ref<SubShader> toneMappingACESPass;
+    Ref<Material> copyPass;
+    Ref<Material> toneMappingReinhardPass;
+    Ref<Material> toneMappingNeutralPass;
+    Ref<Material> toneMappingACESPass;
 };
 
 }

@@ -23,7 +23,7 @@ void ECSSample::AddTransparent(Vector3 pos){
     _meshRenderer3.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/plane.obj"));
 
     for(auto i: _meshRenderer3.GetModel()->materials){
-        i->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/UnlitBlend.glsl"));
+        i->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/UnlitBlend.glsl"));
         i->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/blending_transparent.png"));
         //i->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("res/Engine/Textures/blending_transparent.png"));
     }
@@ -56,14 +56,14 @@ void ECSSample::OnInit(){
     //scene->Start();
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
     //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
     //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
     //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
     //cubeModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));

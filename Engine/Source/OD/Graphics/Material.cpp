@@ -8,6 +8,8 @@
 #include "OD/Core/Lua.h"
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
+#include <numeric>
 
 namespace OD{
 
@@ -25,20 +27,19 @@ Material::Material(){
     baseId += 1;
 }
 
-Material::Material(Ref<SubShader> s){
+Material::Material(Ref<Shader> s){
     SetShader(s);
     id = baseId;
     baseId += 1;
 }
 
-Ref<SubShader> Material::GetShader(){ 
-    //return shader;
-    return shaderHandler->GetCurrentShader(); 
+Ref<Shader> Material::GetShader(){ 
+    return shader;
 }
 
-void Material::SetShader(Ref<SubShader> s){ 
-    //shader = s; 
-    shaderHandler = CreateRef<MultiCompileShader>(s);
+void Material::SetShader(Ref<Shader> s){ 
+    shader = s; 
+    UpdateCurrentShader();
     UpdateMaps(); 
 }
 
@@ -47,8 +48,8 @@ uint32_t Material::MaterialId(){
 }
 
 bool Material::IsBlend(){
-    if(GetShader() == nullptr) return false;
-    return GetShader()->IsBlend();
+    if(currentShader == nullptr) return false;
+    return currentShader->IsBlend();
 }
 
 bool Material::EnableInstancingValid(){ 
@@ -60,7 +61,8 @@ bool Material::EnableInstancing(){
 }
 
 bool Material::SupportInstancing(){ 
-    return GetShader() != nullptr && GetShader()->SupportInstancing(); 
+    return false;
+    return currentShader != nullptr && currentShader->SupportInstancing(); 
 }
 
 void Material::SetInt(const char* name, int value){
@@ -246,11 +248,65 @@ void Material::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
 }
 
 void Material::DisableKeyword(std::string keyword){
-    shaderHandler->DisableKeyword(keyword);
+    if(shader == nullptr) return;
+
+    for(auto& i: shader->keyworldSpaces){
+        for(auto j: i.keyworlds){
+            if(j == keyword){
+                i.enabledKey = -1;
+                break;
+            }
+        }
+    }
+
+    keywordsIdDirty = true;
 }
 
 void Material::EnableKeyword(std::string keyword){
-    shaderHandler->EnableKeyword(keyword);
+    if(shader == nullptr) return;
+
+    for(auto& i: shader->keyworldSpaces){
+        int index = 0;
+        for(auto j: i.keyworlds){
+            if(j == keyword){
+                i.enabledKey = index;
+                break;
+            }
+            index += 1;
+        }
+    }
+
+    keywordsIdDirty = true;
+}
+
+std::set<std::string> Material::GetEnabledKeywords(){
+    //return enabledKeywords;
+
+    std::set<std::string> out;
+    for(auto i: shader->keyworldSpaces){
+        if(i.enabledKey < 0){
+            out.insert("");
+        } else {
+            out.insert(i.keyworlds[i.enabledKey]);
+        }
+    }
+    return out;
+}
+
+std::string Material::GetKey(const std::set<std::string>& keyworlds){
+    if(keyworlds.size() == 0) return "";
+    return std::accumulate(keyworlds.begin(), keyworlds.end(), std::string(""));
+}
+
+void Material::UpdateCurrentShader(){
+    std::string key = GetKey(GetEnabledKeywords());
+    //LogInfo("Key: %s", key.c_str());
+
+    if(shader->passes[currentPass].shaders.count(key)){
+        currentShader = shader->passes[currentPass].shaders[key];
+    } else {
+        Assert(false);
+    }
 }
 
 void Material::CleanData(){
@@ -283,25 +339,24 @@ void Material::UpdateDatas(){
 
 void Material::SubmitGraphicDatas(Material& material){
     material.currentTextureSlot = 0;
-    material.shaderHandler->SetCurrentShader();
+    material.UpdateCurrentShader();
 
     Assert(material.GetShader() != nullptr);
     if(material.GetShader() == nullptr) return;
 
-    Graphics::SetCullFace(material.GetShader()->GetCullFace());
-    Graphics::SetDepthTest(material.GetShader()->GetDepthTest());
-    Graphics::SetDepthMask(material.GetShader()->IsDepthMask());
-
-    if(material.GetShader()->IsBlend()){
+    Graphics::SetCullFace(material.currentShader->GetCullFace());
+    Graphics::SetDepthTest(material.currentShader->GetDepthTest());
+    Graphics::SetDepthMask(material.currentShader->IsDepthMask());
+    if(material.currentShader->IsBlend()){
         Graphics::SetBlend(true);
-        Graphics::SetBlendFunc(material.GetShader()->GetSrcBlend(), material.GetShader()->GetDstBlend());
+        Graphics::SetBlendFunc(material.currentShader->GetSrcBlend(), material.currentShader->GetDstBlend());
     } else {
         Graphics::SetBlend(false);
     }
 
-    SubShader::Bind(*material.GetShader());
-    ApplyUniformTo(material, *material.GetShader(), material.maps);
-    ApplyUniformTo(material, *material.GetShader(), globalMaps);
+    SubShader::Bind(*material.currentShader);
+    ApplyUniformTo(material, *material.currentShader, material.maps);
+    ApplyUniformTo(material, *material.currentShader, globalMaps);
     Assert(material.currentTextureSlot < 32);
 }
 
@@ -320,12 +375,12 @@ void Material::OnGui(){
         toSave = true;
     }*/
 
-    Ref<SubShader> tempShader = GetShader();
+    /*Ref<SubShader> tempShader = currentShader;
     std::string s("shader");
-    if(ImGui::DrawAsset<SubShader>(s, tempShader, nullptr) && tempShader != GetShader()){
+    if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != currentShader){
         SetShader(tempShader);
         toSave = true;
-    }
+    }*/
 
     /*ImGui::BeginGroup();
     ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));
@@ -425,7 +480,7 @@ void Material::OnGui(){
         }
     }
 
-    if(GetShader() != nullptr && GetShader()->SupportInstancing() && ImGui::Checkbox("enableInstancing", &enableInstancing)){
+    if(currentShader != nullptr && currentShader->SupportInstancing() && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
     }
 
@@ -514,12 +569,12 @@ std::vector<std::string> Material::GetFileAssociations(){
 }*/
 
 void Material::UpdateMaps(){
-    if(GetShader() == nullptr) return;
+    if(currentShader == nullptr) return;
 
     ///*
 
     //Remove Unused Maps
-    for(auto i: GetShader()->Properties()){
+    for(auto i: currentShader->Properties()){
         if(maps.count(i[1].c_str())) continue;
         maps.erase(i[1].c_str());
     }
@@ -527,7 +582,7 @@ void Material::UpdateMaps(){
     properties.clear();
 
     // Add If Not Contains
-    for(auto i: GetShader()->Properties()){
+    for(auto i: currentShader->Properties()){
         if(i.size() < 2) continue;
 
         properties.push_back(i[1]);

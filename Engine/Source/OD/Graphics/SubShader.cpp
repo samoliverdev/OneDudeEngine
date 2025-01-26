@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Platform/GL.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Graphics/Graphics.h"
 #include <string.h>
 #include <sstream>
 #include <fstream>
@@ -135,13 +136,19 @@ std::string _load(std::string path, ShaderSourceData& out){
         if(pragmaLine.size() > 0) out.pragmas.push_back(pragmaLine);
 
         if(lineBuffer.find(includeIndentifier) != lineBuffer.npos){
-            lineBuffer.erase(0, includeIndentifier.size());
+            int includePos = lineBuffer.find(includeIndentifier);
+            lineBuffer.erase(includePos, includeIndentifier.size());
 
             std::string pathOfThisFile;
             getFilePath(path, pathOfThisFile);
             lineBuffer.insert(0, pathOfThisFile);
 
             if(lineBuffer[lineBuffer.size()-1] == '\r') lineBuffer.erase(lineBuffer.length()-1);
+
+            lineBuffer.erase(
+                std::remove(lineBuffer.begin(), lineBuffer.end(), ' '), 
+                lineBuffer.end()
+            );
 
             isRecursiveCall = true;
             fullSourceCode += _load(lineBuffer, out);
@@ -162,8 +169,7 @@ bool ShaderLoadFile(const std::string& path, ShaderSourceData& out){
     return true;
 }
 
-extern int shaderBinds;
-extern int uniformSet;
+extern GraphicsStats stats;
 
 bool SubShader::Create(const std::string& filepath, std::vector<std::string>& keyworlds){
     Destroy(*this);
@@ -562,7 +568,7 @@ void SubShader::Bind(SubShader& shader){
     glUseProgram(shader.rendererId);
     glCheckError();
     
-    shaderBinds += 1;
+    stats.shaderBinds += 1;
 }
 
 void SubShader::Unbind(){
@@ -815,7 +821,7 @@ int SubShader::GetLocation(const char* name){
 }
 
 void SubShader::SetFloat(const char* name, float value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform1f(GetLocation(name), value);
@@ -825,7 +831,7 @@ void SubShader::SetFloat(const char* name, float value){
 }
 
 void SubShader::SetFloat(const char* name, float* value, int count){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     //glUniform1f(GetLocation(name), value);
@@ -834,7 +840,7 @@ void SubShader::SetFloat(const char* name, float* value, int count){
 }
 
 void SubShader::SetInt(const char* name, int value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform1i(GetLocation(name), value);
@@ -845,7 +851,7 @@ void SubShader::SetInt(const char* name, int value){
 }
 
 void SubShader::SetVector2(const char* name, Vector2 value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform2f(GetLocation(name), value.x, value.y);
@@ -853,7 +859,7 @@ void SubShader::SetVector2(const char* name, Vector2 value){
 }
 
 void SubShader::SetVector3(const char* name, Vector3 value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform3f(GetLocation(name), value.x, value.y, value.z);
@@ -864,7 +870,7 @@ void SubShader::SetVector3(const char* name, Vector3 value){
 }
 
 void SubShader::SetVector4(const char* name, Vector4 value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4f(GetLocation(name), value.x, value.y, value.z, value.w);
@@ -872,7 +878,7 @@ void SubShader::SetVector4(const char* name, Vector4 value){
 }
 
 void SubShader::SetVector4(const char* name, Vector4* value, int count){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4fv(GetLocation(name), (GLsizei)count, (GLfloat*)value);
@@ -880,7 +886,7 @@ void SubShader::SetVector4(const char* name, Vector4* value, int count){
 }
 
 void SubShader::SetMatrix4(const char* name, Matrix4 value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(GetLocation(name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
@@ -891,12 +897,12 @@ void SubShader::SetMatrix4(const char* name, Matrix4 value){
 }
 
 void Set(unsigned int slot, Matrix4* inputArray, unsigned int arrayLength) {
-    uniformSet += 1;
+    stats.uniformSet += 1;
 	glUniformMatrix4fv(slot, (GLsizei)arrayLength, false, (float*)&inputArray[0]);
 }
 
 void SubShader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(GetLocation(name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
@@ -908,7 +914,7 @@ void SubShader::SetMatrix4(const char* name, std::vector<Matrix4>& value){
 }
 
 void SubShader::SetMatrix4(const char* name, Matrix4* value, int count){
-    uniformSet += 1;
+    stats.uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
     glUniformMatrix4fv(GetLocation(name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
     glCheckError();

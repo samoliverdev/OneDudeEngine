@@ -560,7 +560,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
 
     MeshRendererComponent& terrainMeshRenderer = GetScene()->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
-    terrainMeshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Terrain.glsl"));
+    terrainMeshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
     terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"));
     terrainMeshRenderer.material->SetTexture("splatmap", terrain.splatmap);
     terrainMeshRenderer.material->SetTexture("tex0", terrain.layer0);
@@ -576,7 +576,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
     terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);
 
-    terrainMeshRenderer.customShadowPass = CreateRef<Material>(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/TerrainShadow.glsl"));
+    terrainMeshRenderer.customShadowPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
     terrainMeshRenderer.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
     terrainMeshRenderer.customShadowPass->SetVector2("heightmapTilling", Vector2(offset, offset));
     terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));

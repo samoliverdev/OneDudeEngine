@@ -1,15 +1,17 @@
 #include "BloomPostFX.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Shader.h"
 
 namespace OD{
 
 BloomPostFX::BloomPostFX(){
     enable = false;
-    blitShader = SubShader::CreateFromFile("Engine/Shaders/Blit.glsl");
-    bloomHorizontalPassShader = SubShader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl");
-    bloomVerticalPassShader = SubShader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl");
-    bloomCombinePassShader = SubShader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl");
-    bloomPrefilterPassShader = SubShader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl");
+    blitShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    bloomHorizontalPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl"));
+    bloomVerticalPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
+    bloomCombinePassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl"));
+    bloomPrefilterPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl"));
 }
 
 void BloomPostFX::OnSetup(){
@@ -54,7 +56,6 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     _threshold.z = 2.0f * _threshold.y;
     _threshold.w = 0.25f / (_threshold.y + 0.00001f);
     _threshold.y -= _threshold.x;
-    SubShader::Bind(*bloomPrefilterPassShader);
     bloomPrefilterPassShader->SetVector4("_BloomThreshold", _threshold);
     Graphics::BlitQuadPostProcessing(fromId, toId, *bloomPrefilterPassShader);
     fromId = toId;
@@ -82,8 +83,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
         height /= 2;
     }
 
-    SubShader::Bind(*bloomCombinePassShader);
-    bloomCombinePassShader->SetFramebuffer("mainTex2", *fromId, 1, 0);
+    bloomCombinePassShader->SetTexture("mainTex2", fromId, 1/*, 0*/);
     bloomCombinePassShader->SetInt("_BloomBicubicUpsampling", bicubicUpsampling ? 1 : 0);
     bloomCombinePassShader->SetFloat("_BloomIntensity", intensity);
     Graphics::BlitQuadPostProcessing(src, dst, *bloomCombinePassShader);

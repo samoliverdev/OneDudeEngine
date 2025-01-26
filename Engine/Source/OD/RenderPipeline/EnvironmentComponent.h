@@ -75,13 +75,13 @@ struct OD_API EnvironmentSettings{
         );*/
         skyCubemap = AssetManager::Get().LoadAsset<Cubemap>("DefaultSkyboxCubemap");
         
-        skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
-        skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
+        //skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
+        //skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
 
         Assert(skyCubemap != nullptr);
 
         skyCustomMaterial = CreateRef<Material>();
-        skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/SkyboxCubemap.glsl"));
+        skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
         //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
         skyCustomMaterial->SetCubemap("mainTex", skyCubemap);
     }

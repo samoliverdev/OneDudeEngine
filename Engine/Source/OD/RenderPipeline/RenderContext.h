@@ -124,9 +124,9 @@ private:
     Framebuffer* postFx1;
     Framebuffer* postFx2;
 
-    Ref<SubShader> blitShader;
-    Ref<SubShader> deferredGBufferShader;
-    Ref<SubShader> deferredLightPassShader;
+    Ref<Material> blitShader;
+    Ref<Material> deferredGBufferShader;
+    Ref<Material> deferredLightPassShader;
     Ref<Material> deferredLightPass;
     Ref<Mesh> skyboxMesh;
     Ref<Mesh> spriteMesh;
@@ -139,7 +139,7 @@ private:
 
     //void SetupDrawTarget(CommandBaseData& cmd, DrawingTarget& target);
     //void SetupShadowDrawTarget(CommandBaseData& cmd, ShadowDrawingTarget& target);
-    static void SetStandUniforms(Camera& cam, SubShader& shader);
+    //static void SetStandUniforms(Camera& cam, SubShader& shader);
 };
 
 

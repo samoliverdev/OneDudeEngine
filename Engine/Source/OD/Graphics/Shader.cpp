@@ -68,7 +68,15 @@ Shader::Shader(std::string path){
     Create(path);
 }
 
-void Shader::Create(std::string path){
+Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
+    Ref<Shader> out = CreateRef<Shader>();
+    if(out->Create(filepath) == false){
+        return nullptr;
+    }
+    return out;
+}
+
+bool Shader::Create(std::string path){
     Destroy();
     errors.clear();
     isComplete = true;
@@ -84,7 +92,10 @@ void Shader::Create(std::string path){
     if(isComplete == false){
         LogError("Error To Compile Shader: %s", path.c_str());
         Destroy();
+        return false;
     } 
+
+    return true;
 }
 
 void Shader::Destroy(){
@@ -96,6 +107,17 @@ void Shader::Destroy(){
     }
     passes.clear();
     isComplete = false;
+}
+
+bool Shader::LoadFromFile(const std::string& path){
+    return Create(path);
+}
+
+std::vector<std::string> Shader::GetFileAssociations(){ 
+    return std::vector<std::string>{
+        ".shader",
+        ".glsl"
+    }; 
 }
 
 bool Shader::InitPass(int pass){
@@ -159,6 +181,7 @@ bool Shader::InitPass(int pass){
     return true;
 }
 
+/*
 void Shader::DisableKeyword(std::string keyword){
     //enabledKeywords.erase(keyword);return;
 
@@ -190,8 +213,9 @@ void Shader::EnableKeyword(std::string keyword){
 void Shader::SetPass(int pass){
     curPass = pass;
 }
+*/
 
-std::set<std::string> Shader::GetEnabledKeywords(){
+/*std::set<std::string> Shader::GetEnabledKeywords(){
     //return enabledKeywords;
 
     std::set<std::string> out;
@@ -203,8 +227,9 @@ std::set<std::string> Shader::GetEnabledKeywords(){
         }
     }
     return out;
-}
+}*/
 
+/*
 void Shader::SetCurrentShader(){
     UpdateCurrentShader();
 }
@@ -212,8 +237,9 @@ void Shader::SetCurrentShader(){
 Ref<SubShader> Shader::GetCurrentShader(){
     return currentShader;
 }
+*/
 
-void Shader::UpdateCurrentShader(){
+/*void Shader::UpdateCurrentShader(){
     std::string key = GetKey_(GetEnabledKeywords());
     //LogInfo("Key: %s", key.c_str());
 
@@ -223,7 +249,7 @@ void Shader::UpdateCurrentShader(){
         Assert(false);
         AddShaderVaring(key, GetEnabledKeywords(), curPass);
     }
-}
+}*/
 
 void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());

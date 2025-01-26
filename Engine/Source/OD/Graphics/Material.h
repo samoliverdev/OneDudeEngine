@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/SubShader.h"
+#include "OD/Graphics/Shader.h"
 #include "OD/Graphics/MultiCompileShader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
@@ -76,12 +77,13 @@ private:
 };
 
 class OD_API Material: public Asset{
+    friend class Graphics;
 public:
     Material();
-    Material(Ref<SubShader> s);
+    Material(Ref<Shader> s);
 
-    Ref<SubShader> GetShader();
-    void SetShader(Ref<SubShader> s);
+    Ref<Shader> GetShader();
+    void SetShader(Ref<Shader> s);
 
     uint32_t MaterialId();
 
@@ -149,14 +151,20 @@ private:
     bool enableInstancing = false;
     int currentTextureSlot = 0;
 
-    //Ref<Shader> shader;
-    Ref<MultiCompileShader> shaderHandler;
+    std::set<std::string> enabledKeywords;
+
+    Ref<Shader> shader;
     std::vector<std::string> properties;
     std::unordered_map<std::string, MaterialMap> maps;
     static std::unordered_map<std::string, MaterialMap> globalMaps;
 
+    int currentPass = 0;
+    Ref<SubShader> currentShader;
+
     uint32_t id;
     static uint32_t baseId;
+
+    bool keywordsIdDirty = true;
 
     void SetFloat(const char* name, float value, float min, float max);
     void SetColor3(const char* name, Vector3 value);
@@ -164,6 +172,10 @@ private:
 
     void UpdateMaps();
     static void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
+
+    std::string GetKey(const std::set<std::string>& keyworlds);
+    std::set<std::string> GetEnabledKeywords();
+    void UpdateCurrentShader();
 };
 
 ////////////////////////////////////////
@@ -229,7 +241,7 @@ void MaterialMap::load(Archive& ar){
 
 template<class Archive>
 void Material::save(Archive& ar) const{
-    std::string shaderPath = shaderHandler->GetCurrentShader() == nullptr ? "" : shaderHandler->GetCurrentShader()->Path();
+    std::string shaderPath = shader == nullptr ? "" : shader->Path();
     ar(
         CEREAL_NVP(enableInstancing),
         CEREAL_NVP(shaderPath),
@@ -247,7 +259,7 @@ void Material::load(Archive& ar){
     );
 
     if(shaderPath.empty() == false){
-        SetShader(AssetManager::Get().LoadAsset<SubShader>(shaderPath));
+        SetShader(AssetManager::Get().LoadAsset<Shader>(shaderPath));
     }
 }
 

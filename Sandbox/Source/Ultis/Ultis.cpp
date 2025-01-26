@@ -38,7 +38,7 @@ Ref<Material> LoadFloorMaterial(){
       Ref<Material> m = CreateRef<Material>();
 
       //m->SetEnableInstancing(true);
-      m->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit.glsl"));
+      m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
       _mat = m;
@@ -56,7 +56,7 @@ Ref<Material> LoadRockMaterial(){
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
-      m->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/StandDiffuse.glsl"));
+      m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
       return m;
@@ -73,7 +73,7 @@ Ref<Material> LoadMaterial1(){
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
 
-      m->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/StandDiffuse.glsl"));
+      m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));                 
       return m;

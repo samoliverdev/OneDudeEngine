@@ -3,12 +3,9 @@
 
 void LightSample::OnInit(){
     LogInfo("Game Init");
-    //LogInfo("SizeOf glm::vec3: %zu", sizeof(glm::vec3));
-    //LogInfo("SizeOf Vector3 %zu", sizeof(Vector3));
-    //LogInfo("(%f, %f, %f)", (Vector3(1,1,1)+Vector3(2,2,2)).x, (Vector3(1,1,1) * 2.0f).y, (glm::vec3(1,1,1) * 5.0f).z);
 
-    lightModel = AssetManager::Get().LoadAsset<Model>("res/Game/Models/sphere.obj");
-    lightModel->materials[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>("res/Engine/Shaders/Unlit.glsl"));
+    lightModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/sphere.obj");
+    lightModel->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
     lightModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
     lightTransform.LocalScale(Vector3(0.1f, 0.1f, 0.1f));
     lightTransform.LocalPosition(Vector3(-1, 2, 2));
@@ -19,12 +16,8 @@ void LightSample::OnInit(){
     camTransform.LocalPosition(Vector3(0, 2, 4));
     camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
 
-    //model = Model::CreateFromFile("res/models/suzane.obj");
-    //model->SetShader(Shader::CreateFromFile("res/shaders/model.glsl"));
-    //model->materials[0].SetTexture("texture1", Texture2D::CreateFromFile("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
-
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/suzane.obj");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>("Sandbox/Shaders/light.glsl"));
+    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/light.glsl"));
     model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
     model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
     model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));
@@ -54,23 +47,16 @@ void LightSample::OnRender(float deltaTime){
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    //Renderer::SetRenderMode(Renderer::RenderMode::WIREFRAME);
-    //Assert(false && "To Implement Draw Model");
     Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
     Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
 
-    ///*
     for(unsigned int i = 0; i < 10; i++){
         modelTransform.LocalPosition(cubePositions[i]);
         float angle = 20.0f * i; 
         modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
-        
-        //Assert(false && "To Implement Draw Model");
         Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
     }
-    //*/
     
-
     Graphics::End();
 }
 

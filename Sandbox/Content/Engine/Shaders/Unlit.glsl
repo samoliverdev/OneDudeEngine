@@ -1,40 +1,35 @@
-#version 330 core
-
 #pragma BeginProperties
     Color4 color
 #pragma EndProperties
 
-#pragma SupportInstancing true
-#pragma MultiCompile _ SKINNED INSTANCING
+#pragma BeginPassDef
+    Name MainPass
+    SupportInstancing true
+    MultiCompile _ SKINNED INSTANCING
+#pragma EndPassDef
 
-#if defined(VERTEX)
 #include Engine/ShaderLibrary/Vertex.glsl
 
-out vec2 _texCoord;
+#if defined(VERTEX) && defined(MainPass)
+    out vec2 _texCoord;
 
-void main(){
-    //mat4 targetModelMatrix = (useInstancing >= 1.0 ? modelInstancing : model);
-    mat4 targetModelMatrix = GetModelMatrix();
-
-    _texCoord = texCoord;
-
-    //gl_Position = projection * view * model * vec4(pos, 1.0);
-    gl_Position = projection * view * targetModelMatrix * GetLocalPos();
-}
+    void main(){
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord;
+        gl_Position = projection * view * targetModelMatrix * GetLocalPos();
+    }
 #endif
 
-#if defined(FRAGMENT)
-uniform sampler2D mainTex;
-uniform vec4 color;// = vec4(1,1,1,1);
-//uniform test{ vec4 color; };
+#if defined(FRAGMENT) && defined(MainPass)
+    uniform sampler2D mainTex;
+    uniform vec4 color;
 
-in vec2 _texCoord;
+    in vec2 _texCoord;
+    out vec4 fragColor;
 
-out vec4 fragColor;
-
-void main(){
-    vec4 texColor = texture(mainTex, _texCoord);
-    if(texColor.a < 0.1) discard;
-    fragColor = texColor * color;
-}
+    void main(){
+        vec4 texColor = texture(mainTex, _texCoord);
+        if(texColor.a < 0.1) discard;
+        fragColor = texColor * color;
+    }
 #endif

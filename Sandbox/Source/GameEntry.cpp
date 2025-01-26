@@ -10,9 +10,7 @@
 #include "Samples/Serialization.h"
 #include "Samples/SynthCity.h"
 #include "Samples/Animator.h"
-#include "Samples/UniformBuffer.h"
 #include "Samples/RenderPipeline.h"
-#include "Samples/UberShader.h"
 #include "Samples/DynamicModule.h"
 #include "Samples/CharacterController.h"
 #include "Samples/Navmesh.h"
@@ -32,7 +30,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 0;
+    int i = 9;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMeshSample();
@@ -45,9 +43,7 @@ OD::Module* CreateMainModule(){
     if(i == 8) return new SerializationSample();
     if(i == 9) return new SynthCitySample();
     if(i == 10) return new AnimatorSample();
-    if(i == 11) return new UniformBufferSample();
     if(i == 12) return new RenderPipelineSample();
-    if(i == 14) return new UberShaderSample();
     if(i == 16) return new DynamicModuleSample();
     if(i == 20) return new CharacterControllerSample();
     if(i == 21) return new NavmeshSample();

@@ -8,50 +8,43 @@
 namespace OD{
 
 // Handler Mult Shader Variants
-class OD_API Shader{
+class OD_API Shader: public Asset{
+    friend class Material;
 public:
     Shader(std::string sourcePath);
     Shader(){}
 
-    void Create(std::string path);
+    static Ref<Shader> CreateFromFile(const std::string& filepath);
+
+    bool Create(std::string path);
     void Destroy();
 
-    //Need Call Disable First
-    void DisableKeyword(std::string keyword);
-    void EnableKeyword(std::string keyword);
-    void SetPass(int pass);
-
-    void SetCurrentShader();
-    Ref<SubShader> GetCurrentShader();
+    bool LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
 
     inline bool IsComplete(){ return isComplete; }
-
 private:
     struct KeyworldSpace{
         std::vector<std::string> keyworlds;
         int enabledKey = -1;
     };
-
+    
     struct Pass{
         std::string name;
         std::unordered_map<std::string, Ref<SubShader>> shaders;
     };
 
-    std::vector<KeyworldSpace> keyworldSpaces;
-    std::set<std::string> enabledKeywords;
-
     ShaderSourceData shaderSourceData;
     std::vector<Pass> passes;
     std::vector<std::string> errors;
     std::string sourcePath;
+    std::vector<KeyworldSpace> keyworldSpaces;
     int curPass = 0;
     Ref<SubShader> currentShader;
     bool isComplete = false;
 
     bool InitPass(int pass);
-    void UpdateCurrentShader();
     void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass);
-    std::set<std::string> GetEnabledKeywords();
 };
 
 }

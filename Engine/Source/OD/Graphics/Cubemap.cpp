@@ -167,6 +167,8 @@ Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const 
 }
 
 Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
+    return nullptr;
+    /*
     Assert(Graphics::HasBegin() == false);
     
     // pbr: setup framebuffer
@@ -303,9 +305,12 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     out->renderId = envCubemap;
     //out->renderId = irradianceMap;
     return out;
+    */
 }
 
 Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    return nullptr;
+    /*
     //FIXME: Destrey gl objects
     Assert(Graphics::HasBegin() == false);
 
@@ -350,12 +355,8 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     Ref<SubShader> irradianceShader = SubShader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
     SubShader::Bind(*irradianceShader);
     
-    /*glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->renderId);
-    glCheckError();*/
 
     irradianceShader->SetCubemap("environmentMap", *cubemap, 0);
-    //irradianceShader->SetInt("environmentMap", 0);
     irradianceShader->SetMatrix4("projection", captureProjection);
     
     glViewport(0, 0, size, size); // don't forget to configure the viewport to the capture dimensions.
@@ -379,9 +380,12 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     Ref<Cubemap> out = CreateRef<Cubemap>();
     out->renderId = irradianceMap;
     return out;
+    */
 }
 
 Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    return nullptr;
+    /*
     //FIXME: Destrey gl objects
     Assert(Graphics::HasBegin() == false);
 
@@ -456,6 +460,7 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
     Ref<Cubemap> out = CreateRef<Cubemap>();
     out->renderId = prefilterMap;
     return out;
+    */
 }
 
 void Cubemap::Destroy(Cubemap& cubemap){

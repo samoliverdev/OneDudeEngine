@@ -64,7 +64,7 @@ void PhysicsSample::OnInit(){
     textRenderer.text = "Ai meu cu!!!";
     textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
-    textRenderer.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 
     Entity sprite = scene->AddEntity("Sprite");
     scene->GetComponent<TransformComponent>(sprite).LocalPosition(Vector3(0, 2, 0));
@@ -72,7 +72,7 @@ void PhysicsSample::OnInit(){
     spriteRenderer.sprite = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/character_1.png"); 
     spriteRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     //spriteRenderer.texture = CreateRef<Texture2D>("Sandbox/Textures/character_1.png", Texture2DSetting()); // Erro 
-    spriteRenderer.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
+    spriteRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
 
     Entity canvas = scene->AddEntity("Canvas");
     CanvasComponent& can = scene->AddComponent<CanvasComponent>(canvas);
@@ -84,7 +84,7 @@ void PhysicsSample::OnInit(){
     rect.anchors = Vector2(-1, -1);
     UIImageComponent& uiImageRenderer = scene->AddComponent<UIImageComponent>(uiImage);
     uiImageRenderer.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.jpg"); 
-    uiImageRenderer.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
+    uiImageRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(canvas, uiImage);
 
     Entity uiImage2 = scene->AddEntity("UIImage2");
@@ -93,7 +93,7 @@ void PhysicsSample::OnInit(){
     rect2.anchors = Vector2(1, 1);
     UIImageComponent& uiImageRenderer2 = scene->AddComponent<UIImageComponent>(uiImage2);
     uiImageRenderer2.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"); 
-    uiImageRenderer2.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
+    uiImageRenderer2.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(uiImage, uiImage2);
 
     Entity uiImage3 = scene->AddEntity("UIImage3");
@@ -103,7 +103,7 @@ void PhysicsSample::OnInit(){
     rect3.anchors = Vector2(1, 1);
     UIImageComponent& uiImageRenderer3 = scene->AddComponent<UIImageComponent>(uiImage3);
     uiImageRenderer3.sourceImage = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg"); 
-    uiImageRenderer3.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
+    uiImageRenderer3.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     scene->SetParent(uiImage2, uiImage3);
 
     Entity uiText = scene->AddEntity("UiText");
@@ -115,7 +115,7 @@ void PhysicsSample::OnInit(){
     uiTextRenderer.text = "Lolo";
     uiTextRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     uiTextRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
-    uiTextRenderer.material = CreateRef<Material>(SubShader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    uiTextRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
     scene->SetParent(uiImage3, uiText);
     
 

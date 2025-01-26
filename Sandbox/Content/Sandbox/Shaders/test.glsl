@@ -1,21 +1,22 @@
-#version 330 core
+#pragma BeginPassDef
+    Name MainPass
+    CullFace NONE
+#pragma EndPassDef
 
-#if defined(VERTEX)
-layout (location = 0) in vec3 position;
+#if defined(VERTEX) && defined(MainPass)
+    layout (location = 0) in vec3 vPosition;
 
-out vec3 _pos; 
-
-void main() {
-    _pos = position;
-    gl_Position = vec4(_pos, 1);
-}
+    out vec3 pos; 
+    void main() {
+        pos = vPosition;
+        gl_Position = vec4(pos, 1);
+    }
 #endif
 
-#if defined(FRAGMENT)
-in vec3 _pos;
-out vec4 color;
-
-void main(){
-    color = vec4(_pos.xyz, 1);
-}
+#if defined(FRAGMENT) && defined(MainPass)
+    in vec3 pos;
+    out vec4 color;
+    void main(){
+        color = vec4(pos.xyz, 1);
+    }
 #endif

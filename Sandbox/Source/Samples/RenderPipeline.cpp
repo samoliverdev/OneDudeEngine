@@ -16,7 +16,7 @@ void RenderPipelineSample::AddTransparent(Vector3 pos){
     _meshRenderer3.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/plane.obj"));
 
     for(auto i: _meshRenderer3.GetModel()->materials){
-        i->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/UnlitBlend.glsl"));
+        i->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/UnlitBlend.glsl"));
         i->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/blending_transparent.png"));
     }
 }
@@ -37,13 +37,13 @@ void RenderPipelineSample::OnInit(){
     std::string defaultShaderPath = "Engine/Shaders/Lit.glsl";
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Ref<Model> sphereModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sphere.glb");
-    sphereModel->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+    sphereModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
@@ -66,7 +66,7 @@ void RenderPipelineSample::OnInit(){
     ModelRendererComponent& _meshRenderer = scene->AddComponent<ModelRendererComponent>(e);
     _meshRenderer.SetModel(floorModel);
     _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+    _meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     Entity e2 = scene->AddEntity("Cube");
     scene->GetComponent<TransformComponent>(e2).Position(Vector3(-8, 0, -4));
@@ -74,7 +74,7 @@ void RenderPipelineSample::OnInit(){
     ModelRendererComponent& _meshRenderer2 = scene->AddComponent<ModelRendererComponent>(e2);
     _meshRenderer2.SetModel(cubeModel);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+    _meshRenderer2.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
 
     /*Entity e3 = scene->AddEntity("Sphere");
     e3.GetComponent<TransformComponent>().Position(Vector3(8, 2, 8));
@@ -89,7 +89,7 @@ void RenderPipelineSample::OnInit(){
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("Plane", [&](auto& transform, auto& meshRenderer){
         Ref<Material> m = CreateRef<Material>();
-        m->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+        m->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         m->SetVector4("color", Vector4(1, 1, 1, 1));
         m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg"));
         m->SetTexture("normal", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall_normal.jpg"));
@@ -106,7 +106,7 @@ void RenderPipelineSample::OnInit(){
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
@@ -120,13 +120,13 @@ void RenderPipelineSample::OnInit(){
         transform.LocalScale(Vector3(4*1, 4*1, 4*1));
         meshRenderer.SetModel(sphereModel);
         meshRenderer.GetMaterialsOverride()[0] = material;
-        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath));
+        meshRenderer.GetMaterialsOverride()[0]->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));
         meshRenderer.GetMaterialsOverride()[0]->SetEnableInstancing(true);
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
         Ref<Material> material = CreateRef<Material>(
-            AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath)
+            AssetManager::Get().LoadAsset<Shader>(defaultShaderPath)
         );
         material->SetTexture(
             "mainTex", 
@@ -153,7 +153,7 @@ void RenderPipelineSample::OnInit(){
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
         Ref<Material> material = CreateRef<Material>(
-            AssetManager::Get().LoadAsset<SubShader>(defaultShaderPath)
+            AssetManager::Get().LoadAsset<Shader>(defaultShaderPath)
         );
         //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
         material->SetFloat("metallic", 1);
@@ -166,7 +166,7 @@ void RenderPipelineSample::OnInit(){
     });
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetali2", [&](auto& transform, auto& meshRenderer){
         Ref<Material> material = CreateRef<Material>(
-            AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Lit2.glsl")
+            AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl")
         );
         //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
         material->SetFloat("metallic", 1);

@@ -12,7 +12,7 @@ struct LoadModelSample: OD::Module {
     CameraMovement camMove;
     std::vector<Matrix4> transforms;
 
-    bool useInstancing = true;
+    bool useInstancing = false;
 
     void OnInit() override;
     void OnUpdate(float deltaTime) override; 

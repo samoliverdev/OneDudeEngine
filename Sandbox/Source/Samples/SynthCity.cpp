@@ -18,7 +18,7 @@ void SynthCitySample::OnInit(){
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    /*envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
     envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
     envComp.settings.colorGradingPostFX->enable = true;
@@ -26,7 +26,7 @@ void SynthCitySample::OnInit(){
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
-    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);*/
     
 
     Entity light = scene->AddEntity("Light");
@@ -47,7 +47,7 @@ void SynthCitySample::OnInit(){
     Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
         "Sandbox/Models/PolygonCity/City.fbx"
     );
-    cityModel->SetShader(AssetManager::Get().LoadAsset<SubShader>("Engine/Shaders/Unlit.glsl"));
+    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
     for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
 
     /*Entity floorEntity = scene->AddEntity("City");
