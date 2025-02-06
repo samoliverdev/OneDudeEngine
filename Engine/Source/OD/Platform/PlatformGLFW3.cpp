@@ -224,6 +224,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenglMajorVer);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenglMinorVer);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #if OPENGL_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     #endif

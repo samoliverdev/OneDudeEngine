@@ -52,6 +52,14 @@ void ShaderPassData::UpdateProperties(){
             if(line[1] == "True") pipeline.depthMask = true;
             if(line[1] == "False") pipeline.depthMask = false;
         }
+
+        if(line.size() > 1 && line[0] == "ColorMask"){
+            Assert(line.size() == 5);
+            pipeline.colorMask.r = std::stof(line[1]);
+            pipeline.colorMask.g = std::stof(line[2]);
+            pipeline.colorMask.b = std::stof(line[3]);
+            pipeline.colorMask.a = std::stof(line[4]);
+        }
     }
 }
 

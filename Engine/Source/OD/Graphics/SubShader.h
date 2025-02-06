@@ -14,6 +14,7 @@ struct OD_API ShaderPipeline{
     CullFace cullFace = CullFace::BACK;
     DepthTest depthTest = DepthTest::LESS;
     bool depthMask = true;
+    Vector4 colorMask = {1, 1, 1, 1};
     bool blend = false;
     BlendMode srcBlend;
     BlendMode dstBlend;

@@ -59,8 +59,8 @@ void SynthCitySample::OnInit(){
     Entity city = scene->Instantiate(cityModel, false);
     scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(0.01f));
 
-    //Application::AddModule<Editor>();
-    scene->Start();
+    Application::AddModule<Editor>();
+    //scene->Start();
 }
 
 void SynthCitySample::OnUpdate(float deltaTime){

@@ -39,7 +39,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     int height = spec.height / 2;
 
     if(maxIterations == 0 || intensity <= 0 || height < downscaleLimit*2 || width < downscaleLimit*2){
-        Graphics::BlitQuadPostProcessing(src, dst, *blitShader);
+        Graphics::DrawQuadPostProcessing(src, dst, *blitShader);
         return;
     }
 
@@ -57,7 +57,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     _threshold.w = 0.25f / (_threshold.y + 0.00001f);
     _threshold.y -= _threshold.x;
     bloomPrefilterPassShader->SetVector4("_BloomThreshold", _threshold);
-    Graphics::BlitQuadPostProcessing(fromId, toId, *bloomPrefilterPassShader);
+    Graphics::DrawQuadPostProcessing(fromId, toId, *bloomPrefilterPassShader);
     fromId = toId;
     width /= 2;
     height /= 2;
@@ -71,12 +71,12 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
         
         toId = new Framebuffer(spec);
         temps.push_back(toId);
-        Graphics::BlitQuadPostProcessing(fromId, toId, *bloomHorizontalPassShader);
+        Graphics::DrawQuadPostProcessing(fromId, toId, *bloomHorizontalPassShader);
         fromId = toId;
 
         toId = new Framebuffer(spec);
         temps.push_back(toId);
-        Graphics::BlitQuadPostProcessing(fromId, toId, *bloomVerticalPassShader);
+        Graphics::DrawQuadPostProcessing(fromId, toId, *bloomVerticalPassShader);
         fromId = toId;
         
         width /= 2;
@@ -86,7 +86,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     bloomCombinePassShader->SetTexture("mainTex2", fromId, 1/*, 0*/);
     bloomCombinePassShader->SetInt("_BloomBicubicUpsampling", bicubicUpsampling ? 1 : 0);
     bloomCombinePassShader->SetFloat("_BloomIntensity", intensity);
-    Graphics::BlitQuadPostProcessing(src, dst, *bloomCombinePassShader);
+    Graphics::DrawQuadPostProcessing(src, dst, *bloomCombinePassShader);
 
     for(auto i: temps) i->Destroy();
     temps.clear();

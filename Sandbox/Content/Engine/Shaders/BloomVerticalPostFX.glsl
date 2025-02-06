@@ -1,5 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
+	DepthTest DISABLE
 #pragma EndPassDef
 
 #if defined(VERTEX) && defined(MainPass)

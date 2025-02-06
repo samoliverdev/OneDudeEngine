@@ -21,6 +21,8 @@
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
+    #include Engine/ShaderLibrary/Core.glsl
+
     uniform sampler2D mainTex;
     uniform vec4 color;
 
@@ -28,7 +30,7 @@
     out vec4 fragColor;
 
     void main(){
-        vec4 texColor = texture(mainTex, _texCoord);
+        vec4 texColor = textureSRGB(mainTex, _texCoord);
         if(texColor.a < 0.1) discard;
         fragColor = texColor * color;
     }

@@ -514,14 +514,15 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
         Material::SetGlobalFloat("_SkyLightIntensity", 0);
-        //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
+        Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-        Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
+        Assert(false && "Outdate for now");
         Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
-        Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
-        Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+        //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        //Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
     }
@@ -540,10 +541,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
-        //context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        //Graphics::SetDepthMask(true);
-        //RenderSprites();
     } else {
         context->BeginDeferredPass();
     
@@ -554,120 +552,19 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndDeferredPassAndCopyToForwardPass();
         context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        //Graphics::SetDepthMask(true);
-        //RenderSprites();
     }
 
     context->RenderSkyboxLater();
     
-    /*context->DrawGizmos();    
+    //context->DrawGizmos();    
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     context->DrawGizmos();
+
     for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
-    RenderUI();*/
+    //RenderUI();
 
     context->EndDrawToScreen();
-
-    /*if(renderingPath == RenderingPath::Forward){
-        context->SetupCameraProperties(camera);
-        context->BeginDrawToScreen();
-
-        Ref<Material> targetSkyMaterial = nullptr;
-        
-        if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
-            cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
-            targetSkyMaterial = cubemapSkyMaterial;
-        }
-        if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
-            targetSkyMaterial = environmentSettings.skyCustomMaterial;
-        }
-
-        if(environmentSettings.environmentLight == EnvironmentLight::Color){
-            Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
-            Material::SetGlobalFloat("_SkyLightIntensity", 0);
-            //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
-        }
-        if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
-            Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
-            Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
-            Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
-            Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-            Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
-        }
-
-        context->BeginForwardPass();
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        context->DrawRenderersBuffer(opaqueDrawTarget, false);
-        context->DrawRenderersBuffer(blendDrawTarget, true);
-        RenderSprites();
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        if(targetSkyMaterial != nullptr){
-            context->skyMaterial = targetSkyMaterial;
-            context->RenderSkyboxLater();
-        }
-        
-        std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
-        context->DrawPostFXs(postFXs);
-
-        context->DrawGizmos();
-
-        for(System* s: context->GetScene()->GetStandSystems()){
-            s->OnRender();
-        }
-
-        RenderUI();
-
-        context->EndDrawToScreen();
-    } else {
-        context->SetupCameraProperties(camera);
-        context->BeginDrawToScreen();
-        
-        Ref<Material> targetSkyMaterial = nullptr;
-        
-        if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
-            cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
-            targetSkyMaterial = cubemapSkyMaterial;
-        }
-        if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
-            targetSkyMaterial = environmentSettings.skyCustomMaterial;
-        }
-
-        if(environmentSettings.environmentLight == EnvironmentLight::Color){
-            Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
-            Material::SetGlobalFloat("_SkyLightIntensity", 0);
-            //Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
-        }
-        if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
-            Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
-            Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
-            Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
-            Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-            Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
-        }
-
-        context->BeginDeferredPass();
-        context->DrawRenderersBuffer(opaqueDrawTarget, false, true);
-        context->EndDeferredPassAndCopyToForwardPass();
-        context->DrawRenderersBuffer(blendDrawTarget, true);
-
-        if(targetSkyMaterial != nullptr){
-            context->skyMaterial = targetSkyMaterial;
-            context->RenderSkyboxLater();
-        }
-
-        std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
-        context->DrawPostFXs(postFXs);
-
-        context->DrawGizmos();
-
-        for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
-        
-        RenderUI();
-
-        context->EndDrawToScreen();
-    }*/
 }
 
 void CameraRenderer::RenderSprites(){

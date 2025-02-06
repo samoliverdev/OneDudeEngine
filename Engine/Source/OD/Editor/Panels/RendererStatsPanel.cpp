@@ -14,6 +14,7 @@ void RendererStatsPanel::OnGui() {
     ImGui::Text("DrawCalls: %d", Graphics::GetStats().drawCalls);
     ImGui::Text("UniformSets: %d", Graphics::GetStats().uniformSet);
     ImGui::Text("ShaderBinds: %d", Graphics::GetStats().shaderBinds);
+    ImGui::Text("MaterialSubmitDatas: %d", Graphics::GetStats().materialSubmitDatas);
     
     if(Graphics::GetStats().vertices >= 1000000){
         ImGui::Text("Vertices: %.1fM", Graphics::GetStats().vertices / 1000000.0f);

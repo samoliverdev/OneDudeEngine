@@ -19,7 +19,7 @@ void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
         saturation * 0.01f + 1.0f
     ));
     colorGradingPass->SetVector4("_ColorFilter", colorFilter);
-    Graphics::BlitQuadPostProcessing(src, dst, *colorGradingPass);
+    Graphics::DrawQuadPostProcessing(src, dst, *colorGradingPass);
 }
 
 }

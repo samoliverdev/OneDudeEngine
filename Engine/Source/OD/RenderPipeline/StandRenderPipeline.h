@@ -29,7 +29,7 @@ public:
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
         _ppShader->SetFloat("option", _option);
-        Graphics::BlitQuadPostProcessing(src, dst, *_ppShader);
+        Graphics::DrawQuadPostProcessing(src, dst, *_ppShader);
     }
 
 private:
@@ -44,7 +44,7 @@ public:
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
-        Graphics::BlitQuadPostProcessing(src, dst, *gamaCorrection);
+        Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
     }
 
 private:

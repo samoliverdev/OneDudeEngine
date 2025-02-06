@@ -13,6 +13,8 @@
 
 namespace OD{
 
+extern GraphicsStats stats;
+
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
         if(type == MaterialMap::Type::Texture) texture = AssetManager::Get().LoadAsset<Texture2D>(texPath);
@@ -69,12 +71,14 @@ void Material::SetInt(const char* name, int value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Int;
     map.valueInt = value;
+    isDirty = true;
 }
 
 void Material::SetFloat(const char* name, float value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Float;
     map.valueFloat = value;
+    isDirty = true;
 }
 
 void Material::SetFloat(const char* name, float value, float min, float max){
@@ -83,6 +87,7 @@ void Material::SetFloat(const char* name, float value, float min, float max){
     map.valueFloat = value;
     map.valueFloatMin = min;
     map.valueFloatMax = max;
+    isDirty = true;
 }
 
 void Material::SetFloat(const char* name, float* value, int count){
@@ -90,24 +95,28 @@ void Material::SetFloat(const char* name, float* value, int count){
     map.type = MaterialMap::Type::FloatList;
     map.list = value;
     map.listCount = count;
+    isDirty = true;
 }
 
 void Material::SetVector2(const char* name, Vector2 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector2;
     map.vector = Vector4(value.x, value.y, 0, 1);
+    isDirty = true;
 }
 
 void Material::SetVector3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
+    isDirty = true;
 }
 
 void Material::SetVector4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
+    isDirty = true;
 }
 
 void Material::SetColor3(const char* name, Vector3 value){
@@ -115,6 +124,7 @@ void Material::SetColor3(const char* name, Vector3 value){
     map.type = MaterialMap::Type::Vector3;
     map.vector = Vector4(value.x, value.y, value.z, 1);
     map.vectorIsColor = true;
+    isDirty = true;
 }
 
 void Material::SetColor4(const char* name, Vector4 value){
@@ -122,6 +132,7 @@ void Material::SetColor4(const char* name, Vector4 value){
     map.type = MaterialMap::Type::Vector4;
     map.vector = value;
     map.vectorIsColor = true;
+    isDirty = true;
 }
 
 void Material::SetVector4(const char* name, Vector4* value, int count){
@@ -129,12 +140,14 @@ void Material::SetVector4(const char* name, Vector4* value, int count){
     map.type = MaterialMap::Type::Vector4List;
     map.list = value;
     map.listCount = count;
+    isDirty = true;
 }
 
 void Material::SetMatrix4(const char* name, Matrix4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Matrix4;
     map.matrix = value;
+    isDirty = true;
 }   
 
 void Material::SetMatrix4(const char* name, Matrix4* value, int count){
@@ -142,18 +155,21 @@ void Material::SetMatrix4(const char* name, Matrix4* value, int count){
     map.type = MaterialMap::Type::Matrix4List;
     map.list = value;
     map.listCount = count;
+    isDirty = true;
 }
 
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Texture;
     map.texture = tex;
+    isDirty = true;
 }
 
 void Material::SetTexture(const char* name, Ref<Texture2DArray> tex){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::TextureArray;
     map.textureArray = tex;
+    isDirty = true;
 }
 
 void Material::SetTexture(const char* name, Framebuffer* tex, int attachment){
@@ -161,12 +177,14 @@ void Material::SetTexture(const char* name, Framebuffer* tex, int attachment){
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;
     map.framebufferAttachment = attachment;
+    isDirty = true;
 }
 
 void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Cubemap;
     map.cubemap = tex;
+    isDirty = true;
 }
 
 void Material::SetGlobalInt(const char* name, int value){
@@ -259,7 +277,7 @@ void Material::DisableKeyword(std::string keyword){
         }
     }
 
-    keywordsIdDirty = true;
+    isDirty = true;
 }
 
 void Material::EnableKeyword(std::string keyword){
@@ -276,7 +294,7 @@ void Material::EnableKeyword(std::string keyword){
         }
     }
 
-    keywordsIdDirty = true;
+    isDirty = true;
 }
 
 std::set<std::string> Material::GetEnabledKeywords(){
@@ -338,12 +356,15 @@ void Material::UpdateDatas(){
 */
 
 void Material::SubmitGraphicDatas(Material& material){
+    stats.materialSubmitDatas += 1;
+
     material.currentTextureSlot = 0;
     material.UpdateCurrentShader();
 
     Assert(material.GetShader() != nullptr);
     if(material.GetShader() == nullptr) return;
 
+    Graphics::SetColorMask(material.currentShader->pipeline.colorMask);
     Graphics::SetCullFace(material.currentShader->GetCullFace());
     Graphics::SetDepthTest(material.currentShader->GetDepthTest());
     Graphics::SetDepthMask(material.currentShader->IsDepthMask());

@@ -106,9 +106,9 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::BeginForwardPass(){
-    Framebuffer::Unbind(); 
-    ScreenClean();
-    return;
+    //Framebuffer::Unbind(); 
+    //ScreenClean();
+    //return;
 
     Framebuffer::Bind(*forwardOutColor);
     //Framebuffer::Unbind(); 
@@ -132,7 +132,7 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     deferredLightPass->SetTexture("gOther", deferredOutColor, 4);
     Material::SubmitGraphicDatas(*deferredLightPass);
     //Graphics::BlitQuadPostProcessingRaw(forwardOutColor);
-    Graphics::BlitQuadPostProcessing(forwardOutColor, *deferredLightPass);
+    Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
     
     Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
     Framebuffer::Bind(*forwardOutColor);
@@ -156,16 +156,16 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Framebuffer::Unbind(); 
-    return;
+    //Framebuffer::Unbind(); 
+    //return;
 
     Graphics::BlitFramebuffer(forwardOutColor, finalColor);
-    Graphics::BlitQuadPostProcessing(forwardOutColor, finalColor, *blitShader);
+    Graphics::DrawQuadPostProcessing(forwardOutColor, finalColor, *blitShader);
 
     if(overrideFramebuffer != nullptr){
-        Graphics::BlitQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
+        Graphics::DrawQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
     } else {
-        Graphics::BlitQuadPostProcessing(finalColor, nullptr, *blitShader);
+        Graphics::DrawQuadPostProcessing(finalColor, nullptr, *blitShader);
     }
 
     Framebuffer::Unbind(); 
@@ -202,7 +202,7 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
         step = !step;
     }
 
-    Graphics::BlitQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
+    Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
 }
 
 void RenderContext::SetupCameraProperties(Camera inCam){

@@ -22,6 +22,7 @@ struct GraphicsStats{
     int tris;
     int shaderBinds;
     int uniformSet;
+    int materialSubmitDatas;
 };
 
 class OD_API Graphics {
@@ -65,8 +66,8 @@ public:
 
     static void BeginFramebuffer(Framebuffer* framebuffer);
 
-    static void BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0);
-    static void BlitQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0);
+    static void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0);
+    static void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0);
 
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
@@ -76,8 +77,8 @@ private:
     static void Initialize();
     static void Shutdown();
 
-    static void SetColorMask(float r, float g, float b, float a);
     static void SetRenderMode(RenderMode mode);
+    static void SetColorMask(Vector4 mask);
     static void SetDepthMask(bool value);
     static void SetDepthTest(DepthTest depthTest);
     static void SetCullFace(CullFace cullFace);

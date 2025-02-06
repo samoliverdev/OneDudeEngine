@@ -44,7 +44,9 @@ unsigned int wiredCubeVAO;
 unsigned int wiredCubeVBO;
 unsigned int wiredCubeEBO;
 
-Ref<SubShader> gismoShader;
+//Ref<SubShader> gismoShader;
+Ref<Material> gismoMaterial;
+
 Ref<Mesh> fullScreenQuad;
 Camera camera;
 
@@ -177,8 +179,11 @@ void Graphics::Initialize(){
     AssetManager::Get().AddAsset("DefaultSkyboxCubemap", defaultSkybox);
 
     fullScreenQuad = Mesh::FullScreenQuad();
-    gismoShader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
-    Assert(gismoShader != nullptr);
+   
+    /*gismoShader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
+    Assert(gismoShader != nullptr);*/
+
+    gismoMaterial = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
 
     CreateLineVAO(&lineVAO, &lineVBO, 2);
     CreateLineVAO(&lineCommandsVAO, &lineCommandsVBO, MAX_LINES_VERTEX_DRAWCALL*2);
@@ -214,7 +219,7 @@ void Graphics::Initialize(){
 
 void Graphics::Shutdown(){
     fullScreenQuad = nullptr;
-    gismoShader = nullptr;
+    //gismoShader = nullptr;
 }
 
 GLsync sync = nullptr;
@@ -225,6 +230,7 @@ void Graphics::Begin(){
     stats.tris = 0;
     stats.shaderBinds = 0;
     stats.uniformSet = 0;
+    stats.materialSubmitDatas = 0;
     begin = true;
 
     lastMat = nullptr;
@@ -390,9 +396,9 @@ void Graphics::BindMaterial(Material& mat){
     Assert(mat.currentShader != nullptr && "Shader is not vali!");
     Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
 
-    if(&mat != lastMat || mat.keywordsIdDirty == true){
+    if(&mat != lastMat || mat.isDirty == true){
         Material::SubmitGraphicDatas(mat);
-        mat.keywordsIdDirty = false;
+        mat.isDirty = false;
     }
     lastMat = &mat;
     
@@ -503,11 +509,16 @@ void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){
     stats.vertices += lineCommandsData.size()/3;
     stats.tris += 0;
 
-    SubShader::Bind(*gismoShader);
+    BindMaterial(*gismoMaterial);
+    Assert(lastShader != nullptr);
+    lastShader->SetVector3("color", color);
+    lastShader->SetMatrix4("model", Matrix4Identity);
+
+    /*SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity);
     gismoShader->SetMatrix4("view", camera.view);
-    gismoShader->SetMatrix4("projection", camera.projection);
+    gismoShader->SetMatrix4("projection", camera.projection);*/
 
 	glLineWidth(lineWidth);
     glCheckError();
@@ -545,11 +556,16 @@ void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int width){
     stats.vertices += 2;
     stats.tris += 0;
 
-    SubShader::Bind(*gismoShader);
+    BindMaterial(*gismoMaterial);
+    Assert(lastShader != nullptr);
+    lastShader->SetVector3("color", color);
+    lastShader->SetMatrix4("model", Matrix4Identity);
+
+    /*SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity);
     gismoShader->SetMatrix4("view", camera.view);
-    gismoShader->SetMatrix4("projection", camera.projection);
+    gismoShader->SetMatrix4("projection", camera.projection);*/
 
 	glLineWidth(width);
 
@@ -581,11 +597,16 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
     start = Vector3(model * Vector4(start.x, start.y, start.z, 1));
     end = Vector3(model * Vector4(end.x, end.y, end.z, 1));
 
-    SubShader::Bind(*gismoShader);
+    BindMaterial(*gismoMaterial);
+    Assert(lastShader != nullptr);
+    lastShader->SetVector3("color", color);
+    lastShader->SetMatrix4("model", Matrix4Identity);
+
+    /*SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", Matrix4Identity); //gismoShader->SetMatrix4("model", model);
     gismoShader->SetMatrix4("view", camera.view);
-    gismoShader->SetMatrix4("projection", camera.projection);
+    gismoShader->SetMatrix4("projection", camera.projection);*/
 
 	glLineWidth(width);
 
@@ -614,11 +635,16 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     stats.vertices += 8;
     stats.tris += 24;
 
-    SubShader::Bind(*gismoShader);
+    BindMaterial(*gismoMaterial);
+    Assert(lastShader != nullptr);
+    lastShader->SetVector3("color", color);
+    lastShader->SetMatrix4("model", modelMatrix);
+
+    /*SubShader::Bind(*gismoShader);
     gismoShader->SetVector3("color", color);
     gismoShader->SetMatrix4("model", modelMatrix);
     gismoShader->SetMatrix4("view", camera.view);
-    gismoShader->SetMatrix4("projection", camera.projection);
+    gismoShader->SetMatrix4("projection", camera.projection);*/
 
     #ifdef USE_VAO
     glBindVertexArray(wiredCubeVAO);
@@ -795,8 +821,8 @@ void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
     *h = value[3];
 }
 
-void Graphics::SetColorMask(float r, float g, float b, float a){
-    glColorMask(r, g, b, a);
+void Graphics::SetColorMask(Vector4 mask){
+    glColorMask(mask.r, mask.g, mask.b, mask.a);
 }   
 
 void Graphics::SetRenderMode(RenderMode mode){
@@ -957,12 +983,33 @@ void Graphics::BlitQuadPostProcessingRaw(Framebuffer* dst){
     glCheckError();
 }*/
 
-void Graphics::BlitQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass){
+void Graphics::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){
+    Assert(src != nullptr);
 
+    if(dst == nullptr){
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCheckError();
+    } else {
+        Framebuffer::Bind(*dst);
+        Graphics::SetViewport(0, 0, dst->Width(), dst->Height());
+    }
+    
+    mat.SetTexture("mainTex", src, pass);
+    BindMaterial(mat);
+    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
 }
 
-void Graphics::BlitQuadPostProcessing(Framebuffer* dst, Material& shader, int pass){
-
+void Graphics::DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass){
+    if(dst == nullptr){
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCheckError();
+    } else {
+        Framebuffer::Bind(*dst);
+        Graphics::SetViewport(0, 0, dst->Width(), dst->Height());
+    }
+    
+    BindMaterial(mat);
+    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
 }
 
 void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){

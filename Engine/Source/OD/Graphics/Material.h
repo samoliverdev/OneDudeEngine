@@ -164,7 +164,7 @@ private:
     uint32_t id;
     static uint32_t baseId;
 
-    bool keywordsIdDirty = true;
+    bool isDirty = true;
 
     void SetFloat(const char* name, float value, float min, float max);
     void SetColor3(const char* name, Vector3 value);
