@@ -76,8 +76,10 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     return out;
 }
 
-bool Shader::Create(std::string path){
+bool Shader::Create(std::string inPath){
     Destroy();
+    
+    path = inPath;
     errors.clear();
     isComplete = true;
     sourcePath = path;
@@ -107,6 +109,7 @@ void Shader::Destroy(){
     }
     passes.clear();
     isComplete = false;
+    path = "Memory";
 }
 
 bool Shader::LoadFromFile(const std::string& path){

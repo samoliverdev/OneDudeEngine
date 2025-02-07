@@ -63,7 +63,7 @@ bool Material::EnableInstancing(){
 }
 
 bool Material::SupportInstancing(){ 
-    return false;
+    //return false;
     return currentShader != nullptr && currentShader->SupportInstancing(); 
 }
 
@@ -320,6 +320,8 @@ void Material::UpdateCurrentShader(){
     std::string key = GetKey(GetEnabledKeywords());
     //LogInfo("Key: %s", key.c_str());
 
+    Assert(shader->passes.size() > 0 && "Fixme");
+
     if(shader->passes[currentPass].shaders.count(key)){
         currentShader = shader->passes[currentPass].shaders[key];
     } else {
@@ -396,12 +398,12 @@ void Material::OnGui(){
         toSave = true;
     }*/
 
-    /*Ref<SubShader> tempShader = currentShader;
+    Ref<Shader> tempShader = shader;
     std::string s("shader");
-    if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != currentShader){
+    if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != shader){
         SetShader(tempShader);
         toSave = true;
-    }*/
+    }
 
     /*ImGui::BeginGroup();
     ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));
@@ -590,12 +592,13 @@ std::vector<std::string> Material::GetFileAssociations(){
 }*/
 
 void Material::UpdateMaps(){
-    if(currentShader == nullptr) return;
+    //if(currentShader == nullptr) return;
+    if(shader == nullptr) return;
 
     ///*
 
     //Remove Unused Maps
-    for(auto i: currentShader->Properties()){
+    for(auto i: shader->Properties() /*currentShader->Properties()*/){
         if(maps.count(i[1].c_str())) continue;
         maps.erase(i[1].c_str());
     }
@@ -603,7 +606,7 @@ void Material::UpdateMaps(){
     properties.clear();
 
     // Add If Not Contains
-    for(auto i: currentShader->Properties()){
+    for(auto i: shader->Properties() /*currentShader->Properties()*/){
         if(i.size() < 2) continue;
 
         properties.push_back(i[1]);

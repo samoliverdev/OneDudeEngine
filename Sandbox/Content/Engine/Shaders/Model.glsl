@@ -1,3 +1,8 @@
+#pragma BeginProperties
+    Color4 color
+    Texture2D mainTex White
+#pragma EndProperties
+
 #pragma BeginPassDef
     Name MainPass
     SupportInstancing true

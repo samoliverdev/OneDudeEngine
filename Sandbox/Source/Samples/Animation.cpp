@@ -157,7 +157,7 @@ void AnimationSample::OnRender(float deltaTime){
         Graphics::SetProjectionViewMatrix(*shader);
         Graphics::SetModelMatrix(*shader, char1Anim.mModel.GetLocalModelMatrix());
         Graphics::DrawMeshRaw(*i);*/
-        Graphics::DrawMeshSkinned(*i, *mat, &char1Anim.mPosePalette[0], char1Anim.mPosePalette.size());
+        Graphics::DrawMeshSkinned(*i, *mat, char1Anim.mModel.GetLocalModelMatrix(), &char1Anim.mPosePalette[0], char1Anim.mPosePalette.size());
     }
 
     for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
@@ -199,6 +199,7 @@ void AnimationSample::OnRender(float deltaTime){
         Graphics::DrawMeshSkinned(
             *char2Model->meshs[i.meshIndex], 
             *char2Model->materials[i.materialIndex], 
+            m,
             &char1Anim.mPosePalette[0], 
             char1Anim.mPosePalette.size()
         );

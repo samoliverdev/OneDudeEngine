@@ -156,7 +156,7 @@ void ProceduralTerrain2::OnInit(){
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
-    envComp.settings.toneMappingPostFX->enable = true;
+    /*envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
     envComp.settings.colorGradingPostFX->enable = true;
     envComp.settings.colorGradingPostFX->contrast = 45;
@@ -169,7 +169,7 @@ void ProceduralTerrain2::OnInit(){
     //envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/Textures/Free Sky Backgrounds/Stylized Sky Background (15).png");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
-    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);*/
 
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);

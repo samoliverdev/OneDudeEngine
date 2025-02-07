@@ -442,6 +442,39 @@ void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
     }
 }
 
+void Graphics::DrawMeshSkinned(Mesh& mesh, Matrix4 modelMatrix, Matrix4* animMatrixs, int count){
+    if(mesh.IsValid() == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
+    Assert(mesh.IsValid() && "Mesh is not vali!");
+    
+    lastShader->SetMatrix4("animated", animMatrixs, count);
+    lastShader->SetMatrix4("model", modelMatrix);
+    
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount;
+    stats.tris += mesh.indiceCount;
+    
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.vao);
+    glCheckError();
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.ebo != 0){
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
+        glCheckError();
+    }
+}
+
 void Graphics::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
     Assert(mesh.IsValid() && "Mesh is not vali!");
 
@@ -474,8 +507,9 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
     DrawMesh(mesh, modelMatrix);
 }
 
-void Graphics::DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4* modelMatrix, int count){
-
+void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count){
+    BindMaterial(mat);
+    DrawMeshSkinned(mesh, modelMatrix, animMatrixs, count);
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
@@ -995,7 +1029,7 @@ void Graphics::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Materi
     }
     
     mat.SetTexture("mainTex", src, pass);
-    BindMaterial(mat);
+    //BindMaterial(mat);
     DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
 }
 
@@ -1008,7 +1042,7 @@ void Graphics::DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass)
         Graphics::SetViewport(0, 0, dst->Width(), dst->Height());
     }
     
-    BindMaterial(mat);
+    //BindMaterial(mat);
     DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
 }
 

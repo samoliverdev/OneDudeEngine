@@ -1,30 +1,31 @@
-#version 330 core
+#pragma BeginPassDef
+    Name MainPass
+    SupportInstancing false
+    CullFace NONE
+    DepthTest LESS
+    Blend Off
+#pragma EndPassDef
 
-#pragma SupportInstancing false
-#pragma CullFace NONE
-#pragma DepthTest LESS
-#pragma Blend Off
+#if defined(VERTEX) && defined(MainPass)
+    #include Engine/ShaderLibrary/Vertex.glsl
 
-#ifdef VERTEX
-#include Engine/ShaderLibrary/Vertex.glsl
+    uniform mat4 lightSpaceMatrix;
+    uniform sampler2D heightMap;
+    uniform float heightScale;
+    uniform vec2 heightmapTilling = vec2(1, 1);
+    uniform vec2 heightmapOffset = vec2(0, 0);
 
-uniform mat4 lightSpaceMatrix;
-uniform sampler2D heightMap;
-uniform float heightScale;
-uniform vec2 heightmapTilling = vec2(1, 1);
-uniform vec2 heightmapOffset = vec2(0, 0);
+    void main(){
+        mat4 targetModelMatrix = GetModelMatrix();
+        vec3 localPos = GetLocalPos().xyz;
 
-void main(){
-    mat4 targetModelMatrix = GetModelMatrix();
-    vec3 localPos = GetLocalPos().xyz;
+        float height = texture(heightMap, texCoord * heightmapTilling + heightmapOffset).r; // uv + uvOffset
+        localPos.y = height * heightScale;
 
-    float height = texture(heightMap, texCoord * heightmapTilling + heightmapOffset).r; // uv + uvOffset
-    localPos.y = height * heightScale;
-
-    gl_Position = lightSpaceMatrix * targetModelMatrix * vec4(localPos, 1.0);
-}
+        gl_Position = lightSpaceMatrix * targetModelMatrix * vec4(localPos, 1.0);
+    }
 #endif
 
-#ifdef FRAGMENT
-void main(){}
+#if defined(FRAGMENT) && defined(MainPass)
+    void main(){}
 #endif

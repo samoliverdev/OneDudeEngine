@@ -55,7 +55,6 @@ Ref<Material> LoadRockMaterial(){
 
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
-
       m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
@@ -72,7 +71,6 @@ Ref<Material> LoadMaterial1(){
 
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
-
       m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/StandDiffuse.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));                 

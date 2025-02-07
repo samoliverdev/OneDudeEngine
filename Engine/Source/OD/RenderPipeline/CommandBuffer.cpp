@@ -262,6 +262,7 @@ void CommandBuffer::Submit(){
             //_mat->DisableKeyword("INSTANCING");
             _mat->EnableKeyword("SKINNED");
             Material::SubmitGraphicDatas(*_mat);
+            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 
         lastMat = _mat;
@@ -269,9 +270,11 @@ void CommandBuffer::Submit(){
         //_mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
+
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size());
         
-        _mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
-        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
+        //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
     });
     lastMat = nullptr;
 }

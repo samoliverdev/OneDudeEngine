@@ -47,7 +47,7 @@ void SynthCitySample::OnInit(){
     Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
         "Sandbox/Models/PolygonCity/City.fbx"
     );
-    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
+    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
 
     /*Entity floorEntity = scene->AddEntity("City");

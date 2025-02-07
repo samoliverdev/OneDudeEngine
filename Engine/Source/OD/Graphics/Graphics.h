@@ -47,11 +47,12 @@ public:
 
     static void BindMaterial(Material& mat);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix);
+    static void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count);
     static void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count);
 
     static void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix);
-    static void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4* modelMatrix, int count);
-    static void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* modelMatrixs, int count);
+    static void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count);
+    static void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count);
     static void DrawModel(Model& model, Matrix4 modelMatrix);
 
     static void AddDrawLineCommand(Vector3 start, Vector3 end);

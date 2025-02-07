@@ -23,6 +23,8 @@ public:
     std::vector<std::string> GetFileAssociations() override;
 
     inline bool IsComplete(){ return isComplete; }
+    inline std::vector<std::vector<std::string>>& Properties(){ return shaderSourceData.properties; }
+
 private:
     struct KeyworldSpace{
         std::vector<std::string> keyworlds;

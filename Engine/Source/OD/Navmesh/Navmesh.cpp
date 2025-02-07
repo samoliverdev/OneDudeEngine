@@ -51,7 +51,7 @@ public:
     Ref<Mesh> mesh;
 
     DebugDrawGL(){
-        shader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
+        shader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Navmesh.glsl"));
         mesh = CreateRef<Mesh>();
     }
 
