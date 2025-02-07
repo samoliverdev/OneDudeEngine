@@ -393,7 +393,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     }
 }
 
-void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, CommandBuffer& target){
+void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, RendererList& target){
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
@@ -472,58 +472,7 @@ void RenderContext::RenderSkyboxLater(){
     //Graphics::SetDepthMask(true);
 }
 
-void RenderContext::RenderSkybox(){
-    Assert(false && "Outdate");
-    OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
-    
-    /*if(skyMaterial != nullptr){
-        Assert(skyMaterial->GetShader() != nullptr);
-
-        //skyMaterial->UpdateDatas();
-        Material::SubmitGraphicDatas(*skyMaterial);
-
-        Graphics::SetCullFace(CullFace::BACK);
-        Graphics::SetDepthMask(false);
-        Graphics::SetBlend(false);
-        SubShader::Bind(*skyMaterial->GetShader());
-        
-        //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
-        skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
-        Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
-        skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMeshRaw(*skyboxMesh);
-
-        Graphics::SetDepthMask(true);
-    }*/
-}
-
-void RenderContext::RenderSkybox(Ref<Cubemap>& skyTexture){
-    Assert(false && "Outdate");
-    OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
-    
-    /*if(skyMaterial != nullptr){
-        Assert(skyMaterial->GetShader() != nullptr);
-
-        //skyMaterial->UpdateDatas();
-        Material::SetGlobalCubemap("_SpecCube0", skyTexture);
-        Material::SubmitGraphicDatas(*skyMaterial);
-
-        Graphics::SetCullFace(CullFace::BACK);
-        Graphics::SetDepthMask(false);
-        Graphics::SetBlend(false);
-        SubShader::Bind(*skyMaterial->GetShader());
-        
-        //environmentSettings.sky->shader()->SetCubemap("mainTex", *_skyboxCubemap, 0);
-        skyMaterial->GetShader()->SetMatrix4("projection", cam.projection);
-        Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
-        skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
-        Graphics::DrawMeshRaw(*skyboxMesh);
-
-        Graphics::SetDepthMask(true);
-    }*/
-}
-
-void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort, bool deferred){
+void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred){
     OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
 
     if(sort) commandBuffer.Sort();
@@ -543,7 +492,7 @@ void RenderContext::DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort,
     //commandBuffer.onUpdateMaterial = nullptr;
 }
 
-void RenderContext::DrawZPreePassRenderersBuffer(CommandBuffer& commandBuffer, bool sort, bool post){
+void RenderContext::DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort, bool post){
     OD_PROFILE_SCOPE("RenderContext::DrawZPreePassRenderersBuffer");
 
     if(sort) commandBuffer.Sort();
@@ -724,7 +673,7 @@ void RenderContext::EndDrawShadow(){
     Framebuffer::Unbind();
 }
 
-void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, CommandBuffer& commandBuffer){
+void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, RendererList& commandBuffer){
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
@@ -769,7 +718,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     } 
 }
 
-void RenderContext::DrawShadows(CommandBuffer& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
+void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     //commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);

@@ -1,4 +1,4 @@
-#include "CommandBuffer.h"
+#include "RendererList.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Framebuffer.h"
@@ -24,31 +24,11 @@ bool MaterialBind2::operator<(const MaterialBind2& a) const{
     return materialId < a.materialId;
 }
 
-void CommandBuffer::SetCamera(Camera inCamera){
-    setCamera = true;
-    camera = inCamera;
-}
-
-void CommandBuffer::CleanRenderTarget(Vector3 inClearColor){
-    clearRenderTarget = true;
-    clearColor = inClearColor;
-}
-
-void CommandBuffer::SetRenderTarget(Framebuffer* framebuffer){
-    setRenderTarget = true;
-    renderTarget = framebuffer;
-}
-
-void CommandBuffer::SetViewport(IVector4 inViewport){
-    setViewport = true;
-    viewport = inViewport;
-}
-
-void CommandBuffer::SetOverrideMaterial(Ref<Material> material){
+void RendererList::SetOverrideMaterial(Ref<Material> material){
     overrideMaterial = material;
 }
 
-void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
+void RendererList::AddDrawCommand(DrawCommand comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
@@ -67,7 +47,7 @@ void CommandBuffer::AddDrawCommand(DrawCommand comand, float distance){
     }*/
 }   
 
-void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
+void RendererList::AddDrawInstancingCommand(DrawCommand comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
@@ -81,7 +61,7 @@ void CommandBuffer::AddDrawInstancingCommand(DrawCommand comand){
     //drawIntancingCommandsMaterials.insert(comand.material);
 } 
 
-void CommandBuffer::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distance){
+void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
@@ -94,14 +74,8 @@ void CommandBuffer::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float dista
     //skinnedDrawCommandsMaterials.insert(comand.material);
 }
 
-void CommandBuffer::Clean(){
+void RendererList::Clean(){
     overrideMaterial = nullptr;
-    setRenderTarget = false;
-    renderTarget = nullptr;
-    clearRenderTarget = false;
-    setViewport = false;
-    setCamera = false;
-    camera = Camera();
 
     drawCommands.Clear();
     //drawIntancingCommands.Clear();
@@ -119,7 +93,7 @@ void CommandBuffer::Clean(){
     skinnedDrawCommandsMaterials.clear();*/
 }
 
-void CommandBuffer::Sort(){
+void RendererList::Sort(){
     if(sortType == SortType::None){
         drawCommands.sortFunction = nullptr;
     }
@@ -163,17 +137,7 @@ void CommandBuffer::Sort(){
     skinnedDrawCommands.Sort();
 }
 
-void CommandBuffer::Submit(){
-    if(setRenderTarget && renderTarget != nullptr){
-        Framebuffer::Bind(*renderTarget);
-    } else if(setRenderTarget && renderTarget == nullptr){
-        Framebuffer::Unbind();
-    }
-
-    if(setCamera) Graphics::SetCamera(camera);
-    if(setViewport) Graphics::SetViewport(viewport.x, viewport.y, viewport.z, viewport.w);
-    if(clearRenderTarget) Graphics::Clean(clearColor.x, clearColor.y, clearColor.z, 1);
-
+void RendererList::Submit(){
     Material* lastMat = nullptr;
 
     //NOTE: This not working why Materials can shared the same shader

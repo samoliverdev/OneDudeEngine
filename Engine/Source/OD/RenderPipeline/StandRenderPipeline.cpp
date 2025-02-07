@@ -415,13 +415,13 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawSettings.enableIntancing = true;
     opaqueDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
     opaqueDrawSettings.sortType = SortType::CommonOpaque;
-    opaqueDrawTarget.sortType = CommandBuffer::SortType::CommonOpaque;
+    opaqueDrawTarget.sortType = RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
     blendDrawSettings.enableIntancing = false;
     blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
     blendDrawSettings.sortType = SortType::CommonTransparent;
-    blendDrawTarget.sortType = CommandBuffer::SortType::CommonTransparent;
+    blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
 
     //tf::Taskflow taskflow;
     //tf::Executor executor;

@@ -1,11 +1,4 @@
 #include "BaseMesh.h"
-#include <OD/RenderPipeline/CommandBuffer.h>
-#include <chrono>
-#include <functional>
-#include <atomic>
-#include <algorithm>
-#include <execution>
-#include <OD/Core/Package.h>
 
 void BaseMeshSample::OnInit(){
     LogInfo("Game Init");

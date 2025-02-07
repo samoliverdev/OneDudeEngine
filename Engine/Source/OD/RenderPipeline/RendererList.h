@@ -46,7 +46,7 @@ struct OD_API MaterialBind2{
     bool operator<(const MaterialBind2& a) const;
 };
 
-struct OD_API CommandBuffer{
+struct OD_API RendererList{
     friend class RenderContext;
 
     enum class SortType{None, CommonOpaque, CommonTransparent};
@@ -55,11 +55,6 @@ struct OD_API CommandBuffer{
     std::function<void(Material& material)> onUpdateMaterial = nullptr;
     std::function<void(Material& material)> postUpdateMaterial = nullptr;
     SortType sortType;
-
-    void SetCamera(Camera inCamera);
-    void CleanRenderTarget(Vector3 inClearColor);
-    void SetRenderTarget(Framebuffer* framebuffer);
-    void SetViewport(IVector4 inViewport);
 
     void SetOverrideMaterial(Ref<Material> shader);
 
@@ -83,17 +78,7 @@ private:
     std::set<Ref<Material>> drawIntancingCommandsMaterials;
     std::set<Ref<Material>> skinnedDrawCommandsMaterials;*/
 
-    bool setRenderTarget = false;
-    Framebuffer* renderTarget = nullptr;
-    bool clearRenderTarget = false;
-    Vector3 clearColor;
-    bool setViewport = false;
-    IVector4 viewport;
-
     Ref<Material> overrideMaterial = nullptr;
-
-    bool setCamera = false;
-    Camera camera;
 };
 
 }

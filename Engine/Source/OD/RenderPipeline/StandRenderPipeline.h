@@ -13,9 +13,8 @@
 #include "MeshRendererComponent.h"
 #include "LightComponent.h"
 #include "EnvironmentComponent.h"
-#include "CommandBuffer.h"
+#include "RendererList.h"
 #include "RenderContext.h"
-
 
 namespace OD{
 
@@ -123,10 +122,10 @@ private:
     Framebuffer* otherShadowAtlas;
     Ref<Material> shadowPass;
 
-    CommandBuffer shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
+    RendererList shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
     ShadowSplitData shadowDirectionalLightsSplits[maxShadowedDirectionalLightCount * maxCascades];
 
-    CommandBuffer shadowOtherLightsBuffers[maxShadowedOtherLightCount];
+    RendererList shadowOtherLightsBuffers[maxShadowedOtherLightCount];
     ShadowSplitData shadowOtherLightsSplits[maxShadowedOtherLightCount];
 
     inline static const char* dirShadowAtlasId = "_DirectionalShadowAtlas";
@@ -215,10 +214,10 @@ private:
     Shadows shadows;
     Lighting lighting;
 
-    CommandBuffer opaqueDrawTarget;
+    RendererList opaqueDrawTarget;
     DrawingSettings opaqueDrawSettings;
 
-    CommandBuffer blendDrawTarget;
+    RendererList blendDrawTarget;
     DrawingSettings blendDrawSettings;
 
     PostFXTest* postFXTest;

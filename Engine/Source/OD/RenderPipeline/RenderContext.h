@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "CommandBuffer.h"
+#include "RendererList.h"
 #include "LightComponent.h"
 
 namespace OD{
@@ -91,21 +91,19 @@ public:
     void ScreenClean();
 
     void RenderSkyboxLater();
-    void RenderSkybox();
-    void RenderSkybox(Ref<Cubemap>& skyTexture);
     //void DrawRenderers(const std::vector<DrawingTarget*>& targets);
     void DrawGizmos();
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
-    void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, CommandBuffer& target);
-    void DrawRenderersBuffer(CommandBuffer& commandBuffer, bool sort = false, bool deferred = false);
-    void DrawZPreePassRenderersBuffer(CommandBuffer& commandBuffer, bool sort = false, bool post = false);
+    void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
+    void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false);
+    void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
 
     void CleanShadow(Framebuffer* shadowMap, int layer = 0);
     void BeginDrawShadow(Framebuffer* shadowMap, int layer = 0);
     void EndDrawShadow();
-    void AddDrawShadow(RenderData& renderData, ShadowDrawingSettings& settings, CommandBuffer& target);
-    void DrawShadows(CommandBuffer& targets, ShadowSplitData& splitData, Ref<Material>& shadowPass);
+    void AddDrawShadow(RenderData& renderData, ShadowDrawingSettings& settings, RendererList& target);
+    void DrawShadows(RendererList& targets, ShadowSplitData& splitData, Ref<Material>& shadowPass);
 
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
