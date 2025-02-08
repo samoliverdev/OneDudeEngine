@@ -373,7 +373,7 @@ CameraRenderer::CameraRenderer(){
     postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
     cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
-    brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
+    brdfLUT = nullptr;// Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
     gamaCorrectionPP = new GamaCorrectionPP();
 }
@@ -511,7 +511,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
     context->skyMaterial = targetSkyMaterial;
 
-    if(environmentSettings.environmentLight == EnvironmentLight::Color){
+    Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
+
+    /*if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
         Material::SetGlobalFloat("_SkyLightIntensity", 0);
         Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
@@ -525,7 +527,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
-    }
+    }*/
 
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();

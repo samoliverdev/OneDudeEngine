@@ -167,6 +167,7 @@ Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const 
 }
 
 Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
+    Assert(false && "Not Work for now");
     return nullptr;
     /*
     Assert(Graphics::HasBegin() == false);
@@ -309,6 +310,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 }
 
 Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    Assert(false && "Not Work for now");
     return nullptr;
     /*
     //FIXME: Destrey gl objects
@@ -384,6 +386,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 }
 
 Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    Assert(false && "Not Work for now");
     return nullptr;
     /*
     //FIXME: Destrey gl objects

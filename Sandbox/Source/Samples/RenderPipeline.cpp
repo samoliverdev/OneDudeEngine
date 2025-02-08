@@ -22,6 +22,8 @@ void RenderPipelineSample::AddTransparent(Vector3 pos){
 }
 
 void RenderPipelineSample::OnInit(){
+    Assert(false && "Not work for now");
+
     LogInfo("Game Init");
     LogInfo(RESOURCES_PATH "/");
 

@@ -157,6 +157,10 @@ std::string _load(std::string path, ShaderSourceData& out){
                 std::remove(lineBuffer.begin(), lineBuffer.end(), ' '), 
                 lineBuffer.end()
             );
+            lineBuffer.erase(
+                std::remove(lineBuffer.begin(), lineBuffer.end(), '"'), 
+                lineBuffer.end()
+            );
 
             isRecursiveCall = true;
             fullSourceCode += _load(lineBuffer, out);
@@ -378,7 +382,7 @@ std::string SubShader::load(std::string path){
                 pragmaLine.push_back(_out);
                 index += 1;
             }
-            properties.push_back(pragmaLine);
+            //properties.push_back(pragmaLine);
 
             //LogInfo("Propertie: %s, %s", pragmaLine[0].c_str(), pragmaLine[1].c_str());
             continue;
@@ -792,7 +796,7 @@ void SubShader::OnGui(){
     }
     ImGui::Spacing();
 
-    if(ImGui::CollapsingHeader("Properties")){
+    /*if(ImGui::CollapsingHeader("Properties")){
         for(auto& i: properties){
             for(auto& j: i){
                 ImGui::Text(j.c_str());
@@ -801,7 +805,7 @@ void SubShader::OnGui(){
             ImGui::Spacing();
         }
     }
-    ImGui::Spacing();
+    ImGui::Spacing();*/
 
     if(ImGui::CollapsingHeader("Pragmas")){
         for(auto& i: pragmas){

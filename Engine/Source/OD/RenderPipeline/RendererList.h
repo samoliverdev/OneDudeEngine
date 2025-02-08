@@ -10,7 +10,6 @@ namespace OD{
 
 class Material;
 class Mesh;
-class Framebuffer;
 
 struct OD_API DrawCommand{
     Matrix4 trans;

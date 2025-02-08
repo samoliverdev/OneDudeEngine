@@ -210,13 +210,15 @@ std::vector<std::string> Texture2D::GetFileAssociations(){
 
 void LoadSettings(const char* filePath, Texture2DSetting& settings);
 
-
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
     return AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
 }
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
-    Assert(Graphics::HasBegin() == false);
+    Assert(false && "Not Work for now");
+    return nullptr;
+    
+    /*Assert(Graphics::HasBegin() == false);
 
     // pbr: setup framebuffer
     // ----------------------
@@ -275,6 +277,7 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     out->width = 512;
     out->height = 512;
     return out;
+    */
 }
 
 void Texture2D::Destroy(Texture2D& tex){

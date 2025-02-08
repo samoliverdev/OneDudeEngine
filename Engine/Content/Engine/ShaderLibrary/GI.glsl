@@ -47,8 +47,10 @@ struct GI{
 
 GI GetGI(Surface surfaceWS, BRDF brdf){
     GI gi;
-    gi.diffuse = SampleEnvironmentDiffuse(surfaceWS); //_AmbientLight; //SampleLightMap(lightMapUV) + SampleLightProbe(surfaceWS);
-    gi.specular = SampleEnvironmentSpecular(surfaceWS, brdf);
+    //gi.diffuse = SampleEnvironmentDiffuse(surfaceWS); //_AmbientLight; //SampleLightMap(lightMapUV) + SampleLightProbe(surfaceWS);
+    //gi.specular = SampleEnvironmentSpecular(surfaceWS, brdf);
+    gi.diffuse = _AmbientLight;
+    gi.specular = _AmbientLight;
     return gi;
 }
 

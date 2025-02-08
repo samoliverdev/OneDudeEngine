@@ -40,10 +40,13 @@ bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);
 class OD_API SubShader: public Asset{
     friend class Graphics;
     friend class Material;
+    friend class MultiCompileShader;
+    friend class Shader;
 public:
+    virtual ~SubShader();
+private:
     static Ref<SubShader> CreateFromFile(const std::string& filepath);
     static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
-
     static Ref<SubShader> CreateFromBaseSource(
         std::string& filepath, 
         std::vector<std::string>& keyworlds, 
@@ -57,9 +60,6 @@ public:
     static void Destroy(SubShader& shader);
     static void Bind(SubShader& shader);
     static void Unbind();
-
-    virtual ~SubShader();
-
     bool IsValid();
 
     void OnGui() override;
@@ -76,8 +76,6 @@ public:
     inline BlendMode GetDstBlend(){ return pipeline.dstBlend; }
 
     inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
-
-    inline std::vector<std::vector<std::string>>& Properties(){ return properties; }
     inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
 
 private:
@@ -98,14 +96,12 @@ private:
     void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
 
     ShaderPipeline pipeline;
-
     std::vector<std::string> enabledKeyworlds;
+    std::vector<std::vector<std::string>> pragmas;
     
     unsigned int rendererId = 0;
     std::unordered_map<std::string, int> uniforms;
     std::vector<std::string> _uniforms;
-    std::vector<std::vector<std::string>> properties;
-    std::vector<std::vector<std::string>> pragmas;
     
     bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
     bool CreateBaseSource(
