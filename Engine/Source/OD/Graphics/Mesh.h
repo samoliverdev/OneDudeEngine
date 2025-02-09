@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
+#include "OD/Platform/OpenGL/GL.h"
 
 namespace OD {
 
@@ -23,6 +24,7 @@ enum class MeshDrawMode{
 
 class OD_API Mesh: public Asset{
     friend class Graphics;
+    friend class OpenGLGraphicsDevice;
 public:
     std::vector<Vector3> vertices;
     std::vector<Vector3> uv;
@@ -54,18 +56,6 @@ public:
 
     void OnGui() override;
 
-    /*template<class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, vertices);
-        ArchiveDumpNVP(ar, uv);
-        ArchiveDumpNVP(ar, normals);
-        ArchiveDumpNVP(ar, colors);
-        ArchiveDumpNVP(ar, tangents);
-        ArchiveDumpNVP(ar, weights);
-        ArchiveDumpNVP(ar, influences);
-        ArchiveDumpNVP(ar, indices);
-    }*/
-
     void CalculateNormals();
     void CalculateTangent();
 
@@ -84,11 +74,10 @@ public:
     void SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
 
     bool IsValid();
-    void Destroy();
 
     inline bool IsReadable(){ return isReadable; }
     inline int VertexCount(){ return vertexCount; }
-    inline int IndiceCount(){ return ebo != 0 ? indiceCount : vertexCount / 3; }
+    inline int IndiceCount(){ return indiceCount; }
 
     static Ref<Mesh> FullScreenQuad();
     static Ref<Mesh> SkyboxCube();
@@ -98,26 +87,10 @@ public:
 
 private:
     bool isReadable = false;
-
-    //#ifdef USE_VAO
-    unsigned int vao = 0;
-    //#endif
-
-    unsigned int vertexVbo = 0;
-    unsigned int uvVbo = 0;
-    unsigned int normalVbo = 0;
-    unsigned int colorVbo = 0;
-    unsigned int tangentVbo = 0;
-
-    unsigned int instancingModelMatrixsVbo = 0;
-    
-    unsigned int jointVbo = 0; 
-    unsigned int weightsVbo = 0;  
-    
-    unsigned int ebo = 0;
-
+    bool isComplete = false;
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
+    MeshDataGL;
 
     void Bind();
 };

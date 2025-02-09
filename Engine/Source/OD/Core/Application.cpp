@@ -59,7 +59,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     return true;
 }
 
-#include "OD/Platform/GL.h"
+#include "OD/Platform/OpenGL/GL.h"
 #include <GLFW/glfw3.h>
 
 bool Application::Run(){
@@ -90,7 +90,7 @@ bool Application::Run(){
         }
         //Platform::SwapBuffers();
         Platform::PreUpdate();
-        Graphics::_Begin();
+        Graphics::Device()._Begin();
         {
             OD_PROFILE_SCOPE("Application::Run::OnRender");
             for(auto i: modules) i->OnRender(deltaTime);
@@ -108,7 +108,7 @@ bool Application::Run(){
         onFrameEnd.Invoke();
         }
 
-        Graphics::_End();
+        Graphics::Device()._End();
         Platform::LateUpdate();
         Platform::SwapBuffers();
         }

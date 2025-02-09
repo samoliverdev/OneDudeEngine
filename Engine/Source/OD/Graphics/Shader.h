@@ -4,6 +4,7 @@
 #include <set>
 #include <vector>
 #include <unordered_map>
+#include "OD/Platform/OpenGL/GL.h"
 
 namespace OD{
 
@@ -15,9 +16,6 @@ public:
     Shader(){}
 
     static Ref<Shader> CreateFromFile(const std::string& filepath);
-
-    bool Create(std::string path);
-    void Destroy();
 
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
@@ -43,7 +41,9 @@ private:
     std::vector<KeyworldSpace> keyworldSpaces;
     int curPass = 0;
     Ref<SubShader> currentShader;
+
     bool isComplete = false;
+    ShaderDataGL;
 
     bool InitPass(int pass);
     void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass);

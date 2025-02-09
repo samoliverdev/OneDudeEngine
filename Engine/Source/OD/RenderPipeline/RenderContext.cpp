@@ -110,19 +110,23 @@ void RenderContext::BeginForwardPass(){
     //ScreenClean();
     //return;
 
-    Framebuffer::Bind(*forwardOutColor);
+    //Framebuffer::Bind(*forwardOutColor);
+    Graphics::BeginFramebuffer(*forwardOutColor, 0);
+    
     //Framebuffer::Unbind(); 
     ScreenClean();
 }
 
 void RenderContext::BeginDeferredPass(){
     //Assert(false);
-    Framebuffer::Bind(*deferredOutColor);
+    //Framebuffer::Bind(*deferredOutColor);
+    Graphics::BeginFramebuffer(*deferredOutColor, 0);
     ScreenClean();
 }
 
 void RenderContext::EndDeferredPassAndCopyToForwardPass(){
-    Framebuffer::Bind(*forwardOutColor);
+    //Framebuffer::Bind(*forwardOutColor);
+    Graphics::BeginFramebuffer(*forwardOutColor, 0);
     Graphics::Clean(0, 1, 0, 1);
 
     deferredLightPass->SetTexture("gPosition", deferredOutColor, 0);
@@ -135,7 +139,8 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
     
     Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
-    Framebuffer::Bind(*forwardOutColor);
+    //Framebuffer::Bind(*forwardOutColor);
+    Graphics::BeginFramebuffer(*forwardOutColor, 0);
 
     /*Framebuffer::Bind(*forwardOutColor);
     Graphics::Clean(0, 1, 0, 1);
@@ -168,7 +173,8 @@ void RenderContext::EndDrawToScreen(){
         Graphics::DrawQuadPostProcessing(finalColor, nullptr, *blitShader);
     }
 
-    Framebuffer::Unbind(); 
+    //Framebuffer::Unbind(); 
+    Graphics::EndFramebuffer();
 }
 
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
@@ -654,23 +660,27 @@ void RenderContext::DrawGizmos(){
 
 void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
-    Framebuffer::Bind(*shadowMap, layer);
+    //Framebuffer::Bind(*shadowMap, layer);
+    Graphics::BeginFramebuffer(*shadowMap, layer);
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
-    Framebuffer::Unbind();
+    //Framebuffer::Unbind();
+    Graphics::EndFramebuffer();
 }
 
 void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
 
-    Framebuffer::Bind(*shadowMap, layer);
+    //Framebuffer::Bind(*shadowMap, layer);
+    Graphics::BeginFramebuffer(*shadowMap, layer);
 
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
 }
 
 void RenderContext::EndDrawShadow(){
-    Framebuffer::Unbind();
+    //Framebuffer::Unbind();
+    Graphics::EndFramebuffer();
 }
 
 void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, RendererList& commandBuffer){

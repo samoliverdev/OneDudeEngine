@@ -3,6 +3,8 @@
 #include "OD/Core/Asset.h"
 #include "OD/Serialization/Serialization.h"
 
+#include "OD/Platform/OpenGL/GL.h"
+
 namespace sol{ class state; }
 
 namespace OD {
@@ -71,15 +73,10 @@ struct OD_API Texture2DSetting{
 
 class OD_API Texture2D: public Asset{
     friend class Graphics;
+    friend class OpenGLGraphicsDevice;
 public:
     Texture2D() = default;
     ~Texture2D();
-
-    /*Texture2D() = default;
-    Texture2D(Texture2DSetting settings);
-    Texture2D(const std::string& filePath, Texture2DSetting settings); 
-    Texture2D(void* data, size_t size, Texture2DSetting settings); 
-    Texture2D(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings);*/ 
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
     static Ref<Texture2D> CreateFromMemory(void* data, size_t size, Texture2DSetting settings); 
@@ -87,9 +84,6 @@ public:
     static Ref<Texture2D> CreateFromPackage(const char* path, Package& package, Texture2DSetting settings); 
     static Ref<Texture2D> LoadDefautlTexture2D();
     static Ref<Texture2D> CreateBrdfLUTTexture2D();
-
-    static void Destroy(Texture2D& tex);
-    static void Bind(Texture2D& tex, int index);
     
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;
@@ -97,7 +91,7 @@ public:
     bool IsValid();
     inline unsigned int Width(){ return width; }
     inline unsigned int Height(){ return height; }
-    inline unsigned int RenderId(){ return id; }
+    inline unsigned int RenderId(){ return 0; /*id;*/ }
 
     void OnGui() override;
     void Reload() override;
@@ -106,7 +100,6 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
 private:
-    unsigned int id = 0;
     unsigned int width;
     unsigned int height;
     unsigned int internalFormat;
@@ -117,13 +110,8 @@ private:
     unsigned int filterMax;
     bool mipmap;
     Texture2DSetting settings;
-
-    bool Create(const std::string path, Texture2DSetting settings);
-    bool Create(void* data, size_t size, Texture2DSetting settings);
-    bool Create(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings);
-    void texture2DGenerate(unsigned int width, unsigned int height, TextureDataType dataType, void* data);
-
-    //void SaveSettings();
+    bool isComplete = false;
+    Texture2DDataGL;
 };
 
 class OD_API Texture2DArray: public Asset{
@@ -132,20 +120,18 @@ public:
     Texture2DArray(const std::vector<std::string>& filePaths); 
     ~Texture2DArray();
 
-    static void Destroy(Texture2DArray& tex);
-    static void Bind(Texture2DArray& tex, int index);
-
     bool IsValid();
     inline unsigned int Width(){ return width; }
     inline unsigned int Height(){ return height; }
-    inline unsigned int RenderId(){ return id; }
+    inline unsigned int RenderId(){ return 0; /*id;*/ }
 
     void OnGui() override;
 
 private:
-    unsigned int id = 0;
     unsigned int width;
     unsigned int height;
+    bool isComplete = false;
+    Texture2DArrayDataGL;
 };
 
 }

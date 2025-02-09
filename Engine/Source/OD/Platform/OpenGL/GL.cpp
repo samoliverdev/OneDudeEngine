@@ -1,3 +1,4 @@
+#ifdef OPENGL_SUPPORT
 #include "GL.h"
 #include <iostream>
 #include "OD/Defines.h"
@@ -27,3 +28,4 @@ GLenum glCheckError_(const char *file, int line, std::function<void()> callback)
 
     return errorCode;
 }
+#endif

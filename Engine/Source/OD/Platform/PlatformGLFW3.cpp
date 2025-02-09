@@ -1,19 +1,17 @@
 #include "Platform.h"
-
 #include <string.h>
-
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/Input.h"
+#include "OD/Core/Application.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <ImGuizmo/ImGuizmo.h>
 
-#include "GL.h"
+#include "OpenGL/GL.h"
+//#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include "OD/Core/Input.h"
-#include "OD/Core/Application.h"
 
 #define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
@@ -131,7 +129,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 #if OPENGL_DEBUG
-void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param) {
+void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param){
 	
 	std::string sourceStr;
 	switch(source) {

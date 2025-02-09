@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "Graphics.h"
 #include <algorithm>
 #include <numeric>
 
@@ -65,55 +66,19 @@ std::string GetKey_(const std::set<std::string>& keyworlds){
 }
 
 Shader::Shader(std::string path){
-    Create(path);
+    Graphics::ShaderCreate(*this, path);
 }
 
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     Ref<Shader> out = CreateRef<Shader>();
-    if(out->Create(filepath) == false){
+    if(Graphics::ShaderCreate(*out, filepath) == false){
         return nullptr;
     }
     return out;
 }
 
-bool Shader::Create(std::string inPath){
-    Destroy();
-    
-    path = inPath;
-    errors.clear();
-    isComplete = true;
-    sourcePath = path;
-    ShaderLoadFile(path, shaderSourceData);
-    passes.resize(shaderSourceData.passes.size());
-    for(int i = 0; i < passes.size(); i++){
-        passes[i].name = shaderSourceData.passes[i].name;
-        bool r = InitPass(i);
-        if(r == false) break;
-    }
-
-    if(isComplete == false){
-        LogError("Error To Compile Shader: %s", path.c_str());
-        Destroy();
-        return false;
-    } 
-
-    return true;
-}
-
-void Shader::Destroy(){
-    for(auto& i: passes){
-        for(auto& j: i.shaders){
-            if(j.second == nullptr) continue;
-            SubShader::Destroy(*j.second);
-        }
-    }
-    passes.clear();
-    isComplete = false;
-    path = "Memory";
-}
-
 bool Shader::LoadFromFile(const std::string& path){
-    return Create(path);
+    return Graphics::ShaderCreate(*this, path);
 }
 
 std::vector<std::string> Shader::GetFileAssociations(){ 
@@ -268,7 +233,9 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     //LogWarning("%s", shaderSourceData.baseSource.c_str());
 
-    Ref<SubShader> shader = SubShader::CreateFromBaseSource(
+    Ref<SubShader> shader = CreateRef<SubShader>();
+    Graphics::SubShaderCreateFromBaseSource(
+        *shader,
         shaderSourceData.baseSource, 
         _enabledKeywords, 
         shaderSourceData.passes[pass].pipeline,

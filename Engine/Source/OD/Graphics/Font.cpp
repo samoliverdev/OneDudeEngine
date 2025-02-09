@@ -1,6 +1,5 @@
 #include "Font.h"
 #include "OD/Core/Application.h"
-#include "OD/Platform/GL.h"
 #include "OD/Core/Lua.h"
 
 #include <ft2build.h>
@@ -99,6 +98,9 @@ Ref<Font> Font::CreateFromFile(const char* path){
 */
 
 bool Font::LoadFromFile(const std::string& inPath){
+    Assert(false && "Outdate for now");
+
+    /*
     InitFreeFont();
 
     FT_Face face;
@@ -156,7 +158,7 @@ bool Font::LoadFromFile(const std::string& inPath){
     FT_Done_Face(face);
     //FT_Done_FreeType(ft);
 
-    path = inPath;
+    path = inPath;*/
     return true;
 }
 

@@ -2,6 +2,8 @@
 #include "OD/Defines.h"
 #include <vector>
 
+#include "OD/Platform/OpenGL/GL.h"
+
 namespace sol{ class state; }
 
 namespace OD{
@@ -35,17 +37,14 @@ struct OD_API FrameBufferSpecification{
 };
 
 class OD_API Framebuffer{
+    friend class OpenGLGraphicsDevice;
 public:
-    static void Bind(Framebuffer& framebuffer, int layer = 0);
-    static void Unbind();
-
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
 
     void Reload(FrameBufferSpecification specification);
     void Resize(int width, int height);
     bool IsValid();
-    void Destroy();
     void Invalidate();
     
     //void BindColorAttachmentTexture(Shader& shader, int index);
@@ -57,21 +56,15 @@ public:
     inline int Width(){ return specification.width; }
     inline int Height(){ return specification.height; }
 
-    inline unsigned int RenderId(){ return renderId; }
+    inline unsigned int RenderId(){ return 0; /*renderId;*/ }
     inline FrameBufferSpecification Specification(){ return specification; }
 
     static void CreateLuaBind(sol::state& lua);
 
 private:
     FrameBufferSpecification specification;
-    unsigned int renderId = 0;
-
-    //unsigned int colorAttachment;
-    unsigned int depthAttachment;
-    std::vector<unsigned int> colorAttachments;
-
-    void GenColorAttachment(int index);
-    void GenDepthAttachment();
+    bool isComplete = false;
+    FramebufferDataGL;
 };
 
 }

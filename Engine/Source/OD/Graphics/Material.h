@@ -6,6 +6,7 @@
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Platform/OpenGL/GL.h"
 
 namespace sol{ class state; }
 
@@ -164,6 +165,9 @@ private:
     static uint32_t baseId;
 
     bool isDirty = true;
+    
+    bool isComplete = false;
+    MaterialDataGL;
 
     void SetFloat(const char* name, float value, float min, float max);
     void SetColor3(const char* name, Vector3 value);

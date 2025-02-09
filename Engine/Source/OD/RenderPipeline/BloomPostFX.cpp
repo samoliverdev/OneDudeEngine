@@ -88,7 +88,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
     bloomCombinePassShader->SetFloat("_BloomIntensity", intensity);
     Graphics::DrawQuadPostProcessing(src, dst, *bloomCombinePassShader);
 
-    for(auto i: temps) i->Destroy();
+    for(auto i: temps) Graphics::FramebufferDestroy(*i); //i->Destroy();
     temps.clear();
 }
 

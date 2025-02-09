@@ -13,7 +13,7 @@
 
 namespace OD{
 
-extern GraphicsStats stats;
+/*extern*/ GraphicsStats stats;
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
@@ -64,7 +64,7 @@ bool Material::EnableInstancing(){
 
 bool Material::SupportInstancing(){ 
     //return false;
-    return currentShader != nullptr && currentShader->SupportInstancing(); 
+    return currentShader != nullptr && currentShader->pipeline.supportInstancing; 
 }
 
 void Material::SetInt(const char* name, int value){
@@ -366,7 +366,7 @@ void Material::SubmitGraphicDatas(Material& material){
     Assert(material.GetShader() != nullptr);
     if(material.GetShader() == nullptr) return;
 
-    Graphics::SetColorMask(material.currentShader->pipeline.colorMask);
+    /*Graphics::SetColorMask(material.currentShader->pipeline.colorMask);
     Graphics::SetCullFace(material.currentShader->GetCullFace());
     Graphics::SetDepthTest(material.currentShader->GetDepthTest());
     Graphics::SetDepthMask(material.currentShader->IsDepthMask());
@@ -375,9 +375,10 @@ void Material::SubmitGraphicDatas(Material& material){
         Graphics::SetBlendFunc(material.currentShader->GetSrcBlend(), material.currentShader->GetDstBlend());
     } else {
         Graphics::SetBlend(false);
-    }
+    }*/
 
-    SubShader::Bind(*material.currentShader);
+    Graphics::Device().SubShaderBind(*material.currentShader);
+    //SubShader::Bind(*material.currentShader);
     ApplyUniformTo(material, *material.currentShader, material.maps);
     ApplyUniformTo(material, *material.currentShader, globalMaps);
     Assert(material.currentTextureSlot < 32);
@@ -503,7 +504,7 @@ void Material::OnGui(){
         }
     }
 
-    if(currentShader != nullptr && currentShader->SupportInstancing() && ImGui::Checkbox("enableInstancing", &enableInstancing)){
+    if(currentShader != nullptr && currentShader->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
     }
 
@@ -666,7 +667,7 @@ void Material::UpdateMaps(){
 
 void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
     //Shader::Bind(shader);
-
+    /*
     for(auto& i: maps){
         MaterialMap& map = i.second;
 
@@ -716,7 +717,7 @@ void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unorde
         if(map.type == MaterialMap::Type::Matrix4List){
             shader.SetMatrix4(i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
         }
-    }
+    }*/
 }
 
 void Material::CreateLuaBind(sol::state& lua){

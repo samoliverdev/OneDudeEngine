@@ -37,35 +37,14 @@ struct OD_API ShaderSourceData{
 
 bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);
 
-class OD_API SubShader: public Asset{
-    friend class Graphics;
-    friend class Material;
-    friend class MultiCompileShader;
-    friend class Shader;
-public:
-    virtual ~SubShader();
-private:
-    static Ref<SubShader> CreateFromFile(const std::string& filepath);
-    static Ref<SubShader> CreateFromFile(const std::string& filepath, std::vector<std::string>& keyworlds);
-    static Ref<SubShader> CreateFromBaseSource(
-        std::string& filepath, 
-        std::vector<std::string>& keyworlds, 
-        ShaderPipeline pipeline, 
-        std::vector<std::string>& errors
-    );
-
-    bool LoadFromFile(const std::string& path) override;
-    std::vector<std::string> GetFileAssociations() override;
-
-    static void Destroy(SubShader& shader);
-    static void Bind(SubShader& shader);
-    static void Unbind();
-    bool IsValid();
-
-    void OnGui() override;
-    void Reload() override;
-
-    inline unsigned int RendererId(){ return rendererId; }
+struct OD_API SubShader{
+    ShaderPipeline pipeline;
+    std::vector<std::string> enabledKeyworlds;
+    std::vector<std::vector<std::string>> pragmas;
+    std::unordered_map<std::string, int> uniforms;
+    std::vector<std::string> _uniforms;
+    bool isComplete = false;
+    SubShaderDataGL;
 
     inline bool SupportInstancing(){ return pipeline.supportInstancing; }
     inline CullFace GetCullFace(){ return pipeline.cullFace; }
@@ -77,43 +56,6 @@ private:
 
     inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
     inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
-
-private:
-    void SetFloat(const char* name, float value);
-    void SetFloat(const char* name, float* value, int count);
-    void SetInt(const char* name, int value);
-    void SetVector2( const char* name, Vector2 value);
-    void SetVector3(const char* name, Vector3 value);
-    void SetVector4(const char* name, Vector4 value);
-    void SetVector4(const char* name, Vector4* value, int count);
-    void SetMatrix4(const char* name, Matrix4 value);
-    void SetMatrix4(const char* name, std::vector<Matrix4>& value);
-    void SetMatrix4(const char* name, Matrix4* value, int count);
-    void SetTexture2D(const char* name, Texture2D& value, int index);
-    void SetTexture2DArray(const char* name, Texture2DArray& value, int index);
-    void SetCubemap(const char* name, Cubemap& value, int index);
-    void SetUniforBuffer(const char* name, UniformBuffer& buffer, int index);
-    void SetFramebuffer(const char* name, Framebuffer& framebuffer, int index, int colorAttachmentId);
-
-    ShaderPipeline pipeline;
-    std::vector<std::string> enabledKeyworlds;
-    std::vector<std::vector<std::string>> pragmas;
-    
-    unsigned int rendererId = 0;
-    std::unordered_map<std::string, int> uniforms;
-    std::vector<std::string> _uniforms;
-    
-    bool Create(const std::string& filepath, std::vector<std::string>& keyworlds);
-    bool CreateBaseSource(
-        std::string& source, 
-        std::vector<std::string>& keyworlds,
-        std::vector<std::string>& errors
-    );
-
-    std::string load(std::string path);
-    int GetLocation(const char* name);
-	std::unordered_map<unsigned int, std::string> PreProcess(const std::string& source, std::vector<std::string>& keyworlds);
-	void Compile(const std::unordered_map<unsigned int, std::string>& shaderSources);
 };
 
 }

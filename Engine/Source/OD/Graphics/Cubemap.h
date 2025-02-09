@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
+#include "OD/Platform/OpenGL/GL.h"
 
 namespace sol{ class state; }
 
@@ -20,15 +21,13 @@ public:
     static Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap);  
     static Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap);  
 
-    static void Destroy(Cubemap& cubemap);
-    static void Bind(Cubemap& cubemap, int index);
-
     bool IsValid();
 
     static void CreateLuaBind(sol::state& lua);
     
 private:
-    unsigned int renderId;
+    bool isComplete = false;
+    CubemapDataGL; 
 };
 
 }

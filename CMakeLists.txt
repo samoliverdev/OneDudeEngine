@@ -122,6 +122,7 @@ add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
 target_precompile_headers(Engine INTERFACE Engine/Source/OD/pch.h)
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
+target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
     Engine/ThirdParty/lua-5.1.5/src/

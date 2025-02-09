@@ -1,4 +1,4 @@
-#include "UniformBuffer.h"
+/*#include "UniformBuffer.h"
 #include "OD/Platform/GL.h"
 #include "OD/Defines.h"
 
@@ -39,4 +39,4 @@ void UniformBuffer::SetData(const void* data, unsigned int size, unsigned int of
     glCheckError();
 }
 
-}
+}*/

@@ -10,7 +10,6 @@
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
 #include "OD/Animation/Animator.h"
-#include "OD/Platform/GL.h"
 #include "TextRendererComponent.h"
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
@@ -532,7 +531,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();
         
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         
         //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, false);
         //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, true);
@@ -541,15 +540,15 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Graphics::SetColorMask(0,0,0,0);
         context->DrawRenderersBuffer(opaqueDrawTarget, true);
         
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         context->DrawRenderersBuffer(blendDrawTarget, true);
     } else {
         context->BeginDeferredPass();
     
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         context->DrawRenderersBuffer(opaqueDrawTarget, false, true);
-        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         context->EndDeferredPassAndCopyToForwardPass();
         context->RenderSkyboxLater();

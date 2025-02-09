@@ -8,7 +8,6 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
-#include "OD/Platform/GL.h"
 #include "OD/Core/Application.h"
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
@@ -1212,9 +1211,9 @@ void Navmesh::DrawDebug(){
 
     if(m_dd == nullptr) m_dd = new DebugDrawGL();
 
-	glEnable(GL_BLEND);
+	/*glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_FALSE);
+	glDepthMask(GL_FALSE);*/
 
 	const float texScale = 1.0f / (buildSettings.cellSize * 10.0f);
 
@@ -1234,8 +1233,8 @@ void Navmesh::DrawDebug(){
 		duDebugDrawNavMeshPolysWithFlags(m_dd, *m_navMesh, SAMPLE_POLYFLAGS_DISABLED, duRGBA(0,0,0,128));
 	}
 		
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);	
+	/*glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);*/	
 }
 
 bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
