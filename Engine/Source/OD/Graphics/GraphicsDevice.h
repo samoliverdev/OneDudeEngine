@@ -23,9 +23,14 @@ class Cubemap;
 class Shader;
 struct GraphicsStats;
 
+struct GraphicsDeviceInfo{
+    std::string apiName;
+};
+
 class OD_API GraphicsDevice {
 public:
     virtual GraphicsStats& GetStats() = 0;
+    virtual GraphicsDeviceInfo GetInfo() = 0;
 
     virtual void Begin() = 0;
     virtual void End() = 0;
@@ -123,6 +128,9 @@ public:
     virtual void Shutdown() = 0;
     virtual void _Begin() = 0;
     virtual void _End() = 0;
+
+    virtual void ImGuiNewFrame() = 0;
+    virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
 };
 
 }

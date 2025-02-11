@@ -8,6 +8,7 @@ namespace OD{
 class OpenGLGraphicsDevice: public GraphicsDevice{
 public:
     virtual GraphicsStats& GetStats() override;
+    virtual GraphicsDeviceInfo GetInfo() override;
 
     virtual void Begin() override;
     virtual void End() override;
@@ -106,6 +107,9 @@ public:
     virtual void _Begin() override;
     virtual void _End() override;
 
+    virtual void ImGuiNewFrame() override;
+    virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
+
     void SetColorMask(Vector4 mask);
     void SetRenderMode(RenderMode mode);
     void SetDepthMask(bool value);
@@ -133,6 +137,8 @@ public:
     void SubShaderSetTexture2DArray(SubShader& shader, const char* name, Texture2DArray& value, int index);
     void SubShaderSetCubemap(SubShader& shader, const char* name, Cubemap& value, int index);
     void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
+
+    GraphicsDeviceInfo info;
     
     unsigned int globalVAO;
 

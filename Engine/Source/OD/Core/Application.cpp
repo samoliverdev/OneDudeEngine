@@ -59,8 +59,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     return true;
 }
 
-#include "OD/Platform/OpenGL/GL.h"
-#include <GLFW/glfw3.h>
+//#include "OD/Platform/OpenGL/GL.h"
+//#include <GLFW/glfw3.h>
 
 bool Application::Run(){
     while(running){

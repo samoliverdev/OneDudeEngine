@@ -13,8 +13,11 @@
 #include "OD/Graphics/Font.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
+#include "OD/Core/Application.h"
+#include "OD/Core/ImGui.h"
 #include <fstream>
 #include <stb/stb_image.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
 namespace OD{
 
@@ -27,6 +30,10 @@ GLenum meshDrawModeLookup[] = {
 
 GraphicsStats& OpenGLGraphicsDevice::GetStats(){ 
     return stats; 
+}
+
+GraphicsDeviceInfo OpenGLGraphicsDevice::GetInfo(){
+    return info;
 }
 
 void OpenGLGraphicsDevice::Initialize(){
@@ -120,7 +127,17 @@ void OpenGLGraphicsDevice::Initialize(){
         glCheckError();
         #endif
     };
-    
+
+    info.apiName = "OpenGL";
+
+    glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    ImGui_ImplOpenGL3_Init("#version 150");
+
+    LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
+    LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));
+    LogInfo("GL_RENDERER: %s", glGetString(GL_RENDERER));
+    LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
     glEnable(GL_DEPTH_TEST); 
 
     #ifndef USE_VAO
@@ -180,6 +197,7 @@ void OpenGLGraphicsDevice::Initialize(){
 
 void OpenGLGraphicsDevice::Shutdown(){
     fullScreenQuad = nullptr;
+    ImGui_ImplOpenGL3_Shutdown();
 }
 
 void OpenGLGraphicsDevice::Begin(){
@@ -2112,6 +2130,21 @@ bool OpenGLGraphicsDevice::MaterialCreate(Material& shader){
 
 void OpenGLGraphicsDevice::MaterialDestroy(Material& shader){
 
+}
+
+void OpenGLGraphicsDevice::ImGuiNewFrame(){
+    ImGui_ImplOpenGL3_NewFrame();
+}
+
+void OpenGLGraphicsDevice::ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
+    ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    glViewport(0, 0, w, h);
+    if(ImGuiLayer::GetCleanAll() == true){
+        glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 }

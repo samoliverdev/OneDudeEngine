@@ -4,13 +4,13 @@
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/Input.h"
 #include "OD/Core/Application.h"
+#include "OD/Graphics/GraphicsDevice.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <ImGuizmo/ImGuizmo.h>
 
 #include "OpenGL/GL.h"
-//#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #define OPENGL_DEBUG 1
@@ -18,6 +18,8 @@
 #define OpenglMinorVer 6
 
 namespace OD{
+
+extern GraphicsDevice* graphicsDevice;
 
 GLFWwindow* window;
 //GLFWwindow* offscreenWindow;
@@ -70,11 +72,13 @@ void imguiOnInit(GLFWwindow* window){
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 150");
+    //ImGui_ImplOpenGL3_Init("#version 150");
+    //graphicsDevice->ImGuiInit();
 }
 
 void imguiOnPreUpdate(){
-    ImGui_ImplOpenGL3_NewFrame();
+    graphicsDevice->ImGuiNewFrame();
+    //ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
@@ -86,15 +90,18 @@ void imguiOnUpdate(GLFWwindow* window){
     // Rendering
     ImGui::Render();
     
-    int display_w, display_h;
+    /*int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
-
     glViewport(0, 0, display_w, display_h);
     if(ImGuiLayer::GetCleanAll() == true){
         glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
     }
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());*/
+
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    graphicsDevice->ImGuiRenderDrawData(0, 0, display_w, display_h);
 
     // Update and Render additional Platform Windows
     // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
@@ -110,7 +117,7 @@ void imguiOnUpdate(GLFWwindow* window){
 
 void imguiOnDestroy(){
     // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
+    //ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
@@ -263,13 +270,13 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     glfwSetCursorPosCallback(window, MouseCallback); 
     glfwSetScrollCallback(window, ScrollCallback); 
 
-    glViewport(0, 0, width, height);
+    //glViewport(0, 0, width, height);
     imguiOnInit(window);
 
-    LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
+    /*LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
     LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));
     LogInfo("GL_RENDERER: %s", glGetString(GL_RENDERER));
-    LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));*/
 
     //glEnable(GL_POLYGON_SMOOTH);
 
