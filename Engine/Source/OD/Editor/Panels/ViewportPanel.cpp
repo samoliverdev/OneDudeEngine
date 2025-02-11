@@ -16,6 +16,8 @@ void ViewportPanel::OnGui(){
     }
 
     bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
+
+    void* textureId = editor->framebuffer->ColorAttachmentId(0);
     
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::SetNextWindowSize(ImVec2(576, 680));
@@ -34,6 +36,20 @@ void ViewportPanel::OnGui(){
         ImGui::Checkbox("GizmosRuntime", &RenderContext::GetSettings().enableGizmosRuntime);
         ImGui::Checkbox("Wireframe", &RenderContext::GetSettings().enableWireframe);
 
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        static const char* items[]{"One","Two","three"};
+        static int Selecteditem = 0;
+        if(ImGui::Combo("MyCombo", &Selecteditem, items, IM_ARRAYSIZE(items))){
+            // Here event is fired
+        }
+
+        if(Selecteditem == 1){
+            StandRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<StandRenderPipeline>();
+            textureId = renderPipeline->GetCameraRenderer().GetShadows().GetDirectionalShadowAtlas()->DepthAttachmentId();
+        }
+
         ImGui::EndMenuBar();
     }
 
@@ -50,7 +66,7 @@ void ViewportPanel::OnGui(){
     editor->viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
     editor->viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
-    uint32_t textureId = editor->framebuffer->ColorAttachmentId(0);
+    
 
     auto[mx, my] = ImGui::GetMousePos();
     mx -= editor->viewportBounds[0].x;
@@ -78,8 +94,8 @@ void ViewportPanel::OnGui(){
 
     ImVec2 imagePos = ImGui::GetCursorPos();
     
-    //ImGui::Image((ImTextureID)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+    //ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
 
     if(ImGui::BeginDragDropTarget()){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ContentBrowserPanelFile");

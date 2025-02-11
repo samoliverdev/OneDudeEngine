@@ -561,7 +561,6 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     context->DrawGizmos();
-
     for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
 

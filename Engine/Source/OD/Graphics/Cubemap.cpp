@@ -313,20 +313,16 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
     */
 }
 
-bool Cubemap::IsValid(){
-    return isComplete;
-}
-
 void Cubemap::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Cubemap>(
         "Cubemap",
         "CreateFromFile", Cubemap::CreateFromFile,
         "CreateFromFileHDR", Cubemap::CreateFromFileHDR,
         "CreateIrradianceMapFromCubeMap", Cubemap::CreateIrradianceMapFromCubeMap,
-        "CreatePrefilterMapFromCubeMap", Cubemap::CreatePrefilterMapFromCubeMap,
+        "CreatePrefilterMapFromCubeMap", Cubemap::CreatePrefilterMapFromCubeMap
         //"Destroy", &Cubemap::Destroy,
         //"Bind", &Cubemap::Bind,
-        "IsValid", &Cubemap::IsValid
+        //"IsValid", &Cubemap::IsValid
     );
 }
 

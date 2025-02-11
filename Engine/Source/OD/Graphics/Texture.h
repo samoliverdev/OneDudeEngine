@@ -102,12 +102,6 @@ public:
 private:
     unsigned int width;
     unsigned int height;
-    unsigned int internalFormat;
-    unsigned int imageFormat;
-    unsigned int wrapS;
-    unsigned int wrapT;
-    unsigned int filterMin;
-    unsigned int filterMax;
     bool mipmap;
     Texture2DSetting settings;
     bool isComplete = false;
@@ -116,21 +110,19 @@ private:
 
 class OD_API Texture2DArray: public Asset{
     friend class Graphics;
+    friend class OpenGLGraphicsDevice;
 public:
     Texture2DArray(const std::vector<std::string>& filePaths); 
     ~Texture2DArray();
 
-    bool IsValid();
     inline unsigned int Width(){ return width; }
     inline unsigned int Height(){ return height; }
-    inline unsigned int RenderId(){ return 0; /*id;*/ }
 
     void OnGui() override;
 
 private:
     unsigned int width;
     unsigned int height;
-    bool isComplete = false;
     Texture2DArrayDataGL;
 };
 

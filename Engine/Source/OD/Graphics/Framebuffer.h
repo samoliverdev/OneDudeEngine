@@ -41,29 +41,26 @@ class OD_API Framebuffer{
 public:
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
+    
+    Framebuffer& operator=(const Framebuffer& other) = delete;
+    Framebuffer(const Framebuffer& other) = delete;
 
     void Reload(FrameBufferSpecification specification);
     void Resize(int width, int height);
-    bool IsValid();
     void Invalidate();
-    
-    //void BindColorAttachmentTexture(Shader& shader, int index);
-    unsigned int ColorAttachmentId(int index);
-    unsigned int DepthAttachmentId();
-
     int ReadPixel(int attachmentIndex, int x, int y);
-
+    bool IsValid();
+    void* ColorAttachmentId(int index);
+    void* DepthAttachmentId();
+    
     inline int Width(){ return specification.width; }
     inline int Height(){ return specification.height; }
-
-    inline unsigned int RenderId(){ return 0; /*renderId;*/ }
     inline FrameBufferSpecification Specification(){ return specification; }
 
     static void CreateLuaBind(sol::state& lua);
 
 private:
     FrameBufferSpecification specification;
-    bool isComplete = false;
     FramebufferDataGL;
 };
 

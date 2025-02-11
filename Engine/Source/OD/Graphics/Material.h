@@ -78,6 +78,7 @@ private:
 
 class OD_API Material: public Asset{
     friend class Graphics;
+    friend class OpenGLGraphicsDevice;
 public:
     Material();
     Material(Ref<Shader> s);
@@ -125,7 +126,7 @@ public:
     void CleanData();
     //void UpdateDatas();
 
-    static void SubmitGraphicDatas(Material& material);
+    //static void SubmitGraphicDatas(Material& material);
     static void CleanGlobalUniformsData();
 
     void Save(std::string& path);
@@ -174,7 +175,7 @@ private:
     void SetColor4(const char* name, Vector4 value);
 
     void UpdateMaps();
-    static void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
+    //static void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
 
     std::string GetKey(const std::set<std::string>& keyworlds);
     std::set<std::string> GetEnabledKeywords();

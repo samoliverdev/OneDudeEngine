@@ -25,7 +25,7 @@ struct GraphicsStats;
 
 class OD_API GraphicsDevice {
 public:
-    virtual const GraphicsStats& GetStats() = 0;
+    virtual GraphicsStats& GetStats() = 0;
 
     virtual void Begin() = 0;
     virtual void End() = 0;
@@ -55,11 +55,18 @@ public:
     virtual void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth) = 0;
     virtual void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth) = 0;
 
-    virtual void BeginFramebuffer(Framebuffer* framebuffer) = 0;
+    virtual void BeginFramebuffer(Framebuffer& frambuffer, int layer) = 0;
+    virtual void EndFramebuffer() = 0;
+    virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
+    virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;
+    virtual bool FramebufferIsValid(Framebuffer& frambuffer) = 0;
+    virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) = 0;
+    virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) = 0;
+    virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) = 0;
+    virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) = 0;
 
     virtual void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0) = 0;
     virtual void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0) = 0;
-    virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) = 0;
 
     virtual bool MeshCreateOrSubmit(
         Mesh& mesh,
@@ -75,20 +82,17 @@ public:
     virtual void MeshSubmitInstancingModelMatrixs(Mesh& mesh) = 0;
     virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
     virtual void MeshDestroy(Mesh& mesh) = 0;
-
-    virtual void BeginFramebuffer(Framebuffer& frambuffer, int layer) = 0;
-    virtual void EndFramebuffer() = 0;
-    virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
-    virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;
-    virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) = 0;
+    virtual bool MeshIsValid(Mesh& mesh) = 0;
 
     virtual bool Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings) = 0;
     virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings) = 0;
     virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings) = 0;
     virtual void Texture2DDestroy(Texture2D& tex) = 0;
+    virtual bool Texture2DIsValid(Texture2D& tex) = 0;
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) = 0; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) = 0;
+    virtual bool Texture2DArrayIsValid(Texture2DArray& tex) = 0;
 
     virtual bool CubemapCreateFromFile(
         Cubemap& cubemap,
@@ -96,6 +100,7 @@ public:
         const char* bottom, const char* front, const char* back
     ) = 0; 
     virtual void CubemapDestroy(Cubemap& cubemap) = 0;
+    virtual bool CubemapIsValid(Cubemap& tex) = 0;
 
     virtual bool SubShaderCreateFromBaseSource(
         SubShader& shader,
@@ -105,6 +110,7 @@ public:
         std::vector<std::string>& errors
     ) = 0;
     virtual void SubShaderDestroy(SubShader& shader) = 0;
+    virtual bool SubShaderIsValid(SubShader& shader) = 0;
     virtual void SubShaderBind(SubShader& shader) = 0;
 
     virtual bool ShaderCreate(Shader& shader, std::string path) = 0;

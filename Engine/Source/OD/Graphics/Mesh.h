@@ -54,6 +54,9 @@ public:
     Mesh(const Mesh& mesh);
     ~Mesh() override;
 
+    //Mesh& operator=(const Mesh& other) = delete;
+    //Mesh(const Mesh& other) = delete;
+
     void OnGui() override;
 
     void CalculateNormals();
@@ -73,8 +76,6 @@ public:
     void SubmitInstancingModelMatrixs();
     void SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count);
 
-    bool IsValid();
-
     inline bool IsReadable(){ return isReadable; }
     inline int VertexCount(){ return vertexCount; }
     inline int IndiceCount(){ return indiceCount; }
@@ -87,7 +88,6 @@ public:
 
 private:
     bool isReadable = false;
-    bool isComplete = false;
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
     MeshDataGL;

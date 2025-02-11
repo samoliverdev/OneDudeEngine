@@ -41,9 +41,8 @@ struct OD_API SubShader{
     ShaderPipeline pipeline;
     std::vector<std::string> enabledKeyworlds;
     std::vector<std::vector<std::string>> pragmas;
-    std::unordered_map<std::string, int> uniforms;
-    std::vector<std::string> _uniforms;
-    bool isComplete = false;
+    //std::unordered_map<std::string, int> uniforms;
+    //std::vector<std::string> _uniforms;
     SubShaderDataGL;
 
     inline bool SupportInstancing(){ return pipeline.supportInstancing; }
@@ -54,8 +53,8 @@ struct OD_API SubShader{
     inline BlendMode GetSrcBlend(){ return pipeline.srcBlend; }
     inline BlendMode GetDstBlend(){ return pipeline.dstBlend; }
 
-    inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
-    inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
+    //inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
+    //inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
 };
 
 }

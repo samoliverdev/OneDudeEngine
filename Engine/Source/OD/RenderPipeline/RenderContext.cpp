@@ -134,7 +134,9 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     deferredLightPass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
     deferredLightPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightPass->SetTexture("gOther", deferredOutColor, 4);
-    Material::SubmitGraphicDatas(*deferredLightPass);
+    //Material::SubmitGraphicDatas(*deferredLightPass);
+    Graphics::BindMaterial(*deferredLightPass);
+
     //Graphics::BlitQuadPostProcessingRaw(forwardOutColor);
     Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
     
@@ -161,7 +163,14 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    //Framebuffer::Unbind(); 
+    //return;
+
+    //Graphics::DrawQuadPostProcessing(forwardOutColor, nullptr, *blitShader);
+    //Graphics::EndFramebuffer();
+    //return;
+    
+    //Framebuffer::Unbind();
+    //Graphics::EndFramebuffer();
     //return;
 
     Graphics::BlitFramebuffer(forwardOutColor, finalColor);
@@ -455,7 +464,7 @@ void RenderContext::RenderSkyboxLater(){
     Assert(skyMaterial->GetShader() != nullptr);
 
     //skyMaterial->UpdateDatas();
-    Material::SubmitGraphicDatas(*skyMaterial);
+    //Material::SubmitGraphicDatas(*skyMaterial);
 
     /*Graphics::SetCullFace(CullFace::BACK);
     //Graphics::SetDepthMask(false);
@@ -673,7 +682,6 @@ void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
 
     //Framebuffer::Bind(*shadowMap, layer);
     Graphics::BeginFramebuffer(*shadowMap, layer);
-
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
 }

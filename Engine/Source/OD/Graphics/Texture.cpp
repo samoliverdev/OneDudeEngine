@@ -11,10 +11,12 @@
 
 namespace OD{
 
+extern GraphicsDevice* graphicsDevice;
+
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    if(Graphics::Texture2DCreate(*tex, filePath, settings) == false){
-        Graphics::Texture2DDestroy(*tex);
+    if(graphicsDevice->Texture2DCreate(*tex, filePath, settings) == false){
+        graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
 
@@ -23,8 +25,8 @@ Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DS
 
 Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    if(Graphics::Texture2DCreate(*tex, data, size, settings) == false){
-        Graphics::Texture2DDestroy(*tex);
+    if(graphicsDevice->Texture2DCreate(*tex, data, size, settings) == false){
+        graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
 
@@ -33,8 +35,8 @@ Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSet
 
 Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    if(Graphics::Texture2DCreate(*tex, data, size, width, height, dataType, settings) == false){
-        Graphics::Texture2DDestroy(*tex);
+    if(graphicsDevice->Texture2DCreate(*tex, data, size, width, height, dataType, settings) == false){
+        graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
 
@@ -47,8 +49,8 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
     if(package.ReadFile(path, data, size) == false) return nullptr;
 
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    if(Graphics::Texture2DCreate(*tex, data, size, settings) == false){
-        Graphics::Texture2DDestroy(*tex);
+    if(graphicsDevice->Texture2DCreate(*tex, data, size, settings) == false){
+        graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
 
@@ -56,8 +58,8 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
 }
 
 bool Texture2D::LoadFromFile(const std::string& path){
-    if(Graphics::Texture2DCreate(*this, path, settings) == false){
-        Graphics::Texture2DDestroy(*this);
+    if(graphicsDevice->Texture2DCreate(*this, path, settings) == false){
+        graphicsDevice->Texture2DDestroy(*this);
         return false;
     }
 
@@ -70,8 +72,6 @@ std::vector<std::string> Texture2D::GetFileAssociations(){
         ".png"
     }; 
 }
-
-void LoadSettings(const char* filePath, Texture2DSetting& settings);
 
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
     return AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
@@ -144,11 +144,11 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
 }
 
 Texture2D::~Texture2D(){
-    Graphics::Texture2DDestroy(*this);
+    graphicsDevice->Texture2DDestroy(*this);
 }
 
 bool Texture2D::IsValid(){
-    return isComplete;
+    return graphicsDevice->Texture2DIsValid(*this);
 }
 
 void Texture2D::OnGui(){
@@ -254,24 +254,12 @@ void Texture2D::CreateLuaBind(sol::state& lua){
     );
 }
 
-void LoadSettings(const char* filePath, Texture2DSetting& settings){
-    std::ifstream stream(std::string(filePath) + ".meta");
-    if(stream.fail()) return;
-
-    cereal::JSONInputArchive archive{stream};
-    archive(CEREAL_NVP(settings));
-}
-
 Texture2DArray::Texture2DArray(const std::vector<std::string>& filePaths){
-    Graphics::Texture2DArrayCreate(*this, filePaths);
+    graphicsDevice->Texture2DArrayCreate(*this, filePaths);
 }
 
 Texture2DArray::~Texture2DArray(){
-    Graphics::Texture2DArrayDestroy(*this);
-}
-
-bool Texture2DArray::IsValid(){
-    return isComplete;
+    graphicsDevice->Texture2DArrayDestroy(*this);
 }
 
 void Texture2DArray::OnGui(){

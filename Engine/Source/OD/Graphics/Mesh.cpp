@@ -7,6 +7,8 @@
 
 namespace OD{
 
+extern GraphicsDevice* graphicsDevice;
+
 Mesh::Mesh(){
     isReadable = true;
 }
@@ -34,7 +36,7 @@ Mesh::Mesh(const Mesh& other){
 }
 
 Mesh::~Mesh(){
-    Graphics::MeshDestroy(*this);
+    graphicsDevice->MeshDestroy(*this);
 }
 
 void Mesh::OnGui(){
@@ -145,22 +147,16 @@ void Mesh::Submit(
     std::vector<IVector4>* influences
 ){
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
-
     //Destroy();
-
-    Graphics::MeshCreateOrSubmit(*this, indices, vertices, uv, normals, colors, tangents, weights, influences);
+    graphicsDevice->MeshCreateOrSubmit(*this, indices, vertices, uv, normals, colors, tangents, weights, influences);
 }
 
 void Mesh::SubmitInstancingModelMatrixs(){
-    Graphics::MeshSubmitInstancingModelMatrixs(*this);
+    graphicsDevice->MeshSubmitInstancingModelMatrixs(*this);
 }
 
 void Mesh::SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count){
-    Graphics::MeshSubmitInstancingCustomModelMatrixs(*this, modelMatrixs, count);
-}
-
-bool Mesh::IsValid(){
-    return isComplete;
+    graphicsDevice->MeshSubmitInstancingCustomModelMatrixs(*this, modelMatrixs, count);
 }
 
 Ref<Mesh> Mesh::FullScreenQuad(){
@@ -227,7 +223,55 @@ Ref<Mesh> Mesh::FullScreenQuad(){
 }
 
 Ref<Mesh> Mesh::SkyboxCube(){
-    float skyboxVertices[] = {
+    std::vector<Vector3> pos = {
+        Vector3(-1.0f,  1.0f, -1.0f),
+        Vector3(-1.0f, -1.0f, -1.0f),
+        Vector3(1.0f, -1.0f, -1.0f),
+        Vector3(1.0f, -1.0f, -1.0f),
+        Vector3(1.0f,  1.0f, -1.0f),
+        Vector3(-1.0f,  1.0f, -1.0f),
+
+        Vector3(-1.0f, -1.0f,  1.0f),
+        Vector3(-1.0f, -1.0f, -1.0f),
+        Vector3(-1.0f,  1.0f, -1.0f),
+        Vector3(-1.0f,  1.0f, -1.0f),
+        Vector3(-1.0f,  1.0f,  1.0f),
+        Vector3(-1.0f, -1.0f,  1.0f),
+
+        Vector3(1.0f, -1.0f, -1.0f),
+        Vector3(1.0f, -1.0f,  1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(1.0f,  1.0f, -1.0f),
+        Vector3(1.0f, -1.0f, -1.0f),
+
+        Vector3(-1.0f, -1.0f,  1.0f),
+        Vector3(-1.0f,  1.0f,  1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(1.0f, -1.0f,  1.0f),
+        Vector3(-1.0f, -1.0f,  1.0f),
+
+        Vector3(-1.0f,  1.0f, -1.0f),
+        Vector3(1.0f,  1.0f, -1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(1.0f,  1.0f,  1.0f),
+        Vector3(-1.0f,  1.0f,  1.0f),
+        Vector3(-1.0f,  1.0f, -1.0f),
+
+        Vector3(-1.0f, -1.0f, -1.0f),
+        Vector3(-1.0f, -1.0f,  1.0f),
+        Vector3(1.0f, -1.0f, -1.0f),
+        Vector3(1.0f, -1.0f, -1.0f),
+        Vector3(-1.0f, -1.0f,  1.0f),
+        Vector3(1.0f, -1.0f,  1.0f)
+    };  
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    mesh->isReadable = false;
+    mesh->Submit(nullptr, &pos);
+    return mesh;
+
+    /*float skyboxVertices[] = {
         // positions          
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
@@ -273,9 +317,9 @@ Ref<Mesh> Mesh::SkyboxCube(){
     };
 
     Ref<Mesh> mesh = CreateRef<Mesh>();
-    mesh->isReadable = false;
+    mesh->isReadable = false;*/
 
-    Assert(false);
+    //Assert(false);
 
     /*#ifdef USE_VAO
     glGenVertexArrays(1, &mesh->vao);
@@ -291,7 +335,7 @@ Ref<Mesh> Mesh::SkyboxCube(){
 
     mesh->vertexCount = 36;*/
 
-    return mesh;
+    //return mesh;
 }
 
 Ref<Mesh> Mesh::CenterQuad(bool useIndices){

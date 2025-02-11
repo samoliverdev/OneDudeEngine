@@ -4,9 +4,6 @@
 
 #pragma BeginPassDef
     Name MainPass
-    CullFace BACK
-    DepthTest DISABLE
-    Blend Off
 #pragma EndPassDef
 
 #if defined(VERTEX) && defined(MainPass)
@@ -32,6 +29,7 @@
     out vec4 fragColor;
 
     void main() {
+        //fragColor = vec4(1, 0, 0, 1);
         fragColor = texture(mainTex, texCoord);
     }
 #endif

@@ -162,7 +162,8 @@ void RendererList::Submit(){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("SKINNED");
-            Material::SubmitGraphicDatas(*_mat);
+            //Material::SubmitGraphicDatas(*_mat);
+            Graphics::BindMaterial(*_mat);
             if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 
@@ -184,7 +185,8 @@ void RendererList::Submit(){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("SKINNED");
             _mat->EnableKeyword("INSTANCING");
-            Material::SubmitGraphicDatas(*_mat);
+            //Material::SubmitGraphicDatas(*_mat);
+            Graphics::BindMaterial(*_mat);
             if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
         
@@ -224,7 +226,8 @@ void RendererList::Submit(){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("INSTANCING");
             _mat->EnableKeyword("SKINNED");
-            Material::SubmitGraphicDatas(*_mat);
+            //Material::SubmitGraphicDatas(*_mat);
+            Graphics::BindMaterial(*_mat);
             if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 

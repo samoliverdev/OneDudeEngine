@@ -7,7 +7,7 @@ namespace OD{
 
 class OpenGLGraphicsDevice: public GraphicsDevice{
 public:
-    virtual const GraphicsStats& GetStats() override;
+    virtual GraphicsStats& GetStats() override;
 
     virtual void Begin() override;
     virtual void End() override;
@@ -37,8 +37,6 @@ public:
     virtual void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth) override;
     virtual void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth) override;
 
-    virtual void BeginFramebuffer(Framebuffer* framebuffer) override;
-
     virtual void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) override;
@@ -57,20 +55,26 @@ public:
     virtual void MeshSubmitInstancingModelMatrixs(Mesh& mesh) override;
     virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
     virtual void MeshDestroy(Mesh& mesh) override;
+    virtual bool MeshIsValid(Mesh& mesh) override;
 
     virtual void BeginFramebuffer(Framebuffer& frambuffer, int layer) override;
     virtual void EndFramebuffer() override;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) override;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) override;
+    virtual bool FramebufferIsValid(Framebuffer& frambuffer) override;
+    virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) override;
+    virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) override;
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) override;
 
     virtual bool Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings) override;
     virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings) override;
     virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings) override;
     virtual void Texture2DDestroy(Texture2D& tex) override;
+    virtual bool Texture2DIsValid(Texture2D& tex) override;
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) override; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) override;
+    virtual bool Texture2DArrayIsValid(Texture2DArray& tex) override;
 
     virtual bool CubemapCreateFromFile(
         Cubemap& cubemap,
@@ -78,6 +82,7 @@ public:
         const char* bottom, const char* front, const char* back
     ) override; 
     virtual void CubemapDestroy(Cubemap& cubemap) override;
+    virtual bool CubemapIsValid(Cubemap& tex) override;
 
     virtual bool SubShaderCreateFromBaseSource(
         SubShader& shader,
@@ -87,6 +92,7 @@ public:
         std::vector<std::string>& errors
     ) override;
     virtual void SubShaderDestroy(SubShader& shader) override;
+    virtual bool SubShaderIsValid(SubShader& shader) override;
     virtual void SubShaderBind(SubShader& shader) override;
 
     virtual bool ShaderCreate(Shader& shader, std::string path) override;
@@ -100,6 +106,34 @@ public:
     virtual void _Begin() override;
     virtual void _End() override;
 
+    void SetColorMask(Vector4 mask);
+    void SetRenderMode(RenderMode mode);
+    void SetDepthMask(bool value);
+    void SetDepthTest(DepthTest depthTest);
+    void SetCullFace(CullFace cullFace);
+    void SetBlend(bool b);
+    int BlendModeToGL(BlendMode blendMode);
+    void SetBlendFunc(BlendMode sfactor, BlendMode dfactor);
+
+    int SubShaderGetLocation(SubShader& shader, const char* name);
+    void SubShaderSetFloat(SubShader& shader, const char* name, float value);
+    void SubShaderSetFloat(SubShader& shader, const char* name, float* value, int count);
+    void SubShaderSetInt(SubShader& shader, const char* name, int value);
+    void SubShaderSetVector2(SubShader& shader, const char* name, Vector2 value);
+    void SubShaderSetVector3(SubShader& shader, const char* name, Vector3 value);
+    void SubShaderSetVector4(SubShader& shader, const char* name, Vector4 value);
+    void SubShaderSetVector4(SubShader& shader, const char* name, Vector4* value, int count);
+    void SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4 value);
+    void SubShaderSetMatrix4(SubShader& shader, const char* name, std::vector<Matrix4>& value);
+    void SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4* value, int count);
+    void Texture2DBind(Texture2D& tex, int index);
+    void Texture2DArrayBind(Texture2DArray& tex, int index);
+    void CubemapBind(Cubemap& cubemap, int index);
+    void SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index);
+    void SubShaderSetTexture2DArray(SubShader& shader, const char* name, Texture2DArray& value, int index);
+    void SubShaderSetCubemap(SubShader& shader, const char* name, Cubemap& value, int index);
+    void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
+    
     unsigned int globalVAO;
 
     unsigned int lineVAO;
@@ -118,15 +152,11 @@ public:
 
     //Ref<SubShader> gismoShader;
     Ref<Material> gismoMaterial;
-
     Ref<Mesh> fullScreenQuad;
     Camera camera;
-
     GraphicsStats stats;
-
     Material* lastMat = nullptr;
     SubShader* lastShader = nullptr;
-
     bool begin = false;
 };
 

@@ -99,6 +99,9 @@ public:
     Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
     Vector4 ReserveOtherShadows(LightComponent light, Transform trans);
     
+    inline Framebuffer* GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
+    inline Framebuffer* GetOtherShadowAtlas(){ return otherShadowAtlas; };
+
 private:
     void RenderDirectionalShadows();
     void RenderOtherShadows();
@@ -210,6 +213,8 @@ public:
     ~CameraRenderer();
     void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings, RenderingPath renderingPath = RenderingPath::Forward);
     inline Lighting& GetLighting(){ return lighting; }
+    inline Shadows& GetShadows(){ return shadows; }
+
 private:
     Shadows shadows;
     Lighting lighting;
@@ -252,6 +257,8 @@ public:
 
     void OnDrawGizmos(Camera& cam) override;
     void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+
+    inline CameraRenderer& GetCameraRenderer(){ return cameraRenderer; }
 
 private:
     ShadowSettings shadow;

@@ -6,61 +6,47 @@
 
 namespace OD{
 
+extern GraphicsDevice* graphicsDevice;
 
-Framebuffer::Framebuffer(FrameBufferSpecification _specification){
-    specification = _specification;
+Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
+    specification = inSpecification;
     Invalidate();
 }
 
 Framebuffer::~Framebuffer(){
-    Graphics::FramebufferDestroy(*this);
+    graphicsDevice->FramebufferDestroy(*this);
 }
 
-void Framebuffer::Reload(FrameBufferSpecification _specification){
-    specification = _specification;
+void Framebuffer::Reload(FrameBufferSpecification inSpecification){
+    specification = inSpecification;
     Invalidate();
-}
-
-bool Framebuffer::IsValid(){
-    return isComplete;
 }
 
 void Framebuffer::Resize(int width, int height){
     if(specification.width == width && specification.height == height) return;
-
     specification.width = width;
     specification.height = height;
-    
     Invalidate();
 }
 
+bool Framebuffer::IsValid(){
+    return graphicsDevice->FramebufferIsValid(*this);
+}
+
 void Framebuffer::Invalidate(){
-    Graphics::FramebufferCreate(*this, specification);
-}
-
-/*
-void Framebuffer::BindColorAttachmentTexture(Shader& shader, int index){
-    Assert(colorAttachments.size() != 0);
-    shader.Bind();
-    glBindTexture(GL_TEXTURE_2D, colorAttachments[0]);
-}
-*/
-
-unsigned int Framebuffer::ColorAttachmentId(int index){ 
-    Assert(false && "Outdata");
-    return 0;
-    //Assert(index < colorAttachments.size());
-    //return colorAttachments[index]; 
-}
-
-unsigned int Framebuffer::DepthAttachmentId(){
-    Assert(false && "Outdata");
-    return 0;
-    //return depthAttachment;
+    graphicsDevice->FramebufferCreate(*this, specification);
 }
 
 int Framebuffer::ReadPixel(int attachmentIndex, int x, int y){
-    return Graphics::FramebufferReadPixel(*this, attachmentIndex, x, y);
+    return graphicsDevice->FramebufferReadPixel(*this, attachmentIndex, x, y);
+}
+
+void* Framebuffer::ColorAttachmentId(int index){
+    return graphicsDevice->FramebufferColorAttachmentId(*this, index);
+}
+
+void* Framebuffer::DepthAttachmentId(){
+    return graphicsDevice->FramebufferDepthAttachmentId(*this);
 }
 
 void Framebuffer::CreateLuaBind(sol::state& lua){
@@ -69,9 +55,9 @@ void Framebuffer::CreateLuaBind(sol::state& lua){
         "Resize", &Framebuffer::Resize,
         "IsValid", &Framebuffer::IsValid,
         //"Destroy", &Framebuffer::Destroy,
-        "Invalidate", &Framebuffer::Invalidate,
-        "ColorAttachmentId", &Framebuffer::ColorAttachmentId,
-        "DepthAttachmentId", &Framebuffer::DepthAttachmentId
+        "Invalidate", &Framebuffer::Invalidate
+        //"ColorAttachmentId", &Framebuffer::ColorAttachmentId,
+        //"DepthAttachmentId", &Framebuffer::DepthAttachmentId
     );
 }
 

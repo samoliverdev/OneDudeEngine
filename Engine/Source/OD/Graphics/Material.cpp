@@ -357,14 +357,14 @@ void Material::UpdateDatas(){
 }
 */
 
-void Material::SubmitGraphicDatas(Material& material){
-    stats.materialSubmitDatas += 1;
+//void Material::SubmitGraphicDatas(Material& material){
+//    stats.materialSubmitDatas += 1;
 
-    material.currentTextureSlot = 0;
-    material.UpdateCurrentShader();
+//    material.currentTextureSlot = 0;
+//    material.UpdateCurrentShader();
 
-    Assert(material.GetShader() != nullptr);
-    if(material.GetShader() == nullptr) return;
+//    Assert(material.GetShader() != nullptr);
+//    if(material.GetShader() == nullptr) return;
 
     /*Graphics::SetColorMask(material.currentShader->pipeline.colorMask);
     Graphics::SetCullFace(material.currentShader->GetCullFace());
@@ -377,12 +377,12 @@ void Material::SubmitGraphicDatas(Material& material){
         Graphics::SetBlend(false);
     }*/
 
-    Graphics::Device().SubShaderBind(*material.currentShader);
+//    Graphics::Device().SubShaderBind(*material.currentShader);
     //SubShader::Bind(*material.currentShader);
-    ApplyUniformTo(material, *material.currentShader, material.maps);
-    ApplyUniformTo(material, *material.currentShader, globalMaps);
-    Assert(material.currentTextureSlot < 32);
-}
+//    ApplyUniformTo(material, *material.currentShader, material.maps);
+//    ApplyUniformTo(material, *material.currentShader, globalMaps);
+//    Assert(material.currentTextureSlot < 32);
+//}
 
 void Material::CleanGlobalUniformsData(){
     globalMaps.clear();
@@ -665,7 +665,7 @@ void Material::UpdateMaps(){
 
 }
 
-void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
+//void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
     //Shader::Bind(shader);
     /*
     for(auto& i: maps){
@@ -718,7 +718,7 @@ void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unorde
             shader.SetMatrix4(i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
         }
     }*/
-}
+//}
 
 void Material::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Material>(

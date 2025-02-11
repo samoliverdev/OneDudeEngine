@@ -3,6 +3,9 @@
 
 #include <glad/glad.h>
 #include <functional>
+#include <vector>
+#include <unordered_map>
+#include <string>
 
 #define OPENGL_CHECK_ERRORS 1
 #define USE_VAO 1
@@ -28,13 +31,18 @@ struct GLMeshData{
 
 struct GLFramebufferData{
     unsigned int renderId = 0;
-    //unsigned int colorAttachment;
-    unsigned int depthAttachment;
+    unsigned int depthAttachment = 0;
     std::vector<unsigned int> colorAttachments;
 };
 
 struct GLTexture2DData{
     unsigned int id = 0;
+    unsigned int internalFormat;
+    unsigned int imageFormat;
+    unsigned int wrapS;
+    unsigned int wrapT;
+    unsigned int filterMin;
+    unsigned int filterMax;
 };
 
 struct GLTexture2DArrayData{
@@ -47,6 +55,8 @@ struct GLCubemapData{
 
 struct GLSubShaderData{
     unsigned int id = 0;
+    std::unordered_map<std::string, int> uniforms;
+    std::vector<std::string> _uniforms;
 };
 
 struct GLShaderData{

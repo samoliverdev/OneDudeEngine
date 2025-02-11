@@ -11,6 +11,7 @@ class Graphics;
 
 class OD_API Cubemap: public Asset{
     friend class Graphics;
+    friend class OpenGLGraphicsDevice;
 public:
 
     static Ref<Cubemap> CreateFromFile(
@@ -21,12 +22,10 @@ public:
     static Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap);  
     static Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap);  
 
-    bool IsValid();
-
     static void CreateLuaBind(sol::state& lua);
     
 private:
-    bool isComplete = false;
+    bool mipmap;
     CubemapDataGL; 
 };
 

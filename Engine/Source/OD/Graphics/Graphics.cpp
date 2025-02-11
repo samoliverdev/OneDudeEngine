@@ -30,22 +30,20 @@ void GraphicsModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Texture2D>();
 }
 
-GraphicsDevice* curDevice = nullptr;
-
-GraphicsDevice& Graphics::Device(){ return *curDevice; }
+GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::Initialize(){
     #ifdef OPENGL_SUPPORT 
-    curDevice = new OpenGLGraphicsDevice();
+    graphicsDevice = new OpenGLGraphicsDevice();
     #endif
 
-    curDevice->Initialize();
+    graphicsDevice->Initialize();
 }
 
 void Graphics::Shutdown(){
-    curDevice->Shutdown();
-    delete curDevice;
-    curDevice = nullptr;
+    graphicsDevice->Shutdown();
+    delete graphicsDevice;
+    graphicsDevice = nullptr;
 }
 
 void Graphics::CreateLuaBind(sol::state& lua){
@@ -133,6 +131,121 @@ void Graphics::CreateLuaBind(sol::state& lua){
         "BlitFramebuffer", Graphics::BlitFramebuffer
     );
     */
+}
+
+GraphicsStats& Graphics::GetStats(){ 
+    return graphicsDevice->GetStats(); 
+}
+
+void Graphics::Begin(){ 
+    graphicsDevice->Begin(); 
+}
+
+void Graphics::End(){ 
+    graphicsDevice->End(); 
+}
+
+void Graphics::_Begin(){
+    graphicsDevice->_Begin(); 
+}
+
+void Graphics::_End(){
+    graphicsDevice->_End(); 
+}
+
+bool Graphics::HasBegin(){ 
+    return graphicsDevice->HasBegin(); 
+}
+
+void Graphics::SetCamera(Camera& camera){ 
+    graphicsDevice->SetCamera(camera); 
+}
+
+Camera Graphics::GetCamera(){ 
+    return graphicsDevice->GetCamera(); 
+}
+
+void Graphics::Clean(float r, float g, float b, float a){ 
+    graphicsDevice->Clean(r, g, b, a); 
+}
+
+void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){ 
+    graphicsDevice->SetViewport(x, y, w, h); 
+}
+
+void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){ 
+    graphicsDevice->GetViewport(x, y, w, h); 
+}
+
+void Graphics::BindMaterial(Material& mat){ 
+    graphicsDevice->BindMaterial(mat); 
+}
+
+void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){ 
+    graphicsDevice->DrawMesh(mesh, modelMatrix); 
+}
+
+void Graphics::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){ 
+    graphicsDevice->DrawMeshSkinned(mesh, model, animMatrix, count); 
+}
+
+void Graphics::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){ 
+    graphicsDevice->DrawMeshInstancing(mesh, modelMatrixs, count); 
+}
+
+void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){ 
+    graphicsDevice->DrawMesh(mesh, mat, modelMatrix); 
+}
+
+void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count){ 
+    graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count); 
+}
+
+void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 
+    graphicsDevice->DrawMeshInstancing(mesh, mat, animMatrixs, count); 
+}
+
+void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){ 
+    graphicsDevice->DrawModel(model, modelMatrix); 
+}
+
+void Graphics::AddDrawLineCommand(Vector3 start, Vector3 end){ 
+    graphicsDevice->AddDrawLineCommand(start, end); 
+}
+
+void Graphics::DrawLinesComamnd(Vector3 color, int lineWidth){ 
+    graphicsDevice->DrawLinesComamnd(color, lineWidth); 
+}
+
+void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth){ 
+    graphicsDevice->DrawLine(start, end, color, lineWidth); 
+}
+
+void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth){ 
+    graphicsDevice->DrawLine(model, start, end, color, lineWidth); 
+}
+void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){ 
+    graphicsDevice->DrawWireCube(modelMatrix, color, lineWidth); 
+}
+
+void Graphics::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){ 
+    graphicsDevice->DrawQuadPostProcessing(src, dst, mat, pass); 
+}
+
+void Graphics::DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass){ 
+    graphicsDevice->DrawQuadPostProcessing(dst, mat, pass); 
+}
+
+void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){ 
+    graphicsDevice->BlitFramebuffer(src, dst, srcPass); 
+}
+
+void Graphics::BeginFramebuffer(Framebuffer& frambuffer, int layer){ 
+    graphicsDevice->BeginFramebuffer(frambuffer, layer); 
+}
+
+void Graphics::EndFramebuffer(){ 
+    graphicsDevice->EndFramebuffer(); 
 }
 
 }

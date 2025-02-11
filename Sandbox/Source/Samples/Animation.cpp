@@ -168,7 +168,8 @@ void AnimationSample::OnRender(float deltaTime){
     }
 
     //char2Model->materials[0]->UpdateDatas();
-    Material::SubmitGraphicDatas(*char2Model->materials[0]);
+    //Material::SubmitGraphicDatas(*char2Model->materials[0]);
+    Graphics::BindMaterial(*char2Model->materials[0]);
 
     //SubShader::Bind(*char2Model->materials[0]->GetShader());
     //char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);

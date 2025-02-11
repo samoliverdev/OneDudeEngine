@@ -11,6 +11,7 @@ namespace OD{
 // Handler Mult Shader Variants
 class OD_API Shader: public Asset{
     friend class Material;
+    friend class OpenGLGraphicsDevice;
 public:
     Shader(std::string sourcePath);
     Shader(){}
@@ -45,6 +46,8 @@ private:
     bool isComplete = false;
     ShaderDataGL;
 
+    bool Create(std::string path);
+    void Destroy();
     bool InitPass(int pass);
     void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass);
 };

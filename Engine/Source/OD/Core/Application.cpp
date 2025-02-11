@@ -90,7 +90,7 @@ bool Application::Run(){
         }
         //Platform::SwapBuffers();
         Platform::PreUpdate();
-        Graphics::Device()._Begin();
+        Graphics::_Begin();
         {
             OD_PROFILE_SCOPE("Application::Run::OnRender");
             for(auto i: modules) i->OnRender(deltaTime);
@@ -108,7 +108,7 @@ bool Application::Run(){
         onFrameEnd.Invoke();
         }
 
-        Graphics::Device()._End();
+        Graphics::_End();
         Platform::LateUpdate();
         Platform::SwapBuffers();
         }
@@ -134,12 +134,12 @@ void Application::OnExit(){
 
     onFrameEnd.Clean();
 
+    AssetManager::Get().UnloadAll();
+    AssetTypesDB::Get().assetFuncs.clear();
+
     Graphics::Shutdown();
     //Input::_Shutdown(0);
     Platform::SystemShutdown(0);
-
-    AssetManager::Get().UnloadAll();
-    AssetTypesDB::Get().assetFuncs.clear();
 }
 
 void Application::Quit(){
