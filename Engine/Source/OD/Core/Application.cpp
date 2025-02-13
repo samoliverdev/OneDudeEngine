@@ -39,6 +39,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
+    Graphics::SelectGraphicsDevice();
+
     if(Platform::SystemStartup(
         appConfig.name.c_str(), 
         appConfig.startPosX, 

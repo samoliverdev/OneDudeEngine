@@ -78,6 +78,7 @@ private:
         #endif
     };
 
+    static void SelectGraphicsDevice();
     static void Initialize();
     static void Shutdown();
     static void _Begin();

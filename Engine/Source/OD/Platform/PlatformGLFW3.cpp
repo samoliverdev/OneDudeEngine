@@ -6,16 +6,16 @@
 #include "OD/Core/Application.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_glfw.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
 #include <ImGuizmo/ImGuizmo.h>
+#include <imgui/backends/imgui_impl_glfw.h>
 
-#include "OpenGL/GL.h"
+#define GLFW_INCLUDE_NONE
+//#include "OpenGL/GL.h"
 #include <GLFW/glfw3.h>
 
-#define OPENGL_DEBUG 1
+/*#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
-#define OpenglMinorVer 6
+#define OpenglMinorVer 6*/
 
 namespace OD{
 
@@ -70,8 +70,14 @@ void imguiOnInit(GLFWwindow* window){
 
     ImGuiLayer::SetDarkTheme();
 
+    auto graphicsDeviceInfo = graphicsDevice->GetInfo();
+
+    if(graphicsDeviceInfo.apiName == "OpenGL"){
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+    }
+
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    //ImGui_ImplGlfw_InitForOpenGL(window, true);
     //ImGui_ImplOpenGL3_Init("#version 150");
     //graphicsDevice->ImGuiInit();
 }
@@ -135,7 +141,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset){
     //Input::ProcessMouseWheel(xoffset);
 }
 
-#if OPENGL_DEBUG
+/*#if OPENGL_DEBUG
 void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param){
 	
 	std::string sourceStr;
@@ -218,7 +224,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
     LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
 }
-#endif
+#endif*/
 
 bool Platform::SystemStartup(const char* applicationName, int x, int y, int width, int height){
     if(!glfwInit()){
@@ -226,14 +232,36 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
         return false;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenglMajorVer);
+    auto graphicsDeviceInfo = graphicsDevice->GetInfo();
+
+    if(graphicsDeviceInfo.apiName == "OpenGL"){
+        if(graphicsDeviceInfo.version == 4){
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
+            #if OPENGL_DEBUG
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 0);
+            #endif
+        } else if(graphicsDeviceInfo.version == 3){
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
+        } else {
+            Assert(false && "OpenGL Version not suppoted");
+        }
+    }
+
+    /*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenglMajorVer);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenglMinorVer);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #if OPENGL_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    #endif
-    glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GL_FALSE);
+    #endif*/
+    
+    glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GLFW_FALSE);
 
     //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
 
@@ -256,15 +284,20 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
         return false;
     }
 
-    glfwMakeContextCurrent(window);
     glfwSwapInterval(0); //vsync on
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    #if OPENGL_DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(DebugCallback, NULL);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-    #endif
+    if(graphicsDeviceInfo.apiName == "OpenGL"){
+        glfwMakeContextCurrent(window);
+        graphicsDevice->LoadContext(glfwGetProcAddress);
+        //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+        /*if(graphicsDeviceInfo.version == 4){
+            #if OPENGL_DEBUG
+            glEnable(GL_DEBUG_OUTPUT);
+            glDebugMessageCallback(DebugCallback, NULL);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+            #endif
+        }*/
+    }
 
     glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
     glfwSetCursorPosCallback(window, MouseCallback); 

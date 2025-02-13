@@ -32,11 +32,13 @@ void GraphicsModuleInit(){
 
 GraphicsDevice* graphicsDevice = nullptr;
 
-void Graphics::Initialize(){
+void Graphics::SelectGraphicsDevice(){
     #ifdef OPENGL_SUPPORT 
     graphicsDevice = new OpenGLGraphicsDevice();
     #endif
+}
 
+void Graphics::Initialize(){
     graphicsDevice->Initialize();
 }
 

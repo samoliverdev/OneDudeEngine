@@ -112,6 +112,7 @@
         "hash_map": "cpp",
         "numbers": "cpp",
         "semaphore": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "glad.c": "cpp"
     }
 }

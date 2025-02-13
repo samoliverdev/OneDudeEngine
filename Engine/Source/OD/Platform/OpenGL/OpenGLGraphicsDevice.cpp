@@ -28,6 +28,15 @@ GLenum meshDrawModeLookup[] = {
     //GL_QUADS
 };  
 
+OpenGLGraphicsDevice::OpenGLGraphicsDevice(){
+    info.apiName = "OpenGL";
+    info.version = OpenGLVersion;
+}
+
+void OpenGLGraphicsDevice::LoadContext(void* data){
+    gladLoadGLLoader((GLADloadproc)data);
+}
+
 GraphicsStats& OpenGLGraphicsDevice::GetStats(){ 
     return stats; 
 }
@@ -35,6 +44,91 @@ GraphicsStats& OpenGLGraphicsDevice::GetStats(){
 GraphicsDeviceInfo OpenGLGraphicsDevice::GetInfo(){
     return info;
 }
+
+#if OPENGL_DEBUG
+void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param){
+	
+	std::string sourceStr;
+	switch(source) {
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		sourceStr = "WindowSys";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		sourceStr = "App";
+		break;
+	case GL_DEBUG_SOURCE_API:
+		sourceStr = "OpenGL";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		sourceStr = "ShaderCompiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		sourceStr = "3rdParty";
+		break;
+	case GL_DEBUG_SOURCE_OTHER:
+		sourceStr = "Other";
+		break;
+	default:
+		sourceStr = "Unknown";
+	}
+	
+	std::string typeStr;
+	switch(type) {
+	case GL_DEBUG_TYPE_ERROR:
+		typeStr = "Error";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		typeStr = "Deprecated";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		typeStr = "Undefined";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		typeStr = "Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		typeStr = "Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		typeStr = "Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		typeStr = "PushGrp";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		typeStr = "PopGrp";
+		break;
+	case GL_DEBUG_TYPE_OTHER:
+		typeStr = "Other";
+		break;
+	default:
+		typeStr = "Unknown";
+	}
+	
+	std::string sevStr;
+	switch(severity) {
+	case GL_DEBUG_SEVERITY_HIGH:
+		sevStr = "HIGH";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		sevStr = "MED";
+		break;
+	case GL_DEBUG_SEVERITY_LOW:
+		sevStr = "LOW";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		sevStr = "NOTIFY";
+		break;
+	default:
+		sevStr = "UNK";
+	}
+
+    //if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER) return;
+
+    //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
+    LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
+}
+#endif
 
 void OpenGLGraphicsDevice::Initialize(){
     auto CreateLineVAO = [&](unsigned int* vao, unsigned int* vbo, int vertexCount){
@@ -128,10 +222,14 @@ void OpenGLGraphicsDevice::Initialize(){
         #endif
     };
 
-    info.apiName = "OpenGL";
-
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     ImGui_ImplOpenGL3_Init("#version 150");
+
+    #if OPENGL_DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(DebugCallback, NULL);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+    #endif
 
     LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
     LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));
@@ -1852,11 +1950,18 @@ bool OpenGLGraphicsDevice::Texture2DArrayCreate(Texture2DArray& tex, const std::
 
         datas.push_back(data);
     }
+
+    #if OpenGLVersion == 4
+    Assert(false);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
+    glCheckError();
+    #endif
+
+    #if OpenGLVersion == 3
     //Fixme: make this complatible with opengl 3.3
     Assert(false);
-    //glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, internalFormat, width, height, filePaths.size());
-    glCheckError();
-   
+    #endif
+    
     int _i = 0;
     for(auto i: datas){
         glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, _i, width, height, 1, imageFormat, GL_UNSIGNED_BYTE, i);

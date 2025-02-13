@@ -25,12 +25,15 @@ struct GraphicsStats;
 
 struct GraphicsDeviceInfo{
     std::string apiName;
+    int version;
 };
 
 class OD_API GraphicsDevice {
 public:
     virtual GraphicsStats& GetStats() = 0;
     virtual GraphicsDeviceInfo GetInfo() = 0;
+
+    virtual void LoadContext(void* data) = 0;
 
     virtual void Begin() = 0;
     virtual void End() = 0;

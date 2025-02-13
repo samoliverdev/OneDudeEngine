@@ -1,8 +1,10 @@
 #include "Boids.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
 #include <fstream>
+
+#undef max
+#undef min
 
 const float boundsSize = 200; 
 

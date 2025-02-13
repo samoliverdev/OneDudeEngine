@@ -1,14 +1,29 @@
 #pragma once
 #if defined(OPENGL_SUPPORT)
 
-#include <glad/glad.h>
+#define OpenGL46
+//#define OpenGL33
+//#define OpenGLEmscripten
+
+#if defined(OpenGL46)
+    #include <glad46Core/glad.h>
+    #define OpenGLVersion 4
+    #define OPENGL_CHECK_ERRORS 1
+#elif defined(OpenGL33)
+    #include <glad33Core/glad.h>
+    #define OpenGLVersion 3
+    #define OPENGL_CHECK_ERRORS 0
+#elif defined(OpenGLEmscripten)
+    #define OpenGLVersion 3
+    #define OPENGL_CHECK_ERRORS 0
+#endif
+
+#define USE_VAO 1
+
 #include <functional>
 #include <vector>
 #include <unordered_map>
 #include <string>
-
-#define OPENGL_CHECK_ERRORS 1
-#define USE_VAO 1
 
 struct GLMeshData{
     //#ifdef USE_VAO
@@ -79,11 +94,11 @@ struct GLMaterialData{
 GLenum glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 
 #if OPENGL_CHECK_ERRORS
-#define glCheckError() glCheckError_(__FILE__, __LINE__)
-#define glCheckError2(...) glCheckError_(__FILE__, __LINE__, __VA_ARGS__)
+    #define glCheckError() glCheckError_(__FILE__, __LINE__)
+    #define glCheckError2(...) glCheckError_(__FILE__, __LINE__, __VA_ARGS__)
 #else
-#define glCheckError()
-#define glCheckError2(...)
+    #define glCheckError()
+    #define glCheckError2(...)
 #endif
 
 #else

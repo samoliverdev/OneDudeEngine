@@ -1,8 +1,10 @@
 #include "ProceduralTerrain2.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
 #include "Ultis/FastNoiseLiteCpp.h"
+
+#undef max
+#undef min
 
 struct ObjectsBuck{
     std::string id;

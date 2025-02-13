@@ -7,6 +7,10 @@ namespace OD{
 
 class OpenGLGraphicsDevice: public GraphicsDevice{
 public:
+    OpenGLGraphicsDevice();
+
+    virtual void LoadContext(void* data) override;
+
     virtual GraphicsStats& GetStats() override;
     virtual GraphicsDeviceInfo GetInfo() override;
 

@@ -114,11 +114,13 @@ endif()
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
     Engine/ThirdParty/tinyfiledialogs/*.c
-    Engine/ThirdParty/glad/*.c 
+    #Engine/ThirdParty/glad/*.c 
     Engine/ThirdParty/stb/*.c 
     Engine/ThirdParty/cgltf/*.c
     #engine/ThirdParty/glm/*.cpp
+    
     Engine/ThirdParty/imgui/*.cpp 
+
     Engine/ThirdParty/ImGuizmo/*.cpp 
     Engine/ThirdParty/entt/*.cpp
     Engine/Source/*.cpp

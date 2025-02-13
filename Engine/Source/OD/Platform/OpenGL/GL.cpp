@@ -28,4 +28,13 @@ GLenum glCheckError_(const char *file, int line, std::function<void()> callback)
 
     return errorCode;
 }
+
+#if defined(OpenGL46)
+    #include <glad46Core/glad.c>
+#elif defined(OpenGL33)
+    #include <glad33Core/glad.c>
+#endif
+
+
+
 #endif
