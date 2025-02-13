@@ -326,8 +326,6 @@ bool Platform::PumpMessages(){
     return true; 
 }
 
-#include <windows.h>
-
 void Platform::SwapBuffers(){
     {
     /*OD_PROFILE_SCOPE("Platform::glFlush");

@@ -339,7 +339,8 @@ bool Navmesh::BakeSingle(Scene* scene, AABB bounds){
 		return false;
 	}
 
-	RasterizeScene(*scene, AABB(Vector3Zero, 10, 10, 10));
+	AABB aabb = AABB(Vector3Zero, 10, 10, 10);
+	RasterizeScene(*scene, aabb);
 	
 	/*auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshView){
@@ -901,7 +902,8 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 		return 0;
 	}
 
-	RasterizeScene(*scene, AABB(Vector3Zero, 10, 10, 10));
+	auto aabb = AABB(Vector3Zero, 10, 10, 10);
+	RasterizeScene(*scene, aabb);
 	/*
 	auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshView){

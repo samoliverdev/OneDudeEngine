@@ -7,7 +7,7 @@ namespace OD{
 class OD_API RendererStatsPanel: public EditorPanel{
 public: 
     RendererStatsPanel();
-    inline void OnGui() override;
+    void OnGui() override;
 };
 
 }

@@ -14,7 +14,9 @@ void LuaScriptModuleInit(){
 void LuaScriptComponent::OnGui(Entity& e, Scene& scene){
     LuaScriptComponent& script = scene.GetComponent<LuaScriptComponent>(e);
     
-    ImGui::DrawPath(std::string("scriptPath"), script.scriptPath, std::vector<std::string>{".lua"});
+    std::string label = "scriptPath";
+    std::vector<std::string> extension = std::vector<std::string>{".lua"};
+    ImGui::DrawPath(label, script.scriptPath, extension);
 }
 
 LuaScriptSystem::LuaScriptSystem(Scene* inScene):System(inScene){

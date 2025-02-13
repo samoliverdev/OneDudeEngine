@@ -1,8 +1,8 @@
 #include "Platform.h"
 #include "OD/Base.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
-#include <Windows.h>
 #include <filesystem>
+#include <string.h>
 
 namespace OD{
 

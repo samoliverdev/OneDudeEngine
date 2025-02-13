@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD 17)
 if(WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
+if(UNIX)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -159,7 +162,7 @@ target_link_libraries(Engine PUBLIC
     soloud
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
-    Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletCollision BulletSoftBody LinearMath
+    Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     #EASTL
 )
 

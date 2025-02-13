@@ -148,9 +148,9 @@ void RegisterMathLuaBindings(sol::state& lua){
 
 void CoreModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind([](sol::state& lua){
-        lua["LogInfo"] = [](std::string& text){ LogInfo(text.c_str()); };
-        lua["LogWarning"] = [](std::string& text){ LogWarning(text.c_str()); };
-        lua["LogError"] = [](std::string& text){ LogError(text.c_str()); };
+        lua["LogInfo"] = [](const std::string& text){ LogInfo(text.c_str()); };
+        lua["LogWarning"] = [](const std::string& text){ LogWarning(text.c_str()); };
+        lua["LogError"] = [](const std::string& text){ LogError(text.c_str()); };
     });
     LuaBindsDB::Get().RegisterLuaBind(RegisterMathLuaBindings);
     LuaBindsDB::Get().RegisterLuaBind<Color>();

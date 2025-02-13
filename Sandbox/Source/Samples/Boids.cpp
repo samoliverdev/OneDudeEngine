@@ -63,7 +63,7 @@ struct BoidSystem: public OD::System{
                 velocity += ((coheshionSum / (float)count) - trans.LocalPosition()) * coheshionWeight;
                 velocity += (alignmentSum / (float)count) * alignmentWeight;
             }
-            if(min(min(//math::min
+            if(math::min(math::min(//math::min
                 (boundsSize) - math::abs(trans.LocalPosition().x),
                 (boundsSize) - math::abs(trans.LocalPosition().y)),
                 (boundsSize) - math::abs(trans.LocalPosition().z))

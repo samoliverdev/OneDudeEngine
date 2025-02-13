@@ -1,6 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 namespace OD{
 

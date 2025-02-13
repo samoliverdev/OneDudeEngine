@@ -765,6 +765,8 @@ void OpenGLGraphicsDevice::AddDrawLineCommand(Vector3 start, Vector3 end){
 }
 
 void OpenGLGraphicsDevice::DrawLinesComamnd(Vector3 color, int lineWidth){
+    if(lineWidth > 1) lineWidth = 1;
+
     //drawCalls += 1;
     stats.vertices += lineCommandsData.size()/3;
     stats.tris += 0;

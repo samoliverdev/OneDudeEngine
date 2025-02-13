@@ -35,7 +35,7 @@ void InspectorPanel::OnGui(){
     ImGui::End();
 }
 
-template<typename T>
+/*template<typename T>
 void DrawComponent(Entity e, const char* name){
     const ImGuiTreeNodeFlags treeNodeFlags = 
         ImGuiTreeNodeFlags_DefaultOpen 
@@ -77,7 +77,7 @@ void DrawComponent(Entity e, const char* name){
             scene->RemoveComponent<T>(e);
         }
     }
-}
+}*/
 
 template<typename T, typename UIFunction>
 void DrawComponent(Entity e, Scene& scene, const char* name, UIFunction function){

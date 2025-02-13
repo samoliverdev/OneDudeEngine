@@ -67,18 +67,18 @@ inline void GenerateByArea(const AreaSpawnSettings& areaSpawnSettings, const Ref
 }
 
 inline void SpawnObjectsRef(/*PhysicsSystem& physicsSystem,*/ Scene& scene, Entity& root, Entity terrain, ObjectsBuck& objectsBuck, std::vector<ObjectsRef>& out){
-    for(ObjectsRef& or: out){
+    for(ObjectsRef _or: out){
         Entity e = scene.AddEntity();
         scene.SetParent(root,  e);
 
         TransformComponent& terrainTrans = scene.GetComponent<TransformComponent>(terrain);
         TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
         float scale = 5000.0f / ((1024.0f*2.0f)+1.0f);
-        trans.Position(terrainTrans.TransformPoint(or.pos * Vector3(scale, 1, scale)));
+        trans.Position(terrainTrans.TransformPoint(_or.pos * Vector3(scale, 1, scale)));
         //trans.LocalPosition(or.pos);
-        trans.LocalEulerAngles(or.euler);
+        trans.LocalEulerAngles(_or.euler);
         //trans.LocalScale(Vector3One * 25.0f);
-        trans.LocalScale(or.scale);
+        trans.LocalScale(_or.scale);
         
         /*RayResult hit;
         if(physicsSystem.Raycast(trans.Position() + Vector3(0, 2000, 0), Vector3Down * 10000.0f, hit)){
@@ -87,7 +87,7 @@ inline void SpawnObjectsRef(/*PhysicsSystem& physicsSystem,*/ Scene& scene, Enti
 
         auto& staticRenderer = scene.AddComponent<StaticRendererComponent>(e);
         auto& modelRenderer = scene.AddComponent<ModelRendererComponent>(e);
-        modelRenderer.SetModel(objectsBuck.models[or.objectsIndex]);
+        modelRenderer.SetModel(objectsBuck.models[_or.objectsIndex]);
     }
 }
 
@@ -125,7 +125,7 @@ Ref<Heightmap> ProceduralTerrain2::GenerateHeightmap(int mapWidth, int mapHeight
         for(int x = 0; x < mapWidth; x++){
             float _x = x / (float)mapWidth * 2 - 1;
 			float _y = y / (float)mapHeight * 2 - 1;
-            float falloff = max(math::abs(_x), math::abs(_y));
+            float falloff = math::max(math::abs(_x), math::abs(_y));
             float a = 3;
 		    float b = 2.2f;
 		    falloff = 1 - math::pow(falloff, a) / (math::pow(falloff, a) + math::pow(b - b * falloff, a));

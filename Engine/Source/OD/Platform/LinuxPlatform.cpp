@@ -1,26 +1,26 @@
-#ifdef _WIN32
+#ifdef __linux__
 #include "Platform.h"
 #include "OD/Base.h"
-#include <Windows.h>
+#include <dlfcn.h>
 
 namespace OD{
 
 void* Platform::LoadDynamicLibrary(const char* dll){
-    HMODULE result = LoadLibraryA(dll);
+    void* result = dlopen(dll, RTLD_NOW);
     Assert(result && "Failed to load dll");
     return result;
 }
 
 void* Platform::LoadDynamicFunction(void* dll, const char* funcName){
-    FARPROC proc = GetProcAddress((HMODULE)dll, funcName);
+    void* proc = dlsym(dll, funcName);
     Assert(proc && "Failed to load function from dll");
-    return (void*)proc;
+    return proc;
 }
 
 bool Platform::FreeDynimicLibrary(void* dll){
-    BOOL freeResult = FreeLibrary((HMODULE)dll);
-    Assert(freeResult && "Failed to FreeLibrary");
-    return (bool)freeResult;
+    int freeResult = dlclose(dll);
+    Assert(freeResult == 0 && "Failed to FreeLibrary");
+    return freeResult == 0;
 }
 
 }

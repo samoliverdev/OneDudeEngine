@@ -385,7 +385,9 @@ void Editor::DrawMainMenuBar(){
 
                     std::string cmd = exe.string() + " " + path.c_str();
                     //ExecultCmd(cmd.c_str());
+                    #ifdef _WIN32
                     WinExec(cmd.c_str(), SW_HIDE); 
+                    #endif
 
                     Application::Quit();
                 }
