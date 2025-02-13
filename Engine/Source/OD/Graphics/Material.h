@@ -24,11 +24,17 @@ struct OD_API MaterialMap{
     Ref<Texture2DArray> textureArray;
     Ref<Cubemap> cubemap;
 
+    struct Vec{
+        Vector4 vector;
+        bool vectorIsColor;
+    };
+
     union{
-        struct{
+        /*struct{
             Vector4 vector;
             bool vectorIsColor;
-        };
+        };*/
+        Vec vec;
 
         Matrix4 matrix;
 
@@ -196,16 +202,16 @@ void MaterialMap::save(Archive& ar) const{
         ArchiveDump(ar, CEREAL_NVP(valueFloatMax));
     }
     if(type == MaterialMap::Type::Vector2){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Vector3){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Vector4){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Texture){
         std::string texPath = texture == nullptr ? "" : texture->Path();
@@ -225,16 +231,16 @@ void MaterialMap::load(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(valueFloatMax));
     }
     if(type == MaterialMap::Type::Vector2){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Vector3){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Vector4){
-        ArchiveDump(ar, CEREAL_NVP(vector));
-        ArchiveDump(ar, CEREAL_NVP(vectorIsColor));
+        ArchiveDump(ar, CEREAL_NVP(vec.vector));
+        ArchiveDump(ar, CEREAL_NVP(vec.vectorIsColor));
     }
     if(type == MaterialMap::Type::Texture){
         std::string texPath = texture == nullptr ? "" : texture->Path();

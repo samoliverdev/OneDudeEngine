@@ -104,6 +104,14 @@
         "fft": "cpp",
         "mprealsupport": "cpp",
         "expected": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "internal.h": "c",
+        "*.tcc": "cpp",
+        "cwctype": "cpp",
+        "string_view": "cpp",
+        "hash_map": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "cfenv": "cpp"
     }
 }

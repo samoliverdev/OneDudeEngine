@@ -101,37 +101,37 @@ void Material::SetFloat(const char* name, float* value, int count){
 void Material::SetVector2(const char* name, Vector2 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector2;
-    map.vector = Vector4(value.x, value.y, 0, 1);
+    map.vec.vector = Vector4(value.x, value.y, 0, 1);
     isDirty = true;
 }
 
 void Material::SetVector3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
-    map.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vec.vector = Vector4(value.x, value.y, value.z, 1);
     isDirty = true;
 }
 
 void Material::SetVector4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
-    map.vector = value;
+    map.vec.vector = value;
     isDirty = true;
 }
 
 void Material::SetColor3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
-    map.vector = Vector4(value.x, value.y, value.z, 1);
-    map.vectorIsColor = true;
+    map.vec.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vec.vectorIsColor = true;
     isDirty = true;
 }
 
 void Material::SetColor4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
-    map.vector = value;
-    map.vectorIsColor = true;
+    map.vec.vector = value;
+    map.vec.vectorIsColor = true;
     isDirty = true;
 }
 
@@ -211,19 +211,19 @@ void Material::SetGlobalFloat(const char* name, float* value, int count){
 void Material::SetGlobalVector2(const char* name, Vector2 value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Vector2;
-    map.vector = Vector4(value.x, value.y, 0, 1);
+    map.vec.vector = Vector4(value.x, value.y, 0, 1);
 }
 
 void Material::SetGlobalVector3(const char* name, Vector3 value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Vector3;
-    map.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vec.vector = Vector4(value.x, value.y, value.z, 1);
 }
 
 void Material::SetGlobalVector4(const char* name, Vector4 value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Vector4;
-    map.vector = value;
+    map.vec.vector = value;
 }
 
 void Material::SetGlobalVector4(const char* name, Vector4* value, int count){
@@ -441,31 +441,31 @@ void Material::OnGui(){
         }
 
         if(map.type == MaterialMap::Type::Vector2){
-            if(ImGui::DragFloat2(name.c_str(), &map.vector[0])){
+            if(ImGui::DragFloat2(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
             }
         }
         
-        if(map.type == MaterialMap::Type::Vector3 && map.vectorIsColor == false){
-            if(ImGui::DragFloat3(name.c_str(), &map.vector[0])){
+        if(map.type == MaterialMap::Type::Vector3 && map.vec.vectorIsColor == false){
+            if(ImGui::DragFloat3(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
             }
         }
 
-        if(map.type == MaterialMap::Type::Vector4 && map.vectorIsColor == false){
-            if(ImGui::DragFloat4(name.c_str(), &map.vector[0])){
+        if(map.type == MaterialMap::Type::Vector4 && map.vec.vectorIsColor == false){
+            if(ImGui::DragFloat4(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
             }
         }
 
-        if(map.type == MaterialMap::Type::Vector3 && map.vectorIsColor == true){
-            if(ImGui::ColorEdit3(name.c_str(), &map.vector[0])){
+        if(map.type == MaterialMap::Type::Vector3 && map.vec.vectorIsColor == true){
+            if(ImGui::ColorEdit3(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
             }
         }
 
-        if(map.type == MaterialMap::Type::Vector4 && map.vectorIsColor == true){
-            if(ImGui::ColorEdit4(name.c_str(), &map.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
+        if(map.type == MaterialMap::Type::Vector4 && map.vec.vectorIsColor == true){
+            if(ImGui::ColorEdit4(name.c_str(), &map.vec.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
                 toSave = true;
             }
         }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Serialization.h"
+#include <fstream>
 #include <cereal/details/helpers.hpp>
 #include <cereal/access.hpp>
 
@@ -23,7 +24,7 @@ namespace OD{
 
 template<class Archive>
 void LoadArchive(const char* path, Archive& data){
-    std::ifstream os(projectSettingsPath);
+    std::ifstream os(path);
     cereal::JSONOutputArchive ar(os);
     ArchiveDumpNVP(ar, data);
 }

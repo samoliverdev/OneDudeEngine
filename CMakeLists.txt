@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if(WIN32)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -96,9 +99,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${RUN_TREE})
 
 project(Engine)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     #using Clang
-else() 
+#else() 
+
+if(WIN32)
     add_compile_options(/bigobj)
     add_compile_options(/MP)
     #add_compile_options(/arch:AVX2)

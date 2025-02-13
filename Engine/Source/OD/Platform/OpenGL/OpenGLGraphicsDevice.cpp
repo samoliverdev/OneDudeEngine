@@ -554,13 +554,13 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                 SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
             }
             if(map.type == MaterialMap::Type::Vector2){
-                SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vector.x, map.vector.y));
+                SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
             }
             if(map.type == MaterialMap::Type::Vector3){
-                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vector.x, map.vector.y, map.vector.z));
+                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
             }
             if(map.type == MaterialMap::Type::Vector4){
-                SubShaderSetVector4(shader, i.first.c_str(), map.vector);
+                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
             }
             if(map.type == MaterialMap::Type::Matrix4){
                 SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
