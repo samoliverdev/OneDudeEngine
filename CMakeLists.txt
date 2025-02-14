@@ -1,21 +1,30 @@
 cmake_minimum_required(VERSION 3.16)
 
-#----------------Engine------------------
+option(ENGINE_SHARED_LIBRARY "" TRUE)
+option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
+option(BUILD_EDITOR "BUILD_EDITOR" TRUE)
+option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" TRUE)
 
+#----------------Engine------------------
 set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 if(WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif()
-if(UNIX)
+    add_compile_options(/bigobj)
+    add_compile_options(/MP)
+    #add_compile_options(/arch:AVX2)
+elseif(UNIX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR})
+if(EMSCRIPTEN)
+    message("Using emscripten!")
+    #option(ENGINE_SHARED_LIBRARY "" OFF)
+    set(ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(BUILD_EDITOR OFF CACHE BOOL "" FORCE)
+    set(BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
+endif()
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -62,9 +71,15 @@ set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 set(SOL2_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
+if(EMSCRIPTEN)
+    message("Using emscripten!2")
+    message(${ENGINE_SHARED_LIBRARY})
+else()  
+    add_subdirectory(Engine/ThirdParty/glfw)
+endif()
+
 add_subdirectory(Engine/ThirdParty/lua-5.1.5)
 add_subdirectory(Engine/ThirdParty/sol2)
-add_subdirectory(Engine/ThirdParty/glfw)
 add_subdirectory(Engine/ThirdParty/assimp)
 add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
@@ -73,10 +88,7 @@ add_subdirectory(Engine/ThirdParty/recastnavigation)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
 
-option(ENGINE_SHARED_LIBRARY "" TRUE)
-
 set(DEFAULT_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/" CACHE STRING "")
-
 MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
 
 set(CMAKE_DEBUG_POSTFIX "")
@@ -101,16 +113,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${RUN_TREE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${RUN_TREE})
 
 project(Engine)
-
-#if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    #using Clang
-#else() 
-
-if(WIN32)
-    add_compile_options(/bigobj)
-    add_compile_options(/MP)
-    #add_compile_options(/arch:AVX2)
-endif()
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
     Engine/ThirdParty/tinyfiledialogs/*.c
@@ -167,8 +169,13 @@ target_link_libraries(Engine PUBLIC
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     #EASTL
 )
+if(EMSCRIPTEN)
+    target_compile_definitions(Engine PUBLIC -DEMSCRIPTEN=1)
+    set_target_properties(Engine PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1")
+endif()
 
-#----------------Sandbox------------------
+#----------------Editor------------------
+if(BUILD_EDITOR)
 project(Editor)
 
 file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
@@ -186,9 +193,10 @@ add_custom_command(
     TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
 )
+endif()
 
 #----------------Sandbox------------------
-option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
+
 
 if(BUILD_SANDBOX)
 
@@ -203,9 +211,16 @@ add_custom_command(
     TARGET Sandbox POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
 )
+if(EMSCRIPTEN)
+    set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
+    target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
+endif()
+
+endif()
 
 #----------------Dynamic module------------------
 
+if(BUILD_DYNAMIC_MODULE)
 project(DynamicModule)
 file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/Source/*.cpp)
 add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
@@ -217,5 +232,4 @@ target_include_directories(DynamicModule PUBLIC Engine/Source/)
 #target_include_directories(dynamic_module PUBLIC game/src/)
 target_link_libraries(DynamicModule Engine)
 #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-
 endif()

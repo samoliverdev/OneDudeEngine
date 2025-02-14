@@ -4,7 +4,12 @@
 #include "OD/Defines.h"
 #include "OD/Base.h"
 
-GLenum glCheckError_(const char *file, int line, std::function<void()> callback){
+#ifdef __EMSCRIPTEN__
+int glCheckError_(const char *file, int line, std::function<void()> callback){
+    return 1;
+}
+#else
+int glCheckError_(const char *file, int line, std::function<void()> callback){
     GLenum errorCode;
     while ((errorCode = glGetError()) != GL_NO_ERROR){
         std::string error = "OTHER";
@@ -28,6 +33,7 @@ GLenum glCheckError_(const char *file, int line, std::function<void()> callback)
 
     return errorCode;
 }
+#endif
 
 #if defined(OpenGL46)
     #include <glad46Core/glad.c>

@@ -1,19 +1,29 @@
 #pragma once
 #if defined(OPENGL_SUPPORT)
 
-#define OpenGL46
-//#define OpenGL33
-//#define OpenGLEmscripten
+#ifdef __EMSCRIPTEN__
+#define OpenGLEmscripten
+#else
+//#define OpenGL46
+#define OpenGL33
+#endif
 
 #if defined(OpenGL46)
     #include <glad46Core/glad.h>
     #define OpenGLVersion 4
     #define OPENGL_CHECK_ERRORS 1
-#elif defined(OpenGL33)
+#endif
+#if defined(OpenGL33)
     #include <glad33Core/glad.h>
     #define OpenGLVersion 3
     #define OPENGL_CHECK_ERRORS 0
-#elif defined(OpenGLEmscripten)
+ #endif
+#if defined(OpenGLEmscripten)
+    #include <emscripten.h>
+    #include <GL/gl.h>
+    #include <GLES3/gl3.h>
+    //#define GL_GLEXT_PROTOTYPES
+    //#define EGL_EGLEXT_PROTOTYPES
     #define OpenGLVersion 3
     #define OPENGL_CHECK_ERRORS 0
 #endif
@@ -91,7 +101,7 @@ struct GLMaterialData{
 #define ShaderDataGL GLShaderData glData;
 #define MaterialDataGL GLMaterialData glData;
 
-GLenum glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
+int glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 
 #if OPENGL_CHECK_ERRORS
     #define glCheckError() glCheckError_(__FILE__, __LINE__)

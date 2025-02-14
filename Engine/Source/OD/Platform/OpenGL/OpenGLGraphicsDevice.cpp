@@ -34,7 +34,10 @@ OpenGLGraphicsDevice::OpenGLGraphicsDevice(){
 }
 
 void OpenGLGraphicsDevice::LoadContext(void* data){
+    #ifdef __EMSCRIPTEN__
+    #else
     gladLoadGLLoader((GLADloadproc)data);
+    #endif
 }
 
 GraphicsStats& OpenGLGraphicsDevice::GetStats(){ 
@@ -1429,11 +1432,15 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
         if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F) hdr = true;
     
         if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
+            #if defined(OpenGLEmscripten)
+            Assert(false && "not supported");
+            #else
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorAttachment);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, specification.sample, internalFormat, specification.width, specification.height, GL_TRUE);
             glCheckError();
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment, 0);
             glCheckError();
+            #endif
         } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
             glBindTexture(GL_TEXTURE_2D, colorAttachment);
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
@@ -1455,7 +1462,13 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glCheckError();
+            #if defined(OpenGLEmscripten)
+            Assert(false && "not supported");
+            //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
+            //glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
+            #else
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
+            #endif
             glCheckError();
         }
     
@@ -1491,11 +1504,15 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
         glGenTextures(1, &frambuffer.glData.depthAttachment);
     
         if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
+            #if defined(OpenGLEmscripten)
+            Assert(false && "not supported");
+            #else
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frambuffer.glData.depthAttachment);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, specification.sample, internalFormat, specification.width, specification.height, GL_TRUE);
             glCheckError();
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, frambuffer.glData.depthAttachment, 0);
             glCheckError();
+            #endif
         } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
             glBindTexture(GL_TEXTURE_2D, frambuffer.glData.depthAttachment);
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
@@ -1525,7 +1542,13 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
             glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
             
+            #if defined(OpenGLEmscripten)
+            Assert(false && "not supported");
+            //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
+            //glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
+            #else
             glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
+            #endif
             glCheckError();
         }
     };

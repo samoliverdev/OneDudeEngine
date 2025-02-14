@@ -288,7 +288,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     if(graphicsDeviceInfo.apiName == "OpenGL"){
         glfwMakeContextCurrent(window);
-        graphicsDevice->LoadContext(glfwGetProcAddress);
+        graphicsDevice->LoadContext((void*)glfwGetProcAddress);
         //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         /*if(graphicsDeviceInfo.version == 4){
             #if OPENGL_DEBUG

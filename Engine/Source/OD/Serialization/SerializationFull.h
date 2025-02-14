@@ -24,7 +24,7 @@ namespace OD{
 
 template<class Archive>
 void LoadArchive(const char* path, Archive& data){
-    std::ifstream os(path);
+    std::ofstream os(path);
     cereal::JSONOutputArchive ar(os);
     ArchiveDumpNVP(ar, data);
 }
