@@ -36,6 +36,26 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     auto project = ProjectManager::LoadProject(projectPath);
     if(project == nullptr) return false;
 
+    LogInfo("dfdfdfd");
+
+    auto exists = [](const char *fname){
+        FILE *file;
+        if((file = fopen(fname, "r"))){
+            fclose(file);
+            return 1;
+        }
+        return 0;
+    };
+
+    auto FileExists = [](const std::string& name){
+        std::ifstream f(name);
+        return f.good();
+    };
+
+    std::string s = projectPath;
+    s += "Content/Engine/Fonts/fa-solid-900.ttf";
+    LogInfo("File exist: %s %d", s.c_str(), exists("Engine/Fonts/fa-solid-900.ttf"));
+
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
@@ -65,7 +85,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 //#include <GLFW/glfw3.h>
 
 bool Application::Run(){
-    while(running){
+    /*while(running){
         #if OD_PROFILE
         Instrumentor::BeginLoop();
         #endif
@@ -118,7 +138,69 @@ bool Application::Run(){
         #if OD_PROFILE
         Instrumentor::EndLoop();
         #endif
-    }
+    }*/
+
+    auto loop = [](){
+        #if OD_PROFILE
+        Instrumentor::BeginLoop();
+        #endif
+
+        {
+        OD_PROFILE_SCOPE("Application::Run");
+
+        float currentFrame = Platform::GetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame; 
+
+        Platform::PumpMessages();
+        //Platform::PreUpdate();
+        //Graphics::_Begin();
+        Input::Update();
+
+        for(auto i: modulesToAdd) _AddModule(i);
+        modulesToAdd.clear();
+
+        inUpdate = true;
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnUpdate");
+            for(auto i: modules) i->OnUpdate(deltaTime);
+        }
+        //Platform::SwapBuffers();
+        Platform::PreUpdate();
+        Graphics::_Begin();
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnRender");
+            for(auto i: modules) i->OnRender(deltaTime);
+        }
+        {
+            OD_PROFILE_SCOPE("Application::Run::OnGUI");
+            for(auto i: modules) i->OnGUI();
+        }
+        inUpdate = false;
+
+        {
+        OD_PROFILE_SCOPE("Application::Run::3");
+        for(auto i: modulesToRemove) _RemoveModule(i);
+        modulesToRemove.clear();
+        onFrameEnd.Invoke();
+        }
+
+        Graphics::_End();
+        Platform::LateUpdate();
+        Platform::SwapBuffers();
+        }
+
+        #if OD_PROFILE
+        Instrumentor::EndLoop();
+        #endif
+    };
+
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(loop, 0, true);
+#else
+    while(running)
+        loop();
+#endif
 
     OnExit();
 

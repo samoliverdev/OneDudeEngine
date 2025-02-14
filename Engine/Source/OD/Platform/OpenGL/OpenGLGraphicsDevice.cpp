@@ -225,6 +225,8 @@ void OpenGLGraphicsDevice::Initialize(){
         #endif
     };
 
+    LogInfo("OpenGLGraphicsDevice::Initialize");
+
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     ImGui_ImplOpenGL3_Init("#version 150");
 
@@ -1569,7 +1571,9 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     GenDepthAttachment();
 
     if(specification.colorAttachments.size() == 0){
-        glDrawBuffer(GL_NONE);
+        //glDrawBuffer(GL_NONE);
+        //glReadBuffer(GL_NONE);
+        glDrawBuffers(1, GL_NONE);
         glReadBuffer(GL_NONE);
         glCheckError();
     } else if(specification.colorAttachments.size() > 1){

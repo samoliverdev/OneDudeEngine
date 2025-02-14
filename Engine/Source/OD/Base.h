@@ -38,7 +38,21 @@ static const char* LogColors[] = {
 	#define LogErrorExtra
     #define LogFatalExtra
 #else*/
+#if defined(__EMSCRIPTEN__)
+
 	#define _LOG(level, colorIndex, ...) \
+        printf("%s [%s] ", LogColors[colorIndex], level); \
+        printf(__VA_ARGS__); \
+        printf("\n");
+
+    #define _LOG_Extra(level, colorIndex, ...) \
+        printf("%s [%s] ", LogColors[colorIndex], level); \
+        printf(__VA_ARGS__); \
+        printf(" | %s %d", __FILE__, __LINE__); \
+        printf("\n");
+#else
+
+    #define _LOG(level, colorIndex, ...) \
         fprintf(stderr, "%s [%s] ", LogColors[colorIndex], level); \
         fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, "\n");
@@ -48,6 +62,8 @@ static const char* LogColors[] = {
         fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, " | %s %d", __FILE__, __LINE__); \
         fprintf(stderr, "\n");
+
+#endif
 
     #define LogInfo(...) _LOG("info", 0, __VA_ARGS__)
 	#define LogWarning(...) _LOG("warning", 1, __VA_ARGS__)

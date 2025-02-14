@@ -7,6 +7,12 @@
 #include "OD/Graphics/GraphicsDevice.h"
 #include <imgui/imgui.h>
 #include <ImGuizmo/ImGuizmo.h>
+
+#ifdef EMSCRIPTEN
+#include<emscripten/emscripten.h>
+#define GLFW_INCLUDE_ES3
+#endif
+
 #include <imgui/backends/imgui_impl_glfw.h>
 
 #define GLFW_INCLUDE_NONE
@@ -36,7 +42,9 @@ void UpdateFpsCounter(GLFWwindow* window){
         double fps       = (double)frame_count / elapsed_seconds;
         char tmp[128];
         sprintf( tmp, "opengl @ fps: %.2f", fps );
+        #if not defined(__EMSCRIPTEN__)
         glfwSetWindowTitle( window, tmp );
+        #endif
         frame_count = 0;
     }
     frame_count++;
@@ -105,13 +113,15 @@ void imguiOnUpdate(GLFWwindow* window){
     }
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());*/
 
-    int display_w, display_h;
+    /*int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
-    graphicsDevice->ImGuiRenderDrawData(0, 0, display_w, display_h);
+    graphicsDevice->ImGuiRenderDrawData(0, 0, display_w, display_h);*/
+    graphicsDevice->ImGuiRenderDrawData(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
 
     // Update and Render additional Platform Windows
     // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
     //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
+    #if not defined(__EMSCRIPTEN__)
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable){
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -119,6 +129,7 @@ void imguiOnUpdate(GLFWwindow* window){
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+    #endif
 }
 
 void imguiOnDestroy(){
@@ -234,6 +245,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     auto graphicsDeviceInfo = graphicsDevice->GetInfo();
 
+    #if not defined(__EMSCRIPTEN__)
     if(graphicsDeviceInfo.apiName == "OpenGL"){
         if(graphicsDeviceInfo.version == 4){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -262,6 +274,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     #endif*/
     
     glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GLFW_FALSE);
+    #endif
+
 
     //glfwWindowHint(GLFW_MAXIMIZED , GL_TRUE);
 
@@ -284,11 +298,15 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
         return false;
     }
 
+    #if not defined(__EMSCRIPTEN__)
     glfwSwapInterval(0); //vsync on
+    #endif
 
     if(graphicsDeviceInfo.apiName == "OpenGL"){
+        #if not defined(__EMSCRIPTEN__)
         glfwMakeContextCurrent(window);
         graphicsDevice->LoadContext((void*)glfwGetProcAddress);
+        #endif
         //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         /*if(graphicsDeviceInfo.version == 4){
             #if OPENGL_DEBUG
