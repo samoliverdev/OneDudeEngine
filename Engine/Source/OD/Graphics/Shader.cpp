@@ -91,6 +91,7 @@ std::vector<std::string> Shader::GetFileAssociations(){
 }
 
 bool Shader::Create(std::string inPath){
+    LogInfo("Create Shader: %s", inPath.c_str());
     Destroy();
     
     path = inPath;

@@ -52,9 +52,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
         return f.good();
     };
 
-    std::string s = projectPath;
-    s += "Content/Engine/Fonts/fa-solid-900.ttf";
-    LogInfo("File exist: %s %d", s.c_str(), exists("Engine/Fonts/fa-solid-900.ttf"));
+
+    LogInfo("File exist: %s %d", "Engine/Fonts/fa-solid-900.ttf", exists("Engine/Fonts/fa-solid-900.ttf"));
 
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
@@ -70,9 +69,14 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     Graphics::Initialize();
     //Input::_Initialize(0, 0);
+    #ifdef __EMSCRIPTEN__
+    #else
     JobSystem::Initialize();
+    #endif
     //AssetTypesDB::_Init();
     //CoreModulesStartup();
+
+    LogInfo("Test2");
 
     mainModule = inMainModule;
     AddModule(mainModule);
@@ -195,12 +199,12 @@ bool Application::Run(){
         #endif
     };
 
-#ifdef __EMSCRIPTEN__
+/*#ifdef __EMSCRIPTEN__
+    LogInfo("EMSCRIPTEN Loop");
     emscripten_set_main_loop(loop, 0, true);
-#else
-    while(running)
-        loop();
-#endif
+#else*/
+    while(running) loop();
+//#endif
 
     OnExit();
 

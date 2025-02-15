@@ -19,6 +19,8 @@
 //#include "OpenGL/GL.h"
 #include <GLFW/glfw3.h>
 
+#include <fstream>
+
 /*#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6*/
@@ -63,7 +65,14 @@ void imguiOnInit(GLFWwindow* window){
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.FontDefault = io.Fonts->AddFontFromFileTTF("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
+    auto FileExists = [](const std::string& name){
+        std::ifstream f(name);
+        return f.good();
+    };
+
+    if(FileExists("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf")){
+        io.FontDefault = io.Fonts->AddFontFromFileTTF("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", 16.5f);
+    }
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();

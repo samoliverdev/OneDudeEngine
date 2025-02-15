@@ -10,9 +10,9 @@ void LoadModelSample::OnInit(){
     camTransform.LocalEulerAngles(Vector3(0, 0, 0));
     camMove.transform = &camTransform;
 
-    model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.glb");
+    model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.gltf");
     model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
-    model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
+    model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
     model->materials[0]->SetVector4("color", {1,1,1,1});
 
     for(int i = 0; i < 100000; i++){

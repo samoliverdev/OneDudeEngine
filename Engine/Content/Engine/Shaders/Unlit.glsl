@@ -8,6 +8,7 @@
     MultiCompile _ SKINNED INSTANCING
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
 #if defined(VERTEX) && defined(MainPass)

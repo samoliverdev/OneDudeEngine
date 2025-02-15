@@ -9,6 +9,8 @@
     MultiCompile _ SKINNED INSTANCING
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -33,7 +35,7 @@
 
 #if defined(FRAGMENT) && defined(MainPass)
     uniform sampler2D mainTex;
-    uniform vec4 color = vec4(1,1,1,1);
+    uniform vec4 color;
 
     in vec3 pos;
     in vec3 normal;

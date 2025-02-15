@@ -12,16 +12,19 @@
     #include <glad46Core/glad.h>
     #define OpenGLVersion 4
     #define OPENGL_CHECK_ERRORS 1
+    #define OpenglHeader "#version 330 core"
 #endif
 #if defined(OpenGL33)
     #include <glad33Core/glad.h>
     #define OpenGLVersion 3
     #define OPENGL_CHECK_ERRORS 0
+    #define OpenglHeader "#version 330 core"
  #endif
 #if defined(OpenGLEmscripten)
     #include <emscripten.h>
     #include <GL/gl.h>
     #include <GLES3/gl3.h>
+    #define OpenglHeader "#version 300 es"
     //#define GL_GLEXT_PROTOTYPES
     //#define EGL_EGLEXT_PROTOTYPES
     #define OpenGLVersion 3

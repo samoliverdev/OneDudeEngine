@@ -228,7 +228,7 @@ void OpenGLGraphicsDevice::Initialize(){
     LogInfo("OpenGLGraphicsDevice::Initialize");
 
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    ImGui_ImplOpenGL3_Init("#version 150");
+    ImGui_ImplOpenGL3_Init(OpenglHeader /*"#version 150"*/);
 
     #if OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
@@ -1465,9 +1465,9 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glCheckError();
             #if defined(OpenGLEmscripten)
-            Assert(false && "not supported");
-            //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
-            //glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
+            //Assert(false && "not supported");
+            //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0, 0);
             #else
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
             #endif
@@ -1545,9 +1545,10 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
             
             #if defined(OpenGLEmscripten)
-            Assert(false && "not supported");
+            //Assert(false && "not supported");
             //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
-            //glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
+            //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, frambuffer.glData.depthAttachment, 0);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0, 0);
             #else
             glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
             #endif
@@ -2099,8 +2100,10 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
     shader.enabledKeyworlds = keyworlds;
     shader.pipeline = pipeline;
 
-    std::string vertexToInsert = "#version 330 core\n#define VERTEX\n";
-    std::string fragToInsert = "#version 330 core\n#define FRAGMENT\n";
+    //std::string vertexToInsert = "#version 330 core\n#define VERTEX\n";
+    //std::string fragToInsert = "#version 330 core\n#define FRAGMENT\n";
+    std::string vertexToInsert = OpenglHeader "\n#define VERTEX\n";
+    std::string fragToInsert = OpenglHeader "\n#define FRAGMENT\n";
 
     auto CompileShader = [&](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
         baseSource.insert(0, toInsert);
@@ -2251,6 +2254,7 @@ void OpenGLGraphicsDevice::SubShaderBind(SubShader& shader){
 }
 
 bool OpenGLGraphicsDevice::ShaderCreate(Shader& shader, std::string inPath){
+    LogInfo("Create Shader: %s", inPath.c_str());
     return shader.Create(inPath);
 }
 

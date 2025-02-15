@@ -18,7 +18,7 @@ void LightSample::OnInit(){
 
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/suzane.obj");
     model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/light.glsl"));
-    model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rock.jpg"));
+    model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
     model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
     model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));
     model->materials[0]->SetVector3("light.position", lightTransform.LocalPosition());

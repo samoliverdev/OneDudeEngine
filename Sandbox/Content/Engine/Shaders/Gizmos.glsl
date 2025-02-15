@@ -2,6 +2,8 @@
     Name MainPass
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 position;
 
@@ -15,12 +17,11 @@
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform vec3 color = vec3(0, 0, 1);
-    uniform float alpha = 1;
-
     out vec4 outColor;
-
     void main(){
+        vec3 color = vec3(0, 0, 1);
+        float alpha = 1.0;
+
         outColor = vec4(color.xyz, alpha);
     }
 #endif
