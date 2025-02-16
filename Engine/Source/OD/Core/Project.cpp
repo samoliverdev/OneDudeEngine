@@ -27,7 +27,7 @@ Ref<Project> ProjectManager::LoadProject(const char* path){
     LogInfo("Loading Project Path: %s", path);
     LogWarning("Cur Path: %s", std::filesystem::current_path().string().c_str());
 
-    #if not defined(__EMSCRIPTEN__)
+    #if !defined(__EMSCRIPTEN__)
     
     std::string _projectPath(path);
     std::string projectSettingsPath = _projectPath + "ProjectSettings.proj";

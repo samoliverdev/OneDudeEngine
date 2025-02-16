@@ -34,6 +34,7 @@ OpenGLGraphicsDevice::OpenGLGraphicsDevice(){
 }
 
 void OpenGLGraphicsDevice::LoadContext(void* data){
+    LogInfo("OpenGLGraphicsDevice::LoadContext");
     #ifdef __EMSCRIPTEN__
     #else
     gladLoadGLLoader((GLADloadproc)data);
@@ -228,7 +229,13 @@ void OpenGLGraphicsDevice::Initialize(){
     LogInfo("OpenGLGraphicsDevice::Initialize");
 
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    ImGui_ImplOpenGL3_Init(OpenglHeader /*"#version 150"*/);
+    LogInfo("OpenGLGraphicsDevice::Initialize2");
+    #if !defined(__EMSCRIPTEN__)
+    ImGui_ImplOpenGL3_Init(
+        //OpenglHeader 
+        "#version 150"
+    );
+    #endif
 
     #if OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
@@ -300,7 +307,9 @@ void OpenGLGraphicsDevice::Initialize(){
 
 void OpenGLGraphicsDevice::Shutdown(){
     fullScreenQuad = nullptr;
+    #if !defined(__EMSCRIPTEN__)
     ImGui_ImplOpenGL3_Shutdown();
+    #endif
 }
 
 void OpenGLGraphicsDevice::Begin(){

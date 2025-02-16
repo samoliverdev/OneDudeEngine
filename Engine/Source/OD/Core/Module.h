@@ -5,6 +5,8 @@ namespace OD {
 
 class OD_API Module {
 public:
+    virtual ~Module(){}
+
     virtual void OnInit() = 0;
     virtual void OnExit() = 0;
     virtual void OnUpdate(float deltaTime) = 0;

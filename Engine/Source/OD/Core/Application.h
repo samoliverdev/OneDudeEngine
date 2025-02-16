@@ -58,6 +58,7 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
 private:
+    static void Loop();
     static void _RemoveModule(Module* module);
     static void _AddModule(Module* module);
     static void OnExit();

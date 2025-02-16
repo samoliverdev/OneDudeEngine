@@ -88,6 +88,64 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 //#include "OD/Platform/OpenGL/GL.h"
 //#include <GLFW/glfw3.h>
 
+void Application::Loop(){
+    #if OD_PROFILE
+    Instrumentor::BeginLoop();
+    #endif
+
+    {
+    OD_PROFILE_SCOPE("Application::Run");
+
+    float currentFrame = Platform::GetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame; 
+
+    Platform::PumpMessages();
+    //Platform::PreUpdate();
+    //Graphics::_Begin();
+    Input::Update();
+
+    for(auto i: modulesToAdd) _AddModule(i);
+    modulesToAdd.clear();
+
+    inUpdate = true;
+    {
+        OD_PROFILE_SCOPE("Application::Run::OnUpdate");
+        for(auto i: modules) i->OnUpdate(deltaTime);
+    }
+
+    //Platform::SwapBuffers();
+    Platform::PreUpdate();
+    Graphics::_Begin();
+    {
+        OD_PROFILE_SCOPE("Application::Run::OnRender");
+        for(auto i: modules) i->OnRender(deltaTime);
+    }
+    {
+        #if !defined(__EMSCRIPTEN__)
+        OD_PROFILE_SCOPE("Application::Run::OnGUI");
+        for(auto i: modules) i->OnGUI();
+        #endif
+    }
+    inUpdate = false;
+
+    {
+    OD_PROFILE_SCOPE("Application::Run::3");
+    for(auto i: modulesToRemove) _RemoveModule(i);
+    modulesToRemove.clear();
+    onFrameEnd.Invoke();
+    }
+
+    Graphics::_End();
+    Platform::LateUpdate();
+    Platform::SwapBuffers();
+    }
+
+    #if OD_PROFILE
+    Instrumentor::EndLoop();
+    #endif
+}
+
 bool Application::Run(){
     /*while(running){
         #if OD_PROFILE
@@ -144,67 +202,12 @@ bool Application::Run(){
         #endif
     }*/
 
-    auto loop = [](){
-        #if OD_PROFILE
-        Instrumentor::BeginLoop();
-        #endif
-
-        {
-        OD_PROFILE_SCOPE("Application::Run");
-
-        float currentFrame = Platform::GetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame; 
-
-        Platform::PumpMessages();
-        //Platform::PreUpdate();
-        //Graphics::_Begin();
-        Input::Update();
-
-        for(auto i: modulesToAdd) _AddModule(i);
-        modulesToAdd.clear();
-
-        inUpdate = true;
-        {
-            OD_PROFILE_SCOPE("Application::Run::OnUpdate");
-            for(auto i: modules) i->OnUpdate(deltaTime);
-        }
-        //Platform::SwapBuffers();
-        Platform::PreUpdate();
-        Graphics::_Begin();
-        {
-            OD_PROFILE_SCOPE("Application::Run::OnRender");
-            for(auto i: modules) i->OnRender(deltaTime);
-        }
-        {
-            OD_PROFILE_SCOPE("Application::Run::OnGUI");
-            for(auto i: modules) i->OnGUI();
-        }
-        inUpdate = false;
-
-        {
-        OD_PROFILE_SCOPE("Application::Run::3");
-        for(auto i: modulesToRemove) _RemoveModule(i);
-        modulesToRemove.clear();
-        onFrameEnd.Invoke();
-        }
-
-        Graphics::_End();
-        Platform::LateUpdate();
-        Platform::SwapBuffers();
-        }
-
-        #if OD_PROFILE
-        Instrumentor::EndLoop();
-        #endif
-    };
-
-/*#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
     LogInfo("EMSCRIPTEN Loop");
-    emscripten_set_main_loop(loop, 0, true);
-#else*/
-    while(running) loop();
-//#endif
+    emscripten_set_main_loop(Loop, 0, true);
+#else
+    while(running) Loop();
+#endif
 
     OnExit();
 

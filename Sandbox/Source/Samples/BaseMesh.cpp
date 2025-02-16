@@ -2,7 +2,7 @@
 
 void BaseMeshSample::OnInit(){
     LogInfo("Game Init");
-    OD::Application::Vsync(false);
+    //OD::Application::Vsync(false);
 
     mesh.vertices.push_back(Vector3(0.5f, 0.5f, 0));
     mesh.vertices.push_back(Vector3(0.5f, -0.5f, 0));

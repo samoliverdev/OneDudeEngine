@@ -44,7 +44,7 @@ void UpdateFpsCounter(GLFWwindow* window){
         double fps       = (double)frame_count / elapsed_seconds;
         char tmp[128];
         sprintf( tmp, "opengl @ fps: %.2f", fps );
-        #if not defined(__EMSCRIPTEN__)
+        #if !defined(__EMSCRIPTEN__)
         glfwSetWindowTitle( window, tmp );
         #endif
         frame_count = 0;
@@ -53,6 +53,10 @@ void UpdateFpsCounter(GLFWwindow* window){
 }
 
 void imguiOnInit(GLFWwindow* window){
+    #if defined(__EMSCRIPTEN__)
+    return;
+    #endif
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -100,6 +104,10 @@ void imguiOnInit(GLFWwindow* window){
 }
 
 void imguiOnPreUpdate(){
+    #if defined(__EMSCRIPTEN__)
+    return;
+    #endif
+
     graphicsDevice->ImGuiNewFrame();
     //ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -108,6 +116,9 @@ void imguiOnPreUpdate(){
 }
 
 void imguiOnUpdate(GLFWwindow* window){
+    #if defined(__EMSCRIPTEN__)
+    return;
+    #endif
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Rendering
@@ -130,7 +141,6 @@ void imguiOnUpdate(GLFWwindow* window){
     // Update and Render additional Platform Windows
     // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
     //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-    #if not defined(__EMSCRIPTEN__)
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable){
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -138,10 +148,13 @@ void imguiOnUpdate(GLFWwindow* window){
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
-    #endif
 }
 
 void imguiOnDestroy(){
+    #if defined(__EMSCRIPTEN__)
+    return;
+    #endif
+    
     // Cleanup
     //ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -149,11 +162,12 @@ void imguiOnDestroy(){
 }
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height){
-    glViewport(0, 0, width, height);
+    //glViewport(0, 0, width, height);
     Application::_OnResize(width, height);
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos){
+    //LogInfo("MouseCallback");
     //Input::ProcessMouseMove(xpos, ypos);
 }
 
@@ -254,7 +268,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     auto graphicsDeviceInfo = graphicsDevice->GetInfo();
 
-    #if not defined(__EMSCRIPTEN__)
+    #if !defined(__EMSCRIPTEN__)
     if(graphicsDeviceInfo.apiName == "OpenGL"){
         if(graphicsDeviceInfo.version == 4){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -307,15 +321,15 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
         return false;
     }
 
-    #if not defined(__EMSCRIPTEN__)
+    #if !defined(__EMSCRIPTEN__)
     glfwSwapInterval(0); //vsync on
     #endif
 
     if(graphicsDeviceInfo.apiName == "OpenGL"){
-        #if not defined(__EMSCRIPTEN__)
+        //#if !defined(__EMSCRIPTEN__)
         glfwMakeContextCurrent(window);
         graphicsDevice->LoadContext((void*)glfwGetProcAddress);
-        #endif
+        //#endif
         //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         /*if(graphicsDeviceInfo.version == 4){
             #if OPENGL_DEBUG
@@ -363,17 +377,28 @@ void Platform::SystemShutdown(void* plat_state){
 }
 
 bool Input::IsKey(KeyCode key){
+    /*#if defined(__EMSCRIPTEN__)
+    return false;
+    #endif*/
+    
     auto state = glfwGetKey(window, (int)key);
     return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
 bool Input::IsMouseButton(MouseButton button){
+    /*#if defined(__EMSCRIPTEN__)
+    return false;
+    #endif*/
+    
     auto state = glfwGetMouseButton(window, (int)button);
     return state == GLFW_PRESS;
 }
 
 void Input::GetMousePosition(double* x, double* y){
+    #if defined(__EMSCRIPTEN__)
+    #else
     glfwGetCursorPos(window, x, y);
+    #endif
 }
 
 bool Platform::PumpMessages(){ 
