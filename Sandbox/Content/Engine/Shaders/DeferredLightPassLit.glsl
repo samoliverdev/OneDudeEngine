@@ -2,6 +2,8 @@
     Name MainPass
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -53,10 +55,10 @@
         surface.position = FragPos;
         surface.normal = Normal;
         surface.viewDirection = normalize(viewPos - FragPos);
-        surface.depth = -(view * vec4(FragPos, 1)).z;
+        surface.depth = -(view * vec4(FragPos, 1.0)).z;
         surface.color = Albedo.rgb;
         surface.alpha = AO;
-        surface.occlusion = 1;
+        surface.occlusion = 1.0;
         surface.metallic = Metallic;
         surface.smoothness = Specular;
 

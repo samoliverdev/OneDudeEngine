@@ -25,6 +25,8 @@
     Blend Off
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     #include Engine/ShaderLibrary/Vertex.glsl
 
@@ -79,18 +81,18 @@
 
     uniform vec3 viewPos;
 
-    uniform vec4 color = vec4(1,1,1,1);
-    uniform vec4 sizeOffset = vec4(1, 1, 0, 0);
+    uniform vec4 color ;
+    uniform vec4 sizeOffset;
     uniform sampler2D mainTex;
     uniform sampler2D normal;
-    uniform float normalStrength = 1;
+    uniform float normalStrength;
     uniform sampler2D emissionMap;
-    uniform vec4 emissionColor = vec4(0,0,0,0);
+    uniform vec4 emissionColor;
     uniform sampler2D maskMap;
-    uniform float occlusion = 1;
-    uniform float metallic = 0;
-    uniform float smoothness = 0.5;
-    uniform float cutoff  = 0.5;
+    uniform float occlusion;
+    uniform float metallic;
+    uniform float smoothness;
+    uniform float cutoff;
 
     #ifdef Deferred
         layout(location = 0) out vec3 gPosition;
@@ -141,6 +143,7 @@
     }
 
     void main(){
+        sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
         vec2 uv = fsIn.texCoord * sizeOffset.xy + sizeOffset.zw;
         vec4 base = textureSRGB(mainTex, uv);
         if(base.a < cutoff) discard;

@@ -369,7 +369,7 @@ void Lighting::UpdateGlobalShaders(){
 
 #pragma region CameraRenderer
 CameraRenderer::CameraRenderer(){
-    postFXTest = new PostFXTest(2);
+    //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
     cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = nullptr;// Texture2D::CreateBrdfLUTTexture2D();
@@ -378,7 +378,7 @@ CameraRenderer::CameraRenderer(){
 }
 
 CameraRenderer::~CameraRenderer(){
-    delete postFXTest;
+    //delete postFXTest;
     delete gamaCorrectionPP;
 }
 
@@ -749,7 +749,7 @@ void CameraRenderer::RenderUI(){
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out;
 
-    if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
+    //if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     out.push_back(gamaCorrectionPP);
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());

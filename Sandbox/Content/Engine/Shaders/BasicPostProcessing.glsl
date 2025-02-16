@@ -3,6 +3,8 @@
     DepthTest DISABLE
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -41,7 +43,7 @@
             vec2( offset, -offset)  // bottom-right    
         );
 
-        fragColor = texture(mainTex, texCoord) * 2;
+        fragColor = texture(mainTex, texCoord) * 2.0;
         
         if(option == 1){
             fragColor = vec4(vec3(1.0 - texture(mainTex, texCoord)), 1.0);

@@ -3,6 +3,8 @@
     DepthTest DISABLE
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -42,10 +44,10 @@
 
     // Source: https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
     vec4 textureBicubic(sampler2D sampler, vec2 texCoords){
-    vec2 texSize = textureSize(sampler, 0);
-    vec2 invTexSize = 1.0 / texSize;
+        vec2 texSize = textureSize(sampler, 0);
+        vec2 invTexSize = vec2(1.0) / texSize;
     
-    texCoords = texCoords * texSize - 0.5;
+        texCoords = texCoords * texSize - 0.5;
 
         vec2 fxy = fract(texCoords);
         texCoords -= fxy;
@@ -53,10 +55,10 @@
         vec4 xcubic = cubic(fxy.x);
         vec4 ycubic = cubic(fxy.y);
 
-        vec4 c = texCoords.xxyy + vec2 (-0.5, +1.5).xyxy;
+        vec4 c = texCoords.xxyy + vec2(-0.5, 1.5).xyxy;
         
         vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
-        vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
+        vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;
         
         offset *= invTexSize.xxyy;
         
@@ -69,8 +71,9 @@
         float sy = s.z / (s.z + s.w);
 
         return mix(
-        mix(sample3, sample2, sx), mix(sample1, sample0, sx), 
-        sy
+            mix(sample3, sample2, sx), 
+            mix(sample1, sample0, sx), 
+            sy
         );
     }
 
@@ -82,7 +85,7 @@
             lowRes = texture(mainTex2, texCoord).rgb;
         }
 
-        //vec3 lowRes = textureBicubic(mainTex2, texCoord).rgb;
+        //vec3 lowRes = textureBicubic(mainTex2, texCoord).rgbs;
         vec3 highRes = texture(mainTex, texCoord).rgb;
         
         fragColor = vec4(lowRes * _BloomIntensity + highRes, 1.0);

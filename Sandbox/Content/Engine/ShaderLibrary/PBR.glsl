@@ -4,7 +4,7 @@
 const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 4.0;
 
-uniform vec3 _AmbientLight = vec3(0.1, 0.1, 0.1);
+uniform vec3 _AmbientLight;
 uniform samplerCube _IrradianceMap;
 uniform samplerCube _PrefilterMap; 
 uniform float _SkyLightIntensity;
@@ -95,7 +95,7 @@ vec3 AmbientLight(Surface surfaceWS){
 	vec3 R = reflect(-surfaceWS.viewDirection, surfaceWS.normal); 
     vec3 F = fresnelSchlickRoughness(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), F0, surfaceWS.smoothness);
     vec3 kS = F;
-    vec3 kD = 1.0 - kS;
+    vec3 kD = vec3(1.0 - kS);
     kD *= 1.0 - surfaceWS.metallic;	  
     vec3 irradiance = _AmbientLight + texture(_IrradianceMap, surfaceWS.normal).rgb * _SkyLightIntensity;
     vec3 diffuse = irradiance * surfaceWS.color;

@@ -3,6 +3,8 @@
     DepthTest DISABLE
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;

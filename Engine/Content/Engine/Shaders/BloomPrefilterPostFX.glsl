@@ -3,6 +3,8 @@
     DepthTest DISABLE
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -44,7 +46,6 @@
         contribution /= max(brightness, 0.00001);
         return color * contribution;
         //return mix(vec3(0), color, contribution);
-        
     }
 
     vec4 BloomPrefilterPassFragment(){

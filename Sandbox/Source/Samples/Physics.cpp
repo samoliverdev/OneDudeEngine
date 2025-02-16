@@ -58,13 +58,13 @@ void PhysicsSample::OnInit(){
 
     Scene* scene = SceneManager::Get().NewScene();
 
-    Entity text = scene->AddEntity("Text");
+    /*Entity text = scene->AddEntity("Text");
     scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
     TextRendererComponent& textRenderer = scene->AddComponent<TextRendererComponent>(text);
     textRenderer.text = "Ai meu cu!!!";
     textRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
-    textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));*/
 
     Entity sprite = scene->AddEntity("Sprite");
     scene->GetComponent<TransformComponent>(sprite).LocalPosition(Vector3(0, 2, 0));

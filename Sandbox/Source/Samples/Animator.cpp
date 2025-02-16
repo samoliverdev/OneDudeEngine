@@ -7,7 +7,7 @@
 void AnimatorSample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
-    Application::Vsync(false);
+    //Application::Vsync(false);
 
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
@@ -95,9 +95,9 @@ void AnimatorSample::OnInit(){
         }
     }
     
-    //scene->Start();
-    RenderContext::GetSettings().enableGizmos = false;
-    Application::AddModule<Editor>();
+    scene->Start();
+    //RenderContext::GetSettings().enableGizmos = false;
+    //Application::AddModule<Editor>();
 
     LogInfo("AnimationCount: %zd", charModel->animationClips.size());
 }

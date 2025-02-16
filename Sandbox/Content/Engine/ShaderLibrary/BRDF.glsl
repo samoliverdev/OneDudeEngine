@@ -26,14 +26,12 @@ float PerceptualSmoothnessToPerceptualRoughness(float perceptualSmoothness){
 
 BRDF GetBRDF(Surface surface){
 	BRDF brdf;
-
     float oneMinusReflectivity = OneMinusReflectivity(surface.metallic);
     brdf.diffuse = surface.color * oneMinusReflectivity;
 	brdf.specular = mix(vec3(MIN_REFLECTIVITY), surface.color, surface.metallic);
     brdf.perceptualRoughness = PerceptualSmoothnessToPerceptualRoughness(surface.smoothness);
     brdf.roughness = PerceptualRoughnessToRoughness(brdf.perceptualRoughness);
 	brdf.fresnel = saturate(surface.smoothness + 1.0 - oneMinusReflectivity);
-	
     return brdf;
 }
 

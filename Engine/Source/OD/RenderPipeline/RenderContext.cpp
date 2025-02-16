@@ -38,7 +38,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.sample = 1;
     forwardOutColor = new Framebuffer(framebufferSpecification);
 
-    framebufferSpecification.colorAttachments = {
+    /*framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGB32F}, // Pos
         {FramebufferTextureFormat::RGB32F}, // Normal
         {FramebufferTextureFormat::RGBA16F}, // Albedo
@@ -48,7 +48,7 @@ RenderContext::RenderContext(Scene* inScene){
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
-    framebufferSpecification.sample = 1;
+    framebufferSpecification.sample = 1;*/
     deferredOutColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;

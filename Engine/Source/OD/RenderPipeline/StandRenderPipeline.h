@@ -225,7 +225,7 @@ private:
     RendererList blendDrawTarget;
     DrawingSettings blendDrawSettings;
 
-    PostFXTest* postFXTest;
+    //PostFXTest* postFXTest;
 
     Ref<Material> cubemapSkyMaterial = nullptr;
     Ref<Texture2D> brdfLUT = nullptr;

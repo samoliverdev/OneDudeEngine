@@ -6,6 +6,7 @@
     Blend Off
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
 #if defined(VERTEX) && defined(MainPass)

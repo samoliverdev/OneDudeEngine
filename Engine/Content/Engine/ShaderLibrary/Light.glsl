@@ -25,7 +25,7 @@ DirectionalShadowData GetDirectionalShadowData(int lightIndex, ShadowData shadow
 	DirectionalShadowData data;
 	data.strength = _DirectionalLightShadowData[lightIndex].x * shadowData.strength;
 	data.tileIndex = int(_DirectionalLightShadowData[lightIndex].y) + shadowData.cascadeIndex;
-	data.diffuseFactor = 0;
+	data.diffuseFactor = 0.0;
 	return data;
 }
 
@@ -42,8 +42,8 @@ OtherShadowData GetOtherShadowData(int lightIndex){
 	data.strength = _OtherLightShadowData[lightIndex].x;
 	data.tileIndex = int(_OtherLightShadowData[lightIndex].y);
 	data.isPoint = _OtherLightShadowData[lightIndex].z == 1.0;
-	data.lightDirectionWS = vec3(0);
-	data.lightPositionWS = vec3(0);
+	data.lightDirectionWS = vec3(0.0);
+	data.lightPositionWS = vec3(0.0);
 	//data.diffuseFactor = dot(surfaceWS.normal, -_DirectionalLightDirections[lightIndex].xyz);
 	data.shadowMaskChannel = int(_OtherLightShadowData[lightIndex].w);
 	return data;

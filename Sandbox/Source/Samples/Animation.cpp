@@ -8,7 +8,7 @@
 void AnimationSample::OnInit(){
     LogInfo("Game Init");
 
-    Application::Vsync(false);
+    //Application::Vsync(false);
 
     camTransform.LocalPosition(Vector3(0, 2, 4));
     camTransform.LocalEulerAngles(Vector3(-25, 0, 0));

@@ -29,6 +29,8 @@
     Blend Off
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
     #include Engine/ShaderLibrary/Vertex.glsl
 

@@ -1,8 +1,8 @@
 #ifndef GI_INCLUDED
 #define GI_INCLUDED
 
-uniform vec3 _AmbientLight = vec3(0.1, 0.1, 0.1);
-uniform vec3 _IrradianceMapScale = vec3(0, 0, 0);
+uniform vec3 _AmbientLight ;
+uniform vec3 _IrradianceMapScale;
 uniform samplerCube _IrradianceMap;
 uniform samplerCube _PrefilterMap; 
 uniform float _SkyLightIntensity;

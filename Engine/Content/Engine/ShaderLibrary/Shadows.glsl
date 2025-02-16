@@ -10,7 +10,7 @@
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
 
-uniform sampler2DArray _DirectionalShadowAtlas;
+uniform mediump sampler2DArray _DirectionalShadowAtlas;
 uniform mat4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
 uniform int _CascadeCount;
 uniform float _CascadeCullingSpheres[MAX_CASCADE_COUNT];
@@ -18,10 +18,10 @@ uniform float _ShadowDistance;
 uniform vec4 _ShadowAtlasSize;
 uniform vec4 _ShadowDistanceFade;
 
-uniform sampler2DArray _OtherShadowAtlas;
+uniform mediump sampler2DArray _OtherShadowAtlas;
 uniform mat4 _OtherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
 
-float _ShadowBias = 0.001;
+const float _ShadowBias = 0.001;
 
 struct DirectionalShadowData{
 	float strength;
@@ -96,7 +96,7 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFac
     float currentDepth = projCoords.z;
     if(currentDepth > 1.0) return 1.0;
     
-    float bias = _ShadowBias/4;
+    float bias = _ShadowBias / 4.0;
     //bias = 0.001/2;
 
     //float diffuseFactor = dot(normal, -lightDir);
@@ -104,25 +104,25 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFac
 
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
 
-    return 1 - shadow;
+    return 1.0 - shadow;
 }
 
 float FilterDirectionalShadow(vec4 positionSTS, int layer, float diffuseFactor){
 #if defined(_DIRECTIONAL_PCF)
     ///*
-    float shadow = 0;
-    vec2 texelSize = 1.0 / textureSize(_DirectionalShadowAtlas, 0).xy;
+    float shadow = 0.0;
+    vec2 texelSize = vec2(1.0) / vec2(textureSize(_DirectionalShadowAtlas, 0).xy);
     int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
     for(int x = -sampleRadius; x <= sampleRadius; x++){
         for(int y = -sampleRadius; y <= sampleRadius; y++){
             shadow += SampleDirectionalShadowAtlas(
-                positionSTS + (vec4(x, y, 0, 0) * vec4(texelSize.xy, 1,1)) ,
+                positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
                 layer,
                 diffuseFactor
             );
         }
     }
-    shadow /= pow((sampleRadius * 2 + 1), 2);
+    shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
     return shadow;
     //*/
     
@@ -155,31 +155,31 @@ float SampleOtherShadowAltas(vec4 positionSTS, int layer, float diffuseFactor){
     float currentDepth = projCoords.z;
     if(currentDepth > 1.0) return 1.0;
     
-    float bias = _ShadowBias/4;
+    float bias = _ShadowBias / 4.0;
     //bias = 0.001/2;
     bias = mix(bias, 0.0, diffuseFactor);
 
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
 
-    return 1 - shadow;
+    return 1.0 - shadow;
 }
 
 float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
 #if defined(_DIRECTIONAL_PCF)
     ///*
-    float shadow = 0;
-    vec2 texelSize = 1.0 / textureSize(_OtherShadowAtlas, 0).xy;
+    float shadow = 0.0;
+    vec2 texelSize = vec2(1.0) / vec2(textureSize(_OtherShadowAtlas, 0).xy);
     int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
     for(int x = -sampleRadius; x <= sampleRadius; x++){
         for(int y = -sampleRadius; y <= sampleRadius; y++){
             shadow += SampleOtherShadowAltas(
-                positionSTS + (vec4(x, y, 0, 0) * vec4(texelSize.xy, 1,1)) ,
+                positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
                 layer,
                 diffuseFactor
             );
         }
     }
-    shadow /= pow((sampleRadius * 2 + 1), 2);
+    shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
     return shadow;
     //*/
 

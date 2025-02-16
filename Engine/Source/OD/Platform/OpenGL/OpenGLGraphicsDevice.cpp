@@ -1473,13 +1473,13 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glCheckError();
-            #if defined(OpenGLEmscripten)
+            //#if defined(OpenGLEmscripten)
             //Assert(false && "not supported");
             //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0, 0);
-            #else
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
-            #endif
+            ///*#else
+            //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
+            //#endif*/
             glCheckError();
         }
     
@@ -1553,14 +1553,13 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
             glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
             
-            #if defined(OpenGLEmscripten)
+            //#if defined(OpenGLEmscripten)
             //Assert(false && "not supported");
-            //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
             //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, frambuffer.glData.depthAttachment, 0);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0, 0);
-            #else
-            glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
-            #endif
+            ///*#else
+            //glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
+            //#endif*/
             glCheckError();
         }
     };
@@ -1583,7 +1582,8 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     if(specification.colorAttachments.size() == 0){
         //glDrawBuffer(GL_NONE);
         //glReadBuffer(GL_NONE);
-        glDrawBuffers(1, GL_NONE);
+        const GLenum b = GL_NONE;
+        glDrawBuffers(1, &b);
         glReadBuffer(GL_NONE);
         glCheckError();
     } else if(specification.colorAttachments.size() > 1){

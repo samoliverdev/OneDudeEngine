@@ -7,6 +7,8 @@
     lend Off
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #undef SKINNED
 #undef INSTANCING
 #include Engine/ShaderLibrary/Vertex.glsl
@@ -27,7 +29,7 @@
 
 #if defined(FRAGMENT) && defined(MainPass)
     uniform sampler2D mainTex;
-    uniform vec4 color = vec4(1,1,1,1);
+    uniform vec4 color;
 
     in vec3 _pos;
     in vec3 _normal;
@@ -44,6 +46,6 @@
         gPosition = _pos;
         gNormal = normalize(_normal);
         gAlbedoSpec.rgb = texColor.rgb * color.rgb;
-        gAlbedoSpec.a = 1;
+        gAlbedoSpec.a = 1.0;
     }
 #endif

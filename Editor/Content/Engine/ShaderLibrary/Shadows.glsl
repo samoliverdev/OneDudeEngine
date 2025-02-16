@@ -10,7 +10,7 @@
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
 
-uniform sampler2DArray _DirectionalShadowAtlas;
+uniform mediump sampler2DArray _DirectionalShadowAtlas;
 uniform mat4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
 uniform int _CascadeCount;
 uniform float _CascadeCullingSpheres[MAX_CASCADE_COUNT];
@@ -18,7 +18,7 @@ uniform float _ShadowDistance;
 uniform vec4 _ShadowAtlasSize;
 uniform vec4 _ShadowDistanceFade;
 
-uniform sampler2DArray _OtherShadowAtlas;
+uniform mediump sampler2DArray _OtherShadowAtlas;
 uniform mat4 _OtherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
 
 float _ShadowBias = 0.001;

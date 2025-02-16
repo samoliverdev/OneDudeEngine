@@ -3,6 +3,8 @@
 	DepthTest DISABLE
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
+
 #if defined(VERTEX) && defined(MainPass)
 	layout (location = 0) in vec3 _pos;
 	layout (location = 1) in vec2 _texCoord;
@@ -26,7 +28,7 @@
 	out vec4 fragColor;
 
 	vec2 GetSourceTexelSize(){
-		return 1 / vec2(textureSize(mainTex, 0));
+		return vec2(1.0) / vec2(textureSize(mainTex, 0));
 	}
 
 	vec4 GetSource(vec2 uv){

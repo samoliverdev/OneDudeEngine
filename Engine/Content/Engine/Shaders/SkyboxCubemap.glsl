@@ -4,6 +4,7 @@
     DepthTest LESS_EQUAL
 #pragma EndPassDef
 
+#include Engine/ShaderLibrary/Base.glsl
 
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 inPos;
