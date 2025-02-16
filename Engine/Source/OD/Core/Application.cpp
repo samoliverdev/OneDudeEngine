@@ -122,10 +122,10 @@ void Application::Loop(){
         for(auto i: modules) i->OnRender(deltaTime);
     }
     {
-        #if !defined(__EMSCRIPTEN__)
+        //#if !defined(__EMSCRIPTEN__)
         OD_PROFILE_SCOPE("Application::Run::OnGUI");
         for(auto i: modules) i->OnGUI();
-        #endif
+        //#endif
     }
     inUpdate = false;
 
