@@ -53,9 +53,9 @@ void UpdateFpsCounter(GLFWwindow* window){
 }
 
 void imguiOnInit(GLFWwindow* window){
-    #if defined(__EMSCRIPTEN__)
+    /*#if defined(__EMSCRIPTEN__)
     return;
-    #endif
+    #endif*/
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -104,9 +104,9 @@ void imguiOnInit(GLFWwindow* window){
 }
 
 void imguiOnPreUpdate(){
-    #if defined(__EMSCRIPTEN__)
+    /*#if defined(__EMSCRIPTEN__)
     return;
-    #endif
+    #endif*/
 
     graphicsDevice->ImGuiNewFrame();
     //ImGui_ImplOpenGL3_NewFrame();
@@ -116,9 +116,9 @@ void imguiOnPreUpdate(){
 }
 
 void imguiOnUpdate(GLFWwindow* window){
-    #if defined(__EMSCRIPTEN__)
+    /*#if defined(__EMSCRIPTEN__)
     return;
-    #endif
+    #endif*/
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Rendering
@@ -151,9 +151,9 @@ void imguiOnUpdate(GLFWwindow* window){
 }
 
 void imguiOnDestroy(){
-    #if defined(__EMSCRIPTEN__)
+    /*#if defined(__EMSCRIPTEN__)
     return;
-    #endif
+    #endif*/
     
     // Cleanup
     //ImGui_ImplOpenGL3_Shutdown();
@@ -395,10 +395,10 @@ bool Input::IsMouseButton(MouseButton button){
 }
 
 void Input::GetMousePosition(double* x, double* y){
-    #if defined(__EMSCRIPTEN__)
-    #else
+    //#if defined(__EMSCRIPTEN__)
+    //#else
     glfwGetCursorPos(window, x, y);
-    #endif
+    //#endif
 }
 
 bool Platform::PumpMessages(){ 

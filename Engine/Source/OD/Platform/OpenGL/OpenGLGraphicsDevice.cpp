@@ -230,12 +230,12 @@ void OpenGLGraphicsDevice::Initialize(){
 
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     LogInfo("OpenGLGraphicsDevice::Initialize2");
-    #if !defined(__EMSCRIPTEN__)
+    //#if !defined(__EMSCRIPTEN__)
     ImGui_ImplOpenGL3_Init(
-        //OpenglHeader 
-        "#version 150"
+        OpenglHeader 
+        //"#version 150"
     );
-    #endif
+    //#endif
 
     #if OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
@@ -307,9 +307,9 @@ void OpenGLGraphicsDevice::Initialize(){
 
 void OpenGLGraphicsDevice::Shutdown(){
     fullScreenQuad = nullptr;
-    #if !defined(__EMSCRIPTEN__)
+    //#if !defined(__EMSCRIPTEN__)
     ImGui_ImplOpenGL3_Shutdown();
-    #endif
+    //#endif
 }
 
 void OpenGLGraphicsDevice::Begin(){
