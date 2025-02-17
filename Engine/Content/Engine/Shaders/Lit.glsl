@@ -30,14 +30,12 @@
 #if defined(VERTEX) && defined(MainPass)
     #include Engine/ShaderLibrary/Vertex.glsl
 
-    out VsOut{
-        vec3 pos;
-        vec3 normal;
-        vec2 texCoord;
-        vec3 worldPos;
-        vec3 worldNormal;
-        mat3 TBN;
-    } vsOut;
+    out vec3 outPos;
+    out vec3 outNormal;
+    out vec2 outTexCoord;
+    out vec3 outWorldPos;
+    out vec3 outWorldNormal;
+    out mat3 outTBN;
 
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
@@ -46,13 +44,13 @@
         vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
         vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
         
-        vsOut.pos = pos;
-        vsOut.normal = normal;
-        vsOut.texCoord = texCoord;
-        vsOut.TBN = mat3(T, B, N);
-        vsOut.worldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
+        outPos = pos;
+        outNormal = normal;
+        outTexCoord = texCoord;
+        outTBN = mat3(T, B, N);
+        outWorldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
         //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
-        vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
+        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
 
         gl_Position = projection * view * targetModelMatrix * GetLocalPos();
     }
@@ -70,19 +68,17 @@
     #include Engine/ShaderLibrary/GI.glsl
     #include Engine/ShaderLibrary/Lighting.glsl
 
-    in VsOut{
-        vec3 pos;
-        vec3 normal;
-        vec2 texCoord;
-        vec3 worldPos;
-        vec3 worldNormal;
-        mat3 TBN;
-    } fsIn;
-
+    in vec3 outPos;
+    in vec3 outNormal;
+    in vec2 outTexCoord;
+    in vec3 outWorldPos;
+    in vec3 outWorldNormal;
+    in mat3 outTBN;
+    
     uniform vec3 viewPos;
 
     uniform vec4 color ;
-    uniform vec4 sizeOffset;
+    //uniform vec4 sizeOffset;
     uniform sampler2D mainTex;
     uniform sampler2D normal;
     uniform float normalStrength;
@@ -143,8 +139,8 @@
     }
 
     void main(){
-        sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
-        vec2 uv = fsIn.texCoord * sizeOffset.xy + sizeOffset.zw;
+        vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
+        vec2 uv = outTexCoord * sizeOffset.xy + sizeOffset.zw;
         vec4 base = textureSRGB(mainTex, uv);
         if(base.a < cutoff) discard;
         base = base * color;
@@ -153,13 +149,13 @@
         vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
-        vec3 _normal = GetNormal(fsIn.TBN, uv);
+        vec3 _normal = GetNormal(outTBN, uv);
 
         Surface surface;
-        surface.position = fsIn.worldPos;
+        surface.position = outWorldPos;
         surface.normal = _normal;
-        surface.viewDirection = normalize(viewPos - fsIn.worldPos);
-        surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
+        surface.viewDirection = normalize(viewPos - outWorldPos);
+        surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
         surface.alpha = base.a;
         surface.occlusion = GetOcclusion(uv);

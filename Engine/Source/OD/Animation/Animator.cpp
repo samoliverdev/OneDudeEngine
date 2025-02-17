@@ -31,6 +31,8 @@ SystemType AnimatorSystem::Type(){
 }
 
 void AnimatorSystem::Update(){
+    return;
+
     OD_PROFILE_SCOPE("AnimatorSystem::Update");
 
     auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();

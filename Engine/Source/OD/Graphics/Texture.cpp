@@ -240,6 +240,7 @@ void Texture2D::CreateLuaBind(sol::state& lua){
 
     lua.new_usertype<Texture2D>(
         "Texture2D",
+        "New", Texture2D::CreateFromFile,
         "CreateFromFile", Texture2D::CreateFromFile,
         "CreateFromMemory", Texture2D::CreateFromMemory,
         "CreateFromPackage", Texture2D::CreateFromPackage,

@@ -114,5 +114,8 @@
         "semaphore": "cpp",
         "cfenv": "cpp",
         "glad.c": "cpp"
-    }
+    },
+    "Lua.diagnostics.disable": [
+        "undefined-global"
+    ]
 }

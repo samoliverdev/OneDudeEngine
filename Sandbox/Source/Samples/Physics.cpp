@@ -17,7 +17,7 @@ void PhysicsCubeS::OnStart(){
     
     Assert(scene->IsValid(entity) == true);
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
     //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
     //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
     //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
@@ -66,7 +66,7 @@ void PhysicsSample::OnInit(){
     textRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     textRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));*/
 
-    Entity sprite = scene->AddEntity("Sprite");
+    /*Entity sprite = scene->AddEntity("Sprite");
     scene->GetComponent<TransformComponent>(sprite).LocalPosition(Vector3(0, 2, 0));
     SpriteRendererComponent& spriteRenderer = scene->AddComponent<SpriteRendererComponent>(sprite);
     spriteRenderer.sprite = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/character_1.png"); 
@@ -116,7 +116,7 @@ void PhysicsSample::OnInit(){
     uiTextRenderer.color = {0.5f, 0.8f, 0.2f, 1.0f};
     uiTextRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     uiTextRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
-    scene->SetParent(uiImage3, uiText);
+    scene->SetParent(uiImage3, uiText);*/
     
 
     Entity env = scene->AddEntity("Env");
@@ -139,8 +139,8 @@ void PhysicsSample::OnInit(){
     //camMove.OnInit();
     cam.farClipPlane = 1000;
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.obj");
+    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
 
     Entity floorEntity = scene->AddEntity("Floor");
     ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
@@ -185,19 +185,19 @@ void PhysicsSample::OnInit(){
     _trigger.NeverSleep(true);
 
     // Fixme: Not Work why play mode clone the scene and theirs system, Work only if Start Scene now
-    scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Scene& scene, Entity trigger, Entity other){
+    /*scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Scene& scene, Entity trigger, Entity other){
         LogWarning("OnTrigger");
         scene.GetComponent<RigidbodyComponent>(other).ApplyImpulse(Vector3Up * 25.0f);
         //scene->GetComponent<RigidbodyComponent>(other).ApplyImpulse(Vector3Up * 25.0f);
-    });
+    });*/
 
-    Entity luaScript = scene->AddEntity("LuaScript");
+    /*Entity luaScript = scene->AddEntity("LuaScript");
     LuaScriptComponent& _luaScript = scene->AddComponent<LuaScriptComponent>(luaScript);
     _luaScript.scriptPath = "Sandbox/LuaScripts/Test.lua";
 
     Entity luaScript2 = scene->AddEntity("LuaScript2");
     LuaScriptComponent& _luaScript2 = scene->AddComponent<LuaScriptComponent>(luaScript2);
-    _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";
+    _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";*/
 
     //scene->Save("res/scene1.scene");
     //scene->Start();
@@ -210,6 +210,7 @@ void PhysicsSample::OnInit(){
 }
 
 void PhysicsSample::OnUpdate(float deltaTime){
+    return;
     Scene* scene = SceneManager::Get().GetActiveScene();
     //scene->Update();
     if(scene->Running() == false) return;
