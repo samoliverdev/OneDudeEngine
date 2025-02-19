@@ -163,7 +163,9 @@ void CoreModulesStartup(){
     CoreModuleInit();
     GraphicsModuleInit();
     StandRenderPipelineModuleInit();
+    #if !defined(__EMSCRIPTEN__)
     PhysicsModuleInit();
+    #endif
     ScriptModuleInit();
     AnimatorModuleInit();
     AudioModuleInit();

@@ -1,11 +1,11 @@
 #pragma BeginProperties
     Color4 color
-    Vector4 sizeOffset
+    Vector4 sizeOffset 1 1 0 0
     Texture2D mainTex White
     Texture2D normal Normal
     Float normalStrength 1 0 10
     Texture2D emissionMap Black
-    Color4 emissionColor
+    Color4 emissionColor 0 0 0 0
     Texture2D maskMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
@@ -78,7 +78,7 @@
     uniform vec3 viewPos;
 
     uniform vec4 color ;
-    //uniform vec4 sizeOffset;
+    uniform vec4 sizeOffset;
     uniform sampler2D mainTex;
     uniform sampler2D normal;
     uniform float normalStrength;
@@ -139,7 +139,7 @@
     }
 
     void main(){
-        vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
+        //vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
         vec2 uv = outTexCoord * sizeOffset.xy + sizeOffset.zw;
         vec4 base = textureSRGB(mainTex, uv);
         if(base.a < cutoff) discard;

@@ -2,17 +2,18 @@
 #include "OD/Defines.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/GraphicsDevice.h"
+#include "OD/CoreModulesStartup.h"
+#include "OD/Serialization/SerializationFull.h"
 #include "Project.h"
 #include "ImGui.h"
 #include "Input.h"
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "Lua.h"
-#include "OD/CoreModulesStartup.h"
 #include <algorithm>
 #include <fstream>
 #include <string>
-#include "OD/Serialization/SerializationFull.h"
 
 namespace OD{
 
@@ -32,11 +33,11 @@ int heigth;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; 
 
+extern GraphicsDevice* graphicsDevice;
+
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
     auto project = ProjectManager::LoadProject(projectPath);
     if(project == nullptr) return false;
-
-    LogInfo("dfdfdfd");
 
     auto exists = [](const char *fname){
         FILE *file;
@@ -122,9 +123,10 @@ void Application::Loop(){
         for(auto i: modules) i->OnRender(deltaTime);
     }
     {
-        //#if !defined(__EMSCRIPTEN__)
-        OD_PROFILE_SCOPE("Application::Run::OnGUI");
-        for(auto i: modules) i->OnGUI();
+        if(graphicsDevice->ImGuiSupport()){
+            OD_PROFILE_SCOPE("Application::Run::OnGUI");
+            for(auto i: modules) i->OnGUI();
+        }
         //#endif
     }
     inUpdate = false;

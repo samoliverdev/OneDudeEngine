@@ -91,7 +91,8 @@ public:
     bool IsValid();
     inline unsigned int Width(){ return width; }
     inline unsigned int Height(){ return height; }
-    inline unsigned int RenderId(){ return 0; /*id;*/ }
+    
+    void* RenderId();
 
     void OnGui() override;
     void Reload() override;

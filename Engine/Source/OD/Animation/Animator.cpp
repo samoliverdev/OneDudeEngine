@@ -31,7 +31,9 @@ SystemType AnimatorSystem::Type(){
 }
 
 void AnimatorSystem::Update(){
+    #ifdef __EMSCRIPTEN__
     return;
+    #endif
 
     OD_PROFILE_SCOPE("AnimatorSystem::Update");
 

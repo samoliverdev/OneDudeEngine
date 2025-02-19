@@ -481,7 +481,8 @@ void Material::OnGui(){
 
             ImGui::BeginGroup();
             ImVec2 imagePos = ImGui::GetCursorPos();
-            ImGui::Image((void*)(uint64_t)map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 1), ImVec2(1, 0));
+            //ImGui::Image((void*)(uint64_t)map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image(map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::SetCursorPos(imagePos);
             if(ImGui::SmallButton("X")){
                 map.texture = Texture2D::LoadDefautlTexture2D();
@@ -642,22 +643,30 @@ void Material::UpdateMaps(){
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Color4"){
-            SetColor4(i[1].c_str(), Vector4(1,1,1,1));
+            if(i.size() == 6){
+                SetColor4(i[1].c_str(), Vector4(std::stof(i[2]), std::stof(i[3]), std::stof(i[4]), std::stof(i[5])));
+            } else {
+                SetColor4(i[1].c_str(), Vector4(1,1,1,1));
+            }
         }
 
         if(!maps.count(i[1].c_str()) && i[0] == "Color3"){
             SetColor3(i[1].c_str(), Vector3(1,1,1));
         }
 
-        if(!maps.count(i[1].c_str()) && i[0] == "Vetor4"){
-            SetVector4(i[1].c_str(), Vector4(1,1,1,1));
+        if(!maps.count(i[1].c_str()) && i[0] == "Vector4"){
+            if(i.size() == 6){
+                SetVector4(i[1].c_str(), Vector4(std::stof(i[2]), std::stof(i[3]), std::stof(i[4]), std::stof(i[5])));
+            } else {
+                SetVector4(i[1].c_str(), Vector4(1,1,1,1));
+            }
         }
 
-        if(!maps.count(i[1].c_str()) && i[0] == "Vetor3"){
+        if(!maps.count(i[1].c_str()) && i[0] == "Vector3"){
             SetVector3(i[1].c_str(), Vector3(1,1,1));
         }
 
-        if(!maps.count(i[1].c_str()) && i[0] == "Vetor2"){
+        if(!maps.count(i[1].c_str()) && i[0] == "Vector2"){
             SetVector2(i[1].c_str(), Vector2(1,1));
         }
     }

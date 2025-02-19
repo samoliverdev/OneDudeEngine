@@ -53,9 +53,7 @@ void UpdateFpsCounter(GLFWwindow* window){
 }
 
 void imguiOnInit(GLFWwindow* window){
-    /*#if defined(__EMSCRIPTEN__)
-    return;
-    #endif*/
+    if(graphicsDevice->ImGuiSupport() == false) return;
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -104,6 +102,8 @@ void imguiOnInit(GLFWwindow* window){
 }
 
 void imguiOnPreUpdate(){
+    if(graphicsDevice->ImGuiSupport() == false) return;
+
     /*#if defined(__EMSCRIPTEN__)
     return;
     #endif*/
@@ -116,9 +116,8 @@ void imguiOnPreUpdate(){
 }
 
 void imguiOnUpdate(GLFWwindow* window){
-    /*#if defined(__EMSCRIPTEN__)
-    return;
-    #endif*/
+    if(graphicsDevice->ImGuiSupport() == false) return;
+
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Rendering
@@ -151,9 +150,7 @@ void imguiOnUpdate(GLFWwindow* window){
 }
 
 void imguiOnDestroy(){
-    /*#if defined(__EMSCRIPTEN__)
-    return;
-    #endif*/
+    if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
     //ImGui_ImplOpenGL3_Shutdown();
@@ -286,6 +283,9 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
         } else {
             Assert(false && "OpenGL Version not suppoted");
         }
+    } else{
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // <-- extra info for glfwCreateWindow
+	    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     }
 
     /*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenglMajorVer);
@@ -297,6 +297,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
     #endif*/
     
     glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GLFW_FALSE);
+    #else   
+    
     #endif
 
 
@@ -377,28 +379,17 @@ void Platform::SystemShutdown(void* plat_state){
 }
 
 bool Input::IsKey(KeyCode key){
-    /*#if defined(__EMSCRIPTEN__)
-    return false;
-    #endif*/
-    
     auto state = glfwGetKey(window, (int)key);
     return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
 bool Input::IsMouseButton(MouseButton button){
-    /*#if defined(__EMSCRIPTEN__)
-    return false;
-    #endif*/
-    
     auto state = glfwGetMouseButton(window, (int)button);
     return state == GLFW_PRESS;
 }
 
 void Input::GetMousePosition(double* x, double* y){
-    //#if defined(__EMSCRIPTEN__)
-    //#else
     glfwGetCursorPos(window, x, y);
-    //#endif
 }
 
 bool Platform::PumpMessages(){ 

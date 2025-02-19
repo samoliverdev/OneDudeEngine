@@ -4,6 +4,7 @@ option(ENGINE_SHARED_LIBRARY "" TRUE)
 option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
 option(BUILD_EDITOR "BUILD_EDITOR" TRUE)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" TRUE)
+option(UseWebGPU "UseWebGPU" TRUE)
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
 #----------------Engine------------------
@@ -15,6 +16,7 @@ if(EMSCRIPTEN)
     set(ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
     set(BUILD_EDITOR OFF CACHE BOOL "" FORCE)
     set(BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
+    set(UseWebGPU OFF CACHE BOOL "" FORCE)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
 elseif(WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -87,6 +89,18 @@ add_subdirectory(Engine/ThirdParty/recastnavigation)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
 
+if(UseWebGPU) 
+    #FetchContent_Declare(
+    #webgpu
+    #GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
+    #GIT_TAG        main #<branch_name>
+    #)
+    #FetchContent_MakeAvailable(webgpu)
+    add_subdirectory(Engine/ThirdParty/webgpu)
+    add_subdirectory(Engine/ThirdParty/glfw3webgpu)
+endif()
+
+#set(CMAKE_CXX_STANDARD 17)
 set(DEFAULT_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/" CACHE STRING "")
 MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
 
@@ -131,9 +145,18 @@ add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()
 add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
+#set_target_properties(Engine PROPERTIES
+#    CXX_STANDARD 17
+#    CXX_STANDARD_REQUIRED ON
+#    CXX_EXTENSIONS OFF
+#    COMPILE_WARNING_AS_ERROR ON
+#)
 target_precompile_headers(Engine INTERFACE Engine/Source/OD/pch.h)
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
+if(UseWebGPU)
+    target_compile_definitions(Engine PUBLIC WEBGPU_SUPPORT)
+endif()
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
     Engine/ThirdParty/lua-5.1.5/src/
@@ -168,6 +191,10 @@ target_link_libraries(Engine PUBLIC
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     #EASTL
 )
+if(UseWebGPU)
+    target_link_libraries(Engine PUBLIC webgpu glfw3webgpu)
+    target_copy_webgpu_binaries(Engine)
+endif()
 if(EMSCRIPTEN)
     target_compile_definitions(Engine PUBLIC -DEMSCRIPTEN=1)
     set_target_properties(Engine PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1")
@@ -213,7 +240,7 @@ add_custom_command(
 if(EMSCRIPTEN)
     set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
     target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
-    set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
+    set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
     #set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl)
     set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf)
     #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl@./Font.glsl")

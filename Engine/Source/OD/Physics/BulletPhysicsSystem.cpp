@@ -510,6 +510,10 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::Update(){
+    #ifdef __EMSCRIPTEN__
+    return;
+    #endif
+
     if(GetScene()->Running() == false) return;
 
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();

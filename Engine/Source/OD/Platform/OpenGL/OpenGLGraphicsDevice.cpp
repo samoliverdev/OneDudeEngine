@@ -1959,6 +1959,10 @@ bool OpenGLGraphicsDevice::Texture2DIsValid(Texture2D& tex){
     return tex.glData.id != 0;
 }
 
+void* OpenGLGraphicsDevice::Texture2DRenderId(Texture2D& tex){
+    return (void*)(uint64_t)tex.glData.id;
+}
+
 bool OpenGLGraphicsDevice::Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths){
     stbi_set_flip_vertically_on_load(1);
 
@@ -2277,6 +2281,10 @@ bool OpenGLGraphicsDevice::MaterialCreate(Material& shader){
 
 void OpenGLGraphicsDevice::MaterialDestroy(Material& shader){
 
+}
+
+bool OpenGLGraphicsDevice::ImGuiSupport(){
+    return true;
 }
 
 void OpenGLGraphicsDevice::ImGuiNewFrame(){

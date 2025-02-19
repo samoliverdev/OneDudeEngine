@@ -151,6 +151,10 @@ bool Texture2D::IsValid(){
     return graphicsDevice->Texture2DIsValid(*this);
 }
 
+void* Texture2D::RenderId(){
+    return graphicsDevice->Texture2DRenderId(*this);
+}
+
 void Texture2D::OnGui(){
     bool save = false;
 
@@ -160,7 +164,7 @@ void Texture2D::OnGui(){
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
     float aspect = width / height;
-    //ImGui::Image((void*)(uint64_t)id, ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image(RenderId(), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::Spacing();
 
@@ -240,6 +244,7 @@ void Texture2D::CreateLuaBind(sol::state& lua){
 
     lua.new_usertype<Texture2D>(
         "Texture2D",
+        sol::call_constructor, Texture2D::CreateFromFile,
         "New", Texture2D::CreateFromFile,
         "CreateFromFile", Texture2D::CreateFromFile,
         "CreateFromMemory", Texture2D::CreateFromMemory,

@@ -42,7 +42,6 @@ namespace OD{
 bool cleanAll = false;
 
 void ImGuiLayer::SetDarkTheme(){
-    return;
     ImGuiIO& io = ImGui::GetIO();
     float baseFontSize = 20.0f; // 13.0f is the size of the default font. Change to the font size you use.
     float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly

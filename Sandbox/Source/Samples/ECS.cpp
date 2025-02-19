@@ -55,14 +55,14 @@ void ECSSample::OnInit(){
     //scene->GetSystem<StandRendererSystem>()->sceneLightSettings.ambient = Vector3(0.11f,0.16f,0.25f) * 1.0f;
     //scene->Start();
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
+    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.obj");
     floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     //floorModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
     //floorModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
     //floorModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
     cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     //cubeModel->materials[0]->shader = AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/StandDiffuse.glsl");
     //cubeModel->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadTexture2D("res/textures/floor.jpg", OD::TextureFilter::Linear, false));
@@ -170,8 +170,8 @@ void ECSSample::OnInit(){
     /*audioSource.clip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/2ne1_2.mp3");
     audioSource.Play();*/
 
-    Application::AddModule<Editor>();
-    //scene->Start();
+    //Application::AddModule<Editor>();
+    scene.Start();
 }
 
 void ECSSample::OnUpdate(float deltaTime){

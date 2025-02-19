@@ -20,7 +20,9 @@ function OnStart()
     local lightT =  scene:GetComponent(fromLua, TransformComponent()) --fromLua:GetComponent(TransformComponent())
     lightT:LocalPosition(Vector3(0, 1, 0))
 
-    local tex = Texture2D.CreateFromFile("Engine/Textures/White.jpg", Texture2DSetting())
+    --local tex = Texture2D.CreateFromFile("Engine/Textures/White.jpg", Texture2DSetting())
+    --local tex = Texture2D.New("Engine/Textures/White.jpg", Texture2DSetting())
+    local tex = Texture2D("Engine/Textures/White.jpg", Texture2DSetting())
     print(tex:Width(), tex:Height())
 end
 

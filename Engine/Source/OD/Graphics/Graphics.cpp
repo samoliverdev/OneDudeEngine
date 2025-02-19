@@ -13,6 +13,9 @@
 //#define ENGINE_RESOURCE_PATH "res/Engine/"
 
 #include "OD/Platform/OpenGL/OpenGLGraphicsDevice.h"
+#if defined(WEBGPU_SUPPORT)
+#include "OD/Platform/WebGPU/WebGPUGraphicsDevice.h"
+#endif
 
 namespace OD{
 
@@ -33,7 +36,9 @@ void GraphicsModuleInit(){
 GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::SelectGraphicsDevice(){
-    #ifdef OPENGL_SUPPORT 
+    #if defined(WEBGPU_SUPPORT)
+    graphicsDevice = new WebGPUGraphicsDevice();
+    #elif defined(OPENGL_SUPPORT) 
     graphicsDevice = new OpenGLGraphicsDevice();
     #endif
 }
@@ -49,8 +54,6 @@ void Graphics::Shutdown(){
 }
 
 void Graphics::CreateLuaBind(sol::state& lua){
-    return;
-    /*
     lua.new_enum(
         "DepthTest",
         "DISABLE", DepthTest::DISABLE,
@@ -87,16 +90,16 @@ void Graphics::CreateLuaBind(sol::state& lua){
         "CONSTANT_ALPHA", BlendMode::CONSTANT_ALPHA,
         "ONE_MINUS_CONSTANT_ALPHA", BlendMode::ONE_MINUS_CONSTANT_ALPHA
     );
-    lua.new_enum(
+    /*lua.new_enum(
         "GraphicsRenderMode",
         "SHADED", Graphics::RenderMode::SHADED,
         "WIREFRAME", Graphics::RenderMode::WIREFRAME
-    );
+    );*/
     lua.new_usertype<Graphics>(
         "Graphics",
-        "GetDrawCallsCount", Graphics::GetDrawCallsCount,
-        "GetVerticesCount", Graphics::GetVerticesCount,
-        "GetTrisCount", Graphics::GetTrisCount,
+        //"GetDrawCallsCount", Graphics::GetDrawCallsCount,
+        //"GetVerticesCount", Graphics::GetVerticesCount,
+        //"GetTrisCount", Graphics::GetTrisCount,
         "Begin", Graphics::Begin,
         "End", Graphics::End,
         "HasBegin", Graphics::HasBegin,
@@ -107,32 +110,31 @@ void Graphics::CreateLuaBind(sol::state& lua){
         //"SetModelMatrix", Graphics::SetModelMatrix,
         //"DrawMeshRaw", Graphics::DrawMeshRaw,
         //"DrawMeshInstancingRaw", Graphics::DrawMeshInstancingRaw,
-        "DrawMesh", Graphics::DrawMesh,
-        "DrawMeshInstancing", Graphics::DrawMeshInstancing,
-        "DrawModel", Graphics::DrawModel,
+        //"DrawMesh", Graphics::DrawMesh,
+        //"DrawMeshInstancing", Graphics::DrawMeshInstancing,
+        //"DrawModel", Graphics::DrawModel,
         "AddDrawLineCommand", Graphics::AddDrawLineCommand,
         "DrawLinesComamnd", Graphics::DrawLinesComamnd,
         "DrawLine", sol::overload(
             [](Vector3 start, Vector3 end, Vector3 color, int lineWidth){ Graphics::DrawLine(start, end, color, lineWidth);},
             [](Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth){ Graphics::DrawLine(model, start, end, color, lineWidth);}
         ),
-        "DrawText", sol::overload(
+        /*"DrawText", sol::overload(
             [](Font& f, SubShader& s, std::string text, Vector3 pos, float scale){ Graphics::DrawText(f, s, text, pos, scale); },
             [](Font& f, SubShader& s, std::string text, Matrix4 model){ Graphics::DrawText(f, s, text, model); }
-        ),
+        ),*/
         "SetViewport", Graphics::SetViewport,
-        "GetViewport", Graphics::GetViewport,
-        "SetRenderMode", Graphics::SetRenderMode,
-        "SetDepthMask", Graphics::SetDepthMask,
-        "SetDepthTest", Graphics::SetDepthTest,
-        "SetCullFace", Graphics::SetCullFace,
-        "SetBlend", Graphics::SetBlend,
-        "SetBlendFunc", Graphics::SetBlendFunc,
-        "BeginFramebuffer", Graphics::BeginFramebuffer,
-        "BlitQuadPostProcessing", Graphics::BlitQuadPostProcessing,
-        "BlitFramebuffer", Graphics::BlitFramebuffer
+        "GetViewport", Graphics::GetViewport
+        //"SetRenderMode", Graphics::SetRenderMode,
+        //"SetDepthMask", Graphics::SetDepthMask,
+        //"SetDepthTest", Graphics::SetDepthTest,
+        //"SetCullFace", Graphics::SetCullFace,
+        //"SetBlend", Graphics::SetBlend,
+        //"SetBlendFunc", Graphics::SetBlendFunc,
+        //"BeginFramebuffer", Graphics::BeginFramebuffer,
+        //"BlitQuadPostProcessing", Graphics::BlitQuadPostProcessing,
+        //"BlitFramebuffer", Graphics::BlitFramebuffer
     );
-    */
 }
 
 GraphicsStats& Graphics::GetStats(){ 

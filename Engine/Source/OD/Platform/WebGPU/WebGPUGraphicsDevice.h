@@ -1,13 +1,20 @@
 #pragma once
-#ifdef OPENGL_SUPPORT
+#ifdef WEBGPU_SUPPORT
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
 
+#include <webgpu/webgpu.h>
+#ifdef WEBGPU_BACKEND_WGPU
+#include <webgpu/wgpu.h>
+#endif
+#include <glfw3webgpu.h>
+
+
 namespace OD{
 
-class OpenGLGraphicsDevice: public GraphicsDevice{
+class WebGPUGraphicsDevice: public GraphicsDevice{
 public:
-    OpenGLGraphicsDevice();
+    WebGPUGraphicsDevice();
 
     virtual void LoadContext(void* data) override;
 
@@ -116,60 +123,15 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
 
-    void SetColorMask(Vector4 mask);
-    void SetRenderMode(RenderMode mode);
-    void SetDepthMask(bool value);
-    void SetDepthTest(DepthTest depthTest);
-    void SetCullFace(CullFace cullFace);
-    void SetBlend(bool b);
-    int BlendModeToGL(BlendMode blendMode);
-    void SetBlendFunc(BlendMode sfactor, BlendMode dfactor);
-
-    int SubShaderGetLocation(SubShader& shader, const char* name);
-    void SubShaderSetFloat(SubShader& shader, const char* name, float value);
-    void SubShaderSetFloat(SubShader& shader, const char* name, float* value, int count);
-    void SubShaderSetInt(SubShader& shader, const char* name, int value);
-    void SubShaderSetVector2(SubShader& shader, const char* name, Vector2 value);
-    void SubShaderSetVector3(SubShader& shader, const char* name, Vector3 value);
-    void SubShaderSetVector4(SubShader& shader, const char* name, Vector4 value);
-    void SubShaderSetVector4(SubShader& shader, const char* name, Vector4* value, int count);
-    void SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4 value);
-    void SubShaderSetMatrix4(SubShader& shader, const char* name, std::vector<Matrix4>& value);
-    void SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4* value, int count);
-    void Texture2DBind(Texture2D& tex, int index);
-    void Texture2DArrayBind(Texture2DArray& tex, int index);
-    void CubemapBind(Cubemap& cubemap, int index);
-    void SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index);
-    void SubShaderSetTexture2DArray(SubShader& shader, const char* name, Texture2DArray& value, int index);
-    void SubShaderSetCubemap(SubShader& shader, const char* name, Cubemap& value, int index);
-    void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
+    WGPUTextureView GetNextSurfaceTextureView();
 
     GraphicsDeviceInfo info;
-    
-    unsigned int globalVAO;
-
-    unsigned int lineVAO;
-    unsigned int lineVBO;
-    unsigned int lineCommandsVAO;
-    unsigned int lineCommandsVBO;
-    std::vector<float> lineCommandsData;
-    #define MAX_LINES_VERTEX_DRAWCALL 1000000
-
-    unsigned int textQuadVAO;
-    unsigned int textQuadVBO;
-
-    unsigned int wiredCubeVAO;
-    unsigned int wiredCubeVBO;
-    unsigned int wiredCubeEBO;
-
-    //Ref<SubShader> gismoShader;
-    Ref<Material> gismoMaterial;
-    Ref<Mesh> fullScreenQuad;
-    Camera camera;
     GraphicsStats stats;
-    Material* lastMat = nullptr;
-    SubShader* lastShader = nullptr;
-    bool begin = false;
+    Camera camera;
+
+    WGPUDevice device;
+	WGPUQueue queue;
+	WGPUSurface surface;
 };
 
 }

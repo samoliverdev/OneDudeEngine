@@ -97,6 +97,7 @@ public:
     virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings) = 0;
     virtual void Texture2DDestroy(Texture2D& tex) = 0;
     virtual bool Texture2DIsValid(Texture2D& tex) = 0;
+    virtual void* Texture2DRenderId(Texture2D& tex) = 0;
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) = 0; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) = 0;
@@ -132,6 +133,7 @@ public:
     virtual void _Begin() = 0;
     virtual void _End() = 0;
 
+    virtual bool ImGuiSupport() = 0;
     virtual void ImGuiNewFrame() = 0;
     virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
 };
