@@ -510,9 +510,9 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::Update(){
-    #ifdef __EMSCRIPTEN__
+    /*#ifdef __EMSCRIPTEN__
     return;
-    #endif
+    #endif*/
 
     if(GetScene()->Running() == false) return;
 

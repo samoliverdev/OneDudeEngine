@@ -202,8 +202,8 @@ void PhysicsSample::OnInit(){
     _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";
 
     //scene->Save("res/scene1.scene");
-    //scene->Start();
-    Application::AddModule<Editor>();
+    scene->Start();
+    //Application::AddModule<Editor>();
 
     /*typedef Module* (*CreateInstanceFunc)();
     void* module = Platform::LoadDynamicLibrary("build/Release/dynamic_module.dll");
@@ -212,7 +212,7 @@ void PhysicsSample::OnInit(){
 }
 
 void PhysicsSample::OnUpdate(float deltaTime){
-    return;
+    //return;
     Scene* scene = SceneManager::Get().GetActiveScene();
     //scene->Update();
     if(scene->Running() == false) return;

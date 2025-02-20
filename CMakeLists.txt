@@ -240,7 +240,7 @@ add_custom_command(
 if(EMSCRIPTEN)
     set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
     target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
-    set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
+    set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s -s EXPORTED_FUNCTIONS=_malloc,_free,setValue,_main -s EXPORTED_RUNTIME_METHODS=cwrap,ccall -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
     #set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl)
     set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf)
     #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl@./Font.glsl")
