@@ -8,6 +8,9 @@
 #include "UniformBuffer.h"
 #include "RendererTypes.h"
 
+#include "OD/Platform/OpenGL/GL.h"
+#include "OD/Platform/WebGPU/WebGPU.h"
+
 namespace OD {
 
 struct OD_API ShaderPipeline{
@@ -44,6 +47,7 @@ struct OD_API SubShader{
     //std::unordered_map<std::string, int> uniforms;
     //std::vector<std::string> _uniforms;
     SubShaderDataGL;
+    SubShaderDataWG;
 
     inline bool SupportInstancing(){ return pipeline.supportInstancing; }
     inline CullFace GetCullFace(){ return pipeline.cullFace; }

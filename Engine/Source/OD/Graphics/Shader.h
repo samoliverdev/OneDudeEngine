@@ -12,6 +12,7 @@ namespace OD{
 class OD_API Shader: public Asset{
     friend class Material;
     friend class OpenGLGraphicsDevice;
+    friend class WebGPUGraphicsDevice;
 public:
     Shader(std::string sourcePath);
     Shader(){}

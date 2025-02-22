@@ -85,6 +85,7 @@ private:
 class OD_API Material: public Asset{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
+    friend class WebGPUGraphicsDevice;
 public:
     Material();
     Material(Ref<Shader> s);

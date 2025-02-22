@@ -132,6 +132,16 @@ public:
     WGPUDevice device;
 	WGPUQueue queue;
 	WGPUSurface surface;
+
+    WGPUTextureFormat surfaceFormat = WGPUTextureFormat_Undefined;
+
+    //Frame Data
+    WGPUTextureView targetView;
+    WGPURenderPassEncoder renderPass;
+    WGPUCommandEncoder encoder;
+
+    Material* lastMat = nullptr;
+    SubShader* lastShader = nullptr;
 };
 
 }

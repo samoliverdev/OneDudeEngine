@@ -1,7 +1,26 @@
 #ifdef WEBGPU_SUPPORT
 #include "WebGPUGraphicsDevice.h"
 #include "OD/Platform/Platform.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Camera.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Font.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
+#include "OD/Graphics/SubShader.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Font.h"
+#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationFull.h"
+#include "OD/Core/Application.h"
+#include "OD/Core/ImGui.h"
+
 #include <GLFW/glfw3.h>
+
+#include "glslang/Include/glslang_c_interface.h"
+#include "glslang/Public/resource_limits_c.h"
+//#include <spirv_cross_c.h>
 
 namespace OD{
 
@@ -259,7 +278,7 @@ void WebGPUGraphicsDevice::Initialize(){
 	config.width = 640;
 	config.height = 480;
 	config.usage = WGPUTextureUsage_RenderAttachment;
-	WGPUTextureFormat surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
+	surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
 	config.format = surfaceFormat;
 
 	// And we do not need any particular view format:
@@ -314,14 +333,14 @@ WGPUTextureView WebGPUGraphicsDevice::GetNextSurfaceTextureView(){
 
 void WebGPUGraphicsDevice::_Begin(){
 	// Get the next target texture view
-	WGPUTextureView targetView = GetNextSurfaceTextureView();
-	if (!targetView) return;
+	/*WGPUTextureView*/ targetView = GetNextSurfaceTextureView();
+	if(!targetView) return;
 
 	// Create a command encoder for the draw call
 	WGPUCommandEncoderDescriptor encoderDesc = {};
 	encoderDesc.nextInChain = nullptr;
 	encoderDesc.label = "My command encoder";
-	WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+	/*WGPUCommandEncoder*/ encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 	// Create the render pass that clears the screen with our color
 	WGPURenderPassDescriptor renderPassDesc = {};
@@ -344,8 +363,13 @@ void WebGPUGraphicsDevice::_Begin(){
 	renderPassDesc.timestampWrites = nullptr;
 
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
-	WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
-	wgpuRenderPassEncoderEnd(renderPass);
+	/*WGPURenderPassEncoder*/ renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+}
+
+void WebGPUGraphicsDevice::_End(){
+    if(!targetView) return;
+
+    wgpuRenderPassEncoderEnd(renderPass);
 	wgpuRenderPassEncoderRelease(renderPass);
 
 	// Finally encode and submit the render pass
@@ -373,10 +397,6 @@ void WebGPUGraphicsDevice::_Begin(){
 #endif
 }
 
-void WebGPUGraphicsDevice::_End(){
-
-}
-
 GraphicsStats& WebGPUGraphicsDevice::GetStats(){
     return stats;
 }
@@ -386,7 +406,15 @@ GraphicsDeviceInfo WebGPUGraphicsDevice::GetInfo(){
 }
 
 void WebGPUGraphicsDevice::Begin(){
-
+    stats.drawCalls = 0;
+    stats.vertices = 0;
+    stats.tris = 0;
+    stats.shaderBinds = 0;
+    stats.uniformSet = 0;
+    stats.materialSubmitDatas = 0;
+    //begin = true;
+    lastMat = nullptr;
+    lastShader = nullptr;
 }
 
 void WebGPUGraphicsDevice::End(){
@@ -418,11 +446,108 @@ void WebGPUGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned
 }
 
 void WebGPUGraphicsDevice::BindMaterial(Material& mat){
+    /*auto ContainUniformName = [&](SubShader shader, const std::string& name){ 
+        return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
+    };
 
+    auto ApplyUniformTo = [&](Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
+        for(auto& i: maps){
+            MaterialMap& map = i.second;
+
+            if(ContainUniformName(shader, i.first) == false) continue;
+
+            if(map.type == MaterialMap::Type::Int){
+                SubShaderSetInt(shader, i.first.c_str(), map.valueInt);
+            }
+            if(map.type == MaterialMap::Type::Float){
+                SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
+            }
+            if(map.type == MaterialMap::Type::Vector2){
+                SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
+            }
+            if(map.type == MaterialMap::Type::Vector3){
+                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+            }
+            if(map.type == MaterialMap::Type::Vector4){
+                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+            }
+            if(map.type == MaterialMap::Type::Matrix4){
+                SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
+            }
+            if(map.type == MaterialMap::Type::Texture){
+                Assert(i.second.texture != nullptr);
+                SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::TextureArray){
+                SubShaderSetTexture2DArray(shader, i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::Framebuffer){
+                SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::Cubemap){
+                SubShaderSetCubemap(shader, i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::FloatList){
+                SubShaderSetFloat(shader, i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+            }
+            if(map.type == MaterialMap::Type::Vector4List){
+                SubShaderSetVector4(shader, i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+            }
+            if(map.type == MaterialMap::Type::Matrix4List){
+                SubShaderSetMatrix4(shader, i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+            }
+        }
+    };*/
+
+    auto SubmitGraphicDatas = [&](Material& material){
+        stats.materialSubmitDatas += 1;
+        material.currentTextureSlot = 0;
+        material.UpdateCurrentShader();
+
+        Assert(material.GetShader() != nullptr);
+        if(material.GetShader() == nullptr) return;
+
+        /*SetColorMask(mat.currentShader->pipeline.colorMask);
+        SetCullFace(mat.currentShader->GetCullFace());
+        SetDepthTest(mat.currentShader->GetDepthTest());
+        SetDepthMask(mat.currentShader->IsDepthMask());
+        if(mat.currentShader->IsBlend()){
+            SetBlend(true);
+            SetBlendFunc(mat.currentShader->GetSrcBlend(), mat.currentShader->GetDstBlend());
+        } else {
+            SetBlend(false);
+        }*/
+
+        SubShaderBind(*material.currentShader);
+        //ApplyUniformTo(material, *material.currentShader, material.maps);
+        //ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
+        Assert(material.currentTextureSlot < 32);
+    };
+
+    Assert(mat.currentShader != nullptr && "Shader is not vali!");
+    Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
+
+    if(&mat != lastMat || mat.isDirty == true){
+        SubmitGraphicDatas(mat);
+        mat.isDirty = false;
+    }
+    lastMat = &mat;
+    
+    if(mat.currentShader.get() != lastShader){
+        //SubShaderBind(*mat.currentShader);
+        //SubShaderSetMatrix4(*mat.currentShader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
+        //SubShaderSetMatrix4(*mat.currentShader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
+    }
+    lastShader = mat.currentShader.get();
 }
 
 void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
-    
+    if(!targetView) return;
+    wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
 }
 
 void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){
@@ -433,8 +558,9 @@ void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs,
 
 }
 
-void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix){
-
+void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
+    BindMaterial(mat);
+    DrawMesh(mesh, modelMatrix);
 }
 
 void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count){
@@ -595,6 +721,71 @@ bool WebGPUGraphicsDevice::CubemapIsValid(Cubemap& tex){
     return false;
 }
 
+using ShaderSpiv = std::vector<uint32_t>;
+
+bool CompileShader(std::string& baseSource, glslang_stage_t Stage, ShaderSpiv& spiv){
+	glslang_input_t input = {};
+	input.language = GLSLANG_SOURCE_GLSL;
+	input.stage = Stage;
+	input.client = GLSLANG_CLIENT_VULKAN;
+	input.client_version = GLSLANG_TARGET_VULKAN_1_1;
+	input.target_language = GLSLANG_TARGET_SPV;
+	input.target_language_version = GLSLANG_TARGET_SPV_1_0;
+	input.code = baseSource.c_str();
+	input.default_version = 450;
+	input.default_profile = GLSLANG_NO_PROFILE;
+	input.force_default_version_and_profile = false;
+	input.forward_compatible = false;
+	input.messages = (glslang_messages_t)(GLSLANG_MSG_SPV_RULES_BIT);
+	input.resource = glslang_default_resource();
+
+	glslang_shader_t* shader = glslang_shader_create(&input);
+
+	if(!glslang_shader_preprocess(shader, &input)){
+		fprintf(stderr, "GLSL preprocessing failed\n");
+		fprintf(stderr, "\n%s", glslang_shader_get_info_log(shader));
+		fprintf(stderr, "\n%s", glslang_shader_get_info_debug_log(shader));
+        
+		//PrintShaderSource(input.code);
+		return 0;
+	}
+
+	if(!glslang_shader_parse(shader, &input)){
+		fprintf(stderr, "GLSL parsing failed\n");
+		fprintf(stderr, "\n%s", glslang_shader_get_info_log(shader));
+		fprintf(stderr, "\n%s", glslang_shader_get_info_debug_log(shader));
+		//PrintShaderSource(glslang_shader_get_preprocessed_code(shader));
+		return 0;
+	}
+
+	glslang_program_t* program = glslang_program_create();
+	glslang_program_add_shader(program, shader);
+
+	if(!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT)) {
+		fprintf(stderr, "GLSL linking failed\n");
+		fprintf(stderr, "\n%s", glslang_program_get_info_log(program));
+		fprintf(stderr, "\n%s", glslang_program_get_info_debug_log(program));
+		return 0;
+	}
+
+	glslang_program_SPIRV_generate(program, Stage);
+    size_t program_size = glslang_program_SPIRV_get_size(program);
+    spiv.resize(program_size);
+    glslang_program_SPIRV_get(program, spiv.data());
+
+	const char* spirv_messages = glslang_program_SPIRV_get_messages(program);
+
+	if(spirv_messages){
+		fprintf(stderr, "SPIR-V message: '%s'", spirv_messages);
+	}
+
+	glslang_program_delete(program);
+	glslang_shader_delete(shader);
+
+	bool ret = spiv.size() > 0;
+	return ret;
+}
+
 bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     SubShader& shader,
     std::string& source, 
@@ -602,23 +793,127 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     ShaderPipeline pipeline, 
     std::vector<std::string>& errors
 ){
-    return false;
+    glslang_initialize_process();
+
+    #define Header "#version 450"
+    std::string vertexToInsert = Header "\n#define VERTEX\n#define WebGPU_API\n";
+    std::string fragToInsert = Header "\n#define FRAGMENT\n#define WebGPU_API\n";
+
+    ShaderSpiv spivVertex;
+    ShaderSpiv spivFrag;
+
+    source.insert(0, vertexToInsert);
+    if(CompileShader(source,  GLSLANG_STAGE_VERTEX, spivVertex) == false) Assert(false);
+    source.erase(0, vertexToInsert.size());
+
+    source.insert(0, fragToInsert);
+    if(CompileShader(source, GLSLANG_STAGE_FRAGMENT, spivFrag) == false) Assert(false);
+    source.erase(0, fragToInsert.size());
+
+    WGPUShaderModuleDescriptor shaderDesc{};
+    #ifdef WEBGPU_BACKEND_WGPU
+    shaderDesc.hintCount = 0;
+    shaderDesc.hints = nullptr;
+    #endif
+
+    WGPUShaderModuleSPIRVDescriptor shaderCodeDesc{};
+    shaderCodeDesc.chain.next = nullptr;// Set the chained struct's header
+    shaderCodeDesc.chain.sType = WGPUSType_ShaderModuleSPIRVDescriptor;
+    shaderCodeDesc.code = spivVertex.data();
+    shaderCodeDesc.codeSize = spivVertex.size();
+    shaderDesc.nextInChain = &shaderCodeDesc.chain;// Connect the chain
+    shader.wgData.shaderModuleVertex = wgpuDeviceCreateShaderModule(device, &shaderDesc);
+
+    shaderCodeDesc.code = spivFrag.data();
+    shaderCodeDesc.codeSize = spivFrag.size();
+    shader.wgData.shaderModuleFrag = wgpuDeviceCreateShaderModule(device, &shaderDesc);
+    glslang_finalize_process();
+
+    //-----------------------------------------------
+
+    WGPURenderPipelineDescriptor pipelineDesc{};
+    pipelineDesc.nextInChain = nullptr;
+
+    pipelineDesc.vertex.bufferCount = 0;
+    pipelineDesc.vertex.buffers = nullptr;
+    pipelineDesc.vertex.module = shader.wgData.shaderModuleVertex;
+    pipelineDesc.vertex.entryPoint = "main";
+    pipelineDesc.vertex.constantCount = 0;
+    pipelineDesc.vertex.constants = nullptr;
+    // Each sequence of 3 vertices is considered as a triangle
+    pipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    // We'll see later how to specify the order in which vertices should be
+    // connected. When not specified, vertices are considered sequentially.
+    pipelineDesc.primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
+    // The face orientation is defined by assuming that when looking
+    // from the front of the face, its corner vertices are enumerated
+    // in the counter-clockwise (CCW) order.
+    pipelineDesc.primitive.frontFace = WGPUFrontFace_CCW;
+    // But the face orientation does not matter much because we do not
+    // cull (i.e. "hide") the faces pointing away from us (which is often
+    // used for optimization).
+    pipelineDesc.primitive.cullMode = WGPUCullMode_None;
+
+    WGPUFragmentState fragmentState{};
+    fragmentState.module = shader.wgData.shaderModuleFrag;
+    fragmentState.entryPoint = "main";
+    fragmentState.constantCount = 0;
+    fragmentState.constants = nullptr;
+    
+    WGPUBlendState blendState{};
+    blendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+    blendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blendState.color.operation = WGPUBlendOperation_Add;
+    blendState.alpha.srcFactor = WGPUBlendFactor_Zero;
+    blendState.alpha.dstFactor = WGPUBlendFactor_One;
+    blendState.alpha.operation = WGPUBlendOperation_Add;
+
+    WGPUColorTargetState colorTarget{};
+    colorTarget.format = surfaceFormat;
+    colorTarget.blend = &blendState;
+    colorTarget.writeMask = WGPUColorWriteMask_All; // We could write to only some of the color channels.
+
+    // We have only one target because our render pass has only one output color
+    // attachment.
+    fragmentState.targetCount = 1;
+    fragmentState.targets = &colorTarget;
+
+    pipelineDesc.fragment = &fragmentState;
+    pipelineDesc.depthStencil = nullptr;
+
+    pipelineDesc.multisample.count = 1;
+    pipelineDesc.multisample.mask = ~0u;// Default value for the mask, meaning "all bits on"
+    pipelineDesc.multisample.alphaToCoverageEnabled = false;// Default value as well (irrelevant for count = 1 anyways)
+
+    pipelineDesc.layout = nullptr;
+
+    shader.wgData.pipeline = wgpuDeviceCreateRenderPipeline(device, &pipelineDesc);
+    return true;
 }
 
 void WebGPUGraphicsDevice::SubShaderDestroy(SubShader& shader){
+    wgpuShaderModuleRelease(shader.wgData.shaderModuleVertex);
+    wgpuShaderModuleRelease(shader.wgData.shaderModuleFrag);
+    wgpuRenderPipelineRelease(shader.wgData.pipeline);
 
+    shader.wgData.shaderModuleVertex = nullptr;
+    shader.wgData.shaderModuleFrag = nullptr;
+    shader.wgData.pipeline = nullptr;
 }
 
 bool WebGPUGraphicsDevice::SubShaderIsValid(SubShader& shader){
-    return false;
+    if(shader.wgData.pipeline == nullptr) return false;
+    return true;
 }
 
 void WebGPUGraphicsDevice::SubShaderBind(SubShader& shader){
-
+    if(!targetView) return;
+    wgpuRenderPassEncoderSetPipeline(renderPass, shader.wgData.pipeline);
 }
 
-bool WebGPUGraphicsDevice::ShaderCreate(Shader& shader, std::string path){
-    return false;
+bool WebGPUGraphicsDevice::ShaderCreate(Shader& shader, std::string inPath){
+    LogInfo("Create Shader: %s", inPath.c_str());
+    return shader.Create(inPath);
 }
 
 void WebGPUGraphicsDevice::ShaderDestroy(Shader& shader){

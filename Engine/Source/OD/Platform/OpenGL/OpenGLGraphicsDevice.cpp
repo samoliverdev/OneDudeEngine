@@ -2115,8 +2115,8 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
 
     //std::string vertexToInsert = "#version 330 core\n#define VERTEX\n";
     //std::string fragToInsert = "#version 330 core\n#define FRAGMENT\n";
-    std::string vertexToInsert = OpenglHeader "\n#define VERTEX\n";
-    std::string fragToInsert = OpenglHeader "\n#define FRAGMENT\n";
+    std::string vertexToInsert = OpenglHeader "\n#define VERTEX\n#define OpenGL_API\n";
+    std::string fragToInsert = OpenglHeader "\n#define FRAGMENT\n#define OpenGL_API\n";
 
     auto CompileShader = [&](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
         baseSource.insert(0, toInsert);
