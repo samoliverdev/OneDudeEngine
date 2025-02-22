@@ -1,14 +1,6 @@
 #ifndef BASE_INCLUDED
 #define BASE_INCLUDED
 
-/*
-#define BeginAttribute() \
-    #if defined(VERTEX)
-    
-#define EndAttribute() \
-    #endif
-*/
-
 #if defined(OpenGL_API)
     precision highp float;
     precision highp int;
@@ -18,6 +10,7 @@
     #define Attribute(loc) layout(location = loc) in
 
     #define OutPosition gl_Position
+    #define VertexIndex gl_VertexID
 
 #endif
 
@@ -27,6 +20,7 @@
     #define Attribute(loc) layout(location = loc) in
 
     #define OutPosition gl_Position
+    #define VertexIndex gl_VertexIndex
 #endif
 
 #endif

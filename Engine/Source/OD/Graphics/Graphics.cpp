@@ -12,10 +12,14 @@
 
 //#define ENGINE_RESOURCE_PATH "res/Engine/"
 
+#include "OD/Platform/Headless/HeadlessGraphicsDevice.h"
+
 #include "OD/Platform/OpenGL/OpenGLGraphicsDevice.h"
 #if defined(WEBGPU_SUPPORT)
 #include "OD/Platform/WebGPU/WebGPUGraphicsDevice.h"
 #endif
+
+#include <functional>
 
 namespace OD{
 
@@ -33,14 +37,42 @@ void GraphicsModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Texture2D>();
 }
 
+std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
+    [](){ return new HeadlessGraphicsDevice(); },
+
+    #if defined(__EMSCRIPTEN__)
+        #if defined(OPENGL_SUPPORT) 
+        [](){ return new OpenGLGraphicsDevice(); },
+        #endif
+    #else
+        #if defined(OPENGL_SUPPORT) 
+        [](){ return new OpenGLGraphicsDevice(); },
+        #endif
+        #if defined(WEBGPU_SUPPORT)
+        [](){ return new WebGPUGraphicsDevice(); },
+        #endif
+    #endif
+};
+
+int curGraphicsDevice = 0;
 GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::SelectGraphicsDevice(){
-    #if defined(WEBGPU_SUPPORT)
+    if(curGraphicsDevice >= supportedGraphicsDevices.size()){
+        curGraphicsDevice = supportedGraphicsDevices.size() - 1;
+    }  
+
+    Assert(curGraphicsDevice >= 0);
+    Assert(curGraphicsDevice < supportedGraphicsDevices.size());
+    Assert(supportedGraphicsDevices.size() < 5);
+
+    graphicsDevice = supportedGraphicsDevices[curGraphicsDevice]();
+
+    /*#if defined(WEBGPU_SUPPORT)
     graphicsDevice = new WebGPUGraphicsDevice();
     #elif defined(OPENGL_SUPPORT) 
     graphicsDevice = new OpenGLGraphicsDevice();
-    #endif
+    #endif*/
 }
 
 void Graphics::Initialize(){

@@ -2120,7 +2120,7 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
 
     auto CompileShader = [&](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
         baseSource.insert(0, toInsert);
-        //LogWarning("%s", baseSource.c_str());
+        LogWarning("%s", baseSource.c_str());
 
         shader = glCreateShader(type);
 

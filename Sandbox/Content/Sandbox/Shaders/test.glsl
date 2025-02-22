@@ -20,8 +20,8 @@ EndAttribute()*/
             vec3(0.5, -0.5, 0.0),
             vec3(0.0, 0.5, 0.0)
         );
-        //pos = positions[gl_VertexIndex];
-        OutPosition = vec4(positions[gl_VertexIndex], 1.0);
+        //pos = positions[VertexIndex];
+        OutPosition = vec4(positions[VertexIndex], 1.0);
 
         //pos = vPosition;
         //OutPosition = vec4(pos, 1.0);

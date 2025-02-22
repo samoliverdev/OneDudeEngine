@@ -72,12 +72,6 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
 private:
-    static inline std::vector<std::string> supportedGraphicsDevices = {
-        #ifdef OPENGL_SUPPORT 
-        "OpenGL" 
-        #endif
-    };
-
     static void SelectGraphicsDevice();
     static void Initialize();
     static void Shutdown();
