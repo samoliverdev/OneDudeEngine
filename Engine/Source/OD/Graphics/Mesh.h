@@ -3,6 +3,7 @@
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Platform/WebGPU/WebGPU.h"
 
 namespace OD {
 
@@ -25,6 +26,7 @@ enum class MeshDrawMode{
 class OD_API Mesh: public Asset{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
+    friend class WebGPUGraphicsDevice;
 public:
     std::vector<Vector3> vertices;
     std::vector<Vector3> uv;
@@ -91,6 +93,7 @@ private:
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
     MeshDataGL;
+    MeshDataWG;
 
     void Bind();
 };

@@ -8,6 +8,10 @@ void BaseMeshSample::OnInit(){
     mesh.vertices.push_back(Vector3(0.5f, -0.5f, 0));
     mesh.vertices.push_back(Vector3(-0.5f, -0.5f, 0));
     mesh.vertices.push_back(Vector3(-0.5f, 0.5f, 0));
+    mesh.uv.push_back(Vector3(1, 1, 0));
+    mesh.uv.push_back(Vector3(1, 0, 0));
+    mesh.uv.push_back(Vector3(0, 0, 0));
+    mesh.uv.push_back(Vector3(0, 1, 0));
     mesh.indices.push_back(0);
     mesh.indices.push_back(1);
     mesh.indices.push_back(3);

@@ -4,7 +4,19 @@
 #include <webgpu/webgpu.h>
 
 struct WGMeshData{
-    
+    WGPUBuffer vertexBuffer = nullptr;
+    WGPUBuffer uvBuffer = nullptr;
+
+    /*WGPUBuffer uvBuffer;
+    WGPUBuffer normalVbo;
+    WGPUBuffer colorVbo;
+    WGPUBuffer tangentVbo;
+    WGPUBuffer instancingModelMatrixsVbo;
+    WGPUBuffer jointVbo = 0; 
+    WGPUBuffer weightsVbo = 0;  
+    unsigned int ebo = 0;*/
+
+    WGPUBuffer indexBuffer = nullptr;
 };
 
 struct WGFramebufferData{

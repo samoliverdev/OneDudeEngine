@@ -54,7 +54,7 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
     #endif
 };
 
-int curGraphicsDevice = 0;
+int curGraphicsDevice = 2;
 GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::SelectGraphicsDevice(){

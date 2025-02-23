@@ -334,6 +334,7 @@ WGPUTextureView WebGPUGraphicsDevice::GetNextSurfaceTextureView(){
 void WebGPUGraphicsDevice::_Begin(){
 	// Get the next target texture view
 	/*WGPUTextureView*/ targetView = GetNextSurfaceTextureView();
+    Assert(targetView != nullptr);
 	if(!targetView) return;
 
 	// Create a command encoder for the draw call
@@ -367,7 +368,7 @@ void WebGPUGraphicsDevice::_Begin(){
 }
 
 void WebGPUGraphicsDevice::_End(){
-    if(!targetView) return;
+    //if(!targetView) return;
 
     wgpuRenderPassEncoderEnd(renderPass);
 	wgpuRenderPassEncoderRelease(renderPass);
@@ -546,8 +547,14 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
 }
 
 void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
-    if(!targetView) return;
-    wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
+    wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
+    if(mesh.wgData.indexBuffer != nullptr){
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mesh.wgData.indexBuffer, WGPUIndexFormat_Uint32, 0, wgpuBufferGetSize(mesh.wgData.indexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mesh.indiceCount, 1, 0, 0, 0);
+    } else {
+        wgpuRenderPassEncoderDraw(renderPass, mesh.vertexCount, 1, 0, 0);
+    }
 }
 
 void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){
@@ -618,7 +625,44 @@ bool WebGPUGraphicsDevice::MeshCreateOrSubmit(
     std::vector<Vector4>* weights,
     std::vector<IVector4>* influences
 ){
-    return false;
+    MeshDestroy(mesh);
+
+    auto CreateBuffer = [&](size_t size, const char* label){
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.nextInChain = nullptr;
+        bufferDesc.label = label;
+        bufferDesc.size = size;
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex; // Vertex usage here!
+        bufferDesc.mappedAtCreation = false;
+        WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
+        return buffer;
+    };
+
+    auto CreateIndexBuffer = [&](size_t size, const char* label){
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.nextInChain = nullptr;
+        bufferDesc.label = label;
+        bufferDesc.size = size;
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+        bufferDesc.mappedAtCreation = false;
+        WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
+        return buffer;
+    };
+
+    mesh.wgData.vertexBuffer = CreateBuffer(sizeof(Vector3) * vertices->size(), "VertexBuffer");
+    wgpuQueueWriteBuffer(queue, mesh.wgData.vertexBuffer, 0, vertices->data(), sizeof(Vector3) * vertices->size());
+    mesh.vertexCount = vertices->size();
+
+    if(indices != nullptr && indices->size() > 0){
+        mesh.wgData.indexBuffer = CreateIndexBuffer(sizeof(unsigned int) * indices->size(), "IndexBuffer");
+        wgpuQueueWriteBuffer(queue, mesh.wgData.indexBuffer, 0, indices->data(), sizeof(unsigned int) * indices->size());
+        mesh.indiceCount = indices->size();
+    }
+
+    mesh.wgData.uvBuffer = CreateBuffer(uv == nullptr ? sizeof(Vector3) : sizeof(Vector3) * vertices->size(), "UvBuffer");
+    if(uv != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.uvBuffer, 0, uv->data(), sizeof(Vector3) * uv->size());
+
+    return true;
 }
 
 void WebGPUGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
@@ -630,7 +674,13 @@ void WebGPUGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 }
 
 void WebGPUGraphicsDevice::MeshDestroy(Mesh& mesh){
+    if(mesh.wgData.vertexBuffer != nullptr) wgpuBufferRelease(mesh.wgData.vertexBuffer);
+    if(mesh.wgData.uvBuffer != nullptr) wgpuBufferRelease(mesh.wgData.uvBuffer);
+    if(mesh.wgData.indexBuffer != nullptr) wgpuBufferRelease(mesh.wgData.indexBuffer);
 
+    mesh.wgData.vertexBuffer = nullptr;
+    mesh.wgData.uvBuffer = nullptr;
+    mesh.wgData.indexBuffer = nullptr;
 }
 
 bool WebGPUGraphicsDevice::MeshIsValid(Mesh& mesh){
@@ -834,8 +884,28 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     WGPURenderPipelineDescriptor pipelineDesc{};
     pipelineDesc.nextInChain = nullptr;
 
-    pipelineDesc.vertex.bufferCount = 0;
-    pipelineDesc.vertex.buffers = nullptr;
+    std::vector<WGPUVertexBufferLayout> vertexBufferLayouts(2);
+
+    WGPUVertexAttribute positionAttrib;
+    positionAttrib.shaderLocation = 0;
+    positionAttrib.format = WGPUVertexFormat_Float32x3;// Means vec3f in the shader
+    positionAttrib.offset = 0;// Index of the first element
+    vertexBufferLayouts[0].arrayStride = 3 * sizeof(float);
+    vertexBufferLayouts[0].stepMode = WGPUVertexStepMode_Vertex;
+    vertexBufferLayouts[0].attributeCount = 1;
+    vertexBufferLayouts[0].attributes = &positionAttrib;
+
+    WGPUVertexAttribute uvAttrib;
+    uvAttrib.shaderLocation = 1;
+    uvAttrib.format = WGPUVertexFormat_Float32x3;// Means vec3f in the shader
+    uvAttrib.offset = 0;// Index of the first element
+    vertexBufferLayouts[1].arrayStride = 3 * sizeof(float);
+    vertexBufferLayouts[1].stepMode = WGPUVertexStepMode_Vertex;
+    vertexBufferLayouts[1].attributeCount = 1;
+    vertexBufferLayouts[1].attributes = &uvAttrib;
+
+    pipelineDesc.vertex.bufferCount = vertexBufferLayouts.size(); //pipelineDesc.vertex.bufferCount = 0;
+    pipelineDesc.vertex.buffers = vertexBufferLayouts.data();// pipelineDesc.vertex.buffers = nullptr;
     pipelineDesc.vertex.module = shader.wgData.shaderModuleVertex;
     pipelineDesc.vertex.entryPoint = "main";
     pipelineDesc.vertex.constantCount = 0;
