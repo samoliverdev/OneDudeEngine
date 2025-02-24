@@ -11,12 +11,16 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
+BeginUniform(0, 0, Main)
+    Uniform vec4 color;
+EndUniform()
+
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec2 _texCoord;
 
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
-        _texCoord = texCoord;
+        _texCoord = texCoord.xy;
         OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
@@ -33,6 +37,6 @@
     void main(){
         vec4 texColor = vec4(0, 1, 0, 1); //textureSRGB(mainTex, _texCoord);
         if(texColor.a < 0.1) discard;
-        fragColor = texColor;// * color;
+        fragColor = texColor * color;
     }
 #endif

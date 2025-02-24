@@ -18,15 +18,25 @@ layout(location = 6) in vec4 weights;
 #endif
 
 #ifdef INSTANCING
-layout(location = 10) in mat4 modelInstancing;
+    #ifdef OpenGL_API
+    layout(location = 10) in mat4 modelInstancing;
+    #else   
+    layout(location = 5) in vec4 a_ModelMatrix_0;
+    layout(location = 6) in vec4 a_ModelMatrix_1;
+    layout(location = 7) in vec4 a_ModelMatrix_2;
+    layout(location = 8) in vec4 a_ModelMatrix_3;
+    #endif
 #endif
 
 #include Engine/ShaderLibrary/Base.glsl
 
-BeginUniform(1, 0, Core)
-    Uniform mat4 model;
-    Uniform mat4 view;
+BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;
+    Uniform mat4 view;
+EndUniform()
+
+BeginUniform(1, 0, PerDraw)
+    Uniform mat4 model;
 EndUniform()
 
 #ifdef SKINNED
@@ -45,7 +55,11 @@ EndUniform()
 
 mat4 GetModelMatrix(){
 #ifdef INSTANCING
+    #ifdef OpenGL_API
     return modelInstancing;
+    #else
+    return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
+    #endif
 #else
     return model;
 #endif

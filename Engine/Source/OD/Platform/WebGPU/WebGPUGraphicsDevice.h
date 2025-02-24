@@ -126,6 +126,7 @@ public:
     virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
 
     WGPUTextureView GetNextSurfaceTextureView();
+    WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter) const;
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;
@@ -167,6 +168,7 @@ public:
     };
     std::vector<PerDrawData> perDrawDatas;
     int curPerDrawData = 0;
+    const int maxPerDraw = 10000;
 
     WGPUBindGroupLayout perDrawSkinnedBindGroupLayout = nullptr;
     struct PerDrawSkinnedData{
@@ -176,6 +178,11 @@ public:
     };
     std::vector<PerDrawSkinnedData> perDrawSkinnedDatas;
     int curPerDrawSkinnedData = 0;
+    const int maxPerDrawSkinned = 10000;
+
+    std::vector<WGPUBuffer> perDrawInstancingDatas;
+    int curPerDrawInstancingData = 0;
+    const int maxPerDrawInstancing = 10000;
 };
 
 }

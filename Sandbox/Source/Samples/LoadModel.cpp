@@ -26,6 +26,8 @@ void LoadModelSample::OnInit(){
 
         transforms.push_back(t.GetLocalModelMatrix());
     }
+
+    useInstancing = true;
 }
 
 void LoadModelSample::OnUpdate(float deltaTime){

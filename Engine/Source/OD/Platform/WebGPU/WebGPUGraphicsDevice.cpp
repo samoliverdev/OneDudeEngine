@@ -223,6 +223,41 @@ namespace Ultis{
         }
     }
 
+    void setDefault(WGPULimits& limits){
+        limits.maxTextureDimension1D = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxTextureDimension2D = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxTextureArrayLayers = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxBindGroups = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxBindGroupsPlusVertexBuffers = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxBindingsPerBindGroup = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxDynamicUniformBuffersPerPipelineLayout = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxDynamicStorageBuffersPerPipelineLayout = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxSampledTexturesPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxSamplersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxStorageBuffersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxStorageTexturesPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxUniformBuffersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxUniformBufferBindingSize = WGPU_LIMIT_U64_UNDEFINED;
+        limits.maxStorageBufferBindingSize = WGPU_LIMIT_U64_UNDEFINED;
+        limits.minUniformBufferOffsetAlignment = WGPU_LIMIT_U32_UNDEFINED;
+        limits.minStorageBufferOffsetAlignment = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxVertexBuffers = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxBufferSize = WGPU_LIMIT_U64_UNDEFINED;
+        limits.maxVertexAttributes = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxVertexBufferArrayStride = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxInterStageShaderComponents = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxInterStageShaderVariables = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxColorAttachments = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxColorAttachmentBytesPerSample = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeWorkgroupStorageSize = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeInvocationsPerWorkgroup = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeWorkgroupSizeX = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeWorkgroupSizeY = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeWorkgroupSizeZ = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxComputeWorkgroupsPerDimension = WGPU_LIMIT_U32_UNDEFINED;
+    }
+
     void setDefault(WGPUBindGroupLayoutEntry &bindingLayout) {
         bindingLayout.buffer.nextInChain = nullptr;
         bindingLayout.buffer.type = WGPUBufferBindingType_Undefined;
@@ -273,6 +308,43 @@ void WebGPUGraphicsDevice::LoadContext(void* data){
 
 }
 
+WGPURequiredLimits WebGPUGraphicsDevice::GetRequiredLimits(WGPUAdapter adapter) const {
+	// Get adapter supported limits, in case we need them
+	WGPUSupportedLimits supportedLimits;
+	supportedLimits.nextInChain = nullptr;
+	wgpuAdapterGetLimits(adapter, &supportedLimits);
+
+	WGPURequiredLimits requiredLimits{};
+	setDefault(requiredLimits.limits);
+
+	// We use at most 2 vertex attributes
+	requiredLimits.limits.maxVertexAttributes = 15;
+	// We should also tell that we use 1 vertex buffers
+	requiredLimits.limits.maxVertexBuffers = 15;
+	// Maximum size of a buffer is 6 vertices of 5 float each
+	requiredLimits.limits.maxBufferSize = sizeof(Matrix4) * 1000;
+	// Maximum stride between 2 consecutive vertices in the vertex buffer
+	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(Matrix4) * 2;
+
+	// There is a maximum of 3 float forwarded from vertex to fragment shader
+	requiredLimits.limits.maxInterStageShaderComponents = 10;
+
+	// We use at most 1 bind group for now
+	requiredLimits.limits.maxBindGroups = 4;
+	// We use at most 1 uniform buffer per stage
+	requiredLimits.limits.maxUniformBuffersPerShaderStage = 10;
+	// Uniform structs have a size of maximum 16 float (more than what we need)
+	requiredLimits.limits.maxUniformBufferBindingSize = sizeof(Matrix4) * 200;
+
+	// These two limits are different because they are "minimum" limits,
+	// they are the only ones we are may forward from the adapter's supported
+	// limits.
+	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
+	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
+
+	return requiredLimits;
+}
+
 void WebGPUGraphicsDevice::Initialize(){
     WGPUInstance instance = wgpuCreateInstance(nullptr);
 	
@@ -291,7 +363,8 @@ void WebGPUGraphicsDevice::Initialize(){
 	deviceDesc.nextInChain = nullptr;
 	deviceDesc.label = "My Device";
 	deviceDesc.requiredFeatureCount = 0;
-	deviceDesc.requiredLimits = nullptr;
+	WGPURequiredLimits requiredLimits = GetRequiredLimits(adapter);
+    deviceDesc.requiredLimits = &requiredLimits;
 	deviceDesc.defaultQueue.nextInChain = nullptr;
 	deviceDesc.defaultQueue.label = "The default queue";
 	deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void* /* pUserData */) {
@@ -357,6 +430,17 @@ void WebGPUGraphicsDevice::Initialize(){
 	wgpuAdapterRelease(adapter);
 
     /////////////////////////////
+    auto CreateVertexBuffer = [&](size_t size, const char* label){
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.nextInChain = nullptr;
+        bufferDesc.label = label;
+        bufferDesc.size = size;
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex; // Vertex usage here!
+        bufferDesc.mappedAtCreation = false;
+        WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
+        return buffer;
+    };
+
     auto CreateUniformBuffer = [&](size_t size, const char* label){
         WGPUBufferDescriptor bufferDesc = {};
         bufferDesc.nextInChain = nullptr;
@@ -397,7 +481,7 @@ void WebGPUGraphicsDevice::Initialize(){
 
     ///////////////////////////////
 
-    perDrawDatas.resize(10000);
+    perDrawDatas.resize(maxPerDraw);
 
     WGPUBindGroupLayoutEntry bindingLayout{};
     setDefault(bindingLayout);
@@ -429,7 +513,7 @@ void WebGPUGraphicsDevice::Initialize(){
     }
 
     ////////////////////////////////
-    perDrawSkinnedDatas.resize(10000);
+    perDrawSkinnedDatas.resize(maxPerDrawSkinned);
 
     std::vector<WGPUBindGroupLayoutEntry> skinnedBindingLayout(2);
     setDefault(skinnedBindingLayout[0]);
@@ -470,6 +554,11 @@ void WebGPUGraphicsDevice::Initialize(){
         bindGroupDesc.entries = binding.data();
 
         perDrawSkinnedDatas[i].bindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+    }
+    ///////////////////////////////////////////////////////////////////
+    perDrawInstancingDatas.resize(maxPerDrawInstancing);
+    for(int i = 0; i < perDrawInstancingDatas.size(); i++){
+        perDrawInstancingDatas[i] = CreateVertexBuffer(sizeof(Matrix4) * 1000, "PerDrawInstancing");
     }
 }
 
@@ -617,6 +706,7 @@ void WebGPUGraphicsDevice::Begin(){
 
     curPerDrawData = 0;
     curPerDrawSkinnedData = 0;
+    curPerDrawInstancingData = 0;
 }
 
 void WebGPUGraphicsDevice::End(){
@@ -781,6 +871,7 @@ void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
     }
     lastMesh = &mesh;
 
+    Assert(curPerDrawData < perDrawDatas.size());
     wgpuQueueWriteBuffer(queue, perDrawDatas[curPerDrawData].uniformBuffer, 0, &modelMatrix, sizeof(Matrix4));
     wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawDatas[curPerDrawData].bindGroup, 0, nullptr);
     curPerDrawData += 1;
@@ -811,6 +902,7 @@ void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* a
     }
     lastMesh = &mesh;
 
+    Assert(curPerDrawSkinnedData < perDrawSkinnedDatas.size());
     wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer, 0, &model, sizeof(Matrix4));
     wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer1, 0, animMatrix, sizeof(Matrix4) * count);
     wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawSkinnedDatas[curPerDrawSkinnedData].bindGroup, 0, nullptr);
@@ -824,7 +916,57 @@ void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* a
 }
 
 void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
+    auto Draw = [&](Matrix4* inmodelMatrixs, int inCount){
+        //if(&mesh != lastMesh){
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 2, mesh.wgData.normalBuffer, 0, wgpuBufferGetSize(mesh.wgData.normalBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 3, mesh.wgData.colorBuffer, 0, wgpuBufferGetSize(mesh.wgData.colorBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 4, mesh.wgData.tangentBuffer, 0, wgpuBufferGetSize(mesh.wgData.tangentBuffer));
 
+        Assert(curPerDrawInstancingData < perDrawInstancingDatas.size());
+        wgpuQueueWriteBuffer(queue, perDrawInstancingDatas[curPerDrawInstancingData], 0, inmodelMatrixs, sizeof(Matrix4) * inCount);
+        wgpuRenderPassEncoderSetVertexBuffer(
+            renderPass, 
+            5, 
+            perDrawInstancingDatas[curPerDrawInstancingData], 
+            0, 
+            wgpuBufferGetSize(perDrawInstancingDatas[curPerDrawInstancingData])
+        );
+        curPerDrawInstancingData += 1;
+
+        if(mesh.wgData.indexBuffer != nullptr)
+            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mesh.wgData.indexBuffer, WGPUIndexFormat_Uint32, 0, wgpuBufferGetSize(mesh.wgData.indexBuffer));
+
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, lastMat->wgData.mainBindGroup, 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 2, cameraBindGroup, 0, nullptr);
+        //}
+        lastMesh = &mesh;
+    
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawDatas[0].bindGroup, 0, nullptr);
+    
+        if(mesh.wgData.indexBuffer != nullptr){
+            wgpuRenderPassEncoderDrawIndexed(renderPass, mesh.indiceCount, inCount, 0, 0, 0);
+        } else {
+            wgpuRenderPassEncoderDraw(renderPass, mesh.vertexCount, inCount, 0, 0);
+        }
+    };
+
+    int drawCounts = math::ceil(count / 1000);
+    int total = count;
+    int offset = 0;
+    for(int i = 0; i < drawCounts; i++){
+        int toDrawCount = 0;
+        if(total - 1000 > 0){
+            total -= 1000;
+            toDrawCount = 1000;
+        } else {
+            toDrawCount = total;
+        }
+
+        Draw(modelMatrixs + offset, toDrawCount);
+        offset += toDrawCount;
+    }
 }
 
 void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
@@ -837,8 +979,9 @@ void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     DrawMeshSkinned(mesh, model, animMatrix, count);
 }
 
-void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count){
-
+void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){
+    BindMaterial(mat);
+    DrawMeshInstancing(mesh, animMatrixs, count);
 }
 
 void WebGPUGraphicsDevice::DrawModel(Model& model, Matrix4 modelMatrix){
@@ -1238,6 +1381,29 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     weightsAttrib.shaderLocation = 6;
     weightsAttrib.format = WGPUVertexFormat_Float32x4;// Means vec3f in the shader
     weightsAttrib.offset = 0;// Index of the first element
+
+    std::vector<WGPUVertexAttribute> instancingAttrib(4);
+    instancingAttrib[0].shaderLocation = 5;
+    instancingAttrib[0].format = WGPUVertexFormat_Float32x4;
+    instancingAttrib[0].offset = 0;
+    instancingAttrib[1].shaderLocation = 6;
+    instancingAttrib[1].format = WGPUVertexFormat_Float32x4;
+    instancingAttrib[1].offset = 16;
+    instancingAttrib[2].shaderLocation = 7;
+    instancingAttrib[2].format = WGPUVertexFormat_Float32x4;
+    instancingAttrib[2].offset = 32;
+    instancingAttrib[3].shaderLocation = 8;
+    instancingAttrib[3].format = WGPUVertexFormat_Float32x4;
+    instancingAttrib[3].offset = 48;
+
+    if(ContainKey("INSTANCING")){
+        WGPUVertexBufferLayout instancinglayout;
+        instancinglayout.arrayStride = sizeof(float) * 16;
+        instancinglayout.stepMode = WGPUVertexStepMode_Instance; //WGPUVertexStepMode_Vertex;
+        instancinglayout.attributeCount = 4;
+        instancinglayout.attributes = instancingAttrib.data();
+        vertexBufferLayouts.emplace_back(instancinglayout);
+    }
 
     if(ContainKey("SKINNED")){
         WGPUVertexBufferLayout boneIdsLayout;
