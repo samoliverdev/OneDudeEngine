@@ -4,11 +4,11 @@
 void LightSample::OnInit(){
     LogInfo("Game Init");
 
-    lightModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/sphere.obj");
+    /*lightModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/sphere.obj");
     lightModel->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
     lightModel->materials[0]->SetVector4("color", Vector4(1, 1, 1, 1));
     lightTransform.LocalScale(Vector3(0.1f, 0.1f, 0.1f));
-    lightTransform.LocalPosition(Vector3(-1, 2, 2));
+    lightTransform.LocalPosition(Vector3(-1, 2, 2));*/
 
     camMove.transform = &camTransform;
 
@@ -18,18 +18,18 @@ void LightSample::OnInit(){
 
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/suzane.obj");
     model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/light.glsl"));
-    model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
+    //model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
     model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
     model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));
-    model->materials[0]->SetVector3("light.position", lightTransform.LocalPosition());
+    model->materials[0]->SetVector3("light_position", lightTransform.LocalPosition());
     model->materials[0]->SetVector3("viewPos", camTransform.LocalPosition());
-    model->materials[0]->SetVector3("material.ambient", Vector3(0.3f, 0.3f, 0.31f));
-    model->materials[0]->SetVector3("material.diffuse", Vector3(0.8f, 0.8f, 0.31f));
-    model->materials[0]->SetVector3("material.specular", Vector3(0.5f, 0.5f, 0.5f));
-    model->materials[0]->SetFloat("material.shininess", 32.0f);
-    model->materials[0]->SetVector3("light.ambient",  Vector3(0.2f, 0.2f, 0.2f));
-    model->materials[0]->SetVector3("light.diffuse",  Vector3(0.5f, 0.5f, 0.5f)); // darken diffuse light a bit
-    model->materials[0]->SetVector3("light.specular", Vector3(1.0f, 1.0f, 1.0f)); 
+    model->materials[0]->SetVector3("material_ambient", Vector3(0.3f, 0.3f, 0.31f));
+    model->materials[0]->SetVector3("material_diffuse", Vector3(0.8f, 0.8f, 0.31f));
+    model->materials[0]->SetVector3("material_specular", Vector3(0.5f, 0.5f, 0.5f));
+    model->materials[0]->SetFloat("material_shininess", 32.0f);
+    model->materials[0]->SetVector3("light_ambient",  Vector3(0.2f, 0.2f, 0.2f));
+    model->materials[0]->SetVector3("light_diffuse",  Vector3(0.5f, 0.5f, 0.5f)); // darken diffuse light a bit
+    model->materials[0]->SetVector3("light_specular", Vector3(1.0f, 1.0f, 1.0f)); 
 }
 
 void LightSample::OnUpdate(float deltaTime){
@@ -48,7 +48,7 @@ void LightSample::OnRender(float deltaTime){
     Graphics::SetCamera(cam);
 
     Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-    Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
+   // Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
 
     for(unsigned int i = 0; i < 10; i++){
         modelTransform.LocalPosition(cubePositions[i]);

@@ -113,6 +113,8 @@ public:
 
     virtual bool MaterialCreate(Material& shader) override;
     virtual void MaterialDestroy(Material& shader) override;
+    virtual void MaterialOnSetShader(Material& shader) override;
+    virtual void MaterialOnUnsetShader(Material& shader) override;
 
     virtual void Initialize() override;
     virtual void Shutdown() override;
@@ -134,14 +136,46 @@ public:
 	WGPUSurface surface;
 
     WGPUTextureFormat surfaceFormat = WGPUTextureFormat_Undefined;
+    WGPUTextureFormat depthTextureFormat = WGPUTextureFormat_Depth24Plus;
 
     //Frame Data
     WGPUTextureView targetView;
     WGPURenderPassEncoder renderPass;
     WGPUCommandEncoder encoder;
 
+    WGPUTexture depthTexture;
+    WGPUTextureView depthTextureView;
+
     Material* lastMat = nullptr;
     SubShader* lastShader = nullptr;
+    Mesh* lastMesh = nullptr;
+
+    struct CameraDrawData{
+        Matrix4 projection;
+        Matrix4 view;
+    };
+    CameraDrawData cameraDrawData;
+
+    WGPUBindGroupLayout cameraBindGroupLayout = nullptr;
+    WGPUBuffer cameraUniformBuffer;
+    WGPUBindGroup cameraBindGroup;
+
+    WGPUBindGroupLayout perDrawBindGroupLayout = nullptr;
+    struct PerDrawData{
+        WGPUBuffer uniformBuffer;
+        WGPUBindGroup bindGroup;
+    };
+    std::vector<PerDrawData> perDrawDatas;
+    int curPerDrawData = 0;
+
+    WGPUBindGroupLayout perDrawSkinnedBindGroupLayout = nullptr;
+    struct PerDrawSkinnedData{
+        WGPUBuffer uniformBuffer;
+        WGPUBuffer uniformBuffer1;
+        WGPUBindGroup bindGroup;
+    };
+    std::vector<PerDrawSkinnedData> perDrawSkinnedDatas;
+    int curPerDrawSkinnedData = 0;
 };
 
 }

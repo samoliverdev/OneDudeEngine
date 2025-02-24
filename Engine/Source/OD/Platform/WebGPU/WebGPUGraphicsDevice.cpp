@@ -15,7 +15,9 @@
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Platform/Spirv.h"
 
+#include <stdlib.h>
 #include <GLFW/glfw3.h>
 
 #include "glslang/Include/glslang_c_interface.h"
@@ -220,6 +222,45 @@ namespace Ultis{
             std::cout << " - maxComputeWorkgroupsPerDimension: " << limits.limits.maxComputeWorkgroupsPerDimension << std::endl;
         }
     }
+
+    void setDefault(WGPUBindGroupLayoutEntry &bindingLayout) {
+        bindingLayout.buffer.nextInChain = nullptr;
+        bindingLayout.buffer.type = WGPUBufferBindingType_Undefined;
+        bindingLayout.buffer.hasDynamicOffset = false;
+    
+        bindingLayout.sampler.nextInChain = nullptr;
+        bindingLayout.sampler.type = WGPUSamplerBindingType_Undefined;
+    
+        bindingLayout.storageTexture.nextInChain = nullptr;
+        bindingLayout.storageTexture.access = WGPUStorageTextureAccess_Undefined;
+        bindingLayout.storageTexture.format = WGPUTextureFormat_Undefined;
+        bindingLayout.storageTexture.viewDimension = WGPUTextureViewDimension_Undefined;
+    
+        bindingLayout.texture.nextInChain = nullptr;
+        bindingLayout.texture.multisampled = false;
+        bindingLayout.texture.sampleType = WGPUTextureSampleType_Undefined;
+        bindingLayout.texture.viewDimension = WGPUTextureViewDimension_Undefined;
+    }
+    
+    void setDefault(WGPUStencilFaceState &stencilFaceState){
+        stencilFaceState.compare = WGPUCompareFunction_Always;
+        stencilFaceState.failOp = WGPUStencilOperation_Keep;
+        stencilFaceState.depthFailOp = WGPUStencilOperation_Keep;
+        stencilFaceState.passOp = WGPUStencilOperation_Keep;
+    }
+    
+    void setDefault(WGPUDepthStencilState &depthStencilState){
+        depthStencilState.format = WGPUTextureFormat_Undefined;
+        depthStencilState.depthWriteEnabled = false;
+        depthStencilState.depthCompare = WGPUCompareFunction_Always;
+        depthStencilState.stencilReadMask = 0xFFFFFFFF;
+        depthStencilState.stencilWriteMask = 0xFFFFFFFF;
+        depthStencilState.depthBias = 0;
+        depthStencilState.depthBiasSlopeScale = 0;
+        depthStencilState.depthBiasClamp = 0;
+        setDefault(depthStencilState.stencilFront);
+        setDefault(depthStencilState.stencilBack);
+    }
 };
 
 using namespace Ultis;
@@ -288,13 +329,155 @@ void WebGPUGraphicsDevice::Initialize(){
 	config.presentMode = WGPUPresentMode_Fifo;
 	config.alphaMode = WGPUCompositeAlphaMode_Auto;
 
+    // Create the depth texture
+    WGPUTextureDescriptor depthTextureDesc;
+    depthTextureDesc.dimension = WGPUTextureDimension_2D;
+    depthTextureDesc.format = depthTextureFormat;
+    depthTextureDesc.mipLevelCount = 1;
+    depthTextureDesc.sampleCount = 1;
+    depthTextureDesc.size = {640, 480, 1};
+    depthTextureDesc.usage = WGPUTextureUsage_RenderAttachment;
+    depthTextureDesc.viewFormatCount = 1;
+    depthTextureDesc.viewFormats = &depthTextureFormat;
+    depthTexture = wgpuDeviceCreateTexture(device, &depthTextureDesc);
+
+    WGPUTextureViewDescriptor depthTextureViewDesc;
+    depthTextureViewDesc.aspect = WGPUTextureAspect_DepthOnly;
+    depthTextureViewDesc.baseArrayLayer = 0;
+    depthTextureViewDesc.arrayLayerCount = 1;
+    depthTextureViewDesc.baseMipLevel = 0;
+    depthTextureViewDesc.mipLevelCount = 1;
+    depthTextureViewDesc.dimension = WGPUTextureViewDimension_2D;
+    depthTextureViewDesc.format = depthTextureFormat;
+    depthTextureView = wgpuTextureCreateView(depthTexture, &depthTextureViewDesc);
+
 	wgpuSurfaceConfigure(surface, &config);
 
 	// Release the adapter only after it has been fully utilized
 	wgpuAdapterRelease(adapter);
+
+    /////////////////////////////
+    auto CreateUniformBuffer = [&](size_t size, const char* label){
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.nextInChain = nullptr;
+        bufferDesc.label = label;
+        bufferDesc.size = size;
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform;
+        bufferDesc.mappedAtCreation = false;
+        WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
+        return buffer;
+    };
+
+    WGPUBindGroupLayoutEntry cambindingLayout{};
+    setDefault(cambindingLayout);
+    cambindingLayout.binding = 0;// The binding index as used in the @binding attribute in the shader
+    cambindingLayout.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    cambindingLayout.buffer.type = WGPUBufferBindingType_Uniform;
+    cambindingLayout.buffer.minBindingSize = sizeof(CameraDrawData);
+    WGPUBindGroupLayoutDescriptor cambindGroupLayoutDesc{};
+    cambindGroupLayoutDesc.nextInChain = nullptr;
+    cambindGroupLayoutDesc.entryCount = 1;
+    cambindGroupLayoutDesc.entries = &cambindingLayout;
+    cameraBindGroupLayout = wgpuDeviceCreateBindGroupLayout(device, &cambindGroupLayoutDesc);
+
+    cameraUniformBuffer = CreateUniformBuffer(sizeof(CameraDrawData), "CameraUniformBuffer");
+
+    WGPUBindGroupEntry binding{};
+    binding.nextInChain = nullptr;
+    binding.binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+    binding.buffer = cameraUniformBuffer;// The buffer it is actually bound to
+    binding.offset = 0;
+    binding.size = sizeof(CameraDrawData);
+    WGPUBindGroupDescriptor bindGroupDesc{};// A bind group contains one or multiple bindings
+    bindGroupDesc.nextInChain = nullptr;
+    bindGroupDesc.layout = cameraBindGroupLayout;// bindGroupLayout;
+    bindGroupDesc.entryCount = 1;// There must be as many bindings as declared in the layout!
+    bindGroupDesc.entries = &binding;
+    cameraBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+
+    ///////////////////////////////
+
+    perDrawDatas.resize(10000);
+
+    WGPUBindGroupLayoutEntry bindingLayout{};
+    setDefault(bindingLayout);
+    bindingLayout.binding = 0;// The binding index as used in the @binding attribute in the shader
+    bindingLayout.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    bindingLayout.buffer.type = WGPUBufferBindingType_Uniform;
+    bindingLayout.buffer.minBindingSize = sizeof(Matrix4);
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc{};
+    bindGroupLayoutDesc.nextInChain = nullptr;
+    bindGroupLayoutDesc.entryCount = 1;
+    bindGroupLayoutDesc.entries = &bindingLayout;
+    perDrawBindGroupLayout = wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
+
+    for(int i = 0; i < perDrawDatas.size(); i++){
+        perDrawDatas[i].uniformBuffer = CreateUniformBuffer(sizeof(Matrix4), "PerDraw");
+
+        WGPUBindGroupEntry binding{};
+        binding.nextInChain = nullptr;
+        binding.binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+        binding.buffer = perDrawDatas[i].uniformBuffer;// The buffer it is actually bound to
+        binding.offset = 0;
+        binding.size = sizeof(Matrix4);
+        WGPUBindGroupDescriptor bindGroupDesc{};// A bind group contains one or multiple bindings
+        bindGroupDesc.nextInChain = nullptr;
+        bindGroupDesc.layout = perDrawBindGroupLayout;// bindGroupLayout;
+        bindGroupDesc.entryCount = 1;// There must be as many bindings as declared in the layout!
+        bindGroupDesc.entries = &binding;
+        perDrawDatas[i].bindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+    }
+
+    ////////////////////////////////
+    perDrawSkinnedDatas.resize(10000);
+
+    std::vector<WGPUBindGroupLayoutEntry> skinnedBindingLayout(2);
+    setDefault(skinnedBindingLayout[0]);
+    setDefault(skinnedBindingLayout[1]);
+    skinnedBindingLayout[0].binding = 0;// The binding index as used in the @binding attribute in the shader
+    skinnedBindingLayout[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    skinnedBindingLayout[0].buffer.type = WGPUBufferBindingType_Uniform;
+    skinnedBindingLayout[0].buffer.minBindingSize = sizeof(Matrix4);
+    skinnedBindingLayout[1].binding = 1;// The binding index as used in the @binding attribute in the shader
+    skinnedBindingLayout[1].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    skinnedBindingLayout[1].buffer.type = WGPUBufferBindingType_Uniform;
+    skinnedBindingLayout[1].buffer.minBindingSize = sizeof(Matrix4) * 120;
+    //WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc{};
+    bindGroupLayoutDesc.nextInChain = nullptr;
+    bindGroupLayoutDesc.entryCount = skinnedBindingLayout.size();
+    bindGroupLayoutDesc.entries = skinnedBindingLayout.data();
+    perDrawSkinnedBindGroupLayout = wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
+
+    for(int i = 0; i < perDrawSkinnedDatas.size(); i++){
+        perDrawSkinnedDatas[i].uniformBuffer = CreateUniformBuffer(sizeof(Matrix4), "PerDrawSkinned0");
+        perDrawSkinnedDatas[i].uniformBuffer1 = CreateUniformBuffer(sizeof(Matrix4) * 120, "PerDrawSkinned1");
+
+        std::vector<WGPUBindGroupEntry> binding(2);
+        binding[0].nextInChain = nullptr;
+        binding[0].binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+        binding[0].buffer = perDrawSkinnedDatas[i].uniformBuffer;// The buffer it is actually bound to
+        binding[0].offset = 0;
+        binding[0].size = sizeof(Matrix4);
+        binding[1].nextInChain = nullptr;
+        binding[1].binding = 1;// The index of the binding (the entries in bindGroupDesc can be in any order)
+        binding[1].buffer = perDrawSkinnedDatas[i].uniformBuffer1;// The buffer it is actually bound to
+        binding[1].offset = 0;
+        binding[1].size = sizeof(Matrix4) * 120;
+        WGPUBindGroupDescriptor bindGroupDesc{};// A bind group contains one or multiple bindings
+        bindGroupDesc.nextInChain = nullptr;
+        bindGroupDesc.layout = perDrawSkinnedBindGroupLayout;// bindGroupLayout;
+        bindGroupDesc.entryCount = binding.size();// There must be as many bindings as declared in the layout!
+        bindGroupDesc.entries = binding.data();
+
+        perDrawSkinnedDatas[i].bindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+    }
 }
 
 void WebGPUGraphicsDevice::Shutdown(){
+    wgpuTextureViewRelease(depthTextureView);
+    wgpuTextureDestroy(depthTexture);
+    wgpuTextureRelease(depthTexture);
+
 	wgpuSurfaceUnconfigure(surface);
 	wgpuQueueRelease(queue);
 	wgpuSurfaceRelease(surface);
@@ -333,9 +516,9 @@ WGPUTextureView WebGPUGraphicsDevice::GetNextSurfaceTextureView(){
 
 void WebGPUGraphicsDevice::_Begin(){
 	// Get the next target texture view
-	/*WGPUTextureView*/ targetView = GetNextSurfaceTextureView();
+	targetView = GetNextSurfaceTextureView();
     Assert(targetView != nullptr);
-	if(!targetView) return;
+	//if(!targetView) return;
 
 	// Create a command encoder for the draw call
 	WGPUCommandEncoderDescriptor encoderDesc = {};
@@ -358,18 +541,32 @@ void WebGPUGraphicsDevice::_Begin(){
 	renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
 
+    WGPURenderPassDepthStencilAttachment depthStencilAttachment;
+    depthStencilAttachment.view = depthTextureView;
+    depthStencilAttachment.depthClearValue = 1.0f;// The initial value of the depth buffer, meaning "far"
+    depthStencilAttachment.depthLoadOp = WGPULoadOp_Clear;// Operation settings comparable to the color attachment
+    depthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
+    depthStencilAttachment.depthReadOnly = false;// we could turn off writing to the depth buffer globally here
+    depthStencilAttachment.stencilClearValue = 0;// Stencil setup, mandatory but unused
+#ifdef WEBGPU_BACKEND_WGPU
+    depthStencilAttachment.stencilLoadOp = WGPULoadOp_Clear;
+    depthStencilAttachment.stencilStoreOp = WGPUStoreOp_Store;
+#else
+    depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+    depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+#endif
+    depthStencilAttachment.stencilReadOnly = true;
+
 	renderPassDesc.colorAttachmentCount = 1;
 	renderPassDesc.colorAttachments = &renderPassColorAttachment;
-	renderPassDesc.depthStencilAttachment = nullptr;
+	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;;
 	renderPassDesc.timestampWrites = nullptr;
 
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
-	/*WGPURenderPassEncoder*/ renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+	renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 }
 
 void WebGPUGraphicsDevice::_End(){
-    //if(!targetView) return;
-
     wgpuRenderPassEncoderEnd(renderPass);
 	wgpuRenderPassEncoderRelease(renderPass);
 
@@ -416,6 +613,10 @@ void WebGPUGraphicsDevice::Begin(){
     //begin = true;
     lastMat = nullptr;
     lastShader = nullptr;
+    lastMesh = nullptr;
+
+    curPerDrawData = 0;
+    curPerDrawSkinnedData = 0;
 }
 
 void WebGPUGraphicsDevice::End(){
@@ -426,8 +627,11 @@ bool WebGPUGraphicsDevice::HasBegin(){
     return false;
 }
 
-void WebGPUGraphicsDevice::SetCamera(Camera& camera){
-
+void WebGPUGraphicsDevice::SetCamera(Camera& inCamera){
+    camera = inCamera;
+    cameraDrawData.projection = camera.projection;
+    cameraDrawData.view = camera.view;
+    wgpuQueueWriteBuffer(queue, cameraUniformBuffer, 0, &cameraDrawData, sizeof(CameraDrawData));
 }
 
 Camera WebGPUGraphicsDevice::GetCamera(){
@@ -449,60 +653,84 @@ void WebGPUGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned
 void WebGPUGraphicsDevice::BindMaterial(Material& mat){
     /*auto ContainUniformName = [&](SubShader shader, const std::string& name){ 
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
-    };
+    };*/
 
     auto ApplyUniformTo = [&](Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
         for(auto& i: maps){
             MaterialMap& map = i.second;
 
-            if(ContainUniformName(shader, i.first) == false) continue;
+            if(material.wgData.mainUnformDef.members.count(i.first) <= 0) continue;
+
+            UniformBufferDef::Member m = material.wgData.mainUnformDef.members[i.first];
 
             if(map.type == MaterialMap::Type::Int){
-                SubShaderSetInt(shader, i.first.c_str(), map.valueInt);
+                Assert(m.size >= sizeof(int));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &map.valueInt, sizeof(int));
+                //SubShaderSetInt(shader, i.first.c_str(), map.valueInt);
             }
             if(map.type == MaterialMap::Type::Float){
-                SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
+                Assert(m.size >= sizeof(float));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &map.valueFloat, sizeof(float));
+                //SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
             }
             if(map.type == MaterialMap::Type::Vector2){
-                SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
+                //SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
+                Assert(m.size >= sizeof(Vector2));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
             }
             if(map.type == MaterialMap::Type::Vector3){
-                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+                //SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+                Assert(m.size >= sizeof(Vector3));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
             }
             if(map.type == MaterialMap::Type::Vector4){
-                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+                //SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+                Assert(m.size >= sizeof(Vector4));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector4));
             }
             if(map.type == MaterialMap::Type::Matrix4){
-                SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
+                //SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
+                Assert(m.size >= sizeof(Matrix4));
+                memcpy((char*)material.wgData.mainUniformData + m.pos, &i.second.matrix, sizeof(Matrix4));
             }
             if(map.type == MaterialMap::Type::Texture){
-                Assert(i.second.texture != nullptr);
+                Assert(false);
+                /*Assert(i.second.texture != nullptr);
                 SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
-                material.currentTextureSlot += 1;
+                material.currentTextureSlot += 1;*/
             }
             if(map.type == MaterialMap::Type::TextureArray){
-                SubShaderSetTexture2DArray(shader, i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
-                material.currentTextureSlot += 1;
+                Assert(false);
+                //SubShaderSetTexture2DArray(shader, i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
+                //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::Framebuffer){
-                SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
-                material.currentTextureSlot += 1;
+                Assert(false);
+                //SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
+                //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::Cubemap){
-                SubShaderSetCubemap(shader, i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
-                material.currentTextureSlot += 1;
+                Assert(false);
+                //SubShaderSetCubemap(shader, i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
+                //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::FloatList){
-                SubShaderSetFloat(shader, i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+                //SubShaderSetFloat(shader, i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+                Assert(m.size >= sizeof(float) * map.listCount);
+                memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
             }
             if(map.type == MaterialMap::Type::Vector4List){
-                SubShaderSetVector4(shader, i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+                //SubShaderSetVector4(shader, i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+                Assert(m.size >= sizeof(Vector4) * map.listCount);
+                memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Vector4) * map.listCount);
             }
             if(map.type == MaterialMap::Type::Matrix4List){
-                SubShaderSetMatrix4(shader, i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+                //SubShaderSetMatrix4(shader, i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+                Assert(m.size >= sizeof(Matrix4) * map.listCount);
+                memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Matrix4) * map.listCount);
             }
         }
-    };*/
+    };
 
     auto SubmitGraphicDatas = [&](Material& material){
         stats.materialSubmitDatas += 1;
@@ -512,21 +740,12 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
-        /*SetColorMask(mat.currentShader->pipeline.colorMask);
-        SetCullFace(mat.currentShader->GetCullFace());
-        SetDepthTest(mat.currentShader->GetDepthTest());
-        SetDepthMask(mat.currentShader->IsDepthMask());
-        if(mat.currentShader->IsBlend()){
-            SetBlend(true);
-            SetBlendFunc(mat.currentShader->GetSrcBlend(), mat.currentShader->GetDstBlend());
-        } else {
-            SetBlend(false);
-        }*/
-
         SubShaderBind(*material.currentShader);
-        //ApplyUniformTo(material, *material.currentShader, material.maps);
-        //ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
+        ApplyUniformTo(material, *material.currentShader, material.maps);
+        ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
         Assert(material.currentTextureSlot < 32);
+
+        wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.mainUnformDef.size);
     };
 
     Assert(mat.currentShader != nullptr && "Shader is not vali!");
@@ -547,10 +766,26 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
 }
 
 void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
-    wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
-    wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
+    if(&mesh != lastMesh){
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 2, mesh.wgData.normalBuffer, 0, wgpuBufferGetSize(mesh.wgData.normalBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 3, mesh.wgData.colorBuffer, 0, wgpuBufferGetSize(mesh.wgData.colorBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 4, mesh.wgData.tangentBuffer, 0, wgpuBufferGetSize(mesh.wgData.tangentBuffer));
+
+        if(mesh.wgData.indexBuffer != nullptr)
+            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mesh.wgData.indexBuffer, WGPUIndexFormat_Uint32, 0, wgpuBufferGetSize(mesh.wgData.indexBuffer));
+
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, lastMat->wgData.mainBindGroup, 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 2, cameraBindGroup, 0, nullptr);
+    }
+    lastMesh = &mesh;
+
+    wgpuQueueWriteBuffer(queue, perDrawDatas[curPerDrawData].uniformBuffer, 0, &modelMatrix, sizeof(Matrix4));
+    wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawDatas[curPerDrawData].bindGroup, 0, nullptr);
+    curPerDrawData += 1;
+
     if(mesh.wgData.indexBuffer != nullptr){
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mesh.wgData.indexBuffer, WGPUIndexFormat_Uint32, 0, wgpuBufferGetSize(mesh.wgData.indexBuffer));
         wgpuRenderPassEncoderDrawIndexed(renderPass, mesh.indiceCount, 1, 0, 0, 0);
     } else {
         wgpuRenderPassEncoderDraw(renderPass, mesh.vertexCount, 1, 0, 0);
@@ -558,7 +793,34 @@ void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
 }
 
 void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){
+    //DrawMesh(mesh, model); return;
+    if(&mesh != lastMesh){
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 2, mesh.wgData.normalBuffer, 0, wgpuBufferGetSize(mesh.wgData.normalBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 3, mesh.wgData.colorBuffer, 0, wgpuBufferGetSize(mesh.wgData.colorBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 4, mesh.wgData.tangentBuffer, 0, wgpuBufferGetSize(mesh.wgData.tangentBuffer));
+        
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 5, mesh.wgData.jointBuffer, 0, wgpuBufferGetSize(mesh.wgData.jointBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 6, mesh.wgData.weightsBuffer, 0, wgpuBufferGetSize(mesh.wgData.weightsBuffer));
+        if(mesh.wgData.indexBuffer != nullptr)
+            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mesh.wgData.indexBuffer, WGPUIndexFormat_Uint32, 0, wgpuBufferGetSize(mesh.wgData.indexBuffer));
 
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, lastMat->wgData.mainBindGroup, 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 2, cameraBindGroup, 0, nullptr);
+    }
+    lastMesh = &mesh;
+
+    wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer, 0, &model, sizeof(Matrix4));
+    wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer1, 0, animMatrix, sizeof(Matrix4) * count);
+    wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawSkinnedDatas[curPerDrawSkinnedData].bindGroup, 0, nullptr);
+    curPerDrawSkinnedData += 1;
+
+    if(mesh.wgData.indexBuffer != nullptr){
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mesh.indiceCount, 1, 0, 0, 0);
+    } else {
+        wgpuRenderPassEncoderDraw(renderPass, mesh.vertexCount, 1, 0, 0);
+    }
 }
 
 void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
@@ -570,8 +832,9 @@ void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     DrawMesh(mesh, modelMatrix);
 }
 
-void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count){
-
+void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count){
+    BindMaterial(mat);
+    DrawMeshSkinned(mesh, model, animMatrix, count);
 }
 
 void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count){
@@ -579,7 +842,14 @@ void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& shader, Matr
 }
 
 void WebGPUGraphicsDevice::DrawModel(Model& model, Matrix4 modelMatrix){
-    
+    int index = 0;
+    for(auto i: model.renderTargets){
+        Ref<Material> targetMaterial = model.materials[i.materialIndex];
+        Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
+        Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+        BindMaterial(*targetMaterial);
+        DrawMesh(*targetMesh, targetMatrix);
+    }
 }
 
 void WebGPUGraphicsDevice::AddDrawLineCommand(Vector3 start, Vector3 end){
@@ -659,8 +929,29 @@ bool WebGPUGraphicsDevice::MeshCreateOrSubmit(
         mesh.indiceCount = indices->size();
     }
 
-    mesh.wgData.uvBuffer = CreateBuffer(uv == nullptr ? sizeof(Vector3) : sizeof(Vector3) * vertices->size(), "UvBuffer");
+    size_t targetUvSize = uv == nullptr || uv->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * uv->size();
+    mesh.wgData.uvBuffer = CreateBuffer(targetUvSize, "UvBuffer");
     if(uv != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.uvBuffer, 0, uv->data(), sizeof(Vector3) * uv->size());
+
+    size_t targetNormalSize = normals == nullptr || normals->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * normals->size();
+    mesh.wgData.normalBuffer = CreateBuffer(targetNormalSize, "NormalBuffer");
+    if(normals != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.normalBuffer, 0, normals->data(), sizeof(Vector3) * normals->size());
+
+    size_t colorTargetSize = colors == nullptr || colors->size() <= 0 ? sizeof(Vector4) : sizeof(Vector4) * colors->size();
+    mesh.wgData.colorBuffer = CreateBuffer(colorTargetSize, "ColorBuffer");
+    if(colors != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.colorBuffer, 0, colors->data(), sizeof(Vector4) * colors->size());
+
+    size_t tangentTargetSize = tangents == nullptr || tangents->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * tangents->size();
+    mesh.wgData.tangentBuffer = CreateBuffer(tangentTargetSize, "TangentBuffer");
+    if(tangents != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.tangentBuffer, 0, tangents->data(), sizeof(Vector3) * tangents->size());
+
+    size_t jointTargetSize = influences == nullptr || influences->size() <= 0 ? sizeof(IVector4) : sizeof(IVector4) * influences->size();
+    mesh.wgData.jointBuffer = CreateBuffer(jointTargetSize, "JointBuffer");
+    if(influences != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.jointBuffer, 0, influences->data(), sizeof(IVector4) * influences->size());
+
+    size_t weightTargetSize = weights == nullptr || weights->size() <= 0 ? sizeof(Vector4) : sizeof(Vector4) * weights->size();
+    mesh.wgData.weightsBuffer = CreateBuffer(weightTargetSize, "WeightsBuffer");
+    if(weights != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.weightsBuffer, 0, weights->data(), sizeof(Vector4) * weights->size());
 
     return true;
 }
@@ -676,10 +967,12 @@ void WebGPUGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 void WebGPUGraphicsDevice::MeshDestroy(Mesh& mesh){
     if(mesh.wgData.vertexBuffer != nullptr) wgpuBufferRelease(mesh.wgData.vertexBuffer);
     if(mesh.wgData.uvBuffer != nullptr) wgpuBufferRelease(mesh.wgData.uvBuffer);
+    if(mesh.wgData.normalBuffer != nullptr) wgpuBufferRelease(mesh.wgData.normalBuffer);
     if(mesh.wgData.indexBuffer != nullptr) wgpuBufferRelease(mesh.wgData.indexBuffer);
 
     mesh.wgData.vertexBuffer = nullptr;
     mesh.wgData.uvBuffer = nullptr;
+    mesh.wgData.normalBuffer = nullptr;
     mesh.wgData.indexBuffer = nullptr;
 }
 
@@ -843,6 +1136,10 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     ShaderPipeline pipeline, 
     std::vector<std::string>& errors
 ){
+    auto ContainKey = [&](std::string key){
+        return std::find(keyworlds.begin(), keyworlds.end(), key) != keyworlds.end(); 
+    };
+
     glslang_initialize_process();
 
     #define Header "#version 450"
@@ -859,6 +1156,8 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     source.insert(0, fragToInsert);
     if(CompileShader(source, GLSLANG_STAGE_FRAGMENT, spivFrag) == false) Assert(false);
     source.erase(0, fragToInsert.size());
+
+    Assert(SpirvReflect(0, 0, spivVertex.data(), spivVertex.size() * sizeof(unsigned int), shader.wgData.mainUnformDef) == true);
 
     WGPUShaderModuleDescriptor shaderDesc{};
     #ifdef WEBGPU_BACKEND_WGPU
@@ -884,7 +1183,7 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     WGPURenderPipelineDescriptor pipelineDesc{};
     pipelineDesc.nextInChain = nullptr;
 
-    std::vector<WGPUVertexBufferLayout> vertexBufferLayouts(2);
+    std::vector<WGPUVertexBufferLayout> vertexBufferLayouts(5);
 
     WGPUVertexAttribute positionAttrib;
     positionAttrib.shaderLocation = 0;
@@ -903,6 +1202,58 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     vertexBufferLayouts[1].stepMode = WGPUVertexStepMode_Vertex;
     vertexBufferLayouts[1].attributeCount = 1;
     vertexBufferLayouts[1].attributes = &uvAttrib;
+
+    WGPUVertexAttribute normalAttrib;
+    normalAttrib.shaderLocation = 2;
+    normalAttrib.format = WGPUVertexFormat_Float32x3;// Means vec3f in the shader
+    normalAttrib.offset = 0;// Index of the first element
+    vertexBufferLayouts[2].arrayStride = 3 * sizeof(float);
+    vertexBufferLayouts[2].stepMode = WGPUVertexStepMode_Vertex;
+    vertexBufferLayouts[2].attributeCount = 1;
+    vertexBufferLayouts[2].attributes = &normalAttrib;
+
+    WGPUVertexAttribute colorAttrib;
+    colorAttrib.shaderLocation = 3;
+    colorAttrib.format = WGPUVertexFormat_Float32x4;// Means vec3f in the shader
+    colorAttrib.offset = 0;// Index of the first element
+    vertexBufferLayouts[3].arrayStride = 4 * sizeof(float);
+    vertexBufferLayouts[3].stepMode = WGPUVertexStepMode_Vertex;
+    vertexBufferLayouts[3].attributeCount = 1;
+    vertexBufferLayouts[3].attributes = &colorAttrib;
+
+    WGPUVertexAttribute tangentAttrib;
+    tangentAttrib.shaderLocation = 4;
+    tangentAttrib.format = WGPUVertexFormat_Float32x3;// Means vec3f in the shader
+    tangentAttrib.offset = 0;// Index of the first element
+    vertexBufferLayouts[4].arrayStride = 3 * sizeof(float);
+    vertexBufferLayouts[4].stepMode = WGPUVertexStepMode_Vertex;
+    vertexBufferLayouts[4].attributeCount = 1;
+    vertexBufferLayouts[4].attributes = &tangentAttrib;
+
+    WGPUVertexAttribute bondeIdsAttrib;
+    bondeIdsAttrib.shaderLocation = 5;
+    bondeIdsAttrib.format = WGPUVertexFormat_Sint32x4;// Means vec3f in the shader
+    bondeIdsAttrib.offset = 0;// Index of the first element
+    WGPUVertexAttribute weightsAttrib;
+    weightsAttrib.shaderLocation = 6;
+    weightsAttrib.format = WGPUVertexFormat_Float32x4;// Means vec3f in the shader
+    weightsAttrib.offset = 0;// Index of the first element
+
+    if(ContainKey("SKINNED")){
+        WGPUVertexBufferLayout boneIdsLayout;
+        boneIdsLayout.arrayStride = 4 * sizeof(int);
+        boneIdsLayout.stepMode = WGPUVertexStepMode_Vertex;
+        boneIdsLayout.attributeCount = 1;
+        boneIdsLayout.attributes = &bondeIdsAttrib;
+        vertexBufferLayouts.emplace_back(boneIdsLayout);
+
+        WGPUVertexBufferLayout weightsLayout;
+        weightsLayout.arrayStride = 4 * sizeof(float);
+        weightsLayout.stepMode = WGPUVertexStepMode_Vertex;
+        weightsLayout.attributeCount = 1;
+        weightsLayout.attributes = &weightsAttrib;
+        vertexBufferLayouts.emplace_back(weightsLayout);
+    }
 
     pipelineDesc.vertex.bufferCount = vertexBufferLayouts.size(); //pipelineDesc.vertex.bufferCount = 0;
     pipelineDesc.vertex.buffers = vertexBufferLayouts.data();// pipelineDesc.vertex.buffers = nullptr;
@@ -949,13 +1300,53 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     fragmentState.targets = &colorTarget;
 
     pipelineDesc.fragment = &fragmentState;
-    pipelineDesc.depthStencil = nullptr;
+
+    WGPUDepthStencilState depthStencilState;
+    setDefault(depthStencilState);
+    depthStencilState.depthCompare = WGPUCompareFunction_Less;
+    depthStencilState.depthWriteEnabled = true;
+    depthStencilState.format = depthTextureFormat;
+    depthStencilState.stencilReadMask = 0;
+    depthStencilState.stencilWriteMask = 0;
+
+    pipelineDesc.depthStencil = &depthStencilState;
 
     pipelineDesc.multisample.count = 1;
     pipelineDesc.multisample.mask = ~0u;// Default value for the mask, meaning "all bits on"
     pipelineDesc.multisample.alphaToCoverageEnabled = false;// Default value as well (irrelevant for count = 1 anyways)
 
-    pipelineDesc.layout = nullptr;
+    // Define binding layout
+    WGPUBindGroupLayoutEntry bindingLayout{};
+    setDefault(bindingLayout);
+    bindingLayout.binding = 0;// The binding index as used in the @binding attribute in the shader
+    bindingLayout.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    bindingLayout.buffer.type = WGPUBufferBindingType_Uniform;
+    bindingLayout.buffer.minBindingSize = shader.wgData.mainUnformDef.size; //4 * sizeof(float);
+
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc{};
+    bindGroupLayoutDesc.nextInChain = nullptr;
+    bindGroupLayoutDesc.entryCount = 1;
+    bindGroupLayoutDesc.entries = &bindingLayout;
+    shader.wgData.bindGroupLayout = wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
+
+    std::vector<WGPUBindGroupLayout> bindGroupLayouts{
+        shader.wgData.bindGroupLayout,
+        perDrawBindGroupLayout,
+        cameraBindGroupLayout
+    };
+
+    if(ContainKey("SKINNED")){
+        bindGroupLayouts[1] = perDrawSkinnedBindGroupLayout; 
+    }
+
+    // Create the pipeline layout
+    WGPUPipelineLayoutDescriptor layoutDesc{};
+    layoutDesc.nextInChain = nullptr;
+    layoutDesc.bindGroupLayoutCount = bindGroupLayouts.size(); //1;
+    layoutDesc.bindGroupLayouts = bindGroupLayouts.data();// &shader.wgData.bindGroupLayout;
+    shader.wgData.layout = wgpuDeviceCreatePipelineLayout(device, &layoutDesc);
+
+    pipelineDesc.layout = shader.wgData.layout; //nullptr;
 
     shader.wgData.pipeline = wgpuDeviceCreateRenderPipeline(device, &pipelineDesc);
     return true;
@@ -965,10 +1356,14 @@ void WebGPUGraphicsDevice::SubShaderDestroy(SubShader& shader){
     wgpuShaderModuleRelease(shader.wgData.shaderModuleVertex);
     wgpuShaderModuleRelease(shader.wgData.shaderModuleFrag);
     wgpuRenderPipelineRelease(shader.wgData.pipeline);
+    wgpuPipelineLayoutRelease(shader.wgData.layout);
+    wgpuBindGroupLayoutRelease(shader.wgData.bindGroupLayout);
 
     shader.wgData.shaderModuleVertex = nullptr;
     shader.wgData.shaderModuleFrag = nullptr;
     shader.wgData.pipeline = nullptr;
+    shader.wgData.layout = nullptr;
+    shader.wgData.bindGroupLayout = nullptr;
 }
 
 bool WebGPUGraphicsDevice::SubShaderIsValid(SubShader& shader){
@@ -977,7 +1372,6 @@ bool WebGPUGraphicsDevice::SubShaderIsValid(SubShader& shader){
 }
 
 void WebGPUGraphicsDevice::SubShaderBind(SubShader& shader){
-    if(!targetView) return;
     wgpuRenderPassEncoderSetPipeline(renderPass, shader.wgData.pipeline);
 }
 
@@ -996,6 +1390,46 @@ bool WebGPUGraphicsDevice::MaterialCreate(Material& shader){
 
 void WebGPUGraphicsDevice::MaterialDestroy(Material& shader){
 
+}
+
+void WebGPUGraphicsDevice::MaterialOnSetShader(Material& mat){
+    auto CreateUniformBuffer = [&](size_t size, const char* label){
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.nextInChain = nullptr;
+        bufferDesc.label = label;
+        bufferDesc.size = size;
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform;
+        bufferDesc.mappedAtCreation = false;
+        WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
+        return buffer;
+    };
+
+    mat.wgData.mainUnformDef = mat.currentShader->wgData.mainUnformDef;
+    mat.wgData.mainUniformData = malloc(mat.wgData.mainUnformDef.size);
+    mat.wgData.mainUniformBuffer = CreateUniformBuffer(mat.wgData.mainUnformDef.size, "UniformBuffer");
+
+    WGPUBindGroupEntry binding{};
+    binding.nextInChain = nullptr;
+    binding.binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+    binding.buffer = mat.wgData.mainUniformBuffer;// The buffer it is actually bound to
+    // We can specify an offset within the buffer, so that a single buffer can hold
+    // multiple uniform blocks.
+    binding.offset = 0;
+    // And we specify again the size of the buffer.
+    binding.size = mat.wgData.mainUnformDef.size;
+
+    // A bind group contains one or multiple bindings
+    WGPUBindGroupDescriptor bindGroupDesc{};
+    bindGroupDesc.nextInChain = nullptr;
+    bindGroupDesc.layout = mat.currentShader->wgData.bindGroupLayout;// bindGroupLayout;
+    // There must be as many bindings as declared in the layout!
+    bindGroupDesc.entryCount = 1;
+    bindGroupDesc.entries = &binding;
+    mat.wgData.mainBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+}
+
+void WebGPUGraphicsDevice::MaterialOnUnsetShader(Material& mat){
+    
 }
 
 bool WebGPUGraphicsDevice::ImGuiSupport(){

@@ -2,19 +2,23 @@
 #if defined(WEBGPU_SUPPORT)
 
 #include <webgpu/webgpu.h>
+#include "OD/Graphics/RendererTypes.h"
+
+namespace OD{
 
 struct WGMeshData{
     WGPUBuffer vertexBuffer = nullptr;
     WGPUBuffer uvBuffer = nullptr;
+    WGPUBuffer normalBuffer = nullptr;
+    WGPUBuffer colorBuffer = nullptr;
+    WGPUBuffer tangentBuffer = nullptr;
 
-    /*WGPUBuffer uvBuffer;
-    WGPUBuffer normalVbo;
-    WGPUBuffer colorVbo;
-    WGPUBuffer tangentVbo;
+    WGPUBuffer jointBuffer = nullptr; 
+    WGPUBuffer weightsBuffer = nullptr;  
+
+    /*
     WGPUBuffer instancingModelMatrixsVbo;
-    WGPUBuffer jointVbo = 0; 
-    WGPUBuffer weightsVbo = 0;  
-    unsigned int ebo = 0;*/
+    */
 
     WGPUBuffer indexBuffer = nullptr;
 };
@@ -39,6 +43,9 @@ struct WGSubShaderData{
     WGPUShaderModule shaderModuleVertex = nullptr;
     WGPUShaderModule shaderModuleFrag = nullptr;
     WGPURenderPipeline pipeline = nullptr;
+    WGPUPipelineLayout layout = nullptr;
+    WGPUBindGroupLayout bindGroupLayout = nullptr;
+    UniformBufferDef mainUnformDef;
 };
 
 struct WGShaderData{
@@ -46,8 +53,13 @@ struct WGShaderData{
 };
 
 struct WGMaterialData{
-
+    WGPUBuffer mainUniformBuffer;
+    UniformBufferDef mainUnformDef;
+    void* mainUniformData = nullptr;
+    WGPUBindGroup mainBindGroup;
 };
+
+}
 
 #define MeshDataWG WGMeshData wgData;
 #define FramebufferDataWG WGFramebufferData wgData;
@@ -57,7 +69,6 @@ struct WGMaterialData{
 #define SubShaderDataWG WGSubShaderData wgData;
 #define ShaderDataWG WGShaderData wgData;
 #define MaterialDataWG WGMaterialData wgData;
-
 
 #else
 

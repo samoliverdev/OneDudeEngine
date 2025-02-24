@@ -127,6 +127,8 @@ public:
 
     virtual bool MaterialCreate(Material& shader) = 0;
     virtual void MaterialDestroy(Material& shader) = 0;
+    virtual void MaterialOnSetShader(Material& shader) = 0;
+    virtual void MaterialOnUnsetShader(Material& shader) = 0;
 
     virtual void Initialize() = 0;
     virtual void Shutdown() = 0;

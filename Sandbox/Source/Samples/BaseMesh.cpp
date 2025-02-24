@@ -40,7 +40,10 @@ void BaseMeshSample::OnRender(float deltaTime){
     Camera cam = {Matrix4Identity, Matrix4Identity};
     Graphics::SetCamera(cam);
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
-    Graphics::DrawMesh(mesh, *meshMat, Matrix4Identity);
+
+    //Graphics::DrawMesh(mesh, *meshMat, Matrix4Identity);
+    Graphics::DrawMesh(mesh, *meshMat, math::translate(Vector3(0.5f, 0, 0)));
+    Graphics::DrawMesh(mesh, *meshMat, math::translate(Vector3(-0.5f, 0, 0)));
     
     Graphics::End();
 }

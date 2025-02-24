@@ -150,13 +150,14 @@ void AnimationSample::OnRender(float deltaTime){
 
     //mat->SetMatrix4("animated", char1Anim.mPosePalette);
     mat->SetTexture("mainTex", texture);
-
+    
     for(auto i: char1Meshs){
         //Graphics::SetDefaultShaderData(*shader, char1Anim.mModel.GetLocalModelMatrix());
         /*SubShader::Bind(*shader);
         Graphics::SetProjectionViewMatrix(*shader);
         Graphics::SetModelMatrix(*shader, char1Anim.mModel.GetLocalModelMatrix());
         Graphics::DrawMeshRaw(*i);*/
+        mat->EnableKeyword("SKINNED");
         Graphics::DrawMeshSkinned(*i, *mat, char1Anim.mModel.GetLocalModelMatrix(), &char1Anim.mPosePalette[0], char1Anim.mPosePalette.size());
     }
 
@@ -169,7 +170,7 @@ void AnimationSample::OnRender(float deltaTime){
 
     //char2Model->materials[0]->UpdateDatas();
     //Material::SubmitGraphicDatas(*char2Model->materials[0]);
-    Graphics::BindMaterial(*char2Model->materials[0]);
+    //Graphics::BindMaterial(*char2Model->materials[0]);
 
     //SubShader::Bind(*char2Model->materials[0]->GetShader());
     //char2Model->materials[0]->GetShader()->SetMatrix4("animated", char2Anim.mPosePalette);
@@ -197,6 +198,7 @@ void AnimationSample::OnRender(float deltaTime){
         Graphics::SetModelMatrix(*char2Model->materials[i.materialIndex]->GetShader(), m);
         Graphics::DrawMeshRaw(*char2Model->meshs[i.meshIndex]);*/
 
+        char2Model->materials[i.materialIndex]->EnableKeyword("SKINNED");
         Graphics::DrawMeshSkinned(
             *char2Model->meshs[i.meshIndex], 
             *char2Model->materials[i.materialIndex], 

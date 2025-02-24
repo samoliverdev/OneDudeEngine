@@ -12,27 +12,27 @@
 #include Engine/ShaderLibrary/Vertex.glsl
 
 #if defined(VERTEX) && defined(MainPass)
-    out vec2 _texCoord;
+    Out(0) vec2 _texCoord;
 
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
         _texCoord = texCoord;
-        gl_Position = projection * view * targetModelMatrix * GetLocalPos();
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
     #include Engine/ShaderLibrary/Core.glsl
 
-    uniform sampler2D mainTex;
-    uniform vec4 color;
+    //uniform sampler2D mainTex;
+    //uniform vec4 color;
 
-    in vec2 _texCoord;
-    out vec4 fragColor;
+    In(0) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     void main(){
-        vec4 texColor = textureSRGB(mainTex, _texCoord);
+        vec4 texColor = vec4(0, 1, 0, 1); //textureSRGB(mainTex, _texCoord);
         if(texColor.a < 0.1) discard;
-        fragColor = texColor * color;
+        fragColor = texColor;// * color;
     }
 #endif

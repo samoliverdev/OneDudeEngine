@@ -1,131 +1,137 @@
-#version 330 core
+#pragma BeginProperties
+    Color4 color
+    Texture2D mainTex White
+#pragma EndProperties
 
-#if defined(VERTEX)
-layout (location = 0) in vec3 _pos;
-layout (location = 1) in vec2 _texCoord;
-layout (location = 2) in vec3 _normal;
-layout (location = 5) in ivec4 _boneIds;
-layout (location = 6) in vec4 _weights;
+#pragma BeginPassDef
+    Name MainPass
+    SupportInstancing true
+    MultiCompile _ SKINNED
+#pragma EndPassDef
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+#include Engine/ShaderLibrary/Base.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec4 color;
+    Uniform int selectedBoneIndex;
+EndUniform()
+
+BeginUniform(2, 0, CamDraw)
+    Uniform mat4 projection;
+    Uniform mat4 view;
+EndUniform()
 
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
-//uniform mat4 finalBonesMatrices[MAX_BONES];
 
-//uniform mat4 pose[MAX_BONES];
-//uniform mat4 invBindPose[MAX_BONES];
-uniform mat4 animated[MAX_BONES];
+BeginUniform(1, 0, PerDraw)
+    Uniform mat4 model;
+EndUniform()
 
-out vec3 pos;
-out vec3 normal;
-out vec2 texCoord;
-
-flat out ivec4 boneIds;
-out vec4 weights;
-
-void main(){
-    pos = _pos;
-    normal = _normal;
-    texCoord = _texCoord;
-    boneIds = _boneIds;
-    weights = _weights;
-
-    /*
-    vec4 totalPosition = vec4(0.0f);
-    for(int i = 0; i < MAX_BONE_INFLUENCE; i++){
-        if(_boneIds[i] == -1) continue;
-        if(_boneIds[i] >= MAX_BONES){
-            totalPosition = vec4(_pos,1.0f);
-            break;
-        }
-        vec4 localPosition = animated[_boneIds[i]] * vec4(_pos,1.0f);
-        totalPosition += localPosition * _weights[i];
-        //vec3 localNormal = mat3(finalBonesMatrices[_boneIds[i]]) * _normal;
-        //normal = localNormal;
-    }
-
-    mat4 viewModel = view * model;
-    gl_Position =  projection * viewModel * totalPosition;
-    */
-
-
-    /*mat4 skin = (pose[boneIds.x] * invBindPose[boneIds.x]) * weights.x;
-    skin += (pose[boneIds.y] * invBindPose[boneIds.y]) * weights.y;
-    skin += (pose[boneIds.z] * invBindPose[boneIds.z]) * weights.z;
-    skin += (pose[boneIds.w] * invBindPose[boneIds.w]) * weights.w;*/
-
-    ///*
-    mat4 skin = animated[boneIds.x] * weights.x +
-    animated[boneIds.y] * weights.y +
-    animated[boneIds.z] * weights.z +
-    animated[boneIds.w] * weights.w;
-
-    gl_Position = projection * view * model * skin * vec4(pos, 1.0);
-    //*/
-
-    //gl_Position = projection * view * model * vec4(pos, 1.0);
-}
+#if defined(SKINNED)
+BeginUniform(1, 1, PerDrawSkinned)
+    Uniform mat4 animated[MAX_BONES];
+EndUniform()
 #endif
 
-#if defined(FRAGMENT)
-uniform sampler2D mainTex;
-uniform vec4 color = vec4(1,1,1,1);
+#if defined(VERTEX) && defined(MainPass)
+    Attribute(0) vec3 _pos;
+    Attribute(1) vec2 _texCoord;
+    Attribute(2) vec3 _normal;
 
-uniform int selectedBoneIndex = 36;
+    #if defined(SKINNED)
+    Attribute(5) ivec4 _boneIds;
+    Attribute(6) vec4 _weights;
+    #endif
 
-in vec3 pos;
-in vec3 normal;
-in vec2 texCoord;
+    Out(0) vec3 pos;
+    Out(1) vec3 normal;
+    Out(2) vec2 texCoord;
 
-flat in ivec4 boneIds;
-in vec4 weights;
+    #if defined(SKINNED)
+    OutFlat(3) ivec4 boneIds;
+    Out(4) vec4 weights;
+    #endif
 
-out vec4 fragColor;
+    void main(){
+        pos = _pos;
+        normal = _normal;
+        texCoord = _texCoord;
+        #if defined(SKINNED)
+        boneIds = _boneIds;
+        weights = _weights;
+        #endif
 
-float near = 0.1; 
-float far  = 100.0; 
-  
-float LinearizeDepth(float depth) {
-    float z = depth * 2.0 - 1.0; // back to NDC 
-    return (2.0 * near * far) / (far + near - z * (far - near));	
-}
+        #if defined(SKINNED)
+        mat4 skin = animated[boneIds.x] * weights.x +
+        animated[boneIds.y] * weights.y +
+        animated[boneIds.z] * weights.z +
+        animated[boneIds.w] * weights.w;
+        #else
+        mat4 skin = mat4(1.0);
+        #endif
 
-void main() {
-    vec4 outColor = texture(mainTex, texCoord) * color;
-    if(outColor.a < 0.1) discard;
+        OutPosition = projection * view * model * skin * vec4(pos, 1.0);
+    }
+#endif
 
-    fragColor = outColor;
-    //fragColor = color;
-    return;
+#if defined(FRAGMENT) && defined(MainPass)
+    //uniform sampler2D mainTex;
+    //uniform vec4 color = vec4(1,1,1,1);
 
-    //outColor = vec4(normal, 1);
-    //outColor = vec4(texCoord, 0, 1);
+    In(0) vec3 pos;
+    In(1) vec3 normal;
+    In(2) vec2 texCoord;
+    #if defined(SKINNED)
+    InFlat(3) ivec4 boneIds;
+    In(4) vec4 weights;
+    #endif
 
-    //fragColor = outColor;
-    //fragColor = weights;
-    //return;
+    Out(0) vec4 fragColor;
 
-    //fragColor = vec4(boneIds.x, boneIds.x, boneIds.x,1);
-
-    //fragColor = weights;
-
-    for(int i = 0; i < 4; i++){
-        if(boneIds[i] == selectedBoneIndex){
-            if(weights[i] >= 0.7){
-                fragColor = vec4(1,0,0,0) * weights[i];
-            } else if(weights[i] >= 0.4 && weights[i] <= 0.6){
-                fragColor = vec4(0,1,0,0) * weights[i];
-            } else if(weights[i] >= 0.1){
-                fragColor = vec4(1,1,0,0) * weights[i];
-            }
-            break;
-        }
+    float near = 0.1; 
+    float far  = 100.0; 
+    
+    float LinearizeDepth(float depth){
+        float z = depth * 2.0 - 1.0; // back to NDC 
+        return (2.0 * near * far) / (far + near - z * (far - near));	
     }
 
-    //float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
-    //fragColor = vec4(vec3(depth), 1.0);
-}
+    void main() {
+        vec4 outColor = /*texture(mainTex, texCoord) **/ color;
+        if(outColor.a < 0.1) discard;
+
+        fragColor = outColor;
+        //fragColor = color;
+        return;
+
+        //outColor = vec4(normal, 1);
+        //outColor = vec4(texCoord, 0, 1);
+
+        //fragColor = outColor;
+        //fragColor = weights;
+        //return;
+
+        //fragColor = vec4(boneIds.x, boneIds.x, boneIds.x,1);
+
+        //fragColor = weights;
+
+        #if defined(SKINNED)
+        for(int i = 0; i < 4; i++){
+            if(boneIds[i] == selectedBoneIndex){
+                if(weights[i] >= 0.7){
+                    fragColor = vec4(1,0,0,0) * weights[i];
+                } else if(weights[i] >= 0.4 && weights[i] <= 0.6){
+                    fragColor = vec4(0,1,0,0) * weights[i];
+                } else if(weights[i] >= 0.1){
+                    fragColor = vec4(1,1,0,0) * weights[i];
+                }
+                break;
+            }
+        }
+        #endif
+
+        //float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
+        //fragColor = vec4(vec3(depth), 1.0);
+    }
 #endif

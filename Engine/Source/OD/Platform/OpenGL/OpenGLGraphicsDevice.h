@@ -106,6 +106,8 @@ public:
 
     virtual bool MaterialCreate(Material& shader) override;
     virtual void MaterialDestroy(Material& shader) override;
+    virtual void MaterialOnSetShader(Material& shader) override;
+    virtual void MaterialOnUnsetShader(Material& shader) override;
 
     virtual void Initialize() override;
     virtual void Shutdown() override;

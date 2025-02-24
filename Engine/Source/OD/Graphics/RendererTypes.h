@@ -1,5 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 namespace OD {
 
@@ -37,6 +40,22 @@ enum class OD_API_IMPORT BlendMode{
     ONE_MINUS_CONSTANT_COLOR,
     CONSTANT_ALPHA,
     ONE_MINUS_CONSTANT_ALPHA	
+};
+
+struct OD_API UniformBufferDef{
+    enum class Type{Int, Float, Vec2, Vec3, Vec4, Mat4};
+
+    struct Member{
+        //std::string name;
+        //Type type;
+        size_t pos;
+        size_t size;
+    };
+
+    std::string name;
+    size_t size;
+    std::unordered_map<std::string, Member> members;
+    //std::vector<Member> members;
 };
 
 }

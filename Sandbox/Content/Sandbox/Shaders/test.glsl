@@ -5,13 +5,23 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
-/*BeginAttribute()
-    Attribute(0) vec3 vPosition;
-EndAttribute()*/
+BeginUniform(0, 0, Main)
+    Uniform vec4 a;
+EndUniform()
+
+BeginUniform(1, 0, PerDraw)
+    Uniform mat4 model;
+EndUniform()
+
+BeginUniform(2, 0, CamDraw)
+    Uniform mat4 projection;
+    Uniform mat4 view;
+EndUniform()
 
 #if defined(VERTEX) && defined(MainPass)
     Attribute(0) vec3 vPosition;
     Attribute(1) vec3 vUv;
+    //Attribute(2) vec3 _normal;
 
     Out(0) vec3 pos; 
 
@@ -23,9 +33,10 @@ EndAttribute()*/
         );
         //pos = positions[VertexIndex];
         OutPosition = vec4(positions[VertexIndex], 1.0);*/
+        float dd = a.x;
 
         pos = vUv; //vPosition;
-        OutPosition = vec4(vPosition, 1.0);
+        OutPosition = projection * view * model * vec4(vPosition, 1.0);
     }
 #endif
 

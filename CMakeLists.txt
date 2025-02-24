@@ -74,6 +74,9 @@ set(SOL2_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
 set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
 
+set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
+set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
+
 if(EMSCRIPTEN)
     message("Using emscripten!2")
     message(${ENGINE_SHARED_LIBRARY})
@@ -89,6 +92,7 @@ add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
 add_subdirectory(Engine/ThirdParty/glslang)
+add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
 #add_subdirectory(Engine/ThirdParty/SPIRV-Cross)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
@@ -181,6 +185,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/recastnavigation/DetourCrowd/Include/
     Engine/ThirdParty/recastnavigation/Detour/Include/
     Engine/ThirdParty/taskflow/
+    Engine/ThirdParty/SPIRV-Reflect/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
     Engine/Source/
@@ -195,6 +200,7 @@ target_link_libraries(Engine PUBLIC
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     glslang glslang-default-resource-limits
+    spirv-reflect-static
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )

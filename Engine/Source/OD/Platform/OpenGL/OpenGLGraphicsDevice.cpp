@@ -2283,6 +2283,9 @@ void OpenGLGraphicsDevice::MaterialDestroy(Material& shader){
 
 }
 
+void OpenGLGraphicsDevice::MaterialOnSetShader(Material& shader){}
+void OpenGLGraphicsDevice::MaterialOnUnsetShader(Material& shader){}
+
 bool OpenGLGraphicsDevice::ImGuiSupport(){
     return true;
 }

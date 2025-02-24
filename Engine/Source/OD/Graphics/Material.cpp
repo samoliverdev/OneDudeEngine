@@ -14,6 +14,7 @@
 namespace OD{
 
 /*extern*/ GraphicsStats stats;
+extern GraphicsDevice* graphicsDevice;
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
@@ -41,8 +42,11 @@ Ref<Shader> Material::GetShader(){
 
 void Material::SetShader(Ref<Shader> s){ 
     shader = s; 
+    //graphicsDevice->MaterialOnSetShader(*this);
     UpdateCurrentShader();
     UpdateMaps(); 
+
+    graphicsDevice->MaterialOnSetShader(*this);
 }
 
 uint32_t Material::MaterialId(){ 

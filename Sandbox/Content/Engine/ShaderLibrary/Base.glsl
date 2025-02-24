@@ -6,21 +6,34 @@
     precision highp int;
 
     #define In(loc) in
+    #define InFlat(loc) flat in
     #define Out(loc) out
+    #define OutFlat(loc) flat out
     #define Attribute(loc) layout(location = loc) in
 
     #define OutPosition gl_Position
     #define VertexIndex gl_VertexID
 
+    #define BeginUniform(inSet, inBinding, name)
+    #define EndUniform()
+    #define Uniform uniform
+
 #endif
 
 #if defined(WebGPU_API)
     #define In(loc) layout(location = loc) in 
+    #define InFlat(loc) layout(location = loc) flat in
     #define Out(loc) layout(location = loc) out 
+    #define OutFlat(loc) layout(location = loc) flat out
     #define Attribute(loc) layout(location = loc) in
 
     #define OutPosition gl_Position
     #define VertexIndex gl_VertexIndex
+
+    #define BeginUniform(inSet, inBinding, name) layout(set = inSet, binding = inBinding) uniform name {
+    #define EndUniform() };
+    
+    #define Uniform
 #endif
 
 #endif

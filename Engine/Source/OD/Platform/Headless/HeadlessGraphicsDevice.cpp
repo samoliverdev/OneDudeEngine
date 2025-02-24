@@ -97,6 +97,8 @@ void HeadlessGraphicsDevice::ShaderDestroy(Shader& shader){}
 
 bool HeadlessGraphicsDevice::MaterialCreate(Material& shader){ return false; }
 void HeadlessGraphicsDevice::MaterialDestroy(Material& shader){}
+void HeadlessGraphicsDevice::MaterialOnSetShader(Material& shader){}
+void HeadlessGraphicsDevice::MaterialOnUnsetShader(Material& shader){}
 
 void HeadlessGraphicsDevice::Initialize(){}
 void HeadlessGraphicsDevice::Shutdown(){}

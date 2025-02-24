@@ -176,6 +176,7 @@ private:
     
     bool isComplete = false;
     MaterialDataGL;
+    MaterialDataWG;
 
     void SetFloat(const char* name, float value, float min, float max);
     void SetColor3(const char* name, Vector3 value);
