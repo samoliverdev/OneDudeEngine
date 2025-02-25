@@ -15,7 +15,7 @@ BeginUniform(0, 0, Main)
     Uniform vec4 color;
 EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
-Texture2D(0, 2, main2Tex, main2Sampler)
+//Texture2D(0, 2, main2Tex, main2Sampler)
 
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec2 _texCoord;

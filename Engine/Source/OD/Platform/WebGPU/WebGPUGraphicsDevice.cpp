@@ -331,7 +331,7 @@ WGPURequiredLimits WebGPUGraphicsDevice::GetRequiredLimits(WGPUAdapter adapter) 
 	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(Matrix4) * 2;
 
 	// There is a maximum of 3 float forwarded from vertex to fragment shader
-	requiredLimits.limits.maxInterStageShaderComponents = 10;
+	requiredLimits.limits.maxInterStageShaderComponents = 20;
 
 	// We use at most 1 bind group for now
 	requiredLimits.limits.maxBindGroups = 4;
