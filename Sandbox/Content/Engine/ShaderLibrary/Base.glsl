@@ -18,6 +18,8 @@
     #define EndUniform()
     #define Uniform uniform
 
+    #define Texture2D(inset, inbinding, name, nameSampler) uniform sampler2D name;
+
 #endif
 
 #if defined(WebGPU_API)
@@ -32,8 +34,12 @@
 
     #define BeginUniform(inSet, inBinding, name) layout(set = inSet, binding = inBinding) uniform name {
     #define EndUniform() };
-    
     #define Uniform
+
+    #define Texture2D(inset, inbinding, name, nameSampler) \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1)) uniform texture2D name;  \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1) + 1) uniform sampler nameSampler; \
+    
 #endif
 
 #endif

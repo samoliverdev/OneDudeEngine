@@ -14,26 +14,50 @@ vec3 ApplyGamaCorrection(vec3 rgb){
 #endif
 }
 
-vec4 textureSRGB(sampler2D tex, vec2 uv){
+vec4 ToSRGB(vec4 a){
 #if defined(ENABLE_GAMA_CORRECTION)
-    vec4 color = texture(tex, uv);
-    //return pow(color, vec4(gamma));
-    color.rgb = pow(color.rgb, vec3(gamma));
-    return color;
+    return vec4(pow(a.r, gamma), pow(a.g, gamma), pow(a.b, gamma), a.a);
 #else
-    return texture(tex, uv);
-#endif 
+    return a;
+#endif
 }
 
-vec4 textureSRGB(samplerCube tex, vec3 uv){
-#if defined(ENABLE_GAMA_CORRECTION)
-    vec4 color = texture(tex, uv);
-    //return pow(color, vec4(gamma));
-    color.rgb = pow(color.rgb, vec3(gamma));
-    return color;
-#else
-    return texture(tex, uv);
-#endif 
-}
+#if defined(OpenGL_API)
+    #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
+
+    vec4 textureSRGB(sampler2D tex, vec2 uv){
+    #if defined(ENABLE_GAMA_CORRECTION)
+        vec4 color = texture(tex, uv); //return pow(color, vec4(gamma));
+        color.rgb = pow(color.rgb, vec3(gamma));
+        return color;
+    #else
+        return texture(tex, uv);
+    #endif 
+    }
+
+    vec4 textureSRGB(samplerCube tex, vec3 uv){
+    #if defined(ENABLE_GAMA_CORRECTION)
+        vec4 color = texture(tex, uv); //return pow(color, vec4(gamma));
+        color.rgb = pow(color.rgb, vec3(gamma));
+        return color;
+    #else
+        return texture(tex, uv);
+    #endif 
+    }
+#endif
+
+#if defined(WebGPU_API)
+    #define SampleTexture2D(tex, sample, uv) texture(sampler2D(tex, sample), uv)
+
+    vec4 textureSRGB(texture2D tex, sampler s, vec2 uv){
+    #if defined(ENABLE_GAMA_CORRECTION)
+        vec4 color = texture(sampler2D(tex, s), uv); //return pow(color, vec4(gamma));
+        color.rgb = pow(color.rgb, vec3(gamma));
+        return color;
+    #else
+        return texture(sampler2D(tex, s), uv);
+    #endif 
+    }
+#endif
 
 #endif

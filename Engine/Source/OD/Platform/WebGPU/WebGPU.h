@@ -2,7 +2,7 @@
 #if defined(WEBGPU_SUPPORT)
 
 #include <webgpu/webgpu.h>
-#include "OD/Graphics/RendererTypes.h"
+#include "OD/Platform/Spirv.h"
 
 namespace OD{
 
@@ -28,7 +28,9 @@ struct WGFramebufferData{
 };
 
 struct WGTexture2DData{
-    
+    WGPUTexture texture = nullptr;
+    WGPUTextureView textureView = nullptr;
+    WGPUSampler sampler = nullptr;
 };
 
 struct WGTexture2DArrayData{
@@ -45,7 +47,7 @@ struct WGSubShaderData{
     WGPURenderPipeline pipeline = nullptr;
     WGPUPipelineLayout layout = nullptr;
     WGPUBindGroupLayout bindGroupLayout = nullptr;
-    UniformBufferDef mainUnformDef;
+    MaterialMainSetDef materialMainSetDef;
 };
 
 struct WGShaderData{
@@ -53,10 +55,11 @@ struct WGShaderData{
 };
 
 struct WGMaterialData{
-    WGPUBuffer mainUniformBuffer;
-    UniformBufferDef mainUnformDef;
+    MaterialMainSetDef materialMainSetDef;
+
+    WGPUBuffer mainUniformBuffer = nullptr;
     void* mainUniformData = nullptr;
-    WGPUBindGroup mainBindGroup;
+    WGPUBindGroup mainBindGroup = nullptr;
 };
 
 }

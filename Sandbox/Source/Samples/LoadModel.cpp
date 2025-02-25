@@ -15,7 +15,7 @@ void LoadModelSample::OnInit(){
     model->materials[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
     model->materials[0]->SetVector4("color", {1,1,1,1});
 
-    for(int i = 0; i < 100000; i++){
+    for(int i = 0; i < 1000; i++){
         float posRange = 25;
 
         Transform t;

@@ -4,7 +4,7 @@
 
 namespace OD{
 
-bool SpirvReflect(int set, int bind, void* data, size_t size, UniformBufferDef& out){
+bool SpirvReflectMainSet(void* data, size_t size, MaterialMainSetDef& out){
     SpvReflectShaderModule module = {};
     SpvReflectResult result = spvReflectCreateShaderModule(size, data, &module);
     Assert(result == SPV_REFLECT_RESULT_SUCCESS);
@@ -18,7 +18,32 @@ bool SpirvReflect(int set, int bind, void* data, size_t size, UniformBufferDef& 
     result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
     Assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
-    LogWarning("%s", sets[set]->bindings[bind]->name);
+    Assert(sets.size() >= 1);
+    Assert(sets[0]->binding_count >= 1);
+
+    //MainBind
+    out.bufferName = std::string(sets[0]->bindings[0]->name);
+    out.bufferSize = sets[0]->bindings[0]->block.size;
+    for(int i = 0; i < sets[0]->bindings[0]->block.member_count; i++){
+        //LogWarning("%s", sets[0]->bindings[0]->block.members[i].name);
+        //LogWarning("%d", sets[0]->bindings[0]->block.members[i].offset);
+        
+        MaterialMainSetDef::Member member{};
+        member.pos = sets[0]->bindings[0]->block.members[i].offset;
+        member.size = sets[0]->bindings[0]->block.members[i].size;
+        out.bufferMembers[sets[0]->bindings[0]->block.members[i].name] = member;
+    }
+
+    //TexSlots
+    for(int i = 1; i < sets[0]->binding_count; i++){
+        //LogWarning("%s", sets[0]->bindings[i]->name);
+        //LogWarning("%d", sets[0]->bindings[i]->resource_type);
+        if(sets[0]->bindings[i]->resource_type == SPV_REFLECT_RESOURCE_FLAG_SRV){
+            out.textureBindings[std::string(sets[0]->bindings[i]->name)] = i;
+        }
+    }
+
+    /*LogWarning("%s", sets[set]->bindings[bind]->name);
     out.name = std::string(sets[set]->bindings[bind]->name);
     out.size = sets[set]->bindings[bind]->block.size;
     for(int i = 0; i < sets[set]->bindings[bind]->block.member_count; i++){
@@ -31,7 +56,7 @@ bool SpirvReflect(int set, int bind, void* data, size_t size, UniformBufferDef& 
         //member.name = sets[set]->bindings[bind]->block.members[i].name;
         out.members[sets[set]->bindings[bind]->block.members[i].name] = member;
         //out.members.emplace_back(member);
-    }
+    }*/
 
     /*result = spvReflectEnumerateDescriptorBindings(&module, &count, NULL);
     Assert(result == SPV_REFLECT_RESULT_SUCCESS);

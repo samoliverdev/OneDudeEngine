@@ -4,6 +4,7 @@
 #include "OD/Serialization/Serialization.h"
 
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Platform/WebGPU/WebGPU.h"
 
 namespace sol{ class state; }
 
@@ -74,6 +75,7 @@ struct OD_API Texture2DSetting{
 class OD_API Texture2D: public Asset{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
+    friend class WebGPUGraphicsDevice;
 public:
     Texture2D() = default;
     ~Texture2D();
@@ -107,6 +109,7 @@ private:
     Texture2DSetting settings;
     bool isComplete = false;
     Texture2DDataGL;
+    Texture2DDataWG;
 };
 
 class OD_API Texture2DArray: public Asset{

@@ -127,6 +127,14 @@ public:
 
     WGPUTextureView GetNextSurfaceTextureView();
     WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter) const;
+    void WriteMipMaps(
+        WGPUDevice device,
+        WGPUTexture texture,
+        WGPUExtent3D textureSize,
+        [[maybe_unused]] uint32_t mipLevelCount, // not used yet
+        const unsigned char* pixelData
+    );
+    
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;
@@ -183,6 +191,9 @@ public:
     std::vector<WGPUBuffer> perDrawInstancingDatas;
     int curPerDrawInstancingData = 0;
     const int maxPerDrawInstancing = 10000;
+
+    Texture2D defaultTex;
+    const int maxTexSlots = 2;
 };
 
 }

@@ -14,6 +14,8 @@
 BeginUniform(0, 0, Main)
     Uniform vec4 color;
 EndUniform()
+Texture2D(0, 1, mainTex, mainSampler)
+Texture2D(0, 2, main2Tex, main2Sampler)
 
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec2 _texCoord;
@@ -28,14 +30,11 @@ EndUniform()
 #if defined(FRAGMENT) && defined(MainPass)
     #include Engine/ShaderLibrary/Core.glsl
 
-    //uniform sampler2D mainTex;
-    //uniform vec4 color;
-
     In(0) vec2 _texCoord;
     Out(0) vec4 fragColor;
 
     void main(){
-        vec4 texColor = vec4(0, 1, 0, 1); //textureSRGB(mainTex, _texCoord);
+        vec4 texColor = ToSRGB(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
         if(texColor.a < 0.1) discard;
         fragColor = texColor * color;
     }

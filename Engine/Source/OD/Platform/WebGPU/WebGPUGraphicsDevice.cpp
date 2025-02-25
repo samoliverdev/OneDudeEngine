@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
 
 #include "glslang/Include/glslang_c_interface.h"
 #include "glslang/Public/resource_limits_c.h"
@@ -224,7 +225,7 @@ namespace Ultis{
     }
 
     void setDefault(WGPULimits& limits){
-        limits.maxTextureDimension1D = WGPU_LIMIT_U32_UNDEFINED;
+        limits.maxTextureDimension1D =  WGPU_LIMIT_U32_UNDEFINED;
         limits.maxTextureDimension2D = WGPU_LIMIT_U32_UNDEFINED;
         limits.maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
         limits.maxTextureArrayLayers = WGPU_LIMIT_U32_UNDEFINED;
@@ -316,6 +317,9 @@ WGPURequiredLimits WebGPUGraphicsDevice::GetRequiredLimits(WGPUAdapter adapter) 
 
 	WGPURequiredLimits requiredLimits{};
 	setDefault(requiredLimits.limits);
+
+    requiredLimits.limits.maxTextureDimension1D = 2048;
+    requiredLimits.limits.maxTextureDimension2D = 2048;
 
 	// We use at most 2 vertex attributes
 	requiredLimits.limits.maxVertexAttributes = 15;
@@ -560,6 +564,9 @@ void WebGPUGraphicsDevice::Initialize(){
     for(int i = 0; i < perDrawInstancingDatas.size(); i++){
         perDrawInstancingDatas[i] = CreateVertexBuffer(sizeof(Matrix4) * 1000, "PerDrawInstancing");
     }
+
+    /////////////////////
+    Texture2DCreate(defaultTex, "Engine/Textures/brickwall.jpg", Texture2DSetting());
 }
 
 void WebGPUGraphicsDevice::Shutdown(){
@@ -749,9 +756,9 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         for(auto& i: maps){
             MaterialMap& map = i.second;
 
-            if(material.wgData.mainUnformDef.members.count(i.first) <= 0) continue;
+            if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
 
-            UniformBufferDef::Member m = material.wgData.mainUnformDef.members[i.first];
+            MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
 
             if(map.type == MaterialMap::Type::Int){
                 Assert(m.size >= sizeof(int));
@@ -835,7 +842,7 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
         Assert(material.currentTextureSlot < 32);
 
-        wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.mainUnformDef.size);
+        wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.materialMainSetDef.bufferSize);
     };
 
     Assert(mat.currentShader != nullptr && "Shader is not vali!");
@@ -1155,8 +1162,200 @@ int WebGPUGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int atta
     return 0;
 }
 
+void WebGPUGraphicsDevice::WriteMipMaps(
+    WGPUDevice device,
+    WGPUTexture texture,
+    WGPUExtent3D textureSize,
+    [[maybe_unused]] uint32_t mipLevelCount, // not used yet
+    const unsigned char* pixelData
+){
+    WGPUQueue queue = wgpuDeviceGetQueue(device);
+
+    // Arguments telling which part of the texture we upload to
+    WGPUImageCopyTexture destination = {};
+    destination.texture = texture;
+    destination.origin = { 0, 0, 0 };
+    destination.aspect = WGPUTextureAspect_All;
+
+    // Arguments telling how the C++ side pixel memory is laid out
+    WGPUTextureDataLayout source = {};
+    source.offset = 0;
+
+    // Create image data
+    WGPUExtent3D mipLevelSize = textureSize;
+    std::vector<unsigned char> previousLevelPixels;
+    WGPUExtent3D previousMipLevelSize;
+    for(uint32_t level = 0; level < mipLevelCount; ++level){
+        // Pixel data for the current level
+        std::vector<unsigned char> pixels(4 * mipLevelSize.width * mipLevelSize.height);
+        if(level == 0){
+            // We cannot really avoid this copy since we need this
+            // in previousLevelPixels at the next iteration
+            memcpy(pixels.data(), pixelData, pixels.size());
+        } else {
+            // Create mip level data
+            for(uint32_t i = 0; i < mipLevelSize.width; ++i){
+                for(uint32_t j = 0; j < mipLevelSize.height; ++j){
+                    unsigned char* p = &pixels[4 * (j * mipLevelSize.width + i)];
+                    // Get the corresponding 4 pixels from the previous level
+                    unsigned char* p00 = &previousLevelPixels[4 * ((2 * j + 0) * previousMipLevelSize.width + (2 * i + 0))];
+                    unsigned char* p01 = &previousLevelPixels[4 * ((2 * j + 0) * previousMipLevelSize.width + (2 * i + 1))];
+                    unsigned char* p10 = &previousLevelPixels[4 * ((2 * j + 1) * previousMipLevelSize.width + (2 * i + 0))];
+                    unsigned char* p11 = &previousLevelPixels[4 * ((2 * j + 1) * previousMipLevelSize.width + (2 * i + 1))];
+                    // Average
+                    p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
+                    p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
+                    p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
+                    p[3] = (p00[3] + p01[3] + p10[3] + p11[3]) / 4;
+                }
+            }
+        }
+
+        // Upload data to the GPU texture
+        destination.mipLevel = level;
+        source.bytesPerRow = 4 * mipLevelSize.width;
+        source.rowsPerImage = mipLevelSize.height;
+        wgpuQueueWriteTexture(queue, &destination, pixels.data(), pixels.size(), &source, &mipLevelSize);
+
+        previousLevelPixels = std::move(pixels);
+        previousMipLevelSize = mipLevelSize;
+        mipLevelSize.width /= 2;
+        mipLevelSize.height /= 2;
+    }
+
+    wgpuQueueRelease(queue);
+}
+
+// Equivalent of std::bit_width that is available from C++20 onward
+uint32_t bit_width(uint32_t m) {
+    if (m == 0) return 0;
+    else { uint32_t w = 0; while (m >>= 1) ++w; return w; }
+}
+
 bool WebGPUGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings){
-    return false;
+    Texture2DDestroy(tex);
+
+    int width, height, channels;
+    unsigned char* pixelData = stbi_load(path.c_str(), &width, &height, &channels, 4 /* force 4 channels */);
+    if(pixelData == nullptr){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", tex.path.c_str(), stbi_failure_reason());
+        return false;
+    }
+
+    WGPUTextureDescriptor textureDesc = {};
+    textureDesc.nextInChain = nullptr;
+    textureDesc.dimension = WGPUTextureDimension_2D;
+    textureDesc.format = WGPUTextureFormat_RGBA8Unorm; // by convention for bmp, png and jpg file. Be careful with other formats.
+    textureDesc.sampleCount = 1;
+    textureDesc.size = { (unsigned int)width, (unsigned int)height, 1 };
+    textureDesc.mipLevelCount = bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
+    textureDesc.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    textureDesc.viewFormatCount = 0;
+    textureDesc.viewFormats = nullptr;
+    tex.wgData.texture = wgpuDeviceCreateTexture(device, &textureDesc);
+
+    // Upload data to the GPU texture (to be implemented!)
+    WriteMipMaps(device, tex.wgData.texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
+    stbi_image_free(pixelData);
+
+    WGPUTextureViewDescriptor textureViewDesc = {};
+    textureViewDesc.nextInChain = nullptr;
+    textureViewDesc.aspect = WGPUTextureAspect_All;
+    textureViewDesc.baseArrayLayer = 0;
+    textureViewDesc.arrayLayerCount = 1;
+    textureViewDesc.baseMipLevel = 0;
+    textureViewDesc.mipLevelCount = textureDesc.mipLevelCount;
+    textureViewDesc.dimension = WGPUTextureViewDimension_2D;
+    textureViewDesc.format = textureDesc.format;
+    tex.wgData.textureView = wgpuTextureCreateView(tex.wgData.texture, &textureViewDesc);
+
+    WGPUSamplerDescriptor samplerDesc = {};
+    samplerDesc.nextInChain = nullptr;
+    samplerDesc.addressModeU = WGPUAddressMode_Repeat;
+    samplerDesc.addressModeV = WGPUAddressMode_Repeat;
+    samplerDesc.addressModeW = WGPUAddressMode_Repeat;
+    samplerDesc.magFilter = WGPUFilterMode_Linear;
+    samplerDesc.minFilter = WGPUFilterMode_Linear;
+    samplerDesc.mipmapFilter = WGPUMipmapFilterMode_Linear;
+    samplerDesc.lodMinClamp = 0.0f;
+    samplerDesc.lodMaxClamp = 8.0f;
+    samplerDesc.compare = WGPUCompareFunction_Undefined;
+    samplerDesc.maxAnisotropy = 1;
+    tex.wgData.sampler = wgpuDeviceCreateSampler(device, &samplerDesc);
+
+    
+    return true;
+    
+    
+    /*WGPUTextureDescriptor textureDesc;
+    textureDesc.nextInChain = nullptr;
+    textureDesc.dimension = WGPUTextureDimension_2D;
+    textureDesc.size = { 256, 256, 1 };
+    textureDesc.mipLevelCount = 1;
+    textureDesc.sampleCount = 1;
+    textureDesc.format = WGPUTextureFormat_RGBA8Unorm;
+    textureDesc.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    textureDesc.viewFormatCount = 0;
+    textureDesc.viewFormats = nullptr;
+    tex.wgData.texture = wgpuDeviceCreateTexture(device, &textureDesc);
+
+    // Create image data
+    std::vector<uint8_t> pixels(4 * textureDesc.size.width * textureDesc.size.height);
+    for(uint32_t i = 0; i < textureDesc.size.width; ++i){
+        for(uint32_t j = 0; j < textureDesc.size.height; ++j){
+            uint8_t *p = &pixels[4 * (j * textureDesc.size.width + i)];
+            p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
+            p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
+            p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
+            p[3] = 255; // a
+        }
+    }
+
+    // Arguments telling which part of the texture we upload to
+    // (together with the last argument of writeTexture)
+    WGPUImageCopyTexture destination;
+    destination.nextInChain = nullptr;
+    destination.texture = tex.wgData.texture ;
+    destination.mipLevel = 0;
+    destination.origin = { 0, 0, 0 }; // equivalent of the offset argument of Queue::writeBuffer
+    destination.aspect = WGPUTextureAspect_All; // only relevant for depth/Stencil textures
+
+    // Arguments telling how the C++ side pixel memory is laid out
+    WGPUTextureDataLayout source;
+    source.nextInChain = nullptr;
+    source.offset = 0;
+    source.bytesPerRow = 4 * textureDesc.size.width;
+    source.rowsPerImage = textureDesc.size.height;
+
+    wgpuQueueWriteTexture(queue, &destination, pixels.data(), pixels.size(), &source, &textureDesc.size);
+
+    WGPUTextureViewDescriptor textureViewDesc;
+    textureViewDesc.nextInChain = nullptr;
+    textureViewDesc.label = "TextureViwer";
+    textureViewDesc.aspect = WGPUTextureAspect_All;
+    textureViewDesc.baseArrayLayer = 0;
+    textureViewDesc.arrayLayerCount = 1;
+    textureViewDesc.baseMipLevel = 0;
+    textureViewDesc.mipLevelCount = 1;
+    textureViewDesc.dimension = WGPUTextureViewDimension_2D;
+    textureViewDesc.format = textureDesc.format;
+    tex.wgData.textureView = wgpuTextureCreateView(tex.wgData.texture, &textureViewDesc);
+
+    WGPUSamplerDescriptor samplerDesc;
+    samplerDesc.nextInChain = nullptr;
+    samplerDesc.addressModeU = WGPUAddressMode_ClampToEdge;
+    samplerDesc.addressModeV = WGPUAddressMode_ClampToEdge;
+    samplerDesc.addressModeW = WGPUAddressMode_ClampToEdge;
+    samplerDesc.magFilter = WGPUFilterMode_Linear;
+    samplerDesc.minFilter = WGPUFilterMode_Linear;
+    samplerDesc.mipmapFilter = WGPUMipmapFilterMode_Linear;
+    samplerDesc.lodMinClamp = 0.0f;
+    samplerDesc.lodMaxClamp = 1.0f;
+    samplerDesc.compare = WGPUCompareFunction_Undefined;
+    samplerDesc.maxAnisotropy = 1;
+    tex.wgData.sampler = wgpuDeviceCreateSampler(device, &samplerDesc);
+    
+    return true;*/
 }
 
 bool WebGPUGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings){
@@ -1168,7 +1367,14 @@ bool WebGPUGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
 }
 
 void WebGPUGraphicsDevice::Texture2DDestroy(Texture2D& tex){
+    if(tex.wgData.texture != nullptr){
+        wgpuTextureDestroy(tex.wgData.texture);
+        wgpuTextureRelease(tex.wgData.texture);
+    }
 
+    tex.wgData.texture = nullptr;
+    tex.wgData.textureView = nullptr;
+    tex.wgData.sampler = nullptr;
 }
 
 bool WebGPUGraphicsDevice::Texture2DIsValid(Texture2D& tex){
@@ -1300,7 +1506,7 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     if(CompileShader(source, GLSLANG_STAGE_FRAGMENT, spivFrag) == false) Assert(false);
     source.erase(0, fragToInsert.size());
 
-    Assert(SpirvReflect(0, 0, spivVertex.data(), spivVertex.size() * sizeof(unsigned int), shader.wgData.mainUnformDef) == true);
+    Assert(SpirvReflectMainSet(spivVertex.data(), spivVertex.size() * sizeof(unsigned int), shader.wgData.materialMainSetDef) == true);
 
     WGPUShaderModuleDescriptor shaderDesc{};
     #ifdef WEBGPU_BACKEND_WGPU
@@ -1481,18 +1687,44 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
     pipelineDesc.multisample.mask = ~0u;// Default value for the mask, meaning "all bits on"
     pipelineDesc.multisample.alphaToCoverageEnabled = false;// Default value as well (irrelevant for count = 1 anyways)
 
+    std::vector<WGPUBindGroupLayoutEntry> bindingLayoutEntries(3);
+
     // Define binding layout
-    WGPUBindGroupLayoutEntry bindingLayout{};
-    setDefault(bindingLayout);
-    bindingLayout.binding = 0;// The binding index as used in the @binding attribute in the shader
-    bindingLayout.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
-    bindingLayout.buffer.type = WGPUBufferBindingType_Uniform;
-    bindingLayout.buffer.minBindingSize = shader.wgData.mainUnformDef.size; //4 * sizeof(float);
+    setDefault(bindingLayoutEntries[0]);
+    bindingLayoutEntries[0].binding = 0;// The binding index as used in the @binding attribute in the shader
+    bindingLayoutEntries[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;// The stage that needs to access this resource
+    bindingLayoutEntries[0].buffer.type = WGPUBufferBindingType_Uniform;
+    bindingLayoutEntries[0].buffer.minBindingSize = shader.wgData.materialMainSetDef.bufferSize; //4 * sizeof(float);
+
+    bindingLayoutEntries.resize(maxTexSlots * 2 + 1);
+    for(int i = 1; i < bindingLayoutEntries.size(); i+=2){
+        setDefault(bindingLayoutEntries[i]);
+        bindingLayoutEntries[i].binding = i;
+        bindingLayoutEntries[i].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+        bindingLayoutEntries[i].texture.sampleType = WGPUTextureSampleType_Float;
+        bindingLayoutEntries[i].texture.viewDimension = WGPUTextureViewDimension_2D;
+        bindingLayoutEntries[i].texture.multisampled = false;
+        setDefault(bindingLayoutEntries[i+1]);
+        bindingLayoutEntries[i+1].binding = i+1;
+        bindingLayoutEntries[i+1].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+        bindingLayoutEntries[i+1].sampler.type = WGPUSamplerBindingType_Filtering;
+    }
+
+    /*setDefault(bindingLayoutEntries[1]);
+    bindingLayoutEntries[1].binding = 1;
+    bindingLayoutEntries[1].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    bindingLayoutEntries[1].texture.sampleType = WGPUTextureSampleType_Float;
+    bindingLayoutEntries[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+    bindingLayoutEntries[1].texture.multisampled = false;
+    setDefault(bindingLayoutEntries[2]);
+    bindingLayoutEntries[2].binding = 2;
+    bindingLayoutEntries[2].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    bindingLayoutEntries[2].sampler.type = WGPUSamplerBindingType_Filtering;*/
 
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc{};
     bindGroupLayoutDesc.nextInChain = nullptr;
-    bindGroupLayoutDesc.entryCount = 1;
-    bindGroupLayoutDesc.entries = &bindingLayout;
+    bindGroupLayoutDesc.entryCount = bindingLayoutEntries.size();// 1;
+    bindGroupLayoutDesc.entries = bindingLayoutEntries.data();// &bindingLayout;
     shader.wgData.bindGroupLayout = wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
 
     std::vector<WGPUBindGroupLayout> bindGroupLayouts{
@@ -1570,28 +1802,38 @@ void WebGPUGraphicsDevice::MaterialOnSetShader(Material& mat){
         return buffer;
     };
 
-    mat.wgData.mainUnformDef = mat.currentShader->wgData.mainUnformDef;
-    mat.wgData.mainUniformData = malloc(mat.wgData.mainUnformDef.size);
-    mat.wgData.mainUniformBuffer = CreateUniformBuffer(mat.wgData.mainUnformDef.size, "UniformBuffer");
+    mat.wgData.materialMainSetDef = mat.currentShader->wgData.materialMainSetDef;
+    mat.wgData.mainUniformData = malloc(mat.wgData.materialMainSetDef.bufferSize);
+    mat.wgData.mainUniformBuffer = CreateUniformBuffer(mat.wgData.materialMainSetDef.bufferSize, "UniformBuffer");
 
-    WGPUBindGroupEntry binding{};
-    binding.nextInChain = nullptr;
-    binding.binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
-    binding.buffer = mat.wgData.mainUniformBuffer;// The buffer it is actually bound to
-    // We can specify an offset within the buffer, so that a single buffer can hold
-    // multiple uniform blocks.
-    binding.offset = 0;
-    // And we specify again the size of the buffer.
-    binding.size = mat.wgData.mainUnformDef.size;
+    std::vector<WGPUBindGroupEntry> bindings(3);
+    bindings[0] = {};
+    bindings[0].nextInChain = nullptr;
+    bindings[0].binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+    bindings[0].buffer = mat.wgData.mainUniformBuffer;// The buffer it is actually bound to
+    bindings[0].size = mat.wgData.materialMainSetDef.bufferSize;// And we specify again the size of the buffer.
+    bindings[0].offset = 0;
+
+    bindings.resize(maxTexSlots * 2 + 1);
+    for(int i = 1; i < bindings.size(); i+=2){
+        bindings[i] = {};
+        bindings[i].nextInChain = nullptr;
+        bindings[i].binding = i;
+        bindings[i].textureView = defaultTex.wgData.textureView;
+        bindings[i+1] = {};
+        bindings[i+1].nextInChain = nullptr;
+        bindings[i+1].binding = i+1;
+        bindings[i+1].sampler = defaultTex.wgData.sampler;
+    }
 
     // A bind group contains one or multiple bindings
     WGPUBindGroupDescriptor bindGroupDesc{};
     bindGroupDesc.nextInChain = nullptr;
     bindGroupDesc.layout = mat.currentShader->wgData.bindGroupLayout;// bindGroupLayout;
-    // There must be as many bindings as declared in the layout!
-    bindGroupDesc.entryCount = 1;
-    bindGroupDesc.entries = &binding;
+    bindGroupDesc.entryCount = bindings.size();// 1; // There must be as many bindings as declared in the layout!
+    bindGroupDesc.entries = bindings.data();// &binding;
     mat.wgData.mainBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+
 }
 
 void WebGPUGraphicsDevice::MaterialOnUnsetShader(Material& mat){
