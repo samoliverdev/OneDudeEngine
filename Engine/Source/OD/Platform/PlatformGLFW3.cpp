@@ -93,6 +93,8 @@ void imguiOnInit(GLFWwindow* window){
 
     if(graphicsDeviceInfo.apiName == "OpenGL"){
         ImGui_ImplGlfw_InitForOpenGL(window, true);
+    } else {
+        ImGui_ImplGlfw_InitForOther(window, true);
     }
 
     // Setup Platform/Renderer backends
@@ -101,7 +103,7 @@ void imguiOnInit(GLFWwindow* window){
     //graphicsDevice->ImGuiInit();
 }
 
-void imguiOnPreUpdate(){
+void Platform::ImguiBegin(){
     if(graphicsDevice->ImGuiSupport() == false) return;
 
     /*#if defined(__EMSCRIPTEN__)
@@ -115,7 +117,7 @@ void imguiOnPreUpdate(){
     ImGuizmo::BeginFrame();
 }
 
-void imguiOnUpdate(GLFWwindow* window){
+void Platform::ImguiEnd(){
     if(graphicsDevice->ImGuiSupport() == false) return;
 
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -150,7 +152,7 @@ void imguiOnUpdate(GLFWwindow* window){
 }
 
 void imguiOnDestroy(){
-    if(graphicsDevice->ImGuiSupport() == false) return;
+    //if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
     //ImGui_ImplOpenGL3_Shutdown();
@@ -362,12 +364,11 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 void Platform::PreUpdate(){
     OD_PROFILE_SCOPE("Platform::PreUpdate");
     UpdateFpsCounter(window);
-    imguiOnPreUpdate();
+    //imguiOnPreUpdate();
 }
 
 void Platform::LateUpdate(){
-    OD_PROFILE_SCOPE("Platform::LateUpdate");
-    imguiOnUpdate(window);
+    //OD_PROFILE_SCOPE("Platform::LateUpdate");
 }
 
 void Platform::SystemShutdown(void* plat_state){

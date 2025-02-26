@@ -70,8 +70,8 @@ void LightSample::OnGUI(){
     static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
     ImGui::ColorEdit3("color", color);
     
-    model->materials[0]->SetVector3("light.diffuse",  Vector3(color[0], color[1], color[2]));
-    model->materials[0]->SetVector3("light.position", lightTransform.LocalPosition());
+    model->materials[0]->SetVector3("light_diffuse",  Vector3(color[0], color[1], color[2]));
+    model->materials[0]->SetVector3("light_position", lightTransform.LocalPosition());
     
     ImGui::End();
 }

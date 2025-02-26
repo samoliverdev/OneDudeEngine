@@ -134,7 +134,13 @@ public:
         [[maybe_unused]] uint32_t mipLevelCount, // not used yet
         const unsigned char* pixelData
     );
-    
+
+    struct TexTarget{
+        WGPUTextureView textureView = nullptr;
+        WGPUSampler sampler = nullptr;
+    };
+
+    void UpdateMaterialMainSet(Material& mat, std::vector<TexTarget>& texs);
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;

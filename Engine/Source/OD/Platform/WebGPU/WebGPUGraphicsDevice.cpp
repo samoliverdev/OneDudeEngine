@@ -25,6 +25,8 @@
 #include "glslang/Public/resource_limits_c.h"
 //#include <spirv_cross_c.h>
 
+#include <imgui/backends/imgui_impl_wgpu.h>
+
 namespace OD{
 
 namespace Ultis{
@@ -326,7 +328,7 @@ WGPURequiredLimits WebGPUGraphicsDevice::GetRequiredLimits(WGPUAdapter adapter) 
 	// We should also tell that we use 1 vertex buffers
 	requiredLimits.limits.maxVertexBuffers = 15;
 	// Maximum size of a buffer is 6 vertices of 5 float each
-	requiredLimits.limits.maxBufferSize = sizeof(Matrix4) * 1000;
+	requiredLimits.limits.maxBufferSize = sizeof(Matrix4) * 10000;
 	// Maximum stride between 2 consecutive vertices in the vertex buffer
 	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(Matrix4) * 2;
 
@@ -393,8 +395,8 @@ void WebGPUGraphicsDevice::Initialize(){
 	config.nextInChain = nullptr;
 
 	// Configuration of the textures created for the underlying swap chain
-	config.width = 640;
-	config.height = 480;
+	config.width = Application::ScreenWidth();// 640;
+	config.height = Application::ScreenHeight();// 480;
 	config.usage = WGPUTextureUsage_RenderAttachment;
 	surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
 	config.format = surfaceFormat;
@@ -412,13 +414,14 @@ void WebGPUGraphicsDevice::Initialize(){
     depthTextureDesc.format = depthTextureFormat;
     depthTextureDesc.mipLevelCount = 1;
     depthTextureDesc.sampleCount = 1;
-    depthTextureDesc.size = {640, 480, 1};
+    depthTextureDesc.size = {(uint32_t)Application::ScreenWidth(), (uint32_t)Application::ScreenHeight(), 1};
     depthTextureDesc.usage = WGPUTextureUsage_RenderAttachment;
     depthTextureDesc.viewFormatCount = 1;
     depthTextureDesc.viewFormats = &depthTextureFormat;
     depthTexture = wgpuDeviceCreateTexture(device, &depthTextureDesc);
 
-    WGPUTextureViewDescriptor depthTextureViewDesc;
+    WGPUTextureViewDescriptor depthTextureViewDesc{};
+    depthTextureViewDesc.nextInChain = nullptr;
     depthTextureViewDesc.aspect = WGPUTextureAspect_DepthOnly;
     depthTextureViewDesc.baseArrayLayer = 0;
     depthTextureViewDesc.arrayLayerCount = 1;
@@ -567,9 +570,13 @@ void WebGPUGraphicsDevice::Initialize(){
 
     /////////////////////
     Texture2DCreate(defaultTex, "Engine/Textures/brickwall.jpg", Texture2DSetting());
+
+    ImGui_ImplWGPU_Init(device, 3, surfaceFormat, depthTextureFormat);
 }
 
 void WebGPUGraphicsDevice::Shutdown(){
+    ImGui_ImplWGPU_Shutdown();
+
     wgpuTextureViewRelease(depthTextureView);
     wgpuTextureDestroy(depthTexture);
     wgpuTextureRelease(depthTexture);
@@ -752,77 +759,100 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
     };*/
 
-    auto ApplyUniformTo = [&](Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
+    auto ApplyUniformTo = [&](Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps, std::vector<TexTarget>& texs){
         for(auto& i: maps){
             MaterialMap& map = i.second;
 
-            if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
-
-            MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
+            //if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+            //MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
 
             if(map.type == MaterialMap::Type::Int){
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(int));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &map.valueInt, sizeof(int));
                 //SubShaderSetInt(shader, i.first.c_str(), map.valueInt);
             }
             if(map.type == MaterialMap::Type::Float){
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(float));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &map.valueFloat, sizeof(float));
                 //SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
             }
             if(map.type == MaterialMap::Type::Vector2){
-                //SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Vector2));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+                //SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
             }
             if(map.type == MaterialMap::Type::Vector3){
                 //SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Vector3));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
             }
             if(map.type == MaterialMap::Type::Vector4){
                 //SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Vector4));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector4));
             }
             if(map.type == MaterialMap::Type::Matrix4){
                 //SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Matrix4));
                 memcpy((char*)material.wgData.mainUniformData + m.pos, &i.second.matrix, sizeof(Matrix4));
             }
             if(map.type == MaterialMap::Type::Texture){
-                Assert(false);
+                if(mat.wgData.materialMainSetDef.textureBindings.count(i.first) <= 0) continue;
+                int slot = mat.wgData.materialMainSetDef.textureBindings[i.first] - 1;
+                texs[slot].textureView = i.second.texture->wgData.textureView;
+                texs[slot].sampler = i.second.texture->wgData.sampler;
+
+                //texs.push_back(std::make_pair(i.first, i.second.texture.get()));
+                //Assert(false);
                 /*Assert(i.second.texture != nullptr);
                 SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
                 material.currentTextureSlot += 1;*/
             }
             if(map.type == MaterialMap::Type::TextureArray){
-                Assert(false);
+                //Assert(false);
                 //SubShaderSetTexture2DArray(shader, i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
                 //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::Framebuffer){
-                Assert(false);
+                //Assert(false);
                 //SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
                 //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::Cubemap){
-                Assert(false);
+                //Assert(false);
                 //SubShaderSetCubemap(shader, i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
                 //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::FloatList){
                 //SubShaderSetFloat(shader, i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(float) * map.listCount);
                 memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
             }
             if(map.type == MaterialMap::Type::Vector4List){
                 //SubShaderSetVector4(shader, i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Vector4) * map.listCount);
                 memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Vector4) * map.listCount);
             }
             if(map.type == MaterialMap::Type::Matrix4List){
                 //SubShaderSetMatrix4(shader, i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+                if(material.wgData.materialMainSetDef.bufferMembers.count(i.first) <= 0) continue;
+                MaterialMainSetDef::Member m = material.wgData.materialMainSetDef.bufferMembers[i.first];
                 Assert(m.size >= sizeof(Matrix4) * map.listCount);
                 memcpy((char*)material.wgData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Matrix4) * map.listCount);
             }
@@ -831,18 +861,23 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
 
     auto SubmitGraphicDatas = [&](Material& material){
         stats.materialSubmitDatas += 1;
-        material.currentTextureSlot = 0;
         material.UpdateCurrentShader();
 
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
         SubShaderBind(*material.currentShader);
-        ApplyUniformTo(material, *material.currentShader, material.maps);
-        ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
-        Assert(material.currentTextureSlot < 32);
 
+        std::vector<TexTarget> texs(maxTexSlots);
+        //texs.resize(maxTexSlots);
+        material.currentTextureSlot = 0;
+        ApplyUniformTo(material, *material.currentShader, material.maps, texs);
+        ApplyUniformTo(material, *material.currentShader, Material::globalMaps, texs);
+        Assert(material.currentTextureSlot < maxTexSlots /*32*/);
         wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.materialMainSetDef.bufferSize);
+        //if(material.isDirty){
+        UpdateMaterialMainSet(mat, texs);
+        //}
     };
 
     Assert(mat.currentShader != nullptr && "Shader is not vali!");
@@ -1806,7 +1841,9 @@ void WebGPUGraphicsDevice::MaterialOnSetShader(Material& mat){
     mat.wgData.mainUniformData = malloc(mat.wgData.materialMainSetDef.bufferSize);
     mat.wgData.mainUniformBuffer = CreateUniformBuffer(mat.wgData.materialMainSetDef.bufferSize, "UniformBuffer");
 
-    std::vector<WGPUBindGroupEntry> bindings(3);
+    //UpdateMaterialMainSet(mat);
+
+    /*std::vector<WGPUBindGroupEntry> bindings(3);
     bindings[0] = {};
     bindings[0].nextInChain = nullptr;
     bindings[0].binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
@@ -1832,8 +1869,48 @@ void WebGPUGraphicsDevice::MaterialOnSetShader(Material& mat){
     bindGroupDesc.layout = mat.currentShader->wgData.bindGroupLayout;// bindGroupLayout;
     bindGroupDesc.entryCount = bindings.size();// 1; // There must be as many bindings as declared in the layout!
     bindGroupDesc.entries = bindings.data();// &binding;
-    mat.wgData.mainBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+    mat.wgData.mainBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);*/
+}
 
+void WebGPUGraphicsDevice::UpdateMaterialMainSet(Material& mat, std::vector<TexTarget>& texs){
+    std::vector<WGPUBindGroupEntry> bindings(3);
+    bindings[0] = {};
+    bindings[0].nextInChain = nullptr;
+    bindings[0].binding = 0;// The index of the binding (the entries in bindGroupDesc can be in any order)
+    bindings[0].buffer = mat.wgData.mainUniformBuffer;// The buffer it is actually bound to
+    bindings[0].size = mat.wgData.materialMainSetDef.bufferSize;// And we specify again the size of the buffer.
+    bindings[0].offset = 0;
+
+    bindings.resize(maxTexSlots * 2 + 1);
+    int _i = 0;
+    Assert(texs.size() == maxTexSlots);
+    for(int i = 1; i < bindings.size(); i+=2){
+        WGPUTextureView targetTextureView = defaultTex.wgData.textureView;
+        WGPUSampler targetSampler = defaultTex.wgData.sampler;
+
+        if(texs[_i].textureView != nullptr){
+            targetTextureView =texs[_i].textureView;
+            targetSampler = texs[_i].sampler;
+        }
+        
+        bindings[i] = {};
+        bindings[i].nextInChain = nullptr;
+        bindings[i].binding = i;
+        bindings[i].textureView = targetTextureView;
+        bindings[i+1] = {};
+        bindings[i+1].nextInChain = nullptr;
+        bindings[i+1].binding = i+1;
+        bindings[i+1].sampler = targetSampler;
+        _i += 1;
+    }
+
+    // A bind group contains one or multiple bindings
+    WGPUBindGroupDescriptor bindGroupDesc{};
+    bindGroupDesc.nextInChain = nullptr;
+    bindGroupDesc.layout = mat.currentShader->wgData.bindGroupLayout;// bindGroupLayout;
+    bindGroupDesc.entryCount = bindings.size();// 1; // There must be as many bindings as declared in the layout!
+    bindGroupDesc.entries = bindings.data();// &binding;
+    mat.wgData.mainBindGroup = wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
 void WebGPUGraphicsDevice::MaterialOnUnsetShader(Material& mat){
@@ -1841,15 +1918,15 @@ void WebGPUGraphicsDevice::MaterialOnUnsetShader(Material& mat){
 }
 
 bool WebGPUGraphicsDevice::ImGuiSupport(){
-    return false;
+    return true;
 }
 
 void WebGPUGraphicsDevice::ImGuiNewFrame(){
-
+    ImGui_ImplWGPU_NewFrame();
 }
 
 void WebGPUGraphicsDevice::ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
-
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPass);
 }
 
 }

@@ -7,13 +7,8 @@ namespace OD{
 enum class CursorState{Normal, Disabled, Hidden};
 
 class OD_API Platform{
+    friend class Application;
 public:
-    static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
-    static void SystemShutdown(void* plat_state);
-
-    static void PreUpdate();
-    static void LateUpdate();
-
     static bool PumpMessages();
     static void SwapBuffers();
 
@@ -38,6 +33,16 @@ public:
     static std::string OpenFolder();
     static std::string OpenFile(const char* filter = "");
     static std::string SaveFile(const char* filter = "");
+
+private:
+    static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
+    static void SystemShutdown(void* plat_state);
+
+    static void PreUpdate();
+    static void LateUpdate();
+
+    static void ImguiBegin();
+    static void ImguiEnd();
 
     /*static void BeginOffscreenContextCurrent();
     static void EndOffscreenContextCurrent();*/

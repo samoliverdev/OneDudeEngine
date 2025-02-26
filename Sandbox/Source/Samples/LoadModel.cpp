@@ -17,13 +17,11 @@ void LoadModelSample::OnInit(){
 
     for(int i = 0; i < 1000; i++){
         float posRange = 25;
-
         Transform t;
 
         float angle = 20.0f * i; 
         t.LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         t.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
-
         transforms.push_back(t.GetLocalModelMatrix());
     }
 

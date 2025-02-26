@@ -5,6 +5,10 @@ option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
 option(BUILD_EDITOR "BUILD_EDITOR" TRUE)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" TRUE)
 option(UseWebGPU "UseWebGPU" TRUE)
+
+option(SupportOpenGL "SupportOpenGL" TRUE)
+option(SupportWebGPU "SupportWebGPU" TRUE)
+
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
 #----------------Engine------------------
@@ -93,6 +97,7 @@ add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
 add_subdirectory(Engine/ThirdParty/glslang)
 add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
+#add_subdirectory(Engine/ThirdParty/imgui)
 #add_subdirectory(Engine/ThirdParty/SPIRV-Cross)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
@@ -141,13 +146,30 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     Engine/ThirdParty/stb/*.c 
     Engine/ThirdParty/cgltf/*.c
     #engine/ThirdParty/glm/*.cpp
-    
-    Engine/ThirdParty/imgui/*.cpp 
-
+    #Engine/ThirdParty/imgui/*.cpp 
     Engine/ThirdParty/ImGuizmo/*.cpp 
     Engine/ThirdParty/entt/*.cpp
     Engine/Source/*.cpp
 )
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
+    Engine/ThirdParty/imgui/imgui.cpp
+    Engine/ThirdParty/imgui/imgui_draw.cpp
+    Engine/ThirdParty/imgui/imgui_demo.cpp
+    Engine/ThirdParty/imgui/imgui_tables.cpp
+    Engine/ThirdParty/imgui/imgui_widgets.cpp
+    Engine/ThirdParty/imgui/backends/imgui_impl_glfw.cpp
+)
+if(SupportOpenGL)
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
+    Engine/ThirdParty/imgui/backends/imgui_impl_opengl3.cpp
+)
+endif()
+if(SupportWebGPU)
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
+    Engine/ThirdParty/imgui/backends/imgui_impl_wgpu.cpp
+)
+endif()
+
 if(ENGINE_SHARED_LIBRARY)
 add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()

@@ -122,6 +122,7 @@ void Application::Loop(){
         OD_PROFILE_SCOPE("Application::Run::OnRender");
         for(auto i: modules) i->OnRender(deltaTime);
     }
+    Platform::ImguiBegin();
     {
         if(graphicsDevice->ImGuiSupport()){
             OD_PROFILE_SCOPE("Application::Run::OnGUI");
@@ -129,6 +130,7 @@ void Application::Loop(){
         }
         //#endif
     }
+    Platform::ImguiEnd();
     inUpdate = false;
 
     {
