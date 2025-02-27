@@ -15,6 +15,10 @@ struct LightSample: OD::Module {
     Ref<Model> lightModel;
     Transform lightTransform;
 
+    Framebuffer* framebuffer;
+    Ref<Material> blitMat;
+    Ref<Mesh> fullScreenQuad;
+
     Vector3 cubePositions[10] = {
         //Vector3( 0.0f,  0.0f,  0.0f), 
         Vector3( 2.0f,  5.0f, -15.0f), 

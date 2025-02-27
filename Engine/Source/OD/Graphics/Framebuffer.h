@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Platform/WebGPU/WebGPU.h"
 
 namespace sol{ class state; }
 
@@ -36,9 +37,18 @@ struct OD_API FrameBufferSpecification{
     bool swapChainTarget = false;
 };
 
+enum class OD_API_IMPORT FramebufferType{
+    Screen, 
+    Deffered,
+    Shadowmap,
+    Dynamic
+};
+
 class OD_API Framebuffer{
     friend class OpenGLGraphicsDevice;
+    friend class WebGPUGraphicsDevice;
 public:
+    Framebuffer(FramebufferType type, int width, int height);
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
     
@@ -60,8 +70,10 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
 private:
+    FramebufferType type;
     FrameBufferSpecification specification;
     FramebufferDataGL;
+    FramebufferDataWG;
 };
 
 }

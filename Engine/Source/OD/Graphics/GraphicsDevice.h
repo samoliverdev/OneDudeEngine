@@ -42,6 +42,9 @@ public:
     virtual void SetCamera(Camera& camera) = 0;
     virtual Camera GetCamera() = 0;
 
+    virtual void BeginRenderToScreen() = 0;
+    virtual void EndRenderToScreen() = 0;
+
     virtual void Clean(float r, float g, float b, float a) = 0;
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) = 0;

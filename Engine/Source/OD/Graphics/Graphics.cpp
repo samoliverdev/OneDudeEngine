@@ -201,6 +201,14 @@ Camera Graphics::GetCamera(){
     return graphicsDevice->GetCamera(); 
 }
 
+void Graphics::BeginRenderToScreen(){
+    graphicsDevice->BeginRenderToScreen(); 
+}
+
+void Graphics::EndRenderToScreen(){
+    graphicsDevice->EndRenderToScreen(); 
+}
+
 void Graphics::Clean(float r, float g, float b, float a){ 
     graphicsDevice->Clean(r, g, b, a); 
 }

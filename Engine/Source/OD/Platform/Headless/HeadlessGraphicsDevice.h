@@ -18,6 +18,9 @@ public:
     virtual void SetCamera(Camera& camera) override;
     virtual Camera GetCamera() override;
 
+    virtual void BeginRenderToScreen() override;
+    virtual void EndRenderToScreen() override;
+
     virtual void Clean(float r, float g, float b, float a) override;
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) override;

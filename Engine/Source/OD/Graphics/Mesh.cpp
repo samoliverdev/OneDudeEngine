@@ -179,6 +179,10 @@ Ref<Mesh> Mesh::FullScreenQuad(){
         Vector3(1, 0, 0),
         Vector3(1, 1, 0)
     };
+    mesh->indices = {
+        0, 1, 2,
+        3, 4, 5
+    };
     mesh->Submit();
     return mesh;
 

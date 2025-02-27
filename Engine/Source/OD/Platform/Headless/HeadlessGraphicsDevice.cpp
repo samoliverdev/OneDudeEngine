@@ -12,6 +12,8 @@ void HeadlessGraphicsDevice::End(){}
 bool HeadlessGraphicsDevice::HasBegin(){ return false; }
 void HeadlessGraphicsDevice::SetCamera(Camera& camera){}
 Camera HeadlessGraphicsDevice::GetCamera(){ return camera; }
+void HeadlessGraphicsDevice::BeginRenderToScreen(){}
+void HeadlessGraphicsDevice::EndRenderToScreen(){}
 void HeadlessGraphicsDevice::Clean(float r, float g, float b, float a){}
 void HeadlessGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){}
 void HeadlessGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){}

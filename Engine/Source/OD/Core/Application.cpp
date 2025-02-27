@@ -89,6 +89,24 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 //#include "OD/Platform/OpenGL/GL.h"
 //#include <GLFW/glfw3.h>
 
+void Application::DrawImGui(){
+    if(graphicsDevice->ImGuiSupport() == false) return;
+
+    OD_PROFILE_SCOPE("Application::Run::OnGUI");
+    Platform::ImguiBegin();
+    for(auto i: modules) i->OnGUI();
+    Platform::ImguiEnd();
+}
+
+void Application::DrawImGui(std::function<void()> func){
+    if(graphicsDevice->ImGuiSupport() == false) return;
+
+    OD_PROFILE_SCOPE("Application::Run::OnGUI");
+    Platform::ImguiBegin();
+    func();
+    Platform::ImguiEnd();
+}
+
 void Application::Loop(){
     #if OD_PROFILE
     Instrumentor::BeginLoop();
@@ -122,7 +140,7 @@ void Application::Loop(){
         OD_PROFILE_SCOPE("Application::Run::OnRender");
         for(auto i: modules) i->OnRender(deltaTime);
     }
-    Platform::ImguiBegin();
+    /*Platform::ImguiBegin();
     {
         if(graphicsDevice->ImGuiSupport()){
             OD_PROFILE_SCOPE("Application::Run::OnGUI");
@@ -130,7 +148,7 @@ void Application::Loop(){
         }
         //#endif
     }
-    Platform::ImguiEnd();
+    Platform::ImguiEnd();*/
     inUpdate = false;
 
     {

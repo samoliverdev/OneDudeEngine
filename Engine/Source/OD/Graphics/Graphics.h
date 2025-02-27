@@ -41,6 +41,9 @@ public:
     static void SetCamera(Camera& camera);
     static Camera GetCamera();
 
+    static void BeginRenderToScreen();
+    static void EndRenderToScreen();
+
     static void Clean(float r, float g, float b, float a);
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);

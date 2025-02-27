@@ -5,6 +5,7 @@
 #include "Action.h"
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace sol{ class state; }
 
@@ -19,6 +20,7 @@ struct ApplicationConfig {
 };
 
 class OD_API Application {
+    friend class WebGPUGraphicsDevice;
 public:
     static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "");
     static bool Run();
@@ -62,6 +64,9 @@ private:
     static void _RemoveModule(Module* module);
     static void _AddModule(Module* module);
     static void OnExit();
+
+    static void DrawImGui();
+    static void DrawImGui(std::function<void()> func);
 };
 
 }

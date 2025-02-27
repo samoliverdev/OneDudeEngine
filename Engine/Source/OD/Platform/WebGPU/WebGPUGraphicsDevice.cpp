@@ -630,7 +630,7 @@ void WebGPUGraphicsDevice::_Begin(){
 	/*WGPUCommandEncoder*/ encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 	// Create the render pass that clears the screen with our color
-	WGPURenderPassDescriptor renderPassDesc = {};
+	/*WGPURenderPassDescriptor renderPassDesc = {};
 	renderPassDesc.nextInChain = nullptr;
 
 	// The attachment part of the render pass descriptor describes the target texture of the pass
@@ -666,12 +666,12 @@ void WebGPUGraphicsDevice::_Begin(){
 	renderPassDesc.timestampWrites = nullptr;
 
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
-	renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+	renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);*/
 }
 
 void WebGPUGraphicsDevice::_End(){
-    wgpuRenderPassEncoderEnd(renderPass);
-	wgpuRenderPassEncoderRelease(renderPass);
+    //wgpuRenderPassEncoderEnd(renderPass);
+	//wgpuRenderPassEncoderRelease(renderPass);
 
 	// Finally encode and submit the render pass
 	WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
@@ -740,6 +740,57 @@ void WebGPUGraphicsDevice::SetCamera(Camera& inCamera){
 
 Camera WebGPUGraphicsDevice::GetCamera(){
     return camera;
+}
+
+void WebGPUGraphicsDevice::BeginRenderToScreen(){
+    lastMat = nullptr;
+    lastShader = nullptr;
+    lastMesh = nullptr;
+
+    // Create the render pass that clears the screen with our color
+	WGPURenderPassDescriptor renderPassDesc = {};
+	renderPassDesc.nextInChain = nullptr;
+
+    // The attachment part of the render pass descriptor describes the target texture of the pass
+	WGPURenderPassColorAttachment renderPassColorAttachment = {};
+	renderPassColorAttachment.view = targetView;
+	renderPassColorAttachment.resolveTarget = nullptr;
+	renderPassColorAttachment.loadOp = WGPULoadOp_Clear;
+	renderPassColorAttachment.storeOp = WGPUStoreOp_Store;
+	renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.1, 0.2, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+	renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif // NOT WEBGPU_BACKEND_WGPU
+
+    WGPURenderPassDepthStencilAttachment depthStencilAttachment;
+    depthStencilAttachment.view = depthTextureView;
+    depthStencilAttachment.depthClearValue = 1.0f;// The initial value of the depth buffer, meaning "far"
+    depthStencilAttachment.depthLoadOp = WGPULoadOp_Clear;// Operation settings comparable to the color attachment
+    depthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
+    depthStencilAttachment.depthReadOnly = false;// we could turn off writing to the depth buffer globally here
+    depthStencilAttachment.stencilClearValue = 0;// Stencil setup, mandatory but unused
+#ifdef WEBGPU_BACKEND_WGPU
+    depthStencilAttachment.stencilLoadOp = WGPULoadOp_Clear;
+    depthStencilAttachment.stencilStoreOp = WGPUStoreOp_Store;
+#else
+    depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+    depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+#endif
+    depthStencilAttachment.stencilReadOnly = true;
+
+	renderPassDesc.colorAttachmentCount = 1;
+	renderPassDesc.colorAttachments = &renderPassColorAttachment;
+	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;;
+	renderPassDesc.timestampWrites = nullptr;
+
+	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
+	renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+}
+
+void WebGPUGraphicsDevice::EndRenderToScreen(){
+    Application::DrawImGui();
+    wgpuRenderPassEncoderEnd(renderPass);
+	//wgpuRenderPassEncoderRelease(renderPass);
 }
 
 void WebGPUGraphicsDevice::Clean(float r, float g, float b, float a){
@@ -826,6 +877,10 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
                 //material.currentTextureSlot += 1;
             }
             if(map.type == MaterialMap::Type::Framebuffer){
+                if(mat.wgData.materialMainSetDef.textureBindings.count(i.first) <= 0) continue;
+                int slot = mat.wgData.materialMainSetDef.textureBindings[i.first] - 1;
+                texs[slot].textureView = i.second.framebuffer->wgData.textureView;
+                texs[slot].sampler = i.second.framebuffer->wgData.sampler;
                 //Assert(false);
                 //SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
                 //material.currentTextureSlot += 1;
@@ -1166,19 +1221,124 @@ bool WebGPUGraphicsDevice::MeshIsValid(Mesh& mesh){
 }
 
 void WebGPUGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, int layer){
+    lastMat = nullptr;
+    lastShader = nullptr;
+    lastMesh = nullptr;
 
+    WGPURenderPassDescriptor renderPassDesc = {};
+	renderPassDesc.nextInChain = nullptr;
+
+    // The attachment part of the render pass descriptor describes the target texture of the pass
+	WGPURenderPassColorAttachment renderPassColorAttachment = {};
+	renderPassColorAttachment.view = frambuffer.wgData.textureView;// targetView;
+	renderPassColorAttachment.resolveTarget = nullptr;
+	renderPassColorAttachment.loadOp = WGPULoadOp_Clear;
+	renderPassColorAttachment.storeOp = WGPUStoreOp_Store;
+	renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.1, 0.2, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+	renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif // NOT WEBGPU_BACKEND_WGPU
+
+    WGPURenderPassDepthStencilAttachment depthStencilAttachment;
+    depthStencilAttachment.view = frambuffer.wgData.depthTextureView;// depthTextureView;
+    depthStencilAttachment.depthClearValue = 1.0f;// The initial value of the depth buffer, meaning "far"
+    depthStencilAttachment.depthLoadOp = WGPULoadOp_Clear;// Operation settings comparable to the color attachment
+    depthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
+    depthStencilAttachment.depthReadOnly = false;// we could turn off writing to the depth buffer globally here
+    depthStencilAttachment.stencilClearValue = 0;// Stencil setup, mandatory but unused
+#ifdef WEBGPU_BACKEND_WGPU
+    depthStencilAttachment.stencilLoadOp = WGPULoadOp_Clear;
+    depthStencilAttachment.stencilStoreOp = WGPUStoreOp_Store;
+#else
+    depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+    depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+#endif
+    depthStencilAttachment.stencilReadOnly = true;
+
+	renderPassDesc.colorAttachmentCount = 1;
+	renderPassDesc.colorAttachments = &renderPassColorAttachment;
+	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;;
+	renderPassDesc.timestampWrites = nullptr;
+    renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 }
 
 void WebGPUGraphicsDevice::EndFramebuffer(){
-
+    wgpuRenderPassEncoderEnd(renderPass);
+	//wgpuRenderPassEncoderRelease(renderPass);
 }
 
 bool WebGPUGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){
-    return false;
+    FramebufferDestroy(frambuffer);
+
+    WGPUTextureDescriptor textureDesc = {};
+    textureDesc.nextInChain = nullptr;
+    textureDesc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc | WGPUTextureUsage_TextureBinding;
+    textureDesc.dimension = WGPUTextureDimension_2D;
+    textureDesc.size = { (uint32_t)specification.width, (uint32_t)specification.height, 1 };
+    textureDesc.format = surfaceFormat; //WGPUTextureFormat_BGRA8Unorm;
+    textureDesc.mipLevelCount = 1;
+    textureDesc.sampleCount = 1;
+    textureDesc.dimension = WGPUTextureDimension_2D;
+    frambuffer.wgData.texture = wgpuDeviceCreateTexture(device, &textureDesc);
+    WGPUTextureViewDescriptor viewDescriptor = {};
+	viewDescriptor.nextInChain = nullptr;
+	viewDescriptor.format = surfaceFormat;// wgpuTextureGetFormat(surfaceTexture.texture);
+	viewDescriptor.dimension = WGPUTextureViewDimension_2D;
+	viewDescriptor.baseMipLevel = 0;
+	viewDescriptor.mipLevelCount = 1;
+	viewDescriptor.baseArrayLayer = 0;
+	viewDescriptor.arrayLayerCount = 1;
+	viewDescriptor.aspect = WGPUTextureAspect_All;
+	frambuffer.wgData.textureView = wgpuTextureCreateView(frambuffer.wgData.texture, &viewDescriptor);
+
+    // Create texture for depth attachment
+    WGPUTextureDescriptor depthTextureDesc = {};
+    depthTextureDesc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc | WGPUTextureUsage_TextureBinding;// WGPUTextureUsage_Sampled;
+    depthTextureDesc.dimension = WGPUTextureDimension_2D;
+    depthTextureDesc.size = { (uint32_t)specification.width, (uint32_t)specification.height, 1 };
+    depthTextureDesc.format = depthTextureFormat;// WGPUTextureFormat_Depth32Float;
+    depthTextureDesc.mipLevelCount = 1;
+    depthTextureDesc.sampleCount = 1;
+    depthTextureDesc.dimension = WGPUTextureDimension_2D;
+    frambuffer.wgData.depthTexture = wgpuDeviceCreateTexture(device, &depthTextureDesc);
+    WGPUTextureViewDescriptor depthTextureViewDesc{};
+    depthTextureViewDesc.nextInChain = nullptr;
+    depthTextureViewDesc.aspect = WGPUTextureAspect_DepthOnly;
+    depthTextureViewDesc.baseArrayLayer = 0;
+    depthTextureViewDesc.arrayLayerCount = 1;
+    depthTextureViewDesc.baseMipLevel = 0;
+    depthTextureViewDesc.mipLevelCount = 1;
+    depthTextureViewDesc.dimension = WGPUTextureViewDimension_2D;
+    depthTextureViewDesc.format = depthTextureFormat;
+    frambuffer.wgData.depthTextureView = wgpuTextureCreateView(depthTexture, &depthTextureViewDesc);
+
+    WGPUSamplerDescriptor samplerDesc = {};
+    samplerDesc.nextInChain = nullptr;
+    samplerDesc.addressModeU = WGPUAddressMode_Repeat;
+    samplerDesc.addressModeV = WGPUAddressMode_Repeat;
+    samplerDesc.addressModeW = WGPUAddressMode_Repeat;
+    samplerDesc.magFilter = WGPUFilterMode_Linear;
+    samplerDesc.minFilter = WGPUFilterMode_Linear;
+    samplerDesc.mipmapFilter = WGPUMipmapFilterMode_Linear;
+    samplerDesc.lodMinClamp = 0.0f;
+    samplerDesc.lodMaxClamp = 8.0f;
+    samplerDesc.compare = WGPUCompareFunction_Undefined;
+    samplerDesc.maxAnisotropy = 1;
+    frambuffer.wgData.sampler = wgpuDeviceCreateSampler(device, &samplerDesc);
+
+    return true;
 }
 
 void WebGPUGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){
+    if(frambuffer.wgData.depthTextureView != nullptr) wgpuTextureViewRelease(frambuffer.wgData.depthTextureView);
+    if(frambuffer.wgData.depthTexture != nullptr) wgpuTextureDestroy(frambuffer.wgData.depthTexture);
+    if(frambuffer.wgData.textureView != nullptr) wgpuTextureViewRelease(frambuffer.wgData.textureView);
+    if(frambuffer.wgData.texture != nullptr) wgpuTextureDestroy(frambuffer.wgData.texture);
 
+    frambuffer.wgData.depthTextureView = nullptr;
+    frambuffer.wgData.depthTexture = nullptr;
+    frambuffer.wgData.textureView = nullptr;
+    frambuffer.wgData.texture = nullptr;
 }
 
 bool WebGPUGraphicsDevice::FramebufferIsValid(Framebuffer& frambuffer){

@@ -30,6 +30,10 @@ void LightSample::OnInit(){
     model->materials[0]->SetVector3("light_ambient",  Vector3(0.2f, 0.2f, 0.2f));
     model->materials[0]->SetVector3("light_diffuse",  Vector3(0.5f, 0.5f, 0.5f)); // darken diffuse light a bit
     model->materials[0]->SetVector3("light_specular", Vector3(1.0f, 1.0f, 1.0f)); 
+
+    framebuffer = new Framebuffer(FramebufferType::Screen, Application::ScreenWidth(), Application::ScreenHeight());
+    blitMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    fullScreenQuad = Mesh::FullScreenQuad();
 }
 
 void LightSample::OnUpdate(float deltaTime){
@@ -47,15 +51,29 @@ void LightSample::OnRender(float deltaTime){
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-   // Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
-
-    for(unsigned int i = 0; i < 10; i++){
-        modelTransform.LocalPosition(cubePositions[i]);
-        float angle = 20.0f * i; 
-        modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
+    Graphics::BeginFramebuffer(*framebuffer, 0);
         Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-    }
+        for(unsigned int i = 0; i < 10; i++){
+            modelTransform.LocalPosition(cubePositions[i]);
+            float angle = 20.0f * i; 
+            modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
+            Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
+        }
+    Graphics::EndFramebuffer();
+
+    Graphics::BeginRenderToScreen();
+        blitMat->SetTexture("mainTex", framebuffer, 0);
+        Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
+
+        /*Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
+        //Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
+        for(unsigned int i = 0; i < 10; i++){
+            modelTransform.LocalPosition(cubePositions[i]);
+            float angle = 20.0f * i; 
+            modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
+            Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
+        }*/
+    Graphics::EndRenderToScreen();
     
     Graphics::End();
 }
@@ -76,5 +94,10 @@ void LightSample::OnGUI(){
     ImGui::End();
 }
 
-void LightSample::OnResize(int width, int height){}
-void LightSample::OnExit(){}
+void LightSample::OnResize(int width, int height){
+
+}
+
+void LightSample::OnExit(){
+    delete framebuffer;
+}

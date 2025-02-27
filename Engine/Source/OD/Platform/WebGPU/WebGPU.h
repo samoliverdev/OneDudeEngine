@@ -24,7 +24,11 @@ struct WGMeshData{
 };
 
 struct WGFramebufferData{
-    
+    WGPUTexture texture = nullptr;
+    WGPUTextureView textureView = nullptr;
+    WGPUTexture depthTexture = nullptr;
+    WGPUTextureView depthTextureView = nullptr;
+    WGPUSampler sampler = nullptr;
 };
 
 struct WGTexture2DData{

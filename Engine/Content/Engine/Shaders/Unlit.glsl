@@ -17,15 +17,6 @@ EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 //Texture2D(0, 2, main2Tex, main2Sampler)
 
-layout(set = 3, binding = 0) uniform texture2D matTexs[100];
-layout(set = 3, binding = 1) uniform sampler matSamplers[100];
-
-//"layout(set = 0, binding = 0) uniform texture2D[] texs;" or
-/*"layout(set = 0, binding = 0) uniform texture2D tex1;
-layout(set = 0, binding = 1) uniform texture2D tex2;
-..."*/
-//#define DefTex(name, bind) const int name = bind;
-
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec2 _texCoord;
 

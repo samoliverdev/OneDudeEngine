@@ -7,31 +7,40 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Core.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec4 color;
+EndUniform()
+Texture2D(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout(location = 0) in vec3 vPos;
-    layout(location = 1) in vec2 vTexCoord;
-
-    out vec3 pos;
-    out vec2 texCoord;
+    In(0) vec3 vPos;
+    In(1) vec2 vTexCoord;
+    Out(0) vec3 pos;
+    Out(1) vec2 texCoord;
 
     void main() {
         pos = vPos;
+        #if defined(WebGPU_API)
+        texCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
+        #else
         texCoord = vTexCoord;
-        gl_Position = vec4(pos, 1.0);
+        #endif
+        OutPosition = vec4(pos, 1.0);
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D mainTex;
+    In(0) vec3 pos;
+    In(1) vec2 texCoord;
+    Out(0) vec4 fragColor;
 
-    in vec3 pos;
-    in vec2 texCoord;
-
-    out vec4 fragColor;
+    //uniform sampler2D mainTex;
 
     void main() {
         //fragColor = vec4(1, 0, 0, 1);
-        fragColor = texture(mainTex, texCoord);
+        fragColor = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
+        //fragColor = vec4(texCoord.xy, 0, 1);
     }
 #endif

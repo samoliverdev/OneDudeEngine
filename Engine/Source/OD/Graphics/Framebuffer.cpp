@@ -8,6 +8,13 @@ namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
 
+Framebuffer::Framebuffer(FramebufferType inType, int width, int height){
+    type = inType;
+    specification.width = width;
+    specification.height = height;
+    graphicsDevice->FramebufferCreate(*this, specification);
+}
+
 Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
     specification = inSpecification;
     Invalidate();
