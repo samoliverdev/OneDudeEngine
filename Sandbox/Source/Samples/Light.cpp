@@ -31,7 +31,7 @@ void LightSample::OnInit(){
     model->materials[0]->SetVector3("light_diffuse",  Vector3(0.5f, 0.5f, 0.5f)); // darken diffuse light a bit
     model->materials[0]->SetVector3("light_specular", Vector3(1.0f, 1.0f, 1.0f)); 
 
-    framebuffer = new Framebuffer(FramebufferType::Screen, Application::ScreenWidth(), Application::ScreenHeight());
+    framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     blitMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     fullScreenQuad = Mesh::FullScreenQuad();
 }

@@ -19,6 +19,8 @@
     #define Uniform uniform
 
     #define Texture2D(inset, inbinding, name, nameSampler) uniform sampler2D name;
+    #define Texture2DArray(inset, inbinding, name, nameSampler) uniform sampler2DArray name;
+    #define TextureCube(inset, inbinding, name, nameSampler) uniform samplerCube name;
 
 #endif
 
@@ -39,6 +41,16 @@
     #define Texture2D(inset, inbinding, name, nameSampler) \
         layout(set = inset, binding = (inbinding * 2 - 2 + 1)) uniform texture2D name;  \
         layout(set = inset, binding = (inbinding * 2 - 2 + 1) + 1) uniform sampler nameSampler; \
+
+    #define Texture2DArray(inset, inbinding, name, nameSampler) \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1)) uniform texture2D name;  \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1) + 1) uniform sampler nameSampler; \
+
+    #define TextureCube(inset, inbinding, name, nameSampler) \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1)) uniform texture2D name;  \
+        layout(set = inset, binding = (inbinding * 2 - 2 + 1) + 1) uniform sampler nameSampler; \
+
+    #define TextureSize(tex, lod) vec3(1)
     
 #endif
 

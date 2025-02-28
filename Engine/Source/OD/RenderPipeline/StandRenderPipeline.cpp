@@ -50,7 +50,7 @@ void StandRenderPipelineModuleInit(){
 
 #pragma region Shadows
 Shadows::Shadows(){
-    FrameBufferSpecification specification;
+    /*FrameBufferSpecification specification;
     specification.width = 1024 * 1;
     specification.height = 1024 * 1;
     specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
@@ -59,10 +59,13 @@ Shadows::Shadows(){
     directionalShadowAtlas = new Framebuffer(specification);
 
     specification.sample = Shadows::maxShadowedOtherLightCount;
-    otherShadowAtlas = new Framebuffer(specification);
+    otherShadowAtlas = new Framebuffer(specification);*/
+
+    directionalShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
+    otherShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
 
     shadowPass = CreateRef<Material>();
-    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
+    //shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 Shadows::~Shadows(){
@@ -371,10 +374,10 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    //cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = nullptr;// Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
-    gamaCorrectionPP = new GamaCorrectionPP();
+    //gamaCorrectionPP = new GamaCorrectionPP();
 }
 
 CameraRenderer::~CameraRenderer(){
@@ -390,8 +393,8 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     context = inRenderContext;
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
-    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
-    for(auto i: postFXs) i->OnSetup();
+    /*std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    for(auto i: postFXs) i->OnSetup();*/
     
     // ----------- Build Render Datas Loop ----------- 
     // Get All RenderData and Building CommandsBuffer to Post Renderer
@@ -399,7 +402,7 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     RunRenderDataLoop();
     
     // ----------- Rendering ------------
-    shadows.Render();
+    //shadows.Render();
     lighting.UpdateGlobalShaders();
     RenderVisibleGeometry(environmentSettings);
 }
@@ -555,6 +558,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawRenderersBuffer(blendDrawTarget, true);
     }
 
+    /*
     context->RenderSkyboxLater();
     
     //context->DrawGizmos();    
@@ -563,6 +567,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->DrawGizmos();
     for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
+    */
 
     context->EndDrawToScreen();
 }

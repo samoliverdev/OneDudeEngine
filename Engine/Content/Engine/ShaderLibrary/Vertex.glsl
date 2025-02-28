@@ -1,6 +1,17 @@
 #ifndef VERTEX_INCLUDED
 #define VERTEX_INCLUDED
 
+#include Engine/ShaderLibrary/Base.glsl
+
+BeginUniform(2, 0, CamDraw)
+    Uniform mat4 projection;
+    Uniform mat4 view;
+EndUniform()
+
+BeginUniform(1, 0, PerDraw)
+    Uniform mat4 model;
+EndUniform()
+
 #if defined(VERTEX)
 
 layout(location = 0) in vec3 pos;
@@ -27,17 +38,6 @@ layout(location = 6) in vec4 weights;
     layout(location = 8) in vec4 a_ModelMatrix_3;
     #endif
 #endif
-
-#include Engine/ShaderLibrary/Base.glsl
-
-BeginUniform(2, 0, CamDraw)
-    Uniform mat4 projection;
-    Uniform mat4 view;
-EndUniform()
-
-BeginUniform(1, 0, PerDraw)
-    Uniform mat4 model;
-EndUniform()
 
 #ifdef SKINNED
 const int MAX_BONES = 120;

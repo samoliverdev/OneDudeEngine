@@ -144,6 +144,9 @@ public:
     };
 
     void UpdateMaterialMainSet(Material& mat, std::vector<TexTarget>& texs);
+    WGPURenderPipeline CreatePipeline(SubShader& shader, std::vector<std::string>& keyworlds, ShaderPipeline pipeline, int targetRenderPass = 0);
+
+    void InitRenderPasses();
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;
@@ -164,6 +167,20 @@ public:
     WGPUTexture depthTexture;
     WGPUTextureView depthTextureView;
 
+    struct RenderPass{
+        struct ColorAttachment{
+            WGPUTextureFormat format;
+        };
+        struct DepthStencilAttachment{
+            WGPUTextureFormat format;
+        };
+
+        std::vector<ColorAttachment> colorAttachments;
+        DepthStencilAttachment depthStencilAttachments;
+    };
+    std::vector<RenderPass> renderPasses;
+
+    int currentRendePassTarget = 0;
     Material* lastMat = nullptr;
     SubShader* lastShader = nullptr;
     Mesh* lastMesh = nullptr;
@@ -202,7 +219,7 @@ public:
     const int maxPerDrawInstancing = 10000;
 
     Texture2D defaultTex;
-    const int maxTexSlots = 2;
+    const int maxTexSlots = 10;
 };
 
 }

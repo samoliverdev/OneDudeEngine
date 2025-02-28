@@ -17,13 +17,13 @@ void SponzaSample::OnInit(){
     //scene->AddSystem<DeferredRenderPipeline>();
 
     Ref<Model> sponzaModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
-    sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    envComp.settings.toneMappingPostFX->enable = true;
-    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
+    //envComp.settings.toneMappingPostFX->enable = true;
+    //envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
 
     /*Entity e = scene->AddEntity("Sponza");
     //e.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
@@ -34,7 +34,7 @@ void SponzaSample::OnInit(){
     //e.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
 
     /*Entity cube = scene->AddEntity("CubeRef");
     ModelRendererComponent& _meshRenderer2 = cube.AddComponent<ModelRendererComponent>();
@@ -43,7 +43,7 @@ void SponzaSample::OnInit(){
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
-    cam.renderingPath = CameraComponent::RenderingPath::Deferred;
+    //cam.renderingPath = CameraComponent::RenderingPath::Deferred;
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(7, 2.5, 0));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-8, 90, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 10;
@@ -77,8 +77,8 @@ void SponzaSample::OnInit(){
     lightComponent3.renderShadow = false;
     scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));
 
-    Application::AddModule<Editor>();
-    //scene->Start();
+    //Application::AddModule<Editor>();
+    scene->Start();
 }
 
 void SponzaSample::OnUpdate(float deltaTime){

@@ -43,8 +43,8 @@ struct OD_API EnvironmentSettings{
     //AntiAliasing antiAliasing;
     //MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
-    Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
-    Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
+    Ref<ToneMappingPostFX> toneMappingPostFX = nullptr;// CreateRef<ToneMappingPostFX>();
+    Ref<ColorGradingPostFX> colorGradingPostFX = nullptr;// CreateRef<ColorGradingPostFX>();;
     Ref<BloomPostFX> bloomPostFX ;// = CreateRef<BloomPostFX>();
     
     template <class Archive>
@@ -65,6 +65,7 @@ struct OD_API EnvironmentSettings{
     //bool hasInited = false;
 
     EnvironmentSettings(){
+        return;
         /*skyCubemap = Cubemap::CreateFromFile(
             "Engine/Textures/Skybox/right.jpg",
             "Engine/Textures/Skybox/left.jpg",

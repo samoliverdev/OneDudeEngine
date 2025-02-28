@@ -26,16 +26,38 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+BeginUniform(0, 0, Main)
+    #include Engine/ShaderLibrary/UniformsDef.glsl
+    Uniform vec3 viewPos;
+    Uniform vec4 color;
+    Uniform vec4 sizeOffset;
+    Uniform float normalStrength;
+    Uniform vec4 emissionColor;
+    Uniform float occlusion;
+    Uniform float metallic;
+    Uniform float smoothness;
+    Uniform float cutoff;
+EndUniform()
+
+#include Engine/ShaderLibrary/TexturesDef.glsl
+Texture2D(0, 6, mainTex, mainTexSampler)
+Texture2D(0, 7, normalMap, normalMapSampler)
+Texture2D(0, 8, emissionMap, emissionMapSampler)
+Texture2D(0, 9, maskMap, maskMapSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    #include Engine/ShaderLibrary/Vertex.glsl
-
-    out vec3 outPos;
-    out vec3 outNormal;
-    out vec2 outTexCoord;
-    out vec3 outWorldPos;
-    out vec3 outWorldNormal;
-    out mat3 outTBN;
+    Out(0) vec3 outPos;
+    Out(1) vec3 outNormal;
+    Out(2) vec2 outTexCoord;
+    Out(3) vec3 outWorldPos;
+    Out(4) vec3 outWorldNormal;
+    
+    //Out(5) mat3 outTBN;
+    Out(5) vec3 outT;
+    Out(6) vec3 outB;
+    Out(7) vec3 outN;
 
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
@@ -47,18 +69,21 @@
         outPos = pos;
         outNormal = normal;
         outTexCoord = texCoord;
-        outTBN = mat3(T, B, N);
+        
+        //outTBN = mat3(T, B, N);
+        outT = T;
+        outB = B;
+        outN = N;
+
         outWorldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
         //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
         outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
 
-        gl_Position = projection * view * targetModelMatrix * GetLocalPos();
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform mat4 view;
-
     #include Engine/ShaderLibrary/Core.glsl
     #include Engine/ShaderLibrary/Common.glsl
     #include Engine/ShaderLibrary/Surface.glsl
@@ -68,15 +93,18 @@
     #include Engine/ShaderLibrary/GI.glsl
     #include Engine/ShaderLibrary/Lighting.glsl
 
-    in vec3 outPos;
-    in vec3 outNormal;
-    in vec2 outTexCoord;
-    in vec3 outWorldPos;
-    in vec3 outWorldNormal;
-    in mat3 outTBN;
-    
-    uniform vec3 viewPos;
+    In(0) vec3 outPos;
+    In(1) vec3 outNormal;
+    In(2) vec2 outTexCoord;
+    In(3) vec3 outWorldPos;
+    In(4) vec3 outWorldNormal;
+    //In(5) mat3 outTBN;
 
+    In(5) vec3 outT;
+    In(6) vec3 outB;
+    In(7) vec3 outN;
+    
+    /*uniform vec3 viewPos;
     uniform vec4 color ;
     uniform vec4 sizeOffset;
     uniform sampler2D mainTex;
@@ -88,25 +116,25 @@
     uniform float occlusion;
     uniform float metallic;
     uniform float smoothness;
-    uniform float cutoff;
+    uniform float cutoff;*/
 
     #ifdef Deferred
-        layout(location = 0) out vec3 gPosition;
-        layout(location = 1) out vec3 gNormal;
-        layout(location = 2) out vec4 gAlbedoSpec;
-        layout(location = 3) out vec3 gEmission;
-        layout(location = 4) out vec3 gOther;
+        Out(0) vec3 gPosition;
+        Out(1) vec3 gNormal;
+        Out(2) vec4 gAlbedoSpec;
+        Out(3) vec3 gEmission;
+        Out(4) vec3 gOther;
     #else
-        out vec4 fragColor;
+        Out(0) vec4 fragColor;
     #endif
 
     vec3 GetEmission(vec2 baseUV){
-        vec4 map = texture(emissionMap, baseUV);
+        vec4 map = SampleTexture2D(emissionMap, emissionMapSampler, baseUV); //texture(emissionMap, baseUV);
         return map.rgb * emissionColor.rgb;
     }
 
     vec4 GetMask(vec2 baseUV){
-        return texture(maskMap, baseUV);
+        return SampleTexture2D(maskMap, maskMapSampler, baseUV);// texture(maskMap, baseUV);
     }
 
     float GetMetallic(vec2 baseUV){
@@ -131,7 +159,7 @@
     }
 
     vec3 GetNormal(mat3 TBN, vec2 uv){
-        vec3 n = texture(normal, uv).xyz;
+        vec3 n = SampleTexture2D(normalMap, normalMapSampler, uv).xyz;// texture(normal, uv).xyz;
         n = n * 2.0 - 1.0;
         n.xy *= normalStrength;
         n = normalize(n);
@@ -141,7 +169,7 @@
     void main(){
         //vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
         vec2 uv = outTexCoord * sizeOffset.xy + sizeOffset.zw;
-        vec4 base = textureSRGB(mainTex, uv);
+        vec4 base =  ToSRGB(SampleTexture2D(mainTex, mainTexSampler, uv)); //textureSRGB(mainTex, uv);
         if(base.a < cutoff) discard;
         base = base * color;
         
@@ -149,7 +177,7 @@
         vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
-        vec3 _normal = GetNormal(outTBN, uv);
+        vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
 
         Surface surface;
         surface.position = outWorldPos;

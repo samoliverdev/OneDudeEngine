@@ -36,7 +36,8 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
-    forwardOutColor = new Framebuffer(framebufferSpecification);
+    //forwardOutColor = new Framebuffer(framebufferSpecification);
+    forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     /*framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGB32F}, // Pos
@@ -49,7 +50,8 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;*/
-    deferredOutColor = new Framebuffer(framebufferSpecification);
+    //deferredOutColor = new Framebuffer(framebufferSpecification);
+    deferredOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
@@ -57,17 +59,21 @@ RenderContext::RenderContext(Scene* inScene){
         {FramebufferTextureFormat::RGBA8}
     };
     framebufferSpecification.sample = 1;
-    finalColor = new Framebuffer(framebufferSpecification);
-    postFx1 = new Framebuffer(framebufferSpecification);
-    postFx2 = new Framebuffer(framebufferSpecification);
+    //finalColor = new Framebuffer(framebufferSpecification);
+    //postFx1 = new Framebuffer(framebufferSpecification);
+    //postFx2 = new Framebuffer(framebufferSpecification);
+    finalColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
-    deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
-    deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
-    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
+    //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    //deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
+    fullScreenQuad = Mesh::FullScreenQuad();
 
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
@@ -163,7 +169,13 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    //return;
+    Graphics::EndFramebuffer();
+    
+    Graphics::BeginRenderToScreen();
+    blitShader->SetTexture("mainTex", forwardOutColor, 0);
+    Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+    Graphics::EndRenderToScreen();
+    return;
 
     //Graphics::DrawQuadPostProcessing(forwardOutColor, nullptr, *blitShader);
     //Graphics::EndFramebuffer();

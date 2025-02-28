@@ -48,6 +48,10 @@ vec4 ToSRGB(vec4 a){
 
 #if defined(WebGPU_API)
     #define SampleTexture2D(tex, sample, uv) texture(sampler2D(tex, sample), uv)
+    #define SampleTexture2DArray(tex, sample, uv) vec4(0)
+
+    #define SampleTextureCube(tex, sample, uv) vec4(0)
+    #define SampleTextureCubeLod(tex, sample, uv, lod) vec4(0)
 
     vec4 textureSRGB(texture2D tex, sampler s, vec2 uv){
     #if defined(ENABLE_GAMA_CORRECTION)

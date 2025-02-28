@@ -38,17 +38,17 @@ struct OD_API FrameBufferSpecification{
 };
 
 enum class OD_API_IMPORT FramebufferType{
-    Screen, 
+    Stand = 0, 
     Deffered,
     Shadowmap,
-    Dynamic
+    //Dynamic
 };
 
 class OD_API Framebuffer{
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
 public:
-    Framebuffer(FramebufferType type, int width, int height);
+    Framebuffer(FramebufferType type, int width, int height, int layers = 1);
     Framebuffer(FrameBufferSpecification specification);
     ~Framebuffer();
     

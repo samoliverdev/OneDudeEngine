@@ -3,6 +3,7 @@
 
 #include <webgpu/webgpu.h>
 #include "OD/Platform/Spirv.h"
+#include <vector>
 
 namespace OD{
 
@@ -48,8 +49,9 @@ struct WGCubemapData{
 struct WGSubShaderData{
     WGPUShaderModule shaderModuleVertex = nullptr;
     WGPUShaderModule shaderModuleFrag = nullptr;
-    WGPURenderPipeline pipeline = nullptr;
     WGPUPipelineLayout layout = nullptr;
+    //WGPURenderPipeline pipeline = nullptr;
+    std::vector<WGPURenderPipeline> pipelines;
     WGPUBindGroupLayout bindGroupLayout = nullptr;
     MaterialMainSetDef materialMainSetDef;
 };

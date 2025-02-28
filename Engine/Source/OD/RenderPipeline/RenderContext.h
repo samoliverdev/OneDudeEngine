@@ -128,6 +128,7 @@ private:
     Ref<Material> deferredLightPass;
     Ref<Mesh> skyboxMesh;
     Ref<Mesh> spriteMesh;
+    Ref<Mesh> fullScreenQuad;
     
     Camera cam;
     Scene* scene;

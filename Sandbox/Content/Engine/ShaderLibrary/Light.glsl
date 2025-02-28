@@ -1,7 +1,7 @@
 #ifndef LIGHT_INCLUDED
 #define LIGHT_INCLUDED
 
-#define MAX_DIRECTIONAL_LIGHT_COUNT 4
+/*#define MAX_DIRECTIONAL_LIGHT_COUNT 4
 uniform int _DirectionalLightCount;
 uniform vec4 _DirectionalLightColors[MAX_DIRECTIONAL_LIGHT_COUNT];
 uniform vec4 _DirectionalLightDirections[MAX_DIRECTIONAL_LIGHT_COUNT];
@@ -13,7 +13,7 @@ uniform vec4 _OtherLightColors[MAX_OTHER_LIGHT_COUNT];
 uniform vec4 _OtherLightPositions[MAX_OTHER_LIGHT_COUNT];
 uniform vec4 _OtherLightDirections[MAX_OTHER_LIGHT_COUNT];
 uniform vec4 _OtherLightSpotAngles[MAX_OTHER_LIGHT_COUNT];
-uniform vec4 _OtherLightShadowData[MAX_OTHER_LIGHT_COUNT];
+uniform vec4 _OtherLightShadowData[MAX_OTHER_LIGHT_COUNT];*/
 
 struct Light{
 	vec3 color;
