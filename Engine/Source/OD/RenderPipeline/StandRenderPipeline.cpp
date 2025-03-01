@@ -65,7 +65,7 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
 
     shadowPass = CreateRef<Material>();
-    //shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 Shadows::~Shadows(){
@@ -402,7 +402,7 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     RunRenderDataLoop();
     
     // ----------- Rendering ------------
-    //shadows.Render();
+    shadows.Render();
     lighting.UpdateGlobalShaders();
     RenderVisibleGeometry(environmentSettings);
 }
@@ -503,7 +503,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->SetupCameraProperties(camera);
     context->BeginDrawToScreen();
 
-    Ref<Material> targetSkyMaterial = nullptr;
+    /*Ref<Material> targetSkyMaterial = nullptr;
     if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
         cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
         targetSkyMaterial = cubemapSkyMaterial;
@@ -511,11 +511,11 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
         targetSkyMaterial = environmentSettings.skyCustomMaterial;
     }
-    context->skyMaterial = targetSkyMaterial;
+    context->skyMaterial = targetSkyMaterial;*/
 
     Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
 
-    /*if(environmentSettings.environmentLight == EnvironmentLight::Color){
+    if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
         Material::SetGlobalFloat("_SkyLightIntensity", 0);
         Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
@@ -529,7 +529,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
-    }*/
+    }
 
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();
@@ -558,16 +558,15 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawRenderersBuffer(blendDrawTarget, true);
     }
 
-    /*
+    
     context->RenderSkyboxLater();
     
     //context->DrawGizmos();    
-    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    /*std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     context->DrawGizmos();
-    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
+    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();*/
     //RenderUI();
-    */
 
     context->EndDrawToScreen();
 }

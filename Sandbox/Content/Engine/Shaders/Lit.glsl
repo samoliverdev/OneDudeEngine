@@ -2,7 +2,7 @@
     Color4 color
     Vector4 sizeOffset 1 1 0 0
     Texture2D mainTex White
-    Texture2D normal Normal
+    Texture2D normalMap Normal
     Float normalStrength 1 0 10
     Texture2D emissionMap Black
     Color4 emissionColor 0 0 0 0
@@ -53,7 +53,6 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     Out(2) vec2 outTexCoord;
     Out(3) vec3 outWorldPos;
     Out(4) vec3 outWorldNormal;
-    
     //Out(5) mat3 outTBN;
     Out(5) vec3 outT;
     Out(6) vec3 outB;
@@ -99,25 +98,10 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     In(3) vec3 outWorldPos;
     In(4) vec3 outWorldNormal;
     //In(5) mat3 outTBN;
-
     In(5) vec3 outT;
     In(6) vec3 outB;
     In(7) vec3 outN;
     
-    /*uniform vec3 viewPos;
-    uniform vec4 color ;
-    uniform vec4 sizeOffset;
-    uniform sampler2D mainTex;
-    uniform sampler2D normal;
-    uniform float normalStrength;
-    uniform sampler2D emissionMap;
-    uniform vec4 emissionColor;
-    uniform sampler2D maskMap;
-    uniform float occlusion;
-    uniform float metallic;
-    uniform float smoothness;
-    uniform float cutoff;*/
-
     #ifdef Deferred
         Out(0) vec3 gPosition;
         Out(1) vec3 gNormal;
@@ -159,7 +143,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     }
 
     vec3 GetNormal(mat3 TBN, vec2 uv){
-        vec3 n = SampleTexture2D(normalMap, normalMapSampler, uv).xyz;// texture(normal, uv).xyz;
+        vec3 n = SampleTexture2D(normalMap, normalMapSampler, uv).xyz; // texture(normal, uv).xyz;
         n = n * 2.0 - 1.0;
         n.xy *= normalStrength;
         n = normalize(n);

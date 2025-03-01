@@ -25,7 +25,7 @@ bool SpirvReflectMainSet(void* data, size_t size, MaterialMainSetDef& out){
     out.bufferName = std::string(sets[0]->bindings[0]->name);
     out.bufferSize = sets[0]->bindings[0]->block.size;
     for(int i = 0; i < sets[0]->bindings[0]->block.member_count; i++){
-        //LogWarning("%s", sets[0]->bindings[0]->block.members[i].name);
+        LogWarning("%s", sets[0]->bindings[0]->block.members[i].name);
         //LogWarning("%d", sets[0]->bindings[0]->block.members[i].offset);
         
         MaterialMainSetDef::Member member{};
@@ -36,7 +36,7 @@ bool SpirvReflectMainSet(void* data, size_t size, MaterialMainSetDef& out){
 
     //TexSlots
     for(int i = 1; i < sets[0]->binding_count; i++){
-        //LogWarning("%s %d", sets[0]->bindings[i]->name, i);
+        LogWarning("%s %d", sets[0]->bindings[i]->name, i);
         //LogWarning("%d", sets[0]->bindings[i]->resource_type);
         if(sets[0]->bindings[i]->resource_type == SPV_REFLECT_RESOURCE_FLAG_SRV){
             out.textureBindings[std::string(sets[0]->bindings[i]->name)] = i;

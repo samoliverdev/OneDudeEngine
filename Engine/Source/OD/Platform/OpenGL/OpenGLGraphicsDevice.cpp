@@ -21,6 +21,8 @@
 
 namespace OD{
 
+#define OPENGL_DEBUG
+
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
@@ -49,7 +51,7 @@ GraphicsDeviceInfo OpenGLGraphicsDevice::GetInfo(){
     return info;
 }
 
-#if OPENGL_DEBUG
+#ifdef OPENGL_DEBUG
 void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, const void* param){
 	
 	std::string sourceStr;
@@ -237,7 +239,7 @@ void OpenGLGraphicsDevice::Initialize(){
     );
     //#endif
 
-    #if OPENGL_DEBUG
+    #ifdef OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugCallback, NULL);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
@@ -346,12 +348,13 @@ bool OpenGLGraphicsDevice::HasBegin(){
     return begin;
 }
 
-void OpenGLGraphicsDevice::BeginRenderToScreen(){
-
+void OpenGLGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 }
 
 void OpenGLGraphicsDevice::EndRenderToScreen(){
-    
+    Application::DrawImGui();
 }
 
 void OpenGLGraphicsDevice::Clean(float r, float g, float b, float a){
@@ -629,8 +632,9 @@ void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char
     glCheckError();
 
     unsigned int target = GL_TEXTURE_2D;
-    if(framebuffer.Specification().type == FramebufferAttachmentType::TEXTURE_2D_ARRAY)
+    if(framebuffer.Specification().type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
         target = GL_TEXTURE_2D_ARRAY;
+    }
 
     if(colorAttachmentIndex == -1){
         //glBindTexture(target, framebuffer.DepthAttachmentId());
@@ -642,7 +646,7 @@ void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char
         glCheckError();
     }
 
-    glCheckError();
+    //glCheckError();
     SubShaderSetInt(shader, name, index);
 }
 
@@ -664,7 +668,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
     auto ApplyUniformTo = [&](Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){
         for(auto& i: maps){
             MaterialMap& map = i.second;
-
+            
             if(ContainUniformName(shader, i.first) == false) continue;
 
             if(map.type == MaterialMap::Type::Int){
@@ -1047,7 +1051,9 @@ void OpenGLGraphicsDevice::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int 
 }
 
 void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){
-    Assert(src != nullptr);
+    Assert(false && "Deprecated");
+
+    /*Assert(src != nullptr);
     Assert(src->IsValid() == true);
 
     if(dst == nullptr){
@@ -1061,11 +1067,12 @@ void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer*
     mat.SetTexture("mainTex", src, pass);
     //BindMaterial(mat);
     Graphics::Clean(0, 0, 0, 1);
-    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
+    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);*/
 }
 
 void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass){
-    if(dst == nullptr){
+    Assert(false && "Deprecated");
+    /*if(dst == nullptr){
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glCheckError();
     } else {
@@ -1075,7 +1082,7 @@ void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* dst, Material& ma
 
     //BindMaterial(mat);
     Graphics::Clean(0, 0, 0, 1);
-    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);
+    DrawMesh(*fullScreenQuad, mat, Matrix4Identity);*/
 }
 
 void OpenGLGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
@@ -1121,7 +1128,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
     if(mesh.glData.vertexVbo == 0){
         glGenBuffers(1, &mesh.glData.vertexVbo);
         glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.vertexVbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_STATIC_DRAW ); //GL_STATIC_DRAW
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
         glCheckError();
@@ -1136,7 +1143,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.ebo == 0){
             glGenBuffers(1, &mesh.glData.ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_STATIC_DRAW );
             glCheckError();
         } else {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
@@ -1150,7 +1157,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.uvVbo == 0){
             glGenBuffers(1, &mesh.glData.uvVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.uvVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
@@ -1165,7 +1172,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.normalVbo == 0){
             glGenBuffers(1, &mesh.glData.normalVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.normalVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
@@ -1180,7 +1187,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.colorVbo == 0){
             glGenBuffers(1, &mesh.glData.colorVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.colorVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(3);
             glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
@@ -1195,7 +1202,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.tangentVbo == 0){
             glGenBuffers(1, &mesh.glData.tangentVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.tangentVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(4);
             glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
@@ -1211,7 +1218,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.jointVbo == 0){
             glGenBuffers(1, &mesh.glData.jointVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.jointVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(5);
             glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
             glCheckError();
@@ -1227,7 +1234,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         if(mesh.glData.weightsVbo == 0){
             glGenBuffers(1, &mesh.glData.weightsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.weightsVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_STATIC_DRAW );
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
@@ -1256,8 +1263,8 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
     if(mesh.instancingModelMatrixs.empty() == false){
         if(mesh.glData.instancingModelMatrixsVbo == 0){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); 
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -1279,7 +1286,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
         }
     }
@@ -1301,7 +1308,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
         if(mesh.glData.instancingModelMatrixsVbo == 0){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -1323,7 +1330,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
         }
     }
@@ -1393,7 +1400,7 @@ bool IsDepthTypeFormat(FramebufferTextureFormat format){
     return false;
 }
 
-void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, int layer){
+void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){
     Assert(frambuffer.glData.renderId > 0);
     glBindFramebuffer(GL_FRAMEBUFFER, frambuffer.glData.renderId);
     glCheckError();
@@ -1406,6 +1413,8 @@ void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, int layer){
     // Set Attachment glFramebufferTexture2D
     glCheckError();
     //glViewport(0, 0, frambuffer.specification.width, frambuffer.specification.height);
+
+    Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 }
 
 void OpenGLGraphicsDevice::EndFramebuffer(){
@@ -1432,6 +1441,33 @@ void OpenGLGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, i
 }
 
 bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){
+    if(frambuffer.type == FramebufferType::Stand){
+        specification.colorAttachments = {
+            {FramebufferTextureFormat::RGBA8}
+        };
+        specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        specification.sample = 1;
+    }
+    if(frambuffer.type == FramebufferType::Shadowmap){
+        specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+        specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    }
+    if(frambuffer.type == FramebufferType::Deffered){
+        specification.colorAttachments = {
+            {FramebufferTextureFormat::RGB32F}, // Pos
+            {FramebufferTextureFormat::RGB32F}, // Normal
+            {FramebufferTextureFormat::RGBA16F}, // Albedo
+            {FramebufferTextureFormat::RGB16F}, // Emission
+            {FramebufferTextureFormat::RGB16F}, // Spec, Metalic, AO
+            {FramebufferTextureFormat::RED_INTEGER} // Object ID
+        };
+        specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        specification.sample = 1;
+    }
+    frambuffer.specification = specification;
+
     auto GenColorAttachment = [&](int index){
         Assert(IsDepthTypeFormat(specification.colorAttachments[index].colorFormat) == false);
     
@@ -2128,7 +2164,7 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
 
     auto CompileShader = [&](std::string& baseSource, std::string& toInsert, GLenum type, GLuint program, GLenum& shader) -> bool{
         baseSource.insert(0, toInsert);
-        LogWarning("%s", baseSource.c_str());
+        //LogWarning("%s", baseSource.c_str());
 
         shader = glCreateShader(type);
 

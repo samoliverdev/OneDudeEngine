@@ -41,7 +41,7 @@ public:
     static void SetCamera(Camera& camera);
     static Camera GetCamera();
 
-    static void BeginRenderToScreen();
+    static void BeginRenderToScreen(Vector4 clearColor = Vector4(0, 0, 0, 1));
     static void EndRenderToScreen();
 
     static void Clean(float r, float g, float b, float a);
@@ -69,7 +69,7 @@ public:
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
-    static void BeginFramebuffer(Framebuffer& frambuffer, int layer = 0);
+    static void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor = Vector4(0, 0, 0, 1), int layer = 0);
     static void EndFramebuffer();
 
     static void CreateLuaBind(sol::state& lua);

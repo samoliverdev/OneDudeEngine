@@ -54,7 +54,7 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
     #endif
 };
 
-int curGraphicsDevice = 2;
+int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::SelectGraphicsDevice(){
@@ -201,8 +201,8 @@ Camera Graphics::GetCamera(){
     return graphicsDevice->GetCamera(); 
 }
 
-void Graphics::BeginRenderToScreen(){
-    graphicsDevice->BeginRenderToScreen(); 
+void Graphics::BeginRenderToScreen(Vector4 clearColor){
+    graphicsDevice->BeginRenderToScreen(clearColor); 
 }
 
 void Graphics::EndRenderToScreen(){
@@ -284,8 +284,8 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     graphicsDevice->BlitFramebuffer(src, dst, srcPass); 
 }
 
-void Graphics::BeginFramebuffer(Framebuffer& frambuffer, int layer){ 
-    graphicsDevice->BeginFramebuffer(frambuffer, layer); 
+void Graphics::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){ 
+    graphicsDevice->BeginFramebuffer(frambuffer, clearColor, layer); 
 }
 
 void Graphics::EndFramebuffer(){ 

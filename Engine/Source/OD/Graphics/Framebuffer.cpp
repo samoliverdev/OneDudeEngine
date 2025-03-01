@@ -12,10 +12,12 @@ Framebuffer::Framebuffer(FramebufferType inType, int width, int height, int laye
     type = inType;
     specification.width = width;
     specification.height = height;
+    if(type == FramebufferType::Shadowmap) specification.sample = layers;
     graphicsDevice->FramebufferCreate(*this, specification);
 }
 
 Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
+    Assert(false && "Not work for now!!!");
     specification = inSpecification;
     Invalidate();
 }

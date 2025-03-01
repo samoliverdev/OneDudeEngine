@@ -764,7 +764,7 @@ Camera WebGPUGraphicsDevice::GetCamera(){
     return camera;
 }
 
-void WebGPUGraphicsDevice::BeginRenderToScreen(){
+void WebGPUGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){
     lastMat = nullptr;
     lastShader = nullptr;
     lastMesh = nullptr;
@@ -952,6 +952,7 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         ApplyUniformTo(material, *material.currentShader, material.maps, texs);
         ApplyUniformTo(material, *material.currentShader, Material::globalMaps, texs);
         Assert(material.currentTextureSlot < maxTexSlots /*32*/);
+        //memset(material.wgData.mainUniformData, 0, material.wgData.materialMainSetDef.bufferSize);
         wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.materialMainSetDef.bufferSize);
         //if(material.isDirty){
         UpdateMaterialMainSet(mat, texs);
@@ -1243,7 +1244,7 @@ bool WebGPUGraphicsDevice::MeshIsValid(Mesh& mesh){
     return false;
 }
 
-void WebGPUGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, int layer){
+void WebGPUGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){
     lastMat = nullptr;
     lastShader = nullptr;
     lastMesh = nullptr;
@@ -2132,6 +2133,7 @@ void WebGPUGraphicsDevice::MaterialOnSetShader(Material& mat){
 
     mat.wgData.materialMainSetDef = mat.currentShader->wgData.materialMainSetDef;
     mat.wgData.mainUniformData = malloc(mat.wgData.materialMainSetDef.bufferSize);
+    memset( mat.wgData.mainUniformData, 0, mat.wgData.materialMainSetDef.bufferSize);
     mat.wgData.mainUniformBuffer = CreateUniformBuffer(mat.wgData.materialMainSetDef.bufferSize, "UniformBuffer");
 
     //UpdateMaterialMainSet(mat);

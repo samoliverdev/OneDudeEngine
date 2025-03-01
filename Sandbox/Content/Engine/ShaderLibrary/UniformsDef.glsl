@@ -1,6 +1,3 @@
-#ifndef UNIFORM_INCLUDED
-#define UNIFORM_INCLUDED
-
 Uniform vec3 _AmbientLight;
 Uniform vec3 _IrradianceMapScale;
 Uniform float _SkyLightIntensity;
@@ -22,7 +19,6 @@ Uniform vec4 _OtherLightShadowData[MAX_OTHER_LIGHT_COUNT];
 #define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
-
 Uniform mat4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
 Uniform int _CascadeCount;
 Uniform float _CascadeCullingSpheres[MAX_CASCADE_COUNT];
@@ -30,5 +26,3 @@ Uniform float _ShadowDistance;
 Uniform vec4 _ShadowAtlasSize;
 Uniform vec4 _ShadowDistanceFade;
 Uniform mat4 _OtherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
-
-#endif

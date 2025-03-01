@@ -51,7 +51,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;*/
     //deferredOutColor = new Framebuffer(framebufferSpecification);
-    deferredOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
@@ -112,27 +112,20 @@ void RenderContext::BeginDrawToScreen(){
 }
 
 void RenderContext::BeginForwardPass(){
-    //Framebuffer::Unbind(); 
-    //ScreenClean();
-    //return;
-
-    //Framebuffer::Bind(*forwardOutColor);
-    Graphics::BeginFramebuffer(*forwardOutColor, 0);
-    
-    //Framebuffer::Unbind(); 
+    Graphics::BeginFramebuffer(*forwardOutColor);
     ScreenClean();
 }
 
 void RenderContext::BeginDeferredPass(){
     //Assert(false);
     //Framebuffer::Bind(*deferredOutColor);
-    Graphics::BeginFramebuffer(*deferredOutColor, 0);
+    Graphics::BeginFramebuffer(*deferredOutColor);
     ScreenClean();
 }
 
 void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     //Framebuffer::Bind(*forwardOutColor);
-    Graphics::BeginFramebuffer(*forwardOutColor, 0);
+    Graphics::BeginFramebuffer(*forwardOutColor);
     Graphics::Clean(0, 1, 0, 1);
 
     deferredLightPass->SetTexture("gPosition", deferredOutColor, 0);
@@ -140,7 +133,6 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     deferredLightPass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
     deferredLightPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightPass->SetTexture("gOther", deferredOutColor, 4);
-    //Material::SubmitGraphicDatas(*deferredLightPass);
     Graphics::BindMaterial(*deferredLightPass);
 
     //Graphics::BlitQuadPostProcessingRaw(forwardOutColor);
@@ -148,7 +140,8 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     
     Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
     //Framebuffer::Bind(*forwardOutColor);
-    Graphics::BeginFramebuffer(*forwardOutColor, 0);
+    
+    //Graphics::BeginFramebuffer(*forwardOutColor);
 
     /*Framebuffer::Bind(*forwardOutColor);
     Graphics::Clean(0, 1, 0, 1);
@@ -170,10 +163,42 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 
 void RenderContext::EndDrawToScreen(){
     Graphics::EndFramebuffer();
-    
+
+    Graphics::BeginFramebuffer(*finalColor);
+    blitShader->SetTexture("mainTex", forwardOutColor, 0);
+    Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+    Graphics::EndFramebuffer();
+
+    if(overrideFramebuffer != nullptr){
+        Graphics::BeginFramebuffer(*overrideFramebuffer);
+        blitShader->SetTexture("mainTex", finalColor, 0);
+        Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+        Graphics::EndFramebuffer();
+        Graphics::BeginRenderToScreen();
+        Graphics::EndRenderToScreen();
+    } else {
+        Graphics::BeginRenderToScreen();
+        blitShader->SetTexture("mainTex", finalColor, 0);
+        Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+        Graphics::EndRenderToScreen();
+    }
+    return;
+
+    /*Graphics::EndFramebuffer();
     Graphics::BeginRenderToScreen();
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+    Graphics::EndRenderToScreen();
+    return;*/
+
+    Graphics::EndFramebuffer();
+
+    Graphics::BeginFramebuffer(*overrideFramebuffer);
+    blitShader->SetTexture("mainTex", forwardOutColor, 0);
+    Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+    Graphics::EndFramebuffer();
+
+    Graphics::BeginRenderToScreen();
     Graphics::EndRenderToScreen();
     return;
 
@@ -682,7 +707,7 @@ void RenderContext::DrawGizmos(){
 void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, layer);
+    Graphics::BeginFramebuffer(*shadowMap, Vector4(0, 0, 0, 1), layer);
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
     //Framebuffer::Unbind();
@@ -693,7 +718,7 @@ void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
 
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, layer);
+    Graphics::BeginFramebuffer(*shadowMap, Vector4(0, 0, 0, 1), layer);
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
 }

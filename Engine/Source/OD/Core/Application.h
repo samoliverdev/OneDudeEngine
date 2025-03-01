@@ -21,6 +21,7 @@ struct ApplicationConfig {
 
 class OD_API Application {
     friend class WebGPUGraphicsDevice;
+    friend class OpenGLGraphicsDevice;
 public:
     static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "");
     static bool Run();

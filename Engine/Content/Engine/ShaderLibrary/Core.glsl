@@ -24,6 +24,9 @@ vec4 ToSRGB(vec4 a){
 
 #if defined(OpenGL_API)
     #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
+    #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCube(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCubeLod(tex, sample, uv, lod) textureLod(tex, uv, lod)
 
     vec4 textureSRGB(sampler2D tex, vec2 uv){
     #if defined(ENABLE_GAMA_CORRECTION)
@@ -49,7 +52,6 @@ vec4 ToSRGB(vec4 a){
 #if defined(WebGPU_API)
     #define SampleTexture2D(tex, sample, uv) texture(sampler2D(tex, sample), uv)
     #define SampleTexture2DArray(tex, sample, uv) vec4(0)
-
     #define SampleTextureCube(tex, sample, uv) vec4(0)
     #define SampleTextureCubeLod(tex, sample, uv, lod) vec4(0)
 

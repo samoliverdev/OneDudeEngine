@@ -13,6 +13,7 @@
 
 BeginUniform(0, 0, Main)
     Uniform vec4 color;
+    Uniform int a;
 EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 //Texture2D(0, 2, main2Tex, main2Sampler)
@@ -37,5 +38,9 @@ Texture2D(0, 1, mainTex, mainSampler)
         vec4 texColor = ToSRGB(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
         if(texColor.a < 0.1) discard;
         fragColor = texColor * color;
+
+        /*for(int i = 0; i < a; i++){
+            fragColor += 0.01 * i;
+        }*/
     }
 #endif

@@ -24,6 +24,7 @@
 /*#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6*/
+#define OPENGL_DEBUG 
 
 namespace OD{
 
@@ -275,8 +276,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
-            #if OPENGL_DEBUG
-            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 0);
+            #ifdef OPENGL_DEBUG
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
             #endif
         } else if(graphicsDeviceInfo.version == 3){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

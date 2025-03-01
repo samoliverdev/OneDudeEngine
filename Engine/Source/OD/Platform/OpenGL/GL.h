@@ -4,8 +4,8 @@
 #ifdef __EMSCRIPTEN__
 #define OpenGLEmscripten
 #else
-//#define OpenGL46
-#define OpenGL33
+#define OpenGL46
+//#define OpenGL33
 #endif
 
 #if defined(OpenGL46)

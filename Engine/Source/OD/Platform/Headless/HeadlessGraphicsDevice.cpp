@@ -12,7 +12,7 @@ void HeadlessGraphicsDevice::End(){}
 bool HeadlessGraphicsDevice::HasBegin(){ return false; }
 void HeadlessGraphicsDevice::SetCamera(Camera& camera){}
 Camera HeadlessGraphicsDevice::GetCamera(){ return camera; }
-void HeadlessGraphicsDevice::BeginRenderToScreen(){}
+void HeadlessGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){}
 void HeadlessGraphicsDevice::EndRenderToScreen(){}
 void HeadlessGraphicsDevice::Clean(float r, float g, float b, float a){}
 void HeadlessGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){}
@@ -55,7 +55,7 @@ void HeadlessGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, 
 void HeadlessGraphicsDevice::MeshDestroy(Mesh& mesh){}
 bool HeadlessGraphicsDevice::MeshIsValid(Mesh& mesh){ return false; }
 
-void HeadlessGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, int layer){}
+void HeadlessGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){}
 void HeadlessGraphicsDevice::EndFramebuffer(){}
 bool HeadlessGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){ return false; }
 void HeadlessGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){}

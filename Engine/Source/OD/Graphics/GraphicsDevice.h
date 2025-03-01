@@ -42,7 +42,7 @@ public:
     virtual void SetCamera(Camera& camera) = 0;
     virtual Camera GetCamera() = 0;
 
-    virtual void BeginRenderToScreen() = 0;
+    virtual void BeginRenderToScreen(Vector4 clearColor) = 0;
     virtual void EndRenderToScreen() = 0;
 
     virtual void Clean(float r, float g, float b, float a) = 0;
@@ -66,7 +66,7 @@ public:
     virtual void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth) = 0;
     virtual void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth) = 0;
 
-    virtual void BeginFramebuffer(Framebuffer& frambuffer, int layer) = 0;
+    virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer) = 0;
     virtual void EndFramebuffer() = 0;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;

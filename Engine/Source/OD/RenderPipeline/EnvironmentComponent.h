@@ -43,9 +43,9 @@ struct OD_API EnvironmentSettings{
     //AntiAliasing antiAliasing;
     //MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
-    Ref<ToneMappingPostFX> toneMappingPostFX = nullptr;// CreateRef<ToneMappingPostFX>();
-    Ref<ColorGradingPostFX> colorGradingPostFX = nullptr;// CreateRef<ColorGradingPostFX>();;
-    Ref<BloomPostFX> bloomPostFX ;// = CreateRef<BloomPostFX>();
+    Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
+    Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
+    Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
     
     template <class Archive>
     void serialize(Archive& ar){

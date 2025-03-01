@@ -48,10 +48,11 @@ void LightSample::OnRender(float deltaTime){
     model->materials[0]->SetVector3("viewPos", camTransform.LocalPosition());
 
     Graphics::Begin();
-    Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+    //Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    Graphics::BeginFramebuffer(*framebuffer, 0);
+    Graphics::BeginFramebuffer(*framebuffer, Vector4(0.1f, 0.1f, 0.1f, 1));
+    Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
         Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
         for(unsigned int i = 0; i < 10; i++){
             modelTransform.LocalPosition(cubePositions[i]);
@@ -61,7 +62,7 @@ void LightSample::OnRender(float deltaTime){
         }
     Graphics::EndFramebuffer();
 
-    Graphics::BeginRenderToScreen();
+    Graphics::BeginRenderToScreen(Vector4(0.1f, 0.1f, 0.1f, 1));
         blitMat->SetTexture("mainTex", framebuffer, 0);
         Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
 
@@ -73,6 +74,10 @@ void LightSample::OnRender(float deltaTime){
             modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
             Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
         }*/
+
+        /*Platform::ImguiBegin();
+        OnGUI();
+        Platform::End();*/
     Graphics::EndRenderToScreen();
     
     Graphics::End();

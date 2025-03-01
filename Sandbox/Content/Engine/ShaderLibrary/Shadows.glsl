@@ -61,13 +61,12 @@ ShadowData GetShadowData(Surface surfaceWS){
 	);
 
     for(int i = 0; i < _CascadeCount; i++){
-        int _i = i;
         if(depthValue <= _CascadeCullingSpheres[i]){
-            data.cascadeIndex = _i;
+            data.cascadeIndex = i;
             break;
         }
 
-        if(_i == _CascadeCount && _CascadeCount > 0) data.strength = 0.0;
+        if(i == _CascadeCount && _CascadeCount > 0) data.strength = 0.0;
     }
 
 

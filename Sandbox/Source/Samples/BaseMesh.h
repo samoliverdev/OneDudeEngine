@@ -2,15 +2,13 @@
 #include <OD/OD.h>
 //#include <taskflow/taskflow.hpp> 
 
-using namespace OD;
-
 struct BaseMeshSample: OD::Module {
-    Mesh mesh;
+    OD::Mesh mesh;
     //Ref<SubShader> meshShader;
     //Ref<SubShader> fontShader;
     //Ref<Font> font;
 
-    Ref<Material> meshMat;
+    OD::Ref<OD::Material> meshMat;
 
     /*tf::Executor executor;
     tf::Taskflow taskflow;
