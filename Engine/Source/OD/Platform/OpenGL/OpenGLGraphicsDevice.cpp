@@ -21,7 +21,7 @@
 
 namespace OD{
 
-#define OPENGL_DEBUG
+//#define OPENGL_DEBUG
 
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
@@ -1264,7 +1264,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
         if(mesh.glData.instancingModelMatrixsVbo == 0){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); 
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW GL_DYNAMIC_DRAW
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);

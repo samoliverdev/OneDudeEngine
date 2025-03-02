@@ -24,7 +24,8 @@
 /*#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6*/
-#define OPENGL_DEBUG 
+
+//#define OPENGL_DEBUG 
 
 namespace OD{
 

@@ -9,7 +9,7 @@
     Texture2D mainTex White
     Texture2D heightMap Back
     Texture2D heightMapNormal Back
-    Texture2D normal Normal
+    Texture2D normalMap Normal
     Texture2D emissionMap Black
     Color4 emissionColor
     Texture2D maskMap White
@@ -30,10 +30,42 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+BeginUniform(0, 0, Main)
+    #include Engine/ShaderLibrary/UniformsDef.glsl
+    Uniform vec3 viewPos;
+    Uniform float metersPerHeightfieldTexel = 1;
+    Uniform vec2 uvOffset = vec2(0);
+    Uniform vec2 heightmapTilling = vec2(1, 1);
+    Uniform vec2 heightmapOffset = vec2(0, 0);
+    Uniform float heightScale;
+    Uniform vec4 color = vec4(1,1,1,1);
+    Uniform float normalStrength = 1;
+    Uniform vec4 emissionColor = vec4(0,0,0,0);
+    Uniform float occlusion = 1;
+    Uniform float metallic = 0;
+    Uniform float smoothness = 0.5;
+    Uniform float cutoff = 0.5;
+EndUniform()
+
+#include Engine/ShaderLibrary/TexturesDef.glsl
+Texture2D(0, 6, heightMap, heightMapSampler)
+Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
+Texture2D(0, 8, heightMapNorth, heightMapNorthSampler)
+Texture2D(0, 9, heightMapWest, heightMapWestSampler)
+Texture2D(0, 10, mainTex, mainTexSampler)
+Texture2D(0, 11, splatmap, splatmapSampler)
+Texture2D(0, 12, tex0, tex0Sampler)
+Texture2D(0, 13, tex1, tex1Sampler)
+Texture2D(0, 14, tex2, tex2Sampler)
+Texture2D(0, 15, tex3, tex3Sampler)
+Texture2D(0, 16, tex4, tex4Sampler)
+Texture2D(0, 17, normalMap, normalMapSampler)
+Texture2D(0, 18, emissionMap, emissionMapSampler)
+Texture2D(0, 19, maskMap, maskMapSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    #include Engine/ShaderLibrary/Vertex.glsl
-
     out VsOut{
         vec3 pos;
         vec3 normal;
@@ -46,15 +78,13 @@
         mat4 targetModelMatrix;
     } vsOut;
 
-    uniform sampler2D heightMap;
-
+    /*uniform sampler2D heightMap;
     uniform float heightScale;
     uniform vec3 viewPos;
     uniform float metersPerHeightfieldTexel = 1;
     uniform vec2 uvOffset = vec2(0);
-
     uniform vec2 heightmapTilling = vec2(1, 1);
-    uniform vec2 heightmapOffset = vec2(0, 0);
+    uniform vec2 heightmapOffset = vec2(0, 0);*/
 
     vec3 NormalStrength(vec3 In, float Strength){
         return vec3(In.rg * Strength, mix(1, In.b, clamp(Strength, 0, 1)));
@@ -108,8 +138,8 @@
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform mat4 view;
-
+    //uniform mat4 view;
+    #include Engine/ShaderLibrary/Core.glsl
     #include Engine/ShaderLibrary/Common.glsl
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
@@ -130,26 +160,20 @@
         mat4 targetModelMatrix;
     } fsIn;
 
-    uniform vec3 viewPos;
-
+    /*uniform vec3 viewPos;
     uniform float heightScale;
     uniform sampler2D heightMap;
     uniform sampler2D heightMapNormal;
     uniform sampler2D heightMapNorth;
     uniform sampler2D heightMapWest;
-
     uniform vec2 uvOffset = vec2(0);
-
     uniform sampler2D mainTex;
-
     uniform sampler2D splatmap;
     uniform sampler2D tex0;
     uniform sampler2D tex1;
     uniform sampler2D tex2;
     uniform sampler2D tex3;
     uniform sampler2D tex4;
-
-
     uniform vec4 color = vec4(1,1,1,1);
     uniform sampler2D normal;
     uniform float normalStrength = 1;
@@ -159,7 +183,7 @@
     uniform float occlusion = 1;
     uniform float metallic = 0;
     uniform float smoothness = 0.5;
-    uniform float cutoff  = 0.5;
+    uniform float cutoff  = 0.5;*/
 
     out vec4 fragColor;
 
@@ -186,7 +210,7 @@
     }
 
     vec3 getNormalFromMap(vec2 uv, vec3 WorldPos0, mat4 targetModelMatrix){
-        vec3 tangentNormal = texture(normal, uv).xyz * 2.0 - 1.0;
+        vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
 
         vec3 Q1 = dFdx(WorldPos0);
         vec3 Q2 = dFdy(WorldPos0);
@@ -209,7 +233,7 @@
 
     //
     vec3 getNormalFromMap2(vec2 uv, vec3 WorldPos0, mat4 targetModelMatrix){
-        vec3 tangentNormal = texture(normal, uv).xyz * 2.0 - 1.0;
+        vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
 
         vec3 Normal0 = filterNormalLod(uv);
         //Source: https://www.reddit.com/r/opengl/comments/184zjg8/can_i_calculate_tangent_space_based_on_the_height/
@@ -271,8 +295,8 @@
         return normalize(TBN * n);
     }
 
-    uniform vec2 heightmapTilling = vec2(1, 1);
-    uniform vec2 heightmapOffset = vec2(0, 0);
+    //uniform vec2 heightmapTilling = vec2(1, 1);
+    //uniform vec2 heightmapOffset = vec2(0, 0);
 
     void main(){
         //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
