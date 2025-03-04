@@ -14,9 +14,15 @@
     #define OutPosition gl_Position
     #define VertexIndex gl_VertexID
 
-    #define BeginUniform(inSet, inBinding, name)
-    #define EndUniform()
-    #define Uniform uniform
+    #if defined(UseUniformBuffer)
+        #define BeginUniform(inSet, inBinding, name) layout(std140) uniform name{
+        #define EndUniform() };
+        #define Uniform
+    #else
+        #define BeginUniform(inSet, inBinding, name)
+        #define EndUniform()
+        #define Uniform uniform
+    #endif
 
     #define Texture2D(inset, inbinding, name, nameSampler) uniform sampler2D name;
     #define Texture2DArray(inset, inbinding, name, nameSampler) uniform sampler2DArray name;

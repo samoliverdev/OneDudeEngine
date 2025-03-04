@@ -8,9 +8,15 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 view;
 EndUniform()
 
+#if defined(OpenGL_API) && defined(UseUniformBuffer)
+    uniform mat4 model;
+#else
+
 BeginUniform(1, 0, PerDraw)
     Uniform mat4 model;
 EndUniform()
+
+#endif
 
 #if defined(VERTEX)
 
@@ -42,9 +48,17 @@ layout(location = 6) in vec4 weights;
 #ifdef SKINNED
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
+
+#if defined(OpenGL_API) && defined(UseUniformBuffer)
+    uniform mat4 animated[MAX_BONES];
+#else
+
 BeginUniform(1, 1, Anim)
     Uniform mat4 animated[MAX_BONES];
 EndUniform()
+
+#endif
+
 #endif
 
 /*

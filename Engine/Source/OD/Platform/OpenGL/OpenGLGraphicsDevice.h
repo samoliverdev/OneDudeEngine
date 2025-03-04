@@ -167,6 +167,10 @@ public:
     unsigned int wiredCubeVBO;
     unsigned int wiredCubeEBO;
 
+    unsigned int cameraDataBuffer;
+    unsigned int globalDataBuffer;
+    unsigned int renderPipelineDataBuffer;
+
     //Ref<SubShader> gismoShader;
     Ref<Material> gismoMaterial;
     Ref<Mesh> fullScreenQuad;

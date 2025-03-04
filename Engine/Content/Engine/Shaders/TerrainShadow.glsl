@@ -11,8 +11,8 @@
 BeginUniform(0, 0, Main)
     Uniform mat4 lightSpaceMatrix;
     Uniform float heightScale;
-    Uniform vec2 heightmapTilling = vec2(1, 1);
-    Uniform vec2 heightmapOffset = vec2(0, 0);
+    Uniform vec2 heightmapTilling;// = vec2(1, 1);
+    Uniform vec2 heightmapOffset;// = vec2(0, 0);
 EndUniform()
 Texture2D(0, 1, heightMap, heightMapSampler)
 

@@ -41,6 +41,9 @@ public:
     static void SetCamera(Camera& camera);
     static Camera GetCamera();
 
+    //static void SubmitGlobalData(void* data, size_t size);
+    //static void SubmitRenderPipelineData(void* data, size_t size);
+
     static void BeginRenderToScreen(Vector4 clearColor = Vector4(0, 0, 0, 1));
     static void EndRenderToScreen();
 

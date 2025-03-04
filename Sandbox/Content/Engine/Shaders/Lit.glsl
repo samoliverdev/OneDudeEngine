@@ -28,12 +28,24 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
+/*BeginUniform(3, 0, RenderPipeline)
+    #include Engine/ShaderLibrary/UniformsDef.glsl
+EndUniform()*/
+
+/*layout(std140) uniform MaterialData{
+    vec4 color2;
+    float arr[4];
+    float smoothness2;
+    float metallic2;
+    float pad[2];
+};*/
+
 BeginUniform(0, 0, Main)
     #include Engine/ShaderLibrary/UniformsDef.glsl
     Uniform vec3 viewPos;
+    Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
-    Uniform float normalStrength;
     Uniform vec4 emissionColor;
     Uniform float occlusion;
     Uniform float metallic;

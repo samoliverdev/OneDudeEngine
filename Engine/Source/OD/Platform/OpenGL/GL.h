@@ -85,14 +85,28 @@ struct GLSubShaderData{
     unsigned int id = 0;
     std::unordered_map<std::string, int> uniforms;
     std::vector<std::string> _uniforms;
+
+    std::unordered_map<std::string, int> uniformsBuffers;
 };
 
 struct GLShaderData{
 
 };
 
-struct GLMaterialData{
+struct UniformBufferDef{
+    struct Member{
+        size_t pos;
+        size_t size;
+    };
+    std::string name;
+    size_t size;
+    std::unordered_map<std::string, Member> members;
+};
 
+struct GLMaterialData{
+    UniformBufferDef mainBufferDef;
+    void* mainUniformData = nullptr;
+    unsigned int mainBuffer;
 };
 
 #define MeshDataGL GLMeshData glData;

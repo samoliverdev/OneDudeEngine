@@ -4,9 +4,13 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
+#if defined(OpenGL_API) && defined(UseUniformBuffer)
+    uniform mat4 model;
+#else
 BeginUniform(1, 0, PerDraw)
     Uniform mat4 model;
 EndUniform()
+#endif
 
 BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;

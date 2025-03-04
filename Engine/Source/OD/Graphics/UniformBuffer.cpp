@@ -34,7 +34,6 @@ void UniformBuffer::SetData(const void* data, unsigned int size, unsigned int of
 
     glBindBuffer(GL_UNIFORM_BUFFER, rendererId);
     glCheckError();
-
     glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
     glCheckError();
 }

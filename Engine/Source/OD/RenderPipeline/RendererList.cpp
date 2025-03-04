@@ -2,6 +2,7 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Core/Instrumentor.h"
 #include "MeshRendererComponent.h"
 #include <algorithm>
 
@@ -137,6 +138,7 @@ void RendererList::Sort(){
 }
 
 void RendererList::Submit(){
+    OD_PROFILE_SCOPE("RendererList::Submit");
     Material* lastMat = nullptr;
 
     //NOTE: This not working why Materials can shared the same shader
@@ -154,28 +156,41 @@ void RendererList::Submit(){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
         }
     }*/
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::drawCommands");
     drawCommands.Each([&](auto& cm){
-        auto _mat = cm.material;
+        OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
+        Material* _mat = cm.material;
+
+        //{
+        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::1");
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("SKINNED");
-            //Material::SubmitGraphicDatas(*_mat);
             Graphics::BindMaterial(*_mat);
             if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
+        //}
 
+        //{
+        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::2");
         lastMat = _mat;
+        //Assert(lastMat != nullptr);
         //Shader::Bind(*_mat->GetShader());
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
         Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        //}
     });
+    }
     lastMat = nullptr;
 
     // ---------------Submiting DrawIntancingCommands-----------------
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::drawIntancingCommands");
     drawIntancingCommands.Each([&](auto& cm){
         if(cm.trans.size() == 0) return;
         auto _mat = cm.material;
@@ -200,6 +215,7 @@ void RendererList::Submit(){
         //Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
         Graphics::DrawMeshInstancing(*cm.meshs, *_mat, &cm.trans[0], cm.trans.size());
     });
+    }
     lastMat = nullptr;
 
     // ---------------Submiting SkinnedDrawCommands-----------------
@@ -218,6 +234,8 @@ void RendererList::Submit(){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
         }
     }*/
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommands");
     skinnedDrawCommands.Each([&](auto& cm){
         auto _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
@@ -242,6 +260,7 @@ void RendererList::Submit(){
         //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
         //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
     });
+    }
     lastMat = nullptr;
 }
 

@@ -35,18 +35,18 @@
 BeginUniform(0, 0, Main)
     #include Engine/ShaderLibrary/UniformsDef.glsl
     Uniform vec3 viewPos;
-    Uniform float metersPerHeightfieldTexel = 1;
-    Uniform vec2 uvOffset = vec2(0);
-    Uniform vec2 heightmapTilling = vec2(1, 1);
-    Uniform vec2 heightmapOffset = vec2(0, 0);
+    Uniform float metersPerHeightfieldTexel;// = 1;
+    Uniform vec2 uvOffset;// = vec2(0);
+    Uniform vec2 heightmapTilling;// = vec2(1, 1);
+    Uniform vec2 heightmapOffset;// = vec2(0, 0);
     Uniform float heightScale;
-    Uniform vec4 color = vec4(1,1,1,1);
-    Uniform float normalStrength = 1;
-    Uniform vec4 emissionColor = vec4(0,0,0,0);
-    Uniform float occlusion = 1;
-    Uniform float metallic = 0;
-    Uniform float smoothness = 0.5;
-    Uniform float cutoff = 0.5;
+    Uniform vec4 color;// = vec4(1,1,1,1);
+    Uniform float normalStrength;// = 1;
+    Uniform vec4 emissionColor;// = vec4(0,0,0,0);
+    Uniform float occlusion;// = 1;
+    Uniform float metallic;// = 0;
+    Uniform float smoothness;// = 0.5;
+    Uniform float cutoff;// = 0.5;
 EndUniform()
 
 #include Engine/ShaderLibrary/TexturesDef.glsl
