@@ -4,10 +4,9 @@ option(ENGINE_SHARED_LIBRARY "" TRUE)
 option(BUILD_SANDBOX "BUILD_SANDBOX" TRUE)
 option(BUILD_EDITOR "BUILD_EDITOR" TRUE)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" TRUE)
-option(UseWebGPU "UseWebGPU" TRUE)
-
+#option(UseWebGPU "UseWebGPU" Off)
 option(SupportOpenGL "SupportOpenGL" TRUE)
-option(SupportWebGPU "SupportWebGPU" TRUE)
+option(SupportWebGPU "SupportWebGPU" Off)
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
@@ -20,7 +19,7 @@ if(EMSCRIPTEN)
     set(ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
     set(BUILD_EDITOR OFF CACHE BOOL "" FORCE)
     set(BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
-    set(UseWebGPU OFF CACHE BOOL "" FORCE)
+    set(SupportWebGPU OFF CACHE BOOL "" FORCE)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
 elseif(WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -102,7 +101,7 @@ add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
 
-if(UseWebGPU) 
+if(SupportWebGPU) 
     #FetchContent_Declare(
     #webgpu
     #GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
@@ -184,7 +183,7 @@ endif()
 target_precompile_headers(Engine INTERFACE Engine/Source/OD/pch.h)
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
-if(UseWebGPU)
+if(SupportWebGPU)
     target_compile_definitions(Engine PUBLIC WEBGPU_SUPPORT)
 endif()
 target_include_directories(Engine PUBLIC 
@@ -226,7 +225,7 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
-if(UseWebGPU)
+if(SupportWebGPU)
     target_link_libraries(Engine PUBLIC webgpu glfw3webgpu)
     target_copy_webgpu_binaries(Engine)
 endif()

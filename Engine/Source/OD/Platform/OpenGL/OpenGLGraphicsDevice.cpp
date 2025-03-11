@@ -729,10 +729,10 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                     memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
                 } else if(map.type == MaterialMap::Type::Vector4List){
                     Assert(m.size >= sizeof(Vector4) * map.listCount);
-                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Vector4) * map.listCount);
+                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
                 } else if(map.type == MaterialMap::Type::Matrix4List){
                     Assert(m.size >= sizeof(Matrix4) * map.listCount);
-                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(Matrix4) * map.listCount);
+                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
                 } else {
                     Assert(false && "Type Not Supported in A UnifomBuffer");
                 }
@@ -2570,12 +2570,12 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
         glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
         glCheckError();
 
-        LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
+        /*LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
         for(auto& i: mat.glData.mainBufferDef.members){
            LogInfo("Name: %s", i.first.c_str());
            LogInfo("Pos: %zd", i.second.pos);
            LogInfo("Size: %zd", i.second.size);
-        }
+        }*/
     }
     #endif
 }

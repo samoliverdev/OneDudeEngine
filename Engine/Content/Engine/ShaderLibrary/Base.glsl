@@ -16,10 +16,14 @@
 
     #if defined(UseUniformBuffer)
         #define BeginUniform(inSet, inBinding, name) layout(std140) uniform name{
+        #define BeginCameraUniform() layout(std140) uniform CamDraw{
+        #define BeginMaterialUniform() layout(std140) uniform Main{
+        #define BeginPerDrawUniform() //layout(std140) uniform PerDraw{
         #define EndUniform() };
         #define Uniform
     #else
         #define BeginUniform(inSet, inBinding, name)
+
         #define EndUniform()
         #define Uniform uniform
     #endif

@@ -1,9 +1,9 @@
 #include "Animation.h"
 #include <OD/Loader/GLTFLoader.h>
+#include <OD/Loader/AssimpLoader.h>
 #include <OD/Animation/RearrangeBones.h>
 #include <OD/Animation/CrossFadeController.h>
 #include "Ultis/Ultis.h"
-#include <OD/Loader/AssimpLoader.h>
 
 void AnimationSample::OnInit(){
     LogInfo("Game Init");
