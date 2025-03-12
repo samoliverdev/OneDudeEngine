@@ -41,7 +41,8 @@ struct ComponentTest_01{
     std::vector<ObjectTest> tests = {ObjectTest(), ObjectTest()};
 
     //inline static TestRegisterComponent<ComponentTest_01> registerTest = TestRegisterComponent<ComponentTest_01>("ComponentTest_01");
-    REGISTER_COMPONENT(ComponentTest_01);
+    
+    //REGISTER_COMPONENT(ComponentTest_01);
 
     template<class Archive>
     void serialize(Archive& ar){

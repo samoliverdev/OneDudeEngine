@@ -92,7 +92,7 @@ enum class KeyCode {
     RAlt = 346,
     //6
 };
-#define KeyCodeMaxKeys 346
+#define KeyCodeMaxKeys 347
 
 class Application;
 

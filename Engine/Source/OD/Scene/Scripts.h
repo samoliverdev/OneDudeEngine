@@ -10,6 +10,7 @@ namespace OD{
 struct OD_API Script{
     friend struct ScriptComponent;
 
+    virtual ~Script(){}
     virtual void OnStart(){}
     virtual void OnDestroy(){}
     virtual void OnUpdate(){}

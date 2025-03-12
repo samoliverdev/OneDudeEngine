@@ -207,9 +207,13 @@ Scene::Scene(Scene& other){
 
 Scene::~Scene(){
     registry.clear();
-    for(auto i: standSystems) delete i;
-    for(auto i: rendererSystems) delete i;
-    for(auto i: physicsSystems) delete i;
+    for(System* i: standSystems) delete i;
+    for(System* i: rendererSystems) delete i;
+    for(System* i: physicsSystems) delete i;
+
+    standSystems.clear();
+    rendererSystems.clear();
+    physicsSystems.clear();
 }
 
 /*Entity Scene::AddEntity(std::string name){

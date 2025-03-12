@@ -30,6 +30,8 @@ struct GraphicsDeviceInfo{
 
 class OD_API GraphicsDevice {
 public:
+    virtual ~GraphicsDevice(){}
+
     virtual GraphicsStats& GetStats() = 0;
     virtual GraphicsDeviceInfo GetInfo() = 0;
 

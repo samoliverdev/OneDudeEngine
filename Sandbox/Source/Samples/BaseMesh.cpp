@@ -30,6 +30,7 @@ void BaseMeshSample::OnInit(){
     }
     
     LogInfo("Game Init");
+    //Assert(false);
     //OD::Application::Vsync(false);
 
     mesh.vertices.push_back(OD::Vector3(0.5f, 0.5f, 0));
@@ -40,6 +41,7 @@ void BaseMeshSample::OnInit(){
     mesh.uv.push_back(OD::Vector3(1, 0, 0));
     mesh.uv.push_back(OD::Vector3(0, 0, 0));
     mesh.uv.push_back(OD::Vector3(0, 1, 0));
+    mesh.indices.reserve(10);
     mesh.indices.push_back(0);
     mesh.indices.push_back(1);
     mesh.indices.push_back(3);
@@ -70,8 +72,10 @@ void BaseMeshSample::OnRender(float deltaTime){
     OD::Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
 
     //Graphics::DrawMesh(mesh, *meshMat, Matrix4Identity);
+    OD::Graphics::BeginRenderToScreen();
     OD::Graphics::DrawMesh(mesh, *meshMat, OD::math::translate(OD::Vector3(0.5f, 0, 0)));
     OD::Graphics::DrawMesh(mesh, *meshMat, OD::math::translate(OD::Vector3(-0.5f, 0, 0)));
+    OD::Graphics::EndRenderToScreen();
     
     OD::Graphics::End();
 }

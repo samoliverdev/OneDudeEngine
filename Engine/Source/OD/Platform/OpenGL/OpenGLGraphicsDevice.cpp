@@ -19,7 +19,7 @@
 #include <stb/stb_image.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#define UseUniformBuffer 1
+#define UseUniformBuffer 0
 
 namespace OD{
 
@@ -2543,7 +2543,7 @@ void OpenGLGraphicsDevice::SubShaderBind(SubShader& shader){
 }
 
 bool OpenGLGraphicsDevice::ShaderCreate(Shader& shader, std::string inPath){
-    LogInfo("Create Shader: %s", inPath.c_str());
+    //LogInfo("Create Shader: %s", inPath.c_str());
     return shader.Create(inPath);
 }
 

@@ -58,6 +58,7 @@ int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 
 void Graphics::SelectGraphicsDevice(){
+    
     if(curGraphicsDevice >= supportedGraphicsDevices.size()){
         curGraphicsDevice = supportedGraphicsDevices.size() - 1;
     }  

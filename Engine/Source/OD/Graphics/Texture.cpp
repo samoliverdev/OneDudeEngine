@@ -144,10 +144,20 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
 }
 
 Texture2D::~Texture2D(){
+    if(graphicsDevice == nullptr){
+        int a = 20;
+    }
+
+    Assert(graphicsDevice != nullptr);
     graphicsDevice->Texture2DDestroy(*this);
 }
 
 bool Texture2D::IsValid(){
+    if(graphicsDevice == nullptr){
+        int a = 20;
+    }
+
+    Assert(graphicsDevice != nullptr);
     return graphicsDevice->Texture2DIsValid(*this);
 }
 

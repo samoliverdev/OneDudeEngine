@@ -39,7 +39,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     auto project = ProjectManager::LoadProject(projectPath);
     if(project == nullptr) return false;
 
-    auto exists = [](const char *fname){
+    /*auto exists = [](const char *fname){
         FILE *file;
         if((file = fopen(fname, "r"))){
             fclose(file);
@@ -47,14 +47,11 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
         }
         return 0;
     };
-
     auto FileExists = [](const std::string& name){
         std::ifstream f(name);
         return f.good();
     };
-
-
-    LogInfo("File exist: %s %d", "Engine/Fonts/fa-solid-900.ttf", exists("Engine/Fonts/fa-solid-900.ttf"));
+    LogInfo("File exist: %s %d", "Engine/Fonts/fa-solid-900.ttf", exists("Engine/Fonts/fa-solid-900.ttf"));*/
 
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
@@ -72,13 +69,11 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     //Input::_Initialize(0, 0);
     #ifdef __EMSCRIPTEN__
     #else
-    JobSystem::Initialize();
+    //JobSystem::Initialize();
     #endif
     //AssetTypesDB::_Init();
     //CoreModulesStartup();
-
-    LogInfo("Test2");
-
+    
     mainModule = inMainModule;
     AddModule(mainModule);
 
