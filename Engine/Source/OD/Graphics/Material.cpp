@@ -505,7 +505,7 @@ void Material::OnGui(){
             });
 
             ImGui::SameLine();
-            ImGui::Text(name.c_str());
+            ImGui::TextUnformatted(name.c_str()); //ImGui::Text(name.c_str());
         }
     }
 

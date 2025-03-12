@@ -1,4 +1,4 @@
-#include "light.h"
+#include "Light.h"
 #include <assert.h>
 
 void LightSample::OnInit(){

@@ -1,6 +1,8 @@
 #include "Model.h"
 #include "OD/Loader/AssimpLoader.h"
+#include "OD/Loader/GltfLoader.h"
 #include "OD/Core/ImGui.h"
+#include <string>
 
 namespace OD{
 
@@ -37,6 +39,15 @@ std::vector<std::string> Model::GetFileAssociations(){
 }
 
 bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
+	auto getExtension = [](const std::string& path) -> std::string {
+        size_t dotPos = path.rfind('.');
+        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+    };
+
+	std::string fileType = getExtension(path);
+
+	if(fileType == "gltf") return GltfLoadModel(model, path, customShader);
+	if(fileType == "glb") return GltfLoadModel(model, path, customShader);
     return AssimpLoadModel(model, path, customShader);
 }
 

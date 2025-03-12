@@ -5,25 +5,39 @@
 #include <filesystem>
 #include "CoreModulesStartup.h"
 
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
+
+#include <iostream>
+#include <stdio.h>
+
+void* operator new(size_t size){
+    void* x = malloc(size);
+    std::cout << "Allocated " << size << " byte(s) at address " << x << std::endl;
+    return x;  
+}
+
+void operator delete(void* p){
+   free(p);
+   std::cout << "Freed memory at address " << p << std::endl;
+}
 
 extern OD::ApplicationConfig GetStartAppConfig();
 extern OD::Module* CreateMainModule();
 
-int CustomReportHandler(int reportType, char* message, int* returnValue){
+/*int CustomReportHandler(int reportType, char* message, int* returnValue){
     // Break into the debugger
     __debugbreak();
     // Optionally, handle the message (e.g., log it) or pass it to the default handler
     // ...
     // Return 1 to invoke the default report handler after breaking
     return 1;
-}
+}*/
 
 int main(int argc, char *argv[]){
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-    _CrtSetBreakAlloc(-1);
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+    //_CrtSetBreakAlloc(-1);
 
     //_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
     //_CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, CustomReportHandler);

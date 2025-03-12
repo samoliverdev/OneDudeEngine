@@ -9,7 +9,8 @@
 #endif
 
 #if defined(OpenGL46)
-    #include <glad46Core/glad.h>
+    //#include <glad46core/glad.h>
+    #include <glad.h>
     #define OpenGLVersion 4
     #define OPENGL_CHECK_ERRORS 1
     #define OpenglHeader "#version 330 core"

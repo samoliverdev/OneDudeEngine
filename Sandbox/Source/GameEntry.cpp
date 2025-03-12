@@ -30,6 +30,10 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
+    /*int* a = new int(55);
+    *a = 20;
+    a = nullptr;*/
+
     int i = 0;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 

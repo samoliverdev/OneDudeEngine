@@ -13,9 +13,9 @@ inline bool FileExists(const std::string& name){
 }
 
 #ifdef NDEBUG
-char* modulePath = "../build/Debug/DynamicModule.dll";
+const char* modulePath = "../build/Debug/DynamicModule.dll";
 #else
-char* modulePath = "../build/Release/DynamicModule.dll";
+const char* modulePath = "../build/Release/DynamicModule.dll";
 #endif
 
 void DynamicModuleSample::OnInit(){

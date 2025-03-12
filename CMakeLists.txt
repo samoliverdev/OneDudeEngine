@@ -7,15 +7,19 @@ endif()
 #if(MSVC)
     cmake_policy(SET CMP0091 NEW)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "" FORCE)
+    
+    #add_compile_options(-fsanitize=address -g)
+    #add_link_options(-fsanitize=address -g)
+    
     #add_compile_options(/fsanitize=address /Zi)
 #endif()
 
-option(ENGINE_SHARED_LIBRARY "" on)
-option(BUILD_SANDBOX "BUILD_SANDBOX" true)
-option(BUILD_EDITOR "BUILD_EDITOR" true)
-option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" true)
-option(SupportOpenGL "SupportOpenGL" true)
-option(SupportWebGPU "SupportWebGPU" off)
+option(ENGINE_SHARED_LIBRARY "" Off)
+option(BUILD_SANDBOX "BUILD_SANDBOX" On)
+option(BUILD_EDITOR "BUILD_EDITOR" On)
+option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)
+option(SupportOpenGL "SupportOpenGL" On)
+option(SupportWebGPU "SupportWebGPU" Off)
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
@@ -65,6 +69,7 @@ set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT  OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT  ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DRACO_STATIC On Cache Bool "" Force)
 
 set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
@@ -109,6 +114,8 @@ add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
 #add_subdirectory(Engine/ThirdParty/SPIRV-Cross)
 #add_subdirectory(Engine/ThirdParty/EASTL)
 #add_subdirectory(engine/ThirdParty/taskflow)
+
+#add_subdirectory(Engine/ThirdParty/tinygltf)
 
 if(SupportWebGPU) 
     #FetchContent_Declare(
@@ -161,6 +168,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     Engine/ThirdParty/entt/*.cpp
     Engine/Source/*.cpp
 )
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinygltf/tiny_gltf.cc)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui.cpp
     Engine/ThirdParty/imgui/imgui_draw.cpp
@@ -199,6 +207,8 @@ if(SupportWebGPU)
 endif()
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
+    Engine/ThirdParty/glad46core/
+    Engine/ThirdParty/tinygltf/
     Engine/ThirdParty/lua-5.1.5/src/
     Engine/ThirdParty/sol2/include/
     Engine/ThirdParty/cgltf/
@@ -218,6 +228,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/recastnavigation/Detour/Include/
     Engine/ThirdParty/taskflow/
     Engine/ThirdParty/SPIRV-Reflect/
+    #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
     Engine/Source/
@@ -236,6 +247,7 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+#target_link_libraries(Engine PRIVATE tinygltf) 
 if(SupportWebGPU)
     target_link_libraries(Engine PUBLIC webgpu glfw3webgpu)
     target_copy_webgpu_binaries(Engine)
