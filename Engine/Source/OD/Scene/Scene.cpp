@@ -232,7 +232,7 @@ Scene::~Scene(){
     return Entity(e, this);
 }*/
 
-Entity Scene::AddEntity(std::string name){
+Entity Scene::AddEntity(const std::string& name){
     Entity e = registry.create();
     
     InfoComponent& info = registry.emplace<InfoComponent>(e);

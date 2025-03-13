@@ -242,8 +242,9 @@ void Application::OnExit(){
 
     onFrameEnd.Clean();
 
-    AssetManager::Get().UnloadAll();
     AssetTypesDB::Get().assetFuncs.clear();
+    AssetManager::Get().UnloadAll();
+    //AssetTypesDB::Get().assetFuncs.clear();
 
     Graphics::Shutdown();
     //Input::_Shutdown(0);

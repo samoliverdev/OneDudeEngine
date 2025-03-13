@@ -1,4 +1,4 @@
-#include "GltfLoader.h"
+#include "GLTFLoader2.h"
 #include <tiny_gltf.h>
 #include <string>
 

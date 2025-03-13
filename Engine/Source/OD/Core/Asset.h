@@ -7,23 +7,14 @@ namespace OD{
 
 class OD_API Asset{
 public:
-    virtual ~Asset(){}
-
-    inline virtual std::string& Path(){ return path; }
-
+    virtual ~Asset() = default; //virtual ~Asset(){}
+    virtual std::string& Path();
     virtual void OnGui(){}
     virtual void Reload(){ LoadFromFile(path); }
     virtual void Save(){}
-    virtual bool LoadFromFile(const std::string& path){ return false; }
-
-    inline virtual std::vector<std::string> GetFileAssociations(){ return std::vector<std::string>(); }
-
-    inline bool HasFileExtension(const std::string& fileExtension){
-        for(auto& i: GetFileAssociations()){
-            if(i == fileExtension) return true;
-        }
-        return false;
-    }
+    virtual bool LoadFromFile(const std::string& path);
+    virtual std::vector<std::string> GetFileAssociations();
+    bool HasFileExtension(const std::string& fileExtension);
 
 protected:
     std::string path = "Memory";
@@ -57,14 +48,9 @@ public:
         assetFuncs[fileExtension] = funcs;
     }
 
-    inline bool HasAssetByExtension(std::string fileExtension){
-        return assetFuncs.find(fileExtension) != assetFuncs.end();
-    }
+    bool HasAssetByExtension(std::string fileExtension);
 
-    inline static AssetTypesDB& Get(){
-        static AssetTypesDB global;
-        return global;
-    }
+    static AssetTypesDB& Get();
 
     std::unordered_map<std::string, AssetFuncs> assetFuncs;
 
@@ -74,33 +60,9 @@ private:
 
 class OD_API AssetManager{
 public:
-    template<class T, typename ... Args>
-    Ref<T> LoadAsset(const std::string& path, Args&& ... args){
-        auto& db = data[std::type_index(typeid(T))];
-        //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
-        if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
-
-        LogInfo("LoadAsset: %s", path.c_str());
-
-        Ref<T> d = CreateRef<T>(std::forward<Args>(args)...);
-        d->LoadFromFile(path);
-        db[path] = d;
-        
-        //return reinterpret_cast<const Ref<T>&>(d);
-        return std::static_pointer_cast<T>(d);
-    }
-
-    template<class T, typename ... Args>
-    inline void AddAsset(const std::string& path, Ref<T> asset){
-        auto& db = data[std::type_index(typeid(T))];
-        LogInfo("AddAsset: %s", path.c_str());
-        db[path] = asset;
-    }
-
-    inline void UnloadAll(){
-        data.clear();
-    }
-
+    template<class T, typename ... Args> Ref<T> LoadAsset(const std::string& path, Args&& ... args);
+    template<class T, typename ... Args> void AddAsset(const std::string& path, Ref<T> asset);
+    void UnloadAll();
     static AssetManager& Get();
 
 private:
@@ -180,5 +142,37 @@ struct OD_API AssetVectorRefSerialize{
         }
     }
 };
+
+}
+
+namespace OD{
+
+template<class T, typename ... Args>
+Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
+    static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
+
+    auto& db = data[std::type_index(typeid(T))];
+    //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
+    //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
+    if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
+
+    LogInfo("LoadAsset: %s", path.c_str());
+    Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
+    asset->LoadFromFile(path);
+    db[path] = asset;
+    
+    //return reinterpret_cast<const Ref<T>&>(d);
+    //return std::static_pointer_cast<T>(d);
+    return asset;
+}
+
+template<class T, typename ... Args>
+void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
+    static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
+
+    auto& db = data[std::type_index(typeid(T))];
+    LogInfo("AddAsset: %s", path.c_str());
+    db[path] = asset;
+}
 
 }

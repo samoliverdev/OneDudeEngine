@@ -28,9 +28,10 @@ class Model;
 class OD_API TransformComponent{
     friend struct Scene;
     friend class cereal::access;
-
 public:
     //static constexpr auto in_place_delete = true;
+    
+    TransformComponent() = default;
 
     inline Vector3 Forward(){ return Rotation() * Vector3Forward; }
     inline Vector3 Back(){ return Rotation() * Vector3Back; }
@@ -96,9 +97,9 @@ private:
     std::vector<Entity> children;
 
     Entity parent = entt::null;
-    bool hasParent;
+    bool hasParent = false;
 
-    entt::registry* registry;
+    entt::registry* registry = nullptr;
 };
 
 enum class EntityType{
@@ -173,7 +174,7 @@ public:
     Scene(Scene& other);
     ~Scene();
 
-    Entity AddEntity(std::string name = "Entity");
+    Entity AddEntity(const std::string& name = "Entity");
     template<typename... T, typename Func> Entity AddEntityWith(std::string name, Func func);
 
     Entity DuplicateEntity(Entity e);

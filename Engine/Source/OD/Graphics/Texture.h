@@ -91,8 +91,8 @@ public:
     std::vector<std::string> GetFileAssociations() override;
 
     bool IsValid();
-    inline unsigned int Width(){ return width; }
-    inline unsigned int Height(){ return height; }
+    unsigned int Width();
+    unsigned int Height();
     
     void* RenderId();
 

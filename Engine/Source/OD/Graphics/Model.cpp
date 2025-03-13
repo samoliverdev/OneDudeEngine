@@ -1,6 +1,6 @@
 #include "Model.h"
 #include "OD/Loader/AssimpLoader.h"
-#include "OD/Loader/GltfLoader.h"
+#include "OD/Loader/GltfLoader2.h"
 #include "OD/Core/ImGui.h"
 #include <string>
 
@@ -15,6 +15,10 @@ void Model::OnGui(){
 	ImGui::Text("Textures Count: %zd", textures.size());
 	ImGui::Text("Matrixs Count: %zd", matrixs.size());
 	ImGui::Text("Animation Clips Count: %zd", animationClips.size());
+}
+
+void Model::SetPath(const std::string& inPath){ 
+	path = inPath; 
 }
 
 void Model::SetShader(Ref<Shader> shader){

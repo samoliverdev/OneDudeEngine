@@ -269,11 +269,11 @@ void Material::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
     map.cubemap = tex;
 }
 
-void Material::DisableKeyword(std::string keyword){
+void Material::DisableKeyword(const std::string& keyword){
     if(shader == nullptr) return;
 
     for(auto& i: shader->keyworldSpaces){
-        for(auto j: i.keyworlds){
+        for(auto& j: i.keyworlds){
             if(j == keyword){
                 i.enabledKey = -1;
                 break;
@@ -284,12 +284,12 @@ void Material::DisableKeyword(std::string keyword){
     isDirty = true;
 }
 
-void Material::EnableKeyword(std::string keyword){
+void Material::EnableKeyword(const std::string& keyword){
     if(shader == nullptr) return;
 
     for(auto& i: shader->keyworldSpaces){
         int index = 0;
-        for(auto j: i.keyworlds){
+        for(auto& j: i.keyworlds){
             if(j == keyword){
                 i.enabledKey = index;
                 break;

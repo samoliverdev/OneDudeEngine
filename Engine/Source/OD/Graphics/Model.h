@@ -29,7 +29,7 @@ public:
 
     void OnGui() override;
 
-    inline void SetPath(const std::string& inPath){ path = inPath; }
+    void SetPath(const std::string& inPath);
 
     bool LoadFromFile(const std::string& path) override;
     std::vector<std::string> GetFileAssociations() override;

@@ -127,8 +127,8 @@ public:
     static void SetGlobalTexture(const char* name, Framebuffer* tex, int attachment);
     static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
 
-    void DisableKeyword(std::string keyword);
-    void EnableKeyword(std::string keyword);
+    void DisableKeyword(const std::string& keyword);
+    void EnableKeyword(const std::string& keyword);
 
     void CleanData();
     //void UpdateDatas();

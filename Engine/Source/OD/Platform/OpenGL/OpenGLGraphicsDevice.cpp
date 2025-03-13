@@ -1916,7 +1916,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
 
     Texture2DDestroy(tex);
 
-    tex.path = std::string(path);
+    tex.path = path;// std::string(path);
     tex.settings = settings;
     LoadSettings(tex.path.c_str(), tex.settings);
     tex.glData.wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;

@@ -14,7 +14,7 @@ endif()
     #add_compile_options(/fsanitize=address /Zi)
 #endif()
 
-option(ENGINE_SHARED_LIBRARY "" Off)
+option(ENGINE_SHARED_LIBRARY "" On)
 option(BUILD_SANDBOX "BUILD_SANDBOX" On)
 option(BUILD_EDITOR "BUILD_EDITOR" On)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)
@@ -256,6 +256,7 @@ if(EMSCRIPTEN)
     target_compile_definitions(Engine PUBLIC -DEMSCRIPTEN=1)
     set_target_properties(Engine PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1")
 endif()
+set_target_properties(Engine PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 #if(Clang)
 #    target_compile_options(Engine PRIVATE -fsanitize=address)
 #    target_link_options(Engine PRIVATE -fsanitize=address)
@@ -282,6 +283,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
 )
 endif()
+set_target_properties(Editor PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #----------------Sandbox------------------
 
@@ -309,6 +311,7 @@ if(EMSCRIPTEN)
     #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf@./fa-solid-900.ttf")
 endif()
 #set_property(TARGET Sandbox PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set_target_properties(Sandbox PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 endif()
 
@@ -326,4 +329,5 @@ target_include_directories(DynamicModule PUBLIC Engine/Source/)
 #target_include_directories(dynamic_module PUBLIC game/src/)
 target_link_libraries(DynamicModule Engine)
 #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+set_target_properties(DynamicModule PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()

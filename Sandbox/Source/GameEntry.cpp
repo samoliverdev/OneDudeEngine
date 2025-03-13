@@ -1,5 +1,4 @@
 #include <OD/Entry.h>
-
 #include "Samples/BaseMesh.h"
 #include "Samples/LoadModel.h"
 #include "Samples/Light.h"
@@ -18,7 +17,6 @@
 #include "Samples/Sponza.h"
 #include "Samples/Terrain.h"
 #include "Samples/ProceduralTerrain2.h"
-
 #include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -30,11 +28,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    /*int* a = new int(55);
-    *a = 20;
-    a = nullptr;*/
-
-    int i = 0;
+    int i = 23;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMeshSample();
