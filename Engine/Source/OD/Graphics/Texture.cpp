@@ -149,10 +149,6 @@ Texture2D::~Texture2D(){
 }
 
 bool Texture2D::IsValid(){
-    if(graphicsDevice == nullptr){
-        int a = 20;
-    }
-
     Assert(graphicsDevice != nullptr);
     return graphicsDevice->Texture2DIsValid(*this);
 }
@@ -247,6 +243,7 @@ void Texture2D::Save(){
 
 void Texture2D::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Texture2DSetting>(
+        sol::base_classes, sol::bases<Asset>(),
         "Texture2DSetting",
         sol::call_constructor,
         sol::constructors<void()>(),

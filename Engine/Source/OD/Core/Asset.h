@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
+#include <entt/entt.hpp>
 
 namespace OD{
 
@@ -23,6 +24,7 @@ protected:
 class OD_API AssetTypesDB{
 public:
     struct AssetFuncs{
+        std::function<Ref<Asset>()> Create;
         std::function<Ref<Asset>(const std::string&)> CreateFromFile;
     };
 
@@ -32,11 +34,16 @@ public:
 
         AssetFuncs funcs;
 
+        funcs.Create = [](){
+            return CreateRef<T>();
+        };
+
         funcs.CreateFromFile = [](const char* path){
             return T::CreateFromFile(path);
         };
         
         assetFuncs[fileExtension] = funcs;
+        assetFuncsTypes[GetType<T>()] = funcs;
     }
 
     template<typename T>
@@ -45,7 +52,12 @@ public:
 
         AssetFuncs funcs;
         funcs.CreateFromFile = createFromFile;
+        funcs.Create = [](){
+            return CreateRef<T>();
+        };
+
         assetFuncs[fileExtension] = funcs;
+        assetFuncsTypes[GetType<T>()] = funcs;
     }
 
     bool HasAssetByExtension(std::string fileExtension);
@@ -53,6 +65,7 @@ public:
     static AssetTypesDB& Get();
 
     std::unordered_map<std::string, AssetFuncs> assetFuncs;
+    std::unordered_map<Type, AssetFuncs> assetFuncsTypes;
 
 private:
     AssetTypesDB(){}
@@ -66,7 +79,11 @@ public:
     static AssetManager& Get();
 
 private:
-    std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
+    //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
+    //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
+    std::unordered_map<Type, std::unordered_map<std::string, Ref<Asset>>> data;
+
+    std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
 };
 
 template<class T>
@@ -151,26 +168,40 @@ template<class T, typename ... Args>
 Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
 
-    auto& db = data[std::type_index(typeid(T))];
+    //auto& db = GetDB(std::type_index(typeid(T))); 
+    //auto& db = data[std::type_index(typeid(T))];
+    //auto& db = data[entt::type_hash<T>::value()];
+    //auto& db = GetDB(entt::type_hash<T>::value()); 
+    auto& db = GetDB(GetType<T>()); 
+
     //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
     //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
     if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
 
     LogInfo("LoadAsset: %s", path.c_str());
-    Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
+
+    Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));
+    Ref<Asset> asset = AssetTypesDB::Get().assetFuncsTypes[GetType<T>()].Create();
+
+    //Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
+    
     asset->LoadFromFile(path);
     db[path] = asset;
     
-    //return reinterpret_cast<const Ref<T>&>(d);
-    //return std::static_pointer_cast<T>(d);
-    return asset;
+    //return reinterpret_cast<const Ref<T>&>(asset);
+    return std::static_pointer_cast<T>(asset);
+    //return asset;
 }
 
 template<class T, typename ... Args>
 void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
     static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
 
-    auto& db = data[std::type_index(typeid(T))];
+    //auto& db = data[std::type_index(typeid(T))];
+    //auto& db = data[entt::type_hash<T>::value()];
+    //auto& db = GetDB(entt::type_hash<T>::value()); 
+    auto& db = GetDB(GetType<T>()); 
+
     LogInfo("AddAsset: %s", path.c_str());
     db[path] = asset;
 }

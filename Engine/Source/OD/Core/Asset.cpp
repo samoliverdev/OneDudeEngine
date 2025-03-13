@@ -32,8 +32,22 @@ AssetTypesDB& AssetTypesDB::Get(){
     return global;
 }
 
+std::unordered_map<std::string, Ref<Asset>>& AssetManager::GetDB(Type id){
+    return data[id];
+}
+
 void AssetManager::UnloadAll(){
-    data.clear();
+    //for(auto& [type, db]: data){
+        /*for(auto& [path, asset]: db){
+            LogWarning("Unload Asset: %s %d", asset->Path().c_str(), asset.use_count());
+            Assert(asset.use_count() == 1);
+            asset.reset();  // Explicitly release shared_ptr
+        }*/
+    //    db.clear();  // Clear inner map
+    //}
+    //data.clear();  // Then clear the outer map
+    
+    data.clear(); //Fixme: Crach in Debug Mode and using Engine.dll
 }
 
 AssetManager& AssetManager::Get(){

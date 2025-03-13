@@ -66,12 +66,12 @@ struct GLFramebufferData{
 
 struct GLTexture2DData{
     unsigned int id = 0;
-    unsigned int internalFormat;
-    unsigned int imageFormat;
-    unsigned int wrapS;
-    unsigned int wrapT;
-    unsigned int filterMin;
-    unsigned int filterMax;
+    unsigned int internalFormat = 0;
+    unsigned int imageFormat = 0;
+    unsigned int wrapS = 0;
+    unsigned int wrapT = 0;
+    unsigned int filterMin = 0;
+    unsigned int filterMax = 0;
 };
 
 struct GLTexture2DArrayData{
@@ -100,14 +100,14 @@ struct UniformBufferDef{
         size_t size;
     };
     std::string name;
-    size_t size;
+    size_t size = 0;
     std::unordered_map<std::string, Member> members;
 };
 
 struct GLMaterialData{
     UniformBufferDef mainBufferDef;
     void* mainUniformData = nullptr;
-    unsigned int mainBuffer;
+    unsigned int mainBuffer = 0;
 };
 
 #define MeshDataGL GLMeshData glData;

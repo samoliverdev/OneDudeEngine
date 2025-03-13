@@ -103,10 +103,10 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
 private:
-    unsigned int width;
-    unsigned int height;
-    bool mipmap;
-    Texture2DSetting settings;
+    unsigned int width = 0;
+    unsigned int height = 0;
+    bool mipmap = false;
+    Texture2DSetting settings{};
     bool isComplete = false;
     Texture2DDataGL;
     Texture2DDataWG;
