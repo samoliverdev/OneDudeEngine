@@ -1,4 +1,3 @@
-#ifdef USE_ASSIMP
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Graphics/Model.h"
@@ -7,9 +6,9 @@
 
 namespace OD{
 
-class SubShader;
+class Shader;
 
-bool OD_API AssimpLoadModel(
+bool OD_API ObjLoadModel(
     Model& model, 
     std::string const &path, 
     Ref<Shader> customShader, 
@@ -17,4 +16,3 @@ bool OD_API AssimpLoadModel(
 );
 
 }
-#endif

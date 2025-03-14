@@ -361,9 +361,9 @@ void AnimatorSample::OnInit(){
         }
     }
     
-    scene->Start();
+    //scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
-    //Application::AddModule<Editor>();
+    Application::AddModule<Editor>();
 
     LogInfo("AnimationCount: %zd", charModel->animationClips.size());
 }

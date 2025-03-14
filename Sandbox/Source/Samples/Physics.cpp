@@ -146,7 +146,7 @@ void PhysicsSample::OnInit(){
     ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
     floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
-    floorRenderer.GetMaterialsOverride()[1] = LoadFloorMaterial();
+    //floorRenderer.GetMaterialsOverride()[1] = LoadFloorMaterial();
     RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
     floorEntityP.Mass(0);
@@ -158,7 +158,7 @@ void PhysicsSample::OnInit(){
     ModelRendererComponent& character2Renderer = scene->AddComponent<ModelRendererComponent>(character2Entity);
     character2Renderer.SetModel(cubeModel);
     character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
-    character2Renderer.GetMaterialsOverride()[1] = LoadRockMaterial();
+    //character2Renderer.GetMaterialsOverride()[1] = LoadRockMaterial();
     RigidbodyComponent& physicObject = scene->AddComponent<RigidbodyComponent>(character2Entity);
     physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
     physicObject.Mass(1);

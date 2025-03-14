@@ -14,9 +14,11 @@
 #include "CoreModulesStartup.h"
 
 /*void* operator new(size_t size){
+    LogInfo("Alloc: %zd", size);
     return malloc(size);
 }
 void operator delete(void* data){
+    LogInfo("Dealloc");
     free(data);
 }*/
 

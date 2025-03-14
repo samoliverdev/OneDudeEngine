@@ -14,12 +14,13 @@ endif()
     #add_compile_options(/fsanitize=address /Zi)
 #endif()
 
-option(ENGINE_SHARED_LIBRARY "" On)
+option(ENGINE_SHARED_LIBRARY "" Off)
+option(USE_ASSIMP Off)
 option(BUILD_SANDBOX "BUILD_SANDBOX" On)
 option(BUILD_EDITOR "BUILD_EDITOR" On)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)
-option(SupportOpenGL "SupportOpenGL" On)
-option(SupportWebGPU "SupportWebGPU" Off)
+option(SUPPORT_OPENGL "SUPPORT_OPENGL" On)
+option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" Off)
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
@@ -32,7 +33,7 @@ if(EMSCRIPTEN)
     set(ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
     set(BUILD_EDITOR OFF CACHE BOOL "" FORCE)
     set(BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
-    set(SupportWebGPU OFF CACHE BOOL "" FORCE)
+    set(SUPPORT_WEBGPU OFF CACHE BOOL "" FORCE)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
 elseif(WIN32)
     #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -103,7 +104,9 @@ endif()
 
 add_subdirectory(Engine/ThirdParty/lua-5.1.5)
 add_subdirectory(Engine/ThirdParty/sol2) 
-add_subdirectory(Engine/ThirdParty/assimp)
+if(USE_ASSIMP)
+    add_subdirectory(Engine/ThirdParty/assimp)
+endif()
 add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
@@ -117,7 +120,7 @@ add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
 
 #add_subdirectory(Engine/ThirdParty/tinygltf)
 
-if(SupportWebGPU) 
+if(SUPPORT_WEBGPU) 
     #FetchContent_Declare(
     #webgpu
     #GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
@@ -169,6 +172,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     Engine/Source/*.cpp
 )
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinygltf/tiny_gltf.cc)
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinyobjloader/tiny_obj_loader.cc)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui.cpp
     Engine/ThirdParty/imgui/imgui_draw.cpp
@@ -177,12 +181,12 @@ set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui_widgets.cpp
     Engine/ThirdParty/imgui/backends/imgui_impl_glfw.cpp
 )
-if(SupportOpenGL)
+if(SUPPORT_OPENGL)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/backends/imgui_impl_opengl3.cpp
 )
 endif()
-if(SupportWebGPU)
+if(SUPPORT_WEBGPU)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/backends/imgui_impl_wgpu.cpp
 )
@@ -202,13 +206,14 @@ endif()
 #target_precompile_headers(Engine PRIVATE Engine/Source/OD/pch.h) #INTERFACE
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
-if(SupportWebGPU)
+if(SUPPORT_WEBGPU)
     target_compile_definitions(Engine PUBLIC WEBGPU_SUPPORT)
 endif()
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
     Engine/ThirdParty/glad46core/
     Engine/ThirdParty/tinygltf/
+    #Engine/ThirdParty/tinyobjloader/
     Engine/ThirdParty/lua-5.1.5/src/
     Engine/ThirdParty/sol2/include/
     Engine/ThirdParty/cgltf/
@@ -237,7 +242,7 @@ target_link_libraries(Engine PUBLIC
     LUA
     sol2
     glfw 
-    assimp
+    #assimp
     soloud
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
@@ -247,8 +252,12 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+if(USE_ASSIMP)
+    target_link_libraries(Engine PUBLIC assimp)
+    target_compile_definitions(Editor PUBLIC USE_ASSIMP)
+endif()
 #target_link_libraries(Engine PRIVATE tinygltf) 
-if(SupportWebGPU)
+if(SUPPORT_WEBGPU)
     target_link_libraries(Engine PUBLIC webgpu glfw3webgpu)
     target_copy_webgpu_binaries(Engine)
 endif()

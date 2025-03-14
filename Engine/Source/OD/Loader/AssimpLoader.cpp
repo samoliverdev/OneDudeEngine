@@ -1,3 +1,4 @@
+#ifdef USE_ASSIMP
 #include "AssimpLoader.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/SubShader.h"
@@ -636,3 +637,4 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
 }
 
 }
+#endif

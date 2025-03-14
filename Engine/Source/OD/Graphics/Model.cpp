@@ -1,6 +1,7 @@
 #include "Model.h"
 #include "OD/Loader/AssimpLoader.h"
 #include "OD/Loader/GltfLoader2.h"
+#include "OD/Loader/ObjLoader.h"
 #include "OD/Core/ImGui.h"
 #include <string>
 
@@ -50,9 +51,16 @@ bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> cu
 
 	std::string fileType = getExtension(path);
 
+	if(fileType == "obj") return ObjLoadModel(model, path, customShader);
 	if(fileType == "gltf") return GltfLoadModel(model, path, customShader);
 	if(fileType == "glb") return GltfLoadModel(model, path, customShader);
-    return AssimpLoadModel(model, path, customShader);
+    
+	#ifdef USE_ASSIMP
+	return AssimpLoadModel(model, path, customShader);
+	#endif
+
+	LogError("File Type Not Supported: %s", fileType.c_str());
+	return false;
 }
 
 AABB Model::GenerateAABB(Model& model){
