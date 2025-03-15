@@ -5,7 +5,7 @@ namespace OD {
 
 class OD_API Module {
 public:
-    virtual ~Module(){}
+    virtual ~Module() = default;
 
     virtual void OnInit() = 0;
     virtual void OnExit() = 0;

@@ -34,6 +34,18 @@ private:
     Ref<sol::state> lua;
 };
 
+class OD_API LuaModule: public Module{
+public:
+    void OnInit() override;
+    void OnExit() override;
+    void OnUpdate(float deltaTime) override;
+    void OnRender(float deltaTime) override;
+    void OnGUI() override;
+    void OnResize(int width, int height) override;
+private: 
+    Ref<sol::state> lua;
+};
+
 void LuaScriptModuleInit();
 
 }

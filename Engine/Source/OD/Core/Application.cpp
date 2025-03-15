@@ -21,6 +21,7 @@ std::vector<std::string> args;
 std::vector<Module*> modules;
 std::vector<Module*> modulesToAdd;
 std::vector<Module*> modulesToRemove;
+bool appHasInited = false;
 bool inUpdate = false;
 
 Action<void()> onFrameEnd;
@@ -77,7 +78,12 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     mainModule = inMainModule;
     AddModule(mainModule);
 
+    for(auto i: modules){
+        i->OnInit();
+    }
+
     running = true;
+    appHasInited = true;
     return true;
 }
 
@@ -296,12 +302,11 @@ void Application::RemoveModule(Module* module){
 }
 
 void Application::AddModule(Module* module){
-    if(inUpdate == false){
-        _AddModule(module);
+    if(inUpdate == true || appHasInited == false){
+        modulesToAdd.push_back(module);
         return;
     }
-
-    modulesToAdd.push_back(module);
+    _AddModule(module); 
 }
 
 void Application::_RemoveModule(Module* module){

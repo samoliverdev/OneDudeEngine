@@ -2,6 +2,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/RenderPipeline/LightComponent.h"
+#include "OD/Core/Application.h"
 #include <stdlib.h>
 
 namespace OD{
@@ -9,6 +10,7 @@ namespace OD{
 void LuaScriptModuleInit(){
     SceneManager::Get().RegisterCoreComponent<LuaScriptComponent>("LuaScriptComponent");
     SceneManager::Get().RegisterSystem<LuaScriptSystem>("LuaScriptSystem");
+    Application::AddModule(new LuaModule());
 }
 
 void LuaScriptComponent::OnGui(Entity& e, Scene& scene){
@@ -73,5 +75,33 @@ void LuaScriptSystem::Update(){
         }
     }   
 }
+
+void LuaModule::OnInit(){
+    lua = CreateRef<sol::state>();
+    lua->open_libraries(sol::lib::base, sol::lib::math, sol::lib::os, sol::lib::table, sol::lib::io, sol::lib::string);
+    for(auto i: LuaBindsDB::Get().bindFuncs){
+        i(*lua);
+    } 
+
+    auto FileExists = [](const std::string& name){
+        std::ifstream f(name);
+        return f.good();
+    };
+
+    if(FileExists("Main.lua")){
+        lua->script_file("Main.lua");
+        return;
+    }
+    if(FileExists("main.lua")){
+        lua->script_file("main.lua");
+        return;
+    }
+}
+
+void LuaModule::OnExit(){}
+void LuaModule::OnUpdate(float deltaTime){}
+void LuaModule::OnRender(float deltaTime){}
+void LuaModule::OnGUI(){}
+void LuaModule::OnResize(int width, int height){}
 
 }

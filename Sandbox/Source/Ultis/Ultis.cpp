@@ -27,11 +27,7 @@ bool FileExist(const std::string& path){
    return false;
 }
 
-Ref<Material> _mat = nullptr;
-
 Ref<Material> LoadFloorMaterial(){
-   if(_mat != nullptr) return _mat;
-
    //std::string path = "res/Game/Textures/floor.material";
 
    //if(FileExist(path) == false){
@@ -41,7 +37,6 @@ Ref<Material> LoadFloorMaterial(){
       m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
-      _mat = m;
       return m;
 
       //m->Save(path);

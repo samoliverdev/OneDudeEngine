@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
 
+option(ENGINE_SHARED_LIBRARY "" On)
+option(USE_ASSIMP Off)
+option(BUILD_SANDBOX "BUILD_SANDBOX" On)
+option(BUILD_EDITOR "BUILD_EDITOR" Off)
+option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" Off)
+option(SUPPORT_OPENGL "SUPPORT_OPENGL" On)
+option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" Off)
+
+#----------------s------------------
+
 if(MSVC)
     message(STATUS "----------Using MSVC compiler----------")
 endif()
@@ -13,14 +23,6 @@ endif()
     
     #add_compile_options(/fsanitize=address /Zi)
 #endif()
-
-option(ENGINE_SHARED_LIBRARY "" Off)
-option(USE_ASSIMP Off)
-option(BUILD_SANDBOX "BUILD_SANDBOX" On)
-option(BUILD_EDITOR "BUILD_EDITOR" On)
-option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)
-option(SUPPORT_OPENGL "SUPPORT_OPENGL" On)
-option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" Off)
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
@@ -104,6 +106,7 @@ endif()
 
 add_subdirectory(Engine/ThirdParty/lua-5.1.5)
 add_subdirectory(Engine/ThirdParty/sol2) 
+
 if(USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
@@ -209,6 +212,7 @@ target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
 if(SUPPORT_WEBGPU)
     target_compile_definitions(Engine PUBLIC WEBGPU_SUPPORT)
 endif()
+
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
     Engine/ThirdParty/glad46core/
@@ -238,6 +242,7 @@ target_include_directories(Engine PUBLIC
     #Engine/ThirdParty/EASTL/include/
     Engine/Source/
 )
+
 target_link_libraries(Engine PUBLIC 
     LUA
     sol2
@@ -291,8 +296,9 @@ add_custom_command(
     TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
 )
-endif()
 set_target_properties(Editor PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 
 #----------------Sandbox------------------
 
