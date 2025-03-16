@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 option(ENGINE_SHARED_LIBRARY "" On)
 option(USE_ASSIMP Off)
 option(BUILD_SANDBOX "BUILD_SANDBOX" On)
-option(BUILD_EDITOR "BUILD_EDITOR" Off)
-option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" Off)
+option(BUILD_EDITOR "BUILD_EDITOR" On)
+option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)
 option(SUPPORT_OPENGL "SUPPORT_OPENGL" On)
 option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" Off)
 
@@ -114,8 +114,11 @@ add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
-add_subdirectory(Engine/ThirdParty/glslang)
-add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
+
+if(SUPPORT_WEBGPU)
+    add_subdirectory(Engine/ThirdParty/glslang)
+    add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
+endif()
 #add_subdirectory(Engine/ThirdParty/imgui)
 #add_subdirectory(Engine/ThirdParty/SPIRV-Cross)
 #add_subdirectory(Engine/ThirdParty/EASTL)
@@ -252,11 +255,17 @@ target_link_libraries(Engine PUBLIC
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
-    glslang glslang-default-resource-limits
-    spirv-reflect-static
+    #glslang glslang-default-resource-limits
+    #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+if(SUPPORT_WEBGPU)
+target_link_libraries(Engine PUBLIC 
+    glslang glslang-default-resource-limits
+    spirv-reflect-static
+)
+endif()
 if(USE_ASSIMP)
     target_link_libraries(Engine PUBLIC assimp)
     target_compile_definitions(Editor PUBLIC USE_ASSIMP)
@@ -279,70 +288,64 @@ set_target_properties(Engine PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<C
 
 #----------------Editor------------------
 if(BUILD_EDITOR)
-project(Editor)
+    project(Editor)
 
-file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
-add_executable(Editor ${EDITOR_SOURCE_FILES})
-target_include_directories(Editor PUBLIC Engine/Source/)
-target_include_directories(Editor PUBLIC Editor/Source/)
-target_link_libraries(Editor Engine)
-target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Editor/")
-target_compile_definitions(Editor PUBLIC ENGINE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
-add_custom_command(
-    TARGET Editor POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content
-)
-add_custom_command(
-    TARGET Editor POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
-)
-set_target_properties(Editor PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
+    add_executable(Editor ${EDITOR_SOURCE_FILES})
+    target_include_directories(Editor PUBLIC Engine/Source/)
+    target_include_directories(Editor PUBLIC Editor/Source/)
+    target_link_libraries(Editor Engine)
+    target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Editor/")
+    target_compile_definitions(Editor PUBLIC ENGINE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
+    add_custom_command(
+        TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content
+    )
+    add_custom_command(
+        TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content/ProjectTemplate/Content
+    )
+    set_target_properties(Editor PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
-
 
 #----------------Sandbox------------------
-
-
 if(BUILD_SANDBOX)
-
-project(Sandbox)
-file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
-add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
-target_include_directories(Sandbox PUBLIC Engine/Source/)
-target_include_directories(Sandbox PUBLIC Sandbox/Source/)
-target_link_libraries(Sandbox Engine)
-target_compile_definitions(Sandbox PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
-add_custom_command(
-    TARGET Sandbox POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
-)
-if(EMSCRIPTEN)
-    set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
-    target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
-    set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s -s EXPORTED_FUNCTIONS=_malloc,_free,setValue,_main -s EXPORTED_RUNTIME_METHODS=cwrap,ccall -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
-    #set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl)
-    set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf)
-    #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl@./Font.glsl")
-    #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf@./fa-solid-900.ttf")
-endif()
-#set_property(TARGET Sandbox PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set_target_properties(Sandbox PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
+    project(Sandbox)
+    file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
+    add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
+    target_include_directories(Sandbox PUBLIC Engine/Source/)
+    target_include_directories(Sandbox PUBLIC Sandbox/Source/)
+    target_link_libraries(Sandbox Engine)
+    target_compile_definitions(Sandbox PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+    add_custom_command(
+        TARGET Sandbox POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
+    )
+    if(EMSCRIPTEN)
+        set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
+        target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
+        set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s -s EXPORTED_FUNCTIONS=_malloc,_free,setValue,_main -s EXPORTED_RUNTIME_METHODS=cwrap,ccall -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
+        #set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl)
+        set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf)
+        #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl@./Font.glsl")
+        #set_target_properties(Sandbox PROPERTIES LINK_FLAGS "--preload-file ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf@./fa-solid-900.ttf")
+    endif()
+    #set_property(TARGET Sandbox PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    set_target_properties(Sandbox PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 #----------------Dynamic module------------------
-
 if(BUILD_DYNAMIC_MODULE)
-project(DynamicModule)
-file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/Source/*.cpp)
-add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
-#target_include_directories(dynamic_module PUBLIC engine/vendor/)
-#target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
-#target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)
-#target_include_directories(DynamicModule PUBLIC Engine/vendor/taskflow/)
-target_include_directories(DynamicModule PUBLIC Engine/Source/)
-#target_include_directories(dynamic_module PUBLIC game/src/)
-target_link_libraries(DynamicModule Engine)
-#target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(DynamicModule PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    project(DynamicModule)
+    file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/Source/*.cpp)
+    add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
+    #target_include_directories(dynamic_module PUBLIC engine/vendor/)
+    #target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
+    #target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)
+    #target_include_directories(DynamicModule PUBLIC Engine/vendor/taskflow/)
+    target_include_directories(DynamicModule PUBLIC Engine/Source/)
+    #target_include_directories(dynamic_module PUBLIC game/src/)
+    target_link_libraries(DynamicModule Engine)
+    #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+    set_target_properties(DynamicModule PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()

@@ -6,6 +6,10 @@
 #include <OD/Serialization/SerializationFull.h>
 #include <OD/Editor/Editor.h>
 #include <OD/Scene/SceneManager.h>
+#include <OD/Graphics/Graphics.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
 #include <OD/Platform/Platform.h>
 #include <OD/Core/Input.h>
 #include <OD/Core/Action.h>
@@ -224,7 +228,10 @@ class Launcher: public OD::Module{
     }
 
     void OnUpdate(float deltaTime) override {}
-    void OnRender(float deltaTime) override {}
+    void OnRender(float deltaTime) override {
+        OD::Graphics::BeginRenderToScreen();
+        OD::Graphics::EndRenderToScreen();
+    }
 
     void DrawNewProjectTab(){
         ImGui::InputText("Project Name", projectName, 128);

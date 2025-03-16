@@ -1,3 +1,4 @@
+#if defined(WEBGPU_SUPPORT)
 #pragma once
 #include "OD/Defines.h"
 #include <unordered_map>
@@ -21,3 +22,4 @@ struct MaterialMainSetDef{
 bool SpirvReflectMainSet(void* data, size_t size, MaterialMainSetDef& out);
 
 }
+#endif

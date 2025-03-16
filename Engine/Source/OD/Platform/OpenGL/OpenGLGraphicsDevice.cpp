@@ -2245,6 +2245,8 @@ bool OpenGLGraphicsDevice::CubemapIsValid(Cubemap& tex){
     return tex.glData.id != 0;
 }
 
+#if UseUniformBuffer
+
 // Structure to hold uniform details
 /*struct UniformInfo {
     std::string name;
@@ -2357,6 +2359,8 @@ bool getUniformInfo(GLuint program, const char* blockName, UniformBufferDef& out
 
     return true;
 }
+
+#endif
 
 bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
     SubShader& shader,

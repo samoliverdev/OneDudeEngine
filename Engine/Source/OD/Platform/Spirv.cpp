@@ -1,3 +1,4 @@
+#if defined(WEBGPU_SUPPORT)
 #include "Spirv.h"
 #include <spirv_reflect.h>
 #include "OD/Base.h"
@@ -94,3 +95,4 @@ bool SpirvReflectMainSet(void* data, size_t size, MaterialMainSetDef& out){
 }
 
 }
+#endif
