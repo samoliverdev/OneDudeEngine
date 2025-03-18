@@ -35,6 +35,8 @@ void HeadlessGraphicsDevice::DrawLine(Vector3 start, Vector3 end, Vector3 color,
 void HeadlessGraphicsDevice::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth){}
 void HeadlessGraphicsDevice::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){}
 
+void HeadlessGraphicsDevice::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){}
+
 void HeadlessGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass){}
 void HeadlessGraphicsDevice::DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass){}
 void HeadlessGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){}

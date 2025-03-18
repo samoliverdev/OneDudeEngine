@@ -246,6 +246,8 @@ void Editor::StopScene(){
     renderPipeline->SetOverrideFrameBuffer(nullptr);
     delete SceneManager::Get().GetActiveScene();
     SceneManager::Get().SetActiveScene(lastScene);
+
+    Platform::SetCursorState(CursorState::Normal);
 }
 
 void Editor::NewScene(){

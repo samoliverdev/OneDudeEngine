@@ -130,6 +130,8 @@ private:
     bool neverSleep = false;
     Rigidbody* data = nullptr; 
 
+    Vector3 angularFactor = {1, 1, 1};
+
     void UpdateSettings();
 };
 

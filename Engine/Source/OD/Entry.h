@@ -1,7 +1,6 @@
 #ifdef _WIN32
-#define _CRTDBG_MAP_ALLOC
-//#define _CRTDBG_MAP_ALLOC_NEW
-#include <crtdbg.h>
+    //#define _CRTDBG_MAP_ALLOC //#define _CRTDBG_MAP_ALLOC_NEW
+    //#include <crtdbg.h>
 #endif
 
 #include "OD/Core/Module.h"
@@ -29,14 +28,14 @@ int main(int argc, char *argv[]){
     int* a = new int();
 
     #ifdef _WIN32
-    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+        //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
     OD::CoreModulesStartup();
 
-    /*for(int i = 0; i < argc; i++){
+    for(int i = 0; i < argc; i++){
         OD::Application::GetArgs().push_back(std::string(argv[i]));
-    }*/
+    }
 
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
         printf("Application failed to create!.\n");
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]){
     OD::Application::Run();
 
     #ifdef _WIN32 
-    _CrtDumpMemoryLeaks();
+        //_CrtDumpMemoryLeaks();
     #endif
 
     return 0;

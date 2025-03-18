@@ -68,6 +68,8 @@ public:
     static void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth);
     static void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth);
 
+    static void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix);
+
     static void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass = 0);
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);

@@ -449,6 +449,7 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 }
 
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
+    angularFactor = v;
     if(data == nullptr) return;
     data->body->setAngularFactor(ToBullet(v));
 }
@@ -652,7 +653,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 Assert(scene->HasComponent<InfoComponent>(e1));
                 Assert(scene->HasComponent<InfoComponent>(e2));
 
-                LogInfo("OnCollision %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
+                //LogInfo("OnCollision %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
                 //LogInfo("OnTriggerCallbacks: %zd", onTriggerCallbacks.size());
 
                 for(auto i: onCollisionEnterCallbacks){
@@ -746,6 +747,8 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     //if(world == nullptr) return false;
     Assert(physicsWorld->world != nullptr);
+
+    dir = pos + dir;
 
     btVector3 _pos = btVector3(pos.x, pos.y, pos.z);
     btVector3 _dir = btVector3(dir.x, dir.y, dir.z);
@@ -842,6 +845,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     //c.SetType(c.GetType());
     c.UpdateSettings();
     c.NeverSleep(c.NeverSleep());
+    c.SetAngularFactor(c.angularFactor);
     /*data->body->setCcdMotionThreshold(1e-7);
     data->body->setCcdSweptSphereRadius(0.25);*/
     data->body->setCollisionFlags(data->body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);

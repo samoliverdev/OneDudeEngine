@@ -275,6 +275,10 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     graphicsDevice->DrawWireCube(modelMatrix, color, lineWidth); 
 }
 
+void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){
+    graphicsDevice->DrawFullScreenQuad(mat, modelMatrix); 
+}
+
 void Graphics::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){ 
     graphicsDevice->DrawQuadPostProcessing(src, dst, mat, pass); 
 }

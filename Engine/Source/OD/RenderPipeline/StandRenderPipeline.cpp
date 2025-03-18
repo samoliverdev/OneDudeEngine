@@ -374,10 +374,10 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    //cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     brdfLUT = nullptr;// Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
-    //gamaCorrectionPP = new GamaCorrectionPP();
+    gamaCorrectionPP = new GamaCorrectionPP();
 }
 
 CameraRenderer::~CameraRenderer(){
@@ -503,7 +503,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->SetupCameraProperties(camera);
     context->BeginDrawToScreen();
 
-    /*Ref<Material> targetSkyMaterial = nullptr;
+    Ref<Material> targetSkyMaterial = nullptr;
     if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
         cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
         targetSkyMaterial = cubemapSkyMaterial;
@@ -511,7 +511,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
         targetSkyMaterial = environmentSettings.skyCustomMaterial;
     }
-    context->skyMaterial = targetSkyMaterial;*/
+    context->skyMaterial = targetSkyMaterial;
 
     Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
 
@@ -558,14 +558,15 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawRenderersBuffer(blendDrawTarget, true);
     }
 
-    
     context->RenderSkyboxLater();
+    context->DrawGizmos();    
+
+    //Fixme: No Call to EndFramebuffer here
     
-    //context->DrawGizmos();    
-    /*std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
-    context->DrawGizmos();
-    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();*/
+    //context->DrawGizmos();
+    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
 
     context->EndDrawToScreen();
@@ -754,9 +755,9 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     std::vector<PostFX*> out;
 
     //if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
-    if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
+    //if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     out.push_back(gamaCorrectionPP);
-    if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+    //if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
 
     return out;
 }

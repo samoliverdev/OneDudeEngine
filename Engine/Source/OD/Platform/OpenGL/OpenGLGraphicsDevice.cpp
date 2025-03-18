@@ -1149,6 +1149,10 @@ void OpenGLGraphicsDevice::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int 
     //glCheckError();
 }
 
+void OpenGLGraphicsDevice::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){
+    DrawMesh(*fullScreenQuad, mat, modelMatrix);
+}
+
 void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){
     Assert(false && "Deprecated");
 

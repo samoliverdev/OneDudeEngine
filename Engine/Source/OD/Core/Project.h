@@ -9,7 +9,7 @@ namespace OD{
 
 struct OD_API Project{
     std::string name = "Untitled";
-    std::string startScene;
+    std::string startScene = "";
     std::string assetDirectory = "";
     std::string scriptModulePath = "";
 

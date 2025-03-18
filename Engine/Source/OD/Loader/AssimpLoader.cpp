@@ -156,7 +156,7 @@ void ExtractBoneWeightForVertices(LoadData& skeletonData, Ref<Mesh> _mesh, aiMes
             boneID = AddToBindPose(skeletonData, mesh->mBones[boneIndex]);
         }
 
-        LogInfo("Bone -> Name: %s, Id: %d", boneName.c_str(), boneID);
+        //LogInfo("Bone -> Name: %s, Id: %d", boneName.c_str(), boneID);
 
         assert(boneID != -1);
         auto weights = mesh->mBones[boneIndex]->mWeights;

@@ -44,6 +44,10 @@ std::vector<std::string> Model::GetFileAssociations(){
 }
 
 bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
+	#ifdef USE_ASSIMP
+	return AssimpLoadModel(model, path, customShader);
+	#endif
+
 	auto getExtension = [](const std::string& path) -> std::string {
         size_t dotPos = path.rfind('.');
         return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";

@@ -96,16 +96,16 @@ struct GLShaderData{
 
 struct UniformBufferDef{
     struct Member{
-        size_t pos;
-        size_t size;
+        size_t pos = 0;
+        size_t size = 0;
     };
     std::string name;
     size_t size = 0;
-    std::unordered_map<std::string, Member> members;
+    std::unordered_map<std::string, Member> members{};
 };
 
 struct GLMaterialData{
-    UniformBufferDef mainBufferDef;
+    UniformBufferDef mainBufferDef{};
     void* mainUniformData = nullptr;
     unsigned int mainBuffer = 0;
 };
@@ -117,7 +117,7 @@ struct GLMaterialData{
 #define CubemapDataGL GLCubemapData glData;
 #define SubShaderDataGL GLSubShaderData glData;
 #define ShaderDataGL GLShaderData glData;
-#define MaterialDataGL GLMaterialData glData;
+#define MaterialDataGL GLMaterialData glData{};
 
 int glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 

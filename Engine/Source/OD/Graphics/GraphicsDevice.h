@@ -68,6 +68,8 @@ public:
     virtual void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth) = 0;
     virtual void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth) = 0;
 
+    virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) = 0;
+
     virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer) = 0;
     virtual void EndFramebuffer() = 0;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;

@@ -254,7 +254,12 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
         step = !step;
     }
 
-    Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
+    //Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
+    Graphics::BeginFramebuffer(*forwardOutColor);
+    blitShader->SetTexture("mainTex", finalFramebuffer, 0);
+    Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
+    
+    Graphics::EndFramebuffer();
 }
 
 void RenderContext::SetupCameraProperties(Camera inCam){
@@ -382,7 +387,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
             data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix =  t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
@@ -405,7 +410,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
             data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             data.posePalette = &c.posePalette;
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();

@@ -38,7 +38,7 @@ SET(CMAKE_POLICY_DEFAULT_CMP0012 NEW)
 SET(CMAKE_POLICY_DEFAULT_CMP0074 NEW)
 SET(CMAKE_POLICY_DEFAULT_CMP0092 NEW)
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.10 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.16 )
 
 # Disabled importers: m3d for 5.1
 ADD_DEFINITIONS( -DASSIMP_BUILD_NO_M3D_IMPORTER)
@@ -162,13 +162,13 @@ IF (WIN32)
 
     # The CMAKE_CXX_FLAGS vars can be overriden by some Visual Studio generators, so we use an alternative
     # global method here:
-    if (${USE_STATIC_CRT})
-      add_compile_options(
-          $<$<CONFIG:>:/MT>
-          $<$<CONFIG:Debug>:/MTd>
-          $<$<CONFIG:Release>:/MT>
-      )
-    endif()
+    #if (${USE_STATIC_CRT})
+    #  add_compile_options(
+    #      $<$<CONFIG:>:/MT>
+    #      $<$<CONFIG:Debug>:/MTd>
+    #      $<$<CONFIG:Release>:/MT>
+    #  )
+    #endif()
   ENDIF()
 ENDIF()
 

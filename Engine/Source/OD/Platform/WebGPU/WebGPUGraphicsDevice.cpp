@@ -1136,6 +1136,10 @@ void WebGPUGraphicsDevice::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int 
 
 }
 
+void WebGPUGraphicsDevice::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){
+
+}
+
 void WebGPUGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass){
 
 }
@@ -2039,6 +2043,15 @@ bool WebGPUGraphicsDevice::SubShaderCreateFromBaseSource(
 
     source.insert(0, vertexToInsert);
     if(CompileShader(source,  GLSLANG_STAGE_VERTEX, spivVertex) == false) Assert(false);
+
+    /*WGPUShaderModuleWGSLDescriptor shaderCodeDesc2{};
+    shaderCodeDesc2.chain.next = nullptr;// Set the chained struct's header
+    shaderCodeDesc2.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
+    shaderCodeDesc2.code = source.c_str();
+    WGPUShaderModuleDescriptor shaderDesc2{};
+    shaderDesc2.nextInChain = &shaderCodeDesc2.chain;// Connect the chain
+    wgpuDeviceCreateShaderModule(device, &shaderDesc2);*/
+
     source.erase(0, vertexToInsert.size());
 
     source.insert(0, fragToInsert);

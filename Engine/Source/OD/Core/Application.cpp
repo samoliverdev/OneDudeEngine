@@ -26,7 +26,7 @@ bool inUpdate = false;
 
 Action<void()> onFrameEnd;
 
-Module* mainModule;
+//Module* mainModule;
 bool running = true;
 int width;
 int heigth;
@@ -75,12 +75,12 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     //AssetTypesDB::_Init();
     //CoreModulesStartup();
     
-    mainModule = inMainModule;
-    AddModule(mainModule);
+    //mainModule = inMainModule;
+    AddModule(inMainModule); //mainModule);
 
-    for(auto i: modules){
+    /*for(auto i: modules){
         i->OnInit();
-    }
+    }*/
 
     running = true;
     appHasInited = true;

@@ -23,7 +23,7 @@ void MaterialMap::OnLoad(std::string& texPath){
 }
 
 uint32_t Material::baseId = 0;
-std::unordered_map<std::string, MaterialMap> Material::globalMaps;
+std::unordered_map<std::string, MaterialMap> Material::globalMaps{};
 
 Material::Material(){
     id = baseId;

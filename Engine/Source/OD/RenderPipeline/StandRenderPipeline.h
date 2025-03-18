@@ -43,7 +43,12 @@ public:
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
-        Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
+        //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
+
+        Graphics::BeginFramebuffer(*dst);
+        gamaCorrection->SetTexture("mainTex", src, 0);
+        Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
+        Graphics::EndFramebuffer();
     }
 
 private:

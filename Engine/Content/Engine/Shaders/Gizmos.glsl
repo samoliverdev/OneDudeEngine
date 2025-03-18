@@ -18,8 +18,16 @@
 
 #if defined(FRAGMENT) && defined(MainPass)
     out vec4 outColor;
+
+    #if defined(OpenGL_API)
+    uniform vec3 color;
+    #endif
+
     void main(){
+        #if !defined(OpenGL_API)
         vec3 color = vec3(0, 0, 1);
+        #endif
+        
         float alpha = 1.0;
 
         outColor = vec4(color.xyz, alpha);

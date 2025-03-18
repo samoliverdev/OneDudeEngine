@@ -47,9 +47,10 @@ auto LoadProject = [&](){
 };
 
 void EditorOnExit(){
-    if(currentDll != nullptr) OD::Platform::FreeDynimicLibrary(currentDll);
     if(currentModule != nullptr) delete currentModule;
-    delete editor;
+    if(currentDll != nullptr) OD::Platform::FreeDynimicLibrary(currentDll);
+
+    //delete editor;
 }
 
 inline bool FileExists(const std::string& name){
@@ -102,6 +103,24 @@ class Launcher: public OD::Module{
 
     void LoadSettings(){
         OD::LoadOrCreateArchive("LauncherSettings.json", launcherSettings);
+
+        /*auto exists = [](const std::filesystem::path& p){
+            return std::filesystem::exists(p);
+        };*/
+
+        /*std::vector<std::string> toRemove; 
+        for(auto& i: launcherSettings.projectsPath){
+            if(exists(i) == false) toRemove.push_back(i);
+        }
+        for(auto& i: toRemove){
+            launcherSettings.projectsPath.erase(
+                std::remove(
+                    launcherSettings.projectsPath.begin(), 
+                    launcherSettings.projectsPath.end(), i
+                ), 
+                launcherSettings.projectsPath.end()
+            );
+        }*/
     }
 
     void SaveSettings(){
@@ -228,6 +247,7 @@ class Launcher: public OD::Module{
     }
 
     void OnUpdate(float deltaTime) override {}
+
     void OnRender(float deltaTime) override {
         OD::Graphics::BeginRenderToScreen();
         OD::Graphics::EndRenderToScreen();
@@ -332,6 +352,7 @@ class Launcher: public OD::Module{
     }
     
     void OnResize(int width, int height) override {}
+    bool DeleteOnExit() override { return false; }
 };
 
 OD::ApplicationConfig GetEditorConfig(){
@@ -596,6 +617,7 @@ class Editor: public OD::Module{
         }
     }
     void OnResize(int width, int height) override {}
+    bool DeleteOnExit() override { return false; }
 };
 
 int main(int argc, char *argv[]){
@@ -605,8 +627,8 @@ int main(int argc, char *argv[]){
     action.Add([](){ LogInfo("tesds"); });
     action.Invoke();
 
-    Launcher* launcer = new Launcher();
-    Editor* editor = new Editor();
+    OD::Module* launcer = new Launcher();
+    OD::Module* editor = new Editor();
 
     enginePath = ENGINE_PATH "";
     defaultProjectPath = RESOURCES_PATH "";

@@ -52,6 +52,8 @@ public:
     virtual void DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth) override;
     virtual void DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth) override;
 
+    virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) override;
+
     virtual void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) override;

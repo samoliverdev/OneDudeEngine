@@ -51,6 +51,8 @@ void BaseMeshSample::OnInit(){
     mesh.Submit();
 
     meshMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Sandbox/Shaders/test.glsl"));
+
+    auto lit = OD::Shader::CreateFromFile("Engine/Shaders/Lit.glsl");
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){

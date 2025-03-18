@@ -159,17 +159,17 @@ private:
     bool enableInstancing = false;
     int currentTextureSlot = 0;
 
-    std::set<std::string> enabledKeywords;
+    std::set<std::string> enabledKeywords{};
 
-    Ref<Shader> shader;
-    std::vector<std::string> properties;
-    std::unordered_map<std::string, MaterialMap> maps;
+    Ref<Shader> shader = nullptr;
+    std::vector<std::string> properties{};
+    std::unordered_map<std::string, MaterialMap> maps{};
     static std::unordered_map<std::string, MaterialMap> globalMaps;
 
     int currentPass = 0;
-    Ref<SubShader> currentShader;
+    Ref<SubShader> currentShader = nullptr;
 
-    uint32_t id;
+    uint32_t id = 0;
     static uint32_t baseId;
 
     bool isDirty = true;

@@ -7,9 +7,14 @@
 
 namespace OD{
 
+extern GraphicsDevice* graphicsDevice;
+
 Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
     bool mipmap = true;
     Ref<Cubemap> out = CreateRef<Cubemap>();
+    if(graphicsDevice->CubemapCreateFromFile(*out, right, left, top, bottom, front, back) == false){
+        return nullptr;
+    }
     return out;
 }
 

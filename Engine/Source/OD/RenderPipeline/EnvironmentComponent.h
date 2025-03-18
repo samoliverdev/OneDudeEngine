@@ -65,7 +65,7 @@ struct OD_API EnvironmentSettings{
     //bool hasInited = false;
 
     EnvironmentSettings(){
-        return;
+        //return;
         /*skyCubemap = Cubemap::CreateFromFile(
             "Engine/Textures/Skybox/right.jpg",
             "Engine/Textures/Skybox/left.jpg",
