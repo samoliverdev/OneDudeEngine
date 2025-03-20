@@ -24,7 +24,7 @@ protected:
     float time;
     Pose pose;
     Skeleton skeleton;
-    bool wasSkeletonSet;   
+    bool wasSkeletonSet = false;   
 };
 
 }

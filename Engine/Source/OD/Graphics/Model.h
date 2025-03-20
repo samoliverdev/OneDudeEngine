@@ -53,6 +53,8 @@ public:
     Skeleton skeleton;
     std::vector<Ref<Clip>> animationClips;
 
+    Ref<Clip> FindClipByName(const std::string& name);
+
     void OnGui() override;
 
     void SetPath(const std::string& inPath);

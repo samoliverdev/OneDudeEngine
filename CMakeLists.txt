@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 option(ENGINE_SHARED_LIBRARY "" On)
-option(USE_ASSIMP Off)
+option(USE_ASSIMP On)
 option(BUILD_SANDBOX "BUILD_SANDBOX" On)
 option(BUILD_EDITOR "BUILD_EDITOR" On)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" On)

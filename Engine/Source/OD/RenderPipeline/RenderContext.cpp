@@ -319,15 +319,17 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
         auto& t = meshStaticRenderView.get<TransformComponent>(e);
         auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
-        if(c.GetModel() == nullptr) continue;
 
-        if(s.staticDatas.size() != c.GetModel()->renderTargets.size()){
-            s.staticDatas.resize(c.GetModel()->renderTargets.size());
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        if(s.staticDatas.size() != model->renderTargets.size()){
+            s.staticDatas.resize(model->renderTargets.size());
             for(auto& i: s.staticDatas) i.isDirt = true;
         }
 
         int _i = 0;
-        for(auto i: c.GetModel()->renderTargets){
+        for(auto i: model->renderTargets){
             if(s.staticDatas[_i].isDirt){
                 s.staticDatas[_i].isDirt = false;
                 s.staticDatas[_i].m = t.GlobalModelMatrix();
@@ -336,8 +338,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
             data.targetMatrix =  s.staticDatas[_i].m;
             data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
@@ -380,14 +382,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
-        if(c.GetModel() == nullptr) continue;
 
-        for(auto i: c.GetModel()->renderTargets){
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        for(auto i: model->renderTargets){
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
@@ -403,16 +407,21 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     for(auto e: skinnedView){
         SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
         TransformComponent& t = skinnedView.get<TransformComponent>(e);
-        if(c.GetModel() == nullptr) continue;
 
-        for(auto i: c.GetModel()->renderTargets){
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        for(auto i: model->renderTargets){
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            
+            if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
             data.posePalette = &c.posePalette;
+            
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){

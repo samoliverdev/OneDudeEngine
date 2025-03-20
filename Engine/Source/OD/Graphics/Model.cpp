@@ -7,6 +7,13 @@
 
 namespace OD{
 
+Ref<Clip> Model::FindClipByName(const std::string& name){
+	for(auto& i: animationClips){
+		if(i->GetName() == name) return i;
+	}
+	return nullptr;
+}
+
 void Model::OnGui(){
 	ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_Leaf);
 

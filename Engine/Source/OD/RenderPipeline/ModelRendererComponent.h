@@ -109,6 +109,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     friend class StandRenderPipeline;
     
     Transform skeletonTransform;
+    Pose finalPose;
     std::vector<Matrix4> posePalette;
     std::vector<Entity> skeletonEntities;
 
