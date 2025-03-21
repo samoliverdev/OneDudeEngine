@@ -286,8 +286,11 @@ void RenderContext::ScreenClean(){
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
-    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent>();
+    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>();
     for(auto e: staticMeshView){
+        auto& info = staticMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
         auto& c = staticMeshView.get<MeshRendererComponent>(e);
         auto& t = staticMeshView.get<TransformComponent>(e);
         auto& s = staticMeshView.get<StaticRendererComponent>(e);
@@ -314,12 +317,15 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         onReciveRenderData(data);
     }
 
-    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent>();
+    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>();
     for(auto e: meshStaticRenderView){
+        auto& info = meshStaticRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
         auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
         auto& t = meshStaticRenderView.get<TransformComponent>(e);
         auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
-
+    
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
 
@@ -354,10 +360,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     //////////////////////////////////////////////////////////
 
-    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>(
+    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent>
     );
     for(auto e: meshView){
+        auto& info = meshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
         auto& c = meshView.get<MeshRendererComponent>(e);
         auto& t = meshView.get<TransformComponent>(e);
         if(c.mesh == nullptr) continue;
@@ -376,10 +385,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         onReciveRenderData(data);
     }
 
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>(
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent>
     );
     for(auto e: meshRenderView){
+        auto& info = meshRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
 
@@ -403,8 +415,11 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         }
     }
 
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent>();
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>();
     for(auto e: skinnedView){
+        auto& info = skinnedView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
         SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
         TransformComponent& t = skinnedView.get<TransformComponent>(e);
 
@@ -432,8 +447,11 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         }
     }
 
-    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent>();
+    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>();
     for(auto entity: spriteView){
+        auto& info = spriteView.get<InfoComponent>(entity);
+        if(info.enable == false) continue;
+
         TransformComponent& t = spriteView.get<TransformComponent>(entity);
         SpriteRendererComponent& c = spriteView.get<SpriteRendererComponent>(entity);
         //if(c.mesh == nullptr) continue;

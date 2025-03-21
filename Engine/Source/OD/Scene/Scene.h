@@ -77,6 +77,8 @@ public:
     inline bool HasParent(){ /*return parent != entt::null;*/ return hasParent; }
     inline std::vector<Entity> Children(){ return children; }
 
+    bool FindEntityInChildren(const std::string& name, Entity& out);
+
     template <class Archive>
     void serialize(Archive & ar);
 
@@ -113,6 +115,7 @@ struct OD_API InfoComponent{
 
     std::string name = "Entity";
     std::string tag =  "";
+    bool enable = true;
     bool hidden = false;
     bool notSave = false;
 

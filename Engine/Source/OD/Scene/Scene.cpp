@@ -95,6 +95,25 @@ Vector3 TransformComponent::Scale(){
     return t.LocalScale();
 }
 
+bool TransformComponent::FindEntityInChildren(const std::string& name, Entity& out){
+    for(auto& i: children){
+        TransformComponent& child = registry->get<TransformComponent>(i);
+        InfoComponent& info = registry->get<InfoComponent>(i);
+
+        if(child.children.size() > 0){
+            bool r = child.FindEntityInChildren(name, out);
+            if(r == true) return true;
+        }
+
+        if(info.name == name){
+            out = i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void TransformComponent::CreateLuaBind(sol::state& lua){
     Scene::RegisterMetaComponent<TransformComponent>();
     lua.new_usertype<TransformComponent>(
