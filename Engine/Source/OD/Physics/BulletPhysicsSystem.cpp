@@ -322,11 +322,11 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
     }
 
     if(shape.type == CollisionShape::Type::Capsule){
-        auto _shape = new btCapsuleShape(shape.radius, shape.height);
+        auto _shape = new btCapsuleShape(shape.radius, shape.height - 2 * shape.radius);
         auto _shape2 = new btCompoundShape();
         btTransform t;
         t.setIdentity();
-        t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
+        t.setOrigin(ToBullet(shape.center)); //t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
         _shape2->addChildShape(t, _shape);
         
         data->shape = _shape2;

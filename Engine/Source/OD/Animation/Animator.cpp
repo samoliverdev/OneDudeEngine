@@ -59,8 +59,8 @@ void AnimatorSystem::Update(){
         taskflow.emplace([&](){ 
             Ref<Model> model = skinned.GetModel();
             if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
-            if(anim.controller.WasSkeletonSet() == false) anim.controller.SetSkeleton(model->skeleton);
-            //if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+            //if(anim.controller.WasSkeletonSet() == false) anim.controller.SetSkeleton(model->skeleton);
+            if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
 
 
             anim.controller.Update(Application::DeltaTime());

@@ -21,6 +21,13 @@ std::vector<Matrix4>& Skeleton::GetInvBindPose(){ return invBindPose; }
 std::vector<std::string>& Skeleton::GetJointNames(){ return jointNames; }
 std::string& Skeleton::GetJointName(unsigned int index){ return jointNames[index]; }
 
+int Skeleton::FindJointByName(const std::string& name){
+    for(int i = 0; i < jointNames.size(); i++){
+        if(jointNames[i] == name) return i;
+    }
+    return -1;
+}
+
 void Skeleton::UpdateInverseBindPose(){
     unsigned int size = bindPose.Size();
     invBindPose.resize(size);

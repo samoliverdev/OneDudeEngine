@@ -18,6 +18,7 @@ public:
     std::vector<Matrix4>& GetInvBindPose();
     std::vector<std::string>& GetJointNames();
     std::string& GetJointName(unsigned int index);
+    int FindJointByName(const std::string& name);
 
 protected:
     Pose restPose;

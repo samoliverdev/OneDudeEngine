@@ -49,6 +49,39 @@ public:
     inline Vector3 LocalScale() const { return localScale; }
     inline void LocalScale(Vector3 scale){ localScale = scale; isDirt = true; }
 
+    inline void Rotate(Vector3 eulerAngles, bool relativeToLocal = true) {
+        Quaternion rotation = Quaternion(Mathf::Deg2Rad(eulerAngles));
+        if (relativeToLocal) {
+            localRotation = localRotation * rotation;
+        } else {
+            localRotation = rotation * localRotation;
+        }
+        localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(localRotation));
+        isDirt = true;
+    }
+
+    inline void LookAt(Vector3 target, Vector3 worldUp = Vector3Up) {
+        Vector3 direction = math::normalize(target - localPosition);// Calculate the forward direction
+    
+        if(math::abs(math::dot(direction, worldUp)) > 0.9999f){// Avoid degenerate case when direction is parallel to up vector
+            worldUp = Vector3Right;// If direction is almost exactly up or down, use a different up vector
+        }
+
+        Quaternion newRotation = math::quatLookAt(direction, worldUp);
+        LocalRotation(newRotation);// Apply the rotation
+    }
+
+    inline void LookAtDirection(Vector3 direction, Vector3 worldUp = Vector3Up){
+        direction = math::normalize(direction);
+        
+        if(math::abs(math::dot(direction, worldUp)) > 0.9999f){// Avoid degenerate case when direction is parallel to up vector
+            worldUp = Vector3Right;// If direction is almost exactly up or down, use a different up vector
+        }
+
+        Quaternion newRotation = math::quatLookAt(direction, worldUp);
+        LocalRotation(newRotation);
+    }
+
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
     Vector3 InverseTransformDirection(Vector3 dir); 
     
