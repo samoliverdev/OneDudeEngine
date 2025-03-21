@@ -49,6 +49,25 @@ void Pose::SetLocalTransform(unsigned int index, const Transform& transform){
     joints[index] = transform;
 }
 
+void Pose::SetGlobalTransform(unsigned int index, Transform& globalTransform){
+    if(index >= joints.size()) return;
+
+    if(parents[index] < 0){// If this joint has no parent (root), local = global
+        joints[index] = globalTransform;
+        return;
+    }
+
+    Transform parentGlobal = GetGlobalTransform(parents[index]);// Get parent's global transform
+    
+    // Calculate local transform: local = parentGlobal^-1 * globalTransform
+    // First get the inverse of parent's global transform
+    Matrix4 parentMat = parentGlobal.GetLocalModelMatrix();
+    Matrix4 globalMat = globalTransform.GetLocalModelMatrix();
+    
+    Matrix4 localMat = math::inverse(parentMat) * globalMat;// Calculate local matrix
+    joints[index] = Transform(localMat);// Convert back to Transform
+}
+
 Transform Pose::GetGlobalTransform(unsigned int i){
     Transform result = joints[i];
     for(int p = parents[i]; p >= 0; p = parents[p]){
