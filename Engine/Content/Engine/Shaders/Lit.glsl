@@ -71,13 +71,13 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     Out(7) vec3 outN;
 
     void main(){
+        vec4 localPos = GetLocalPos();
         mat4 targetModelMatrix = GetModelMatrix();
-
         vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
         vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
         vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
-        
-        outPos = pos;
+
+        outPos = localPos.xyz;// pos;
         outNormal = normal;
         outTexCoord = texCoord;
         
@@ -86,11 +86,11 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         outB = B;
         outN = N;
 
-        outWorldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
+        outWorldPos = vec3(targetModelMatrix * localPos); //vec3(targetModelMatrix * vec4(pos, 1.0));
         //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
         outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
 
-        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
+        OutPosition = projection * view * targetModelMatrix * localPos;//GetLocalPos();
     }
 #endif
 

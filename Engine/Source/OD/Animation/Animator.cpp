@@ -21,6 +21,7 @@ void AnimatorComponent::Play(Clip* clip){
 }
 
 void AnimatorComponent::FadeTo(Clip* target, float fadeTime){
+    if(controller.WasSkeletonSet() == false) return; //Info: Quick fix, maybe change later
     controller.FadeTo(target, fadeTime);
 }
 
