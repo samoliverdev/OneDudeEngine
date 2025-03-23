@@ -93,6 +93,8 @@ public:
     bool IsValid();
     unsigned int Width();
     unsigned int Height();
+
+    inline Texture2DSetting& GetSettings(){ return settings; }//Info: Temp add function
     
     void* RenderId();
 
