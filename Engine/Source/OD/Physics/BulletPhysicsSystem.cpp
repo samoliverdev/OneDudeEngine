@@ -487,6 +487,10 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     //LogWarning("PhysicsSystem Contructor");
 }
 
+void* PhysicsSystem::GetInternlWorld(){
+    return physicsWorld->world;
+}
+
 PhysicsSystem::~PhysicsSystem(){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 

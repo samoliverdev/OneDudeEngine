@@ -13,6 +13,7 @@ class btCollisionObject;
 namespace OD{
 
 struct Rigidbody;
+struct Carbody;
 struct PhysicsWorld;
 
 //using MeshShapeData = btBvhTriangleMeshShape;
@@ -202,6 +203,8 @@ struct OD_API PhysicsSystem: public System{
     
     void AddOnTriggerExitCallback(OnCollisionCallback callback);
     void RemoveOnTriggerExitCallback(OnCollisionCallback callback);
+
+    void* GetInternlWorld(); // Temp/Experimental 
 
 private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);

@@ -25,7 +25,7 @@ struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
 
     Transform localTransform;
-    
+
     static void OnGui(Entity& e, Scene& scene);
 
     inline Ref<Model> GetModel(){ return model; }
