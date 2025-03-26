@@ -1,7 +1,14 @@
 #include "ToneMappingPostFX.h"
+#include "OD/Base.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
+
+void ToneMappingPostFX::OnGui() {
+    cereal::ImGuiArchive colorGradring;
+    colorGradring(*this);
+}
 
 ToneMappingPostFX::ToneMappingPostFX(){
     enable = false;

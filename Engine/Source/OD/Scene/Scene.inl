@@ -20,6 +20,7 @@ template <class Archive>
 void InfoComponent::serialize(Archive& ar){
     ArchiveDumpNVP(ar, name);
     ArchiveDumpNVP(ar, tag);
+    ArchiveDumpNVP(ar, layer);
     ArchiveDumpNVP(ar, active);
     ArchiveDumpNVP(ar, entityType);
     ArchiveDumpNVP(ar, prefabPath);

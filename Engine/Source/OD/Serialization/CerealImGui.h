@@ -1,6 +1,7 @@
 #pragma once
 #include "Serialization.h"
 #include "OD/Defines.h"
+#include "OD/Scene/Scene.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Color.h"
 #include "OD/Core/Asset.h"
@@ -259,14 +260,83 @@ private:
         }
     }
 
-    void DrawUI(const char* name, OD::Color& value, Options opt = Options()){
-        ImGui::ColorEdit4(name, &value.r, opt.colorHDR ? ImGuiColorEditFlags_HDR : ImGuiColorEditFlags_None);
-    }
-    
     void DrawUI(const char* name, glm::quat& value, Options opt = Options()){
         glm::vec3 euler = glm::eulerAngles(value);
         if(ImGui::DragFloat3(name, &euler[0], opt.getStep())){
             value = glm::quat(euler);
+        }
+    }
+
+    void DrawUI(const char* name, OD::Color& value, Options opt = Options()){
+        ImGui::ColorEdit4(name, &value.r, opt.colorHDR ? ImGuiColorEditFlags_HDR : ImGuiColorEditFlags_None);
+    }
+    
+    void DrawUI(const char* label, OD::LayerMask& value, Options opt = Options()){
+        auto& layerNames = OD::GetGlobalSceneData().layerNames; // Retrieve global layer names
+        if (layerNames.empty()) return;
+
+        int totalLayers = layerNames.size();
+        int selectedCount = 0;
+        std::string selectedLayerName;
+
+        // Count selected layers & track the first one
+        for (int i = 0; i < totalLayers; i++) {
+            int v = (1 << i);
+            if (value.mask & v) {
+                selectedCount++;
+                selectedLayerName = layerNames[i]; // Store the last selected layer name
+            }
+        }
+
+        // Determine what to display on the button
+        std::string selectedLayersText;
+        if (selectedCount == 0) {
+            selectedLayersText = "Nothing";
+        } else if (selectedCount == totalLayers) {
+            selectedLayersText = "Everything";
+        } else if (selectedCount == 1) {
+            selectedLayersText = selectedLayerName;
+        } else {
+            selectedLayersText = "Mixed";
+        }
+
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine();
+
+        // Dropdown button
+        if (ImGui::Button(selectedLayersText.c_str())) {
+            ImGui::OpenPopup(label);
+        }
+
+        // Dropdown popup
+        if (ImGui::BeginPopup(label)) {
+            bool allSelected = (selectedCount == totalLayers);
+            bool noneSelected = (selectedCount == 0);
+
+            // Shortcut checkboxes
+            if (ImGui::Checkbox("Everything", &allSelected)) {
+                value.mask = allSelected ? ((1 << totalLayers) - 1) : 0; // Set all or none
+                //ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Checkbox("Nothing", &noneSelected)) {
+                value.mask = 0; // Clear all
+                //ImGui::CloseCurrentPopup();
+            }
+
+            // Layer checkboxes (disabled if Everything/Nothing was selected)
+            bool disableOtherChecks = allSelected || noneSelected;
+            for (int i = 0; i < totalLayers; i++) {
+                int v = (1 << i);
+                bool selected = (value.mask & v) != 0;
+                if (ImGui::Checkbox(layerNames[i].c_str(), &selected)){
+                    if (selected)
+                        value.mask |= v;  // Add layer
+                    else
+                        value.mask &= ~v; // Remove layer
+                }
+            }
+
+            ImGui::EndPopup();
         }
     }
 

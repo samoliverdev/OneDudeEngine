@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Graphics/Texture.h"
 #include "OD/Scene/Scene.h"
 #include "Heightmap.h"
 

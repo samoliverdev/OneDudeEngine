@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "RendererList.h"
 #include "LightComponent.h"
 

@@ -1,9 +1,15 @@
 #include "BloomPostFX.h"
+#include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Shader.h"
 
 namespace OD{
+
+void BloomPostFX::OnGui(){
+    cereal::ImGuiArchive colorGradring;
+    colorGradring(*this);
+}
 
 BloomPostFX::BloomPostFX(){
     enable = false;

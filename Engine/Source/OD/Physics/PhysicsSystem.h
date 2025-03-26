@@ -82,6 +82,8 @@ struct OD_API CollisionShape{
 struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
+    int mask = AllLayers;
+
     enum class Type{Dynamic, Static, Kinematic, Trigger, TestDisable};
 
     static void OnGui(Entity& e, Scene& scene);
@@ -188,6 +190,7 @@ struct OD_API PhysicsSystem: public System{
     void ShowDebugGizmos();
 
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
+    bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask);
     bool IsSimulationEnable();
     void Simulate(float step);
     void SynchronizeMotionStates();
@@ -210,7 +213,7 @@ private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
 
     void CheckForCollisionEvents();
-    void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t);
+    void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveRigidbody(Entity entity, RigidbodyComponent& c);
 
     PhysicsWorld* physicsWorld;

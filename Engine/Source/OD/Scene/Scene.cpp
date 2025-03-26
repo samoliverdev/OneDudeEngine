@@ -1,9 +1,11 @@
 #include "Scene.h"
 #include "SceneManager.h"
 #include "Scripts.h"
+#include "OD/Core/ImGui.h"
+#include "OD/Core/Instrumentor.h"
+#include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Graphics/Graphics.h"
-#include "OD/Core/Instrumentor.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
@@ -12,6 +14,21 @@
 #include <fstream>
 
 namespace OD{
+
+GlobalSceneData globalSceneData;
+
+int LayerMask::GetLayerByName(const std::string& name){
+    Assert(globalSceneData.layerNames.size() == Layers::LayerMax);
+
+    for(int i = 0; i < globalSceneData.layerNames.size(); i++){
+        if(globalSceneData.layerNames[i] == name) return (1 << i);
+    }
+    return Layers::LayerNone;
+}
+
+GlobalSceneData& GetGlobalSceneData(){
+    return globalSceneData;
+}
 
 #pragma region TransformComponent
 

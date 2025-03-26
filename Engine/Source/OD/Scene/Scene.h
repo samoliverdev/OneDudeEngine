@@ -4,8 +4,6 @@
 #include "OD/Core/Asset.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
-#include "OD/Serialization/CerealImGui.h"
-#include "OD/Core/ImGui.h"
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Module.h"
 #include "OD/Core/Lua.h"
@@ -25,6 +23,46 @@ using Entity = entt::entity;
 class System;
 class Scene;
 class Model;
+
+enum Layers{
+    LayerNone = 0,
+    Layer0 = 1 << 0,  // 0001
+    Layer1 = 1 << 1,  // 0010
+    Layer2 = 1 << 2,  // 0100
+    Layer3 = 1 << 3,  // 1000
+    Layer4 = 1 << 4,
+    Layer5 = 1 << 5, 
+    Layer6 = 1 << 6, 
+    Layer7 = 1 << 7, 
+    Layer8 = 1 << 8,
+    Layer9 = 1 << 9,
+
+    LayerMax = 10
+};
+
+OD_API constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;
+
+struct OD_API LayerMask{
+    int mask = AllLayers;
+    static int GetLayerByName(const std::string& name);
+};
+
+struct OD_API GlobalSceneData{
+    std::vector<std::string> layerNames = {
+        "Layer0",
+        "Layer1",
+        "Layer2",
+        "Layer3",
+        "Layer4",
+        "Layer5",
+        "Layer6",
+        "Layer7",
+        "Layer8",
+        "Layer9",
+    };
+};
+
+OD_API GlobalSceneData& GetGlobalSceneData();
 
 class OD_API TransformComponent{
     friend struct Scene;
@@ -116,6 +154,7 @@ struct OD_API InfoComponent{
 
     std::string name = "Entity";
     std::string tag =  "";
+    int layer = Layers::Layer0;
     bool enable = true;
     bool hidden = false;
     bool notSave = false;

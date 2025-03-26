@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "RenderContext.h"
 
 namespace OD{
@@ -19,11 +20,7 @@ public:
     BloomPostFX();
     void OnSetup() override;
     void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
-
-    inline void OnGui() override {
-        cereal::ImGuiArchive colorGradring;
-        colorGradring(*this);
-    }
+    void OnGui() override;
 
     template <class Archive>
     void serialize(Archive& ar){

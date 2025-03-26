@@ -55,6 +55,9 @@ struct Rigidbody{
     btDynamicsWorld* world = nullptr;
     btDefaultMotionState* motionState = nullptr;
 
+    int layer; //Info: Not implemented runtime Change
+    int mask; //Info: Not implemented runtime Change
+
     Entity entity;
 };
 
@@ -368,7 +371,7 @@ void RigidbodyComponent::UpdateSettings(){
     if (mass != 0.0f) data->shape->calculateLocalInertia(mass, localInertia);
     data->body->setMassProps(mass, localInertia);
     
-    if(data->updating == false) data->world->addRigidBody(data->body);
+    if(data->updating == false) data->world->addRigidBody(data->body, data->layer, data->mask);
 }
 
 void RigidbodyComponent::Mass(float m){
@@ -582,12 +585,13 @@ void PhysicsSystem::Update(){
         }
     }
 
-    auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent>();
+    auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
     for(auto e: view){
         RigidbodyComponent& rb = view.get<RigidbodyComponent>(e);
         TransformComponent& transform = view.get<TransformComponent>(e);
+        InfoComponent& info = view.get<InfoComponent>(e);
 
-        if(rb.data == nullptr) AddRigidbody(e, rb, transform);
+        if(rb.data == nullptr) AddRigidbody(e, rb, transform, info);
         Assert(rb.data != nullptr);
 
         Rigidbody* data = rb.data;
@@ -793,6 +797,46 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
     return false;
 }
 
+class LayeredRayResultCallback : public btCollisionWorld::ClosestRayResultCallback {
+public:
+    int collisionFilterMask;
+
+    LayeredRayResultCallback(const btVector3& rayFrom, const btVector3& rayTo, int filterMask)
+        : btCollisionWorld::ClosestRayResultCallback(rayFrom, rayTo), collisionFilterMask(filterMask){}
+
+    bool needsCollision(btBroadphaseProxy* proxy0) const override {
+        int objectLayer = proxy0->m_collisionFilterGroup;// Get object's collision group
+        return (objectLayer & collisionFilterMask) != 0;// Perform bitwise check if the object's layer is in the allowed mask
+    }
+};
+
+bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask){
+    Assert(physicsWorld->world != nullptr);
+
+    dir = pos + dir;
+
+    btVector3 _pos = btVector3(pos.x, pos.y, pos.z);
+    btVector3 _dir = btVector3(dir.x, dir.y, dir.z);
+
+    LayeredRayResultCallback rayCallback(_pos, _dir, mask.mask);
+    physicsWorld->world->rayTest(_pos, _dir, rayCallback);
+
+    if(rayCallback.hasHit()){
+        btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
+        if(!pBody) return false;
+        if(pBody->getUserPointer() == nullptr) return false;
+
+        Entity entity = static_cast<Rigidbody*>(pBody->getUserPointer())->entity;
+
+        hit.entity = entity; //Entity(entityId, scene);
+        hit.hitPoint = FromBullet(rayCallback.m_hitPointWorld);
+        hit.hitNormal = FromBullet(rayCallback.m_hitNormalWorld);
+        return true;
+    }
+
+    return false;
+}
+
 void PhysicsSystem::Simulate(float step){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     physicsWorld->world->stepSimulation(step, ACCURACY);
@@ -825,13 +869,15 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
     onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
 }
 
-void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t){
+void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     //LogInfo("Add Rigidbody");
     Rigidbody* data = new Rigidbody();
     data->updating = true;
     data->world = physicsWorld->world;
+    data->layer = info.layer;
+    data->mask = c.mask;
     
     c.data = data;
     c.data->entity = entity;
@@ -865,7 +911,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     data->body->setCcdSweptSphereRadius(0.25);*/
     data->body->setCollisionFlags(data->body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 
-    physicsWorld->world->addRigidBody(data->body);
+    physicsWorld->world->addRigidBody(data->body, data->layer, data->mask);
 
     data->updating = false;
 }
