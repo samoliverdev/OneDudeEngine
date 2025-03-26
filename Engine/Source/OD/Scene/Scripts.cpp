@@ -55,7 +55,7 @@ void ScriptComponent::RemoveAllScripts(){
     instances.clear();
 }
     
-void ScriptComponent::_Update(Entity e, Scene& scene){
+void ScriptComponent::_Update(Entity e, Scene& scene, bool isLate){
     for(auto i: instances){
         if(i.second.instance == nullptr){
             i.second.instance = i.second.InstantiateScript(i.second);
@@ -69,7 +69,11 @@ void ScriptComponent::_Update(Entity e, Scene& scene){
             i.second.instance->OnStart();
             i.second.instance->hasStarted = true;
         }
-        i.second.instance->OnUpdate();
+        if(isLate){
+            i.second.instance->OnLateUpdate();
+        } else {
+            i.second.instance->OnUpdate();
+        }
     }
 }
 
@@ -88,7 +92,12 @@ void ScriptSystem::Update(){
 
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
-        c._Update(entity, *GetScene());
+        c._Update(entity, *GetScene(), false);
+    }
+
+    for(auto entity: view){
+        auto& c = view.get<ScriptComponent>(entity);
+        c._Update(entity, *GetScene(), true);
     }
 }
 

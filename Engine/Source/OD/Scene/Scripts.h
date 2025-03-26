@@ -14,6 +14,7 @@ struct OD_API Script{
     virtual void OnStart(){}
     virtual void OnDestroy(){}
     virtual void OnUpdate(){}
+    virtual void OnLateUpdate(){}
     //virtual void OnDraw(){}
 
     inline Entity& GetEntity(){ return entity; }
@@ -89,7 +90,7 @@ private:
 
     std::unordered_map<Type, ScriptHolder> instances;
 
-    void _Update(Entity e, Scene& scene);
+    void _Update(Entity e, Scene& scene, bool isLate = false);
 };
 
 struct OD_API ScriptSystem: public System{

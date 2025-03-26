@@ -41,17 +41,19 @@ struct OD_API CollisionShape{
         ArchiveDump(ar, CEREAL_NVP(height));
     }
 
-    inline static CollisionShape BoxShape(Vector3 size){
+    inline static CollisionShape BoxShape(Vector3 size, Vector3 center = Vector3Zero){
         CollisionShape shape;
         shape.type = Type::Box;
         shape.size = size;
+        shape.center = center;
         return shape;
     }
 
-    inline static CollisionShape SphereShape(float radius){
+    inline static CollisionShape SphereShape(float radius, Vector3 center = Vector3Zero){
         CollisionShape shape;
         shape.type = Type::Sphere;
         shape.radius = radius;
+        shape.center = center;
         return shape;
     }
 
