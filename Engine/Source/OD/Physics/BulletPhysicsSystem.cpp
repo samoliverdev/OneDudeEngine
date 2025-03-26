@@ -354,6 +354,16 @@ void RigidbodyComponent::UpdateSettings(){
     if(type == RigidbodyComponent::Type::Kinematic) data->body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
     if(type == RigidbodyComponent::Type::Trigger) data->body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
     
+    if(type == RigidbodyComponent::Type::TestDisable){
+        //data->body->setActivationState(ISLAND_SLEEPING);
+        
+        //data->body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        //data->body->setActivationState(DISABLE_SIMULATION);
+
+    } else {
+        //NeverSleep(neverSleep);
+    }
+
     btVector3 localInertia(0,0,0);
     if (mass != 0.0f) data->shape->calculateLocalInertia(mass, localInertia);
     data->body->setMassProps(mass, localInertia);
@@ -764,6 +774,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
         // if so, get the rigid body we hit
         btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
         if(!pBody) return false;
+        if(pBody->getUserPointer() == nullptr) return false;
 
         // prevent us from picking objects
         // like the ground plane

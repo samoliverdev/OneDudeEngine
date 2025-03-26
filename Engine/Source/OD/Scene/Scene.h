@@ -19,6 +19,7 @@ namespace OD {
 
 using Entity = entt::entity;
 #define EntityNull entt::null
+//#define EntityNull (Entity)UINT32_MAX
 
 //struct Entity;
 class System;
@@ -207,6 +208,8 @@ public:
     Entity InstantiatePrefab(const char* prefabPath);
     
     Entity GetMainCamera();
+
+    Entity FindEntityByName(const std::string& name);
 
     template<typename T> void AddSystem();
     template<typename T> void RemoveSystem();

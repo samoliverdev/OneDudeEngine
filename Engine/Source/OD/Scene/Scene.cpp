@@ -411,6 +411,18 @@ Entity Scene::GetMainCamera(){
     return EntityNull; //Entity();
 }
 
+Entity Scene::FindEntityByName(const std::string& name){
+    auto infoView = registry.view<InfoComponent>();
+    for(auto e: infoView){
+        InfoComponent& info = infoView.get<InfoComponent>(e);
+        if(info.name == name){
+            return e;
+        }
+    }
+
+    return EntityNull;
+}
+
 void Scene::Start(){
     running = true;
 }
