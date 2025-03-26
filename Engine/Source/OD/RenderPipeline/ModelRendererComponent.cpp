@@ -176,6 +176,13 @@ void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose, Scene& sce
     }
 }
 
+void SkinnedModelRendererComponent::UpdateSkeletonEntitesIn(Pose& pose, Scene& scene){
+    for(int i = 0; i < skeletonEntities.size(); i++){
+        TransformComponent& trans = scene.GetComponent<TransformComponent>(skeletonEntities[i]);
+        pose.SetLocalTransform(i, Transform(trans.LocalPosition(), trans.LocalRotation(), trans.LocalScale()));
+    }
+}
+
 void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     SkinnedModelRendererComponent& mesh = scene.GetComponent<SkinnedModelRendererComponent>(e);
 

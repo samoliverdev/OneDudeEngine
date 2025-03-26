@@ -200,6 +200,28 @@ void Scene::RemoveComponent(Entity id){
     registry.remove<T>(id);
 }
 
+template<typename T> 
+Entity Scene::TryFindEntityWithComponentInParent(Entity id){
+    /*if(HasComponent<T>(id) == false){
+        TransformComponent& t = GetComponent<TransformComponent>(id);
+        if(t.HasParent()){
+            return TryFindEntityWithComponentInParent<T>(t.Parent());
+        }
+    }
+    if(HasComponent<T>(id)) return id;*/
+
+    if(HasComponent<T>(id)){ 
+        return id;
+    } else {
+        TransformComponent& t = GetComponent<TransformComponent>(id);
+        if(t.HasParent()){
+            return TryFindEntityWithComponentInParent<T>(t.Parent());
+        }
+    }
+
+    return EntityNull;
+}
+
 template <typename T>
 void Scene::AddSystem(){
     static_assert(std::is_base_of<OD::System, T>::value);

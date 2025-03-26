@@ -85,6 +85,7 @@ struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
     int mask = AllLayers;
+    //LayerMask mask = {AllLayers};
 
     enum class Type{Dynamic, Static, Kinematic, Trigger, TestDisable};
 

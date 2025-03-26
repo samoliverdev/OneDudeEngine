@@ -104,7 +104,7 @@ void ScriptSystem::Update(){
 void ScriptSystem::OnDestroyScript(entt::registry & r, entt::entity e){
     ScriptComponent& s = r.get<ScriptComponent>(e);
     s.RemoveAllScripts();
-    LogInfo("On Destry ScriptComponent ___");
+    //LogInfo("On Destry ScriptComponent ___");
 }
 
 }

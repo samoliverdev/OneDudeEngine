@@ -111,6 +111,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     Transform skeletonTransform;
     Pose finalPose;
     std::vector<Matrix4> posePalette;
+
     std::vector<Entity> skeletonEntities;
 
     static void OnGui(Entity& e, Scene& scene);
@@ -118,6 +119,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     //INFO: Bug if is called in editor scene the skeletonEntities are linked with editor scene not the running scene
     void CreateSkeletonEntites(Entity& selfEntity, Scene& scene);
     void UpdateSkeletonEntites(Pose& animatedPose, Scene& scene);
+    void UpdateSkeletonEntitesIn(Pose& animatedPose, Scene& scene);
 
     inline void UpdatePosePalette(){
         GetModel()->skeleton.GetRestPose().GetMatrixPalette(posePalette, model->skeleton.GetInvBindPose());

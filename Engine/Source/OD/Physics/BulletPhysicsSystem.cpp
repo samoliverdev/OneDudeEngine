@@ -602,9 +602,10 @@ void PhysicsSystem::Update(){
             transform.Position(FromBullet(trans.getOrigin()));
             transform.Rotation(FromBullet(trans.getRotation()));
         } else {
-            btMotionState* motionState = data->body->getMotionState();
             btTransform physicsTransform = ToBullet(transform);
+            btMotionState* motionState = data->body->getMotionState();
             motionState->setWorldTransform(physicsTransform);
+            //data->body->setWorldTransform(physicsTransform);
         }
     }
 
@@ -728,7 +729,7 @@ void PhysicsSystem::CheckForCollisionEvents(){
         Entity e2 = r2->entity;// Entity(r2->entityId, scene);
         Assert(scene->HasComponent<InfoComponent>(e1));
         Assert(scene->HasComponent<InfoComponent>(e2));
-        LogInfo("OnSeparation %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
+        //LogInfo("OnSeparation %s <==> %s", scene->GetComponent<InfoComponent>(e1).name.c_str(), scene->GetComponent<InfoComponent>(e2).name.c_str());
 
         for(auto i: onCollisionExitCallbacks){
             i(*scene, e1, e2);

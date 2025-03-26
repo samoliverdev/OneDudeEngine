@@ -239,6 +239,8 @@ public:
     template<typename T> T& AddOrGetComponent(Entity entity);
     template<typename T> void RemoveComponent(Entity entity);
 
+    template<typename T> Entity TryFindEntityWithComponentInParent(Entity entity);
+
     template<typename T> inline static void RegisterMetaComponent();
 
     bool IsValid(Entity entity);
