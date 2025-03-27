@@ -385,7 +385,7 @@ bool Scene::IsValid(Entity id){
     return registry.valid(id); 
 }
 
-Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer){
+Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overrideLayer){
     if(model == nullptr){
         LogWarning("Trying instantiate a null model");
         return Entity();
@@ -398,6 +398,11 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer){
         auto& meshRenderer = AddComponent<MeshRendererComponent>(mesh);
         auto& transform = GetComponent<TransformComponent>(mesh);
         if(staticRenderer) AddComponent<StaticRendererComponent>(mesh);
+
+        if(overrideLayer != Layers::LayerNone && overrideLayer != Layers::LayerMax){
+            auto& info = GetComponent<InfoComponent>(mesh);
+            info.layer = overrideLayer;
+        }
 
         meshRenderer.material = model->materials[i.materialIndex];
         meshRenderer.mesh = model->meshs[i.meshIndex];

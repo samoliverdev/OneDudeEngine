@@ -45,6 +45,11 @@ OD_API constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | La
 struct OD_API LayerMask{
     int mask = AllLayers;
     static int GetLayerByName(const std::string& name);
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ArchiveDumpNVP(ar, mask);
+    }
 };
 
 struct OD_API GlobalSceneData{
@@ -245,7 +250,7 @@ public:
 
     bool IsValid(Entity entity);
 
-    Entity Instantiate(const Ref<Model> model, bool staticRenderer = false);
+    Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = Layers::LayerNone);
     Entity InstantiatePrefab(const char* prefabPath);
     
     Entity GetMainCamera();

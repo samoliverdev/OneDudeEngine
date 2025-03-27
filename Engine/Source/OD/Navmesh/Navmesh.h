@@ -133,7 +133,7 @@ enum class NavMeshPathStatus{
 
 struct OD_API NavMeshPath{
 	std::vector<Vector3> corners;
-	NavMeshPathStatus status;
+	NavMeshPathStatus status = NavMeshPathStatus::PathInvalid;
 };
 
 class OD_API Navmesh{
@@ -143,9 +143,9 @@ public:
 
 	~Navmesh();
 
-	bool Bake(Scene* scene, AABB bounds);
-	bool BakeSingle(Scene* scene, AABB bounds);
-	bool BakeAllTiles(Scene* scene, AABB bounds);
+	bool Bake(Scene* scene, AABB bounds, LayerMask layerMask = {});
+	bool BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask = {});
+	bool BakeAllTiles(Scene* scene, AABB bounds, LayerMask layerMask = {});
 	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos);
 	bool RemoveTile(Scene* scene, AABB bounds, const Vector3 pos);
 
@@ -156,6 +156,7 @@ public:
 	template<class Archive> 
 	void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, buildSettings);
+		ArchiveDumpNVP(ar, mask);
 	}
 
 private:
@@ -164,6 +165,8 @@ private:
 	static const int MAX_POLYS = 256*2;
 
 	bool hasInitTile = false;
+
+	LayerMask mask;
 
     unsigned char* m_triareas;
 	rcHeightfield* m_solid;
@@ -220,13 +223,13 @@ struct OD_API NavmeshAgentComponent{
 
 	float speed = 2;
 	float stopDistance = 0.25f;
+	
+	bool manualUpdate = false;
 
-	Vector3 GetDestination(){ return destination; }
-	void SetDestination(Vector3 d){
-		if(d == destination) return;
-		destination = d;
-		isDirty = true;
-	}
+	Vector3 desiredVelocity;
+
+	Vector3 GetDestination();
+	void SetDestination(Vector3 d);
 
 	template<class Archive>
     void serialize(Archive& ar){
@@ -241,6 +244,7 @@ private:
 	NavMeshPath path;
 	int curPathIndex = -1;
 	bool reach = false;
+	bool hasInit = false;
 };
 
 class OD_API NavmeshSystem: public System{

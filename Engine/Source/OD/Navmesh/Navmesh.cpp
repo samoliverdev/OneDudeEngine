@@ -208,8 +208,11 @@ void Navmesh::Cleanup(){
 }
 
 void Navmesh::RasterizeScene(Scene& scene, AABB& bounds){
-	auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent>(entt::exclude<NavmeshSkipTag>);
+	auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<NavmeshSkipTag>);
     for(auto e: meshView){
+		auto& info = meshView.get<InfoComponent>(e);
+		if(!(info.layer & mask.mask)) continue;  
+
         auto& c = meshView.get<MeshRendererComponent>(e);
         auto& t = meshView.get<TransformComponent>(e);
         if(c.mesh == nullptr) continue;
@@ -218,8 +221,11 @@ void Navmesh::RasterizeScene(Scene& scene, AABB& bounds){
         RasterizeMesh(t.GlobalModelMatrix(), c.mesh);
     }
 
-    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent>(entt::exclude<NavmeshSkipTag>);
+    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<NavmeshSkipTag>);
     for(auto e: meshRenderView){
+		auto& info = meshView.get<InfoComponent>(e);
+		if(!(info.layer & mask.mask)) continue;  
+
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);
         if(c.GetModel() == nullptr) continue;
@@ -279,13 +285,14 @@ bool Navmesh::RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh){
     return true;
 }
 
-bool Navmesh::Bake(Scene* scene, AABB bounds){
-	if(buildSettings.useTile) return BakeAllTiles(scene, bounds);
-	return BakeSingle(scene, bounds);
+bool Navmesh::Bake(Scene* scene, AABB bounds, LayerMask layerMask){
+	if(buildSettings.useTile) return BakeAllTiles(scene, bounds, layerMask);
+	return BakeSingle(scene, bounds, layerMask);
 }
 
-bool Navmesh::BakeSingle(Scene* scene, AABB bounds){
+bool Navmesh::BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask){
 	if(buildSettings.useTile == true) return false;
+	mask = layerMask;
 
 	Cleanup();
 	hasInitTile = false;
@@ -688,8 +695,10 @@ bool Navmesh::TileInit(Scene* scene, AABB bounds){
 	return true;
 }
 
-bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds){
+bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds, LayerMask layerMask){
 	if(buildSettings.useTile == false) return false;
+	mask = layerMask;
+
 	if(hasInitTile == false) TileInit(scene, bounds); 
 	//if (!m_geom) return;
 	//if (!m_navMesh) return;
@@ -1302,6 +1311,17 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	return false;
 }
 
+Vector3 NavmeshAgentComponent::GetDestination(){ 
+	return destination; 
+}
+
+void NavmeshAgentComponent::SetDestination(Vector3 d){
+	if(d == destination && hasInit == true) return;
+	destination = d;
+	isDirty = true;
+	hasInit = true;
+}
+
 NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
 NavmeshSystem::~NavmeshSystem(){}
 
@@ -1325,23 +1345,24 @@ void NavmeshSystem::Update(){
 			navmeshComponent.isDirty = false;
 			navmeshComponent.lastPos = transform.Position();
 			navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
-			navmeshComponent.curPathIndex = -1;
+			navmeshComponent.curPathIndex = 1;//-1;
 			navmeshComponent.reach = false;
 		}
 
 		if(scene->Running() == false) continue;
 
 		if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
-			if(navmeshComponent.curPathIndex == -1){
+			Assert(navmeshComponent.path.corners.size() > 1);
+			/*if(navmeshComponent.curPathIndex == -1){
 				navmeshComponent.curPathIndex = 0;
 				navmeshComponent.reach = false;
-			}
+			}*/
 
 			if(navmeshComponent.reach) return;
 
 			Vector3 pos = transform.Position();
 			Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
-			if(math::length(dir) > 0.1f) dir = math::normalize(dir);
+			if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
         	Assert(Mathf::IsNan(dir) == false);
 
 			float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
@@ -1351,11 +1372,15 @@ void NavmeshSystem::Update(){
 				if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
 					navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
 					navmeshComponent.reach = true;
+					navmeshComponent.desiredVelocity = Vector3Zero;
 					continue;
 				}
 			}
+
+			navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
 			
-			transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+			if(navmeshComponent.manualUpdate == false) 
+				transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
 		} else {
 			navmeshComponent.curPathIndex = -1;
 			navmeshComponent.reach = false;
