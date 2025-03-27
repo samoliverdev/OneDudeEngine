@@ -152,6 +152,7 @@ public:
 	void Cleanup();
 	void DrawDebug();
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
+	bool SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius = 2.0f);
 
 	template<class Archive> 
 	void serialize(Archive& ar){

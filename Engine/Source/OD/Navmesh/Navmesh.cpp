@@ -1311,6 +1311,39 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	return false;
 }
 
+bool Navmesh::SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius){
+	Assert(m_navMesh != nullptr);
+	Assert(m_navQuery != nullptr);
+	if(!m_navMesh) return false;
+
+	float _position[3] = {position.x, position.y, position.z};
+
+    // Create and initialize the query
+    dtNavMeshQuery navQuery;
+    navQuery.init(m_navMesh, 2048); // Max nodes
+
+    // Define a simple filter (modify as needed)
+    dtQueryFilter filter;
+    filter.setIncludeFlags(0xFFFF);
+    filter.setExcludeFlags(0);
+
+    // Extents define the search box around the given position
+    float searchExtents[3] = { maxSearchRadius, maxSearchRadius, maxSearchRadius };
+
+    // Find nearest polygon
+    dtPolyRef nearestPoly;
+    float nearestPoint[3];
+
+    dtStatus status = navQuery.findNearestPoly(_position, searchExtents, &filter, &nearestPoly, nearestPoint);
+
+    if(dtStatusSucceed(status) && nearestPoly){
+        outClosestPoint = {nearestPoint[0], nearestPoint[1], nearestPoint[2]};
+        return true;
+    }
+
+    return false; // No valid position found
+}
+
 Vector3 NavmeshAgentComponent::GetDestination(){ 
 	return destination; 
 }
