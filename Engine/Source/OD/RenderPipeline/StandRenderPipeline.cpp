@@ -33,6 +33,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
     SceneManager::Get().RegisterCoreComponent<StaticRendererComponent>("StaticRendererComponent");
     SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent");
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");

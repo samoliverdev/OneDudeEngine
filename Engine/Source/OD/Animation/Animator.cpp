@@ -3,6 +3,7 @@
 #include "OD/Core/JobSystem.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Graphics/Model.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Scene/SceneManager.h"
 #include <taskflow/taskflow.hpp> 
@@ -38,10 +39,10 @@ void AnimatorSystem::Update(){
 
     OD_PROFILE_SCOPE("AnimatorSystem::Update");
 
-    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     tf::Executor executor;
     tf::Taskflow taskflow;
-    
+
+    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     for(auto e: view){
         AnimatorComponent& anim = view.get<AnimatorComponent>(e);
         SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
@@ -69,6 +70,26 @@ void AnimatorSystem::Update(){
             skinned.finalPose = anim.controller.GetCurrentPose();
         });
     }
+
+    auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
+    for(auto e: view2){
+        AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
+        SkinnedMeshRendererComponent& skinned = view2.get<SkinnedMeshRendererComponent>(e);
+        if(skinned.mesh == nullptr) continue;
+        if(skinned.skeleton.GetBindPose().Size() <= 0) continue;
+
+        taskflow.emplace([&](){ 
+            if(skinned.posePalette.size() < skinned.skeleton.GetRestPose().Size()) skinned.posePalette.resize(skinned.skeleton.GetRestPose().Size());
+            //if(anim.controller.WasSkeletonSet() == false) anim.controller.SetSkeleton(model->skeleton);
+            if(anim.controller.GetCurrentPose().Size() != skinned.skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(skinned.skeleton); //Info: This Can work better if the model is change
+
+
+            anim.controller.Update(Application::DeltaTime());
+            //anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
+            skinned.finalPose = anim.controller.GetCurrentPose();
+        });
+    }
+
     //JobSystem::Wait();
     executor.run(taskflow).wait(); 
 

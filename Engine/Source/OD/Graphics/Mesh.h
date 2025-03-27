@@ -41,6 +41,23 @@ public:
 
     MeshDrawMode drawMode = MeshDrawMode::TRIANGLES;
 
+    inline void AppedFrom(Mesh& mesh){
+        unsigned int vertexOffset = static_cast<unsigned int>(vertices.size());
+
+        vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+        uv.insert(uv.end(), mesh.uv.begin(), mesh.uv.end());
+        normals.insert(normals.end(), mesh.normals.begin(), mesh.normals.end());
+        colors.insert(colors.end(), mesh.colors.begin(), mesh.colors.end());
+        tangents.insert(tangents.end(), mesh.tangents.begin(), mesh.tangents.end());
+        weights.insert(weights.end(), mesh.weights.begin(), mesh.weights.end());
+        influences.insert(influences.end(), mesh.influences.begin(), mesh.influences.end());
+        //indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
+
+        for(unsigned int index : mesh.indices){
+            indices.push_back(index + vertexOffset);
+        }
+    }
+
     inline void ClearRuntimeData(){
         vertices.clear();
         uv.clear();

@@ -3,6 +3,7 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Material.h"
+#include "OD/Animation/Skeleton.h"
 
 namespace OD{
 
@@ -69,6 +70,22 @@ struct OD_API MeshRendererComponent{
         AABB result = AABB(globalCenter, newIi, newIj, newIk);
         result.Expand(transform.Scale());
         return result;
+    }
+};
+
+struct OD_API SkinnedMeshRendererComponent: public MeshRendererComponent{
+    Skeleton skeleton;
+    Pose finalPose;
+    std::vector<Matrix4> posePalette;
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        AssetRefSerialize<Material> materialRef(material);
+        ArchiveDumpNVP(ar, materialRef);
+    }
+
+    inline void UpdatePosePalette(){
+        skeleton.GetRestPose().GetMatrixPalette(posePalette, skeleton.GetInvBindPose());
     }
 };
 

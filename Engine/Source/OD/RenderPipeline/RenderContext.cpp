@@ -415,6 +415,33 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         }
     }
 
+    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>();
+    for(auto e: skinnedMeshView){
+        auto& info = skinnedMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        SkinnedMeshRendererComponent& c = skinnedMeshView.get<SkinnedMeshRendererComponent>(e);
+        TransformComponent& t = skinnedMeshView.get<TransformComponent>(e);
+
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  t.GlobalModelMatrix();;
+        //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+        
+        if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose()); 
+        data.posePalette = &c.posePalette;
+        
+        //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        onReciveRenderData(data);
+    }
+
     auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>();
     for(auto e: skinnedView){
         auto& info = skinnedView.get<InfoComponent>(e);

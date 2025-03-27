@@ -804,7 +804,7 @@ bool Navmesh::BakeTile(Scene* scene, AABB bounds, const Vector3 pos){
 	}
 	
 	//m_ctx->log("Build Tile (%d,%d):", tx, ty);
-	LogWarning("Build Tile (%d,%d):", tx, ty);
+	//LogWarning("Build Tile (%d,%d):", tx, ty);
 	return true;
 }
 
@@ -895,8 +895,8 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 	//m_ctx->log(RC_LOG_PROGRESS, "Building navigation:");
 	//m_ctx->log(RC_LOG_PROGRESS, " - %d x %d cells", m_cfg.width, m_cfg.height);
 	//m_ctx->log(RC_LOG_PROGRESS, " - %.1fK verts, %.1fK tris", nverts/1000.0f, ntris/1000.0f);
-	LogWarning("Building navigation:");
-	LogWarning(" - %d x %d cells", m_cfg.width, m_cfg.height);
+	//LogWarning("Building navigation:");
+	//LogWarning(" - %d x %d cells", m_cfg.width, m_cfg.height);
 	
 	// Allocate voxel heightfield where we rasterize our input data to.
 	m_solid = rcAllocHeightfield();
@@ -1209,7 +1209,7 @@ unsigned char* Navmesh::BuildTileMesh(Scene* scene, const int tx, const int ty, 
 	// Show performance stats.
 	//duLogBuildTimes(*m_ctx, m_ctx->getAccumulatedTime(RC_TIMER_TOTAL));
 	//m_ctx->log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", m_pmesh->nverts, m_pmesh->npolys);
-	LogWarning(">> Polymesh: %d vertices  %d polygons", m_pmesh->nverts, m_pmesh->npolys);
+	//LogWarning(">> Polymesh: %d vertices  %d polygons", m_pmesh->nverts, m_pmesh->npolys);
 	
 	//m_tileBuildTime = m_ctx->getAccumulatedTime(RC_TIMER_TOTAL)/1000.0f;
 
@@ -1272,7 +1272,7 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	int m_nstraightPath = 0;
 	int m_straightPathOptions = 0;
 
-	LogWarning("x:%f y:%f z:%f", _startPos[0], _startPos[1], _startPos[2]);
+	//LogWarning("x:%f y:%f z:%f", _startPos[0], _startPos[1], _startPos[2]);
 
 	auto s1 = m_navQuery->findNearestPoly(_startPos, tolerance, &m_filter, &m_startRef, 0);
 	auto s2 = m_navQuery->findNearestPoly(_endPos, tolerance, &m_filter, &m_endRef, 0);
@@ -1307,7 +1307,7 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 
 	outPath.status = NavMeshPathStatus::PathInvalid;
 	outPath.corners.clear();
-	LogWarningExtra("Not OK");
+	//LogWarningExtra("Not OK");
 	return false;
 }
 
