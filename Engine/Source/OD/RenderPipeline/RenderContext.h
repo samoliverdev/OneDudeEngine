@@ -87,8 +87,13 @@ public:
     
     void BeginDrawToScreen();
     void EndDrawToScreen();
+
     void BeginForwardPass();
+    void EndForwardPass();
+
     void BeginDeferredPass();
+    void EndDeferredPass();
+
     void EndDeferredPassAndCopyToForwardPass();
     
     void ScreenClean();

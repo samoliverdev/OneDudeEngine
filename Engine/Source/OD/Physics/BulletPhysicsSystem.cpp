@@ -624,7 +624,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 	physicsWorld->world->getSolverInfo().m_splitImpulse = true;
 
     btContactSolverInfo& info = physicsWorld->world->getSolverInfo();
-    info.m_numIterations = 4; //10; 50;
+    //info.m_numIterations = 4; //10; 50;
     debuger.scene = inScene;
 
     this->scene->GetRegistry().on_destroy<CollisionBodyComponent>().connect<&OnRemoveCollisionBody>();

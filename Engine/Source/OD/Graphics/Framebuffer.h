@@ -41,7 +41,7 @@ enum class OD_API_IMPORT FramebufferType{
     Stand = 0, 
     Deffered,
     Shadowmap,
-    //Dynamic
+    Dynamic
 };
 
 class OD_API Framebuffer{

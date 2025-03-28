@@ -1394,7 +1394,7 @@ void NavmeshSystem::Update(){
 				navmeshComponent.reach = false;
 			}*/
 
-			if(navmeshComponent.reach) return;
+			if(navmeshComponent.reach) continue;
 
 			Vector3 pos = transform.Position();
 			Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
@@ -1415,8 +1415,9 @@ void NavmeshSystem::Update(){
 
 			navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
 			
-			if(navmeshComponent.manualUpdate == false) 
+			if(navmeshComponent.manualUpdate == false){
 				transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+			}
 		} else {
 			navmeshComponent.curPathIndex = -1;
 			navmeshComponent.reach = false;
@@ -1425,7 +1426,7 @@ void NavmeshSystem::Update(){
 }
 
 void NavmeshSystem::OnDrawGizmos(Camera& cam){
-	return;
+	//return;
 	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent>();
 	for(auto e: navmeshAgentView){
 		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);

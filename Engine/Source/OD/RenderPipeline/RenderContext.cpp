@@ -51,6 +51,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     deferredOutColor = new Framebuffer(framebufferSpecification);
+    deferredOutColor->ColorAttachmentId(3);
     //deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
@@ -69,7 +70,7 @@ RenderContext::RenderContext(Scene* inScene){
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
     //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
-    //deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
@@ -116,6 +117,10 @@ void RenderContext::BeginForwardPass(){
     ScreenClean();
 }
 
+void RenderContext::EndForwardPass(){
+    Graphics::EndFramebuffer();
+}
+
 void RenderContext::BeginDeferredPass(){
     //Assert(false);
     //Framebuffer::Bind(*deferredOutColor);
@@ -123,7 +128,13 @@ void RenderContext::BeginDeferredPass(){
     ScreenClean();
 }
 
+void RenderContext::EndDeferredPass(){
+    Graphics::EndFramebuffer();
+}
+
 void RenderContext::EndDeferredPassAndCopyToForwardPass(){
+    EndDeferredPass();
+
     //Framebuffer::Bind(*forwardOutColor);
     Graphics::BeginFramebuffer(*forwardOutColor);
     Graphics::Clean(0, 1, 0, 1);
@@ -136,7 +147,10 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     Graphics::BindMaterial(*deferredLightPass);
 
     //Graphics::BlitQuadPostProcessingRaw(forwardOutColor);
-    Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
+
+    //Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
+    //Graphics::DrawFullScreenQuad(*deferredLightPass, Matrix4Identity);
+    Graphics::DrawMesh(*fullScreenQuad, *deferredLightPass, Matrix4Identity);
     
     Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
     //Framebuffer::Bind(*forwardOutColor);
@@ -162,8 +176,6 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Graphics::EndFramebuffer();
-
     Graphics::BeginFramebuffer(*finalColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
@@ -258,7 +270,6 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     Graphics::BeginFramebuffer(*forwardOutColor);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
-    
     Graphics::EndFramebuffer();
 }
 

@@ -674,6 +674,7 @@ void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char
         glBindTexture(target, framebuffer.glData.depthAttachment);
         glCheckError();
     } else {
+        Assert(framebuffer.glData.colorAttachments.size() > colorAttachmentIndex);
         //glBindTexture(target, framebuffer.ColorAttachmentId(colorAttachmentIndex));
         glBindTexture(target, framebuffer.glData.colorAttachments[colorAttachmentIndex]);
         glCheckError();

@@ -216,7 +216,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
 
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi) + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
+        vec3 color = GetLighting(surface, brdf, gi);// + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
         

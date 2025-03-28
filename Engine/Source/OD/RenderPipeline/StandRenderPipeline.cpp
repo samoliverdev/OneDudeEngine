@@ -547,20 +547,27 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         context->DrawRenderersBuffer(blendDrawTarget, true);
+        context->RenderSkyboxLater();
+        context->DrawGizmos();  
+        
+        context->EndForwardPass();
     } else {
         context->BeginDeferredPass();
-    
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         context->DrawRenderersBuffer(opaqueDrawTarget, false, true);
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
+        //context->EndDeferredPass();
         context->EndDeferredPassAndCopyToForwardPass();
-        context->RenderSkyboxLater();
+        //context->BeginForwardPass();
+
+        //context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
+        context->RenderSkyboxLater();
+        context->DrawGizmos(); 
+        context->EndForwardPass();
     }
 
-    context->RenderSkyboxLater();
-    context->DrawGizmos();    
 
     //Fixme: No Call to EndFramebuffer here
     

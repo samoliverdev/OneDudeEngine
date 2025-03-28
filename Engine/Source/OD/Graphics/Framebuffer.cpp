@@ -18,6 +18,7 @@ Framebuffer::Framebuffer(FramebufferType inType, int width, int height, int laye
 
 Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
     //Assert(false && "Not work for now!!!");
+    type = FramebufferType::Dynamic;
     specification = inSpecification;
     Invalidate();
 }
