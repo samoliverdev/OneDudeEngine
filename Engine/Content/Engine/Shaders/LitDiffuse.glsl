@@ -102,7 +102,6 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     #include Engine/ShaderLibrary/Light.glsl
     #include Engine/ShaderLibrary/BRDF.glsl
     #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
 
     In(0) vec3 outPos;
     In(1) vec3 outNormal;
@@ -164,9 +163,32 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         return normalize(TBN * n);
     }
 
-    float Dither(vec2 fragCoord) {
-        return fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
-        //return fract(sin(dot(fragCoord, vec2(12.9898, 78.233))) * 43758.5453) * 0.003;
+    vec3 IncomingLight(Surface surface, Light light){
+        return saturate(dot(surface.normal, light.direction) * light.attenuation) * light.color;
+    }
+
+    vec3 GetLighting(Surface surface, BRDF brdf, Light light){
+	    float diff = Square(saturate(dot(surface.normal, light.direction)));
+        vec3 DirectBRDF = diff * surface.color;
+
+        return IncomingLight(surface, light) * DirectBRDF;// DirectBRDF(surface, brdf, light);
+    }
+
+    vec3 GetLighting(Surface surfaceWS, BRDF brdf, GI gi){
+        ShadowData shadowData = GetShadowData(surfaceWS);
+        vec3 IndirectBRDF = gi.diffuse * surfaceWS.color;
+
+        vec3 color = IndirectBRDF;// gi.diffuse;// IndirectBRDF(surfaceWS, brdf, gi.diffuse, gi.specular);
+        for(int i = 0; i < GetDirectionalLightCount(); i++){
+            Light light = GetDirectionalLight(i, surfaceWS, shadowData);
+            color += GetLighting(surfaceWS, brdf, light);
+        }
+        for(int j = 0; j < GetOtherLightCount(); j++){
+            Light light = GetOtherLight(j, surfaceWS, shadowData);
+            color += GetLighting(surfaceWS, brdf, light);
+        }
+
+        return color;
     }
 
     void main(){
@@ -206,20 +228,11 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         
         #else
 
-        /*vec3 lightDir = normalize(_DirectionalLightDirections[0].xyz);
-        float diff = max(dot(_normal, lightDir), 0.0);
-        vec3 diffuse = diff * _DirectionalLightColors[0].rgb;
-        vec4 texColor = base;
-        vec3 ambient = _AmbientLight;// * texColor.rgb;
-        fragColor = vec4((diffuse + ambient) * texColor.rgb, texColor.a);
-        return;*/
-
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi) + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
+        vec3 color = GetLighting(surface, brdf, gi);
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
-        
         #endif
     }
 #endif

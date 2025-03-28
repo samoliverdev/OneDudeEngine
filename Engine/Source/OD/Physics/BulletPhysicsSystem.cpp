@@ -1,6 +1,7 @@
 #include "PhysicsSystem.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Instrumentor.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
@@ -13,6 +14,7 @@
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/CollisionDispatch/btCollisionWorld.h>
 #include <BulletCollision/CollisionDispatch/btCollisionObject.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 #include <BulletCollision/CollisionShapes/btMaterial.h>
 #include <BulletCollision/CollisionShapes/btTriangleShape.h>
@@ -21,6 +23,7 @@ namespace OD{
 
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
+    SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
@@ -48,17 +51,21 @@ inline btTransform ToBullet(TransformComponent& v){
     return t;
 }
 
-struct Rigidbody{
-    bool updating = false;
+struct PhysicObject{
+    enum class Type{RigidBody, GhostObject};
+    
     btCollisionShape* shape = nullptr;
-    btRigidBody* body = nullptr;
+    btRigidBody* rbBody = nullptr;
+    btCollisionObject* gtBody = nullptr; //btGhostObject* gtBody = nullptr;
     btDynamicsWorld* world = nullptr;
     btDefaultMotionState* motionState = nullptr;
 
+    Type type;
     int layer; //Info: Not implemented runtime Change
     int mask; //Info: Not implemented runtime Change
 
     Entity entity;
+    bool updating = false;
 };
 
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
@@ -176,6 +183,132 @@ public:
 
 Debuger debuger;
 #pragma endregion
+
+void CollisionBodyComponent::OnGui(Entity& e, Scene& scene){
+    CollisionBodyComponent& rb = scene.GetComponent<CollisionBodyComponent>(e);
+
+    CollisionShape shape = rb.GetShape();
+    ImGui::SeparatorText("CollisionShape");
+
+    CollisionShape::Type _shape = rb.GetShape().type;
+    if(ImGui::DrawEnumCombo<CollisionShape::Type>("CollisionShape", &_shape)){
+        shape.type = _shape;
+        rb.SetShape(shape);
+    }
+
+    shape = rb.GetShape();
+
+    if(rb.shape.type == CollisionShape::Type::Box){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _shape[] = {shape.size.x, shape.size.y, shape.size.z};
+        if(ImGui::DragFloat3("size", _shape)){
+            shape.size = Vector3(_shape[0], _shape[1], _shape[2]);
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Sphere){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Capsule){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+        float _height = shape.height;
+        if(ImGui::DragFloat("height", &_height)){
+            shape.height = _height;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+}
+
+void CollisionBodyComponent::SetShape(CollisionShape inShape){
+    if(data != nullptr && data->shape != nullptr && shape.type != CollisionShape::Type::Mesh) delete data->shape;
+    shape = inShape;
+    if(data == nullptr) return;
+
+    if(shape.type == CollisionShape::Type::Box){
+        auto _shape = new btBoxShape(btVector3(shape.size.x/2, shape.size.y/2, shape.size.z/2));
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+    }
+
+    if(shape.type == CollisionShape::Type::Sphere){
+        auto _shape = new btSphereShape(shape.radius);
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+    }
+
+    if(shape.type == CollisionShape::Type::Capsule){
+        auto _shape = new btCapsuleShape(shape.radius, shape.height - 2 * shape.radius);
+        auto _shape2 = new btCompoundShape();
+        btTransform t;
+        t.setIdentity();
+        t.setOrigin(ToBullet(shape.center)); //t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
+        _shape2->addChildShape(t, _shape);
+        
+        data->shape = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+    }
+
+    if(shape.type == CollisionShape::Type::Mesh){
+        btBvhTriangleMeshShape* _shape = shape.mesh->triangleMeshShape;
+        data->shape = _shape;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+    }
+
+    if(data->updating == false) UpdateSettings();
+}
+
+void CollisionBodyComponent::UpdateSettings(){
+    if(data->updating == false) data->world->removeCollisionObject(data->gtBody);
+    if(data->updating == false) data->world->addCollisionObject(data->gtBody, data->layer, data->mask);
+}
 
 #pragma region RigidbodyComponent
 
@@ -309,7 +442,7 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         _shape2->addChildShape(t, _shape);
         
         data->shape = _shape2;
-        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
     }
 
     if(shape.type == CollisionShape::Type::Sphere){
@@ -321,7 +454,7 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         _shape2->addChildShape(t, _shape);
         
         data->shape = _shape2;
-        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
     }
 
     if(shape.type == CollisionShape::Type::Capsule){
@@ -333,13 +466,13 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         _shape2->addChildShape(t, _shape);
         
         data->shape = _shape2;
-        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
     }
 
     if(shape.type == CollisionShape::Type::Mesh){
         btBvhTriangleMeshShape* _shape = shape.mesh->triangleMeshShape;
         data->shape = _shape;
-        if(data->body != nullptr) data->body->setCollisionShape(data->shape);
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
     }
 
     if(data->updating == false) UpdateSettings();
@@ -347,15 +480,15 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
 }
 
 void RigidbodyComponent::UpdateSettings(){
-    if(data->updating == false) data->world->removeRigidBody(data->body);
+    if(data->updating == false) data->world->removeRigidBody(data->rbBody);
 
     if(mass > 0 && type == RigidbodyComponent::Type::Static) type = RigidbodyComponent::Type::Dynamic;
     if(mass <= 0 && type == RigidbodyComponent::Type::Dynamic) type = RigidbodyComponent::Type::Static;
 
-    if(type == RigidbodyComponent::Type::Dynamic) data->body->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
-    if(type == RigidbodyComponent::Type::Static) data->body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-    if(type == RigidbodyComponent::Type::Kinematic) data->body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
-    if(type == RigidbodyComponent::Type::Trigger) data->body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Dynamic) data->rbBody->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Static) data->rbBody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Kinematic) data->rbBody->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+    if(type == RigidbodyComponent::Type::Trigger) data->rbBody->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
     
     if(type == RigidbodyComponent::Type::TestDisable){
         //data->body->setActivationState(ISLAND_SLEEPING);
@@ -369,9 +502,9 @@ void RigidbodyComponent::UpdateSettings(){
 
     btVector3 localInertia(0,0,0);
     if (mass != 0.0f) data->shape->calculateLocalInertia(mass, localInertia);
-    data->body->setMassProps(mass, localInertia);
+    data->rbBody->setMassProps(mass, localInertia);
     
-    if(data->updating == false) data->world->addRigidBody(data->body, data->layer, data->mask);
+    if(data->updating == false) data->world->addRigidBody(data->rbBody, data->layer, data->mask);
 }
 
 void RigidbodyComponent::Mass(float m){
@@ -392,23 +525,23 @@ void RigidbodyComponent::NeverSleep(bool value){
     if(data == nullptr) return;
 
     if(value){
-        data->body->setActivationState(DISABLE_DEACTIVATION);
+        data->rbBody->setActivationState(DISABLE_DEACTIVATION);
     } else {
-        data->body->setActivationState(ACTIVE_TAG);
+        data->rbBody->setActivationState(ACTIVE_TAG);
     }
 }
 
 Vector3 RigidbodyComponent::Position(){
     if(data == nullptr) return Vector3Zero;
-    btTransform trans = data->body->getWorldTransform();
+    btTransform trans = data->rbBody->getWorldTransform();
     return FromBullet(trans.getOrigin());
 }
 
 void RigidbodyComponent::Position(Vector3 position){
     if(data == nullptr) return;
-    btTransform trans = data->body->getWorldTransform();
+    btTransform trans = data->rbBody->getWorldTransform();
     trans.setOrigin(ToBullet(position));
-    data->body->setWorldTransform(trans);
+    data->rbBody->setWorldTransform(trans);
     //data->motionState->setWorldTransform(trans);
 
     /*data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
@@ -418,14 +551,14 @@ void RigidbodyComponent::Position(Vector3 position){
 
 Quaternion RigidbodyComponent::Rotation(){
     if(data == nullptr) return QuaternionIdentity;
-    btTransform trans = data->body->getWorldTransform();
+    btTransform trans = data->rbBody->getWorldTransform();
     return FromBullet(trans.getRotation());
 }
 
 void RigidbodyComponent::Rotation(Quaternion rotation){
-    btTransform trans = data->body->getWorldTransform();
+    btTransform trans = data->rbBody->getWorldTransform();
     trans.setRotation(ToBullet(rotation));
-    data->body->setWorldTransform(trans);
+    data->rbBody->setWorldTransform(trans);
     //data->motionState->setWorldTransform(trans);
 
     /*data->body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
@@ -435,7 +568,7 @@ void RigidbodyComponent::Rotation(Quaternion rotation){
 
 Vector3 RigidbodyComponent::Velocity(){
     if(data == nullptr) return Vector3Zero;
-    return FromBullet(data->body->getLinearVelocity());
+    return FromBullet(data->rbBody->getLinearVelocity());
 }
 
 void RigidbodyComponent::Velocity(Vector3 v){
@@ -443,28 +576,28 @@ void RigidbodyComponent::Velocity(Vector3 v){
     Assert(isnan(v.y) == false);
     Assert(isnan(v.z) == false);
     if(data == nullptr) return;
-    return data->body->setLinearVelocity(ToBullet(v));
+    return data->rbBody->setLinearVelocity(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyForce(Vector3 v){
     if(data == nullptr) return;
-    data->body->applyCentralForce(ToBullet(v));
+    data->rbBody->applyCentralForce(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyTorque(Vector3 v){
     if(data == nullptr) return;
-    data->body->applyTorque(ToBullet(v));
+    data->rbBody->applyTorque(ToBullet(v));
 }
 
 void RigidbodyComponent::ApplyImpulse(Vector3 v){
     if(data == nullptr) return;
-    data->body->applyCentralImpulse(ToBullet(v));
+    data->rbBody->applyCentralImpulse(ToBullet(v));
 }
 
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
     angularFactor = v;
     if(data == nullptr) return;
-    data->body->setAngularFactor(ToBullet(v));
+    data->rbBody->setAngularFactor(ToBullet(v));
 }
 
 #pragma endregion
@@ -491,9 +624,10 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 	physicsWorld->world->getSolverInfo().m_splitImpulse = true;
 
     btContactSolverInfo& info = physicsWorld->world->getSolverInfo();
-    info.m_numIterations = 50;
+    info.m_numIterations = 4; //10; 50;
     debuger.scene = inScene;
 
+    this->scene->GetRegistry().on_destroy<CollisionBodyComponent>().connect<&OnRemoveCollisionBody>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 
@@ -516,21 +650,17 @@ PhysicsSystem::~PhysicsSystem(){
 
     this->scene->GetRegistry().ctx().erase<PhysicsSystem*>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
+    this->scene->GetRegistry().on_destroy<CollisionBodyComponent>().disconnect<&OnRemoveCollisionBody>();
 
     //LogWarningExtra("PhysicsSystem Destructor"); 
-}
-
-void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
-    //LogInfo("Removing Rigidbody");
-    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
-    RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
-    physicsSystem->RemoveRigidbody(e, rb);
 }
 
 void PhysicsSystem::Update(){
     /*#ifdef __EMSCRIPTEN__
     return;
     #endif*/
+
+    OD_PROFILE_SCOPE("PhysicsSystem::Update");
 
     if(GetScene()->Running() == false) return;
 
@@ -594,20 +724,37 @@ void PhysicsSystem::Update(){
         if(rb.data == nullptr) AddRigidbody(e, rb, transform, info);
         Assert(rb.data != nullptr);
 
-        Rigidbody* data = rb.data;
+        PhysicObject* data = rb.data;
         data->shape->setLocalScaling(ToBullet(transform.LocalScale()));
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Static){
-            btTransform trans = data->body->getWorldTransform();
+            btTransform trans = data->rbBody->getWorldTransform();
             transform.Position(FromBullet(trans.getOrigin()));
             transform.Rotation(FromBullet(trans.getRotation()));
         } else {
             btTransform physicsTransform = ToBullet(transform);
-            btMotionState* motionState = data->body->getMotionState();
+            btMotionState* motionState = data->rbBody->getMotionState();
             motionState->setWorldTransform(physicsTransform);
             //data->body->setWorldTransform(physicsTransform);
         }
     }
+
+    auto view2 = GetScene()->GetRegistry().view<CollisionBodyComponent, TransformComponent, InfoComponent>();
+    for(auto e: view2){
+        CollisionBodyComponent& rb = view2.get<CollisionBodyComponent>(e);
+        TransformComponent& transform = view2.get<TransformComponent>(e);
+        InfoComponent& info = view2.get<InfoComponent>(e);
+
+        if(rb.data == nullptr) AddCollisionBody(e, rb, transform, info);
+        Assert(rb.data != nullptr);
+
+        PhysicObject* data = rb.data;
+        data->shape->setLocalScaling(ToBullet(transform.LocalScale()));
+
+        btTransform physicsTransform = ToBullet(transform);
+        data->gtBody->setWorldTransform(physicsTransform);
+    }
+
 
     CheckForCollisionEvents();
 }
@@ -662,10 +809,12 @@ void PhysicsSystem::CheckForCollisionEvents(){
                 Assert(pBody1->getUserPointer() != nullptr);
 				//CollisionEvent((btRigidBody*)pBody0, (btRigidBody*)pBody1);
 
-                Rigidbody* r1 = static_cast<Rigidbody*>(pBody0->getUserPointer());
-                Rigidbody* r2 = static_cast<Rigidbody*>(pBody1->getUserPointer());
+                PhysicObject* r1 = static_cast<PhysicObject*>(pBody0->getUserPointer());
+                PhysicObject* r2 = static_cast<PhysicObject*>(pBody1->getUserPointer());
                 Assert(r1 != nullptr);
                 Assert(r2 != nullptr);
+                if(r1->type != PhysicObject::Type::RigidBody) continue;
+                if(r2->type != PhysicObject::Type::RigidBody) continue;
                 
                 Entity e1 = r1->entity; //Entity(r1->entityId, scene);
                 Entity e2 = r2->entity; //Entity(r2->entityId, scene);
@@ -720,10 +869,12 @@ void PhysicsSystem::CheckForCollisionEvents(){
         Assert(iter->second->getUserPointer() != nullptr);
         //SeparationEvent((btRigidBody*)iter->first, (btRigidBody*)iter->second);
 
-        Rigidbody* r1 = static_cast<Rigidbody*>(iter->first->getUserPointer());
-        Rigidbody* r2 = static_cast<Rigidbody*>(iter->second->getUserPointer());
+        PhysicObject* r1 = static_cast<PhysicObject*>(iter->first->getUserPointer());
+        PhysicObject* r2 = static_cast<PhysicObject*>(iter->second->getUserPointer());
         Assert(r1 != nullptr);
         Assert(r2 != nullptr);
+        if(r1->type != PhysicObject::Type::RigidBody) continue;
+        if(r2->type != PhysicObject::Type::RigidBody) continue;
 
         Entity e1 = r1->entity; //Entity(r1->entityId, scene);
         Entity e2 = r2->entity;// Entity(r2->entityId, scene);
@@ -777,15 +928,19 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
     if(rayCallback.hasHit()){
         // if so, get the rigid body we hit
-        btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
+        /*btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
         if(!pBody) return false;
         if(pBody->getUserPointer() == nullptr) return false;
-
         // prevent us from picking objects
         // like the ground plane
         //if(pBody->isStaticObject() || pBody->isKinematicObject()) return false;
+        Entity entity = static_cast<PhysicObject*>(pBody->getUserPointer())->entity;*/
 
-        Entity entity = static_cast<Rigidbody*>(pBody->getUserPointer())->entity;
+        const btCollisionObject* pBody = rayCallback.m_collisionObject;
+        if(!pBody) return false;
+        if(pBody->getUserPointer() == nullptr) return false;
+
+        Entity entity = static_cast<PhysicObject*>(pBody->getUserPointer())->entity;
 
         // set the result data
         //hit.pBody = pBody;
@@ -823,11 +978,15 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
     physicsWorld->world->rayTest(_pos, _dir, rayCallback);
 
     if(rayCallback.hasHit()){
-        btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
+        /*btRigidBody* pBody = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
         if(!pBody) return false;
         if(pBody->getUserPointer() == nullptr) return false;
+        Entity entity = static_cast<PhysicObject*>(pBody->getUserPointer())->entity;*/
 
-        Entity entity = static_cast<Rigidbody*>(pBody->getUserPointer())->entity;
+        const btCollisionObject* pBody = rayCallback.m_collisionObject;
+        if(!pBody) return false;
+        if(pBody->getUserPointer() == nullptr) return false;
+        Entity entity = static_cast<PhysicObject*>(pBody->getUserPointer())->entity;
 
         hit.entity = entity; //Entity(entityId, scene);
         hit.hitPoint = FromBullet(rayCallback.m_hitPointWorld);
@@ -870,17 +1029,23 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
     onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
 }
 
+void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
+    //LogInfo("Removing Rigidbody");
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
+    physicsSystem->RemoveRigidbody(e, rb);
+}
+
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     //LogInfo("Add Rigidbody");
-    Rigidbody* data = new Rigidbody();
-    data->updating = true;
-    data->world = physicsWorld->world;
-    data->layer = info.layer;
-    data->mask = c.mask;
-    
-    c.data = data;
+    c.data = new PhysicObject();
+    c.data->type = PhysicObject::Type::RigidBody;
+    c.data->updating = true;
+    c.data->world = physicsWorld->world;
+    c.data->layer = info.layer;
+    c.data->mask = c.mask;
     c.data->entity = entity;
 
     Vector3 pos = t.Position();
@@ -893,15 +1058,15 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     transform.setOrigin(btVector3(pos.x, pos.y, pos.z));
     transform.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
 
-    data->motionState = new btDefaultMotionState(transform);
+    c.data->motionState = new btDefaultMotionState(transform);
 
     btVector3 localInertia(0,0,0);
-    if(c.mass != 0.0f) data->shape->calculateLocalInertia(c.mass, localInertia);
+    if(c.mass != 0.0f) c.data->shape->calculateLocalInertia(c.mass, localInertia);
     
     //data->body = new btRigidBody(c.mass, data->motionState, data->shape, localInertia);
-    btRigidBody::btRigidBodyConstructionInfo cInfo(c.mass, data->motionState, data->shape, localInertia);
-    data->body = new btRigidBody(cInfo); //data->body = new btRigidBody(c.mass, data->motionState, data->shape);
-    data->body->setUserPointer(data);
+    btRigidBody::btRigidBodyConstructionInfo cInfo(c.mass, c.data->motionState, c.data->shape, localInertia);
+    c.data->rbBody = new btRigidBody(cInfo); //data->body = new btRigidBody(c.mass, data->motionState, data->shape);
+    c.data->rbBody->setUserPointer(c.data);
 
     //Update Rigidbody
     //c.SetType(c.GetType());
@@ -910,11 +1075,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     c.SetAngularFactor(c.angularFactor);
     /*data->body->setCcdMotionThreshold(1e-7);
     data->body->setCcdSweptSphereRadius(0.25);*/
-    data->body->setCollisionFlags(data->body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+    c.data->rbBody->setCollisionFlags(c.data->rbBody->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 
-    physicsWorld->world->addRigidBody(data->body, data->layer, data->mask);
+    physicsWorld->world->addRigidBody(c.data->rbBody, c.data->layer, c.data->mask);
 
-    data->updating = false;
+    c.data->updating = false;
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
@@ -923,11 +1088,11 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
     //LogInfo("Remove Rigidbody");
     if(rb.data == nullptr) return;
 
-    Rigidbody* data = rb.data;
-    data->world->removeRigidBody(data->body);
+    PhysicObject* data = rb.data;
+    data->world->removeRigidBody(data->rbBody);
 
     for(auto i = physicsWorld->pairsLastUpdate.begin(); i != physicsWorld->pairsLastUpdate.end(); ){
-        if(i->first == data->body || i->second == data->body){
+        if(i->first == data->rbBody || i->second == data->rbBody){
             physicsWorld->pairsLastUpdate.erase(i++);
         } else {
             ++i;
@@ -936,7 +1101,73 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
 
     if(rb.shape.type != CollisionShape::Type::Mesh) delete data->shape;
     delete data->motionState;
-    delete data->body;
+    delete data->rbBody;
+    delete data;
+    rb.data = nullptr;
+}
+
+void PhysicsSystem::OnRemoveCollisionBody(entt::registry& r, entt::entity e){
+    //LogInfo("Removing Rigidbody");
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    CollisionBodyComponent& rb = r.get<CollisionBodyComponent>(e);
+    physicsSystem->RemoveCollisionBody(e, rb);
+}
+
+void PhysicsSystem::AddCollisionBody(Entity entity, CollisionBodyComponent& c, TransformComponent& t, InfoComponent& info){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+
+    //LogInfo("Add Rigidbody");
+    c.data = new PhysicObject();
+    c.data->type = PhysicObject::Type::GhostObject;
+    c.data->updating = true;
+    c.data->world = physicsWorld->world;
+    c.data->layer = info.layer;
+    c.data->mask = c.mask;
+    c.data->entity = entity;
+
+    Vector3 pos = t.Position();
+    Quaternion rot = t.Rotation();
+
+    //c.SetShape(c.GetShape());
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(btVector3(pos.x, pos.y, pos.z));
+    transform.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
+
+    //data->motionState = new btDefaultMotionState(transform);
+    
+    c.data->gtBody = new btCollisionObject();
+    c.data->gtBody->setUserPointer(c.data);
+    //c.data->gtBody->setCollisionFlags(c.data->gtBody->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+    c.data->gtBody->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE | btCollisionObject::CF_KINEMATIC_OBJECT);
+
+    c.SetShape(c.GetShape());
+
+    physicsWorld->world->addCollisionObject(c.data->gtBody, c.data->layer, c.data->mask);
+
+    c.data->updating = false;
+}
+
+void PhysicsSystem::RemoveCollisionBody(Entity entity, CollisionBodyComponent& rb){
+    //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+    
+    //LogInfo("Remove Rigidbody");
+    if(rb.data == nullptr) return;
+
+    PhysicObject* data = rb.data;
+    data->world->removeCollisionObject(data->gtBody);
+
+    /*for(auto i = physicsWorld->pairsLastUpdate.begin(); i != physicsWorld->pairsLastUpdate.end(); ){
+        if(i->first == data->body || i->second == data->body){
+            physicsWorld->pairsLastUpdate.erase(i++);
+        } else {
+            ++i;
+        }
+    }*/
+
+    if(rb.shape.type != CollisionShape::Type::Mesh) delete data->shape;
+    delete data->gtBody;
     delete data;
     rb.data = nullptr;
 }

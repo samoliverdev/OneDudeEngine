@@ -9,6 +9,7 @@
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Core/Application.h"
+#include "OD/Core/Instrumentor.h"
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
 #include <DetourCommon.h>
@@ -1301,7 +1302,7 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 		}
 
 		outPath.status = NavMeshPathStatus::PathComplete;
-		LogWarningExtra("OK Count: %zd", outPath.corners.size());
+		//LogWarningExtra("OK Count: %zd", outPath.corners.size());
 		return true;
 	}
 
@@ -1359,6 +1360,8 @@ NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
 NavmeshSystem::~NavmeshSystem(){}
 
 void NavmeshSystem::Update(){
+	OD_PROFILE_SCOPE("NavmeshSystem::Update");
+
 	Ref<Navmesh> navmesh = nullptr;
 
 	auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();

@@ -90,10 +90,10 @@ void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
-    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB}};
+    framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
-    //framebuffer = new Framebuffer(framebufferSpecification);
-    framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    framebuffer = new Framebuffer(framebufferSpecification);
+    //framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     framebuffer->Invalidate();
 
     viewportSize.x = framebuffer->Width();

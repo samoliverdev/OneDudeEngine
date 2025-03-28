@@ -1,5 +1,6 @@
 #include "Scripts.h"
 #include "SceneManager.h"
+#include "OD/Core/Instrumentor.h"
 #include <functional>
 #include <string>
 
@@ -88,6 +89,8 @@ ScriptSystem::~ScriptSystem(){
 }
 
 void ScriptSystem::Update(){
+    OD_PROFILE_SCOPE("ScriptSystem::Update");
+
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
 
     for(auto entity: view){

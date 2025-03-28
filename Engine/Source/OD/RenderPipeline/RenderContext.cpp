@@ -29,17 +29,17 @@ RenderContext::RenderContext(Scene* inScene){
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification.colorAttachments = {
-        //{FramebufferTextureFormat::RGBA16F}, 
-        {FramebufferTextureFormat::RGBA8}//, 
+        {FramebufferTextureFormat::RGBA32F}, 
+        //{FramebufferTextureFormat::RGBA8}//, 
         //{FramebufferTextureFormat::RED_INTEGER}
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
-    //forwardOutColor = new Framebuffer(framebufferSpecification);
-    forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    forwardOutColor = new Framebuffer(framebufferSpecification);
+    //forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
-    /*framebufferSpecification.colorAttachments = {
+    framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGB32F}, // Pos
         {FramebufferTextureFormat::RGB32F}, // Normal
         {FramebufferTextureFormat::RGBA16F}, // Albedo
@@ -49,22 +49,22 @@ RenderContext::RenderContext(Scene* inScene){
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
-    framebufferSpecification.sample = 1;*/
-    //deferredOutColor = new Framebuffer(framebufferSpecification);
-    deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
+    framebufferSpecification.sample = 1;
+    deferredOutColor = new Framebuffer(framebufferSpecification);
+    //deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
-        //{FramebufferTextureFormat::RGBA16F}
-        {FramebufferTextureFormat::RGBA8}
+        {FramebufferTextureFormat::RGBA32F}
+        //{FramebufferTextureFormat::RGBA8}
     };
     framebufferSpecification.sample = 1;
-    //finalColor = new Framebuffer(framebufferSpecification);
-    //postFx1 = new Framebuffer(framebufferSpecification);
-    //postFx2 = new Framebuffer(framebufferSpecification);
-    finalColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
-    postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
-    postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    finalColor = new Framebuffer(framebufferSpecification);
+    postFx1 = new Framebuffer(framebufferSpecification);
+    postFx2 = new Framebuffer(framebufferSpecification);
+    //finalColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));

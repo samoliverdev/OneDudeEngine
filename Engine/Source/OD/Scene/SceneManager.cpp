@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
+#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 
@@ -33,11 +34,15 @@ void SceneManager::OnExit(){
 }
 
 void SceneManager::OnUpdate(float deltaTime){
+    OD_PROFILE_SCOPE("SceneManager::OnUpdate");
+
     if(GetActiveScene() == nullptr) return;
     GetActiveScene()->Update();
 }
 
 void SceneManager::OnRender(float deltaTime){
+    OD_PROFILE_SCOPE("SceneManager::OnRender");
+
     if(GetActiveScene() == nullptr) return;
     GetActiveScene()->Draw();
 }

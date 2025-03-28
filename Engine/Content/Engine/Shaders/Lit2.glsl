@@ -1,4 +1,220 @@
-#version 330 core
+#pragma BeginProperties
+    Color4 color
+    Vector4 sizeOffset 1 1 0 0
+    Texture2D mainTex White
+    Texture2D normalMap Normal
+    Float normalStrength 1 0 10
+    Texture2D emissionMap Black
+    Color4 emissionColor 0 0 0 0
+    Texture2D maskMap White
+    Float occlusion 1 0 1
+    Float metallic 0 0 1
+    Float smoothness 0.5 0.0 1.0
+    Float cutoff 0.5 0 1
+#pragma EndProperties
+
+#pragma BeginPassDef
+    Name MainPass
+    SupportInstancing true
+    MultiCompile _ SKINNED INSTANCING
+    MultiCompile Opaque Blend
+    MultiCompile Forward Deferred
+
+    CullFace BACK
+    DepthTest LESS
+    Blend Off
+#pragma EndPassDef
+
+#include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+/*BeginUniform(3, 0, RenderPipeline)
+    #include Engine/ShaderLibrary/UniformsDef.glsl
+EndUniform()*/
+
+/*layout(std140) uniform MaterialData{
+    vec4 color2;
+    float arr[4];
+    float smoothness2;
+    float metallic2;
+    float pad[2];
+};*/
+
+BeginUniform(0, 0, Main)
+    #include Engine/ShaderLibrary/UniformsDef.glsl
+    Uniform vec3 viewPos;
+    Uniform float normalStrength;
+    Uniform vec4 color;
+    Uniform vec4 sizeOffset;
+    Uniform vec4 emissionColor;
+    Uniform float occlusion;
+    Uniform float metallic;
+    Uniform float smoothness;
+    Uniform float cutoff;
+EndUniform()
+
+#include Engine/ShaderLibrary/TexturesDef.glsl
+Texture2D(0, 6, mainTex, mainTexSampler)
+Texture2D(0, 7, normalMap, normalMapSampler)
+Texture2D(0, 8, emissionMap, emissionMapSampler)
+Texture2D(0, 9, maskMap, maskMapSampler)
+
+#if defined(VERTEX) && defined(MainPass)
+    Out(0) vec3 outPos;
+    Out(1) vec3 outNormal;
+    Out(2) vec2 outTexCoord;
+    Out(3) vec3 outWorldPos;
+    Out(4) vec3 outWorldNormal;
+    //Out(5) mat3 outTBN;
+    Out(5) vec3 outT;
+    Out(6) vec3 outB;
+    Out(7) vec3 outN;
+
+    void main(){
+        vec4 localPos = GetLocalPos();
+        mat4 targetModelMatrix = GetModelMatrix();
+        vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
+        vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
+        vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
+
+        outPos = localPos.xyz;// pos;
+        outNormal = normal;
+        outTexCoord = texCoord;
+        
+        //outTBN = mat3(T, B, N);
+        outT = T;
+        outB = B;
+        outN = N;
+
+        outWorldPos = vec3(targetModelMatrix * localPos); //vec3(targetModelMatrix * vec4(pos, 1.0));
+        //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
+        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
+
+        OutPosition = projection * view * targetModelMatrix * localPos;//GetLocalPos();
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(MainPass)
+    #include Engine/ShaderLibrary/Core.glsl
+    #include Engine/ShaderLibrary/Common.glsl
+    #include Engine/ShaderLibrary/Surface.glsl
+    #include Engine/ShaderLibrary/Shadows.glsl
+    #include Engine/ShaderLibrary/Light.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
+
+    In(0) vec3 outPos;
+    In(1) vec3 outNormal;
+    In(2) vec2 outTexCoord;
+    In(3) vec3 outWorldPos;
+    In(4) vec3 outWorldNormal;
+    //In(5) mat3 outTBN;
+    In(5) vec3 outT;
+    In(6) vec3 outB;
+    In(7) vec3 outN;
+    
+    #ifdef Deferred
+        Out(9) vec4 gAlbedoSpec;
+
+        Out(1) vec3 gPosition;
+        Out(2) vec3 gNormal;
+        //Out(3) vec4 gAlbedoSpec;
+        Out(3) vec3 gEmission;
+        Out(4) vec3 gOther;
+    #else
+        Out(0) vec4 fragColor;
+    #endif
+
+    vec3 GetEmission(vec2 baseUV){
+        vec4 map = SampleTexture2D(emissionMap, emissionMapSampler, baseUV); //texture(emissionMap, baseUV);
+        return map.rgb * emissionColor.rgb;
+    }
+
+    vec4 GetMask(vec2 baseUV){
+        return SampleTexture2D(maskMap, maskMapSampler, baseUV);// texture(maskMap, baseUV);
+    }
+
+    float GetMetallic(vec2 baseUV){
+        float _metallic = metallic;
+        _metallic *= GetMask(baseUV).r;
+        return _metallic;
+    }
+
+    float GetSmoothness(vec2 baseUV){
+        float _smoothness = smoothness;
+        _smoothness *= GetMask(baseUV).a;
+        return _smoothness;
+    }
+
+    float GetOcclusion(vec2 baseUV){
+        //return 1.0;
+
+        float strength = occlusion;
+        float _occlusion = GetMask(baseUV).g;
+        _occlusion = mix(_occlusion, 1.0, strength);
+        return _occlusion;
+    }
+
+    vec3 GetNormal(mat3 TBN, vec2 uv){
+        vec3 n = SampleTexture2D(normalMap, normalMapSampler, uv).xyz; // texture(normal, uv).xyz;
+        n = n * 2.0 - 1.0;
+        n.xy *= normalStrength;
+        n = normalize(n);
+        return normalize(TBN * n);
+    }
+
+    float Dither(vec2 fragCoord) {
+        return fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
+        //return fract(sin(dot(fragCoord, vec2(12.9898, 78.233))) * 43758.5453) * 0.003;
+    }
+
+    void main(){
+        //vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
+        vec2 uv = outTexCoord * sizeOffset.xy + sizeOffset.zw;
+        vec4 base = ToLinear(SampleTexture2D(mainTex, mainTexSampler, uv)); //textureSRGB(mainTex, uv);
+        if(base.a < cutoff) discard;
+        base = base * color;
+        
+        /*vec3 normalMap = exture(normal, uv).rgb);
+        vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
+        _normal = normalize(fsIn.TBN * _normal);*/ 
+        
+        vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+
+        Surface surface;
+        surface.position = outWorldPos;
+        surface.normal = _normal;
+        surface.viewDirection = normalize(viewPos - outWorldPos);
+        surface.depth = -(view * vec4(outWorldPos, 1)).z;
+        surface.color = base.rgb;
+        surface.alpha = base.a;
+        surface.occlusion = GetOcclusion(uv);
+        surface.metallic = GetMetallic(uv);
+        surface.smoothness = GetSmoothness(uv);
+
+        #ifdef Deferred
+        
+        gPosition = surface.position;
+        gNormal = surface.normal;
+        gAlbedoSpec.rgb = surface.color.rgb;
+        //gAlbedoSpec.a = surface.smoothness;
+        gEmission.rgb = GetEmission(uv);
+        gOther.r = surface.smoothness;
+        gOther.g = surface.metallic;
+        gOther.b = surface.occlusion;
+        
+        #else
+
+        surface.smoothness = 1 - surface.smoothness;
+        vec3 color = GetFinalColor(surface);
+        color += GetEmission(uv);
+        fragColor = vec4(color, surface.alpha);
+        
+        #endif
+    }
+#endif
+
+
+/*#version 330 core
 
 #pragma BeginProperties
     Color4 color
@@ -15,7 +231,17 @@
     Float cutoff 0.5 0 1
 #pragma EndProperties
 
-#pragma BeginPass 
+#pragma BeginPassDef
+    Name MainPass
+    SupportInstancing true
+    MultiCompile _ SKINNED INSTANCING
+    MultiCompile Opaque Blend
+    MultiCompile Forward Deferred
+
+    CullFace BACK
+    DepthTest LESS
+    Blend Off
+#pragma EndPassDef
 
 #pragma SupportInstancing true
 #pragma DrawType Stand
@@ -27,164 +253,156 @@
 #pragma DepthTest LESS
 #pragma Blend Off
 
-#ifdef VERTEX
+#if defined(VERTEX) && defined(MainPass)
 
-#include Engine/ShaderLibrary/Vertex.glsl
+    out VsOut{
+        vec3 pos;
+        vec3 normal;
+        vec2 texCoord;
+        vec3 worldPos;
+        vec3 worldNormal;
+        mat3 TBN;
+    } vsOut;
 
-out VsOut{
-    vec3 pos;
-    vec3 normal;
-    vec2 texCoord;
-    vec3 worldPos;
-    vec3 worldNormal;
-    mat3 TBN;
-} vsOut;
+    void main(){
+        mat4 targetModelMatrix = GetModelMatrix();
 
-void main(){
-    mat4 targetModelMatrix = GetModelMatrix();
+        vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
+        vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
+        vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
+        
+        vsOut.pos = pos;
+        vsOut.normal = normal;
+        vsOut.texCoord = texCoord;
+        vsOut.TBN = mat3(T, B, N);
+        vsOut.worldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
+        //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
+        vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
 
-    vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
-    vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
-    vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
-    
-    vsOut.pos = pos;
-    vsOut.normal = normal;
-    vsOut.texCoord = texCoord;
-    vsOut.TBN = mat3(T, B, N);
-    vsOut.worldPos = vec3(targetModelMatrix * vec4(pos, 1.0));
-    //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
-    vsOut.worldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
-
-    gl_Position = projection * view * targetModelMatrix * GetLocalPos();
-}
+        gl_Position = projection * view * targetModelMatrix * GetLocalPos();
+    }
 #endif
 
-#ifdef FRAGMENT
+#if defined(FRAGMENT) && defined(MainPass)
+    uniform mat4 view;
 
-uniform mat4 view;
+    Engine/ShaderLibrary/Core.glsl
+    Engine/ShaderLibrary/Common.glsl
+    Engine/ShaderLibrary/Surface.glsl
+    Engine/ShaderLibrary/Shadows.glsl
+    Engine/ShaderLibrary/Light.glsl
+    Engine/ShaderLibrary/PBR.glsl
 
-#include Engine/ShaderLibrary/Core.glsl
-#include Engine/ShaderLibrary/Common.glsl
-#include Engine/ShaderLibrary/Surface.glsl
-#include Engine/ShaderLibrary/Shadows.glsl
-#include Engine/ShaderLibrary/Light.glsl
-#include Engine/ShaderLibrary/PBR.glsl
+    in VsOut{
+        vec3 pos;
+        vec3 normal;
+        vec2 texCoord;
+        vec3 worldPos;
+        vec3 worldNormal;
+        mat3 TBN;
+    } fsIn;
 
-in VsOut{
-    vec3 pos;
-    vec3 normal;
-    vec2 texCoord;
-    vec3 worldPos;
-    vec3 worldNormal;
-    mat3 TBN;
-} fsIn;
+    uniform vec3 viewPos;
 
-uniform vec3 viewPos;
-
-uniform vec4 color = vec4(1,1,1,1);
-uniform vec4 sizeOffset = vec4(1, 1, 0, 0);
-uniform sampler2D mainTex;
-uniform sampler2D normal;
-uniform float normalStrength = 1;
-uniform sampler2D emissionMap;
-uniform vec4 emissionColor = vec4(0,0,0,0);
-uniform sampler2D maskMap;
-uniform float occlusion = 1;
-uniform float metallic = 0;
-uniform float smoothness = 0.5;
-uniform float cutoff  = 0.5;
-
-#ifdef Deferred
-    layout(location = 0) out vec3 gPosition;
-    layout(location = 1) out vec3 gNormal;
-    layout(location = 2) out vec4 gAlbedoSpec;
-    layout(location = 3) out vec3 gEmission;
-    layout(location = 4) out vec3 gOther;
-#else
-    out vec4 fragColor;
-#endif
-
-vec3 GetEmission(vec2 baseUV){
-	vec4 map = texture(emissionMap, baseUV);
-	return map.rgb * emissionColor.rgb;
-}
-
-vec4 GetMask(vec2 baseUV){
-	return texture(maskMap, baseUV);
-}
-
-float GetMetallic(vec2 baseUV){
-	float _metallic = metallic;
-	_metallic *= GetMask(baseUV).r;
-	return _metallic;
-}
-
-float GetSmoothness(vec2 baseUV){
-	float _smoothness = smoothness;
-	_smoothness *= GetMask(baseUV).a;
-	return _smoothness;
-}
-
-float GetOcclusion(vec2 baseUV){
-	//return 1.0;
-
-    float strength = occlusion;
-	float _occlusion = GetMask(baseUV).g;
-	_occlusion = mix(_occlusion, 1.0, strength);
-	return _occlusion;
-}
-
-vec3 GetNormal(mat3 TBN, vec2 uv){
-    vec3 n = texture(normal, uv).xyz;
-    n = n * 2.0 - 1.0;
-    n.xy *= normalStrength;
-    n = normalize(n);
-    return normalize(TBN * n);
-}
-
-void main(){
-    vec2 uv = fsIn.texCoord * sizeOffset.xy + sizeOffset.zw;
-    vec4 base = textureSRGB(mainTex, uv);
-    if(base.a < cutoff) discard;
-    base = base * color;
-    
-    /*vec3 normalMap = exture(normal, uv).rgb);
-    vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
-    _normal = normalize(fsIn.TBN * _normal);*/ 
-    
-    vec3 _normal = GetNormal(fsIn.TBN, uv);
-
-    Surface surface;
-    surface.position = fsIn.worldPos;
-    surface.normal = _normal;
-    surface.viewDirection = normalize(viewPos - fsIn.worldPos);
-    surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
-    surface.color = base.rgb;
-    surface.alpha = base.a;
-    surface.occlusion = GetOcclusion(uv);
-    surface.metallic = GetMetallic(uv);
-    surface.smoothness = GetSmoothness(uv);
+    uniform vec4 color = vec4(1,1,1,1);
+    uniform vec4 sizeOffset = vec4(1, 1, 0, 0);
+    uniform sampler2D mainTex;
+    uniform sampler2D normal;
+    uniform float normalStrength = 1;
+    uniform sampler2D emissionMap;
+    uniform vec4 emissionColor = vec4(0,0,0,0);
+    uniform sampler2D maskMap;
+    uniform float occlusion = 1;
+    uniform float metallic = 0;
+    uniform float smoothness = 0.5;
+    uniform float cutoff  = 0.5;
 
     #ifdef Deferred
-    
-    gPosition = surface.position;
-    gNormal = surface.normal;
-    gAlbedoSpec.rgb = surface.color.rgb;
-    //gAlbedoSpec.a = surface.smoothness;
-    gEmission.rgb = GetEmission(uv);
-    gOther.r = surface.smoothness;
-    gOther.g = surface.metallic;
-    gOther.b = surface.occlusion;
-    
+        layout(location = 0) out vec3 gPosition;
+        layout(location = 1) out vec3 gNormal;
+        layout(location = 2) out vec4 gAlbedoSpec;
+        layout(location = 3) out vec3 gEmission;
+        layout(location = 4) out vec3 gOther;
     #else
-    
-    surface.smoothness = 1 - surface.smoothness;
-    vec3 color = GetFinalColor(surface);
-    color += GetEmission(uv);
-    fragColor = vec4(color, surface.alpha);
-    
+        out vec4 fragColor;
     #endif
-}
-#endif
 
-#pragma EndPass 
+    vec3 GetEmission(vec2 baseUV){
+        vec4 map = texture(emissionMap, baseUV);
+        return map.rgb * emissionColor.rgb;
+    }
+
+    vec4 GetMask(vec2 baseUV){
+        return texture(maskMap, baseUV);
+    }
+
+    float GetMetallic(vec2 baseUV){
+        float _metallic = metallic;
+        _metallic *= GetMask(baseUV).r;
+        return _metallic;
+    }
+
+    float GetSmoothness(vec2 baseUV){
+        float _smoothness = smoothness;
+        _smoothness *= GetMask(baseUV).a;
+        return _smoothness;
+    }
+
+    float GetOcclusion(vec2 baseUV){
+        //return 1.0;
+
+        float strength = occlusion;
+        float _occlusion = GetMask(baseUV).g;
+        _occlusion = mix(_occlusion, 1.0, strength);
+        return _occlusion;
+    }
+
+    vec3 GetNormal(mat3 TBN, vec2 uv){
+        vec3 n = texture(normal, uv).xyz;
+        n = n * 2.0 - 1.0;
+        n.xy *= normalStrength;
+        n = normalize(n);
+        return normalize(TBN * n);
+    }
+
+    void main(){
+        vec2 uv = fsIn.texCoord * sizeOffset.xy + sizeOffset.zw;
+        vec4 base = ToLinear(SampleTexture2D(mainTex, mainTexSampler, uv)); //textureSRGB(mainTex, uv);
+        if(base.a < cutoff) discard;
+        base = base * color;
+        
+        vec3 _normal = GetNormal(fsIn.TBN, uv);
+
+        Surface surface;
+        surface.position = fsIn.worldPos;
+        surface.normal = _normal;
+        surface.viewDirection = normalize(viewPos - fsIn.worldPos);
+        surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
+        surface.color = base.rgb;
+        surface.alpha = base.a;
+        surface.occlusion = GetOcclusion(uv);
+        surface.metallic = GetMetallic(uv);
+        surface.smoothness = GetSmoothness(uv);
+
+        #ifdef Deferred
+        
+        gPosition = surface.position;
+        gNormal = surface.normal;
+        gAlbedoSpec.rgb = surface.color.rgb;
+        //gAlbedoSpec.a = surface.smoothness;
+        gEmission.rgb = GetEmission(uv);
+        gOther.r = surface.smoothness;
+        gOther.g = surface.metallic;
+        gOther.b = surface.occlusion;
+        
+        #else
+        
+        surface.smoothness = 1 - surface.smoothness;
+        vec3 color = GetFinalColor(surface);
+        color += GetEmission(uv);
+        fragColor = vec4(color, surface.alpha);
+        
+        #endif
+    }
+#endif
+*/

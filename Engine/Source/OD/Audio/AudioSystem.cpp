@@ -5,6 +5,7 @@
 #include <soloud_speech.h>
 #include <soloud_thread.h>
 #include "OD/Scene/SceneManager.h"
+#include "OD/Core/Instrumentor.h"
 
 namespace OD{
 
@@ -51,6 +52,8 @@ AudioSystem::~AudioSystem(){
 }
 
 void AudioSystem::Update(){
+    OD_PROFILE_SCOPE("ScriptSystem::Update");
+
     if(hasInited == false){
         soloud.init();
         hasInited = true;

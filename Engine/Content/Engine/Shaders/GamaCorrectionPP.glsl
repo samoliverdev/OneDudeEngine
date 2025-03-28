@@ -29,8 +29,20 @@
     in vec2 texCoord;
     out vec4 fragColor;
 
+    vec3 ApplyDithering(vec3 color, vec2 uv) {
+        float ditheringNoise = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+        return color + (ditheringNoise * 0.01);  // Add slight noise
+    }
+
+    float Dither(vec2 fragCoord) {
+        return fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
+        //return fract(sin(dot(fragCoord, vec2(12.9898, 78.233))) * 43758.5453) * 0.003;
+    }
+
     void main() {
         fragColor = texture(mainTex, texCoord);
-        fragColor.rgb = ApplyGamaCorrection(fragColor.rgb);
+        fragColor.rgb = ApplyGamaCorrection(fragColor.rgb);// + vec3(Dither(gl_FragCoord.xy));
+        //fragColor.rgb = ApplyDithering(fragColor.rgb, texCoord);
+        //fragColor.rgb = clamp(fragColor.rgb, 0.0, 1.0);
     }
 #endif

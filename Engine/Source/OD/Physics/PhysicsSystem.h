@@ -12,8 +12,7 @@ class btCollisionObject;
 
 namespace OD{
 
-struct Rigidbody;
-struct Carbody;
+struct PhysicObject;
 struct PhysicsWorld;
 
 //using MeshShapeData = btBvhTriangleMeshShape;
@@ -134,9 +133,33 @@ private:
 
     float mass = 1;
     bool neverSleep = false;
-    Rigidbody* data = nullptr; 
+    PhysicObject* data = nullptr; 
 
     Vector3 angularFactor = {1, 1, 1};
+
+    void UpdateSettings();
+};
+
+struct OD_API CollisionBodyComponent{
+    friend struct PhysicsSystem;
+
+    int mask = AllLayers;
+
+    static void OnGui(Entity& e, Scene& scene);
+
+    inline CollisionShape GetShape(){ return shape; }
+    void SetShape(CollisionShape shape);
+    
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive & ar){
+        ArchiveDump(ar, CEREAL_NVP(shape));
+        ArchiveDump(ar, CEREAL_NVP(neverSleep));
+    }
+private:
+    CollisionShape shape;
+    bool neverSleep = false;
+    PhysicObject* data = nullptr; 
 
     void UpdateSettings();
 };
@@ -213,11 +236,15 @@ struct OD_API PhysicsSystem: public System{
     void* GetInternlWorld(); // Temp/Experimental 
 
 private:
-    static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
-
     void CheckForCollisionEvents();
+
+    static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
     void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveRigidbody(Entity entity, RigidbodyComponent& c);
+
+    static void OnRemoveCollisionBody(entt::registry& r, entt::entity e);
+    void AddCollisionBody(Entity entity, CollisionBodyComponent& c, TransformComponent& t, InfoComponent& info);
+    void RemoveCollisionBody(Entity entity, CollisionBodyComponent& c);
 
     PhysicsWorld* physicsWorld;
     

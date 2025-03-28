@@ -42,7 +42,7 @@ float SpecularStrength(Surface surface, BRDF brdf, Light light){
 	float r2 = Square(brdf.roughness);
 	float d2 = Square(nh2 * (r2 - 1.0) + 1.00001);
 	float normalization = brdf.roughness * 4.0 + 2.0;
-	return r2 / (d2 * max(0.1, lh2) * normalization);
+	return r2 / (d2 * (lh2 + 0.001) * normalization); //return r2 / (d2 * max(0.1, lh2) * normalization);
 }
 
 vec3 DirectBRDF(Surface surface, BRDF brdf, Light light){

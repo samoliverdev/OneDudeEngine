@@ -28,7 +28,11 @@ void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
         toneMappingReinhardPass->SetFloat("exposure", exposure);
     }
 
-    Graphics::DrawQuadPostProcessing(src, dst, *pass);
+    //Graphics::DrawQuadPostProcessing(src, dst, *pass);
+    Graphics::BeginFramebuffer(*dst);
+    pass->SetTexture("mainTex", src, 0);
+    Graphics::DrawFullScreenQuad(*pass, Matrix4Identity);
+    Graphics::EndFramebuffer();
 }
 
 }

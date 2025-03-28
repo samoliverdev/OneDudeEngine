@@ -761,6 +761,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                 SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
             }
             if(map.type == MaterialMap::Type::Texture){
+                if(i.second.texture == nullptr) continue;
                 Assert(i.second.texture != nullptr);
                 SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
                 material.currentTextureSlot += 1;

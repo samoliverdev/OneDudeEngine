@@ -3,6 +3,7 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/RenderPipeline/LightComponent.h"
 #include "OD/Core/Application.h"
+#include "OD/Core/Instrumentor.h"
 #include <stdlib.h>
 
 namespace OD{
@@ -30,6 +31,8 @@ LuaScriptSystem::LuaScriptSystem(Scene* inScene):System(inScene){
 }
 
 void LuaScriptSystem::Update(){
+    OD_PROFILE_SCOPE("LuaScriptSystem::OnUpdate");
+
     auto scriptView = GetScene()->GetRegistry().view<LuaScriptComponent>();
     for(auto e: scriptView){
         LuaScriptComponent& luaScript = scriptView.get<LuaScriptComponent>(e);
