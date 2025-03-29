@@ -14,7 +14,7 @@ public:
     float exposure = 1;
 
     ToneMappingPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
     void OnGui() override;
 
     template <class Archive>

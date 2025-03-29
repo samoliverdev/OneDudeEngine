@@ -249,7 +249,8 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
         if(i->enable){
             i->OnRenderImage(
                 step == false ? postFx1 : postFx2, 
-                step == false ? postFx2 : postFx1
+                step == false ? postFx2 : postFx1,
+                this
             );
         } else {
             Graphics::BlitFramebuffer(

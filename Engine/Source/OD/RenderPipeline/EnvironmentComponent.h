@@ -46,6 +46,8 @@ struct OD_API EnvironmentSettings{
     Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
     Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
     Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
+
+    std::vector<Ref<PostFX>> customPostPrecessings;
     
     template <class Archive>
     void serialize(Archive& ar){

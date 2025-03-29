@@ -18,7 +18,7 @@ ToneMappingPostFX::ToneMappingPostFX(){
     toneMappingACESPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingACESPostFX.glsl"));
 }
 
-void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
+void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
     Ref<Material> pass = copyPass;
     if(mode == Mode::Neutral) pass = toneMappingNeutralPass;
     if(mode == Mode::Reinhard) pass = toneMappingReinhardPass;

@@ -13,12 +13,11 @@ enum class RenderQueueRange{All, Opaue, Transparent};
 
 class OD_API PostFX{
 public:
-    virtual ~PostFX(){}
-
-    virtual void OnSetup(){}
-    virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst){}
     bool enable = true;
 
+    virtual ~PostFX(){}
+    virtual void OnSetup(){}
+    virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){}
     virtual void OnGui(){}
 };
 
@@ -122,6 +121,9 @@ public:
     //-------Settings---------
     Ref<Material> skyMaterial = nullptr;
     Framebuffer* overrideFramebuffer = nullptr;
+
+    inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
+    inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
 
 private:
     Framebuffer* deferredOutColor;

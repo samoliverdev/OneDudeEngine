@@ -19,7 +19,7 @@ public:
     float saturation = 0;
 
     ColorGradingPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override;
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
 
     inline void OnGui() override {
         cereal::ImGuiArchive colorGradring;

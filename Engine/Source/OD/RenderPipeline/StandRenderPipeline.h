@@ -26,7 +26,7 @@ public:
         Assert(_ppShader != nullptr);
     }
 
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override {
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override {
         _ppShader->SetFloat("option", _option);
         Graphics::DrawQuadPostProcessing(src, dst, *_ppShader);
     }
@@ -42,7 +42,7 @@ public:
         gamaCorrection = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
     }
 
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst) override{
+    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override{
         //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
 
         Graphics::BeginFramebuffer(*dst);

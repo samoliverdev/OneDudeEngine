@@ -69,6 +69,13 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
             ImGui::TreePop();
         }
     }
+
+    if(ImGui::TreeNode("CustomPostFX")){
+        for(auto& i: environment.settings.customPostPrecessings){
+            i->OnGui();
+        }
+        ImGui::TreePop();
+    }
 }
 
 }

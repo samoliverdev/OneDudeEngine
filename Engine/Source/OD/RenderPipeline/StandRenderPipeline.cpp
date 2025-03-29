@@ -762,6 +762,7 @@ void CameraRenderer::RenderUI(){
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out;
 
+    for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     out.push_back(gamaCorrectionPP);

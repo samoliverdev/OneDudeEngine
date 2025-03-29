@@ -11,7 +11,7 @@ ColorGradingPostFX::ColorGradingPostFX(){
     Assert(colorGradingPass != nullptr);
 }
 
-void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
+void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
     colorGradingPass->SetVector4("_ColorAdjustments", Vector4(
         math::pow(2.0f, postExposure),
         contrast * 0.01f + 1.0f,

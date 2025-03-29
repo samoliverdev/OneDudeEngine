@@ -35,7 +35,7 @@ inline float LinearToGammaSpaceExact(float value){
     return pow(value, 0.45454545F);
 }
 
-void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst){
+void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
     maxIterations = math::clamp<int>(maxIterations, 0, 16);
     if(downscaleLimit < 1) downscaleLimit = 1; 
 
