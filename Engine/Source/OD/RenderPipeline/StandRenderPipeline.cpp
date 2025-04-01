@@ -888,7 +888,7 @@ void StandRenderPipeline::Update(){
 }
 
 void StandRenderPipeline::OnDrawGizmos(Camera& cm){
-    //return;
+    return;
 
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){

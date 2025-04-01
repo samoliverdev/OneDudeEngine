@@ -1,5 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
+    DepthTest ALWAYS
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

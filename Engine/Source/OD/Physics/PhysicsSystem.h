@@ -13,6 +13,7 @@ class btCollisionObject;
 namespace OD{
 
 struct PhysicObject;
+struct JointObject;
 struct PhysicsWorld;
 
 //using MeshShapeData = btBvhTriangleMeshShape;
@@ -164,6 +165,36 @@ private:
     void UpdateSettings();
 };
 
+struct OD_API JointComponent{
+    friend struct PhysicsSystem;
+
+    Entity connectedBody = EntityNull;
+    Vector3 pivot = Vector3Zero;
+    Vector3 axis = Vector3Zero;
+    bool autoConfigConnectedPivot = true;
+    Vector3 connectedPivot = Vector3Zero;
+    Vector3 connectedAxis = Vector3Zero;
+    Vector3 angularLowerLimit = Vector3Zero;
+    Vector3 angularUpperLimit = Vector3Zero;
+
+    bool disableSelfCollision = true;
+
+    //static void OnGui(Entity& e, Scene& scene);
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        ArchiveDumpNVP(ar, connectedBody);
+        ArchiveDumpNVP(ar, pivot);
+        ArchiveDumpNVP(ar, connectedPivot);
+        ArchiveDumpNVP(ar, angularLowerLimit);
+        ArchiveDumpNVP(ar, angularUpperLimit);
+        ArchiveDumpNVP(ar, disableSelfCollision);
+    }
+
+private:
+    JointObject* data = nullptr;
+};
+
 struct OD_API HeightmapColliderComponent{
     friend struct PhysicsSystem;
 
@@ -245,6 +276,10 @@ private:
     static void OnRemoveCollisionBody(entt::registry& r, entt::entity e);
     void AddCollisionBody(Entity entity, CollisionBodyComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveCollisionBody(Entity entity, CollisionBodyComponent& c);
+
+    static void OnRemoveJoint(entt::registry& r, entt::entity e);
+    void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);
+    void RemoveJoint(Entity entity, JointComponent& c);
 
     PhysicsWorld* physicsWorld;
     

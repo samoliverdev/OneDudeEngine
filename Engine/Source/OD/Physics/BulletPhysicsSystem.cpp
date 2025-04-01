@@ -24,6 +24,7 @@ namespace OD{
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
     SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent");
+    SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
@@ -66,6 +67,11 @@ struct PhysicObject{
 
     Entity entity;
     bool updating = false;
+};
+
+struct JointObject{
+    btGeneric6DofConstraint* dof6 = nullptr;
+    btDynamicsWorld* world = nullptr;
 };
 
 typedef std::pair<const btRigidBody*, const btRigidBody*> CollisionPair;
@@ -126,11 +132,11 @@ public:
     Scene* scene = nullptr;
 
     void drawLine(const btVector3 &from,const btVector3&to, const btVector3 &color) override{
-        Graphics::AddDrawLineCommand(
+        /*Graphics::AddDrawLineCommand(
             Vector3(from.x(), from.y(), from.z()), 
             Vector3(to.x(), to.y(), to.z())
         );
-        return;
+        return;*/
 
         if(scene != nullptr){
             TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
@@ -167,18 +173,18 @@ public:
     }
 
     void flushLines() override{
-        Graphics::DrawLinesComamnd(
+        /*Graphics::DrawLinesComamnd(
             Vector3(0, 1, 0),
             2
-        );
+        );*/
     }
 
     void reportErrorWarning(const char* warningString) override {}
 	void draw3dText(const btVector3& location, const char* textString) override {}
-	void setDebugMode(int debugMode) override {}
-	int getDebugMode() const override { return 1; }
-
-
+	void setDebugMode(int debugMode) override { this->debugMode = debugMode; }
+	int getDebugMode() const override { return debugMode; }
+private:
+    int debugMode = btIDebugDraw::DBG_DrawWireframe;
 };
 
 Debuger debuger;
@@ -609,6 +615,8 @@ int ACCURACY = 10;
 bool PhysicsSystem::IsSimulationEnable(){ return GetScene()->Running(); }
 
 PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
+    debuger.setDebugMode(btIDebugDraw::DBG_DrawConstraints | btIDebugDraw::DBG_DrawConstraintLimits | btIDebugDraw::DBG_DrawWireframe);
+
     physicsWorld = new PhysicsWorld();
     physicsWorld->collisionConfiguration = new btDefaultCollisionConfiguration();
     physicsWorld->dispatcher = new btCollisionDispatcher(physicsWorld->collisionConfiguration);
@@ -627,6 +635,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     //info.m_numIterations = 4; //10; 50;
     debuger.scene = inScene;
 
+    this->scene->GetRegistry().on_destroy<JointComponent>().connect<&OnRemoveJoint>();
     this->scene->GetRegistry().on_destroy<CollisionBodyComponent>().connect<&OnRemoveCollisionBody>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
@@ -663,12 +672,14 @@ void PhysicsSystem::Update(){
     OD_PROFILE_SCOPE("PhysicsSystem::Update");
 
     if(GetScene()->Running() == false) return;
-
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
-
     physicsWorld->world->stepSimulation(Application::DeltaTime(), ACCURACY);
     //world->synchronizeMotionStates();
     //world->performDiscreteCollisionDetection();
+    
+    /*if(GetScene()->Running() == true){
+        physicsWorld->world->stepSimulation(Application::DeltaTime(), ACCURACY);
+    }*/
 
     auto heightView = GetScene()->GetRegistry().view<HeightmapColliderComponent, TransformComponent>();
     for(auto e: heightView){
@@ -755,12 +766,37 @@ void PhysicsSystem::Update(){
         data->gtBody->setWorldTransform(physicsTransform);
     }
 
+    auto view3 = GetScene()->GetRegistry().view<JointComponent, TransformComponent, InfoComponent>();
+    for(auto e: view3){
+        JointComponent& rb = view3.get<JointComponent>(e);
+        TransformComponent& transform = view3.get<TransformComponent>(e);
+        InfoComponent& info = view3.get<InfoComponent>(e);
+
+        if(rb.data == nullptr) AddJoint(GetScene(), e, rb, transform, info);
+
+        rb.data->dof6->setAngularLowerLimit(ToBullet(rb.angularLowerLimit));
+        rb.data->dof6->setAngularUpperLimit(ToBullet(rb.angularUpperLimit));
+    }
 
     CheckForCollisionEvents();
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
     ShowDebugGizmos();
+    return;
+
+    auto view3 = GetScene()->GetRegistry().view<JointComponent, TransformComponent, InfoComponent>();
+    for(auto e: view3){
+        JointComponent& rb = view3.get<JointComponent>(e);
+        TransformComponent& transform = view3.get<TransformComponent>(e);
+        
+        Vector3 pivot = transform.TransformPoint(rb.pivot);
+        Graphics::DrawWireCube(Transform(pivot, QuaternionIdentity, Vector3(0.25f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
+
+        TransformComponent& t = scene->GetComponent<TransformComponent>(rb.connectedBody);
+        Vector3 pivot2 = t.TransformPoint(rb.connectedPivot);
+        Graphics::DrawWireCube(Transform(pivot2, QuaternionIdentity, Vector3(0.25f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
+    }
 }
 
 void PhysicsSystem::CheckForCollisionEvents(){
@@ -1170,6 +1206,73 @@ void PhysicsSystem::RemoveCollisionBody(Entity entity, CollisionBodyComponent& r
     delete data->gtBody;
     delete data;
     rb.data = nullptr;
+}
+
+void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    JointComponent& rb = r.get<JointComponent>(e);
+    physicsSystem->RemoveJoint(e, rb);
+}
+
+void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info){
+    if(scene->HasComponent<RigidbodyComponent>(entity) == false) return;
+
+    c.data = new JointObject();
+    c.data->world = physicsWorld->world;
+
+    RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(entity);
+    if(rb.data == nullptr) return;
+
+    btTransform localA;
+    btTransform localB;
+	bool useLinearReferenceFrameA = true;
+
+    //c.angularLowerLimit = {-SIMD_PI*0.3f, -SIMD_EPSILON, -SIMD_PI*0.4f};
+    //c.angularUpperLimit = {SIMD_PI*0.3f, SIMD_EPSILON, SIMD_PI*0.4f};
+
+    if(c.connectedBody != EntityNull){
+        RigidbodyComponent& rb2 = scene->GetComponent<RigidbodyComponent>(c.connectedBody);
+        if(rb2.data == nullptr) return;  
+
+        rb.data->rbBody->setDamping(0.05f, 0.85f); // Low linear damping, high angular damping
+        rb.data->rbBody->setFriction(5.0f); // Increase friction to prevent sliding
+        rb.data->rbBody->setSleepingThresholds(0.1f, 0.1f);
+
+        /*rb.data->rbBody->setCcdMotionThreshold(0);
+        rb.data->rbBody->setCcdSweptSphereRadius(0);
+        rb.data->rbBody->setDeactivationTime(1.0f);*/
+
+        localA.setIdentity();
+        //localA.getBasis().setEulerZYX(c.axis.z, c.axis.y, c.axis.x);
+        localA.setOrigin(ToBullet(c.pivot));
+        
+        localB.setIdentity();
+        //localB.getBasis().setEulerZYX(c.connectedAxis.z, c.connectedAxis.y, c.connectedAxis.x);
+        localB.setOrigin(ToBullet(c.connectedPivot));
+        
+        c.data->dof6 = new btGeneric6DofConstraint(*rb2.data->rbBody, *rb.data->rbBody, localB, localA, useLinearReferenceFrameA);
+        //c.data->dof6 = new btGeneric6DofConstraint(*rb.data->rbBody, *rb2.data->rbBody, localA, localB, useLinearReferenceFrameA);
+        c.data->dof6->setAngularLowerLimit(ToBullet(c.angularLowerLimit));
+        c.data->dof6->setAngularUpperLimit(ToBullet(c.angularUpperLimit));
+        c.data->world->addConstraint(c.data->dof6, c.disableSelfCollision);
+    } else {
+        Assert(false && "Not tested for now!!!");
+        localA.setIdentity();
+        localA.setOrigin(ToBullet(c.pivot));
+        c.data->dof6 = new btGeneric6DofConstraint(*rb.data->rbBody, localA, useLinearReferenceFrameA);
+        c.data->dof6->setAngularLowerLimit(ToBullet(c.angularLowerLimit));
+        c.data->dof6->setAngularUpperLimit(ToBullet(c.angularUpperLimit));
+        c.data->world->addConstraint(c.data->dof6, c.disableSelfCollision);
+    }
+}
+
+void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& c){
+    if(c.data == nullptr) return;
+
+    c.data->world->removeConstraint(c.data->dof6);
+    delete c.data->dof6;
+    delete c.data;
+    c.data = nullptr;
 }
 
 #pragma endregion
