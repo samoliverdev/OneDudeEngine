@@ -91,6 +91,31 @@ vec4 GetLocalPos(){
 #endif
 }
 
+vec3 GetLocalNormal(){
+#ifdef SKINNED
+    mat3 skinNormalMatrix = mat3(animated[boneIds.x]) * weights.x +
+                        mat3(animated[boneIds.y]) * weights.y +
+                        mat3(animated[boneIds.z]) * weights.z +
+                        mat3(animated[boneIds.w]) * weights.w;
+    return normalize(skinNormalMatrix * normal);
+#else
+    return normalize(normal);
+#endif
+}
+
+vec3 GetLocalTangent(){
+#ifdef SKINNED
+    mat3 skinTangentMatrix = mat3(animated[boneIds.x]) * weights.x +
+                             mat3(animated[boneIds.y]) * weights.y +
+                             mat3(animated[boneIds.z]) * weights.z +
+                             mat3(animated[boneIds.w]) * weights.w;
+
+    return normalize(skinTangentMatrix * tangents);
+#else
+    return normalize(tangents);
+#endif
+}
+
 #endif
 
 #endif

@@ -72,13 +72,16 @@ Texture2D(0, 9, maskMap, maskMapSampler)
 
     void main(){
         vec4 localPos = GetLocalPos();
+        vec3 localNormal = GetLocalNormal();
+        vec3 localTangents = GetLocalTangent();
+
         mat4 targetModelMatrix = GetModelMatrix();
-        vec3 T = normalize(vec3(targetModelMatrix * vec4(tangents, 0.0)));
-        vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(tangents, normal), 0.0)));
-        vec3 N = normalize(vec3(targetModelMatrix * vec4(normal, 0.0)));
+        vec3 T = normalize(vec3(targetModelMatrix * vec4(localTangents, 0.0)));
+        vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(localTangents, localNormal), 0.0)));
+        vec3 N = normalize(vec3(targetModelMatrix * vec4(localNormal, 0.0)));
 
         outPos = localPos.xyz;// pos;
-        outNormal = normal;
+        outNormal = localNormal;
         outTexCoord = texCoord;
         
         //outTBN = mat3(T, B, N);
@@ -88,7 +91,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
 
         outWorldPos = vec3(targetModelMatrix * localPos); //vec3(targetModelMatrix * vec4(pos, 1.0));
         //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
-        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * normal; // for non-uniform scale objects
+        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * localNormal; // for non-uniform scale objects
 
         OutPosition = projection * view * targetModelMatrix * localPos;//GetLocalPos();
     }
@@ -184,7 +187,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
 
         Surface surface;
         surface.position = outWorldPos;
-        surface.normal = _normal;
+        surface.normal = outWorldNormal;// _normal;
         surface.viewDirection = normalize(viewPos - outWorldPos);
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
@@ -213,6 +216,9 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         vec3 ambient = _AmbientLight;// * texColor.rgb;
         fragColor = vec4((diffuse + ambient) * texColor.rgb, texColor.a);
         return;*/
+
+        fragColor = vec4(surface.normal, 1);
+        return;
 
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);

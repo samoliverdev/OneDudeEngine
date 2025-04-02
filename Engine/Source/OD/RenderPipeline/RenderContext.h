@@ -121,6 +121,7 @@ public:
     //-------Settings---------
     Ref<Material> skyMaterial = nullptr;
     Framebuffer* overrideFramebuffer = nullptr;
+    bool isDeferred = false;
 
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }

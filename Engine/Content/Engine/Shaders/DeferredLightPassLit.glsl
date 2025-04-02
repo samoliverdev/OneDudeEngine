@@ -90,6 +90,9 @@ Texture2D(0, 10, gOther, gOtherSampler)
         surface.metallic = Metallic;
         surface.smoothness = Specular;
 
+        //FragColor = vec4(Normal, 1);
+        //return;
+
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);
         vec3 color = GetLighting(surface, brdf, gi);

@@ -392,6 +392,7 @@ void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, Shadow
     camera = inCam;
     renderingPath = inRenderingPath;
     context = inRenderContext;
+    context->isDeferred = renderingPath == RenderingPath::Deferred;
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
     /*std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
@@ -568,9 +569,6 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndForwardPass();
     }
 
-
-    //Fixme: No Call to EndFramebuffer here
-    
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     //context->DrawGizmos();
