@@ -17,6 +17,7 @@
 #include "Samples/Sponza.h"
 #include "Samples/Terrain.h"
 #include "Samples/ProceduralTerrain2.h"
+#include "Samples/Joint.h"
 #include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -28,7 +29,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 23;
+    int i = 28;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == 0) return new BaseMeshSample();
@@ -49,6 +50,7 @@ OD::Module* CreateMainModule(){
     if(i == 23) return new SponzaSample();
     if(i == 26) return new TerrainSample();
     if(i == 27) return new ProceduralTerrain2();
+    if(i == 28) return new JointSample();
 
     return new BaseMeshSample();
 }

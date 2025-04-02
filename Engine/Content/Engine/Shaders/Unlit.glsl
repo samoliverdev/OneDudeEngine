@@ -35,7 +35,7 @@ Texture2D(0, 1, mainTex, mainSampler)
     Out(0) vec4 fragColor;
 
     void main(){
-        vec4 texColor = ToSRGB(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
+        vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
         if(texColor.a < 0.1) discard;
         fragColor = texColor * color;
 

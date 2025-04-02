@@ -127,16 +127,33 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
     }
 
-private:
-    Type type = Type::Dynamic;
-    
-    CollisionShape shape;
+    /*RigidbodyComponent(const RigidbodyComponent& other){
+        mask = other.mask;
+        shape = other.shape;
+        type = other.type;
+        mass = other.mass;
+        neverSleep = other.neverSleep;
+    }
 
+    RigidbodyComponent& operator=(const RigidbodyComponent& other){
+        if(this == &other) return *this;
+
+        mask = other.mask;
+        shape = other.shape;
+        type = other.type;
+        mass = other.mass;
+        neverSleep = other.neverSleep;
+        return *this;
+    }*/
+
+private:
+    CollisionShape shape;
+    Type type = Type::Dynamic;
+    Vector3 angularFactor = {1, 1, 1};
     float mass = 1;
     bool neverSleep = false;
-    PhysicObject* data = nullptr; 
 
-    Vector3 angularFactor = {1, 1, 1};
+    PhysicObject* data = nullptr; 
 
     void UpdateSettings();
 };
@@ -157,6 +174,20 @@ struct OD_API CollisionBodyComponent{
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
     }
+
+    /*CollisionBodyComponent(const CollisionBodyComponent& other){
+        shape = other.shape;
+        neverSleep = other.neverSleep;
+    }
+
+    CollisionBodyComponent& operator=(const CollisionBodyComponent& other){
+        if(this == &other) return *this;
+
+        shape = other.shape;
+        neverSleep = other.neverSleep;
+        return *this;
+    }*/
+
 private:
     CollisionShape shape;
     bool neverSleep = false;
@@ -168,15 +199,14 @@ private:
 struct OD_API JointComponent{
     friend struct PhysicsSystem;
 
-    Entity connectedBody = EntityNull;
     Vector3 pivot = Vector3Zero;
     Vector3 axis = Vector3Zero;
-    bool autoConfigConnectedPivot = true;
     Vector3 connectedPivot = Vector3Zero;
     Vector3 connectedAxis = Vector3Zero;
     Vector3 angularLowerLimit = Vector3Zero;
     Vector3 angularUpperLimit = Vector3Zero;
-
+    Entity connectedBody = EntityNull;
+    bool autoConfigConnectedPivot = true;
     bool disableSelfCollision = true;
 
     //static void OnGui(Entity& e, Scene& scene);
@@ -190,6 +220,33 @@ struct OD_API JointComponent{
         ArchiveDumpNVP(ar, angularUpperLimit);
         ArchiveDumpNVP(ar, disableSelfCollision);
     }
+
+    /*JointComponent(const JointComponent& other){
+        pivot = other.pivot;
+        axis = other.axis;
+        connectedPivot = other.connectedPivot;
+        connectedAxis = other.connectedAxis;
+        angularLowerLimit = other.angularLowerLimit;
+        angularUpperLimit = other.angularUpperLimit;
+        connectedBody = other.connectedBody;
+        autoConfigConnectedPivot = other.autoConfigConnectedPivot;
+        disableSelfCollision = other.disableSelfCollision;
+    }
+
+    JointComponent& operator=(const JointComponent& other){
+        if(this == &other) return *this;
+
+        pivot = other.pivot;
+        axis = other.axis;
+        connectedPivot = other.connectedPivot;
+        connectedAxis = other.connectedAxis;
+        angularLowerLimit = other.angularLowerLimit;
+        angularUpperLimit = other.angularUpperLimit;
+        connectedBody = other.connectedBody;
+        autoConfigConnectedPivot = other.autoConfigConnectedPivot;
+        disableSelfCollision = other.disableSelfCollision;
+        return *this;
+    }*/
 
 private:
     JointObject* data = nullptr;

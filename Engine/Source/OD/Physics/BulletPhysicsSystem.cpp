@@ -632,7 +632,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 	physicsWorld->world->getSolverInfo().m_splitImpulse = true;
 
     btContactSolverInfo& info = physicsWorld->world->getSolverInfo();
-    //info.m_numIterations = 4; //10; 50;
+    info.m_numIterations = 20;// 4; //10; 50;
     debuger.scene = inScene;
 
     this->scene->GetRegistry().on_destroy<JointComponent>().connect<&OnRemoveJoint>();
@@ -774,8 +774,8 @@ void PhysicsSystem::Update(){
 
         if(rb.data == nullptr) AddJoint(GetScene(), e, rb, transform, info);
 
-        rb.data->dof6->setAngularLowerLimit(ToBullet(rb.angularLowerLimit));
-        rb.data->dof6->setAngularUpperLimit(ToBullet(rb.angularUpperLimit));
+        rb.data->dof6->setAngularLowerLimit(ToBullet(math::radians(rb.angularLowerLimit)));
+        rb.data->dof6->setAngularUpperLimit(ToBullet(math::radians(rb.angularUpperLimit)));
     }
 
     CheckForCollisionEvents();
@@ -1088,6 +1088,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     Quaternion rot = t.Rotation();
 
     c.SetShape(c.GetShape());
+    //c.data->shape->setLocalScaling(ToBullet(t.LocalScale())); 
 
     btTransform transform;
     transform.setIdentity();
@@ -1101,6 +1102,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     
     //data->body = new btRigidBody(c.mass, data->motionState, data->shape, localInertia);
     btRigidBody::btRigidBodyConstructionInfo cInfo(c.mass, c.data->motionState, c.data->shape, localInertia);
+    //cInfo.m_additionalDamping = true;
     c.data->rbBody = new btRigidBody(cInfo); //data->body = new btRigidBody(c.mass, data->motionState, data->shape);
     c.data->rbBody->setUserPointer(c.data);
 
@@ -1227,16 +1229,22 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& c, Tra
     btTransform localB;
 	bool useLinearReferenceFrameA = true;
 
-    //c.angularLowerLimit = {-SIMD_PI*0.3f, -SIMD_EPSILON, -SIMD_PI*0.4f};
-    //c.angularUpperLimit = {SIMD_PI*0.3f, SIMD_EPSILON, SIMD_PI*0.4f};
+    /*c.angularLowerLimit = {-SIMD_PI*0.3f, -SIMD_EPSILON, -SIMD_PI*0.4f};
+    c.angularUpperLimit = {SIMD_PI*0.3f, SIMD_EPSILON, SIMD_PI*0.4f};*/
 
     if(c.connectedBody != EntityNull){
         RigidbodyComponent& rb2 = scene->GetComponent<RigidbodyComponent>(c.connectedBody);
         if(rb2.data == nullptr) return;  
 
-        rb.data->rbBody->setDamping(0.05f, 0.85f); // Low linear damping, high angular damping
+        if(c.autoConfigConnectedPivot){
+            c.connectedPivot = scene->GetComponent<TransformComponent>(c.connectedBody).InverseTransformPoint(
+                scene->GetComponent<TransformComponent>(entity).TransformPoint(c.pivot)
+            );
+        }
+
+        /*rb.data->rbBody->setDamping(0.05f, 0.85f); // Low linear damping, high angular damping
         rb.data->rbBody->setFriction(5.0f); // Increase friction to prevent sliding
-        rb.data->rbBody->setSleepingThresholds(0.1f, 0.1f);
+        rb.data->rbBody->setSleepingThresholds(0.1f, 0.1f);*/
 
         /*rb.data->rbBody->setCcdMotionThreshold(0);
         rb.data->rbBody->setCcdSweptSphereRadius(0);
@@ -1249,19 +1257,27 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& c, Tra
         localB.setIdentity();
         //localB.getBasis().setEulerZYX(c.connectedAxis.z, c.connectedAxis.y, c.connectedAxis.x);
         localB.setOrigin(ToBullet(c.connectedPivot));
+
+        btTransform worldA = rb.data->rbBody->getCenterOfMassTransform() * localA;
+        btTransform worldB = worldA;  // Assuming both pivots are initially in the same world space
+        btTransform invTransformB = rb2.data->rbBody->getCenterOfMassTransform().inverse();
+        localB = invTransformB * worldB;
         
         c.data->dof6 = new btGeneric6DofConstraint(*rb2.data->rbBody, *rb.data->rbBody, localB, localA, useLinearReferenceFrameA);
-        //c.data->dof6 = new btGeneric6DofConstraint(*rb.data->rbBody, *rb2.data->rbBody, localA, localB, useLinearReferenceFrameA);
-        c.data->dof6->setAngularLowerLimit(ToBullet(c.angularLowerLimit));
-        c.data->dof6->setAngularUpperLimit(ToBullet(c.angularUpperLimit));
+        c.data->dof6->setAngularLowerLimit(ToBullet(math::radians(c.angularLowerLimit)));
+        c.data->dof6->setAngularUpperLimit(ToBullet(math::radians(c.angularUpperLimit)));
+        
+        //c.data->dof6->setParam(BT_CONSTRAINT_STOP_ERP, 0.8);
+        //c.data->dof6->setParam(BT_CONSTRAINT_STOP_CFM, 0.1);
+        
         c.data->world->addConstraint(c.data->dof6, c.disableSelfCollision);
     } else {
-        Assert(false && "Not tested for now!!!");
+        //Assert(false && "Not tested for now!!!");
         localA.setIdentity();
         localA.setOrigin(ToBullet(c.pivot));
         c.data->dof6 = new btGeneric6DofConstraint(*rb.data->rbBody, localA, useLinearReferenceFrameA);
-        c.data->dof6->setAngularLowerLimit(ToBullet(c.angularLowerLimit));
-        c.data->dof6->setAngularUpperLimit(ToBullet(c.angularUpperLimit));
+        c.data->dof6->setAngularLowerLimit(ToBullet(math::radians(c.angularLowerLimit)));
+        c.data->dof6->setAngularUpperLimit(ToBullet(math::radians(c.angularUpperLimit)));
         c.data->world->addConstraint(c.data->dof6, c.disableSelfCollision);
     }
 }

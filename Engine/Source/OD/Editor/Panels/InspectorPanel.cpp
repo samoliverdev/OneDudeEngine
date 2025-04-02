@@ -207,11 +207,12 @@ void InspectorPanel::DrawComponents(Entity entity){
 
     DrawComponent<TransformComponent>(entity, *scene, "Transform", [&](Entity e, Scene& scene){
         if(entityType == EntityType::PrefabChild) ImGui::BeginDisabled(true);
-        /*if(e.HasComponent<RigidbodyComponent>()){
-            RigidbodyComponent& rb = e.GetComponent<RigidbodyComponent>();
-            float p[] = {rb.position().x, rb.position().y, rb.position().z};
+        
+        /*if(scene.HasComponent<RigidbodyComponent>(e)){
+            RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
+            float p[] = {rb.Position().x, rb.Position().y, rb.Position().z};
             if(ImGui::DragFloat3("Position", p, 0.5f)){
-                rb.position(Vector3(p[0], p[1], p[2]));
+                rb.Position(Vector3(p[0], p[1], p[2]));
             }
         } else {*/
             float p[] = {transform.LocalPosition().x, transform.LocalPosition().y, transform.LocalPosition().z};
