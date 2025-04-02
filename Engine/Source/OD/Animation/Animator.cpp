@@ -47,6 +47,7 @@ void AnimatorSystem::Update(){
         AnimatorComponent& anim = view.get<AnimatorComponent>(e);
         SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
         if(skinned.GetModel() == nullptr) continue;
+        if(anim.enable == false) continue;
 
         //Ref<Model> model = skinned.GetModel();
         //if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
@@ -77,6 +78,7 @@ void AnimatorSystem::Update(){
         SkinnedMeshRendererComponent& skinned = view2.get<SkinnedMeshRendererComponent>(e);
         if(skinned.mesh == nullptr) continue;
         if(skinned.skeleton.GetBindPose().Size() <= 0) continue;
+        if(anim.enable == false) continue;
 
         taskflow.emplace([&](){ 
             if(skinned.posePalette.size() < skinned.skeleton.GetRestPose().Size()) skinned.posePalette.resize(skinned.skeleton.GetRestPose().Size());

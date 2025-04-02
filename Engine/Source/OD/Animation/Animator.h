@@ -13,13 +13,17 @@ struct OD_API AnimatorComponent{
     void FadeTo(Clip* target, float fadeTime);
 
     template <class Archive>
-    void serialize(Archive & ar){}
+    void serialize(Archive & ar){
+        ArchiveDumpNVP(ar, enable);
+    }
 
     static void OnGui(Entity& e, Scene& scene);
 
 //private:
     //std::vector<Matrix4> posePalette;
     CrossFadeController controller;
+
+    bool enable = true;
 };
 
 struct OD_API AnimatorSystem: public System{

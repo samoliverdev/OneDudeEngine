@@ -217,8 +217,8 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         fragColor = vec4((diffuse + ambient) * texColor.rgb, texColor.a);
         return;*/
 
-        fragColor = vec4(surface.normal, 1);
-        return;
+        //fragColor = vec4(surface.normal, 1);
+        //return;
 
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);

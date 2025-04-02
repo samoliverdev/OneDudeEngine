@@ -800,6 +800,7 @@ void PhysicsSystem::OnDrawGizmos(Camera& cam){
 }
 
 void PhysicsSystem::CheckForCollisionEvents(){
+    return;
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
 
     //return;
