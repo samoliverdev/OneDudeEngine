@@ -54,8 +54,9 @@ inline btTransform ToBullet(TransformComponent& v){
 
 struct PhysicObject{
     enum class Type{RigidBody, GhostObject};
-    
-    btCollisionShape* shape = nullptr;
+
+    btCollisionShape* shape0 = nullptr;
+    btCollisionShape* shape1 = nullptr;
     btRigidBody* rbBody = nullptr;
     btCollisionObject* gtBody = nullptr; //btGhostObject* gtBody = nullptr;
     btDynamicsWorld* world = nullptr;
@@ -79,8 +80,8 @@ typedef std::set<CollisionPair> CollisionPairs;
 
 class MeshShapeData{
 public:
-    btTriangleMesh* triangleMesh;
-    btBvhTriangleMeshShape* triangleMeshShape;
+    btTriangleMesh* triangleMesh = nullptr;
+    btBvhTriangleMeshShape* triangleMeshShape = nullptr;
 
     ~MeshShapeData(){
         delete triangleMeshShape;
@@ -262,7 +263,10 @@ void CollisionBodyComponent::OnGui(Entity& e, Scene& scene){
 }
 
 void CollisionBodyComponent::SetShape(CollisionShape inShape){
-    if(data != nullptr && data->shape != nullptr && shape.type != CollisionShape::Type::Mesh) delete data->shape;
+    if(data != nullptr && shape.type != CollisionShape::Type::Mesh){
+        delete data->shape0;
+        delete data->shape1;
+    }
     shape = inShape;
     if(data == nullptr) return;
 
@@ -274,8 +278,9 @@ void CollisionBodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Sphere){
@@ -286,8 +291,9 @@ void CollisionBodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Capsule){
@@ -298,14 +304,16 @@ void CollisionBodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center)); //t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Mesh){
         btBvhTriangleMeshShape* _shape = shape.mesh->triangleMeshShape;
-        data->shape = _shape;
-        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape);
+        data->shape0 = nullptr;
+        data->shape1 = _shape;
+        if(data->gtBody != nullptr) data->gtBody->setCollisionShape(data->shape1);
     }
 
     if(data->updating == false) UpdateSettings();
@@ -435,7 +443,11 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
-    if(data != nullptr && data->shape != nullptr && shape.type != CollisionShape::Type::Mesh) delete data->shape;
+    if(data != nullptr && shape.type != CollisionShape::Type::Mesh){
+        delete data->shape0;
+        delete data->shape1;
+    }
+
     shape = inShape;
     if(data == nullptr) return;
 
@@ -447,8 +459,9 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Sphere){
@@ -459,8 +472,9 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Capsule){
@@ -471,14 +485,16 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
         t.setOrigin(ToBullet(shape.center)); //t.setOrigin(ToBullet(shape.center+Vector3(0, shape.radius, 0)));
         _shape2->addChildShape(t, _shape);
         
-        data->shape = _shape2;
-        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
+        data->shape0 = _shape;
+        data->shape1 = _shape2;
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape1);
     }
 
     if(shape.type == CollisionShape::Type::Mesh){
         btBvhTriangleMeshShape* _shape = shape.mesh->triangleMeshShape;
-        data->shape = _shape;
-        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape);
+        data->shape0 = nullptr;
+        data->shape1 = _shape;
+        if(data->rbBody != nullptr) data->rbBody->setCollisionShape(data->shape1);
     }
 
     if(data->updating == false) UpdateSettings();
@@ -507,7 +523,7 @@ void RigidbodyComponent::UpdateSettings(){
     }
 
     btVector3 localInertia(0,0,0);
-    if (mass != 0.0f) data->shape->calculateLocalInertia(mass, localInertia);
+    if (mass != 0.0f) data->shape1->calculateLocalInertia(mass, localInertia);
     data->rbBody->setMassProps(mass, localInertia);
     
     if(data->updating == false) data->world->addRigidBody(data->rbBody, data->layer, data->mask);
@@ -736,7 +752,7 @@ void PhysicsSystem::Update(){
         Assert(rb.data != nullptr);
 
         PhysicObject* data = rb.data;
-        data->shape->setLocalScaling(ToBullet(transform.LocalScale()));
+        data->shape1->setLocalScaling(ToBullet(transform.LocalScale()));
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Static){
             btTransform trans = data->rbBody->getWorldTransform();
@@ -760,7 +776,7 @@ void PhysicsSystem::Update(){
         Assert(rb.data != nullptr);
 
         PhysicObject* data = rb.data;
-        data->shape->setLocalScaling(ToBullet(transform.LocalScale()));
+        data->shape1->setLocalScaling(ToBullet(transform.LocalScale()));
 
         btTransform physicsTransform = ToBullet(transform);
         data->gtBody->setWorldTransform(physicsTransform);
@@ -1102,10 +1118,10 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     c.data->motionState = new btDefaultMotionState(transform);
 
     btVector3 localInertia(0,0,0);
-    if(c.mass != 0.0f) c.data->shape->calculateLocalInertia(c.mass, localInertia);
+    if(c.mass != 0.0f) c.data->shape1->calculateLocalInertia(c.mass, localInertia);
     
     //data->body = new btRigidBody(c.mass, data->motionState, data->shape, localInertia);
-    btRigidBody::btRigidBodyConstructionInfo cInfo(c.mass, c.data->motionState, c.data->shape, localInertia);
+    btRigidBody::btRigidBodyConstructionInfo cInfo(c.mass, c.data->motionState, c.data->shape1, localInertia);
     //cInfo.m_additionalDamping = true;
     c.data->rbBody = new btRigidBody(cInfo); //data->body = new btRigidBody(c.mass, data->motionState, data->shape);
     c.data->rbBody->setUserPointer(c.data);
@@ -1148,9 +1164,12 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
         }
     }
 
-    if(rb.shape.type != CollisionShape::Type::Mesh) delete data->shape;
-    delete data->motionState;
     delete data->rbBody;
+    delete data->motionState;
+    if(rb.shape.type != CollisionShape::Type::Mesh){
+        delete data->shape1;
+        delete data->shape0;
+    }
     delete data;
     rb.data = nullptr;
 }
@@ -1215,8 +1234,11 @@ void PhysicsSystem::RemoveCollisionBody(Entity entity, CollisionBodyComponent& r
         }
     }*/
 
-    if(rb.shape.type != CollisionShape::Type::Mesh) delete data->shape;
     delete data->gtBody;
+    if(rb.shape.type != CollisionShape::Type::Mesh){
+        delete data->shape1;
+        delete data->shape0;
+    }
     delete data;
     rb.data = nullptr;
 }
