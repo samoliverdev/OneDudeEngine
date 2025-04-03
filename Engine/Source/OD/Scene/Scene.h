@@ -288,7 +288,8 @@ private:
     std::vector<System*> rendererSystems;
     std::vector<System*> physicsSystems;
     std::unordered_map<Type, System*> systems;
-    std::unordered_map<Type, std::function<void(Scene&)>> systemsAdd;
+    //std::unordered_map<Type, std::function<void(Scene&)>> systemsAdd;
+    std::vector<std::function<void(Scene&)>> systemsAdd;
     std::vector<Entity> toDestroy;
 
     entt::registry registry;

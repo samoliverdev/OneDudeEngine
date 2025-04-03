@@ -233,12 +233,14 @@ void SceneManager::RegisterScript(const char* name){
 
 template<typename T>
 void SceneManager::RegisterSystem(const char* name){
-    Assert(addSystemFuncs.find(name) == addSystemFuncs.end());
-    //LogWarning("Fix this design: %s", name);
+    //Assert(addSystemFuncs.find(name) == addSystemFuncs.end());
 
-    addSystemFuncs[name] = [&](Scene& e){
+    /*addSystemFuncs[name] = [&](Scene& e){
         e.AddSystem<T>();
-    };
+    };*/
+    addSystemFuncs.push_back([&](Scene& e){
+        e.AddSystem<T>();
+    });
 }
 
 }

@@ -212,13 +212,15 @@ Scene::Scene(){
     //LogInfo("NewScene");
     for(auto i: SceneManager::Get().addSystemFuncs){
         //LogInfo("Adding system: %s", i.first);
-        i.second(*this);
+        //i.second(*this);
+        i(*this);
     }
 }
 
 Scene::Scene(Scene& other){
-    for(auto i: other.systemsAdd){
-        i.second(*this);
+    for(auto& i: other.systemsAdd){
+        //i.second(*this);
+        i(*this);
     }
 
     auto view = other.registry.view<entt::entity>();

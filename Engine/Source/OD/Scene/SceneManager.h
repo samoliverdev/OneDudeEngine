@@ -68,7 +68,8 @@ private:
     std::unordered_map<const char*, SerializeFuncs> coreComponentsSerializer;
     std::unordered_map<const char*, SerializeFuncs> componentsSerializer;
     std::unordered_map<const char*, SerializeFuncs> scriptsSerializer;
-    std::unordered_map<const char*, std::function<void(Scene&)> > addSystemFuncs;
+    //std::unordered_map<const char*, std::function<void(Scene&)> > addSystemFuncs;
+    std::vector< std::function<void(Scene&)> > addSystemFuncs;
 
     friend class Editor;
     friend class SceneHierarchyPanel;

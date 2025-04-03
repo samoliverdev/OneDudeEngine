@@ -231,7 +231,8 @@ void Scene::AddSystem(){
     //newSystem->Init(this);
 
     systems[GetType<T>()] = newSystem;
-    systemsAdd[GetType<T>()] = [](Scene& s){ s.AddSystem<T>(); };
+    //systemsAdd[GetType<T>()] = [](Scene& s){ s.AddSystem<T>(); };
+    systemsAdd.push_back([](Scene& s){ s.AddSystem<T>(); });
 
     if(newSystem->Type() == SystemType::Stand) standSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Renderer) rendererSystems.push_back(newSystem);

@@ -164,8 +164,9 @@ void CoreModulesStartup(){
     GraphicsModuleInit();
     StandRenderPipelineModuleInit();
     PhysicsModuleInit();
-    ScriptModuleInit();
     AnimatorModuleInit();
+    ScriptModuleInit();
+    //AnimatorModuleInit();
     AudioModuleInit();
     NavmeshModuleInit();
     SceneManagerModuleInit();

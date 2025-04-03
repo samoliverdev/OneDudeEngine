@@ -886,8 +886,9 @@ void StandRenderPipeline::Update(){
 }
 
 void StandRenderPipeline::OnDrawGizmos(Camera& cm){
-    return;
+    //return;
 
+    /*
     auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     for(auto e: meshRenderView){
         auto& c = meshRenderView.get<MeshRendererComponent>(e);
@@ -966,6 +967,7 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
             Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
         }
     }
+    */
 
     auto drawGizmosView = scene->GetRegistry().view<GizmosDrawComponent, TransformComponent>();
     for(auto e: drawGizmosView){

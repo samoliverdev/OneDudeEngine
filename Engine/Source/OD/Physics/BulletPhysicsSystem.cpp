@@ -1071,6 +1071,9 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
     physicsSystem->RemoveRigidbody(e, rb);
+
+    //physicsSystem->physicsWorld->world->updateAabbs();
+    //physicsSystem->physicsWorld->world->computeOverlappingPairs();
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
@@ -1106,6 +1109,13 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     //cInfo.m_additionalDamping = true;
     c.data->rbBody = new btRigidBody(cInfo); //data->body = new btRigidBody(c.mass, data->motionState, data->shape);
     c.data->rbBody->setUserPointer(c.data);
+
+    /*c.data->rbBody->setWorldTransform(transform);
+    c.data->rbBody->setInterpolationWorldTransform(transform);
+    c.data->rbBody->clearForces();
+    c.data->rbBody->setLinearVelocity(btVector3(0, 0, 0));
+    c.data->rbBody->setAngularVelocity(btVector3(0, 0, 0));
+    c.data->rbBody->setActivationState(ACTIVE_TAG);*/
 
     //Update Rigidbody
     //c.SetType(c.GetType());
