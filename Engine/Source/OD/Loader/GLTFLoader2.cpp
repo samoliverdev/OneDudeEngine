@@ -302,7 +302,7 @@ std::vector<Ref<Mesh>> LoadMeshes(tinygltf::Model& model) {
 bool GltfLoadModel(
     Model& model, 
     std::string const &path, 
-    Ref<Shader> customShader, 
+    ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips
 ){
     tinygltf::TinyGLTF loader;
@@ -396,7 +396,7 @@ bool GltfLoadModel(
     model.animationClips = LoadAnimationClips(gltfModel);
 
     // Set shader and path
-    if(customShader) model.SetShader(customShader);
+    if(loadSettings.customShader) model.SetShader(loadSettings.customShader);
     model.SetPath(path);
 
     return true;

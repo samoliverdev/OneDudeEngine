@@ -6,7 +6,7 @@ namespace OD{
 bool ObjLoadModel(
     Model& model, 
     std::string const &path, 
-    Ref<Shader> customShader, 
+    ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips
 ){
     auto getDirectoryPath = [](const std::string& fullPath) -> std::string {

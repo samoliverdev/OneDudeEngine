@@ -11,7 +11,7 @@ class Shader;
 bool OD_API ObjLoadModel(
     Model& model, 
     std::string const &path, 
-    Ref<Shader> customShader, 
+    ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips = nullptr
 );
 

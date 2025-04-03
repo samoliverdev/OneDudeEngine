@@ -36,7 +36,7 @@ void Model::SetShader(Ref<Shader> shader){
 }
 
 bool Model::LoadFromFile(const std::string& path){
-    return Model::CreateFromFile(*this, path, nullptr);
+    return Model::CreateFromFile(*this, path, {});
 }
 
 std::vector<std::string> Model::GetFileAssociations(){ 
@@ -50,9 +50,9 @@ std::vector<std::string> Model::GetFileAssociations(){
 	};
 }
 
-bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader){
+bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings){
 	#ifdef USE_ASSIMP
-	return AssimpLoadModel(model, path, customShader);
+	return AssimpLoadModel(model, path, loadSettings);
 	#endif
 
 	auto getExtension = [](const std::string& path) -> std::string {
@@ -62,12 +62,12 @@ bool Model::CreateFromFile(Model& model, std::string const &path, Ref<Shader> cu
 
 	std::string fileType = getExtension(path);
 
-	if(fileType == "obj") return ObjLoadModel(model, path, customShader);
-	if(fileType == "gltf") return GltfLoadModel(model, path, customShader);
-	if(fileType == "glb") return GltfLoadModel(model, path, customShader);
+	if(fileType == "obj") return ObjLoadModel(model, path, loadSettings);
+	if(fileType == "gltf") return GltfLoadModel(model, path, loadSettings);
+	if(fileType == "glb") return GltfLoadModel(model, path, loadSettings);
     
 	#ifdef USE_ASSIMP
-	return AssimpLoadModel(model, path, customShader);
+	return AssimpLoadModel(model, path, loadSettings);
 	#endif
 
 	LogError("File Type Not Supported: %s", fileType.c_str());

@@ -196,7 +196,12 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
             
             textures.push_back(texture);
         } else {
-            std::string filename = loadData.directory + '/' + std::string(str.C_Str());
+            auto ss = std::string(str.C_Str());
+            [](std::string& p) {
+                std::replace(p.begin(), p.end(), '\\', '/');
+            }(ss);
+
+            std::string filename = loadData.directory + '/' + ss;// std::string(str.C_Str());
             //LogWarningExtra("AssimpTexture: %s", filename.c_str());
             Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
             textures.push_back(texture);
@@ -269,13 +274,13 @@ int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
     return out;
 }*/
 
-Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, Ref<Shader> customShader){
+Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, ModelLoadSettings& loadSettings){
     Ref<Material> out = CreateRef<Material>();
 
-    if(customShader == nullptr){
+    if(loadSettings.customShader == nullptr){
         out->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Model.glsl"));
     } else {
-        out->SetShader(customShader);
+        out->SetShader(loadSettings.customShader);
     }
 
     // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
@@ -574,7 +579,7 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
     }
 }
 
-bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShader, std::vector<Clip>* outClips){
+bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings loadSettings, std::vector<Clip>* outClips){
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(
@@ -592,6 +597,10 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
         LogError("ERROR::ASSIMP:: %s", importer.GetErrorString());
         return false;
     }
+
+    aiMatrix4x4 scaleMatrix;
+    aiMatrix4x4::Scaling(aiVector3D(loadSettings.scale, loadSettings.scale, loadSettings.scale), scaleMatrix);
+    scene->mRootNode->mTransformation = scaleMatrix * scene->mRootNode->mTransformation;
     
     LoadData loadData;
     loadData.model = &out;
@@ -608,7 +617,7 @@ bool AssimpLoadModel(Model& out, std::string const &path, Ref<Shader> customShad
     }
 
     for(int i = 0; i < scene->mNumMaterials; i++){
-        Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], customShader);
+        Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
         loadData.model->materials.push_back(m);
         loadData.materials.push_back(scene->mMaterials[i]);
     }

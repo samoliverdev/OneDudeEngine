@@ -37,6 +37,11 @@ public:
     std::vector<Matrix4> matrixs;
 };*/
 
+struct ModelLoadSettings{
+    Ref<Shader> customShader = nullptr;
+    float scale = 1.0f;
+};
+
 class OD_API Model: public Asset{
 public:
     struct RenderTarget{
@@ -64,7 +69,7 @@ public:
 
     void SetShader(Ref<Shader> customShader);
     
-    static bool CreateFromFile(Model& model, std::string const &path, Ref<Shader> customShader = nullptr);
+    static bool CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings = {});
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
 };

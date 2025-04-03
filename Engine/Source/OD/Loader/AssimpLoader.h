@@ -12,7 +12,7 @@ class SubShader;
 bool OD_API AssimpLoadModel(
     Model& model, 
     std::string const &path, 
-    Ref<Shader> customShader, 
+    ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips = nullptr
 );
 
