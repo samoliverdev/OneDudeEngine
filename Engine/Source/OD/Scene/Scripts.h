@@ -17,6 +17,8 @@ struct OD_API Script{
     virtual void OnLateUpdate(){}
     //virtual void OnDraw(){}
 
+    virtual void OnParallelUpdate(){} //INFO: Experimental
+
     inline Entity& GetEntity(){ return entity; }
     inline Scene* GetScene(){ return scene; }
     
@@ -91,6 +93,7 @@ private:
     std::unordered_map<Type, ScriptHolder> instances;
 
     void _Update(Entity e, Scene& scene, bool isLate = false);
+    void _ParallelUpdate(Entity e, Scene& scene, bool isLate = false);
 };
 
 struct OD_API ScriptSystem: public System{

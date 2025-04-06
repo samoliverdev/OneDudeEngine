@@ -165,8 +165,18 @@ void CoreModulesStartup(){
     CoreModuleInit();
     GraphicsModuleInit();
     StandRenderPipelineModuleInit();
-    
+
+    AnimatorModuleInit();
+    AudioModuleInit();
+    NavmeshModuleInit();
+    SceneManagerModuleInit();
+    TerrainModuleInit();
+
     ScriptModuleInit();
+    LuaScriptModuleInit();
+    PhysicsModuleInit();
+    
+    /*ScriptModuleInit();
     LuaScriptModuleInit();
 
     PhysicsModuleInit();
@@ -175,7 +185,7 @@ void CoreModulesStartup(){
     AudioModuleInit();
     NavmeshModuleInit();
     SceneManagerModuleInit();
-    TerrainModuleInit();
+    TerrainModuleInit();*/
 }
 
 }

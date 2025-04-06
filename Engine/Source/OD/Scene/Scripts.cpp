@@ -78,6 +78,26 @@ void ScriptComponent::_Update(Entity e, Scene& scene, bool isLate){
     }
 }
 
+void ScriptComponent::_ParallelUpdate(Entity e, Scene& scene, bool isLate){
+    for(auto i: instances){
+        if(i.second.instance == nullptr) return;
+
+        i.second.instance->entity = e;
+        i.second.instance->scene = &scene;
+        Assert(scene.IsValid(i.second.instance->entity) == true);
+
+        if(i.second.instance->hasStarted == false){
+            i.second.instance->OnStart();
+            i.second.instance->hasStarted = true;
+        }
+        //if(isLate){
+        //    i.second.instance->OnLateUpdate();
+        //} else {
+            i.second.instance->OnParallelUpdate();
+        //}
+    }
+}
+
 //////////////////////////////////////
 
 ScriptSystem::ScriptSystem(Scene* inScene):System(inScene){
@@ -89,6 +109,12 @@ ScriptSystem::~ScriptSystem(){
 }
 
 void ScriptSystem::Update(){
+    {
+    OD_PROFILE_SCOPE("ScriptSystem::Update::Sync");
+    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
+    GetScene()->GetTaskflow().clear();
+    }
+
     OD_PROFILE_SCOPE("ScriptSystem::Update");
 
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
@@ -96,10 +122,29 @@ void ScriptSystem::Update(){
         auto& c = view.get<ScriptComponent>(entity);
         c._Update(entity, *GetScene(), false);
     }
+
+    //INFO: Experimental
+    GetScene()->GetTaskflow().emplace([=](tf::Subflow& subflow){
+        for(auto entity: view){
+            subflow.emplace([&](){ 
+                auto& c = view.get<ScriptComponent>(entity);
+                c._ParallelUpdate(entity, *GetScene(), false);
+            });
+        }
+    });
 }
 
 void ScriptSystem::LateUpdate(){
+    {
+    OD_PROFILE_SCOPE("ScriptSystem::LateUpdate::Sync");
+    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
+    GetScene()->GetTaskflow().clear();
+    }
+
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate");
+
+    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
+    GetScene()->GetTaskflow().clear();
 
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
     for(auto entity: view){

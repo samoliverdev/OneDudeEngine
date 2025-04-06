@@ -254,9 +254,9 @@ public:
     ~NavmeshSystem() override;
     
 	//NavmeshSystem* Clone(Scene* inScene) const override{ return new NavmeshSystem(inScene); }
-    virtual int Type() override { return SystemType::Physics; }
+    virtual int Type() override { return SystemType::Late; }
 
-    virtual void PhysicsUpdate() override;
+    virtual void LateUpdate() override;
 	virtual void OnDrawGizmos(Camera& cam) override;
 	virtual void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
 };

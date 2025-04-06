@@ -30,10 +30,10 @@ void AnimatorComponent::FadeTo(Clip* target, float fadeTime){
 AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
 
 int AnimatorSystem::Type(){ 
-    return SystemType::Stand; 
+    return SystemType::Late; 
 }
 
-void AnimatorSystem::Update(){
+void AnimatorSystem::LateUpdate(){
     #ifdef __EMSCRIPTEN__
     return;
     #endif

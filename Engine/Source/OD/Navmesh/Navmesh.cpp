@@ -1359,7 +1359,7 @@ void NavmeshAgentComponent::SetDestination(Vector3 d){
 NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
 NavmeshSystem::~NavmeshSystem(){}
 
-void NavmeshSystem::PhysicsUpdate(){
+void NavmeshSystem::LateUpdate(){
 	OD_PROFILE_SCOPE("NavmeshSystem::Update");
 
 	Ref<Navmesh> navmesh = nullptr;
