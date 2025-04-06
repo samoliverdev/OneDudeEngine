@@ -655,6 +655,7 @@ void RenderContext::DrawGizmos(){
     
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
+    //FIXME: This could be call OnDrawGizmos Twice
     for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmos(cm);
     for(System* s: scene->GetStandSystems()) s->OnDrawGizmos(cm);
     for(System* s: scene->GetRendererSystems()) s->OnDrawGizmos(cm);

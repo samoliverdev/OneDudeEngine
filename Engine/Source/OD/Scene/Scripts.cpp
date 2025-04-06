@@ -92,12 +92,16 @@ void ScriptSystem::Update(){
     OD_PROFILE_SCOPE("ScriptSystem::Update");
 
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
-
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
         c._Update(entity, *GetScene(), false);
     }
+}
 
+void ScriptSystem::LateUpdate(){
+    OD_PROFILE_SCOPE("ScriptSystem::LateUpdate");
+
+    auto view = GetScene()->GetRegistry().view<ScriptComponent>();
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
         c._Update(entity, *GetScene(), true);

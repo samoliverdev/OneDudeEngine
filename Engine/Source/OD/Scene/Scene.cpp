@@ -245,13 +245,17 @@ Scene::Scene(Scene& other){
 
 Scene::~Scene(){
     registry.clear();
-    for(System* i: standSystems) delete i;
+    /*for(System* i: standSystems) delete i;
     for(System* i: rendererSystems) delete i;
-    for(System* i: physicsSystems) delete i;
+    for(System* i: physicsSystems) delete i;*/
 
+    for(auto& i: systems) delete i.second;
+    
+    systems.clear();
     standSystems.clear();
     rendererSystems.clear();
     physicsSystems.clear();
+    lateSystems.clear();
 }
 
 /*Entity Scene::AddEntity(std::string name){
@@ -461,16 +465,34 @@ void Scene::Update(){
 
     //if(_running == false) return;
 
-    for(auto s: physicsSystems) s->Update();
+    for(auto s: physicsSystems) s->PhysicsUpdate();
+    {
+        OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
+        executor.run(taskflow).wait(); 
+        taskflow.clear();
+    }
+
     if(running == false) return;
     for(auto s: standSystems) s->Update();
+    {
+        OD_PROFILE_SCOPE("Scene::Update::Sync");
+        executor.run(taskflow).wait();
+        taskflow.clear();
+    }
+
+    for(auto s: lateSystems) s->LateUpdate();
+    {
+        OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
+        executor.run(taskflow).wait();
+        taskflow.clear();
+    }
 }
 
 void Scene::Draw(){
     OD_PROFILE_SCOPE("Scene::Draw");
 
     Graphics::Begin();
-    for(auto& s: rendererSystems) s->Update();        
+    for(auto& s: rendererSystems) s->Render();        
     Graphics::End();
 }
 

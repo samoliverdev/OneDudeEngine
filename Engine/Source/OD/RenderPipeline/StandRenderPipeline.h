@@ -257,8 +257,8 @@ public:
     void SetOverrideCamera(Camera* cam, Transform trans) override;
     Framebuffer* FinalColor() override;
 
-    SystemType Type() override { return SystemType::Renderer; }
-    void Update() override;
+    int Type() override { return SystemType::Renderer; }
+    void Render() override;
 
     void OnDrawGizmos(Camera& cam) override;
     void OnDrawGizmosSelected(Camera& cam, Entity entity) override;

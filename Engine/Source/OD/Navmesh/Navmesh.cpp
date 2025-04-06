@@ -1359,7 +1359,7 @@ void NavmeshAgentComponent::SetDestination(Vector3 d){
 NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
 NavmeshSystem::~NavmeshSystem(){}
 
-void NavmeshSystem::Update(){
+void NavmeshSystem::PhysicsUpdate(){
 	OD_PROFILE_SCOPE("NavmeshSystem::Update");
 
 	Ref<Navmesh> navmesh = nullptr;
@@ -1371,6 +1371,58 @@ void NavmeshSystem::Update(){
 	}
 
 	if(navmesh == nullptr) return;
+
+	/*scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+		auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
+		for(auto e: navmeshAgentView){
+			NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
+			TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
+
+			if(navmeshComponent.isDirty){
+				navmeshComponent.isDirty = false;
+				navmeshComponent.lastPos = transform.Position();
+				navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
+				navmeshComponent.curPathIndex = 1;//-1;
+				navmeshComponent.reach = false;
+			}
+
+			if(scene->Running() == false) continue;
+
+			subflow.emplace([&](){ 
+				if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+					Assert(navmeshComponent.path.corners.size() > 1);
+					if(navmeshComponent.reach) return;
+
+					Vector3 pos = transform.Position();
+					Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
+					if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
+					Assert(Mathf::IsNan(dir) == false);
+
+					float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
+
+					if(distance <= navmeshComponent.stopDistance){
+						navmeshComponent.curPathIndex += 1;
+						if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
+							navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
+							navmeshComponent.reach = true;
+							navmeshComponent.desiredVelocity = Vector3Zero;
+							return;
+						}
+					}
+
+					navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
+					
+					if(navmeshComponent.manualUpdate == false){
+						transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+					}
+				} else {
+					navmeshComponent.curPathIndex = -1;
+					navmeshComponent.reach = false;
+				}
+			});
+		}
+	});
+	return;*/
 
 	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
 	for(auto e: navmeshAgentView){

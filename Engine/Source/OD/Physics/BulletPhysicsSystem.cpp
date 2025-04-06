@@ -680,7 +680,7 @@ PhysicsSystem::~PhysicsSystem(){
     //LogWarningExtra("PhysicsSystem Destructor"); 
 }
 
-void PhysicsSystem::Update(){
+void PhysicsSystem::PhysicsUpdate(){
     /*#ifdef __EMSCRIPTEN__
     return;
     #endif*/

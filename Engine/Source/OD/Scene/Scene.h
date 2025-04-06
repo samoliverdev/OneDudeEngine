@@ -12,6 +12,7 @@
 #include <functional>
 #include <algorithm>
 #include <entt/entt.hpp>
+#include <taskflow/taskflow.hpp> 
 
 namespace OD {
 
@@ -191,8 +192,12 @@ auto _GetComponent(Scene* scene, Entity entity, sol::this_state s);
 template<typename T>
 void _RemoveComponent(Scene* scene, Entity entity);
 
-enum class SystemType{
-    Stand, Renderer, Physics
+enum SystemType{//FIXME: Maybe Rename
+    None = 0,
+    Physics =  1 << 0, 
+    Stand = 1 << 1, 
+    Late = 1 << 2,
+    Renderer = 1 << 3
 };
 
 class OD_API System{
@@ -200,11 +205,13 @@ public:
     System(Scene* inScene):scene(inScene){}
     virtual ~System(){}
 
-    virtual SystemType Type(){ return SystemType::Stand; }
+    virtual int Type(){ return SystemType::Stand; } //FIXME: Maybe Rename
+    virtual void PhysicsUpdate(){}
     virtual void Update(){}
-    virtual void OnRender(){}
-    virtual void OnDrawGizmos(Camera& cam){}
-    virtual void OnDrawGizmosSelected(Camera& cam, Entity entity){}
+    virtual void LateUpdate(){}
+    virtual void Render(){}
+    virtual void OnDrawGizmos(Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
+    virtual void OnDrawGizmosSelected(Camera& cam, Entity entity){} //FIXME: Maybe Add a SystemType::OnDrawGizmosSelected
     
     Scene* GetScene(){ return scene; }
 
@@ -275,6 +282,9 @@ public:
     void Load(const char* path);
 
     static void CreateLuaBind(sol::state& lua);
+
+    inline auto& GetExecutor(){ return executor; }
+    inline auto& GetTaskflow(){ return taskflow; }
     
 private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
@@ -284,15 +294,19 @@ private:
     
     bool running = false;
 
-    std::vector<System*> standSystems;
-    std::vector<System*> rendererSystems;
     std::vector<System*> physicsSystems;
+    std::vector<System*> standSystems;
+    std::vector<System*> lateSystems;
+    std::vector<System*> rendererSystems;
     std::unordered_map<Type, System*> systems;
     //std::unordered_map<Type, std::function<void(Scene&)>> systemsAdd;
     std::vector<std::function<void(Scene&)>> systemsAdd;
     std::vector<Entity> toDestroy;
 
     entt::registry registry;
+
+    tf::Executor executor;
+    tf::Taskflow taskflow;
 };
 
 struct OD_API EntityHandle{

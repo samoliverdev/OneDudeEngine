@@ -7,6 +7,7 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Scene/SceneManager.h"
 #include <taskflow/taskflow.hpp> 
+#include <taskflow/algorithm/for_each.hpp>
 
 namespace OD{
 
@@ -28,7 +29,7 @@ void AnimatorComponent::FadeTo(Clip* target, float fadeTime){
 
 AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
 
-SystemType AnimatorSystem::Type(){ 
+int AnimatorSystem::Type(){ 
     return SystemType::Stand; 
 }
 
@@ -39,11 +40,46 @@ void AnimatorSystem::Update(){
 
     OD_PROFILE_SCOPE("AnimatorSystem::Update");
 
-    tf::Executor executor;
-    tf::Taskflow taskflow;
+    //tf::Executor executor;
+    //tf::Taskflow taskflow;
+    tf::Taskflow& taskflow = GetScene()->GetTaskflow();
 
     auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
-    for(auto e: view){
+
+    scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+        for(auto e: view){
+            AnimatorComponent& anim = view.get<AnimatorComponent>(e);
+            SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
+            if(skinned.GetModel() == nullptr) continue;
+            if(anim.enable == false) continue;
+    
+            subflow.emplace([&](){ 
+                Ref<Model> model = skinned.GetModel();
+                if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+                if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+    
+                anim.controller.Update(Application::DeltaTime());
+                skinned.finalPose = anim.controller.GetCurrentPose();
+            });
+        }
+    });
+
+    //view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+    /*taskflow.for_each(view.begin(), view.end(), [&](Entity e){
+        AnimatorComponent& anim = view.get<AnimatorComponent>(e);
+        SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
+        if(skinned.GetModel() == nullptr) return;
+        if(anim.enable == false) return;
+
+        Ref<Model> model = skinned.GetModel();
+        if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+        if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+
+        anim.controller.Update(Application::DeltaTime());
+        skinned.finalPose = anim.controller.GetCurrentPose();
+    });*/
+
+    /*for(auto e: view){
         AnimatorComponent& anim = view.get<AnimatorComponent>(e);
         SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
         if(skinned.GetModel() == nullptr) continue;
@@ -70,7 +106,7 @@ void AnimatorSystem::Update(){
             //anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
             skinned.finalPose = anim.controller.GetCurrentPose();
         });
-    }
+    }*/
 
     auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
     for(auto e: view2){
@@ -93,7 +129,7 @@ void AnimatorSystem::Update(){
     }
 
     //JobSystem::Wait();
-    executor.run(taskflow).wait(); 
+    //executor.run(taskflow).wait(); 
 
     return;
     for(auto e: view){

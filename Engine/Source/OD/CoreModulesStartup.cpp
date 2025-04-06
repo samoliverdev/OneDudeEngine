@@ -160,18 +160,22 @@ void CoreModuleInit(){
 
 void CoreModulesStartup(){
     LogInfo("CoreModulesStartup");
+
+    //INFO: This Order Matter
     CoreModuleInit();
     GraphicsModuleInit();
     StandRenderPipelineModuleInit();
+    
+    ScriptModuleInit();
+    LuaScriptModuleInit();
+
     PhysicsModuleInit();
     AnimatorModuleInit();
-    ScriptModuleInit();
-    //AnimatorModuleInit();
+
     AudioModuleInit();
     NavmeshModuleInit();
     SceneManagerModuleInit();
     TerrainModuleInit();
-    LuaScriptModuleInit();
 }
 
 }

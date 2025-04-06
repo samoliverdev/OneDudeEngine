@@ -34,7 +34,7 @@ public:
     AudioSystem(Scene* scene);
     ~AudioSystem() override;
 
-    virtual SystemType Type() override { return SystemType::Stand; }
+    virtual int Type() override { return SystemType::Stand; }
     virtual void Update() override;
 };
 

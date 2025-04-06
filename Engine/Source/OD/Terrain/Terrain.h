@@ -125,7 +125,7 @@ public:
     TerrainSystem(Scene* scene);
     ~TerrainSystem() override;
 
-    virtual SystemType Type() override { return SystemType::Physics; }
+    virtual int Type() override { return SystemType::Physics; }
     virtual void Update() override;
 
 private:

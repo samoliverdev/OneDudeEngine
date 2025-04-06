@@ -572,7 +572,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     //context->DrawGizmos();
-    for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
+    //for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
 
     context->EndDrawToScreen();
@@ -793,7 +793,7 @@ Framebuffer* StandRenderPipeline::FinalColor(){
     return renderContext->GetFinalColor();
 }
 
-void StandRenderPipeline::Update(){
+void StandRenderPipeline::Render(){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
     //----------Setup Envroment Settings-------------

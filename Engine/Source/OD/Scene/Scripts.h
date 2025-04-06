@@ -98,7 +98,9 @@ struct OD_API ScriptSystem: public System{
     ~ScriptSystem();
     //System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }
 
+    virtual inline int Type() override { return SystemType::Stand | SystemType::Late; }
     virtual void Update() override;
+    virtual void LateUpdate() override;
 private:
     static void OnDestroyScript(entt::registry & r, entt::entity e);
 };

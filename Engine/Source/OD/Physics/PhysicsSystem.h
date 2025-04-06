@@ -297,8 +297,8 @@ struct OD_API PhysicsSystem: public System{
         return system; 
     }*/
     
-    virtual SystemType Type() override { return SystemType::Physics; }
-    virtual void Update() override;
+    virtual int Type() override { return SystemType::Physics; }
+    virtual void PhysicsUpdate() override;
     virtual void OnDrawGizmos(Camera& cam) override;
 
     void ShowDebugGizmos();

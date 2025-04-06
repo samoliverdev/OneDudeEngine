@@ -4,6 +4,9 @@
 #include "OD/Animation/Clip.h"
 #include "OD/Animation/CrossFadeController.h"
 
+#include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
+
 namespace OD{
 
 //TODO: Make Serializable
@@ -30,7 +33,7 @@ struct OD_API AnimatorSystem: public System{
     AnimatorSystem(Scene* scene);
     //inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 
-    virtual SystemType Type() override;
+    virtual int Type() override;
     virtual void Update() override;
 };
 
