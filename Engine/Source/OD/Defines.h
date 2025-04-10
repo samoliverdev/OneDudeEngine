@@ -25,3 +25,5 @@
 
 #define INVALID_ID 0
 #define MAX_DELTATIME 0.05f
+
+#define InternalSystemsMulthread 1

@@ -1372,7 +1372,9 @@ void NavmeshSystem::LateUpdate(){
 
 	if(navmesh == nullptr) return;
 
-	/*scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+	#if InternalSystemsMulthread
+	scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+	#endif
 		auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
 		for(auto e: navmeshAgentView){
 			NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
@@ -1388,7 +1390,9 @@ void NavmeshSystem::LateUpdate(){
 
 			if(scene->Running() == false) continue;
 
+			#if InternalSystemsMulthread
 			subflow.emplace([&](){ 
+			#endif
 				if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
 					Assert(navmeshComponent.path.corners.size() > 1);
 					if(navmeshComponent.reach) return;
@@ -1419,10 +1423,14 @@ void NavmeshSystem::LateUpdate(){
 					navmeshComponent.curPathIndex = -1;
 					navmeshComponent.reach = false;
 				}
+			#if InternalSystemsMulthread
 			});
+			#endif
 		}
+	#if InternalSystemsMulthread
 	});
-	return;*/
+	#endif
+	return;
 
 	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
 	for(auto e: navmeshAgentView){

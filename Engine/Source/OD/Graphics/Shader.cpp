@@ -261,6 +261,7 @@ Ref<SubShader> Shader::GetCurrentShader(){
 void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());
     _enabledKeywords.push_back(passes[pass].name);
+    _enabledKeywords.push_back("Pass_" + std::to_string(pass));
 
     int startSize = shaderSourceData.baseSource.size();
     int insirtSize = 0;

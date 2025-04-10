@@ -17,6 +17,7 @@
 namespace OD {
 
 using Entity = entt::entity;
+using Registry = entt::registry;
 #define EntityNull entt::null
 //#define EntityNull (Entity)UINT32_MAX
 
@@ -269,7 +270,7 @@ public:
     template<typename T> T* GetSystem();
     template<typename T> T* GetSystemDynamic();
 
-    inline entt::registry& GetRegistry(){ return registry; }
+    inline Registry& GetRegistry(){ return registry; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
     inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
     inline const std::vector<System*>& GetRendererSystems(){ return rendererSystems; }
@@ -285,7 +286,6 @@ public:
 
     inline auto& GetExecutor(){ return executor; }
     inline auto& GetTaskflow(){ return taskflow; }
-    
 private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
@@ -338,6 +338,50 @@ public:
 private:
     Entity entity = entt::null;
     Scene* scene = nullptr;
+};
+
+template<typename... Components>
+struct GroupOfComps {
+    static Entity Create(Registry& registry, Components&&... components){
+        Entity entity = registry.create();
+        (EmplaceComponent<Components>(registry, entity, std::forward<Components>(components)), ...);
+        return entity;
+    }
+
+    static Entity Create(Registry& registry){
+        Entity entity = registry.create();
+        (EmplaceComponent<Components>(registry, entity, Components{}), ...);
+        return entity;
+    }
+
+    static Entity Create(Scene& scene, const std::string& name, Components&&... components){
+        Entity entity = scene.AddEntity(name);
+        (emplaceComponent<Components>(scene.GetRegistry(), entity, std::forward<Components>(components)), ...);
+        return entity;
+    }
+
+    static Entity Create(Scene& scene, const std::string& name){
+        Entity entity = scene.AddEntity(name);
+        (EmplaceComponent<Components>(scene.GetRegistry(), entity, Components{}), ...);
+        return entity;
+    }
+
+    template<typename Component>
+    static void EmplaceComponent(Registry& registry, Entity entity, Component&& component){
+        if constexpr (std::is_same_v<std::decay_t<Component>, TransformComponent>){
+            std::cout << "Special handling for TransformComponent\n";
+            if(!registry.any_of<TransformComponent>(entity)) registry.emplace<TransformComponent>(entity, std::forward<Component>(component));
+        } else if constexpr (std::is_same_v<std::decay_t<Component>, InfoComponent>) { 
+            std::cout << "Special handling for InfoComponent\n";
+            if(!registry.any_of<InfoComponent>(entity)) registry.emplace<InfoComponent>(entity, std::forward<Component>(component));
+        }else {
+            registry.emplace<Component>(entity, std::forward<Component>(component));
+        }
+    }
+
+    static auto GetView(Registry& registry){
+        return registry.view<Components...>();
+    }
 };
 
 }

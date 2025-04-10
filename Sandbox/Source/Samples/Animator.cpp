@@ -317,7 +317,7 @@ void AnimatorSample::OnInit(){
         //"res/Game/Animations/SillyDancing.fbx"
         //"res/Game/Animations/UnarmedWalkForward.dae"
     );
-    charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/LitNewSyntax.glsl"));
 
     
     /*OD::BoneMap bm = OD::RearrangeSkeleton(charModel->skeleton);

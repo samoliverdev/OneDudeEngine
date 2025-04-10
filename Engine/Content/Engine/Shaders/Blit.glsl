@@ -1,20 +1,19 @@
-#pragma BeginProperties
+BeginProperties
     Texture2D mainTex White
-#pragma EndProperties
+EndProperties
 
-#pragma BeginPassDef
-    Name MainPass
-#pragma EndPassDef
+BeginPass
+    #pragma Name MainPass
 
-#include Engine/ShaderLibrary/Base.glsl
-#include Engine/ShaderLibrary/Core.glsl
+    #include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Core.glsl
 
-BeginUniform(0, 0, Main)
-    Uniform vec4 color;
-EndUniform()
-Texture2D(0, 1, mainTex, mainSampler)
+    BeginUniform(0, 0, Main)
+        Uniform vec4 color;
+    EndUniform()
+    Texture2D(0, 1, mainTex, mainSampler)
 
-#if defined(VERTEX) && defined(MainPass)
+    BeginVertex
     In(0) vec3 vPos;
     In(1) vec2 vTexCoord;
     Out(0) vec3 pos;
@@ -29,9 +28,9 @@ Texture2D(0, 1, mainTex, mainSampler)
         #endif
         OutPosition = vec4(pos, 1.0);
     }
-#endif
+    EndVertex
 
-#if defined(FRAGMENT) && defined(MainPass)
+    BeginFrag
     In(0) vec3 pos;
     In(1) vec2 texCoord;
     Out(0) vec4 fragColor;
@@ -43,4 +42,5 @@ Texture2D(0, 1, mainTex, mainSampler)
         fragColor = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
         //fragColor = vec4(texCoord.xy, 0, 1);
     }
-#endif
+    EndFrag
+EndPass

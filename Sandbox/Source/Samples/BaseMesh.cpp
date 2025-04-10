@@ -2,6 +2,15 @@
 #include "ECSTest.h"
 
 void BaseMeshSample::OnInit(){
+    using CharacterType = OD::GroupOfComps<OD::TransformComponent, OD::MeshRendererComponent>;
+
+    OD::Registry gg;
+    auto character1 = CharacterType::Create(
+        gg,
+        OD::TransformComponent{},
+        OD::MeshRendererComponent{}
+    );
+
     struct Position { float x, y; };
     struct Velocity { float dx, dy; };
     struct Name {std::string name; };

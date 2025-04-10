@@ -46,23 +46,31 @@ void AnimatorSystem::LateUpdate(){
 
     auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
 
+    #if InternalSystemsMulthread
     scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+    #endif
         for(auto e: view){
             AnimatorComponent& anim = view.get<AnimatorComponent>(e);
             SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
             if(skinned.GetModel() == nullptr) continue;
             if(anim.enable == false) continue;
-    
+            
+            #if InternalSystemsMulthread
             subflow.emplace([&](){ 
+            #endif
                 Ref<Model> model = skinned.GetModel();
                 if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
                 if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
     
                 anim.controller.Update(Application::DeltaTime());
                 skinned.finalPose = anim.controller.GetCurrentPose();
+            #if InternalSystemsMulthread
             });
+            #endif
         }
+    #if InternalSystemsMulthread
     });
+    #endif
 
     //view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     /*taskflow.for_each(view.begin(), view.end(), [&](Entity e){
@@ -115,8 +123,10 @@ void AnimatorSystem::LateUpdate(){
         if(skinned.mesh == nullptr) continue;
         if(skinned.skeleton.GetBindPose().Size() <= 0) continue;
         if(anim.enable == false) continue;
-
+        
+        #if InternalSystemsMulthread
         taskflow.emplace([&](){ 
+        #endif
             if(skinned.posePalette.size() < skinned.skeleton.GetRestPose().Size()) skinned.posePalette.resize(skinned.skeleton.GetRestPose().Size());
             //if(anim.controller.WasSkeletonSet() == false) anim.controller.SetSkeleton(model->skeleton);
             if(anim.controller.GetCurrentPose().Size() != skinned.skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(skinned.skeleton); //Info: This Can work better if the model is change
@@ -125,7 +135,9 @@ void AnimatorSystem::LateUpdate(){
             anim.controller.Update(Application::DeltaTime());
             //anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
             skinned.finalPose = anim.controller.GetCurrentPose();
+        #if InternalSystemsMulthread
         });
+        #endif
     }
 
     //JobSystem::Wait();

@@ -82,6 +82,7 @@ std::string _load(std::string path, ShaderSourceData& out){
 
     bool beginProperties = false;
     bool beginPass = false;
+    bool beginPass2 = false;
 
     std::string lineBuffer;
     while(std::getline(file, lineBuffer)){
@@ -96,6 +97,17 @@ std::string _load(std::string path, ShaderSourceData& out){
                 if(index != 0) pragmaLine.push_back(_out);
                 index += 1;
             }
+        }
+
+        if(lineBuffer.find("BeginProperties") != lineBuffer.npos){
+            beginProperties = true;
+            pragmaLine.clear();
+            continue;
+        }
+        if(lineBuffer.find("EndProperties") != lineBuffer.npos){
+            pragmaLine.clear();
+            beginProperties = false;
+            continue;
         }
 
         if(beginProperties == false && pragmaLine.size() > 0 && pragmaLine[0] == "BeginProperties"){
@@ -139,6 +151,55 @@ std::string _load(std::string path, ShaderSourceData& out){
         }
 
         if(pragmaLine.size() > 0) out.pragmas.push_back(pragmaLine);
+
+        std::string replaceIndentifier = "BeginPass";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#if defined(Pass_" + std::to_string(out.passes.size()) + ")");
+
+            beginPass2 = true;
+            out.passes.push_back(ShaderPassData());
+        }
+
+        replaceIndentifier = "EndPass";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#endif");
+            
+            out.passes[out.passes.size()-1].UpdateProperties();
+            beginPass2 = false;
+        }
+
+        if(beginPass2 == true && pragmaLine.size() > 0){
+            out.passes[out.passes.size()-1].properties.push_back(pragmaLine);
+        }
+
+        replaceIndentifier = "BeginVertex";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#if defined(VERTEX)");
+        }
+        replaceIndentifier = "EndVertex";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#endif");
+        }
+        replaceIndentifier = "BeginFrag";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#if defined(FRAGMENT)");
+        }
+        replaceIndentifier = "EndFrag";
+        if(lineBuffer.find(replaceIndentifier) != lineBuffer.npos){
+            int pos = lineBuffer.find(replaceIndentifier);
+            lineBuffer.erase(pos, replaceIndentifier.size());
+            lineBuffer.insert(pos, "#endif");
+        }
 
         if(lineBuffer.find(includeIndentifier) != lineBuffer.npos){
             int includePos = lineBuffer.find(includeIndentifier);
