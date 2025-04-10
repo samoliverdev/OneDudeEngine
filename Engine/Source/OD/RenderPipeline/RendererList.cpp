@@ -38,7 +38,12 @@ void RendererList::AddDrawCommand(DrawCommand comand, float distance){
     );*/
 
     //m.lock();
-    drawCommands.Add(comand);
+    if(sortType == SortType::None){
+        drawCommandsNorSort.Add(comand.material, comand);
+    } else {
+        drawCommands.Add(comand);
+    }
+    //drawCommands.Add(comand.material, comand);
     //m.unlock();
     //drawCommandsMaterials.insert(comand.material);
     
@@ -66,10 +71,15 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distan
     Assert(comand.meshs != nullptr);
 
     //m.lock();
-    skinnedDrawCommands.Add(
-        {distance, comand.material->MaterialId()}, 
-        comand
-    );
+
+    if(sortType == SortType::None){
+        skinnedDrawCommandsNorSort.Add(comand.material, comand);
+    } else {
+        skinnedDrawCommands.Add(
+            {distance, comand.material->MaterialId()}, 
+            comand
+        );
+    }
     //m.unlock();
     //skinnedDrawCommandsMaterials.insert(comand.material);
 }
@@ -78,8 +88,10 @@ void RendererList::Clean(){
     overrideMaterial = nullptr;
 
     drawCommands.Clear();
+    drawCommandsNorSort.Clear();
     //drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
+    skinnedDrawCommandsNorSort.Clear();
 
     for(auto& i: drawIntancingCommands.commands){
         for(auto& j: i.second){
@@ -188,6 +200,38 @@ void RendererList::Submit(){
     }
     lastMat = nullptr;
 
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::drawCommandsNorSort");
+    drawCommandsNorSort.Each([&](auto& cm){
+        OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
+        Material* _mat = cm.material;
+
+        //{
+        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::1");
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+
+        if(_mat != lastMat){
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
+            _mat->DisableKeyword("INSTANCING");
+            _mat->DisableKeyword("SKINNED");
+            Graphics::BindMaterial(*_mat);
+            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
+        }
+        //}
+
+        //{
+        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::2");
+        lastMat = _mat;
+        //Assert(lastMat != nullptr);
+        //Shader::Bind(*_mat->GetShader());
+        //_mat->GetShader()->SetMatrix4("model", cm.trans);
+        //Graphics::DrawMeshRaw(*cm.meshs);
+        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        //}
+    });
+    }
+    lastMat = nullptr;
+
     // ---------------Submiting DrawIntancingCommands-----------------
     {
     OD_PROFILE_SCOPE("RendererList::Submit::drawIntancingCommands");
@@ -237,6 +281,34 @@ void RendererList::Submit(){
     {
     OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommands");
     skinnedDrawCommands.Each([&](auto& cm){
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+
+        if(_mat != lastMat){
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
+            //_mat->DisableKeyword("INSTANCING");
+            _mat->EnableKeyword("SKINNED");
+            //Material::SubmitGraphicDatas(*_mat);
+            Graphics::BindMaterial(*_mat);
+            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
+        }
+
+        lastMat = _mat;
+        //Shader::Bind(*_mat->GetShader());
+        //_mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
+        //_mat->GetShader()->SetMatrix4("model", cm.trans);
+        //Graphics::DrawMeshRaw(*cm.meshs);
+
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size());
+        
+        //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
+        //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+    });
+    }
+    lastMat = nullptr;
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort");
+    skinnedDrawCommandsNorSort.Each([&](auto& cm){
         auto _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 

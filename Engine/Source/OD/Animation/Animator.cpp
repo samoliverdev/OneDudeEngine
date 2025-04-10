@@ -46,7 +46,37 @@ void AnimatorSystem::LateUpdate(){
 
     auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
 
-    #if InternalSystemsMulthread
+    if(InternalSystemsMulthread){
+        scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+        for(auto [entity, anim, skinned]: view.each()){
+            if(skinned.GetModel() == nullptr) continue;
+            if(anim.enable == false) continue;
+            
+            subflow.emplace([&](){ 
+            Ref<Model> model = skinned.GetModel();
+            if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+            if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+
+            anim.controller.Update(Application::DeltaTime());
+            skinned.finalPose = anim.controller.GetCurrentPose();
+            });
+        }
+        });
+    } else {
+        for(auto [entity, anim, skinned]: view.each()){
+            if(skinned.GetModel() == nullptr) continue;
+            if(anim.enable == false) continue;
+            
+            Ref<Model> model = skinned.GetModel();
+            if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+            if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+
+            anim.controller.Update(Application::DeltaTime());
+            skinned.finalPose = anim.controller.GetCurrentPose();
+        }
+    }
+
+    /*#if InternalSystemsMulthread
     scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
     #endif
         for(auto e: view){
@@ -70,7 +100,7 @@ void AnimatorSystem::LateUpdate(){
         }
     #if InternalSystemsMulthread
     });
-    #endif
+    #endif*/
 
     //view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     /*taskflow.for_each(view.begin(), view.end(), [&](Entity e){

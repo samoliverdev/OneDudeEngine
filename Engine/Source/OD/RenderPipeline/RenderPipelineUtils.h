@@ -110,6 +110,7 @@ struct CommandBucket2{
 template<typename Key, typename Value>
 struct CommandBucket3{
     std::unordered_map<Key, std::vector<Value>> commands;
+    std::function<bool(Value&,Value&)> sortFunction = nullptr;
     //int count;
 
     inline void Clear(){
