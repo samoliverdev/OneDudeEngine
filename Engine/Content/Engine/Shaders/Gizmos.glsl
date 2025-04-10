@@ -1,36 +1,41 @@
-#pragma BeginPassDef
-    Name MainPass
-    DepthTest ALWAYS
-#pragma EndPassDef
+BeginPass
+    #pragma Name MainPass
+    #pragma DepthTest ALWAYS
 
-#include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Vertex.glsl
 
-#if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 position;
+    BeginUniform(0, 0, Main)
+        Uniform vec3 color;
+    EndUniform()
 
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
+    BeginVertex
+        layout(location = 0) in vec3 position;
 
-    void main() {
-        gl_Position = projection * view * model * vec4(position, 1);
-    }
-#endif
+        //uniform mat4 model;
+        //uniform mat4 view;
+        //uniform mat4 projection;
 
-#if defined(FRAGMENT) && defined(MainPass)
-    out vec4 outColor;
+        void main() {
+            gl_Position = projection * view * model * vec4(position, 1);
+        }
+    EndVertex
 
-    #if defined(OpenGL_API)
-    uniform vec3 color;
-    #endif
+    BeginFrag
+        out vec4 outColor;
 
-    void main(){
-        #if !defined(OpenGL_API)
-        vec3 color = vec3(0, 0, 1);
-        #endif
-        
-        float alpha = 1.0;
+        /*#if defined(OpenGL_API)
+        uniform vec3 color;
+        #endif*/
 
-        outColor = vec4(color.xyz, alpha);
-    }
-#endif
+        void main(){
+            #if !defined(OpenGL_API)
+            vec3 color = vec3(0, 0, 1);
+            #endif
+            
+            float alpha = 1.0;
+
+            outColor = vec4(color.xyz, alpha);
+        }
+    EndFrag
+EndPass

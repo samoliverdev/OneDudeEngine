@@ -98,6 +98,7 @@ struct UniformBufferDef{
     struct Member{
         size_t pos = 0;
         size_t size = 0;
+        size_t arrayStride = 0; // <- novo campo
     };
     std::string name;
     size_t size = 0;

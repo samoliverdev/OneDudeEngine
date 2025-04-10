@@ -1,14 +1,19 @@
-#pragma BeginPassDef
-    Name MainPass
-    CullFace BACK
-    DepthTest DISABLE
-#pragma EndPassDef
+BeginPass
+    #pragma Name MainPass
+    #pragma CullFace BACK
+    #pragma DepthTest DISABLE
 
-#include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Base.glsl
 
-#if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
+    BeginUniform(0, 0, Main)
+        Uniform vec4 _ColorAdjustments;
+        Uniform vec4 _ColorFilter;
+    EndUniform()
+    Texture2D(0, 1, mainTex, mainSampler)
+
+    BeginVertex
+    layout(location = 0) in vec3 _pos;
+    layout(location = 1) in vec2 _texCoord;
 
     out vec3 pos;
     out vec2 texCoord;
@@ -18,18 +23,18 @@
         texCoord = _texCoord;
         gl_Position = vec4(pos, 1.0);
     }
-#endif
+    EndVertex
 
-#if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D mainTex;
+    BeginFrag
+    //uniform sampler2D mainTex;
 
     in vec3 pos;
     in vec2 texCoord;
 
     out vec4 fragColor;
 
-    uniform vec4 _ColorAdjustments;
-    uniform vec4 _ColorFilter;
+    //uniform vec4 _ColorAdjustments;
+    //uniform vec4 _ColorFilter;
 
     vec3 ColorGradePostExposure(vec3 color){
         return color * _ColorAdjustments.x;
@@ -99,4 +104,5 @@
 
         fragColor = vec4(color, 1);
     }
-#endif
+    EndFrag
+EndPass

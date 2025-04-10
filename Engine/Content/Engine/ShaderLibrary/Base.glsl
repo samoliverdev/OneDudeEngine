@@ -23,7 +23,6 @@
         #define Uniform
     #else
         #define BeginUniform(inSet, inBinding, name)
-
         #define EndUniform()
         #define Uniform uniform
     #endif

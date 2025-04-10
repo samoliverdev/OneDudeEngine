@@ -19,7 +19,7 @@
 #include <stb/stb_image.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#define UseUniformBuffer 0
+#define UseUniformBuffer 1
 
 namespace OD{
 
@@ -726,14 +726,32 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                     Assert(m.size >= sizeof(Matrix4));
                     memcpy((char*)material.glData.mainUniformData + m.pos, &map.matrix, sizeof(Matrix4));
                 } else if(map.type == MaterialMap::Type::FloatList){
-                    Assert(m.size >= sizeof(float) * map.listCount);
-                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
+                    //Assert(m.size >= sizeof(float) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : 16; // fallback seguro
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    float* src = static_cast<float*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(float));
+                    }
                 } else if(map.type == MaterialMap::Type::Vector4List){
-                    Assert(m.size >= sizeof(Vector4) * map.listCount);
-                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
+                    //Assert(m.size >= sizeof(Vector4) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : sizeof(Vector4);
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    Vector4* src = static_cast<Vector4*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(Vector4));
+                    }
                 } else if(map.type == MaterialMap::Type::Matrix4List){
-                    Assert(m.size >= sizeof(Matrix4) * map.listCount);
-                    memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
+                    //Assert(m.size >= sizeof(Matrix4) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : sizeof(Matrix4); // normalmente 64
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    Matrix4* src = static_cast<Matrix4*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(Matrix4));
+                    }
                 } else {
                     Assert(false && "Type Not Supported in A UnifomBuffer");
                 }
@@ -2360,6 +2378,7 @@ bool getUniformInfo(GLuint program, const char* blockName, UniformBufferDef& out
         UniformBufferDef::Member m = {};
         m.pos = offset;
         m.size = getUniformByteSize(size, type);
+        m.arrayStride = arrayStride;
         out.members[label] = m;
     }
 
@@ -2580,12 +2599,12 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
         glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
         glCheckError();
 
-        /*LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
+        LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
         for(auto& i: mat.glData.mainBufferDef.members){
            LogInfo("Name: %s", i.first.c_str());
            LogInfo("Pos: %zd", i.second.pos);
            LogInfo("Size: %zd", i.second.size);
-        }*/
+        }
     }
     #endif
 }

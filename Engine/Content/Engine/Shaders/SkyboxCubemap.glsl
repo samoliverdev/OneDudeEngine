@@ -5,14 +5,20 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform mat4 skyboxView;
+EndUniform()
+TextureCube(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 inPos;
+    layout(location = 0) in vec3 inPos;
 
     out vec3 texCoords;
 
-    uniform mat4 skyboxView;
-    uniform mat4 projection;
+    //uniform mat4 skyboxView;
+    //uniform mat4 projection;
 
     void main() {
         texCoords = inPos;
@@ -34,7 +40,7 @@
     in vec3 texCoords;
     out vec4 fragColor;
 
-    uniform samplerCube mainTex;
+    //uniform samplerCube mainTex;
 
     void main(){
         fragColor = texture(mainTex, texCoords);

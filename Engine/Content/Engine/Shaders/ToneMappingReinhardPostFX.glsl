@@ -5,6 +5,11 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
+BeginUniform(0, 0, Main)
+    Uniform float exposure;
+EndUniform()
+Texture2D(0, 1, mainTex, mainSampler)
+
 #if defined(VERTEX) && defined(MainPass)
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
@@ -20,8 +25,8 @@
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D mainTex;
-    uniform float exposure;
+    //uniform sampler2D mainTex;
+    //uniform float exposure;
 
     in vec3 pos;
     in vec2 texCoord;

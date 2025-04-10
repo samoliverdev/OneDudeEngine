@@ -1,11 +1,15 @@
-#pragma BeginPassDef
-    Name MainPass
-    DepthTest DISABLE
-#pragma EndPassDef
+BeginPass
+    #pragma Name MainPass
+    #pragma DepthTest DISABLE
 
-#include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Base.glsl
 
-#if defined(VERTEX) && defined(MainPass)
+    BeginUniform(0, 0, Main)
+        Uniform float option;
+    EndUniform()
+    Texture2D(0, 1, mainTex, mainSampler)
+
+    BeginVertex
     layout (location = 0) in vec3 _pos;
     layout (location = 1) in vec2 _texCoord;
 
@@ -17,13 +21,13 @@
         texCoord = _texCoord;
         gl_Position = vec4(pos, 1.0);
     }
-#endif
+    EndVertex
 
-#include Engine/ShaderLibrary/Core.glsl
+    #include Engine/ShaderLibrary/Core.glsl
 
-#if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D mainTex;
-    uniform float option;
+    BeginFrag
+    //uniform sampler2D mainTex;
+    //uniform float option;
 
     in vec3 pos;
     in vec2 texCoord;
@@ -45,4 +49,5 @@
         //fragColor.rgb = ApplyDithering(fragColor.rgb, texCoord);
         //fragColor.rgb = clamp(fragColor.rgb, 0.0, 1.0);
     }
-#endif
+    EndFrag
+EndPass
