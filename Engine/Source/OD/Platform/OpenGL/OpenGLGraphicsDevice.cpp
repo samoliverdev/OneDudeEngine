@@ -19,7 +19,7 @@
 #include <stb/stb_image.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#define UseUniformBuffer 1
+#define UseUniformBuffer 0
 
 namespace OD{
 

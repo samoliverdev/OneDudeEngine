@@ -73,6 +73,34 @@ void CrossFadeController::Update(float dt){
     }
 }
 
+void CrossFadeController::Update(float dt, Pose& pose){
+    if(clip == 0 || !wasSkeletonSet) return;
+
+    unsigned int numTargets = targets.size();
+    for(unsigned int i = 0; i < numTargets; i++){
+        if(targets[i].elapsed >= targets[i].duration){
+            clip = targets[i].clip;
+            time = targets[i].time;
+            pose = targets[i].pose;
+            targets.erase(targets.begin() + i);
+            break;
+        }
+    }
+
+    numTargets = targets.size();
+    pose = skeleton.GetRestPose();
+    time = clip->Sample(pose, time + dt);
+
+    for(unsigned int i = 0; i < numTargets; i++){
+        CrossFadeTarget& target = targets[i];
+        target.time = target.clip->Sample(target.pose, target.time + dt);
+        target.elapsed += dt;
+        float t = target.elapsed / target.duration;
+        if(t > 1.0f){ t = 1.0f; }
+        Blend(pose, pose, target.pose, t, -1);
+    }
+}
+
 Pose& CrossFadeController::GetCurrentPose(){
     return pose;
 }

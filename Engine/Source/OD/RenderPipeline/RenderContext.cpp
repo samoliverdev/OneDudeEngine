@@ -298,6 +298,8 @@ void RenderContext::ScreenClean(){
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::0");
     auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>();
     for(auto e: staticMeshView){
         auto& info = staticMeshView.get<InfoComponent>(e);
@@ -328,7 +330,10 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         onReciveRenderData(data);
     }
+    }
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::1");
     auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>();
     for(auto e: meshStaticRenderView){
         auto& info = meshStaticRenderView.get<InfoComponent>(e);
@@ -369,9 +374,12 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             _i += 1;
         }
     }
+    }
 
     //////////////////////////////////////////////////////////
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent>
     );
@@ -396,7 +404,10 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         onReciveRenderData(data);
     }
+    }
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
     auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent>
     );
@@ -426,7 +437,10 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             onReciveRenderData(data);
         }
     }
+    }
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
     auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>();
     for(auto e: skinnedMeshView){
         auto& info = skinnedMeshView.get<InfoComponent>(e);
@@ -445,6 +459,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.targetMatrix =  t.GlobalModelMatrix();;
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
+        //INFO: Try optimize
         if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose()); 
         data.posePalette = &c.posePalette;
         
@@ -453,14 +468,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         onReciveRenderData(data);
     }
+    }
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
     auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>();
-    for(auto e: skinnedView){
-        auto& info = skinnedView.get<InfoComponent>(e);
+    for(auto [e, c, t, info]: skinnedView.each()){
+        //auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
-
-        SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
-        TransformComponent& t = skinnedView.get<TransformComponent>(e);
+        //SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
+        //TransformComponent& t = skinnedView.get<TransformComponent>(e);
 
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
@@ -473,6 +490,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
+            //INFO: Try optimize
             if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
             data.posePalette = &c.posePalette;
             
@@ -481,11 +499,14 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
-
+            
             onReciveRenderData(data);
         }
     }
+    }
 
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::6");
     auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>();
     for(auto entity: spriteView){
         auto& info = spriteView.get<InfoComponent>(entity);
@@ -513,6 +534,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.aabb = transform_aabb_optimized_abs_center_extents(aabb, data.targetMatrix);
 
         onReciveRenderData(data);
+    }
     }
 }
 

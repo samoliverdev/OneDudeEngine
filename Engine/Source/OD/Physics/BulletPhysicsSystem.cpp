@@ -514,12 +514,10 @@ void RigidbodyComponent::UpdateSettings(){
     
     if(type == RigidbodyComponent::Type::TestDisable){
         //data->body->setActivationState(ISLAND_SLEEPING);
-        
-        //data->body->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
-        //data->body->setActivationState(DISABLE_SIMULATION);
-
+        data->rbBody->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        data->rbBody->setActivationState(DISABLE_SIMULATION);
     } else {
-        //NeverSleep(neverSleep);
+        NeverSleep(neverSleep);
     }
 
     btVector3 localInertia(0,0,0);
@@ -761,8 +759,8 @@ void PhysicsSystem::PhysicsUpdate(){
         } else {
             btTransform physicsTransform = ToBullet(transform);
             btMotionState* motionState = data->rbBody->getMotionState();
-            motionState->setWorldTransform(physicsTransform);
-            //data->body->setWorldTransform(physicsTransform);
+            //motionState->setWorldTransform(physicsTransform);
+            data->rbBody->setWorldTransform(physicsTransform);
         }
     }
 

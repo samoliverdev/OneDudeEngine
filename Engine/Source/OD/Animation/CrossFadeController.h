@@ -13,6 +13,7 @@ public:
     void Play(Clip* target);
     void FadeTo(Clip* target, float fadeTime);
     void Update(float dt);
+    void Update(float dt, Pose& pose); //INFO: Experimental
     Pose& GetCurrentPose();
     Clip* GetCurrentClip();
     

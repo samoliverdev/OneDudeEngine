@@ -58,6 +58,7 @@ void AnimatorSystem::LateUpdate(){
             if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
 
             anim.controller.Update(Application::DeltaTime());
+            anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
             skinned.finalPose = anim.controller.GetCurrentPose();
             });
         }
@@ -72,6 +73,7 @@ void AnimatorSystem::LateUpdate(){
             if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
 
             anim.controller.Update(Application::DeltaTime());
+            anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
             skinned.finalPose = anim.controller.GetCurrentPose();
         }
     }
