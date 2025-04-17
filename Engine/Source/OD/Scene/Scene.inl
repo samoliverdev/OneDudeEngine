@@ -158,6 +158,7 @@ T& Scene::AddComponent(Entity id){
 
 template <typename T>
 T& Scene::GetComponent(Entity id){
+    //if(registry.any_of<T>(id) == false) throw 0;
     return registry.get<T>(id);
 }
 

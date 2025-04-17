@@ -534,6 +534,7 @@ void RigidbodyComponent::Mass(float m){
 }
 
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
+    if(value == type) return;
     type = value;
     if(data == nullptr) return;
     UpdateSettings();
@@ -554,6 +555,7 @@ void RigidbodyComponent::NeverSleep(bool value){
 Vector3 RigidbodyComponent::Position(){
     if(data == nullptr) return Vector3Zero;
     btTransform trans = data->rbBody->getWorldTransform();
+    //data->rbBody->getMotionState()->getWorldTransform(trans);
     return FromBullet(trans.getOrigin());
 }
 
@@ -572,6 +574,7 @@ void RigidbodyComponent::Position(Vector3 position){
 Quaternion RigidbodyComponent::Rotation(){
     if(data == nullptr) return QuaternionIdentity;
     btTransform trans = data->rbBody->getWorldTransform();
+    //data->rbBody->getMotionState()->getWorldTransform(trans);
     return FromBullet(trans.getRotation());
 }
 
@@ -688,7 +691,7 @@ void PhysicsSystem::PhysicsUpdate(){
     if(GetScene()->Running() == false) return;
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
     physicsWorld->world->stepSimulation(Application::DeltaTime(), ACCURACY);
-    //world->synchronizeMotionStates();
+    physicsWorld->world->synchronizeMotionStates();
     //world->performDiscreteCollisionDetection();
     
     /*if(GetScene()->Running() == true){
@@ -754,6 +757,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Static){
             btTransform trans = data->rbBody->getWorldTransform();
+            //data->rbBody->getMotionState()->getWorldTransform(trans);
             transform.Position(FromBullet(trans.getOrigin()));
             transform.Rotation(FromBullet(trans.getRotation()));
         } else {

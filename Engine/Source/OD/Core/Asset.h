@@ -3,6 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include <entt/entt.hpp>
+#include "OD/Utils/Allocators.h"
 
 namespace OD{
 
@@ -82,6 +83,7 @@ private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
     std::unordered_map<Type, std::unordered_map<std::string, Ref<Asset>>> data;
+    std::unordered_map<Type, void*> allocator;
 
     std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
 };
@@ -180,11 +182,20 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     LogInfo("LoadAsset: %s", path.c_str());
 
-    Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));
-    Ref<Asset> asset = AssetTypesDB::Get().assetFuncsTypes[GetType<T>()].Create();
+    //INFO: Add Experimental Alloctor
+    void* allo = allocator[GetType<T>()];
+    if(allo == nullptr){
+        allo = new ArenaLinearAllocator<T>();
+        reinterpret_cast<ArenaLinearAllocator<T>*>(allo)->Init(1000);
+    }
+    ArenaLinearAllocator<T>* alloc = reinterpret_cast<ArenaLinearAllocator<T>*>(allo);
+    Ref<T> asset = alloc->AllocShared();
+
+    //Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));
+    //Ref<Asset> asset = AssetTypesDB::Get().assetFuncsTypes[GetType<T>()].Create();
 
     //Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
-    
+
     asset->LoadFromFile(path);
     db[path] = asset;
     

@@ -62,6 +62,21 @@ void AnimatorSystem::LateUpdate(){
             skinned.finalPose = anim.controller.GetCurrentPose();
             });
         }
+        /*auto view2 = GetScene()->GetRegistry().group<AnimatorComponent, SkinnedModelRendererComponent>();
+        subflow.for_each(view2.begin(), view2.end(), [view2](Entity e){
+            AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
+            SkinnedModelRendererComponent& skinned = view2.get<SkinnedModelRendererComponent>(e);
+            if(skinned.GetModel() == nullptr) return;
+            if(anim.enable == false) return;
+        
+            Ref<Model> model = skinned.GetModel();
+            if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+            if(anim.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) anim.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+
+            anim.controller.Update(Application::DeltaTime());
+            anim.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
+            skinned.finalPose = anim.controller.GetCurrentPose();
+        });*/
         });
     } else {
         for(auto [entity, anim, skinned]: view.each()){
