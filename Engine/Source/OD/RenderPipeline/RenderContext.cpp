@@ -491,7 +491,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
-            if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
+            //if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
             data.posePalette = &c.posePalette;
             
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
