@@ -216,7 +216,7 @@ public:
     
     CameraRenderer();
     ~CameraRenderer();
-    void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings, RenderingPath renderingPath = RenderingPath::Forward);
+    void Render(Camera cam, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings, RenderingPath renderingPath = RenderingPath::Forward);
     inline Lighting& GetLighting(){ return lighting; }
     inline Shadows& GetShadows(){ return shadows; }
 
@@ -235,6 +235,7 @@ private:
     Ref<Material> cubemapSkyMaterial = nullptr;
     Ref<Texture2D> brdfLUT = nullptr;
     Ref<Mesh> spriteMesh = nullptr;
+    Ref<Mesh> cubeMesh = nullptr;
 
     GamaCorrectionPP* gamaCorrectionPP = nullptr;
 

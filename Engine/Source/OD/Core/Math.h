@@ -4,9 +4,10 @@
 //#include <string>
 
 #define GLM_FORCE_QUAT_DATA_XYZW
-#define GLM_FORCE_INTRINSICS
+
 //#define GLM_FORCE_PURE
 
+#define GLM_FORCE_INTRINSICS
 #define GLM_FORCE_ALIGNED
 //#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 //#define GLM_FORCE_AVX2

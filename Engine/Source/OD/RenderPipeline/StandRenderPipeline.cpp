@@ -379,6 +379,31 @@ CameraRenderer::CameraRenderer(){
     brdfLUT = nullptr;// Texture2D::CreateBrdfLUTTexture2D();
     spriteMesh = Mesh::CenterQuad(false);
     gamaCorrectionPP = new GamaCorrectionPP();
+
+    cubeMesh = CreateRef<Mesh>();
+    cubeMesh->vertices = {
+        // +X
+        {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f},
+        // -X
+        {-1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, 1.0f},
+        // +Y
+        {-1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f},
+        // -Y
+        {-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f},
+        // +Z
+        {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f},
+        // -Z
+        {1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}
+    };
+    cubeMesh->indices = {
+        0, 1, 2, 2, 3, 0,       // +X
+        4, 5, 6, 6, 7, 4,       // -X
+        8, 9,10,10,11, 8,       // +Y
+       12,13,14,14,15,12,       // -Y
+       16,17,18,18,19,16,       // +Z
+       20,21,22,22,23,20        // -Z
+    };
+    cubeMesh->Submit();
 }
 
 CameraRenderer::~CameraRenderer(){
@@ -386,7 +411,7 @@ CameraRenderer::~CameraRenderer(){
     delete gamaCorrectionPP;
 }
 
-void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings environmentSettings, RenderingPath inRenderingPath){
+void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings, RenderingPath inRenderingPath){
     OD_PROFILE_SCOPE("CameraRenderer::Render");
     // ----------- Setup ----------- 
     camera = inCam;
@@ -499,6 +524,17 @@ void CameraRenderer::AddRenderData(RenderData& data){
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
 }
 
+glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+
+glm::mat4 captureViews[] = {
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+};
+
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
     OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
 
@@ -525,7 +561,75 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
-        Assert(false && "Outdate for now");
+        if(environmentSettings.skyCubemap != nullptr && environmentSettings.skyIrradianceMapF == nullptr){
+            FrameBufferSpecification specification;
+            specification.width = 32*4;
+            specification.height = 32*4;
+            specification.type = FramebufferAttachmentType::CUBEMAP;
+            specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+            specification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
+            environmentSettings.skyIrradianceMapF = CreateRef<Framebuffer>(specification);
+            //environmentSettings.skyIrradianceMapF->Invalidate();
+
+            Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
+            irradianceMat->SetCubemap("environmentMap", environmentSettings.skyCubemap);
+            irradianceMat->SetMatrix4("projection2", captureProjection);
+
+            for(unsigned int i = 0; i < 6; ++i){
+                irradianceMat->SetMatrix4("view2", captureViews[i]);
+                Graphics::BeginFramebuffer(*environmentSettings.skyIrradianceMapF, {0, 0, 0, 1}, i);
+                Graphics::SetViewport(0, 0, specification.width, specification.height);
+                Graphics::BindMaterial(*irradianceMat);
+                Graphics::DrawMesh(*cubeMesh, Matrix4Identity);
+                Graphics::EndFramebuffer();
+            }
+
+            //environmentSettings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(environmentSettings.skyCubemap);
+        }
+        if(environmentSettings.skyCubemap != nullptr && environmentSettings.skyPrefilterMapF == nullptr){
+            FrameBufferSpecification specification;
+            specification.width = 32*4;
+            specification.height = 32*4;
+            specification.type = FramebufferAttachmentType::CUBEMAP;
+            specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+            specification.colorAttachments = {{FramebufferTextureFormat::RGB16F, true}};
+            environmentSettings.skyPrefilterMapF = CreateRef<Framebuffer>(specification);
+            //environmentSettings.skyIrradianceMapF->Invalidate();
+
+            Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
+            irradianceMat->SetCubemap("environmentMap", environmentSettings.skyCubemap);
+            irradianceMat->SetMatrix4("projection2", captureProjection);
+
+            unsigned int maxMipLevels = 5;
+            for(unsigned int mip = 0; mip < maxMipLevels; ++mip){
+                // reisze framebuffer according to mip-level size.
+                unsigned int mipWidth  = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+                unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+
+                float roughness = (float)mip / (float)(maxMipLevels - 1);
+                irradianceMat->SetFloat("roughness", roughness);
+                for(unsigned int i = 0; i < 6; ++i){
+                    irradianceMat->SetMatrix4("view2", captureViews[i]);
+                    Graphics::BeginFramebuffer(*environmentSettings.skyPrefilterMapF, {0, 0, 0, 1}, i, mip);
+                    Graphics::SetViewport(0, 0, mipWidth, mipHeight);
+                    Graphics::BindMaterial(*irradianceMat);
+                    Graphics::DrawMesh(*cubeMesh, Matrix4Identity);
+                    Graphics::EndFramebuffer();
+                }
+            }
+
+            //environmentSettings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(environmentSettings.skyCubemap);
+        }
+
+        /*Assert(environmentSettings.skyIrradianceMapF != nullptr);
+        Assert(environmentSettings.skyPrefilterMapF != nullptr);
+        Material::SetGlobalTexture("_IrradianceMap", environmentSettings.skyIrradianceMapF.get(), 0);
+        Material::SetGlobalTexture("_PrefilterMap", environmentSettings.skyPrefilterMapF.get(), 0);*/
+
+        //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        //Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+
+        //Assert(false && "Outdate for now");
         Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
         //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         //Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);

@@ -32,6 +32,10 @@ struct OD_API EnvironmentSettings{
     Ref<Cubemap> skyCubemap = nullptr;
     Ref<Cubemap> skyIrradianceMap = nullptr;
     Ref<Cubemap> skyPrefilterMap = nullptr;
+
+    Ref<Framebuffer> skyIrradianceMapF = nullptr;
+    Ref<Framebuffer> skyPrefilterMapF = nullptr;
+
     float skyLightIntensity = 1;
 
     ShadowQuality directionalshadowQuality = ShadowQuality::High;

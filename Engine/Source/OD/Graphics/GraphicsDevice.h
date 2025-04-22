@@ -70,7 +70,7 @@ public:
 
     virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) = 0;
 
-    virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer) = 0;
+    virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip) = 0;
     virtual void EndFramebuffer() = 0;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;
@@ -117,6 +117,9 @@ public:
     ) = 0; 
     virtual void CubemapDestroy(Cubemap& cubemap) = 0;
     virtual bool CubemapIsValid(Cubemap& tex) = 0;
+
+    virtual Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
+    virtual Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
 
     virtual bool SubShaderCreateFromBaseSource(
         SubShader& shader,

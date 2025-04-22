@@ -291,8 +291,8 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     graphicsDevice->BlitFramebuffer(src, dst, srcPass); 
 }
 
-void Graphics::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){ 
-    graphicsDevice->BeginFramebuffer(frambuffer, clearColor, layer); 
+void Graphics::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip){ 
+    graphicsDevice->BeginFramebuffer(frambuffer, clearColor, layer, mip); 
 }
 
 void Graphics::EndFramebuffer(){ 

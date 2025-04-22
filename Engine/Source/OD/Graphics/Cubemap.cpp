@@ -162,6 +162,8 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 }
 
 Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    return graphicsDevice->CreateIrradianceMapFromCubeMap(cubemap);
+
     Assert(false && "Not Work for now");
     return nullptr;
     /*
@@ -238,6 +240,8 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
 }
 
 Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    return graphicsDevice->CreatePrefilterMapFromCubeMap(cubemap);
+
     Assert(false && "Not Work for now");
     return nullptr;
     /*

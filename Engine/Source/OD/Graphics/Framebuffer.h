@@ -18,11 +18,13 @@ enum class OD_API_IMPORT FramebufferTextureFormat{
 enum class OD_API_IMPORT FramebufferAttachmentType{
     TEXTURE_2D,
     TEXTURE_2D_MULTISAMPLE,
-    TEXTURE_2D_ARRAY
+    TEXTURE_2D_ARRAY,
+    CUBEMAP
 };
 
 struct OD_API FramebufferAttachment{
     FramebufferTextureFormat colorFormat;
+    bool genMip = false;
 };
 
 struct OD_API FrameBufferSpecification{

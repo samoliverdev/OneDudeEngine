@@ -22,7 +22,7 @@ void RenderPipelineSample::AddTransparent(Vector3 pos){
 }
 
 void RenderPipelineSample::OnInit(){
-    Assert(false && "Not work for now");
+    //Assert(false && "Not work for now");
 
     LogInfo("Game Init");
     LogInfo(RESOURCES_PATH "/");
@@ -57,9 +57,10 @@ void RenderPipelineSample::OnInit(){
     //envComp.settings.bloomPostFX->enable = true;
     //envComp.settings.bloomPostFX->intensity = 0.5f;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
+    //envComp.settings.skyCubemap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
+    /*envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
-    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);*/
     //envComp.settings.skyCubemap = envComp.settings.skyIrradianceMap;
 
     Entity e = scene->AddEntity("Floor");
@@ -195,7 +196,7 @@ void RenderPipelineSample::OnInit(){
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     
-    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 2, 4));
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 3, 8));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     //camMove.transform = &camera->GetComponent<TransformComponent>()();
@@ -312,8 +313,8 @@ void RenderPipelineSample::OnInit(){
     charAnim.Play(charModel->animationClips[0].get());
     */
 
-    //Application::AddModule<Editor>();
-    scene->Start();
+    Application::AddModule<Editor>();
+    //scene->Start();
 }
 
 void RenderPipelineSample::OnUpdate(float deltaTime){

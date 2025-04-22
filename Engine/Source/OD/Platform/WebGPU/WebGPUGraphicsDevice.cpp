@@ -1248,7 +1248,7 @@ bool WebGPUGraphicsDevice::MeshIsValid(Mesh& mesh){
     return false;
 }
 
-void WebGPUGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer){
+void WebGPUGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip){
     lastMat = nullptr;
     lastShader = nullptr;
     lastMesh = nullptr;
