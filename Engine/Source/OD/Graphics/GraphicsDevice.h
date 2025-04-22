@@ -105,6 +105,7 @@ public:
     virtual void Texture2DDestroy(Texture2D& tex) = 0;
     virtual bool Texture2DIsValid(Texture2D& tex) = 0;
     virtual void* Texture2DRenderId(Texture2D& tex) = 0;
+    virtual Ref<Texture2D> Texture2DCreateBrdfLUTTexture2D(){ return nullptr; }
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) = 0; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) = 0;

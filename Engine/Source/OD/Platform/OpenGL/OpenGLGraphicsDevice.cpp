@@ -138,6 +138,8 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 }
 #endif
 
+Ref<Mesh> _cubeMesh = nullptr;
+
 void OpenGLGraphicsDevice::Initialize(){
     auto CreateLineVAO = [&](unsigned int* vao, unsigned int* vbo, int vertexCount){
         #ifdef USE_VAO
@@ -324,6 +326,35 @@ void OpenGLGraphicsDevice::Initialize(){
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glCheckError();
     #endif
+
+    _cubeMesh = CreateRef<Mesh>();
+    _cubeMesh->vertices = {
+        // +X
+        {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f},
+        // -X
+        {-1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, 1.0f},
+        // +Y
+        {-1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f},
+        // -Y
+        {-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f},
+        // +Z
+        {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f},
+        // -Z
+        {1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}
+    };
+    _cubeMesh->indices = {
+        0, 1, 2, 2, 3, 0,       // +X
+        4, 5, 6, 6, 7, 4,       // -X
+        8, 9,10,10,11, 8,       // +Y
+       12,13,14,14,15,12,       // -Y
+       16,17,18,18,19,16,       // +Z
+       20,21,22,22,23,20        // -Z
+    };
+    _cubeMesh->Submit();
+
+    irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
+    prefilterMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
+    brdfMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/brdf.glsl"));
 }
 
 void OpenGLGraphicsDevice::Shutdown(){
@@ -1668,7 +1699,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, specification.colorAttachments[index].genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glCheckError();
             for(unsigned int i = 0; i < 6; ++i){
@@ -2257,6 +2288,67 @@ bool OpenGLGraphicsDevice::Texture2DArrayIsValid(Texture2DArray& tex){
     return tex.glData.id != 0;
 }
 
+Ref<Texture2D> OpenGLGraphicsDevice::Texture2DCreateBrdfLUTTexture2D(){
+    Assert(Graphics::HasBegin() == false);
+
+    // pbr: setup framebuffer
+    // ----------------------
+    unsigned int captureFBO;
+    unsigned int captureRBO;
+    glGenFramebuffers(1, &captureFBO);
+    glGenRenderbuffers(1, &captureRBO);
+    glCheckError();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+    glCheckError();
+    
+    // pbr: generate a 2D LUT from the BRDF equations used.
+    // ----------------------------------------------------
+    unsigned int brdfLUTTexture;
+    glGenTextures(1, &brdfLUTTexture);
+    glCheckError();
+
+    // pre-allocate enough memory for the LUT texture.
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+    // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCheckError();
+
+    // then re-configure capture framebuffer object and render screen-space quad with BRDF shader.
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
+    glCheckError();
+
+    BindMaterial(*brdfMat);
+
+    glViewport(0, 0, 512, 512);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glCheckError();
+
+    DrawMesh(*fullScreenQuad, Matrix4Identity);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
+
+    glDeleteFramebuffers(1, &captureFBO);
+    glDeleteRenderbuffers(1, &captureRBO);
+
+    Ref<Texture2D> out = CreateRef<Texture2D>();
+    out->glData.id = brdfLUTTexture;
+    out->width = 512;
+    out->height = 512;
+    return out;
+}
+
 bool OpenGLGraphicsDevice::CubemapCreateFromFile(
     Cubemap& cubemap,
     const char* right, const char* left, const char* top,
@@ -2439,7 +2531,6 @@ Ref<Cubemap> OpenGLGraphicsDevice::CreateIrradianceMapFromCubeMap(const Ref<Cube
 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
-    Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
     irradianceMat->SetCubemap("environmentMap", cubemap);
     irradianceMat->SetMatrix4("projection2", captureProjection2);
     
@@ -2462,12 +2553,17 @@ Ref<Cubemap> OpenGLGraphicsDevice::CreateIrradianceMapFromCubeMap(const Ref<Cube
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
 
+    glDeleteFramebuffers(1, &captureFBO);
+    glDeleteRenderbuffers(1, &captureRBO);
+
     Ref<Cubemap> out = CreateRef<Cubemap>();
     out->glData.id = irradianceMap;
     return out;
 }
 
 Ref<Cubemap> OpenGLGraphicsDevice::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+    //Assert(Graphics::HasBegin() == false);
+
      // pbr: setup framebuffer
     // ----------------------
     unsigned int captureFBO;
@@ -2493,7 +2589,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CreatePrefilterMapFromCubeMap(const Ref<Cubem
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification filter to mip_linear 
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); //GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification filter to mip_linear 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // generate mipmaps for the cubemap so OpenGL automatically allocates the required memory.
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
@@ -2501,12 +2597,11 @@ Ref<Cubemap> OpenGLGraphicsDevice::CreatePrefilterMapFromCubeMap(const Ref<Cubem
 
     // pbr: run a quasi monte-carlo simulation on the environment lighting to create a prefilter (cube)map.
     // ----------------------------------------------------------------------------------------------------
-    Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
-    irradianceMat->SetCubemap("environmentMap", cubemap);
-    irradianceMat->SetMatrix4("projection2", captureProjection2);
-    glActiveTexture(GL_TEXTURE0);
+    prefilterMat->SetCubemap("environmentMap", cubemap);
+    prefilterMat->SetMatrix4("projection2", captureProjection2);
+    /*glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->glData.id);
-    glCheckError();
+    glCheckError();*/
 
     unsigned int cubeVAO = 0;
     unsigned int cubeVBO = 0;
@@ -2523,18 +2618,21 @@ Ref<Cubemap> OpenGLGraphicsDevice::CreatePrefilterMapFromCubeMap(const Ref<Cubem
         glCheckError();
 
         float roughness = (float)mip / (float)(maxMipLevels - 1);
-        irradianceMat->SetFloat("roughness", roughness);
+        prefilterMat->SetFloat("roughness", roughness);
         for(unsigned int i = 0; i < 6; ++i){
-            irradianceMat->SetMatrix4("view2", captureViews2[i]);
-            BindMaterial(*irradianceMat);
+            prefilterMat->SetMatrix4("view2", captureViews2[i]);
+            BindMaterial(*prefilterMat);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            renderCube(cubeVAO, cubeVBO);
+            DrawMesh(*_cubeMesh, Matrix4Identity);
         }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
+
+    glDeleteFramebuffers(1, &captureFBO);
+    glDeleteRenderbuffers(1, &captureRBO);
 
     Ref<Cubemap> out = CreateRef<Cubemap>();
     out->glData.id = prefilterMap;
@@ -2661,10 +2759,8 @@ bool getUniformInfo(GLuint program, const char* blockName, UniformBufferDef& out
 
 bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
     SubShader& shader,
-    std::string& source, 
-    std::vector<std::string>& keyworlds,
-    ShaderPipeline pipeline, 
-    std::vector<std::string>& errors
+    std::string& source, std::vector<std::string>& keyworlds,
+    ShaderPipeline pipeline, std::vector<std::string>& errors
 ){
     SubShaderDestroy(shader);
     shader.enabledKeyworlds = keyworlds;

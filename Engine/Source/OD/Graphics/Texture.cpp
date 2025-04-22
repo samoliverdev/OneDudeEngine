@@ -78,6 +78,8 @@ Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
 }
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
+    return graphicsDevice->Texture2DCreateBrdfLUTTexture2D();
+    
     Assert(false && "Not Work for now");
     return nullptr;
     

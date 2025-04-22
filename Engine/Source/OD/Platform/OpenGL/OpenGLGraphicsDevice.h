@@ -86,6 +86,7 @@ public:
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) override; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) override;
     virtual bool Texture2DArrayIsValid(Texture2DArray& tex) override;
+    virtual Ref<Texture2D> Texture2DCreateBrdfLUTTexture2D() override;
 
     virtual bool CubemapCreateFromFile(
         Cubemap& cubemap,
@@ -179,6 +180,9 @@ public:
     //Ref<SubShader> gismoShader;
     Ref<Material> gismoMaterial;
     Ref<Mesh> fullScreenQuad;
+    Ref<Material> brdfMat = nullptr;
+    Ref<Material> irradianceMat = nullptr;
+    Ref<Material> prefilterMat = nullptr;
     Camera camera;
     GraphicsStats stats;
     Material* lastMat = nullptr;

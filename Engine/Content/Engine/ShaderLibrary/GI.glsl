@@ -30,7 +30,7 @@ vec3 SampleEnvironmentSpecular(Surface surfaceWS, BRDF brdf){
     vec3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
     float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
     vec3 environment = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSample, uvw, mip).rgb * _SkyLightIntensity; //textureLod(_PrefilterMap, uvw, mip).rgb * _SkyLightIntensity;
-    return /*_AmbientLight +*/ environment;
+    //return /*_AmbientLight +*/ environment;
     
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
