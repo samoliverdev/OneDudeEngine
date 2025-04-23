@@ -48,13 +48,36 @@ float SpecularStrength(Surface surface, BRDF brdf, Light light){
 vec3 DirectBRDF(Surface surface, BRDF brdf, Light light){
 	return SpecularStrength(surface, brdf, light) * brdf.specular + brdf.diffuse;
 }
+ 
+vec3 _fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness){
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}  
 
 vec3 IndirectBRDF(Surface surface, BRDF brdf, vec3 diffuse, vec3 specular){
+	/*
+	vec3 F0 = vec3(0.04); 
+    F0 = mix(F0, surface.color, surface.metallic);
+	vec3 R = reflect(-surface.viewDirection, surface.normal); 
+    vec3 F = _fresnelSchlickRoughness(max(dot(surface.normal, surface.viewDirection), 0.0), F0, brdf.roughness);
+    vec3 kS = F;
+    vec3 kD = vec3(1.0 - kS);
+    kD *= 1.0 - surface.metallic;	  
+    vec3 irradiance = _AmbientLight + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surface.normal).rgb * _SkyLightIntensity;
+    vec3 _diffuse = irradiance * surface.color;
+	float mip = brdf.perceptualRoughness * 4.0;
+    vec3 prefilteredColor = _AmbientLight + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;   
+    vec2 envbrdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surface.normal, surface.viewDirection), 0.0), brdf.roughness)).rg;
+    vec3 _specular = (prefilteredColor * (F * envbrdf.x + envbrdf.y));
+    return (kD * _diffuse + _specular) * surface.occlusion;
+	*/
+
+	///*
 	float fresnelStrength = surface.smoothness * Pow4(1.0 - saturate(dot(surface.normal, surface.viewDirection))); //surface.fresnelStrength
 	vec3 reflection = specular * mix(brdf.specular, vec3(brdf.fresnel), fresnelStrength);
 	//reflection = specular * brdf.specular;
 	reflection /= brdf.roughness * brdf.roughness + 1.0;
     return diffuse * brdf.diffuse + reflection;
+	//*/
 }
 
 #endif

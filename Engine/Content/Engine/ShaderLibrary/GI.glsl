@@ -11,6 +11,8 @@ uniform sampler2D _BrdfLUT;*/
 const float MAX_REFLECTION_LOD = 4.0;
 
 vec3 SampleEnvironmentDiffuse(Surface surfaceWS){
+    return _AmbientLight + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity;
+
     vec4 environment = SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal);
     return _AmbientLight + (environment.rgb * _SkyLightIntensity);
 }
@@ -27,17 +29,30 @@ vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness){
 }
 
 vec3 SampleEnvironmentSpecular(Surface surfaceWS, BRDF brdf){
+    /*
+    vec3 F0 = vec3(0.04); 
+	F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
+    vec3 R = reflect(-surfaceWS.viewDirection, surfaceWS.normal); 
+    vec3 F = FresnelSchlickRoughness(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), F0, brdf.roughness);
+    float mip = brdf.perceptualRoughness * MAX_REFLECTION_LOD;   
+    vec3 prefilteredColor = _AmbientLight + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;   
+    vec2 _brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), brdf.roughness)).rg;
+    return (prefilteredColor * (F * _brdf.x + _brdf.y));
+    //return _AmbientLight + (prefilteredColor * (F * _brdf.x + _brdf.y));
+    */
+
+    ///*
     vec3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
     float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
-    vec3 environment = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSample, uvw, mip).rgb * _SkyLightIntensity; //textureLod(_PrefilterMap, uvw, mip).rgb * _SkyLightIntensity;
-    //return /*_AmbientLight +*/ environment;
-    
+    vec3 environment = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, uvw, mip).rgb * _SkyLightIntensity; //textureLod(_PrefilterMap, uvw, mip).rgb * _SkyLightIntensity;
+    //return environment;
+    //return _AmbientLight + environment;
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
     vec3 F = FresnelSchlickRoughness(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), F0, brdf.roughness);
     vec2 envBRDF = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), brdf.roughness)).rg;
-    
     return _AmbientLight + (environment * (F * envBRDF.x + envBRDF.y));
+    //*/
 }
 
 struct GI{

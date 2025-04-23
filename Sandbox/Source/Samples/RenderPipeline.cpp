@@ -57,7 +57,7 @@ void RenderPipelineSample::OnInit(){
     //envComp.settings.bloomPostFX->enable = true;
     //envComp.settings.bloomPostFX->intensity = 0.5f;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    //envComp.settings.skyCubemap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     /*envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
     envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);*/

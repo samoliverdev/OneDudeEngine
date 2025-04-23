@@ -119,9 +119,10 @@ public:
     virtual void CubemapDestroy(Cubemap& cubemap) = 0;
     virtual bool CubemapIsValid(Cubemap& tex) = 0;
 
-    virtual Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
-    virtual Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
-
+    virtual Ref<Cubemap> CubemapCreateFromFileHDR(const char* hdri){ return nullptr; }
+    virtual Ref<Cubemap> CubemapCreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
+    virtual Ref<Cubemap> CubemapCreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){ return nullptr; }
+    
     virtual bool SubShaderCreateFromBaseSource(
         SubShader& shader,
         std::string& source, 

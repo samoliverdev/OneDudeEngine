@@ -96,8 +96,9 @@ public:
     virtual void CubemapDestroy(Cubemap& cubemap) override;
     virtual bool CubemapIsValid(Cubemap& tex) override;
 
-    virtual Ref<Cubemap> CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap) override;
-    virtual Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap) override;
+    virtual Ref<Cubemap> CubemapCreateFromFileHDR(const char* hdri) override;
+    virtual Ref<Cubemap> CubemapCreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap) override;
+    virtual Ref<Cubemap> CubemapCreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap) override;
 
     virtual bool SubShaderCreateFromBaseSource(
         SubShader& shader,
@@ -183,6 +184,7 @@ public:
     Ref<Material> brdfMat = nullptr;
     Ref<Material> irradianceMat = nullptr;
     Ref<Material> prefilterMat = nullptr;
+    Ref<Material> equirectangularToCubemapMat = nullptr;
     Camera camera;
     GraphicsStats stats;
     Material* lastMat = nullptr;
