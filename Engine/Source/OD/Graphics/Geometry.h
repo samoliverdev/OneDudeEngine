@@ -82,7 +82,27 @@ inline AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
   Vector3 tmin = t_center - t_extents;
   Vector3 tmax = t_center + t_extents;
   
-  return AABB(tmin, tmax);;
+  return AABB(tmin, tmax);
+
+  // Usar o centro e extents diretos do AABB (mais preciso e mais rápido)
+  /*const Vector3& center = box.center;
+  const Vector3& extents = box.extents;
+
+  // Transformar o centro da AABB
+  Vector3 t_center = m * Vector4(center, 1.0f);
+
+  // Matriz de rotação com valores absolutos
+  glm::mat3 abs_mat(
+      glm::abs(glm::vec3(m[0])),
+      glm::abs(glm::vec3(m[1])),
+      glm::abs(glm::vec3(m[2]))
+  );
+
+  // Transformar os extents (escalonados e rotacionados)
+  Vector3 t_extents = abs_mat * extents;
+
+  // Retornar a nova AABB com centro e extents transformados
+  return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);*/
 }
 
 }

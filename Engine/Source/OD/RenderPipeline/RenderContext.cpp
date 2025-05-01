@@ -678,16 +678,20 @@ void RenderContext::DrawGizmos(){
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
     //FIXME: This could be call OnDrawGizmos Twice
-    for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmos(cm);
+    /*for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmos(cm);
     for(System* s: scene->GetStandSystems()) s->OnDrawGizmos(cm);
-    for(System* s: scene->GetRendererSystems()) s->OnDrawGizmos(cm);
+    for(System* s: scene->GetLateSystems()) s->OnDrawGizmos(cm);
+    for(System* s: scene->GetRendererSystems()) s->OnDrawGizmos(cm);*/
+    for(auto& s: scene->GetSystems()) s.second->OnDrawGizmos(cm);
 
     Editor* editor = Application::GetModuleByType<Editor>();
     if(editor != nullptr){
         if(scene->IsValid(editor->GetSelectionEntity())){
-            for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+            /*for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
             for(System* s: scene->GetStandSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
-            for(System* s: scene->GetRendererSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+            for(System* s: scene->GetLateSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+            for(System* s: scene->GetRendererSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());*/
+            for(auto& s: scene->GetSystems()) s.second->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
         }
     }
 

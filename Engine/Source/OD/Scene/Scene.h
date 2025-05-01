@@ -271,8 +271,10 @@ public:
     template<typename T> T* GetSystemDynamic();
 
     inline Registry& GetRegistry(){ return registry; }
+    inline const auto& GetSystems(){ return systems; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
     inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
+    inline const std::vector<System*>& GetLateSystems(){ return lateSystems; }
     inline const std::vector<System*>& GetRendererSystems(){ return rendererSystems; }
 
     void Start();

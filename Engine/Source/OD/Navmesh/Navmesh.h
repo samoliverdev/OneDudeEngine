@@ -56,7 +56,7 @@ struct OD_API BuildSettings{
 	float navMeshBMin[3];
 	float navMeshBMax[3];
 	// Size of the tiles in voxels
-	float tileSize;
+	float tileSize = 256;
 
 	//int maxTiles;
 	//int maxPolysPerTile;
@@ -141,6 +141,8 @@ public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
 
+	struct BakeData;
+
 	~Navmesh();
 
 	bool Bake(Scene* scene, AABB bounds, LayerMask layerMask = {});
@@ -149,7 +151,8 @@ public:
 	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos);
 	bool RemoveTile(Scene* scene, AABB bounds, const Vector3 pos);
 
-	void Cleanup();
+	void Cleanup(BakeData& data);
+
 	void DrawDebug();
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
 	bool SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius = 2.0f);
@@ -162,6 +165,7 @@ public:
 
 private:
 	bool TileInit(Scene* scene, AABB bounds);
+	void _TileInit0(BakeData& data);
 
 	static const int MAX_POLYS = 256*2;
 
@@ -169,7 +173,36 @@ private:
 
 	LayerMask mask;
 
-    unsigned char* m_triareas;
+	struct BakeData{
+		unsigned char* m_triareas = nullptr;
+		rcHeightfield* m_solid = nullptr;
+		rcCompactHeightfield* m_chf = nullptr;
+		rcContourSet* m_cset = nullptr;
+		rcPolyMesh* m_pmesh = nullptr;
+		rcConfig m_cfg;	
+		rcPolyMeshDetail* m_dmesh = nullptr;
+		rcContext* m_ctx = nullptr;
+
+		bool hasInitTile2 = false;
+
+		~BakeData(){
+			delete [] m_triareas;
+			m_triareas = 0;
+			rcFreeHeightField(m_solid);
+			m_solid = 0;
+			rcFreeCompactHeightfield(m_chf);
+			m_chf = 0;
+			rcFreeContourSet(m_cset);
+			m_cset = 0;
+			rcFreePolyMesh(m_pmesh);
+			m_pmesh = 0;
+			rcFreePolyMeshDetail(m_dmesh);
+			m_dmesh = 0;
+			delete m_ctx;
+		}
+	};
+
+    /*unsigned char* m_triareas;
 	rcHeightfield* m_solid;
 	rcCompactHeightfield* m_chf;
 	rcContourSet* m_cset;
@@ -177,7 +210,10 @@ private:
 	rcConfig m_cfg;	
 	rcPolyMeshDetail* m_dmesh;
 	rcContext* m_ctx;
+	*/
 	class dtNavMesh* m_navMesh;
+	BakeData bakeData;
+
 	class dtNavMeshQuery* m_navQuery;
 	int m_partitionType;
 	unsigned char m_navMeshDrawFlags = 0;
@@ -193,10 +229,10 @@ private:
 	float m_lastBuiltTileBmin[3];
 	float m_lastBuiltTileBmax[3];
 
-	void RasterizeScene(Scene& scene, AABB& bounds);
-	bool RasterizeMesh(const Matrix4& model, Ref<Mesh>& mesh);
+	void RasterizeScene(BakeData& data, Scene& scene, AABB& bounds);
+	bool RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mesh);
 	void GetTilePos(const float* pos, int& tx, int& ty);
-	unsigned char* BuildTileMesh(Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize);
+	unsigned char* BuildTileMesh(BakeData& data, Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize);
 };
 
 struct OD_API NavmeshSkipTag{

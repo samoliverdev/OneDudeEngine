@@ -25,16 +25,24 @@ void SponzaSample::OnInit(){
     //envComp.settings.toneMappingPostFX->enable = true;
     //envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
 
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    envComp.settings.toneMappingPostFX->enable = true;
+    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
+    envComp.settings.colorGradingPostFX->enable = true;
+    envComp.settings.colorGradingPostFX->contrast = 18;
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
+
     /*Entity e = scene->AddEntity("Sponza");
     //e.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
     ModelRendererComponent& _meshRenderer = e.AddComponent<ModelRendererComponent>();
     _meshRenderer.SetModel(sponzaModel);*/
 
     Entity e = scene->Instantiate(sponzaModel);
-    //e.GetComponent<TransformComponent>().LocalScale(Vector3(0.01f));
+    //scene->GetComponent<TransformComponent>(e).LocalScale(Vector3(0.01f));
 
     Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
 
     /*Entity cube = scene->AddEntity("CubeRef");
     ModelRendererComponent& _meshRenderer2 = cube.AddComponent<ModelRendererComponent>();
@@ -64,7 +72,7 @@ void SponzaSample::OnInit(){
     lightComponent2.color = {1,1,0.8f};
     lightComponent2.type = LightComponent::Type::Point;
     lightComponent2.intensity = 5.0f;
-    lightComponent2.radius = 100.0f;
+    lightComponent2.radius = 10.0f;
     lightComponent2.renderShadow = false;
     scene->GetComponent<TransformComponent>(pointLight).Position(Vector3(0, 4, 0));
 
@@ -77,8 +85,8 @@ void SponzaSample::OnInit(){
     lightComponent3.renderShadow = false;
     scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));
 
-    //Application::AddModule<Editor>();
-    scene->Start();
+    Application::AddModule<Editor>();
+    //scene->Start();
 }
 
 void SponzaSample::OnUpdate(float deltaTime){

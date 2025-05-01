@@ -104,6 +104,11 @@ void TerrainSample::OnInit(){
     terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
     terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
 
+    Entity navmesh = scene->AddEntity("Navmesh");
+    auto& nav = scene->AddComponent<NavmeshComponent>(navmesh);
+    nav.navmesh = CreateRef<Navmesh>();
+    nav.navmesh->Bake(scene, AABB(Vector3(0), 1000, 1000, 1000), {}); 
+
     Application::AddModule<Editor>();
     //scene->Start();
 

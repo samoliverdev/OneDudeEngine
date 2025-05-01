@@ -227,11 +227,16 @@ void ProceduralTerrain2::OnInit(){
     );
     }
     terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
-    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (31).png");
+    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    /*terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (31).png");
     terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (37).png");
     terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (58).png");
     terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (56).png");
-    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (49).png");
+    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (49).png");*/
 
     std::unordered_map<std::string, ObjectsBuck> objectsBucks;
     objectsBucks["Rocks"] = {

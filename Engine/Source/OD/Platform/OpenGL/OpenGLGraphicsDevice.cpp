@@ -360,6 +360,12 @@ void OpenGLGraphicsDevice::Initialize(){
 
 void OpenGLGraphicsDevice::Shutdown(){
     fullScreenQuad = nullptr;
+    _cubeMesh = nullptr;
+    irradianceMat = nullptr;
+    prefilterMat = nullptr;
+    brdfMat = nullptr;
+    equirectangularToCubemapMat = nullptr;
+
     //#if !defined(__EMSCRIPTEN__)
     ImGui_ImplOpenGL3_Shutdown();
     //#endif
@@ -1993,8 +1999,34 @@ void LoadSettings(const char* filePath, Texture2DSetting& settings){
     archive(CEREAL_NVP(settings));
 }
 
+void OpenGLGraphicsDevice::Texture2DGenerate(Texture2D& tex, unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
+    tex.width = inWidth;
+    tex.height = inHeight;
+    
+    glGenTextures(1, &tex.glData.id);
+    glCheckError();
+
+    glBindTexture(GL_TEXTURE_2D, tex.glData.id);
+    glTexImage2D(GL_TEXTURE_2D, 0, tex.glData.internalFormat, tex.width, tex.height, 0, tex.glData.imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
+    glCheckError();
+    
+    if(tex.mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
+    glCheckError();
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.glData.wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.glData.wrapT);
+
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.glData.filterMin);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.glData.filterMax);
+    glCheckError();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glCheckError();
+}
+
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings){
-    auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
+    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
         
@@ -2019,7 +2051,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
         glBindTexture(GL_TEXTURE_2D, 0);
         glCheckError();
     };
-
+    */
     Texture2DDestroy(tex);
 
     tex.path = path;// std::string(path);
@@ -2064,14 +2096,14 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
         tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
     }
     
-    Texture2DGenerate(width, height, TextureDataType::UnsignedByte, data);
+    Texture2DGenerate(tex, width, height, TextureDataType::UnsignedByte, data);
     stbi_image_free(data);
     tex.isComplete = true;
     return true;
 }
 
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings){
-    auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
+    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
         
@@ -2096,6 +2128,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
         glBindTexture(GL_TEXTURE_2D, 0);
         glCheckError();
     };
+    */
     Texture2DDestroy(tex);
 
     tex.path = "Memory";
@@ -2139,14 +2172,14 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
         tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
     }
 
-    Texture2DGenerate(width, height, TextureDataType::UnsignedByte, _data);
+    Texture2DGenerate(tex, width, height, TextureDataType::UnsignedByte, _data);
     stbi_image_free(_data);
     tex.isComplete = true;
     return true;
 }
 
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
-    auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
+    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
         
@@ -2171,7 +2204,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
         glBindTexture(GL_TEXTURE_2D, 0);
         glCheckError();
     };
-
+    */
     Texture2DDestroy(tex);
 
     tex.path = "Memory";
@@ -2189,7 +2222,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
 
     tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
     tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
-    Texture2DGenerate(width, height, dataType, data);
+    Texture2DGenerate(tex, width, height, dataType, data);
     tex.isComplete = true;
     return true;
 }
@@ -2681,6 +2714,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateIrradianceMapFromCubeMap(const R
 
     /*unsigned int cubeVAO = 0;
     unsigned int cubeVBO = 0;*/
+
 
     for(unsigned int i = 0; i < 6; ++i){
         irradianceMat->SetMatrix4("view2", captureViews2[i]);

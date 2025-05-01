@@ -185,16 +185,26 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
         Assert(mat->Get(AI_MATKEY_TEXTURE(type, i), str) == AI_SUCCESS);
 
+        Ref<Texture2D> texture = nullptr;
+
         if(paiTexture){
-            Ref<Texture2D> texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
-                (void*)paiTexture->pcData, 
-                (size_t)paiTexture->mWidth, 
-                Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
-            );
-            Assert(texture != nullptr);
-            Assert(texture->IsValid() != false);
-            
-            textures.push_back(texture);
+            if(paiTexture->mHeight == 0){
+                texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
+                    (void*)paiTexture->pcData, 
+                    (size_t)paiTexture->mWidth, 
+                    Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
+                );
+            } else {
+                size_t sizeInBytes = paiTexture->mWidth * paiTexture->mHeight * 4;
+                Ref<Texture2D> texture = Texture2D::CreateFromRaw(   //CreateRef<Texture2D>
+                    (void*)paiTexture->pcData, 
+                    sizeInBytes,
+                    (size_t)paiTexture->mWidth, 
+                    (size_t)paiTexture->mHeight,
+                    TextureDataType::UnsignedByte,
+                    Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
+                );
+            }
         } else {
             auto ss = std::string(str.C_Str());
             [](std::string& p) {
@@ -203,9 +213,13 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
             std::string filename = loadData.directory + '/' + ss;// std::string(str.C_Str());
             //LogWarningExtra("AssimpTexture: %s", filename.c_str());
-            Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
+            texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
             textures.push_back(texture);
         }
+
+        Assert(texture != nullptr);
+        Assert(texture->IsValid() != false);
+        textures.push_back(texture);
     }
 
     /*if(textures.empty()){

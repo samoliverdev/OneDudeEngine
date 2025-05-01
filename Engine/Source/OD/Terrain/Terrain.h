@@ -126,7 +126,7 @@ public:
     ~TerrainSystem() override;
 
     virtual int Type() override { return SystemType::Physics; }
-    virtual void Update() override;
+    virtual void PhysicsUpdate() override;
 
 private:
     void DestroyTerrain(TerrainComponent& terrain);

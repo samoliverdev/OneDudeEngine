@@ -68,14 +68,14 @@ void AnimationSample::OnInit(){
     //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader);
     char2Model = CreateRef<Model>();
     #ifdef USE_ASSIMP
-    OD::AssimpLoadModel(*char2Model, "Sandbox/Animations/Walking.dae", shader);
+    OD::AssimpLoadModel(*char2Model, "Sandbox/Animations/Walking.dae", {shader});
     #else
     Assert(false && "Assimp Not Supported");
     #endif
 
     char2Animations = CreateRef<Model>();
     #ifdef USE_ASSIMP
-    OD::AssimpLoadModel(*char2Animations, "Sandbox/Animations/FastRun.dae", shader);
+    OD::AssimpLoadModel(*char2Animations, "Sandbox/Animations/FastRun.dae", {shader});
     #else
     Assert(false && "Assimp Not Supported");
     #endif

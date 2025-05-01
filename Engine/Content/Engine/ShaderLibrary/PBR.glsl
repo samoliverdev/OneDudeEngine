@@ -109,6 +109,12 @@ vec3 AmbientLight(Surface surfaceWS){
     vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), surfaceWS.smoothness)).rg;
     vec3 specular = /*_AmbientLight +*/ (prefilteredColor * (F * brdf.x + brdf.y));
 
+    // === Fresnel Occlusion / Specular Visibility ===
+    float NdotV = max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0);
+    float visibility = clamp(NdotV + surfaceWS.occlusion, 0.0, 1.0);
+    specular *= visibility;
+    // ===============================================
+
     return (kD * diffuse + specular) * surfaceWS.occlusion;
 }
 

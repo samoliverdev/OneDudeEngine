@@ -80,7 +80,7 @@ TerrainSystem::~TerrainSystem(){
 
 }
 
-void TerrainSystem::Update(){
+void TerrainSystem::PhysicsUpdate(){
     OD_PROFILE_SCOPE("TerrainSystem::Update");
     //OD_LOG_PROFILE("TerrainSystem::Update");
 
@@ -88,7 +88,6 @@ void TerrainSystem::Update(){
     for(auto e: terrainView){
         TransformComponent& trans = terrainView.get<TransformComponent>(e);
         TerrainComponent& terrain = terrainView.get<TerrainComponent>(e);
-
         Assert(GetScene()->IsValid(EntityNull) == false);
 
         if(GetScene()->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
@@ -156,6 +155,10 @@ struct TerrainMeshData2{
             &vertices,
             useUv ? &uv : nullptr
         );
+        /*mesh->vertices = vertices;
+        mesh->indices = indices;
+        mesh->uv = uv;
+        mesh->Submit();*/
         return mesh;
     }
 };
@@ -247,7 +250,6 @@ Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDeta
             vertexIndex += 1;
         }
     }
-
     return meshData->CreateMesh();
 
     //meshData->shapeData = CreateMeshShapeData(meshData->mesh->vertices, meshData->mesh->indices);
@@ -255,6 +257,59 @@ Ref<Mesh> GenerateTerrainFromHeightmap(Ref<Heightmap> heightmap, int levelOfDeta
     //meshData->mesh->CalculateTangent();
     //meshData->mesh->Submit();
     //return meshData->mesh;
+}
+
+Ref<Mesh> GenerateTerrainFromHeightmap2(Ref<Heightmap> heightmap, int levelOfDetail){
+    int width = heightmap->width;
+    int height = heightmap->height;
+
+    float topLeftX = (width - 1) / -2.0f;
+    float topLeftZ = (height - 1) / 2.0f;
+
+    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+    int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
+
+    Ref<Mesh> out = CreateRef<Mesh>();
+    int triangleIndex = 0;
+    bool useUv = false;
+
+    auto Reset = [&](int meshWidth, int meshHeight){
+        triangleIndex = 0;
+        out->vertices.resize(meshWidth * meshHeight);
+        if(useUv) out->uv.resize(meshWidth * meshHeight);
+        out->indices.resize((meshWidth-1)*(meshHeight-1)*6);
+    };
+
+    auto AddTriangle = [&](int a, int b, int c){
+        out->indices[triangleIndex] = a;
+        out->indices[triangleIndex+1] = b;
+        out->indices[triangleIndex+2] = c;
+        triangleIndex += 3;
+    };
+
+    //Ref<TerrainMeshData> meshData = CreateRef<TerrainMeshData>(verticesPerLine, verticesPerLine);
+    
+    Reset(verticesPerLine, verticesPerLine);
+    int vertexIndex = 0;
+
+    for(int y = 0; y < height; y += meshSimplificationIncrement){
+        for(int x = 0; x < width; x += meshSimplificationIncrement){
+            //meshData->mesh->vertices[vertexIndex] = Vector3(x+topLeftX, 0, -(y-topLeftZ));
+            int _x = x;
+            int _y = y;
+
+            out->vertices[vertexIndex] = Vector3(_x+topLeftX, heightmap->Get(_x, _y), -(_y-topLeftZ));
+            
+            if(x < width-1 && y < height-1){
+                AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
+                AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
+            }
+
+            vertexIndex += 1;
+        }
+    }
+    out->Submit();
+    return out;
 }
 
 void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
@@ -276,7 +331,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     DestroyTerrain(terrain);
 
     terrain.meshsRoot = GetScene()->AddEntity("Root");
-    GetScene()->GetComponent<InfoComponent>(terrain.meshsRoot).hidden = true;
+    GetScene()->GetComponent<InfoComponent>(terrain.meshsRoot).hidden = false;//true;
     GetScene()->SetParent(e, terrain.meshsRoot);
     
     terrain.chunkSize = terrain.mapChunkSize - 1;
@@ -381,9 +436,10 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     MeshRendererComponent& meshToNavmesh = GetScene()->AddComponent<MeshRendererComponent>(terrain.meshToNavmesh);
     {
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
-    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, terrain.meshToNavmeshLod);
+    //Ref<Mesh> m = CreateRef<Mesh>();
+    meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
     }
-    //meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = GetScene()->GetComponent<TransformComponent>(terrain.meshToNavmesh);
     meshToNavmeshTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)terrain.heightmap->width,
@@ -441,7 +497,8 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
     {
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
     MeshRendererComponent& meshToNavmesh = GetScene()->GetComponent<MeshRendererComponent>(terrain.meshToNavmesh);
-    meshToNavmesh.mesh = GenerateTerrainFromHeightmap(terrain.heightmap, terrain.meshToNavmeshLod);
+    //Ref<Mesh> m = CreateRef<Mesh>();
+    meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
     }
 }
 

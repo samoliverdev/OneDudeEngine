@@ -222,6 +222,7 @@ void AABB::Expand(Vector3 amount){
     extents.x *= amount.x; 
     extents.y *= amount.y; 
     extents.z *= amount.z; 
+    //extents += amount; 
 }
 
 AABB AABB::Scaled(Vector3 s){

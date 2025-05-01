@@ -204,7 +204,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         
         #else
 
-        surface.smoothness = 1 - surface.smoothness;
+        surface.smoothness = clamp(1.0 - smoothness, 0.05, 1);
         vec3 color = GetFinalColor(surface);
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);

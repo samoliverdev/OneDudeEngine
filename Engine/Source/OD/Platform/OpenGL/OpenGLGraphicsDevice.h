@@ -156,6 +156,8 @@ public:
     void SubShaderSetCubemap(SubShader& shader, const char* name, Cubemap& value, int index);
     void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
 
+    void Texture2DGenerate(Texture2D& tex, unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data);
+
     GraphicsDeviceInfo info;
     
     unsigned int globalVAO;
