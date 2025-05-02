@@ -15,20 +15,28 @@ struct OD_API Color{
     float a = 1;
     //bool hdr = false;
 
-    /*static inline const Color Black = {0, 0, 0, 1};
-    static inline const Color Blue = {0, 0, 1, 1};
-    static inline const Color Clear = {0, 0, 0, 0};
-    static inline const Color Cyan = {0, 1, 1, 1};
-    static inline const Color Gray = {0.5f, 0.5f, 0.5f, 1};
-    static inline const Color Green = {0, 1, 0, 1};
-    static inline const Color Grey = {0.5, 0.5, 0.5, 1};
-    static inline const Color Magenta = {1, 0, 1, 1};
-    static inline const Color Red = {1, 0, 0, 1};
-    static inline const Color White = {1, 1, 1, 1};
-    static inline const Color Yellow = {1, 0.92, 0.016, 1};*/
+    Color() = default;
+    constexpr Color(float r, float g, float b):r(r),g(g),b(b),a(1.0f){}
+    constexpr Color(float r, float g, float b, float a):r(r),g(g),b(b),a(a){}
+    constexpr Color(Vector3 v):r(v.r),g(v.r),b(v.b),a(1.0f){}
+    constexpr Color(Vector4 v):r(v.r),g(v.r),b(v.b),a(v.a){}
+
+    static const Color Black;
+    static const Color Blue;
+    static const Color Clear;
+    static const Color Cyan;
+    static const Color Gray;
+    static const Color Green;
+    static const Color Grey;
+    static const Color Magenta;
+    static const Color Red;
+    static const Color White;
+    static const Color Yellow;
 
     inline operator Vector4(){ return Vector4(r, g, b, a); }
     inline operator Vector3(){ return Vector3(r, g, b); }
+
+    inline Color Linear(){ return (Color)math::pow((Vector4)*this, Vector4(2.2f, 2.2f, 2.2f, 1)); }
     
     static void CreateLuaBind(sol::state& lua);
 
@@ -42,11 +50,11 @@ struct OD_API Color{
 };
 
 constexpr Color operator*(const Color& a, const Color& b){
-    return Color{a.r*b.r, a.g*b.g, a.b*b.b, a.a*b.a};
+    return {a.r*b.r, a.g*b.g, a.b*b.b, a.a*b.a};
 }
 
 constexpr Color operator*(const Color& a, float& b){
-    return Color{a.r*b, a.g*b, a.b*b, a.a*b};
+    return {a.r*b, a.g*b, a.b*b, a.a*b};
 }
 
 }

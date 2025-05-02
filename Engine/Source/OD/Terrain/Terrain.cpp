@@ -438,6 +438,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
     //Ref<Mesh> m = CreateRef<Mesh>();
     meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
+    meshToNavmesh.UpdateAABB();
     }
     meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = GetScene()->GetComponent<TransformComponent>(terrain.meshToNavmesh);
@@ -499,6 +500,7 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
     MeshRendererComponent& meshToNavmesh = GetScene()->GetComponent<MeshRendererComponent>(terrain.meshToNavmesh);
     //Ref<Mesh> m = CreateRef<Mesh>();
     meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
+    meshToNavmesh.UpdateAABB();
     }
 }
 

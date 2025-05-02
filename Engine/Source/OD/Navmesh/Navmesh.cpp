@@ -224,9 +224,9 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
         //if(c.material == nullptr) continue;
 
 		Matrix4 targetMatrix = t.GlobalModelMatrix();
-		/*AABB aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, targetMatrix);
-		aabb.Expand(Vector3(1.1f));
-		if(aabb.isOnAABB(bounds) == false) continue;*/
+		AABB aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, targetMatrix);
+		//aabb.Expand(Vector3(1.1f));
+		if(aabb.isOnAABB(bounds) == false) continue;
 
 		if(c.mesh->vertices.size() <= 0){
 			LogWarning("Entity: %s, Navmesh Try RasterizeMesh with Zero Vertices", info.name.c_str());
@@ -249,9 +249,9 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
             auto targetMesh = c.GetModel()->meshs[i.meshIndex];
             auto targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 
-			/*AABB aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), targetMatrix);
-			aabb.Expand(Vector3(1.1f));
-			if(aabb.isOnAABB(bounds) == false) continue;*/
+			AABB aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), targetMatrix);
+			//aabb.Expand(Vector3(1.1f));
+			if(aabb.isOnAABB(bounds) == false) continue;
 
             RasterizeMesh(data, targetMatrix, targetMesh);
         }
@@ -315,6 +315,7 @@ bool Navmesh::RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mes
 
 bool Navmesh::Bake(Scene* scene, AABB bounds, LayerMask layerMask){
 	OD_LOG_PROFILE("Navmesh::Bake");
+	bounds.Expand(Vector3(0.5f));
 
 	if(buildSettings.useTile) return BakeAllTiles(scene, bounds, layerMask);
 	return BakeSingle(scene, bounds, layerMask);
@@ -1619,6 +1620,54 @@ void NavmeshSystem::OnDrawGizmos(Camera& cam){
 				Vector3(0, 1, 0), 
 				1
 			);
+		}
+	}
+
+	auto navmeshView = scene->GetRegistry().view<NavmeshComponent, TransformComponent>();
+	for(auto e: navmeshView){
+		NavmeshComponent& navmeshComponent = navmeshView.get<NavmeshComponent>(e);
+		TransformComponent& trans = navmeshView.get<TransformComponent>(e);
+
+		Transform t;
+		t.LocalPosition(trans.Position());
+		t.LocalScale(navmeshComponent.size);
+		Graphics::DrawWireCube(t.GetLocalModelMatrix(), {1,1,1}, 1);
+
+		if(navmeshComponent.navmesh != nullptr && navmeshComponent.navmesh->buildSettings.useTile){
+			AABB bounds = AABB(
+				trans.Position(), 
+				navmeshComponent.size.x*0.5f, navmeshComponent.size.z*0.5f, navmeshComponent.size.z*0.5f
+			);
+
+			Vector3 _min = bounds.GetMin();
+			Vector3 _max = bounds.GetMax();
+			float* bmin = &_min.x; //m_geom->getNavMeshBoundsMin();
+			float* bmax = &_max.x; //m_geom->getNavMeshBoundsMax();
+			int gw = 0, gh = 0;
+			rcCalcGridSize(bmin, bmax, navmeshComponent.navmesh->buildSettings.cellSize, &gw, &gh);
+			const int ts = (int)navmeshComponent.navmesh->buildSettings.tileSize;
+			const int tw = (gw + ts-1) / ts;
+			const int th = (gh + ts-1) / ts;
+			const float tcs = navmeshComponent.navmesh->buildSettings.tileSize*navmeshComponent.navmesh->buildSettings.cellSize;
+
+			for(int y = 0; y < th; ++y){
+				for(int x = 0; x < tw; ++x){
+					auto min0 = bmin[0] + x*tcs;
+					auto min1 = bmin[1];
+					auto min2 = bmin[2] + y*tcs;
+					
+					auto max0 = bmin[0] + (x+1)*tcs;
+					auto max1 = bmax[1];
+					auto max2 = bmin[2] + (y+1)*tcs;
+
+					AABB a = AABB({min0, min1, min2}, {max0, max1, max2});
+
+					Transform t;
+					t.LocalPosition(a.center);
+					t.LocalScale(a.extents * 2.0f);
+					Graphics::DrawWireCube(t.GetLocalModelMatrix(), {1,1,1}, 1);
+				}
+			}
 		}
 	}
 }

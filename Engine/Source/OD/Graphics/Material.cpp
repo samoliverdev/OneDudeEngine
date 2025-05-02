@@ -124,17 +124,25 @@ void Material::SetVector4(const char* name, Vector4 value){
 }
 
 void Material::SetColor3(const char* name, Vector3 value){
+    auto ToLinear = [](Vector4 srgb) -> Vector4{
+        return math::pow(srgb, Vector4(2.2f, 2.2f, 2.2f, 1));
+    };
+
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
-    map.vec.vector = Vector4(value.x, value.y, value.z, 1);
+    map.vec.vector = Vector4(value.x, value.y, value.z, 1); //ToLinear(Vector4(value.x, value.y, value.z, 1));
     map.vec.vectorIsColor = true;
     isDirty = true;
 }
 
 void Material::SetColor4(const char* name, Vector4 value){
+    auto ToLinear = [](Vector4 srgb) -> Vector4{
+        return math::pow(srgb, Vector4(2.2f, 2.2f, 2.2f, 1));
+    };
+
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
-    map.vec.vector = value;
+    map.vec.vector = value; //ToLinear(value);
     map.vec.vectorIsColor = true;
     isDirty = true;
 }

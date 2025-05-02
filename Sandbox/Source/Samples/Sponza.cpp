@@ -17,7 +17,7 @@ void SponzaSample::OnInit(){
     //scene->AddSystem<DeferredRenderPipeline>();
 
     Ref<Model> sponzaModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
-    sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);

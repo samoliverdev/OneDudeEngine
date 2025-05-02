@@ -22,12 +22,19 @@ vec4 ToLinear(vec4 a){
 #endif
 }
 
+vec3 ToLinear(vec3 a){
+#if defined(ENABLE_GAMA_CORRECTION)
+    return pow(a.rgb, vec3(gamma)); // Convert sRGB to Linear
+#else
+    return a;
+#endif
+}
+
 #if defined(OpenGL_API)
     #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
     #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)
     #define SampleTextureCube(tex, sample, uv) texture(tex, uv)
     #define SampleTextureCubeLod(tex, sample, uv, lod) textureLod(tex, uv, lod)
-
 #endif
 
 #if defined(WebGPU_API)

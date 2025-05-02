@@ -298,7 +298,7 @@ void Lighting::SetupDirectionalLight(){
     
     curDirLightsCount = 0;
     curOtherLightsCount = 0;
-    
+
     for(auto entity: lightView){
         LightComponent& light = lightView.get<LightComponent>(entity);
         TransformComponent& trans = lightView.get<TransformComponent>(entity);
@@ -864,8 +864,8 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
-    out.push_back(gamaCorrectionPP);
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+    out.push_back(gamaCorrectionPP);
 
     return out;
 }
@@ -1079,7 +1079,7 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
 }
 
 void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
-    return;
+    //return;
     
     if(scene->HasComponent<MeshRendererComponent>(e)){
         auto& c = scene->GetComponent<MeshRendererComponent>(e);
