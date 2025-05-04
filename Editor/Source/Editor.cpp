@@ -49,7 +49,6 @@ auto LoadProject = [&](){
 void EditorOnExit(){
     if(currentModule != nullptr) delete currentModule;
     if(currentDll != nullptr) OD::Platform::FreeDynimicLibrary(currentDll);
-
     //delete editor;
 }
 
@@ -364,7 +363,8 @@ OD::ApplicationConfig GetEditorConfig(){
 }
 
 class Editor: public OD::Module{
-    OD::FuncModule dllModule;
+    //OD::FuncModule dllModule;
+
     bool toReload = false;
     FILE* pipe = nullptr;
     std::vector<std::string> console;
@@ -378,21 +378,26 @@ class Editor: public OD::Module{
         currentDll = nullptr;
         LogInfo("DLL Path: %s", modulePath.c_str());
 
-        if(FileExists(modulePath) == false){
+        if(FileExists(modulePath + ".dll") == false){
             LogError("Load Dynamic Module");
             return;
         }
 
-        std::string modulePathCopy = modulePath + "_Copy";
-        std::filesystem::copy_file(modulePath, modulePathCopy, std::filesystem::copy_options::update_existing);
+        std::string modulePathCopy = modulePath + "_Copy.dll";
+        std::filesystem::copy_file(modulePath + ".dll", modulePathCopy, std::filesystem::copy_options::overwrite_existing);
 
         typedef Module* (*CreateInstanceFunc)();
-        currentDll = OD::Platform::LoadDynamicLibrary(modulePathCopy.c_str());
-        auto dllModule = new FuncModule();
+        currentDll = OD::Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: %s", modulePathCopy.c_str());
+
+        /*auto dllModule = new FuncModule();
         dllModule->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
         dllModule->onExit = (OD::_OnExit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnExit");
         dllModule->onUpdate = (OD::_OnUpdate)OD::Platform::LoadDynamicFunction(currentDll, "GameOnUpdate");
-        currentModule = dllModule;
+        currentModule = dllModule;*/
+        
+        CreateInstanceFunc func = (CreateInstanceFunc)Platform::LoadDynamicFunction(currentDll, "CreateInstance");
+        currentModule = func();
+
         OD::Application::AddModule(currentModule);
     }
 
@@ -400,7 +405,8 @@ class Editor: public OD::Module{
         strcpy_s(con, "");
         console.clear();
         ImGui::OpenPopup("HotReload?");
-        pipe = _popen("cmake --build ../build --config Release", "r");
+        //pipe = _popen("cmake --build ../build --config Release", "r");
+        pipe = _popen("cmake --build ../build --config Debug", "r");
         //pipe = _popen("cmake --build ../build --config RelWithDebInfo", "r");
     }
 
@@ -423,11 +429,20 @@ class Editor: public OD::Module{
         currentModule = nullptr;
         currentDll = nullptr;
 
-        std::string modulePathCopy = ProjectManager::GetActiveProject()->scriptModulePath + "_Copy";
-        std::filesystem::copy_file(ProjectManager::GetActiveProject()->scriptModulePath, modulePathCopy, std::filesystem::copy_options::update_existing);
+        std::string modulePathCopy = ProjectManager::GetActiveProject()->scriptModulePath + "_Copy" + ".dll";
+        std::filesystem::copy_file(
+            ProjectManager::GetActiveProject()->scriptModulePath + ".dll", 
+            modulePathCopy, 
+            std::filesystem::copy_options::overwrite_existing
+        );
+        std::filesystem::remove(ProjectManager::GetActiveProject()->scriptModulePath + ".pdb");
+
+        /*std::string pdb = "";
+        if(FileExists(pdb)) 
+            std::filesystem::copy_file(pdb, pdb + "_Copy", std::filesystem::copy_options::overwrite_existing);*/
 
         typedef Module* (*CreateInstanceFunc)();
-        currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str());
+        currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: %s", modulePathCopy.c_str());
 
         /*auto c = new OD::FuncModule();
         c->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
@@ -571,7 +586,7 @@ class Editor: public OD::Module{
                 strcat_s(con, buffer);
                 LogWarning("%s", buffer);
             }
-            ImGui::InputTextMultiline("", con, sizeof(con), {600, 250});
+            ImGui::InputTextMultiline("Info", con, sizeof(con), {600, 250});
 
             //static int unused_i = 0;
             //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
@@ -603,6 +618,8 @@ class Editor: public OD::Module{
                 pipe = nullptr;
             }
             //return false;
+
+            ImGui::EndPopup();
 
             /*static bool dont_ask_me_next_time = false;
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));

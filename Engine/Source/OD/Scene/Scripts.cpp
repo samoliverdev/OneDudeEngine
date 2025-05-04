@@ -26,7 +26,7 @@ void ScriptComponent::OnGui(Entity& e, Scene& scene){
     for(auto i: SceneManager::Get().scriptsSerializer){
         if(i.second.hasComponent(e, scene) == false) continue;
 
-        bool open = ImGui::TreeNodeEx((void*)hasher(i.first), treeNodeFlags, i.first);
+        bool open = ImGui::TreeNodeEx((void*)hasher(i.first.c_str()), treeNodeFlags, i.first.c_str());
         if(open){
             i.second.onGui(e, scene);
         }

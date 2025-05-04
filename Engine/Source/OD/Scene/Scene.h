@@ -26,7 +26,7 @@ class System;
 class Scene;
 class Model;
 
-enum Layers{
+enum OD_API_IMPORT Layers{
     LayerNone = 0,
     Layer0 = 1 << 0,  // 0001
     Layer1 = 1 << 1,  // 0010
@@ -42,7 +42,7 @@ enum Layers{
     LayerMax = 10
 };
 
-OD_API constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;
+constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;
 
 struct OD_API LayerMask{
     int mask = AllLayers;

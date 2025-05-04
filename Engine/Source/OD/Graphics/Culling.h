@@ -78,8 +78,8 @@ struct OD_API SquareAABB: public BoundingVolume{
 };
 
 struct OD_API AABB: public BoundingVolume{
-	Vector3 center{ 0.f, 0.f, 0.f };
-	Vector3 extents{ 0.f, 0.f, 0.f };
+	Vector3 center = Vector3(0);
+	Vector3 extents = Vector3(0);
 
 	AABB(){}
 

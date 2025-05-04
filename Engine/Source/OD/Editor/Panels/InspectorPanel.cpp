@@ -261,7 +261,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
 
     if(ImGui::BeginPopup("AddComponent")){
         for(auto& i: SceneManager::Get().coreComponentsSerializer){
-            if(ImGui::MenuItem(i.first)){
+            if(ImGui::MenuItem(i.first.c_str())){
                 i.second.addComponent(editor->selectionEntity, *scene);
                 ImGui::CloseCurrentPopup();
             }
@@ -272,7 +272,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         ImGui::Spacing(); 
 
         for(auto& i: SceneManager::Get().componentsSerializer){
-            if(ImGui::MenuItem(i.first)){
+            if(ImGui::MenuItem(i.first.c_str())){
                 i.second.addComponent(editor->selectionEntity, *scene);
                 ImGui::CloseCurrentPopup();
             }

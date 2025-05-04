@@ -294,15 +294,54 @@ bool AABB::isOnFrustum(Frustum& camFrustum){
         isOnOrForwardPlane(camFrustum.farFace));
 }
 
+#include <xmmintrin.h>  // SSE
+#ifdef __AVX__
+#include <immintrin.h>  // AVX if available
+#endif
+
 bool AABB::isOnAABB(AABB& other){
+//TODO: Revisar Later
+/*#if defined(__AVX__)
+    // AVX version: compara separadamente aMin vs bMax e aMax vs bMin
+    __m256 a_min = _mm256_set_ps(0, 0, 0, 0, GetMin().z, GetMin().y, GetMin().x, 0.0f);
+    __m256 a_max = _mm256_set_ps(0, 0, 0, 0, GetMax().z, GetMax().y, GetMax().x, 0.0f);
+    __m256 b_min = _mm256_set_ps(0, 0, 0, 0, other.GetMin().z, other.GetMin().y, other.GetMin().x, 0.0f);
+    __m256 b_max = _mm256_set_ps(0, 0, 0, 0, other.GetMax().z, other.GetMax().y, other.GetMax().x, 0.0f);
+
+    // Comparações
+    __m256 cmp1 = _mm256_cmp_ps(a_min, b_max, _CMP_LE_OQ); // aMin <= bMax
+    __m256 cmp2 = _mm256_cmp_ps(a_max, b_min, _CMP_GE_OQ); // aMax >= bMin
+    __m256 result = _mm256_and_ps(cmp1, cmp2);
+
+    // Extrai os resultados dos 3 primeiros componentes
+    int mask = _mm256_movemask_ps(result);
+    return (mask & 0b0111) == 0b0111;
+
+#elif defined(__SSE__)
+    // SSE version
+    __m128 a_min = _mm_set_ps(0.0f, GetMin().z, GetMin().y, GetMin().x);
+    __m128 a_max = _mm_set_ps(0.0f, GetMax().z, GetMax().y, GetMax().x);
+    __m128 b_min = _mm_set_ps(0.0f, other.GetMin().z, other.GetMin().y, other.GetMin().x);
+    __m128 b_max = _mm_set_ps(0.0f, other.GetMax().z, other.GetMax().y, other.GetMax().x);
+
+    __m128 cmp1 = _mm_cmple_ps(a_min, b_max);
+    __m128 cmp2 = _mm_cmpge_ps(a_max, b_min);
+    __m128 result = _mm_and_ps(cmp1, cmp2);
+
+    int mask = _mm_movemask_ps(result);
+    return (mask & 0b0111) == 0b0111;
+
+#else*/
+    // Scalar fallback
     Vector3 aMin = GetMin();
     Vector3 aMax = GetMax();
     Vector3 bMin = other.GetMin();
     Vector3 bMax = other.GetMax();
-
+    
     return (aMin.x <= bMax.x && aMax.x >= bMin.x) &&
         (aMin.y <= bMax.y && aMax.y >= bMin.y) &&
         (aMin.z <= bMax.z && aMax.z >= bMin.z);
+//#endif
 }
 
 }

@@ -1,5 +1,22 @@
 # Current
 
+## New
+- [ ] Add Terrain Navmesh Mesh Chunk
+- [ ] Fix Editor Project load c++ code
+- [ ] Add JoltPhysics
+- [ ] Graphics
+    - [ ] Layed Framebuffer
+    - [ ] EnviromentProbe(Reflection and GI)
+    - [ ] AO
+    - [ ] SSGI
+
+## Next
+- [ ] Graphics
+    - [ ] Computed Shader
+    - [ ] Vulkan
+    - [ ] Occlusion Culling
+
+## Old
 * Fix No HDR -
 * Fix Material Proprities -
 * Fix Animation Rotation Glitch -

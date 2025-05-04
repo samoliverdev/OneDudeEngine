@@ -3,6 +3,6 @@
         "name": "Game",
         "startScene": "",
         "assetDirectory": "",
-        "scriptModulePath": "../Bin/Game.dll"
+        "scriptModulePath": "../Bin/Game"
     }
 }

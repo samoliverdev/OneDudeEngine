@@ -61,7 +61,10 @@ elseif(WIN32)
     #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     add_compile_options(/bigobj)
     add_compile_options(/MP)
-    #add_compile_options(/arch:AVX2)
+
+    #add_compile_options(/arch:AVX)
+    #add_compile_definitions(__AVX__)
+
 elseif(UNIX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()

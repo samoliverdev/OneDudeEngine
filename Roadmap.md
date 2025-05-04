@@ -63,7 +63,7 @@
 - [x] Physics
     - [x] Rigdbody
     - [x] Box, Sphere, Capsule Collider
-    - [ ] Mesh Collider
+    - [x] Mesh Collider
     - [ ] Ragdoll
 - [x] Animations
     - [x] Skinned
@@ -77,7 +77,7 @@
     - [x] Navmesh
         - [x] Bake
         - [x] Simple Agent
-        - [ ] Tile Bake
+        - [x] Tile Bake
 - [x] Audio
     - [x] Play Sound
     - [ ] Play 3d Sound

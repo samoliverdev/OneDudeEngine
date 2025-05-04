@@ -158,11 +158,11 @@ protected:
     Matrix4 localModelMatrix = Matrix4Identity;
     Quaternion localRotation = QuaternionIdentity;
     Vector3 localPosition = Vector3Zero;
-    float _pad0;
+    //float _pad0;
     Vector3 localScale = Vector3One;
-    float _pad1;
+    //float _pad1;
     Vector3 localEulerAngles = Vector3Zero;
-    float _pad2;
+    //float _pad2;
     bool isDirt = true;
     char _pad3[15];
 };

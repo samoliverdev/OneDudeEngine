@@ -73,7 +73,7 @@ HAS_MEM_FUNC(OnGui, HasOnGui);
 //HAS_TEMPLATE_FUNC(serialize, HasSerialize);
 
 template<typename T>
-void SceneManager::RegisterCoreComponent(const char* name){
+void SceneManager::RegisterCoreComponent(const std::string& name){
     //Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
     //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
@@ -116,9 +116,9 @@ void SceneManager::RegisterCoreComponent(const char* name){
 }
 
 template<typename T>
-void SceneManager::UnRegisterCoreComponent(const char* name){
+void SceneManager::UnRegisterCoreComponent(const std::string& name){
     //coreComponentsSerializer[name] = funcs;
-    LogWarning("UnRegisterCoreComponent: %s", name);
+    LogWarning("UnRegisterCoreComponent: %s", name.c_str());
     coreComponentsSerializer.erase(name); 
 }
 
@@ -159,7 +159,7 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
 }*/
 
 template<typename T>
-void SceneManager::RegisterComponent(const char* name){
+void SceneManager::RegisterComponent(const std::string& name){
     Assert(componentsSerializer.find(name) == componentsSerializer.end());
 
     SerializeFuncs funcs;
@@ -200,7 +200,7 @@ void SceneManager::RegisterComponent(const char* name){
 }
 
 template<typename T>
-void SceneManager::RegisterScript(const char* name){
+void SceneManager::RegisterScript(const std::string& name){
     Assert(scriptsSerializer.find(name) == scriptsSerializer.end());
 
     SerializeFuncs funcs;
@@ -232,7 +232,7 @@ void SceneManager::RegisterScript(const char* name){
 }
 
 template<typename T>
-void SceneManager::RegisterSystem(const char* name){
+void SceneManager::RegisterSystem(const std::string& name){
     //Assert(addSystemFuncs.find(name) == addSystemFuncs.end());
 
     /*addSystemFuncs[name] = [&](Scene& e){

@@ -18,13 +18,13 @@ public:
     Scene* NewScene();
     void DestroyActiveScene();
 
-    template<typename T> void RegisterCoreComponent(const char* name);
-    template<typename T> void UnRegisterCoreComponent(const char* name);
+    template<typename T> void RegisterCoreComponent(const std::string& name);
+    template<typename T> void UnRegisterCoreComponent(const std::string& name);
 
     //template<typename T> void RegisterCoreComponentSimple(const char* name);
-    template<typename T> void RegisterComponent(const char* name);
-    template<typename T> void RegisterScript(const char* name);
-    template<typename T> void RegisterSystem(const char* name);    
+    template<typename T> void RegisterComponent(const std::string& name);
+    template<typename T> void RegisterScript(const std::string& name);
+    template<typename T> void RegisterSystem(const std::string& name);    
     
     // Module Parent Overloaded
     void OnInit() override;
@@ -65,9 +65,9 @@ private:
 
     Scene* activeScene;
 
-    std::unordered_map<const char*, SerializeFuncs> coreComponentsSerializer;
-    std::unordered_map<const char*, SerializeFuncs> componentsSerializer;
-    std::unordered_map<const char*, SerializeFuncs> scriptsSerializer;
+    std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;
+    std::unordered_map<std::string, SerializeFuncs> componentsSerializer;
+    std::unordered_map<std::string, SerializeFuncs> scriptsSerializer;
     //std::unordered_map<const char*, std::function<void(Scene&)> > addSystemFuncs;
     std::vector< std::function<void(Scene&)> > addSystemFuncs;
 
