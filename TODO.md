@@ -3,15 +3,27 @@
 ## New
 - [ ] Add Terrain Navmesh Mesh Chunk
 - [ ] Fix Editor Project load c++ code
-- [ ] Add JoltPhysics
+- [ ] Asset Hot-Reload
+- [ ] Finish Lua
+- [ ] Add Save/Load binary Asset
+- [ ] Physics
+    - [ ] Add JoltPhysics
+    - [ ] Finish Ragdoll
+- [ ] Animation
+    - [ ] IK
+    - [ ] Look At
+    - [ ] Custom Event/function to pre/post processing
 - [ ] Graphics
     - [ ] Layed Framebuffer
     - [ ] EnviromentProbe(Reflection and GI)
     - [ ] AO
     - [ ] SSGI
+    - [ ] Finish 2D Render (Text && Sprite)
 
 ## Next
+- [ ] Stand Assets
 - [ ] Graphics
+    - [ ] Particle System
     - [ ] Computed Shader
     - [ ] Vulkan
     - [ ] Occlusion Culling

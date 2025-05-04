@@ -149,6 +149,7 @@ add_subdirectory(Engine/ThirdParty/bullet3)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
+add_subdirectory(Engine/ThirdParty/efsw)
 
 if(SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glslang)
@@ -279,6 +280,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/recastnavigation/Detour/Include/
     Engine/ThirdParty/taskflow/
     Engine/ThirdParty/SPIRV-Reflect/
+    Engine/ThirdParty/efsw/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
@@ -294,6 +296,7 @@ target_link_libraries(Engine PUBLIC
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
+    efsw
     #glslang glslang-default-resource-limits
     #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 

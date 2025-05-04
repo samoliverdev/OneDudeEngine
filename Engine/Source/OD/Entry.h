@@ -24,6 +24,9 @@ void operator delete(void* data){
 extern OD::ApplicationConfig GetStartAppConfig();
 extern OD::Module* CreateMainModule();
 
+#include <FileWatch.hpp>
+#include <efsw/efsw.hpp>
+
 int main(int argc, char *argv[]){
     int* a = new int();
 
@@ -41,8 +44,52 @@ int main(int argc, char *argv[]){
         printf("Application failed to create!.\n");
         return 1;
     }
+
+    /*filewatch::FileWatch<std::string> watch {
+        "C:/Users/sam/Desktop/cpp/OneDudeEngine/Sandbox/Content",
+        [&](const std::string& path, const filewatch::Event event){
+            std::cout << path << ' ' << filewatch::event_to_string(event) << '\n';
+            //LogInfo("dsdss fdff dsdsdsdd");
+        }
+    };*/
+
+    class UpdateListener : public efsw::FileWatchListener {
+    public:
+        void handleFileAction( efsw::WatchID watchid, const std::string& dir,
+                                const std::string& filename, efsw::Action action,
+                                std::string oldFilename ) override {
+            switch ( action ) {
+                case efsw::Actions::Add:
+                    std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Added"
+                            << std::endl;
+                    break;
+                case efsw::Actions::Delete:
+                    std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Delete"
+                            << std::endl;
+                    break;
+                case efsw::Actions::Modified:
+                    std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Modified"
+                            << std::endl;
+                    break;
+                case efsw::Actions::Moved:
+                    std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Moved from ("
+                            << oldFilename << ")" << std::endl;
+                    break;
+                default:
+                    std::cout << "Should never happen!" << std::endl;
+            }
+        }
+    };
+
+    efsw::FileWatcher* fileWatcher = new efsw::FileWatcher();
+    UpdateListener* listener = new UpdateListener();
+    efsw::WatchID watchID = fileWatcher->addWatch("C:/Users/sam/Desktop/cpp/OneDudeEngine/Sandbox/Content", listener, true );
+    fileWatcher->watch();
     
     OD::Application::Run();
+
+    delete listener;
+    delete fileWatcher;
 
     #ifdef _WIN32 
         //_CrtDumpMemoryLeaks();
