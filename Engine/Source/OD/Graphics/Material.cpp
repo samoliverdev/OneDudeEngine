@@ -337,6 +337,7 @@ void Material::UpdateCurrentShader(){
     if(shader->passes[currentPass].shaders.count(key)){
         currentShader = shader->passes[currentPass].shaders[key];
     } else {
+        LogError("No Key: %s", key.c_str());
         Assert(false);
     }
 }

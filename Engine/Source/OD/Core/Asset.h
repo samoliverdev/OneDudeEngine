@@ -3,7 +3,10 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include <entt/entt.hpp>
+#include <mutex>
 #include "OD/Utils/Allocators.h"
+
+#include <efsw/efsw.hpp>
 
 namespace OD{
 
@@ -72,12 +75,19 @@ private:
     AssetTypesDB(){}
 };
 
+class AssetManagerFileUpdateListener;
+
 class OD_API AssetManager{
+    friend class AssetManagerFileUpdateListener;
 public:
     template<class T, typename ... Args> Ref<T> LoadAsset(const std::string& path, Args&& ... args);
     template<class T, typename ... Args> void AddAsset(const std::string& path, Ref<T> asset);
     void UnloadAll();
     static AssetManager& Get();
+
+    void StartHotReload();
+    void StopHotReload();
+    void ApplyHotReload();
 
 private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
@@ -86,6 +96,11 @@ private:
     std::unordered_map<Type, void*> allocator;
 
     std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
+
+    efsw::FileWatcher* fileWatcher;
+    AssetManagerFileUpdateListener* listener;
+    std::vector<Ref<Asset>> sharedVector;
+    std::mutex vectorMutex;
 };
 
 template<class T>

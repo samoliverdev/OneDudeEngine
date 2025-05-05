@@ -6,6 +6,7 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/Asset.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <filesystem>
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]){
         }
     };*/
 
-    class UpdateListener : public efsw::FileWatchListener {
+    /*class UpdateListener : public efsw::FileWatchListener {
     public:
         void handleFileAction( efsw::WatchID watchid, const std::string& dir,
                                 const std::string& filename, efsw::Action action,
@@ -84,12 +85,12 @@ int main(int argc, char *argv[]){
     efsw::FileWatcher* fileWatcher = new efsw::FileWatcher();
     UpdateListener* listener = new UpdateListener();
     efsw::WatchID watchID = fileWatcher->addWatch("C:/Users/sam/Desktop/cpp/OneDudeEngine/Sandbox/Content", listener, true );
-    fileWatcher->watch();
+    fileWatcher->watch();*/
     
     OD::Application::Run();
 
-    delete listener;
-    delete fileWatcher;
+    /*delete listener;
+    delete fileWatcher;*/
 
     #ifdef _WIN32 
         //_CrtDumpMemoryLeaks();

@@ -84,6 +84,9 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     running = true;
     appHasInited = true;
+
+    OD::AssetManager::Get().StartHotReload();
+
     return true;
 }
 
@@ -124,6 +127,8 @@ void Application::Loop(){
     //Platform::PreUpdate();
     //Graphics::_Begin();
     Input::Update();
+
+    OD::AssetManager::Get().ApplyHotReload();
 
     for(auto i: modulesToAdd) _AddModule(i);
     modulesToAdd.clear();
@@ -239,6 +244,8 @@ bool Application::Run(){
 
 void Application::OnExit(){
     //LogInfo("Application::OnExit");
+
+    OD::AssetManager::Get().StopHotReload();
 
     for(auto i: modules){
         i->OnExit();

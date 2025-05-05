@@ -123,6 +123,12 @@ void Shader::Destroy(){
         }
     }
     passes.clear();
+    errors.clear();
+    shaderSourceData = {};
+    keyworldSpaces.clear();
+    curPass = 0;
+    currentShader = nullptr;
+    sourcePath = "";
     isComplete = false;
     path = "Memory";
 }

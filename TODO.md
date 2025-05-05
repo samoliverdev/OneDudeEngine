@@ -1,11 +1,17 @@
 # Current
 
 ## New
-- [ ] Add Terrain Navmesh Mesh Chunk
 - [ ] Fix Editor Project load c++ code
 - [ ] Asset Hot-Reload
 - [ ] Finish Lua
 - [ ] Add Save/Load binary Asset
+- [ ] Make ContentBrowserPanel Fast
+- [ ] Add a option to stop run on exception and create SceneAssert to stop run on exception
+- [ ] Add Procedural Mesh, and make saved in the scene data, to Create Prototype levels
+- [ ] Terrain  
+    - [ ] Add Terrain Navmesh Mesh Chunk
+    - [ ] Choise Heightmap data size(Byte, Short, Float)
+    - [ ] Maybe Add opmized chunk mesh, with submesh, and add DrawInstanc/DrawIndirect with a list of submesh, to get 1 draw call
 - [ ] Physics
     - [ ] Add JoltPhysics
     - [ ] Finish Ragdoll
@@ -14,13 +20,16 @@
     - [ ] Look At
     - [ ] Custom Event/function to pre/post processing
 - [ ] Graphics
-    - [ ] Layed Framebuffer
+    - [ ] Maybe, Layed Framebuffer
     - [ ] EnviromentProbe(Reflection and GI)
     - [ ] AO
     - [ ] SSGI
     - [ ] Finish 2D Render (Text && Sprite)
 
 ## Next
+- [ ] Lod Sytem and auto lod creations
+- [ ] Add Chunk base MeshRenderer Group Component, like "Mesh Combine Studio 2", 
+- [ ] Finish Audio System
 - [ ] Stand Assets
 - [ ] Graphics
     - [ ] Particle System

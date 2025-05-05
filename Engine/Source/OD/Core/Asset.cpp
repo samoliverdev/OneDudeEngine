@@ -1,4 +1,5 @@
 #include "Asset.h"
+#include <filesystem>
 
 namespace OD{
 
@@ -52,6 +53,86 @@ void AssetManager::UnloadAll(){
 
 AssetManager& AssetManager::Get(){
     return globalAssetManager;
+}
+
+class AssetManagerFileUpdateListener : public efsw::FileWatchListener {
+public:
+    AssetManager* assetManager = nullptr;
+
+    void handleFileAction(
+        efsw::WatchID watchid, const std::string& dir,
+        const std::string& filename, efsw::Action action,
+        std::string oldFilename) override 
+    {
+        /*switch ( action ) {
+            case efsw::Actions::Add:
+                std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Added"
+                        << std::endl;
+                break;
+            case efsw::Actions::Delete:
+                std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Delete"
+                        << std::endl;
+                break;
+            case efsw::Actions::Modified:
+                std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Modified"
+                    << std::endl;
+                break;
+            case efsw::Actions::Moved:
+                std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Moved from ("
+                        << oldFilename << ")" << std::endl;
+                break;
+            default:
+                std::cout << "Should never happen!" << std::endl;
+        }*/
+
+        auto removeBasePath = [](const std::string& fullPath, const std::string& basePath) -> std::string {
+            if (fullPath.rfind(basePath, 0) == 0) { // basePath is a prefix
+                return fullPath.substr(basePath.length());
+            }
+            return fullPath; // basePath not found at start
+        };
+
+        auto convertToForwardSlashes = [](std::string path) -> std::string {
+            std::replace(path.begin(), path.end(), '\\', '/');
+            return path;
+        };
+
+        std::string fullPath = dir + filename;
+        fullPath = removeBasePath(fullPath, std::filesystem::current_path().string() + "\\");
+        fullPath = convertToForwardSlashes(fullPath);
+        LogInfo("FileWatching: %s", fullPath.c_str());
+
+        if(action == efsw::Actions::Modified){
+            for(auto& i: assetManager->data){
+                if(i.second.count(fullPath) > 0){
+                    std::lock_guard<std::mutex> lock(assetManager->vectorMutex);
+                    assetManager->sharedVector.push_back(i.second[fullPath]);
+                }
+            }
+        }
+    }
+};
+
+void AssetManager::StartHotReload(){
+    efsw::FileWatcher* fileWatcher = new efsw::FileWatcher();
+    AssetManagerFileUpdateListener* listener = new AssetManagerFileUpdateListener();
+    listener->assetManager = this;
+    LogInfo("Start Filewatch on: %s", std::filesystem::current_path().string().c_str());
+    efsw::WatchID watchID = fileWatcher->addWatch(std::filesystem::current_path().string(), listener, true);
+    fileWatcher->watch();
+}
+
+void AssetManager::StopHotReload(){
+    delete listener;
+    delete fileWatcher;
+}
+
+void AssetManager::ApplyHotReload(){
+    std::lock_guard<std::mutex> lock(vectorMutex);
+    for(auto& i: sharedVector){
+        i->Reload();
+    }
+    sharedVector.clear();
 }
 
 }
