@@ -14,12 +14,148 @@ void LuaScriptModuleInit(){
     Application::AddModule(new LuaModule());
 }
 
+void renderLuaObjectProperties(sol::table& luaObject) {
+    if(!luaObject.valid()) return;
+
+    for(auto& pair : luaObject){
+        sol::object key = pair.first;
+        sol::object value = pair.second;
+
+        // Skip non-string keys (we only care about named properties)
+        if (!key.is<std::string>()) continue;
+
+        std::string keyName = key.as<std::string>();
+
+        if (value.is<double>()) {
+            double val = value.as<double>();
+            if (ImGui::InputDouble(keyName.c_str(), &val)) {
+                luaObject.set(key, sol::make_object(luaObject.lua_state(), val));
+            }
+        }
+        if (value.is<bool>()) {
+            bool val = value.as<bool>();
+            if (ImGui::Checkbox(keyName.c_str(), &val)) {
+                luaObject.set(key, sol::make_object(luaObject.lua_state(), val));
+            }
+        }
+        if (value.is<std::string>()) {
+            std::string str = value.as<std::string>();
+            char buffer[256];
+            std::strncpy(buffer, str.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0';
+
+            if (ImGui::InputText(keyName.c_str(), buffer, sizeof(buffer))) {
+                luaObject.set(key, sol::make_object(luaObject.lua_state(), std::string(buffer)));
+            }
+        }
+        if(value.is<Vector3*>()){
+            Vector3* vec = value.as<Vector3*>();
+        
+            float v[3] = { vec->x, vec->y, vec->z };
+            if (ImGui::InputFloat3(keyName.c_str(), v)) {
+                vec->x = v[0];
+                vec->y = v[1];
+                vec->z = v[2];
+            }
+        }
+    }
+}
+
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+sol::table toSolTable(sol::state& lua, const LuaTable& luaTable);
+
+sol::object toSolObject(sol::state& lua, const LuaValue& val) {
+    return std::visit(overloaded{
+        [&](int v)         { return sol::make_object(lua, v); },
+        [&](float v)       { return sol::make_object(lua, v); },
+        [&](bool v)        { return sol::make_object(lua, v); },
+        [&](const std::string& v) { return sol::make_object(lua, v); },
+        [&](const LuaTable& tbl) { return sol::make_object(lua, toSolTable(lua, tbl)); }
+    }, val);
+}
+
+sol::table toSolTable(sol::state& lua, const LuaTable& luaTable) {
+    sol::table table = lua.create_table();
+    for (const auto& [key, val] : luaTable) {
+        table[key] = toSolObject(lua, val);
+    }
+    return table;
+}
+
+void applySolTable(sol::state& lua, sol::table& table, const LuaTable& luaTable) {
+    for (const auto& [key, val] : luaTable) {
+        table[key] = toSolObject(lua, val);
+    }
+}
+
+LuaValue convertSolObject(const sol::object& obj) {
+    switch (obj.get_type()) {
+        case sol::type::number: {
+            double val = obj.as<double>();
+            if (val == static_cast<int>(val))
+                return static_cast<int>(val);
+            return static_cast<float>(val);
+        }
+        case sol::type::boolean:
+            return obj.as<bool>();
+        case sol::type::string:
+            return obj.as<std::string>();
+        case sol::type::table: {
+            LuaTable table;
+            sol::table tbl = obj;
+            for (auto& pair : tbl) {
+                if (pair.first.get_type() == sol::type::string &&
+                    pair.second.get_type() != sol::type::function &&
+                    //pair.second.get_type() != sol::type::userdata &&
+                    //pair.second.get_type() != sol::type::lightuserdata &&
+                    pair.second.get_type() != sol::type::thread
+                ){
+                    std::string key = pair.first.as<std::string>();
+                    table[key] = convertSolObject(pair.second);
+                }
+            }
+            return table;
+        }
+        default:
+            return {}; // you can define a NilValue type if needed
+    }
+}
+
+LuaScriptComponent::LuaScriptComponent(const LuaScriptComponent& other){
+    scriptPath = other.scriptPath;
+    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+}
+
+LuaScriptComponent::LuaScriptComponent(LuaScriptComponent&& other){
+    scriptPath = std::move(other.scriptPath);
+    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+}
+
+LuaScriptComponent& LuaScriptComponent::operator=(const LuaScriptComponent& other){
+    if(this == &other) return *this;
+    scriptPath = other.scriptPath;
+    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    return *this;
+}
+
+LuaScriptComponent& LuaScriptComponent::operator=(LuaScriptComponent&& other){
+    if(this == &other) return *this;
+    scriptPath = std::move(other.scriptPath);
+    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    return *this;
+}
+
 void LuaScriptComponent::OnGui(Entity& e, Scene& scene){
     LuaScriptComponent& script = scene.GetComponent<LuaScriptComponent>(e);
     
     std::string label = "scriptPath";
     std::vector<std::string> extension = std::vector<std::string>{".lua"};
     ImGui::DrawPath(label, script.scriptPath, extension);
+
+    //if(script.data.valid() == true && script.data.empty() == false) 
+    renderLuaObjectProperties(script.data);
 }
 
 LuaScriptSystem::LuaScriptSystem(Scene* inScene):System(inScene){
@@ -28,6 +164,12 @@ LuaScriptSystem::LuaScriptSystem(Scene* inScene):System(inScene){
     for(auto i: LuaBindsDB::Get().bindFuncs){
         i(*lua);
     } 
+
+    this->scene->GetRegistry().on_destroy<LuaScriptComponent>().connect<&OnDestroyScript>();
+}
+
+LuaScriptSystem::~LuaScriptSystem(){
+    this->scene->GetRegistry().on_destroy<LuaScriptComponent>().disconnect<&OnDestroyScript>();
 }
 
 void LuaScriptSystem::Update(){
@@ -39,8 +181,8 @@ void LuaScriptSystem::Update(){
 
         if(luaScript.scriptPath.empty() == false && luaScript.hasInited == false){
             //sol::table result = lua->script_file(luaScript.scriptPath);
-            auto result = lua->script_file(luaScript.scriptPath);
-
+            /*auto result = lua->script_file(luaScript.scriptPath);
+            //luaScript.data = (*lua)["Data"];
             //sol::table f = lua->load_file("").call();
                                   
             sol::function OnStart = (*lua)["OnStart"]; // result["OnStart"];
@@ -50,8 +192,18 @@ void LuaScriptSystem::Update(){
             luaScript.OnStart = OnStart;
             luaScript.OnDestroy = OnDestroy;
             luaScript.OnUpdate = OnUpdate;
+            luaScript.hasInited = true;*/
+
+            luaScript.data = lua->script_file(luaScript.scriptPath); 
+            applySolTable(*lua, luaScript.data, std::get<LuaTable>(luaScript.saveData));
+            luaScript.OnStart = luaScript.data["OnStart"];
+            luaScript.OnDestroy = luaScript.data["OnDestroy"];
+            luaScript.OnUpdate = luaScript.data["OnUpdate"];
             luaScript.hasInited = true;
+            //luaScript.saveData = convertSolObject(luaScript.data);
         }
+
+        if(GetScene()->Running() == false) continue;
 
         if(luaScript.hasInited == true){
             if(luaScript.hasStarted == false){
@@ -59,7 +211,9 @@ void LuaScriptSystem::Update(){
 
                 (*lua)["entity"] = e; //Entity(e, GetScene());
                 (*lua)["scene"] = scene;
-                auto error2 = luaScript.OnStart();
+                //luaScript.data["entity"] = e;
+                //luaScript.data["scene"] = scene;
+                auto error2 = luaScript.OnStart(luaScript.data);
 
                 if(error2.valid() == false){
                     sol::error err2 = error2;
@@ -69,7 +223,9 @@ void LuaScriptSystem::Update(){
 
             (*lua)["entity"] = e; //Entity(e, GetScene());   
             (*lua)["scene"] = scene; 
-            auto error = luaScript.OnUpdate();
+            //luaScript.data["entity"] = e;
+            //luaScript.data["scene"] = scene;
+            auto error = luaScript.OnUpdate(luaScript.data);
 
             if(error.valid() == false){
                 sol::error err = error;
@@ -77,6 +233,10 @@ void LuaScriptSystem::Update(){
             }
         }
     }   
+}
+
+void LuaScriptSystem::OnDestroyScript(entt::registry & r, entt::entity e){
+
 }
 
 void LuaModule::OnInit(){

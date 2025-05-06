@@ -6,19 +6,14 @@
         3,
         4,
         5,
-        6
+        6,
+        7
     ],
     "InfoComponents": [
         {
-            "name": "Text",
-            "tag": "",
-            "active": false,
-            "entityType": 0,
-            "prefabPath": ""
-        },
-        {
             "name": "Env",
             "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -26,6 +21,7 @@
         {
             "name": "Light",
             "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -33,6 +29,7 @@
         {
             "name": "Camera",
             "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -40,6 +37,7 @@
         {
             "name": "Floor",
             "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -47,6 +45,7 @@
         {
             "name": "MainCube",
             "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -54,6 +53,23 @@
         {
             "name": "Trigger",
             "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "LuaScript",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "LuaScript2",
+            "tag": "",
+            "layer": 1,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -66,35 +82,10 @@
         3,
         4,
         5,
-        6
+        6,
+        7
     ],
     "TransformComponents": [
-        {
-            "transform.localPosition": {
-                "v.x": 25.0,
-                "v.y": 25.0,
-                "v.z": 0.0
-            },
-            "transform.localRotation": {
-                "q.x": 0.0,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 1.0
-            },
-            "transform.localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localScale": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
-            },
-            "children": [],
-            "parent": 4294967295,
-            "hasParent": false
-        },
         {
             "transform.localPosition": {
                 "v.x": 0.0,
@@ -250,6 +241,58 @@
             "children": [],
             "parent": 4294967295,
             "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
         }
     ],
     "TransformComponentEntities": [
@@ -259,67 +302,38 @@
         3,
         4,
         5,
-        6
-    ],
-    "LightComponents": [
-        {
-            "type": 0,
-            "color": {
-                "r": 1.0,
-                "g": 1.0,
-                "b": 1.0,
-                "a": 1.0
-            },
-            "intensity": 1.0,
-            "falloff": 1.0,
-            "radius": 5.0,
-            "coneAngleInner": 45.0,
-            "coneAngleOuter": 45.0,
-            "renderShadow": false
-        }
-    ],
-    "LightComponentEntities": [
-        2
-    ],
-    "CameraComponents": [
-        {
-            "type": 0,
-            "isMain": true,
-            "orthographicSize": 5.0,
-            "fieldOfView": 45.0,
-            "nearClipPlane": 0.10000000149011612,
-            "farClipPlane": 1000.0
-        }
-    ],
-    "CameraComponentEntities": [
-        3
+        6,
+        7
     ],
     "EnvironmentComponents": [
         {
             "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
                 "ambient": {
-                    "v.x": 0.10999999940395355,
-                    "v.y": 0.1599999964237213,
-                    "v.z": 0.25
+                    "r": 0.10999999940395355,
+                    "g": 0.1599999964237213,
+                    "b": 0.25,
+                    "a": 1.0
                 },
                 "cleanColor": {
-                    "v.x": 0.5,
-                    "v.y": 0.10000000149011612,
-                    "v.z": 0.800000011920929
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
                 },
-                "shadowQuality": 3,
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 150.0,
                 "shadowBias": 0.000009999999747378752,
-                "shadowBackFaceRender": true,
-                "antiAliasing": 0,
-                "msaaQuality": 1,
-                "colorCorrection": 0,
                 "toneMappingPostFX": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483649,
                         "data": {
                             "enable": false,
-                            "mode": -1
+                            "mode": -1,
+                            "exposure": 1.0
                         }
                     }
                 },
@@ -348,11 +362,11 @@
                         "id": 2147483651,
                         "data": {
                             "enable": false,
-                            "maxIterations": 5,
-                            "downscaleLimit": 5,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
                             "bicubicUpsampling": true,
                             "threshold": 0.5,
-                            "thresholdKnee": 0.5,
+                            "thresholdKnee": 1.0,
                             "intensity": 1.0
                         }
                     }
@@ -361,31 +375,204 @@
         }
     ],
     "EnvironmentComponentEntities": [
-        1
+        0
     ],
-    "TextRendererComponents": [
+    "LuaScriptComponents": [
         {
-            "text": "Ai meu cu!!!",
-            "scale": 1.0,
-            "color": {
-                "r": 0.5,
-                "g": 0.800000011920929,
-                "b": 0.20000000298023225,
-                "a": 1.0
-            },
-            "is3d": false,
-            "fontRef": {
-                "isNull": false,
-                "path": "res/Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf"
-            },
-            "materialRef": {
-                "isNull": false,
-                "path": "Memory"
+            "scriptPath": "Sandbox/LuaScripts/Test.lua",
+            "saveData": {
+                "value0": []
+            }
+        },
+        {
+            "scriptPath": "Sandbox/LuaScripts/Test2.lua",
+            "saveData": {
+                "value0": [
+                    {
+                        "key": "arr",
+                        "value": {
+                            "value0": []
+                        }
+                    },
+                    {
+                        "key": "customData",
+                        "value": {
+                            "value0": [
+                                {
+                                    "key": "a",
+                                    "value": {
+                                        "value0": 20
+                                    }
+                                },
+                                {
+                                    "key": "b",
+                                    "value": {
+                                        "value0": "Custom"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "key": "elapsed",
+                        "value": {
+                            "value0": 0
+                        }
+                    },
+                    {
+                        "key": "text",
+                        "value": {
+                            "value0": "Script1"
+                        }
+                    },
+                    {
+                        "key": "text2",
+                        "value": {
+                            "value0": "lolo2"
+                        }
+                    },
+                    {
+                        "key": "v",
+                        "value": {
+                            "value0": 0
+                        }
+                    }
+                ]
             }
         }
     ],
-    "TextRendererComponentEntities": [
-        0
+    "LuaScriptComponentEntities": [
+        6,
+        7
+    ],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 45.0,
+            "nearClipPlane": 0.10000000149011612,
+            "farClipPlane": 1000.0,
+            "renderingPath": 0
+        }
+    ],
+    "CameraComponentEntities": [
+        2
+    ],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "intensity": 1.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": false,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
+        }
+    ],
+    "LightComponentEntities": [
+        1
+    ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/plane.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        3,
+        4
+    ],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        2
     ],
     "RigidbodyComponents": [
         {
@@ -450,98 +637,8 @@
         }
     ],
     "RigidbodyComponentEntities": [
-        4,
-        5,
-        6
-    ],
-    "ModelRendererComponents": [
-        {
-            "localTransform": {
-                "localPosition": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localRotation": {
-                    "q.x": 0.0,
-                    "q.y": 0.0,
-                    "q.z": 0.0,
-                    "q.w": 1.0
-                },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                }
-            },
-            "subMeshIndex": -1,
-            "modelRef": {
-                "isNull": false,
-                "path": "res/Game/Models/plane.glb"
-            },
-            "materialVectorRef": {
-                "isNull": [
-                    false
-                ],
-                "path": [
-                    "Memory"
-                ]
-            }
-        },
-        {
-            "localTransform": {
-                "localPosition": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localRotation": {
-                    "q.x": 0.0,
-                    "q.y": 0.0,
-                    "q.z": 0.0,
-                    "q.w": 1.0
-                },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                }
-            },
-            "subMeshIndex": -1,
-            "modelRef": {
-                "isNull": false,
-                "path": "res/Game/Models/Cube.glb"
-            },
-            "materialVectorRef": {
-                "isNull": [
-                    false,
-                    true
-                ],
-                "path": [
-                    "Memory",
-                    ""
-                ]
-            }
-        }
-    ],
-    "ModelRendererComponentEntities": [
+        3,
         4,
         5
-    ],
-    "ScriptComponents": [
-        {}
-    ],
-    "ScriptComponentEntities": [
-        3
     ]
 }

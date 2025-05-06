@@ -124,14 +124,14 @@ void ScriptSystem::Update(){
     }
 
     //INFO: Experimental
-    GetScene()->GetTaskflow().emplace([=](tf::Subflow& subflow){
+    /*GetScene()->GetTaskflow().emplace([=](tf::Subflow& subflow){
         for(auto entity: view){
             subflow.emplace([&](){ 
                 auto& c = view.get<ScriptComponent>(entity);
                 c._ParallelUpdate(entity, *GetScene(), false);
             });
         }
-    });
+    });*/
 }
 
 void ScriptSystem::LateUpdate(){

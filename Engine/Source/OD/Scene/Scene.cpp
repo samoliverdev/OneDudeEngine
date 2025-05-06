@@ -475,15 +475,21 @@ void Scene::Update(){
         taskflow.clear();
     }
 
-    if(running == false) return;
-    for(auto s: standSystems) s->Update();
+    //if(running == false) return;
+    for(auto s: standSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->Update();
+    }
     {
         OD_PROFILE_SCOPE("Scene::Update::Sync");
         executor.run(taskflow).wait();
         taskflow.clear();
     }
 
-    for(auto s: lateSystems) s->LateUpdate();
+    for(auto s: lateSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->LateUpdate();
+    }
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
         executor.run(taskflow).wait();
@@ -516,19 +522,19 @@ void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>
     }
 }
 
-void Scene::Save(const char* path, entt::entity root){
+void Scene::Save(const char* path, Entity root){
     std::ofstream os(path);
     ODOutputArchive archive(os);
 
-    std::vector<entt::entity> entities;
-    std::vector<entt::entity> entitiesAll;
+    std::vector<Entity> entities;
+    std::vector<Entity> entitiesAll;
     
     /*auto entityView = registry.view<entt::entity>();
     std::vector<entt::entity> entities(entityView.begin(), entityView.end()); //std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
     archive(cereal::make_nvp("Entities", entities));*/
 
-    if(root == entt::null){
-        registry.sort<InfoComponent>([](const entt::entity lhs, const entt::entity rhs){
+    if(root == EntityNull){
+        registry.sort<InfoComponent>([](const Entity lhs, const Entity rhs){
             return lhs < rhs;
         });
 
@@ -547,7 +553,7 @@ void Scene::Save(const char* path, entt::entity root){
     } else {
         //Assert(false);
         _AddEntityPrefab(registry, entities, root, path, true);
-        entitiesAll = std::vector<entt::entity>(entities.begin(), entities.end());
+        entitiesAll = std::vector<Entity>(entities.begin(), entities.end());
     }
 
     archive(cereal::make_nvp("Entities", entitiesAll));

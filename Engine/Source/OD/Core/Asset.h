@@ -99,8 +99,8 @@ private:
 
     efsw::FileWatcher* fileWatcher;
     AssetManagerFileUpdateListener* listener;
-    std::vector<Ref<Asset>> sharedVector;
-    std::mutex vectorMutex;
+    std::unordered_set<Ref<Asset>> toApplyHotReload;
+    std::mutex toApplyHotReloadMutex;
 };
 
 template<class T>

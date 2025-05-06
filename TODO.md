@@ -2,7 +2,7 @@
 
 ## New
 - [ ] Fix Editor Project load c++ code
-- [ ] Asset Hot-Reload
+- [x] Asset Hot-Reload
 - [ ] Finish Lua
 - [ ] Add Save/Load binary Asset
 - [ ] Make ContentBrowserPanel Fast

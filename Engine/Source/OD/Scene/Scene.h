@@ -213,6 +213,8 @@ public:
     virtual void Render(){}
     virtual void OnDrawGizmos(Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
     virtual void OnDrawGizmosSelected(Camera& cam, Entity entity){} //FIXME: Maybe Add a SystemType::OnDrawGizmosSelected
+
+    virtual bool ExecuteAlways(){ return false; }
     
     Scene* GetScene(){ return scene; }
 
@@ -281,7 +283,7 @@ public:
     void Update();
     void Draw();
 
-    void Save(const char* path, entt::entity root = entt::null);
+    void Save(const char* path, Entity root = EntityNull);
     void Load(const char* path);
 
     static void CreateLuaBind(sol::state& lua);

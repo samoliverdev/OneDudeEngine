@@ -105,8 +105,9 @@ public:
         if(action == efsw::Actions::Modified){
             for(auto& i: assetManager->data){
                 if(i.second.count(fullPath) > 0){
-                    std::lock_guard<std::mutex> lock(assetManager->vectorMutex);
-                    assetManager->sharedVector.push_back(i.second[fullPath]);
+                    std::lock_guard<std::mutex> lock(assetManager->toApplyHotReloadMutex);
+                    //assetManager->toApplyHotReload.push_back(i.second[fullPath]);
+                    assetManager->toApplyHotReload.insert(i.second[fullPath]);
                 }
             }
         }
@@ -128,11 +129,12 @@ void AssetManager::StopHotReload(){
 }
 
 void AssetManager::ApplyHotReload(){
-    std::lock_guard<std::mutex> lock(vectorMutex);
-    for(auto& i: sharedVector){
+    std::lock_guard<std::mutex> lock(toApplyHotReloadMutex);
+    for(auto& i: toApplyHotReload){
+        LogInfo("Apply HotReload: %s", i->Path().c_str());
         i->Reload();
     }
-    sharedVector.clear();
+    toApplyHotReload.clear();
 }
 
 }

@@ -58,6 +58,10 @@ void PhysicsSample::OnInit(){
 
     Scene* scene = SceneManager::Get().NewScene();
 
+    /*scene->Load("C:/Users/sam/Desktop/Test.scene");
+    Application::AddModule<Editor>();
+    return;*/
+
     /*Entity text = scene->AddEntity("Text");
     scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
     TextRendererComponent& textRenderer = scene->AddComponent<TextRendererComponent>(text);
@@ -202,6 +206,8 @@ void PhysicsSample::OnInit(){
     _luaScript2.scriptPath = "Sandbox/LuaScripts/Test2.lua";
 
     //scene->Save("res/scene1.scene");
+
+    //scene->Save("C:/Users/sam/Desktop/Test.scene", EntityNull);
     
     //scene->Start();
     Application::AddModule<Editor>();
@@ -213,7 +219,6 @@ void PhysicsSample::OnInit(){
 }
 
 void PhysicsSample::OnUpdate(float deltaTime){
-    //return;
     Scene* scene = SceneManager::Get().GetActiveScene();
     //scene->Update();
     if(scene->Running() == false) return;
@@ -243,6 +248,10 @@ void PhysicsSample::OnUpdate(float deltaTime){
         scene->GetComponent<TransformComponent>(e).Position({2, 13, 0});
         scene->GetComponent<TransformComponent>(e).Rotation(QuaternionIdentity);
         scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>();
+    }
+
+    if(Input::IsKeyDown(KeyCode::A)){
+        scene->Save("C:/Users/sam/Desktop/Test.scene", EntityNull);
     }
 }   
 
