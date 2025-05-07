@@ -9,16 +9,41 @@ namespace OD{
 using LuaTable = std::map<std::string, struct LuaValue>;
 
 struct LuaValue : std::variant<
-    int, float, bool, std::string, LuaTable
+    int, float, bool, std::string, LuaTable, Vector3
 > {
-    using Base = std::variant<int, float, bool, std::string, LuaTable>;
+    using Base = std::variant<int, float, bool, std::string, LuaTable, Vector3>;
     using Base::Base;
 
-    template <class Archive>
+    /*template <class Archive>
     void serialize(Archive& ar) {
         std::visit([&](auto& val) {
             ar(val);
         }, *this);
+    }*/
+
+    template <class Archive>
+    void save(Archive& ar) const {
+        ar(cereal::make_nvp("index", this->index()));
+        std::visit([&](auto& val) {
+            ar(cereal::make_nvp("value", val));
+        }, *this);
+    }
+
+    template <class Archive>
+    void load(Archive& ar) {
+        std::size_t index;
+        ar(cereal::make_nvp("index", index));
+
+        switch (index) {
+            case 0: { int v; ar(cereal::make_nvp("value", v)); *this = v; break; }
+            case 1: { float v; ar(cereal::make_nvp("value", v)); *this = v; break; }
+            case 2: { bool v; ar(cereal::make_nvp("value", v)); *this = v; break; }
+            case 3: { std::string v; ar(cereal::make_nvp("value", v)); *this = v; break; }
+            case 4: { LuaTable v; ar(cereal::make_nvp("value", v)); *this = v; break; }
+            case 5: { Vector3 v; ar(cereal::make_nvp("value", v)); *this = v; break; } // ← Vector3 case
+            default:
+                throw std::runtime_error("Invalid LuaValue variant index");
+        }
     }
 };
 
@@ -37,7 +62,6 @@ struct OD_API LuaScriptComponent{
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scriptPath);
-        if(data.valid() == true) saveData = convertSolObject(data);
         ArchiveDumpNVP(ar, saveData);
     }
 

@@ -292,7 +292,7 @@ void Editor::SaveAsScene(){
     std::string path = Platform::SaveFile("*.scene");
     if(path.empty() == false){
         Scene* scene = SceneManager::Get().GetActiveScene();
-        scene->Save(path.c_str());
+        scene->Save(path.c_str(), EntityNull);
         curScenePath = path;
     } 
 }

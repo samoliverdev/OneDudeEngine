@@ -27,7 +27,8 @@ local Script = {
     tt = 2,
     ff = true,
     text = "Script1",
-    text2 = "lolo2"
+    text2 = "lolo2",
+    test = Vector3(1, 2, 3)
 }
 
 function Script:OnStart()

@@ -3,11 +3,10 @@
 ## New
 - [ ] Fix Editor Project load c++ code
 - [x] Asset Hot-Reload
-- [ ] Finish Lua
 - [ ] Add Save/Load binary Asset
-- [ ] Make ContentBrowserPanel Fast
 - [ ] Add a option to stop run on exception and create SceneAssert to stop run on exception
-- [ ] Add Procedural Mesh, and make saved in the scene data, to Create Prototype levels
+- [ ] Finish Lua
+- [ ] Fix Scene Load Exception
 - [ ] Terrain  
     - [ ] Add Terrain Navmesh Mesh Chunk
     - [ ] Choise Heightmap data size(Byte, Short, Float)
@@ -20,13 +19,15 @@
     - [ ] Look At
     - [ ] Custom Event/function to pre/post processing
 - [ ] Graphics
-    - [ ] Maybe, Layed Framebuffer
+    - [ ] Finish Deffered
     - [ ] EnviromentProbe(Reflection and GI)
     - [ ] AO
     - [ ] SSGI
     - [ ] Finish 2D Render (Text && Sprite)
 
 ## Next
+- [ ] Make ContentBrowserPanel Fast
+- [ ] Add Procedural Mesh, and make saved in the scene data, to Create Prototype levels
 - [ ] Lod Sytem and auto lod creations
 - [ ] Add Chunk base MeshRenderer Group Component, like "Mesh Combine Studio 2", 
 - [ ] Finish Audio System

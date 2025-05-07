@@ -1,36 +1,78 @@
 {
     "Entities": [
-        4,
-        3,
-        2,
+        0,
         1,
-        0
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
     ],
     "InfoComponents": [
         {
             "name": "Env",
             "tag": "",
-            "active": false
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         },
         {
             "name": "Light",
             "tag": "",
-            "active": false
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         },
         {
             "name": "Camera",
             "tag": "",
-            "active": false
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         },
         {
             "name": "Floor",
             "tag": "",
-            "active": false
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         },
         {
-            "name": "Character",
+            "name": "MainCube",
             "tag": "",
-            "active": false
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Trigger",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "LuaScript",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "LuaScript2",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -38,7 +80,10 @@
         1,
         2,
         3,
-        4
+        4,
+        5,
+        6,
+        7
     ],
     "TransformComponents": [
         {
@@ -59,67 +104,12 @@
                 "v.z": 0.0
             },
             "transform.localScale": {
-                "v.x": 200.0,
-                "v.y": 200.0,
-                "v.z": 200.0
-            },
-            "transform.isDirt": false,
-            "children": [],
-            "parent": 0,
-            "hasParent": false
-        },
-        {
-            "transform.localPosition": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localRotation": {
-                "q.x": 0.0,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 1.0
-            },
-            "transform.localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
-            "parent": 0,
-            "hasParent": false
-        },
-        {
-            "transform.localPosition": {
-                "v.x": 0.0,
-                "v.y": 15.0,
-                "v.z": 15.0
-            },
-            "transform.localRotation": {
-                "q.x": -0.2164396196603775,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 0.9762960076332092
-            },
-            "transform.localEulerAngles": {
-                "v.x": -25.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
-            "transform.localScale": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
-            },
-            "transform.isDirt": false,
-            "children": [],
-            "parent": 0,
+            "parent": 4294967295,
             "hasParent": false
         },
         {
@@ -144,9 +134,34 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": false,
             "children": [],
-            "parent": 0,
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 15.0,
+                "v.z": 15.0
+            },
+            "transform.localRotation": {
+                "q.x": -0.2164396196603775,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.9762960076332092
+            },
+            "transform.localEulerAngles": {
+                "v.x": -25.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
             "hasParent": false
         },
         {
@@ -171,94 +186,154 @@
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "transform.isDirt": true,
             "children": [],
-            "parent": 0,
+            "parent": 4294967295,
             "hasParent": false
-        }
-    ],
-    "TransformComponentEntities": [
-        4,
-        3,
-        2,
-        1,
-        0
-    ],
-    "ComponentTest_01s": [],
-    "ComponentTest_01Entities": [],
-    "ModelRendererComponents": [
+        },
         {
-            "subMeshIndex": -1,
-            "path": "res/Game/Models/plane.glb",
-            "materialsOverridePaths": [
-                "Memory"
-            ]
-        }
-    ],
-    "ModelRendererComponentEntities": [
-        3
-    ],
-    "MeshRendererComponents": [],
-    "MeshRendererComponentEntities": [],
-    "LightComponents": [
-        {
-            "color": {
+            "transform.localPosition": {
+                "v.x": 2.0,
+                "v.y": 13.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
             },
-            "intensity": 1.0,
-            "falloff": 1.0,
-            "radius": 5.0,
-            "coneAngleInner": 45.0,
-            "coneAngleOuter": 45.0,
-            "renderShadow": true
-        }
-    ],
-    "LightComponentEntities": [
-        1
-    ],
-    "JointComponents": [],
-    "JointComponentEntities": [],
-    "CameraComponents": [
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
         {
-            "type": 0,
-            "isMain": true,
-            "orthographicSize": 5.0,
-            "fieldOfView": 45.0,
-            "nearClipPlane": 0.10000000149011612,
-            "farClipPlane": 1000.0
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
         }
     ],
-    "CameraComponentEntities": [
-        2
+    "TransformComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
     ],
     "EnvironmentComponents": [
         {
             "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
                 "ambient": {
-                    "v.x": 0.10999999940395355,
-                    "v.y": 0.1599999964237213,
-                    "v.z": 0.25
+                    "r": 0.10999999940395355,
+                    "g": 0.1599999964237213,
+                    "b": 0.25,
+                    "a": 1.0
                 },
                 "cleanColor": {
-                    "v.x": 0.5,
-                    "v.y": 0.10000000149011612,
-                    "v.z": 0.800000011920929
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
                 },
-                "shadowQuality": 3,
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 150.0,
                 "shadowBias": 0.000009999999747378752,
-                "shadowBackFaceRender": true,
-                "antiAliasing": 0,
-                "msaaQuality": 1,
-                "colorCorrection": 0,
                 "toneMappingPostFX": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483649,
                         "data": {
                             "enable": false,
-                            "mode": "None"
+                            "mode": -1,
+                            "exposure": 1.0
                         }
                     }
                 },
@@ -287,11 +362,11 @@
                         "id": 2147483651,
                         "data": {
                             "enable": false,
-                            "maxIterations": 5,
-                            "downscaleLimit": 5,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
                             "bicubicUpsampling": true,
                             "threshold": 0.5,
-                            "thresholdKnee": 0.5,
+                            "thresholdKnee": 1.0,
                             "intensity": 1.0
                         }
                     }
@@ -302,42 +377,256 @@
     "EnvironmentComponentEntities": [
         0
     ],
-    "RigidbodyComponents": [
+    "LuaScriptComponents": [
         {
-            "type": 1,
-            "shape": {
-                "type": 0,
-                "boxShapeSize": {
-                    "v.x": 25.0,
-                    "v.y": 0.10000000149011612,
-                    "v.z": 25.0
-                },
-                "sphereRadius": 1.0
+            "scriptPath": "Sandbox/LuaScripts/Test.lua",
+            "saveData": {
+                "index": 4,
+                "value": [
+                    {
+                        "key": "elapsed",
+                        "value": {
+                            "index": 0,
+                            "value": 0
+                        }
+                    },
+                    {
+                        "key": "ff",
+                        "value": {
+                            "index": 2,
+                            "value": true
+                        }
+                    },
+                    {
+                        "key": "test",
+                        "value": {
+                            "index": 5,
+                            "value": {
+                                "v.x": 43.0,
+                                "v.y": 4.0,
+                                "v.z": 5.0
+                            }
+                        }
+                    },
+                    {
+                        "key": "text",
+                        "value": {
+                            "index": 3,
+                            "value": "Script1"
+                        }
+                    },
+                    {
+                        "key": "text2",
+                        "value": {
+                            "index": 3,
+                            "value": "lolo2"
+                        }
+                    },
+                    {
+                        "key": "tt",
+                        "value": {
+                            "index": 0,
+                            "value": 2
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "scriptPath": "Sandbox/LuaScripts/Test2.lua",
+            "saveData": {
+                "index": 4,
+                "value": [
+                    {
+                        "key": "arr",
+                        "value": {
+                            "index": 4,
+                            "value": []
+                        }
+                    },
+                    {
+                        "key": "customData",
+                        "value": {
+                            "index": 4,
+                            "value": [
+                                {
+                                    "key": "a",
+                                    "value": {
+                                        "index": 0,
+                                        "value": 20
+                                    }
+                                },
+                                {
+                                    "key": "b",
+                                    "value": {
+                                        "index": 3,
+                                        "value": "Custom"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "key": "elapsed",
+                        "value": {
+                            "index": 0,
+                            "value": 0
+                        }
+                    },
+                    {
+                        "key": "text",
+                        "value": {
+                            "index": 3,
+                            "value": "Script1"
+                        }
+                    },
+                    {
+                        "key": "text2",
+                        "value": {
+                            "index": 3,
+                            "value": "lolo2"
+                        }
+                    },
+                    {
+                        "key": "v",
+                        "value": {
+                            "index": 5,
+                            "value": {
+                                "v.x": 1.0,
+                                "v.y": 2.0,
+                                "v.z": 3.0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "LuaScriptComponentEntities": [
+        6,
+        7
+    ],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 45.0,
+            "nearClipPlane": 0.10000000149011612,
+            "farClipPlane": 1000.0,
+            "renderingPath": 0
+        }
+    ],
+    "CameraComponentEntities": [
+        2
+    ],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
             },
-            "mass": 0.0,
-            "neverSleep": true
+            "intensity": 1.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": false,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
         }
     ],
-    "RigidbodyComponentEntities": [
-        3
+    "LightComponentEntities": [
+        1
     ],
-    "AnimatorComponents": [
-        {}
-    ],
-    "AnimatorComponentEntities": [
-        4
-    ],
-    "SkinnedModelRendererComponents": [
+    "ModelRendererComponents": [
         {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
             "subMeshIndex": -1,
-            "path": "res/Game/Animations/Walking.dae",
-            "materialsOverridePaths": [
-                "",
-                ""
-            ]
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/plane.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    true
+                ],
+                "path": [
+                    "Memory",
+                    ""
+                ]
+            }
         }
     ],
-    "SkinnedModelRendererComponentEntities": [
+    "ModelRendererComponentEntities": [
+        3,
         4
     ],
     "ScriptComponents": [
@@ -345,5 +634,72 @@
     ],
     "ScriptComponentEntities": [
         2
+    ],
+    "RigidbodyComponents": [
+        {
+            "type": 1,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 25.0,
+                    "v.y": 0.10000000149011612,
+                    "v.z": 25.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 0.0,
+            "neverSleep": true
+        },
+        {
+            "type": 0,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        },
+        {
+            "type": 3,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 4.0,
+                    "v.y": 1.0,
+                    "v.z": 4.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": true
+        }
+    ],
+    "RigidbodyComponentEntities": [
+        3,
+        4,
+        5
     ]
 }

@@ -72,7 +72,8 @@ sol::object toSolObject(sol::state& lua, const LuaValue& val) {
         [&](float v)       { return sol::make_object(lua, v); },
         [&](bool v)        { return sol::make_object(lua, v); },
         [&](const std::string& v) { return sol::make_object(lua, v); },
-        [&](const LuaTable& tbl) { return sol::make_object(lua, toSolTable(lua, tbl)); }
+        [&](const LuaTable& tbl) { return sol::make_object(lua, toSolTable(lua, tbl)); },
+        [&](const Vector3& vec){ return sol::make_object(lua, vec); },
     }, val);
 }
 
@@ -102,6 +103,10 @@ LuaValue convertSolObject(const sol::object& obj) {
             return obj.as<bool>();
         case sol::type::string:
             return obj.as<std::string>();
+        case sol::type::userdata: {
+            if(obj.is<Vector3>()){ return obj.as<Vector3>(); }
+            break; // Ignore other userdata types
+        }
         case sol::type::table: {
             LuaTable table;
             sol::table tbl = obj;
@@ -125,25 +130,41 @@ LuaValue convertSolObject(const sol::object& obj) {
 
 LuaScriptComponent::LuaScriptComponent(const LuaScriptComponent& other){
     scriptPath = other.scriptPath;
-    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    if(other.data.valid() == true){
+        saveData = convertSolObject(other.data);
+    } else {
+        saveData = other.saveData;
+    }
 }
 
 LuaScriptComponent::LuaScriptComponent(LuaScriptComponent&& other){
     scriptPath = std::move(other.scriptPath);
-    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    if(other.data.valid() == true){
+        saveData = convertSolObject(other.data);
+    } else {
+        saveData = std::move(other.saveData);
+    }
 }
 
 LuaScriptComponent& LuaScriptComponent::operator=(const LuaScriptComponent& other){
     if(this == &other) return *this;
     scriptPath = other.scriptPath;
-    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    if(other.data.valid() == true){
+        saveData = convertSolObject(other.data);
+    } else {
+        saveData = other.saveData;
+    }
     return *this;
 }
 
 LuaScriptComponent& LuaScriptComponent::operator=(LuaScriptComponent&& other){
     if(this == &other) return *this;
     scriptPath = std::move(other.scriptPath);
-    if(other.data.valid() == true) saveData = convertSolObject(other.data);
+    if(other.data.valid() == true){
+        saveData = convertSolObject(other.data);
+    } else {
+        saveData = std::move(other.saveData);
+    }
     return *this;
 }
 

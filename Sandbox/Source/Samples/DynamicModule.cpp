@@ -96,7 +96,7 @@ void DynamicModuleSample::OnInit(){
 void DynamicModuleSample::OnUpdate(float deltaTime){
     //NOTE: HotRelead Test( Not worlking if change class defination)
     if(Input::IsKeyDown(KeyCode::R) && currentModule != nullptr){
-        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
+        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene", EntityNull);
         //Clean Old Refs
         Application::RemoveModule(currentModule);
         Platform::FreeDynimicLibrary(currentDll);

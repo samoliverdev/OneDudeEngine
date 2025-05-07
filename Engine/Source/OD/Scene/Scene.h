@@ -283,7 +283,7 @@ public:
     void Update();
     void Draw();
 
-    void Save(const char* path, Entity root = EntityNull);
+    void Save(const char* path, Entity root);
     void Load(const char* path);
 
     static void CreateLuaBind(sol::state& lua);

@@ -58,9 +58,9 @@ void PhysicsSample::OnInit(){
 
     Scene* scene = SceneManager::Get().NewScene();
 
-    /*scene->Load("C:/Users/sam/Desktop/Test.scene");
+    scene->Load("test.scene");
     Application::AddModule<Editor>();
-    return;*/
+    return;
 
     /*Entity text = scene->AddEntity("Text");
     scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
@@ -207,7 +207,7 @@ void PhysicsSample::OnInit(){
 
     //scene->Save("res/scene1.scene");
 
-    //scene->Save("C:/Users/sam/Desktop/Test.scene", EntityNull);
+    //scene->Save("test.scene", EntityNull);
     
     //scene->Start();
     Application::AddModule<Editor>();
