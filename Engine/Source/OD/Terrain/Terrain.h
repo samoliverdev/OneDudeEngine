@@ -111,6 +111,8 @@ private:
     Entity collider = EntityNull;
     Entity meshToNavmesh = EntityNull;
 
+    std::vector<Entity> meshToNavmeshChunks;
+
     int chunkSize;
     std::unordered_map<IVector2, ChunkData> loadedChunks;
     std::vector<int> lods;
@@ -118,6 +120,8 @@ private:
 
     bool isDirt = true;
     bool heightMapIsDirt = false;
+
+    void CreateMeshToNavmesh(Scene& scene);
 };
 
 class OD_API TerrainSystem: public System{

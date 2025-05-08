@@ -57,7 +57,7 @@ struct OD_API MaterialMap{
 
         struct{
             void* list;
-            int listCount;
+            int listCount ;
         };
     };
 

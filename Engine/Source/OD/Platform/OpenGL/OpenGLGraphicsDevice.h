@@ -2,6 +2,7 @@
 #ifdef OPENGL_SUPPORT
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
+#include "OD/Graphics/Material.h"
 
 namespace OD{
 
@@ -157,6 +158,8 @@ public:
     void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
 
     void Texture2DGenerate(Texture2D& tex, unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data);
+
+    //void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
 
     GraphicsDeviceInfo info;
     

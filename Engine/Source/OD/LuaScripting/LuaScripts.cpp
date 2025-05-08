@@ -126,6 +126,8 @@ LuaValue convertSolObject(const sol::object& obj) {
         default:
             return {}; // you can define a NilValue type if needed
     }
+
+    return {};
 }
 
 LuaScriptComponent::LuaScriptComponent(const LuaScriptComponent& other){

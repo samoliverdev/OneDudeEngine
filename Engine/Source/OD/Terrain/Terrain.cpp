@@ -312,12 +312,234 @@ Ref<Mesh> GenerateTerrainFromHeightmap2(Ref<Heightmap> heightmap, int levelOfDet
     return out;
 }
 
+std::vector<std::pair<Ref<Mesh>, Vector3>> GenerateTerrainChunksFromHeightmap(
+    Ref<Heightmap> heightmap, int levelOfDetail, int chunkCountX, int chunkCountY)
+{
+    int width = heightmap->width;
+    int height = heightmap->height;
+
+    float topLeftX = (width - 1) / -2.0f;
+    float topLeftZ = (height - 1) / 2.0f;
+
+    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+    int totalVerticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
+
+    int chunkSizeX = width / chunkCountX;
+    int chunkSizeY = height / chunkCountY;
+
+    std::vector<std::pair<Ref<Mesh>, Vector3>> outMeshes;
+
+    for (int cy = 0; cy < chunkCountY; ++cy) {
+        for (int cx = 0; cx < chunkCountX; ++cx) {
+            int startX = cx * chunkSizeX;
+            int startY = cy * chunkSizeY;
+            int endX = (cx == chunkCountX - 1) ? width : startX + chunkSizeX;
+            int endY = (cy == chunkCountY - 1) ? height : startY + chunkSizeY;
+
+            int chunkWidth = (endX - startX);
+            int chunkHeight = (endY - startY);
+
+            int verticesX = (chunkWidth - 1) / meshSimplificationIncrement + 1;
+            int verticesY = (chunkHeight - 1) / meshSimplificationIncrement + 1;
+
+            Ref<Mesh> mesh = CreateRef<Mesh>();
+            mesh->vertices.resize(verticesX * verticesY);
+            mesh->indices.resize((verticesX - 1) * (verticesY - 1) * 6);
+
+            int triangleIndex = 0;
+            auto AddTriangle = [&](int a, int b, int c) {
+                mesh->indices[triangleIndex++] = a;
+                mesh->indices[triangleIndex++] = b;
+                mesh->indices[triangleIndex++] = c;
+            };
+
+            int vertexIndex = 0;
+            for (int y = startY; y < endY; y += meshSimplificationIncrement) {
+                for (int x = startX; x < endX; x += meshSimplificationIncrement) {
+                    float vx = x + topLeftX;
+                    float vz = -(y - topLeftZ);
+                    float vy = heightmap->Get(x, y);
+                    mesh->vertices[vertexIndex] = Vector3(vx, vy, vz);
+
+                    int localX = (x - startX) / meshSimplificationIncrement;
+                    int localY = (y - startY) / meshSimplificationIncrement;
+                    if (localX < verticesX - 1 && localY < verticesY - 1) {
+                        int a = vertexIndex;
+                        int b = a + verticesX + 1;
+                        int c = a + verticesX;
+                        int d = a + 1;
+                        AddTriangle(a, b, c);
+                        AddTriangle(b, a, d);
+                    }
+
+                    vertexIndex++;
+                }
+            }
+
+            mesh->Submit();
+
+            // Local offset for this chunk (based on topLeftX/Z + offset in chunk grid)
+            float chunkOffsetX = startX + topLeftX;
+            float chunkOffsetZ = -(startY - topLeftZ);
+            outMeshes.push_back({ mesh, Vector3(chunkOffsetX, 0.0f, chunkOffsetZ) });
+        }
+    }
+
+    return outMeshes;
+}
+
+std::vector<std::pair<Ref<Mesh>, Vector3>> GenerateTerrainChunksFromHeightmap2( 
+    Ref<Heightmap> heightmap, int levelOfDetail, int chunkCountX, int chunkCountY)
+{
+    int width = heightmap->width;
+    int height = heightmap->height;
+
+    float topLeftX = (width - 1) / -2.0f;
+    float topLeftZ = (height - 1) / 2.0f;
+
+    int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+
+    int chunkSizeX = (width - 1) / chunkCountX;
+    int chunkSizeY = (height - 1) / chunkCountY;
+
+    std::vector<std::pair<Ref<Mesh>, Vector3>> outMeshes;
+
+    for (int cy = 0; cy < chunkCountY; ++cy) {
+        for (int cx = 0; cx < chunkCountX; ++cx) {
+            int startX = cx * chunkSizeX;
+            int startY = cy * chunkSizeY;
+
+            // Include one extra vertex on non-edge chunks to stitch boundaries
+            int endX = (cx == chunkCountX - 1) ? width : startX + chunkSizeX + meshSimplificationIncrement;
+            int endY = (cy == chunkCountY - 1) ? height : startY + chunkSizeY + meshSimplificationIncrement;
+
+            // Clamp to avoid reading outside heightmap
+            endX = std::min(endX, width);
+            endY = std::min(endY, height);
+
+            int chunkWidth = endX - startX;
+            int chunkHeight = endY - startY;
+
+            int verticesX = (chunkWidth - 1) / meshSimplificationIncrement + 1;
+            int verticesY = (chunkHeight - 1) / meshSimplificationIncrement + 1;
+
+            Ref<Mesh> mesh = CreateRef<Mesh>();
+            mesh->vertices.resize(verticesX * verticesY);
+            mesh->indices.resize((verticesX - 1) * (verticesY - 1) * 6);
+
+            int triangleIndex = 0;
+            auto AddTriangle = [&](int a, int b, int c) {
+                mesh->indices[triangleIndex++] = a;
+                mesh->indices[triangleIndex++] = b;
+                mesh->indices[triangleIndex++] = c;
+            };
+
+            int vertexIndex = 0;
+            for (int y = startY; y < endY; y += meshSimplificationIncrement) {
+                for (int x = startX; x < endX; x += meshSimplificationIncrement) {
+                    float vx = x + topLeftX;
+                    float vz = -(y - topLeftZ);
+                    float vy = heightmap->Get(x, y);
+                    mesh->vertices[vertexIndex] = Vector3(vx, vy, vz);
+
+                    int localX = (x - startX) / meshSimplificationIncrement;
+                    int localY = (y - startY) / meshSimplificationIncrement;
+                    if (localX < verticesX - 1 && localY < verticesY - 1) {
+                        int a = vertexIndex;
+                        int b = a + verticesX + 1;
+                        int c = a + verticesX;
+                        int d = a + 1;
+                        AddTriangle(a, b, c);
+                        AddTriangle(b, a, d);
+                    }
+
+                    vertexIndex++;
+                }
+            }
+
+            mesh->Submit();
+
+            float chunkOffsetX = startX + topLeftX;
+            float chunkOffsetZ = -(startY - topLeftZ);
+            outMeshes.push_back({ mesh, Vector3(chunkOffsetX, 0.0f, chunkOffsetZ) });
+        }
+    }
+
+    return outMeshes;
+}
+
+void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
+    for(auto i: meshToNavmeshChunks){
+        scene.DestroyEntity(i);
+    }
+    meshToNavmeshChunks.clear();
+
+    if(meshToNavmesh != EntityNull) scene.DestroyEntity(meshToNavmesh);
+
+    float terrainMeshWidth = (float)(chunkSize * chunkWidthCount);
+
+    auto chunks = GenerateTerrainChunksFromHeightmap2(heightmap, meshToNavmeshLod, 1, 1);
+    for(auto& i: chunks){
+        Entity e = scene.AddEntity("meshToNavmesh (" + std::to_string(i.second.x) +", " + std::to_string(i.second.z));
+        scene.SetParent(meshsRoot, e);
+        meshToNavmeshChunks.push_back(e);
+
+
+        MeshRendererComponent& _meshToNavmesh = scene.AddComponent<MeshRendererComponent>(e);
+        {
+        OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
+        //Ref<Mesh> m = CreateRef<Mesh>();
+        _meshToNavmesh.mesh = i.first;
+        _meshToNavmesh.UpdateAABB();
+        }
+        //_meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+        TransformComponent& meshToNavmeshTrans = scene.GetComponent<TransformComponent>(e);
+        meshToNavmeshTrans.LocalScale(Vector3(
+            terrainMeshWidth / (float)heightmap->width,
+            terrainHeight,  // vertical exaggeration
+            terrainMeshWidth / (float)heightmap->height
+        ));
+    
+        meshToNavmeshTrans.LocalPosition(Vector3(
+            terrainMeshWidth / 2.0f,
+            0,
+            -(terrainMeshWidth / 2.0f)
+        ));
+    }
+
+    //Create Mesh To Navmesh
+    /*meshToNavmesh = scene.AddEntity("meshToNavmesh");
+    scene.SetParent(meshsRoot, meshToNavmesh);
+    MeshRendererComponent& _meshToNavmesh = scene.AddComponent<MeshRendererComponent>(meshToNavmesh);
+    {
+    OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
+    //Ref<Mesh> m = CreateRef<Mesh>();
+    _meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(heightmap, meshToNavmeshLod);
+    _meshToNavmesh.UpdateAABB();
+    }
+    _meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    TransformComponent& meshToNavmeshTrans = scene.GetComponent<TransformComponent>(meshToNavmesh);
+    meshToNavmeshTrans.LocalScale(Vector3(
+        terrainMeshWidth / (float)heightmap->width,
+        terrainHeight, 
+        terrainMeshWidth / (float)heightmap->height
+    ));
+    meshToNavmeshTrans.LocalPosition(
+        Vector3(
+            terrainMeshWidth / 2.0f,
+            0,
+            -(terrainMeshWidth / 2.0f)
+        )
+    );*/
+}
+
 void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
     if(GetScene()->IsValid(terrain.meshsRoot)){
         scene->DestroyEntity(terrain.meshsRoot);
         terrain.meshsRoot = Entity();
         terrain.collider = Entity();
         terrain.meshToNavmesh = Entity();
+        terrain.meshToNavmeshChunks.clear();
     }
 
     terrain.loadedChunks.clear();
@@ -430,8 +652,10 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     terrain.heightmap->TransposeTo(heightmapCollider.heights);
     }
 
+    terrain.CreateMeshToNavmesh(*GetScene());
+
     //Create Mesh To Navmesh
-    terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
+    /*terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
     GetScene()->SetParent(terrain.meshsRoot, terrain.meshToNavmesh);
     MeshRendererComponent& meshToNavmesh = GetScene()->AddComponent<MeshRendererComponent>(terrain.meshToNavmesh);
     {
@@ -440,7 +664,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
     meshToNavmesh.UpdateAABB();
     }
-    meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    //meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = GetScene()->GetComponent<TransformComponent>(terrain.meshToNavmesh);
     meshToNavmeshTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)terrain.heightmap->width,
@@ -453,7 +677,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
             0,
             -(terrainMeshWidth / 2.0f)
         )
-    );
+    );*/
 
     // Load Coords
     {
@@ -495,13 +719,15 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
     terrain.heightmap->TransposeTo(heightmapCollider.heights);
     }
 
-    {
+    /*{
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenerateTerrainFromHeightmap");  
     MeshRendererComponent& meshToNavmesh = GetScene()->GetComponent<MeshRendererComponent>(terrain.meshToNavmesh);
     //Ref<Mesh> m = CreateRef<Mesh>();
     meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(terrain.heightmap, terrain.meshToNavmeshLod);
     meshToNavmesh.UpdateAABB();
-    }
+    }*/
+
+    terrain.CreateMeshToNavmesh(*GetScene());
 }
 
 void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){

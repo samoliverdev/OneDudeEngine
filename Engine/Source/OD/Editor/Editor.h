@@ -35,6 +35,8 @@ public:
     
     static Editor* Get();
 
+    inline EditorCamera& EditorCam(){ return editorCam; }
+
     void AddMenuCommand(const std::string path, std::function<void()> command);
 
     inline Entity GetSelectionEntity(){ return selectionEntity; }

@@ -1632,6 +1632,8 @@ void NavmeshSystem::OnDrawGizmos(Camera& cam){
 		t.LocalPosition(trans.Position());
 		t.LocalScale(navmeshComponent.size);
 		Graphics::DrawWireCube(t.GetLocalModelMatrix(), {1,1,1}, 1);
+		
+		continue;
 
 		if(navmeshComponent.navmesh != nullptr && navmeshComponent.navmesh->buildSettings.useTile){
 			AABB bounds = AABB(
