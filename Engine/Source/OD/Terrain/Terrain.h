@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Scene/Scene.h"
 #include "Heightmap.h"
 
@@ -110,6 +111,9 @@ private:
     Entity meshsRoot = EntityNull;
     Entity collider = EntityNull;
     Entity meshToNavmesh = EntityNull;
+
+    Ref<Material> mat = nullptr;
+    Ref<Material> matShadow = nullptr;
 
     std::vector<Entity> meshToNavmeshChunks;
 

@@ -194,7 +194,16 @@ void RendererList::Submit(){
         //Shader::Bind(*_mat->GetShader());
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
+        #if EnableExperimentalPerDrawCustomData
+        if(cm.useCustomData){
+            Graphics::BindMaterial(*_mat);
+            Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
+        } else {
+            Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        }
+        #else
         Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        #endif
         //}
     });
     }
@@ -226,7 +235,17 @@ void RendererList::Submit(){
         //Shader::Bind(*_mat->GetShader());
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
+
+        #if EnableExperimentalPerDrawCustomData
+        if(cm.useCustomData){
+            Graphics::BindMaterial(*_mat);
+            Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
+        } else {
+            Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        }
+        #else
         Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        #endif
         //}
     });
     }

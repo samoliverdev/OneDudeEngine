@@ -232,6 +232,10 @@ void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
     graphicsDevice->DrawMesh(mesh, modelMatrix); 
 }
 
+void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){
+    graphicsDevice->DrawMesh(mesh, modelMatrix, customData); 
+}
+
 void Graphics::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){ 
     graphicsDevice->DrawMeshSkinned(mesh, model, animMatrix, count); 
 }

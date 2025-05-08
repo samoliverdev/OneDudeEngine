@@ -31,6 +31,7 @@ public:
 
     virtual void BindMaterial(Material& mat) override;
     virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix) override;
+    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
 

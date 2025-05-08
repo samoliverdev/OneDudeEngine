@@ -13,6 +13,9 @@ struct OD_API MeshRendererComponent{
     Ref<Material> material;
     Ref<Material> customShadowPass;
 
+    bool useCustomData = false;
+    Vector4 customData;
+
     static void OnGui(Entity& e, Scene& scene);
 
     template<class Archive>

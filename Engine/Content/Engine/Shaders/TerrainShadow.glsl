@@ -16,6 +16,8 @@ BeginUniform(0, 0, Main)
 EndUniform()
 Texture2D(0, 1, heightMap, heightMapSampler)
 
+uniform vec4 customData;
+
 #if defined(VERTEX) && defined(MainPass)
     #include Engine/ShaderLibrary/Vertex.glsl
 
@@ -26,10 +28,13 @@ Texture2D(0, 1, heightMap, heightMapSampler)
     uniform vec2 heightmapOffset = vec2(0, 0);*/
 
     void main(){
+        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        //_heightmapOffset = heightmapOffset;
+
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;
 
-        float height = texture(heightMap, texCoord * heightmapTilling + heightmapOffset).r; // uv + uvOffset
+        float height = texture(heightMap, texCoord * heightmapTilling + _heightmapOffset).r; // uv + uvOffset
         localPos.y = height * heightScale;
 
         gl_Position = lightSpaceMatrix * targetModelMatrix * vec4(localPos, 1.0);

@@ -64,6 +64,11 @@ struct OD_API RenderData{
     Mesh* targetMesh;
     std::vector<Matrix4>* posePalette = nullptr;
     float distance;
+
+    #if EnableExperimentalPerDrawCustomData
+    bool useCustomData = false;
+    Vector4 customData;
+    #endif
 };
 
 struct OD_API RenderContextSettings{

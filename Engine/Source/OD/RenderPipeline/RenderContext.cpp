@@ -328,6 +328,11 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = s.staticDatas[0].aabb;
 
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
+
         onReciveRenderData(data);
     }
     }
@@ -401,6 +406,11 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
 
         onReciveRenderData(data);
     }
@@ -575,7 +585,11 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             data.targetMatrix,
             data.targetMaterial,
             data.targetMesh,
-            data.distance
+            data.distance,
+            #if EnableExperimentalPerDrawCustomData
+            data.useCustomData,
+            data.customData,
+            #endif
         }, data.distance);
     } 
 }

@@ -49,6 +49,8 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;// = 0.5;
 EndUniform()
 
+uniform vec4 customData;
+
 #include Engine/ShaderLibrary/TexturesDef.glsl
 Texture2D(0, 6, heightMap, heightMapSampler)
 Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
@@ -108,6 +110,9 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     }
 
     void main(){
+        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        //_heightmapOffset = heightmapOffset;
+
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;
         //vec3 _normal = NormalStrength(filterNormalLod(texCoord * heightmapTilling + heightmapOffset), 1);
@@ -121,7 +126,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         vec2 uv = texCoord;
         //uv.y = 1 - uv.y;
 
-        float height = texture(heightMap, uv * heightmapTilling + heightmapOffset).r; // uv + uvOffset
+        float height = texture(heightMap, uv * heightmapTilling + _heightmapOffset).r; // uv + uvOffset
         localPos.y = height * heightScale;
 
         vsOut.targetModelMatrix = targetModelMatrix;
@@ -299,25 +304,28 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     //uniform vec2 heightmapOffset = vec2(0, 0);
 
     void main(){
+        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        //_heightmapOffset = heightmapOffset;
+
         //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
-        vec4 base = texture(mainTex, fsIn.texCoord * heightmapTilling + heightmapOffset);
+        vec4 base = texture(mainTex, fsIn.texCoord * heightmapTilling + _heightmapOffset);
         base = base * color;
         //base = color;
 
-        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + heightmapOffset);
+        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
         base = mix(
-            texture(tex0, fsIn.texCoord * heightmapTilling + heightmapOffset),
-            texture(tex1, fsIn.texCoord * heightmapTilling + heightmapOffset),
+            texture(tex0, fsIn.texCoord * heightmapTilling + _heightmapOffset),
+            texture(tex1, fsIn.texCoord * heightmapTilling + _heightmapOffset),
             splatmap.r
         );
         base = mix(
             base,
-            texture(tex2, fsIn.texCoord * heightmapTilling + heightmapOffset),
+            texture(tex2, fsIn.texCoord * heightmapTilling + _heightmapOffset),
             splatmap.g
         );
         base = mix(
             base,
-            texture(tex3, fsIn.texCoord * heightmapTilling + heightmapOffset),
+            texture(tex3, fsIn.texCoord * heightmapTilling + _heightmapOffset),
             splatmap.b
         );
         /*base = mix(
@@ -335,7 +343,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         surface.normal = normalize(fsIn.worldNormal);
         //surface.normal = NormalStrength(filterNormalLod(fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
         //surface.normal = NormalStrength(GetNormal(fsIn.TBN, fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
-        surface.normal = getNormalFromMap2(fsIn.texCoord * heightmapTilling + heightmapOffset, fsIn.pos, fsIn.targetModelMatrix);
+        surface.normal = getNormalFromMap2(fsIn.texCoord * heightmapTilling + _heightmapOffset, fsIn.pos, fsIn.targetModelMatrix);
         surface.viewDirection = normalize(viewPos - fsIn.worldPos);
         surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
         surface.color = base.rgb;

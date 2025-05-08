@@ -7,6 +7,8 @@
 #include "Framebuffer.h"
 #include "GraphicsDevice.h"
 
+#define EnableExperimentalPerDrawCustomData 1
+
 namespace sol{ class state; }
 
 namespace OD {
@@ -53,6 +55,7 @@ public:
 
     static void BindMaterial(Material& mat);
     static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix);
+    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData);
     static void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count);
     static void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count);
 

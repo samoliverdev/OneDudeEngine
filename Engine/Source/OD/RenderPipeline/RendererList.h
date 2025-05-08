@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Base.h"
+#include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
@@ -16,6 +17,11 @@ struct OD_API DrawCommand{
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     float distance;
+
+    #if EnableExperimentalPerDrawCustomData
+    bool useCustomData = false;
+    Vector4 customData;
+    #endif
 
     bool operator<(const DrawCommand& a) const;
 };

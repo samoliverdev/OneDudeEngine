@@ -53,6 +53,7 @@ public:
 
     virtual void BindMaterial(Material& mat) = 0;
     virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix) = 0;
+    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){}
     virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
 

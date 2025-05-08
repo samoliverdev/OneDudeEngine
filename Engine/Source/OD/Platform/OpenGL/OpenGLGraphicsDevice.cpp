@@ -878,8 +878,13 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                     Assert(m.size >= sizeof(float));
                     memcpy((char*)material.glData.mainUniformData + m.pos, &map.valueFloat, sizeof(float));
                 } else if(map.type == MaterialMap::Type::Vector2){
-                    Assert(m.size >= sizeof(Vector2));
-                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+                    #ifdef GLM_FORCE_ALIGNED
+                        Assert(m.size >= (sizeof(float) * 2));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 2);
+                    #else
+                        Assert(m.size >= sizeof(Vector2));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+                    #endif
                 } else if(map.type == MaterialMap::Type::Vector3){
                     #ifdef GLM_FORCE_ALIGNED
                         Assert(m.size >= (sizeof(float) * 3));
@@ -1087,6 +1092,11 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
         glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
         glCheckError();
     }
+}
+
+void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){
+    SubShaderSetVector4(*lastShader, "customData", customData);
+    DrawMesh(mesh, modelMatrix);
 }
 
 void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 modelMatrix, Matrix4* animMatrixs, int count){
@@ -3225,6 +3235,7 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
 
 void OpenGLGraphicsDevice::SubShaderDestroy(SubShader& shader){
     //if(shader.IsValid() == false) return;
+    //if(shader.glData.id == 0) return;
 
     glDeleteProgram(shader.glData.id);
     glCheckError();
