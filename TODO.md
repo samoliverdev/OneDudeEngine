@@ -21,6 +21,7 @@
     - [ ] Look At
     - [ ] Custom Event/function to pre/post processing
 - [ ] Graphics
+    - [ ] Test Batch Draw by (Shader -> Material -> Mesh) to small shader uniforms sends
     - [ ] Finish Deffered
     - [ ] EnviromentProbe(Reflection and GI)
     - [ ] AO

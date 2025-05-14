@@ -4,13 +4,13 @@
 namespace OD{
 
 CrossFadeController::CrossFadeController(){
-    clip = 0;
+    clip = nullptr;
     time = 0.0f;
     wasSkeletonSet = false;
 }
 
 CrossFadeController::CrossFadeController(Skeleton& inSkeleton){
-    clip = 0;
+    clip = nullptr;
     time = 0.0f;
     SetSkeleton(inSkeleton);
 }
@@ -46,7 +46,7 @@ void CrossFadeController::FadeTo(Clip* target, float fadeTime){
 }
 
 void CrossFadeController::Update(float dt){
-    if(clip == 0 || !wasSkeletonSet) return;
+    if(clip == nullptr || !wasSkeletonSet) return;
 
     unsigned int numTargets = targets.size();
     for(unsigned int i = 0; i < numTargets; i++){
@@ -70,6 +70,10 @@ void CrossFadeController::Update(float dt){
         float t = target.elapsed / target.duration;
         if(t > 1.0f){ t = 1.0f; }
         Blend(pose, pose, target.pose, t, -1);
+    }
+
+    if(clip->GetLooping() == false && time >= clip->GetEndTime()){
+        clip = nullptr;
     }
 }
 

@@ -1140,7 +1140,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
 
             Pose pose;
             if(scene->Running()){ 
-                pose = c.controller.GetCurrentPose();
+                pose = c.GetLayer(0).controller.GetCurrentPose();
             } else {
                 pose = s.GetModel()->skeleton.GetBindPose(); 
             }

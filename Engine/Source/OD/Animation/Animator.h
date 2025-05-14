@@ -11,9 +11,16 @@ namespace OD{
 
 //TODO: Make Serializable
 struct OD_API AnimatorComponent{
+    enum class LayerBlendMode { Override };
+    struct Layer{
+        CrossFadeController controller;
+        std::vector<unsigned char> mask;
+        LayerBlendMode blendMode = LayerBlendMode::Override;
+    };
+
     friend struct AnimatorSystem;
-    void Play(Clip* clip);
-    void FadeTo(Clip* target, float fadeTime);
+    void Play(Clip* clip, int layer = 0);
+    void FadeTo(Clip* target, float fadeTime, int layer = 0);
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -22,9 +29,16 @@ struct OD_API AnimatorComponent{
 
     static void OnGui(Entity& e, Scene& scene);
 
-//private:
+    void PushLayer();
+    void PopLayer();
+    Layer& GetLayer(int layer);
+    int LayerCount();
+
+private:
     //std::vector<Matrix4> posePalette;
-    CrossFadeController controller;
+
+    std::vector<Layer> layers = {{}};
+    //CrossFadeController controller;
 
     bool enable = true;
 };

@@ -18,6 +18,8 @@ public:
     Clip* GetCurrentClip();
     
     inline bool WasSkeletonSet(){ return wasSkeletonSet; }
+    inline Skeleton& GetSkeleton(){ return skeleton; }
+    inline float GetCurrentTime(){ return time; }
 
 protected:
     std::vector<CrossFadeTarget> targets;

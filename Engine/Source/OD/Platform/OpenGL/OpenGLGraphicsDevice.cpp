@@ -3292,12 +3292,12 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
         glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
         glCheckError();
 
-        LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
+        /*LogInfo("--------TotalSize %zd ---------------", mat.glData.mainBufferDef.size);
         for(auto& i: mat.glData.mainBufferDef.members){
            LogInfo("Name: %s", i.first.c_str());
            LogInfo("Pos: %zd", i.second.pos);
            LogInfo("Size: %zd", i.second.size);
-        }
+        }*/
     }
     #endif
 }

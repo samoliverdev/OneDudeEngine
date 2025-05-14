@@ -142,10 +142,6 @@ void ScriptSystem::LateUpdate(){
     }
 
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate");
-
-    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
-    GetScene()->GetTaskflow().clear();
-
     auto view = GetScene()->GetRegistry().view<ScriptComponent>();
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
