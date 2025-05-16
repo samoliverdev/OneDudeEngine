@@ -1024,10 +1024,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         SubmitGraphicDatas(mat);
         mat.isDirty = false;
         #if UseUniformBuffer
-        glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
-        glCheckError();
-        glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
-        glCheckError();
+        if(mat.glData.mainBuffer != 0){
+            glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
+            glCheckError();
+            glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+            glCheckError();
+        }
         #endif
     }
     lastMat = &mat;
@@ -3298,6 +3300,8 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
            LogInfo("Pos: %zd", i.second.pos);
            LogInfo("Size: %zd", i.second.size);
         }*/
+    } else {
+        LogWarning("No Uniform Buffer Main on: %s", mat.shader->Path().c_str());
     }
     #endif
 }

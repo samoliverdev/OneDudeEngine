@@ -8,7 +8,7 @@
 - [ ] Finish Lua
 - [ ] Fix Scene Load Exception
 - [ ] Fix Opengl Uniform buffer implementation
-- [ ] Add Experimental PerDrawCustomData for fast terrain rendering
+- [x] Add Experimental PerDrawCustomData for fast terrain rendering
 - [ ] Terrain  
     - [ ] Add Terrain Navmesh Mesh Chunk
     - [ ] Choise Heightmap data size(Byte, Short, Float)

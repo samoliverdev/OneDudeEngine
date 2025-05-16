@@ -136,7 +136,7 @@ public:
     //static void SubmitGraphicDatas(Material& material);
     static void CleanGlobalUniformsData();
 
-    void Save(std::string& path);
+    void Save(const std::string& path);
 
     void OnGui() override;
 

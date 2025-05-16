@@ -5,9 +5,13 @@ BeginPass
     #include Engine/ShaderLibrary/Base.glsl
     #include Engine/ShaderLibrary/Vertex.glsl
 
+    #if defined(OpenGL_API)
+        uniform vec3 color;
+    #else
     BeginUniform(0, 0, Main)
         Uniform vec3 color;
     EndUniform()
+    #endif
 
     BeginVertex
         layout(location = 0) in vec3 position;
@@ -29,12 +33,11 @@ BeginPass
         #endif*/
 
         void main(){
-            #if !defined(OpenGL_API)
+            /*#if !defined(OpenGL_API)
             vec3 color = vec3(0, 0, 1);
-            #endif
+            #endif*/
             
             float alpha = 1.0;
-
             outColor = vec4(color.xyz, alpha);
         }
     EndFrag

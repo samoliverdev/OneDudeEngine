@@ -561,7 +561,7 @@ void Material::OnGui(){
     }
 }
 
-void Material::Save(std::string& path){
+void Material::Save(const std::string& path){
     //return;
     //Assert(false && "Not Implemented");
 

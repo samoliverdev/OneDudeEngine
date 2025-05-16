@@ -48,6 +48,7 @@ struct OD_API ModelRendererComponent{
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, localTransform);
         ArchiveDumpNVP(ar, subMeshIndex);
+        ArchiveDumpNVP(ar, boundingVolume);
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);

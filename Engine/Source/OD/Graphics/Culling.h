@@ -125,6 +125,12 @@ struct OD_API AABB: public BoundingVolume{
 	bool isOnAABB(AABB& other);
 
 	//bool isOnFrustum(Frustum& camFrustum);
+
+	template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, center);
+        ArchiveDumpNVP(ar, extents);
+    }
 };
 
 }
