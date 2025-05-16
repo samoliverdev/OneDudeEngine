@@ -206,7 +206,11 @@ void InspectorPanel::DrawComponents(Entity entity){
     });
 
     DrawComponent<TransformComponent>(entity, *scene, "Transform", [&](Entity e, Scene& scene){
-        if(entityType == EntityType::PrefabChild) ImGui::BeginDisabled(true);
+        bool beginDisable = entityType == EntityType::PrefabChild;
+        if(entityType == EntityType::PrefabRoot && transform.HasParent() && scene.GetComponent<InfoComponent>(transform.Parent()).Type() == EntityType::PrefabChild)
+            beginDisable = true;
+
+        if(beginDisable) ImGui::BeginDisabled(true);
         
         /*if(scene.HasComponent<RigidbodyComponent>(e)){
             RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
@@ -230,7 +234,7 @@ void InspectorPanel::DrawComponents(Entity entity){
         if(ImGui::DragFloat3("Scale", s, 0.5f, 0, 0, "%.4f")){
             transform.LocalScale(Vector3(s[0], s[1], s[2]));
         } 
-        if(entityType == EntityType::PrefabChild) ImGui::EndDisabled();
+        if(beginDisable) ImGui::EndDisabled();
     });
 
     ImGui::Spacing();
