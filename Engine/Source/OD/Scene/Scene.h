@@ -291,7 +291,7 @@ public:
     inline auto& GetExecutor(){ return executor; }
     inline auto& GetTaskflow(){ return taskflow; }
 private:
-    void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity root, std::string prefabPath, bool isRoot = false);
+    void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(Entity entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);

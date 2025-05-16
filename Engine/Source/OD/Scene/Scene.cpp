@@ -509,16 +509,24 @@ void Scene::Draw(){
     Graphics::End();
 }
 
-void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, entt::entity entity, std::string prefabPath, bool isRoot){
-    entities.push_back(entity);
+void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity entity, std::string prefabPath, bool isRoot){
+    //entities.push_back(entity);
 
     InfoComponent& infoComponent = registry.get<InfoComponent>(entity);
+
+    if(isRoot == false && infoComponent.entityType == EntityType::PrefabRoot){
+        allEntities.push_back(entity);
+        return;
+    }
+    entities.push_back(entity);
+    allEntities.push_back(entity);
+
     infoComponent.entityType = isRoot ? EntityType::PrefabRoot : EntityType::PrefabChild;
     infoComponent.prefabPath = prefabPath;
 
     TransformComponent& trans = registry.get<TransformComponent>(entity);
     for(auto e: trans.children){
-        _AddEntityPrefab(registry, entities, e, std::string(""));
+        _AddEntityPrefab(registry, entities, allEntities, e, std::string(""));
     }
 }
 
@@ -552,8 +560,8 @@ void Scene::Save(const char* path, Entity root){
         }
     } else {
         //Assert(false);
-        _AddEntityPrefab(registry, entities, root, path, true);
-        entitiesAll = std::vector<Entity>(entities.begin(), entities.end());
+        _AddEntityPrefab(registry, entities, entitiesAll, root, path, true);
+        //entitiesAll = std::vector<Entity>(entities.begin(), entities.end());
     }
 
     archive(cereal::make_nvp("Entities", entitiesAll));
