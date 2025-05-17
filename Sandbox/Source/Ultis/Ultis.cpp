@@ -67,7 +67,7 @@ Ref<Material> LoadMaterial1(){
 
    //if(FileExist(path) == false){
       Ref<Material> m = CreateRef<Material>();
-      m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
+      m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
       m->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.jpg"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));                 
       return m;

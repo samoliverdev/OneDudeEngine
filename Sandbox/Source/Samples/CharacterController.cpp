@@ -130,9 +130,9 @@ struct PlayerController: public Script{
         }
 
         if(moveDir == Vector3Zero){
-            if(anim.controller.GetCurrentClip() != idleAnimation) anim.FadeTo(idleAnimation, 0.1f);
+            if(anim.GetLayer(0).controller.GetCurrentClip() != idleAnimation) anim.FadeTo(idleAnimation, 0.1f);
         } else {
-            if(anim.controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, 0.1f);
+            if(anim.GetLayer(0).controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, 0.1f);
         }
 
         AudioSourceComponent& audioSource = scene->GetComponent<AudioSourceComponent>(entity);

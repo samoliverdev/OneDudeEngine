@@ -132,6 +132,9 @@ set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
+set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+
 if(EMSCRIPTEN)
     message("Using emscripten!2")
     message(${ENGINE_SHARED_LIBRARY})
@@ -146,6 +149,7 @@ if(USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
 add_subdirectory(Engine/ThirdParty/bullet3)
+add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
@@ -271,6 +275,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/glfw/include/
     Engine/ThirdParty/assimp/include/
     Engine/ThirdParty/bullet3/src
+    Engine/ThirdParty/JoltPhysics-5.3.0/
     Engine/ThirdParty/entt/
     Engine/ThirdParty/soloud/include/
     Engine/ThirdParty/freetype/include/
@@ -296,6 +301,7 @@ target_link_libraries(Engine PUBLIC
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
+    Jolt
     efsw
     #glslang glslang-default-resource-limits
     #spirv-reflect-static

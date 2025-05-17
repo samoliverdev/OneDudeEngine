@@ -9,7 +9,7 @@
 //#include <new>
 //#include <cstddef>
 
-#undef NDEBUG
+//#undef NDEBUG
 #include <assert.h>
 
 // runtime assertion

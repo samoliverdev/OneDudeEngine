@@ -21,10 +21,11 @@ void PhysicsCubeS::OnStart(){
     //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
     //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
     //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
-    cubeModel->materials[0] = LoadMaterial1();
+    //for(auto& i:cubeModel->materials) i = LoadMaterial1();
 
     ModelRendererComponent& renderer = scene->AddOrGetComponent<ModelRendererComponent>(entity);
     renderer.SetModel(cubeModel);
+    for(auto& i: renderer.GetMaterialsOverride()) i = LoadMaterial1();
 
     RigidbodyComponent& physicObject = scene->AddOrGetComponent<RigidbodyComponent>(entity);
     physicObject.NeverSleep(true);
@@ -58,9 +59,9 @@ void PhysicsSample::OnInit(){
 
     Scene* scene = SceneManager::Get().NewScene();
 
-    scene->Load("test.scene");
+    /*scene->Load("test.scene");
     Application::AddModule<Editor>();
-    return;
+    return;*/
 
     /*Entity text = scene->AddEntity("Text");
     scene->GetComponent<TransformComponent>(text).LocalPosition(Vector3(25.0f, 25.0f, 0));
@@ -149,7 +150,7 @@ void PhysicsSample::OnInit(){
     Entity floorEntity = scene->AddEntity("Floor");
     ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
     floorRenderer.SetModel(floorModel);
-    floorRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
+    for(auto& i: floorRenderer.GetMaterialsOverride()) i = LoadFloorMaterial();
     //floorRenderer.GetMaterialsOverride()[1] = LoadFloorMaterial();
     RigidbodyComponent& floorEntityP = scene->AddComponent<RigidbodyComponent>(floorEntity);
     floorEntityP.SetShape(CollisionShape::BoxShape({25,0.1f,25}));
@@ -161,7 +162,7 @@ void PhysicsSample::OnInit(){
     Entity character2Entity = scene->AddEntity("MainCube");
     ModelRendererComponent& character2Renderer = scene->AddComponent<ModelRendererComponent>(character2Entity);
     character2Renderer.SetModel(cubeModel);
-    character2Renderer.GetMaterialsOverride()[0] = LoadRockMaterial();
+    for(auto& i: character2Renderer.GetMaterialsOverride()) i = LoadRockMaterial();
     //character2Renderer.GetMaterialsOverride()[1] = LoadRockMaterial();
     RigidbodyComponent& physicObject = scene->AddComponent<RigidbodyComponent>(character2Entity);
     physicObject.SetShape(CollisionShape::BoxShape({1,1,1}));
@@ -184,11 +185,11 @@ void PhysicsSample::OnInit(){
     joint.pivot = Vector3{-3, 13, 0};
     joint.rb = character2Entity2.Id();*/
 
-    Entity trigger = scene->AddEntity("Trigger");
+    /*Entity trigger = scene->AddEntity("Trigger");
     RigidbodyComponent& _trigger = scene->AddComponent<RigidbodyComponent>(trigger);
     _trigger.SetShape(CollisionShape::BoxShape({4,1,4}));
     _trigger.SetType(RigidbodyComponent::Type::Trigger);
-    _trigger.NeverSleep(true);
+    _trigger.NeverSleep(true);*/
 
     // Fixme: Not Work why play mode clone the scene and theirs system, Work only if Start Scene now
     /*scene->GetSystem<PhysicsSystem>()->AddOnTriggerEnterCallback([](Scene& scene, Entity trigger, Entity other){

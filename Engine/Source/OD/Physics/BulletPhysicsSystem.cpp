@@ -1,4 +1,6 @@
 #include "PhysicsSystem.h"
+
+#if defined(UseBulletPhysics)
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Instrumentor.h"
@@ -1329,3 +1331,4 @@ void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& c){
 #pragma endregion
 
 }
+#endif

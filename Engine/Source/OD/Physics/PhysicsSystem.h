@@ -4,17 +4,22 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
 
+//#define UseBulletPhysics
+#define UseJoltPhysics
+
+#if defined(UseBulletPhysics)
 class btRigidBody;
 class btTriangleMesh;
 class btBvhTriangleMeshShape;
 class btHeightfieldTerrainShape;
 class btCollisionObject;
+#endif
 
 namespace OD{
 
-struct PhysicObject;
-struct JointObject;
-struct PhysicsWorld;
+//struct PhysicObject;
+//struct JointObject;
+//struct PhysicsWorld;
 
 //using MeshShapeData = btBvhTriangleMeshShape;
 class MeshShapeData;
@@ -153,7 +158,7 @@ private:
     float mass = 1;
     bool neverSleep = false;
 
-    PhysicObject* data = nullptr; 
+    class PhysicObject* data = nullptr;
 
     void UpdateSettings();
 };
@@ -191,7 +196,10 @@ struct OD_API CollisionBodyComponent{
 private:
     CollisionShape shape;
     bool neverSleep = false;
-    PhysicObject* data = nullptr; 
+
+    #if defined(UseBulletPhysics)
+    class PhysicObject* data = nullptr; 
+    #endif
 
     void UpdateSettings();
 };
@@ -249,7 +257,10 @@ struct OD_API JointComponent{
     }*/
 
 private:
-    JointObject* data = nullptr;
+
+    #if defined(UseBulletPhysics)
+    class JointObject* data = nullptr;
+    #endif
 };
 
 struct OD_API HeightmapColliderComponent{
@@ -268,9 +279,11 @@ struct OD_API HeightmapColliderComponent{
     void serialize(Archive & ar){}
     
 private:
+
+    #if defined(UseBulletPhysics)
     btHeightfieldTerrainShape* shape = nullptr;
-    //btRigidBody* body = nullptr;
     btCollisionObject* body = nullptr;
+    #endif
 };
 
 struct OD_API RayResult{
@@ -338,7 +351,9 @@ private:
     void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveJoint(Entity entity, JointComponent& c);
 
-    PhysicsWorld* physicsWorld;
+    //#if defined(UseBulletPhysics)
+    class PhysicsWorld* physicsWorld;
+    //#endif
     
     std::vector<OnCollisionCallback> onCollisionEnterCallbacks;
     std::vector<OnCollisionCallback> onCollisionExitCallbacks;
