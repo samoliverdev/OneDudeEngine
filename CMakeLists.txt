@@ -149,11 +149,14 @@ if(USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
 add_subdirectory(Engine/ThirdParty/bullet3)
-add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
+
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
 add_subdirectory(Engine/ThirdParty/efsw)
+
+add_compile_definitions(JPH_DEBUG_RENDERER)
+add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
 
 if(SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glslang)

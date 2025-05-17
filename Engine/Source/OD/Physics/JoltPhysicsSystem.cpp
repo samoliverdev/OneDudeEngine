@@ -10,6 +10,8 @@
 #include <set>
 #include <algorithm>
 
+#define JPH_DEBUG_RENDERER
+
 #include <Jolt/Jolt.h>
 // Jolt includes
 #include <Jolt/RegisterTypes.h>
@@ -20,8 +22,12 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Renderer/DebugRenderer.h>
+#include <Jolt/Renderer/DebugRendererSimple.h>
 
 #include <iostream>
 #include <cstdarg>
@@ -49,6 +55,12 @@ using namespace JPH::literals;
 
 // We're also using STL classes in this example
 using namespace std;
+
+inline Vector3 FromJolt(JPH::Vec3 v){ return Vector3(v.GetX(), v.GetY(), v.GetZ()); }
+inline Quaternion FromJolt(JPH::Quat q){ return Quaternion(q.GetX(), q.GetY(), q.GetZ(), q.GetW()); }
+
+inline JPH::Vec3 ToJolt(Vector3 v){ return JPH::Vec3(v.x, v.y, v.z); }
+inline JPH::Quat ToJolt(Quaternion q){ return JPH::Quat(q.x, q.y, q.z, q.w); }
 
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char *inFMT, ...){
@@ -201,6 +213,21 @@ public:
 	}
 };
 
+class MyDebugRenderer: public DebugRendererSimple {
+public:
+    virtual void DrawLine(JPH::RVec3 from, JPH::RVec3 to, JPH::Color color) override {
+        // Aqui você converte os vetores para seu tipo de vetor e desenha uma linha
+        Graphics::DrawLine(
+            FromJolt(from), 
+            FromJolt(to), 
+            Vector3(color.r, color.g, color.b),
+            2
+        );
+    }
+
+	virtual void DrawText3D(JPH::RVec3Arg inPosition, const string_view &inString, JPH::ColorArg inColor, float inHeight) override{}
+};
+
 class MeshShapeData{
 public:
     MeshShapeData() = default;
@@ -225,7 +252,10 @@ struct PhysicsWorld{
     TempAllocatorImpl* tempAllocator;
     JobSystemThreadPool jobSystem;
 
+	MyDebugRenderer* renderer = nullptr;
+
     ~PhysicsWorld(){
+		delete renderer;
         delete tempAllocator;
     }
 };
@@ -233,13 +263,9 @@ struct PhysicsWorld{
 class PhysicObject{
 public:
     BodyID bodyID;
+	PhysicsWorld* world = nullptr;
+	bool isDirt = false;
 };
-
-inline Vector3 FromJolt(JPH::Vec3 v){ return Vector3(v.GetX(), v.GetY(), v.GetZ()); }
-inline Quaternion FromJolt(JPH::Quat q){ return Quaternion(q.GetX(), q.GetY(), q.GetZ(), q.GetW()); }
-
-inline JPH::Vec3 ToJolt(Vector3 v){ return JPH::Vec3(v.x, v.y, v.z); }
-inline JPH::Quat ToJolt(Quaternion q){ return JPH::Quat(q.x, q.y, q.z, q.w); }
 
 #pragma endregion
 
@@ -258,23 +284,139 @@ void CollisionBodyComponent::UpdateSettings(){
 #pragma region RigidbodyComponent
 
 void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
+	RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
 
+    const char* optionsString[] = {"Dynamic", "Static", "Kinematic", "Trigger"};
+    const char* curOptionString = optionsString[(int)rb.GetType()];
+    if(ImGui::BeginCombo("Type", curOptionString)){
+        for(int i = 0; i < 4; i++){
+            bool isSelected = curOptionString == optionsString[i];
+            if(ImGui::Selectable(optionsString[i], isSelected)){
+                curOptionString = optionsString[i];
+                rb.SetType((RigidbodyComponent::Type)i);
+            }
+
+            if(isSelected) ImGui::SetItemDefaultFocus();
+        }
+
+        ImGui::EndCombo();
+    }
+
+    float mass = rb.Mass();
+    if(ImGui::DragFloat("mass", &mass)){
+        rb.Mass(mass);
+    }
+
+    bool neverSleep = rb.NeverSleep();
+    if(ImGui::Checkbox("neverSleep", &neverSleep)){
+        rb.NeverSleep(neverSleep);
+    }
+
+    CollisionShape shape = rb.GetShape();
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("CollisionShape");
+
+    CollisionShape::Type _shape = rb.GetShape().type;
+    if(ImGui::DrawEnumCombo<CollisionShape::Type>("CollisionShape", &_shape)){
+        shape.type = _shape;
+        rb.SetShape(shape);
+    }
+
+    /*const char* shapeTypeString[] = {"Box", "Sphere", "Capsule"};
+    const char* curShapeTypeString = shapeTypeString[(int)rb.GetShape().type];
+    if(ImGui::BeginCombo("CollisionShape", curShapeTypeString)){
+        for(int i = 0; i < 2; i++){
+            bool isSelected = curShapeTypeString == shapeTypeString[i];
+            if(ImGui::Selectable(shapeTypeString[i], isSelected)){
+                curShapeTypeString = shapeTypeString[i];
+                shape.type = (CollisionShape::Type)i;
+                rb.SetShape(shape);
+            }
+
+            if(isSelected) ImGui::SetItemDefaultFocus();
+        }
+
+        ImGui::EndCombo();
+    }*/
+
+    shape = rb.GetShape();
+
+    if(rb.shape.type == CollisionShape::Type::Box){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _shape[] = {shape.size.x, shape.size.y, shape.size.z};
+        if(ImGui::DragFloat3("size", _shape)){
+            shape.size = Vector3(_shape[0], _shape[1], _shape[2]);
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Sphere){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
+
+    if(rb.shape.type == CollisionShape::Type::Capsule){
+        bool update = false;
+        
+        float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+        float _radius = shape.radius;
+        if(ImGui::DragFloat("radius", &_radius)){
+            shape.radius = _radius;
+            update = true;
+        }
+        float _height = shape.height;
+        if(ImGui::DragFloat("height", &_height)){
+            shape.height = _height;
+            update = true;
+        }
+
+        if(update) rb.SetShape(shape);
+    }
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
     shape = inShape;
+	UpdateSettings();
 }
 
 void RigidbodyComponent::UpdateSettings(){
-
+	if(data == nullptr) return;
+	data->isDirt = true;
 }
 
 void RigidbodyComponent::Mass(float m){
-
+	mass = m;
+	UpdateSettings();
 }
 
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
     type = value;
+	UpdateSettings();
 }
 
 void RigidbodyComponent::NeverSleep(bool value){
@@ -282,39 +424,57 @@ void RigidbodyComponent::NeverSleep(bool value){
 }
 
 Vector3 RigidbodyComponent::Position(){
-    return Vector3Zero;
+	if(data == nullptr) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetPosition(data->bodyID));
 }
 
 void RigidbodyComponent::Position(Vector3 position){
-
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetPosition(data->bodyID, ToJolt(position), EActivation::Activate);
 }
 
 Quaternion RigidbodyComponent::Rotation(){
-    return QuaternionIdentity;
+	if(data == nullptr) return QuaternionIdentity;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetRotation(data->bodyID));
 }
 
 void RigidbodyComponent::Rotation(Quaternion rotation){
-
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetRotation(data->bodyID, ToJolt(rotation), EActivation::Activate);
 }
 
 Vector3 RigidbodyComponent::Velocity(){
-    return Vector3Zero;
+    if(data == nullptr) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetLinearVelocity(data->bodyID));
 }
 
 void RigidbodyComponent::Velocity(Vector3 v){
-    
+    if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetLinearVelocity(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::ApplyForce(Vector3 v){
-    
+    if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddForce(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::ApplyTorque(Vector3 v){
-    
+    if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddTorque(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::ApplyImpulse(Vector3 v){
-    
+    if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddImpulse(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
@@ -404,6 +564,9 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
     physicsWorld->tempAllocator = new TempAllocatorImpl(10 * 1024 * 1024);
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
+	physicsWorld->renderer = new MyDebugRenderer();
+
+	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
@@ -505,12 +668,13 @@ PhysicsSystem::~PhysicsSystem(){
 
     UnregisterTypes();
 
+	JPH::DebugRenderer::sInstance = nullptr;
+
     delete Factory::sInstance;
 	Factory::sInstance = nullptr;
 
     delete physicsWorld;
 }
-
 
 void PhysicsSystem::PhysicsUpdate(){
     if(GetScene()->Running() == false) return;
@@ -529,7 +693,16 @@ void PhysicsSystem::PhysicsUpdate(){
         TransformComponent& transform = view.get<TransformComponent>(e);
         InfoComponent& info = view.get<InfoComponent>(e);
 
-        if(rb.data == nullptr) AddRigidbody(e, rb, transform, info);
+        if(rb.data == nullptr){
+			rb.data = new PhysicObject();
+			rb.data->world = physicsWorld;
+			AddRigidbody(e, rb, transform, info);
+		}
+		if(rb.data->isDirt){
+			rb.data->isDirt = false;
+			RemoveRigidbody(e, rb);
+			AddRigidbody(e, rb, transform, info);
+		}
         Assert(rb.data != nullptr);
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Static){
@@ -546,6 +719,7 @@ void PhysicsSystem::PhysicsUpdate(){
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
+	ShowDebugGizmos();
     
 }
 
@@ -554,7 +728,8 @@ void PhysicsSystem::CheckForCollisionEvents(){
 }
 
 void PhysicsSystem::ShowDebugGizmos(){
-   
+	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer);
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
@@ -599,10 +774,7 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
     if(rb.data == nullptr) return;
 
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
-    BodyInterface &bodyInterface = physicsSystem->physicsWorld->physicsSystem.GetBodyInterface();
-    
-    bodyInterface.RemoveBody(rb.data->bodyID);
-    bodyInterface.DestroyBody(rb.data->bodyID);
+    physicsSystem->RemoveRigidbody(e, rb);
     delete rb.data;
 }
 
@@ -610,24 +782,38 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
     EMotionType type = EMotionType::Dynamic;
-    if(rb.type != RigidbodyComponent::Type::Dynamic) type = EMotionType::Static;
+    if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
+	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
 
-    Shape* shape = nullptr;
-    if(rb.shape.type == CollisionShape::Type::Box){
-        shape = new BoxShape(ToJolt(rb.shape.size));
-    } else if(rb.shape.type == CollisionShape::Type::Sphere){
-        shape = new SphereShape(rb.shape.radius);
-    }
+    JPH::Ref<Shape> shape = nullptr;
+    if (rb.shape.type == CollisionShape::Type::Box) {
+		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
+		shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	}
+	else if (rb.shape.type == CollisionShape::Type::Sphere) {
+		SphereShapeSettings shapeSettings(rb.shape.radius);
+		shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	}
+	else if (rb.shape.type == CollisionShape::Type::Capsule) {
+		CapsuleShapeSettings shapeSettings(rb.shape.height * 0.5f, rb.shape.radius);
+		shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	}
 
-    rb.data = new PhysicObject();
-    BodyCreationSettings sphere_settings(
-        shape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
+	RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
+
+    BodyCreationSettings settings(
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
     );
-    rb.data->bodyID = bodyInterface.CreateAndAddBody(sphere_settings, EActivation::Activate);
+    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
-    
+	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+    bodyInterface.RemoveBody(rb.data->bodyID);
+    bodyInterface.DestroyBody(rb.data->bodyID);
 }
 
 void PhysicsSystem::OnRemoveCollisionBody(entt::registry& r, entt::entity e){
