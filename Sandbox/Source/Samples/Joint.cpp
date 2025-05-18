@@ -33,20 +33,21 @@ void JointSample::OnInit(){
     scene.GetComponent<TransformComponent>(e).LocalScale(Vector3(10, 1, 10));
     ModelRendererComponent& _meshRenderer = scene.AddComponent<ModelRendererComponent>(e);
     _meshRenderer.SetModel(floorModel);
-    _meshRenderer.GetMaterialsOverride()[0] = LoadFloorMaterial();
+    for(auto& i: _meshRenderer.GetMaterialsOverride()) i = LoadFloorMaterial();
     RigidbodyComponent& rb = scene.AddComponent<RigidbodyComponent>(e);
     rb.SetShape(CollisionShape::BoxShape({10, 0.1f, 10}));
+    rb.SetType(RigidbodyComponent::Type::Static);
     rb.Mass(0);
 
     ///////////////////
-    Entity e2 = scene.AddEntity("Cube");
+    /*Entity e2 = scene.AddEntity("Cube");
     scene.GetComponent<TransformComponent>(e2).Position(Vector3(0, 1, 0));
     scene.GetComponent<TransformComponent>(e2).LocalScale(Vector3(1, 1, 1));
     ModelRendererComponent& _meshRenderer2 = scene.AddComponent<ModelRendererComponent>(e2);
     _meshRenderer2.SetModel(cubeModel);
-    _meshRenderer2.GetMaterialsOverride()[0] = LoadRockMaterial();
+    for(auto& i: _meshRenderer2.GetMaterialsOverride()) i = LoadRockMaterial();
     RigidbodyComponent& rb2 = scene.AddComponent<RigidbodyComponent>(e2);
-    rb2.SetShape(CollisionShape::BoxShape({0.5f, 1, 0.5f}));
+    rb2.SetShape(CollisionShape::BoxShape({0.5f, 1, 0.5f}));*/
     /*
     JointComponent& j = scene.AddComponent<JointComponent>(e2);
     j.pivot = {0, -0.5f, 0};
@@ -56,12 +57,12 @@ void JointSample::OnInit(){
     */
     ///////////////////
 
-    Entity e3 = scene.AddEntity("Cube");
+    /*Entity e3 = scene.AddEntity("Cube");
     scene.GetComponent<TransformComponent>(e3).Position(Vector3(0, 2.5f, 0));
     scene.GetComponent<TransformComponent>(e3).LocalScale(Vector3(1, 1, 1));
     ModelRendererComponent& _meshRenderer3 = scene.AddComponent<ModelRendererComponent>(e3);
     _meshRenderer3.SetModel(cubeModel);
-    _meshRenderer3.GetMaterialsOverride()[0] = LoadRockMaterial();
+    for(auto& i: _meshRenderer3.GetMaterialsOverride()) i = LoadRockMaterial();
     RigidbodyComponent& rb3 = scene.AddComponent<RigidbodyComponent>(e3);
     rb3.SetShape(CollisionShape::BoxShape({0.2f, 2, 0.2f}));
     JointComponent& j2 = scene.AddComponent<JointComponent>(e3);
@@ -76,7 +77,7 @@ void JointSample::OnInit(){
     scene.GetComponent<TransformComponent>(e4).LocalScale(Vector3(1, 1, 1));
     ModelRendererComponent& _meshRenderer4 = scene.AddComponent<ModelRendererComponent>(e4);
     _meshRenderer4.SetModel(cubeModel);
-    _meshRenderer4.GetMaterialsOverride()[0] = LoadRockMaterial();
+    for(auto& i: _meshRenderer4.GetMaterialsOverride()) i = LoadRockMaterial();
     RigidbodyComponent& rb4 = scene.AddComponent<RigidbodyComponent>(e4);
     rb4.SetShape(CollisionShape::BoxShape({0.2f, 2, 0.2f}));
     JointComponent& j3 = scene.AddComponent<JointComponent>(e4);
@@ -84,7 +85,29 @@ void JointSample::OnInit(){
     j3.connectedBody = e3;
     j3.disableSelfCollision = true;
     j3.angularLowerLimit = {-45, -0, -0};
-    j3.angularUpperLimit = {45, 0, 0};
+    j3.angularUpperLimit = {45, 0, 0};*/
+
+    Entity ragdoll = scene.AddEntity("Ragdoll");
+    SkinnedModelRendererComponent& skinnedRagdoll = scene.AddComponent<SkinnedModelRendererComponent>(ragdoll);
+    skinnedRagdoll.SetModel(AssetManager::Get().LoadAsset<Model>("Sandbox/Models/RagdollTest.glb"));
+    for(auto& i: skinnedRagdoll.GetMaterialsOverride()) i = LoadRockMaterial();
+    RagdollComponent& ragdollComp = scene.AddComponent<RagdollComponent>(ragdoll);
+    ragdollComp.parts.resize(3);
+    ragdollComp.parts[0] = { CollisionShape::BoxShape(Vector3(0.2f, 0.666667f, 0.2f), {0, 0.666667f * 0.5f, 0}), -1, 4 };
+    ragdollComp.parts[1] = { CollisionShape::BoxShape(Vector3(0.2f, 0.666667f, 0.2f), {0, 0.666667f * 0.5f, 0}), 0, 5 };
+    ragdollComp.parts[2] = { CollisionShape::BoxShape(Vector3(0.2f, 0.666667f, 0.2f), {0, 0.666667f * 0.5f, 0}), 1, 6 };
+
+    ragdollComp.parts[1].twistAxis = {1, 0, 0};
+    ragdollComp.parts[1].twistAngleMin = -90;
+    ragdollComp.parts[1].twistAngleMax = 90;
+    ragdollComp.parts[1].normalAngle = 0;
+    ragdollComp.parts[1].planeAngle = 0;
+
+    ragdollComp.parts[2].twistAxis = {1, 0, 0};
+    ragdollComp.parts[2].twistAngleMin = 0;
+    ragdollComp.parts[2].twistAngleMax = 45;
+    ragdollComp.parts[2].normalAngle = 0;
+    ragdollComp.parts[2].planeAngle = 0;
 
     /*scene.AddEntityWith<TransformComponent, ModelRendererComponent>
     ("Plane", [&](auto& transform, auto& meshRenderer){});*/

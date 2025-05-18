@@ -7,10 +7,11 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include <set>
 #include <algorithm>
 
-#define JPH_DEBUG_RENDERER
+//#define JPH_DEBUG_RENDERER
 
 #include <Jolt/Jolt.h>
 // Jolt includes
@@ -26,6 +27,8 @@
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Ragdoll/Ragdoll.h>
+#include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -37,6 +40,7 @@ namespace OD{
 
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
+	SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent");
     SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent");
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent");
@@ -265,6 +269,10 @@ public:
     BodyID bodyID;
 	PhysicsWorld* world = nullptr;
 	bool isDirt = false;
+};
+
+struct RagdollObject{
+	JPH::Ref<Ragdoll> ragdoll;
 };
 
 #pragma endregion
@@ -570,93 +578,6 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
-
-	// A body activation listener gets notified when bodies activate and go to sleep
-	// Note that this is called from a job so whatever you do here needs to be thread safe.
-	// Registering one is entirely optional.
-	/*MyBodyActivationListener body_activation_listener;
-	physics_system.SetBodyActivationListener(&body_activation_listener);
-
-	// A contact listener gets notified when bodies (are about to) collide, and when they separate again.
-	// Note that this is called from a job so whatever you do here needs to be thread safe.
-	// Registering one is entirely optional.
-	MyContactListener contact_listener;
-	physics_system.SetContactListener(&contact_listener);
-
-	// The main way to interact with the bodies in the physics system is through the body interface. There is a locking and a non-locking
-	// variant of this. We're going to use the locking version (even though we're not planning to access bodies from multiple threads)
-	BodyInterface &body_interface = physics_system.GetBodyInterface();
-
-	// Next we can create a rigid body to serve as the floor, we make a large box
-	// Create the settings for the collision volume (the shape).
-	// Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-	BoxShapeSettings floor_shape_settings(Vec3(100.0f, 1.0f, 100.0f));
-	floor_shape_settings.SetEmbedded(); // A ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
-
-	// Create the shape
-	ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
-	ShapeRefC floor_shape = floor_shape_result.Get(); // We don't expect an error here, but you can check floor_shape_result for HasError() / GetError()
-
-	// Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
-	BodyCreationSettings floor_settings(floor_shape, RVec3(0.0_r, -1.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Static, PhysicsLayers::NON_MOVING);
-
-	// Create the actual rigid body
-	Body *floor = body_interface.CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
-
-	// Add it to the world
-	body_interface.AddBody(floor->GetID(), EActivation::DontActivate);
-
-	// Now create a dynamic body to bounce on the floor
-	// Note that this uses the shorthand version of creating and adding a body to the world
-	BodyCreationSettings sphere_settings(new SphereShape(0.5f), RVec3(0.0_r, 2.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Dynamic, PhysicsLayers::MOVING);
-	BodyID sphere_id = body_interface.CreateAndAddBody(sphere_settings, EActivation::Activate);
-
-	// Now you can interact with the dynamic body, in this case we're going to give it a velocity.
-	// (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-	body_interface.SetLinearVelocity(sphere_id, Vec3(0.0f, -5.0f, 0.0f));
-
-	// We simulate the physics world in discrete time steps. 60 Hz is a good rate to update the physics system.
-	const float cDeltaTime = 1.0f / 60.0f;
-
-	// Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
-	// You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
-	// Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-	physics_system.OptimizeBroadPhase();
-
-	// Now we're ready to simulate the body, keep simulating until it goes to sleep
-	uint step = 0;
-	while(body_interface.IsActive(sphere_id)){
-		// Next step
-		++step;
-
-		// Output current position and velocity of the sphere
-		RVec3 position = body_interface.GetCenterOfMassPosition(sphere_id);
-		Vec3 velocity = body_interface.GetLinearVelocity(sphere_id);
-		cout << "Step " << step << ": Position = (" << position.GetX() << ", " << position.GetY() << ", " << position.GetZ() << "), Velocity = (" << velocity.GetX() << ", " << velocity.GetY() << ", " << velocity.GetZ() << ")" << endl;
-
-		// If you take larger steps than 1 / 60th of a second you need to do multiple collision steps in order to keep the simulation stable. Do 1 collision step per 1 / 60th of a second (round up).
-		const int cCollisionSteps = 1;
-
-		// Step the world
-		physics_system.Update(cDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
-	}
-
-	// Remove the sphere from the physics system. Note that the sphere itself keeps all of its state and can be re-added at any time.
-	body_interface.RemoveBody(sphere_id);
-
-	// Destroy the sphere. After this the sphere ID is no longer valid.
-	body_interface.DestroyBody(sphere_id);
-
-	// Remove and destroy the floor
-	body_interface.RemoveBody(floor->GetID());
-	body_interface.DestroyBody(floor->GetID());
-
-	// Unregisters all types with the factory and cleans up the default material
-	// Destroy the factory
-    UnregisterTypes();
-
-    delete Factory::sInstance;
-	Factory::sInstance = nullptr;*/
 }
 
 void* PhysicsSystem::GetInternlWorld(){
@@ -674,6 +595,110 @@ PhysicsSystem::~PhysicsSystem(){
 	Factory::sInstance = nullptr;
 
     delete physicsWorld;
+}
+
+RagdollSettings* CreateRagdollSettings(RagdollComponent& ragdoll, TransformComponent& trans, Skeleton& skinnedSkeleton){
+	auto GetShape = [](CollisionShape shape) -> Shape* {
+		if(shape.type == CollisionShape::Type::Box) return new BoxShape(ToJolt(shape.size * 0.5f));
+		if(shape.type == CollisionShape::Type::Sphere) return new SphereShape(shape.radius);
+		if(shape.type == CollisionShape::Type::Capsule) return new CapsuleShape(shape.height * 0.5f, shape.radius);
+		Assert(false);
+		return nullptr;
+	};
+
+	// Create skeleton
+	JPH::Ref<JPH::Skeleton> skeleton = new JPH::Skeleton;
+
+	//std::vector<JPH::Ref<Shape>> shapes;
+	//shapes.resize(ragdoll.parts.size());
+
+	//std::vector<RVec3> positions;// Positions of body parts in world space
+	//positions.resize(ragdoll.parts.size());
+
+	//std::vector<Quat> rotations;// Rotations of body parts in world space
+	//rotations.resize(ragdoll.parts.size());
+
+	//std::vector<RVec3> constraint_positions(ragdoll.parts.size());// World space constraint positions
+
+	// World space twist axis directions
+	//std::vector<Vec3> twist_axis(ragdoll.parts.size());
+
+	// Constraint limits
+	//std::vector<float> twist_angle(ragdoll.parts.size());
+	//std::vector<float> normal_angle(ragdoll.parts.size());
+	//std::vector<float> plane_angle(ragdoll.parts.size());
+
+	for(int i = 0; i < ragdoll.parts.size(); i++){
+		Assert(ragdoll.parts[i].skinnedSkeletonIndex > 0);
+		//Assert(ragdoll.parts[i].parent > 0);
+
+		
+		if(ragdoll.parts[i].parent >= 0)
+			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex), ragdoll.parts[i].parent);
+		else
+			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex));
+		
+		/*shapes[i] = GetShape(ragdoll.parts[i].shape);
+
+		Transform boneTrans = skinnedSkeleton.GetBindPose().GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex);
+
+		positions[i] = ToJolt(trans.TransformPoint(boneTrans.LocalPosition() + ragdoll.parts[i].shape.center));
+		rotations[i] = ToJolt(boneTrans.LocalRotation());
+
+		constraint_positions[i] = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[i].constraintPos)));
+		twist_axis[i] = ToJolt(trans.TransformDirection(ragdoll.parts[i].twistAxis));
+		twist_angle[i] = ragdoll.parts[i].twistAngle;
+		normal_angle[i] = ragdoll.parts[i].normalAngle;
+		plane_angle[i] = ragdoll.parts[i].planeAngle;*/
+	}
+
+	// Create ragdoll settings
+	RagdollSettings *settings = new RagdollSettings;
+	settings->mSkeleton = skeleton;
+	settings->mParts.resize(skeleton->GetJointCount());
+	for(int p = 0; p < skeleton->GetJointCount(); ++p){
+		auto shapes = GetShape(ragdoll.parts[p].shape);
+		Transform boneTrans = skinnedSkeleton.GetBindPose().GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
+		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition() + ragdoll.parts[p].shape.center));
+		auto rotations = ToJolt(boneTrans.LocalRotation());
+		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
+		auto twist_axis = ToJolt(trans.TransformDirection(ragdoll.parts[p].twistAxis));
+		//auto twist_angle = ragdoll.parts[p].twistAngle;
+		auto normal_angle = ragdoll.parts[p].normalAngle;
+		auto plane_angle = ragdoll.parts[p].planeAngle;
+
+		RagdollSettings::Part &part = settings->mParts[p];
+		part.SetShape(shapes);
+		part.mPosition = positions;
+		part.mRotation = rotations;
+		part.mMotionType = EMotionType::Dynamic;
+		part.mObjectLayer = PhysicsLayers::MOVING;
+
+		// First part is the root, doesn't have a parent and doesn't have a constraint
+		if (p > 0){
+			SwingTwistConstraintSettings *constraint = new SwingTwistConstraintSettings;
+			constraint->mDrawConstraintSize = 0.1f;
+			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
+			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
+			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = Vec3::sAxisZ();
+			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
+			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
+			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
+			constraint->mPlaneHalfConeAngle = DegreesToRadians(plane_angle);
+			part.mToParent = constraint;
+		}
+	}
+
+	// Optional: Stabilize the inertia of the limbs
+	settings->Stabilize();
+
+	// Disable parent child collisions so that we don't get collisions between constrained bodies
+	settings->DisableParentChildCollisions();
+
+	// Calculate the map needed for GetBodyIndexToConstraintIndex()
+	settings->CalculateBodyIndexToConstraintIndex();
+
+	return settings;
 }
 
 void PhysicsSystem::PhysicsUpdate(){
@@ -716,6 +741,16 @@ void PhysicsSystem::PhysicsUpdate(){
             bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
         }
     }
+
+	auto view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
+	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
+		if(ragdoll.data == nullptr){
+			ragdoll.data = new RagdollObject();
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(ragdoll, trans, skinned.GetModel()->skeleton);
+			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
+			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+		}
+	}
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){

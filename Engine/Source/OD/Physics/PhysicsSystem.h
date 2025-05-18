@@ -163,6 +163,33 @@ private:
     void UpdateSettings();
 };
 
+struct OD_API RagdollComponent{
+    friend struct PhysicsSystem;
+
+    struct Part{
+        CollisionShape shape;
+        int parent = -1;
+        int skinnedSkeletonIndex = -1;
+
+        Vector3 pos = Vector3Zero;
+        Quaternion rot = QuaternionIdentity;
+
+        Vector3 constraintPos = Vector3Zero;
+        Vector3 twistAxis = Vector3Zero;
+        float twistAngleMin = 0;
+        float twistAngleMax = 0;
+        float normalAngle = 0;
+        float planeAngle = 0;
+    };
+
+    std::vector<Part> parts;
+    template <class Archive>
+    void serialize(Archive & ar){}
+
+private:
+    struct RagdollObject* data = nullptr;
+};
+
 struct OD_API CollisionBodyComponent{
     friend struct PhysicsSystem;
 
