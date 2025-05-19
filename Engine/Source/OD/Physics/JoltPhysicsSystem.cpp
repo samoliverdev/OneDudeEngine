@@ -21,10 +21,14 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Geometry/Triangle.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Ragdoll/Ragdoll.h>
@@ -220,6 +224,12 @@ public:
 class MyDebugRenderer: public DebugRendererSimple {
 public:
     virtual void DrawLine(JPH::RVec3 from, JPH::RVec3 to, JPH::Color color) override {
+		Graphics::AddDrawLineCommand(
+            Vector3(FromJolt(from)), 
+            Vector3(FromJolt(to))
+        );
+        return;
+
         // Aqui você converte os vetores para seu tipo de vetor e desenha uma linha
         Graphics::DrawLine(
             FromJolt(from), 
@@ -235,15 +245,57 @@ public:
 class MeshShapeData{
 public:
     MeshShapeData() = default;
+	JPH::Ref<Shape> meshShape; // Jolt usa RefConst
+
+	JPH::Array<JPH::Vec3> convexPoints;
+	JPH::Array<JPH::Float3> joltVertices;
+	JPH::Array<JPH::IndexedTriangle> joltTriangles;
 };
 
 Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
-    Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
-    return out;
+    return CreateMeshShapeData(mesh->vertices, mesh->indices); // Usa a função abaixo
 }
 
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
+
+    // Preenche os vértices convertidos
+    //JPH::Array<JPH::Float3> joltVertices;
+    out->joltVertices.reserve(vertices.size());
+    for(const auto& v : vertices)
+        out->joltVertices.push_back(JPH::Float3(v.x, v.y, v.z)); // Float3, não Vec3
+
+    // Preenche os índices (cada 3 índices formam um triângulo)
+    //JPH::Array<JPH::IndexedTriangle> joltTriangles;
+    out->joltTriangles.reserve(indices.size() / 3);
+    for(size_t i = 0; i < indices.size(); i += 3) {
+        out->joltTriangles.push_back(JPH::IndexedTriangle(
+            indices[i],
+            indices[i + 1],
+            indices[i + 2]
+        ));
+    }
+
+	out->convexPoints.reserve(out->joltVertices.size());
+	for(const auto& v : out->joltVertices)
+		out->convexPoints.push_back(JPH::Vec3(v.x, v.y, v.z));
+
+	if(indices.size() % 3 != 0) {
+		std::cerr << "CreateMeshShapeData: Index count is not a multiple of 3!\n";
+		return nullptr;
+	}
+
+    /*JPH::MeshShapeSettings settings(out->joltVertices, out->joltTriangles);
+    settings.SetEmbedded(); // Mantém os dados embutidos no shape
+
+    // Cria shape final
+    auto result = settings.Create();
+    if (result.HasError()) {
+        std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
+        return nullptr;
+    }
+
+    //out->meshShape = result.Get();*/
     return out;
 }
 
@@ -465,6 +517,10 @@ void RigidbodyComponent::Velocity(Vector3 v){
     if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetLinearVelocity(data->bodyID, ToJolt(v));
+	//bodyInterface.ActivateBody(data->bodyID);
+	
+	//bodyInterface.SetFriction(data->bodyID, 0.0f);
+	//bodyInterface.SetLinearDamping(data->bodyID, 0.0f);
 }
 
 void RigidbodyComponent::ApplyForce(Vector3 v){
@@ -486,9 +542,45 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 }
 
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
-    
-}
+    angularFactor = v;
+    if(data == nullptr) return;
 
+    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+    if (motionProps) {
+        Vec3 inertia = motionProps->GetInverseInertiaDiagonal();
+        inertia.SetX(v.x != 0.0f ? inertia.GetX() : 0.0f);
+        inertia.SetY(v.y != 0.0f ? inertia.GetY() : 0.0f);
+        inertia.SetZ(v.z != 0.0f ? inertia.GetZ() : 0.0f);
+		motionProps->SetInverseInertia(inertia, Quat::sIdentity());
+    }
+
+	/*angularFactor = v;
+    if(data == nullptr) return;
+
+    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+    if(motionProps){
+        Vec3 inertia = motionProps->GetInverseInertiaDiagonal();
+        Quat inertiaRotation = motionProps->GetInertiaRotation();
+
+        // Lock rotation if v.x/y/z is 0, otherwise keep original inertia
+        inertia.SetX(v.x != 0.0f ? inertia.GetX() : 0.0f);
+        inertia.SetY(v.y != 0.0f ? inertia.GetY() : 0.0f);
+        inertia.SetZ(v.z != 0.0f ? inertia.GetZ() : 0.0f);
+
+        motionProps->SetInverseInertia(inertia, inertiaRotation);
+        bodyInterface.ActivateBody(data->bodyID);
+    }*/
+}
 #pragma endregion
 
 #pragma region PhysicsSystem
@@ -704,6 +796,8 @@ RagdollSettings* CreateRagdollSettings(RagdollComponent& ragdoll, TransformCompo
 void PhysicsSystem::PhysicsUpdate(){
     if(GetScene()->Running() == false) return;
 
+	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
+
     const int cCollisionSteps = 1;
 	// Step the world
 	physicsWorld->physicsSystem.Update(
@@ -755,7 +849,6 @@ void PhysicsSystem::PhysicsUpdate(){
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
 	ShowDebugGizmos();
-    
 }
 
 void PhysicsSystem::CheckForCollisionEvents(){
@@ -763,8 +856,11 @@ void PhysicsSystem::CheckForCollisionEvents(){
 }
 
 void PhysicsSystem::ShowDebugGizmos(){
-	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	//if(GetScene()->Running() == false) return;
+	//BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+
 	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer);
+	Graphics::DrawLinesComamnd({0, 1, 0}, 1);
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
@@ -821,25 +917,62 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
 
     JPH::Ref<Shape> shape = nullptr;
-    if (rb.shape.type == CollisionShape::Type::Box) {
+    if(rb.shape.type == CollisionShape::Type::Box){
 		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
 		shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
-	}
-	else if (rb.shape.type == CollisionShape::Type::Sphere) {
+	} else if(rb.shape.type == CollisionShape::Type::Sphere){
 		SphereShapeSettings shapeSettings(rb.shape.radius);
 		shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
-	}
-	else if (rb.shape.type == CollisionShape::Type::Capsule) {
-		CapsuleShapeSettings shapeSettings(rb.shape.height * 0.5f, rb.shape.radius);
+	} else if(rb.shape.type == CollisionShape::Type::Capsule){
+		float halfHeight = (rb.shape.height - 2.0f * rb.shape.radius) * 0.5f;
+		if (halfHeight < 0.0f) {
+			std::cerr << "Invalid capsule dimensions: height must be at least 2 * radius\n";
+			Assert(false);
+		}
+		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
 		shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
+	} else if(rb.shape.type == CollisionShape::Type::Mesh){
+		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
+		//shapeSettings.SetDensity(rb.mass);
+		//shape = shapeSettings.Create().Get();
+		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
+
+		if(rb.type == RigidbodyComponent::Type::Dynamic){
+			// Use Convex Hull for dynamic
+			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.mesh->convexPoints);
+			shapeSettings.SetDensity(rb.mass);
+
+			auto result = shapeSettings.Create();
+			if (!result.HasError()) {
+				shape = result.Get();
+			} else {
+				std::cerr << "ConvexHullShape creation error: " << result.GetError() << std::endl;
+				return;
+			}
+		} else {
+			// Use MeshShape for static or kinematic
+			JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
+			shapeSettings.SetEmbedded();
+			auto result = shapeSettings.Create();
+			if (!result.HasError()) {
+				shape = result.Get();
+			} else {
+				std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
+				return;
+			}
+		}
 	}
 
-	RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
+	Assert(shape != nullptr);
+	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
+	
+	RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(rb.shape.center), Quat::sIdentity(), shape);
+	RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
 
-    BodyCreationSettings settings(
+	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
     );
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
