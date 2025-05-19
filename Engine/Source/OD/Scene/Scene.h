@@ -71,6 +71,11 @@ struct OD_API GlobalSceneData{
 
 OD_API GlobalSceneData& GetGlobalSceneData();
 
+struct OD_API SelfDisable{
+    template <class Archive>
+    void serialize(Archive & ar){}
+};
+
 class OD_API TransformComponent{
     friend struct Scene;
     friend class cereal::access;
@@ -246,6 +251,7 @@ public:
     
     template<typename T, typename... Args> T& AddComponent(Entity entity, Args&&... args);
     template<typename T> T& AddComponent(Entity entity);
+    template<typename T> void AddTagComponent(Entity entity);
     template<typename T> T& GetComponent(Entity entity);
     template<typename T> T* TryGetComponent(Entity entity);
     template<typename T> T* TryGetComponentInParent(Entity entity);

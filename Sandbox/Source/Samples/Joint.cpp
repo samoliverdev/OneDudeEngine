@@ -18,6 +18,7 @@ void JointSample::OnInit(){
 
     Entity env = scene.AddEntity("Env");
     scene.AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    scene.AddTagComponent<SelfDisable>(env);
 
     Entity camera = scene.AddEntity("Camera");
     CameraComponent& cam = scene.AddComponent<CameraComponent>(camera);

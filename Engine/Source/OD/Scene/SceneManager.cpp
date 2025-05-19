@@ -12,6 +12,8 @@ void SceneManagerModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<InfoComponent>();
     LuaBindsDB::Get().RegisterLuaBind<EntityHandle>();
     LuaBindsDB::Get().RegisterLuaBind<Scene>();
+    
+    SceneManager::Get().RegisterTagComponent<SelfDisable>("SelfDisable");
 }
 
 SceneManager& SceneManager::Get(){

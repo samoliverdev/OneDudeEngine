@@ -92,6 +92,12 @@ struct OD_API RigidbodyComponent{
     int mask = AllLayers;
     //LayerMask mask = {AllLayers};
 
+    RigidbodyComponent() = default;
+    /*RigidbodyComponent(const RigidbodyComponent& other);
+    RigidbodyComponent& operator=(const RigidbodyComponent& other);
+    RigidbodyComponent(RigidbodyComponent&& other);
+    RigidbodyComponent& operator=(RigidbodyComponent&& other);*/
+
     enum class Type{Dynamic, Static, Kinematic, Trigger, TestDisable};
 
     static void OnGui(Entity& e, Scene& scene);
@@ -132,24 +138,13 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
     }
 
-    /*RigidbodyComponent(const RigidbodyComponent& other){
-        mask = other.mask;
-        shape = other.shape;
-        type = other.type;
-        mass = other.mass;
-        neverSleep = other.neverSleep;
-    }
-
-    RigidbodyComponent& operator=(const RigidbodyComponent& other){
-        if(this == &other) return *this;
-
-        mask = other.mask;
-        shape = other.shape;
-        type = other.type;
-        mass = other.mass;
-        neverSleep = other.neverSleep;
-        return *this;
-    }*/
+    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
+        COPY_OR_MOVE(shape);
+        COPY_OR_MOVE(type);
+        COPY_OR_MOVE(angularFactor);
+        COPY_OR_MOVE(mass);
+        COPY_OR_MOVE(neverSleep);
+    });
 
 private:
     CollisionShape shape;
@@ -161,6 +156,22 @@ private:
     class PhysicObject* data = nullptr;
 
     void UpdateSettings();
+
+    /*inline void Copy(const RigidbodyComponent& other){
+        shape = other.shape;
+        type = other.type;
+        angularFactor = other.angularFactor;
+        mass = other.mask;
+        neverSleep = other.neverSleep;
+    }
+
+    inline void Move(RigidbodyComponent&& other){
+        shape = std::move(other.shape);
+        type = std::move(other.type);
+        angularFactor = std::move(other.angularFactor);
+        mass = std::move(other.mask);
+        neverSleep = std::move(other.neverSleep);
+    }*/
 };
 
 struct OD_API RagdollComponent{

@@ -39,6 +39,36 @@ void _SaveComponent(ODOutputArchive& archive, std::vector<entt::entity>& entitie
     archive(cereal::make_nvp(componentName + "s", components));
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
 }
+template<typename T>
+void _SaveComponentTag(ODOutputArchive& archive, std::vector<entt::entity>& entities, entt::registry& registry, std::string componentName){
+    /*auto view = registry.view<T>();
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+    for(auto e: view){
+        components.push_back(view.template get<T>(e));
+        componentsEntities.push_back(e);
+    }
+
+    if(components.size() <= 0 || componentsEntities.size() <= 0) return;
+
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));*/
+
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+    for(auto e: entities){
+        if(registry.any_of<T>(e) == false) continue;
+
+        components.push_back(T());
+        componentsEntities.push_back(e);
+    }
+
+    if(components.size() <= 0 || componentsEntities.size() <= 0) return;
+
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+}
+
 
 template<typename T>
 void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName){
@@ -68,6 +98,35 @@ void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,ent
         }
     }
 }
+template<typename T>
+void _LoadComponentTag(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName){
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+
+    try{
+
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+
+    }catch(...){ 
+        //LogWarning("ErrorOnTrySerialize: %s", componentName.c_str()); 
+        components.clear();
+        componentsEntities.clear();
+    }
+
+    for(int i = 0; i < components.size(); i++){
+        //registry.get_or_emplace<T>(loadLookup[componentsEntities[i]], components[i]);
+        //continue;
+
+        if(registry.any_of<T>(loadLookup[componentsEntities[i]])){
+            T& t = T(); //registry.get<T>(loadLookup[componentsEntities[i]]);
+            t = components[i];
+        } else {
+            registry.emplace<T>(loadLookup[componentsEntities[i]], components[i]);
+        }
+    }
+}
+
 
 HAS_MEM_FUNC(OnGui, HasOnGui);
 //HAS_TEMPLATE_FUNC(serialize, HasSerialize);
@@ -157,6 +216,48 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
     
     coreComponentsSerializer[name] = funcs;
 }*/
+
+template<typename T> 
+void SceneManager::RegisterTagComponent(const std::string& name){
+    Assert(componentsSerializer.find(name) == componentsSerializer.end());
+
+    SerializeFuncs funcs;
+
+    funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
+    funcs.addComponent = [](Entity& e, Scene& scene){ scene.GetRegistry().emplace<T>(e); };
+    funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ 
+        scene.GetRegistry().emplace_or_replace<T>(other, T()); 
+    };
+
+    funcs.onGui = [](Entity& e, Scene& scene){
+        /*if constexpr(HasOnGui<T>::value){
+            scene.AddOrGetComponent<T>(e);
+            T::OnGui(e, scene);
+        } else {
+            T& c = scene.AddOrGetComponent<T>(e);
+            cereal::ImGuiArchive uiArchive;
+            uiArchive(c);
+        }*/
+    };
+
+    funcs.copy = [](entt::registry& dst, entt::registry& src){
+        auto view = src.view<T>();
+        for(auto e: view){
+            dst.emplace_or_replace<T>(e, T());
+        }
+    };
+
+    funcs.snapshotOut = [](ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name){
+        _SaveComponentTag<T>(out, entities, registry, name);
+    };
+
+    funcs.snapshotIn = [](ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name){
+        _LoadComponentTag<T>(out, loadLookup, registry, name);
+    };
+    
+    componentsSerializer[name] = funcs;
+}
 
 template<typename T>
 void SceneManager::RegisterComponent(const std::string& name){

@@ -21,6 +21,8 @@ public:
     template<typename T> void RegisterCoreComponent(const std::string& name);
     template<typename T> void UnRegisterCoreComponent(const std::string& name);
 
+    template<typename T> void RegisterTagComponent(const std::string& name);
+
     //template<typename T> void RegisterCoreComponentSimple(const char* name);
     template<typename T> void RegisterComponent(const std::string& name);
     template<typename T> void RegisterScript(const std::string& name);

@@ -343,6 +343,43 @@ void CollisionBodyComponent::UpdateSettings(){
 
 #pragma region RigidbodyComponent
 
+/*RigidbodyComponent::RigidbodyComponent(const RigidbodyComponent& other){
+	shape = other.shape;
+    type = other.type;
+    angularFactor = other.angularFactor;
+    mass = other.mask;
+    neverSleep = other.neverSleep;
+}
+
+RigidbodyComponent& RigidbodyComponent::operator=(const RigidbodyComponent& other){
+	if(this == &other) return *this;
+	shape = other.shape;
+    type = other.type;
+    angularFactor = other.angularFactor;
+    mass = other.mask;
+    neverSleep = other.neverSleep;
+	return *this;
+}
+
+RigidbodyComponent::RigidbodyComponent(RigidbodyComponent&& other){
+	shape = std::move(other.shape);
+    type = std::move(other.type);
+    angularFactor = std::move(other.angularFactor);
+    mass = std::move(other.mask);
+    neverSleep = std::move(other.neverSleep);
+}
+
+RigidbodyComponent& RigidbodyComponent::operator=(RigidbodyComponent&& other){
+	if(this == &other) return *this;
+	shape = std::move(other.shape);
+    type = std::move(other.type);
+    angularFactor = std::move(other.angularFactor);
+    mass = std::move(other.mask);
+    neverSleep = std::move(other.neverSleep);
+	return *this;
+}
+*/
+
 void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 	RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
 

@@ -156,6 +156,11 @@ T& Scene::AddComponent(Entity id){
     return c;
 }
 
+template<typename T> 
+void Scene::AddTagComponent(Entity entity){
+    registry.emplace<T>(entity);
+}
+
 template <typename T>
 T& Scene::GetComponent(Entity id){
     //if(registry.any_of<T>(id) == false) throw 0;
