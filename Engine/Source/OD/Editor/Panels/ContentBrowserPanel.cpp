@@ -93,6 +93,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
 #include <filesystem>
 #include <string>
 #include <algorithm>
+#include <fstream>
 
 namespace OD {
 
@@ -111,18 +112,106 @@ ContentBrowserPanel::ContentBrowserPanel() {
 void ContentBrowserPanel::OnGui() {
     ImGui::Begin("ContentBrowserPanel");
 
-    // Optional: Add navigation controls to change _curDirectory
-    //if (ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
-    //    _curDirectory = _curDirectory.parent_path();
-    //    _selectedFile.clear(); // Clear selected file when navigating
-    //}
+    // Navigation controls
+    if (ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
+        _curDirectory = _curDirectory.parent_path();
+        _selectedFile.clear(); // Clear selected file when navigating
+    }
 
-    //ImGui::SameLine();
-    //ImGui::Text("Current Directory: %s", _curDirectory.string().c_str());
+    ImGui::SameLine();
+    ImGui::Text("Current Directory: %s", _curDirectory.string().c_str());
+
+    // Right-click context menu for the panel background
+    if (ImGui::BeginPopupContextWindow()) {
+        HandleContextMenu(_curDirectory, true, true); // Treat as directory
+        ImGui::EndPopup();
+    }
 
     DrawDir(_curDirectory, _assetsDirectory);
 
+    /*// Process deletions at the end of OnGui
+    for (const auto& [path, isDirectory] : toDelete) {
+        try {
+            if (isDirectory) {
+                std::filesystem::remove_all(path);
+                LogInfo("Deleted directory: %s", path.string().c_str());
+            } else {
+                std::filesystem::remove(path);
+                LogInfo("Deleted file: %s", path.string().c_str());
+            }
+            // Invalidate parent cache (skip if deleting _curDirectory)
+            if (!isDirectory || path != _curDirectory) {
+                _dirCache.erase(isDirectory ? path.parent_path() : path.parent_path());
+            }
+            // Clear selected file if deleted
+            if (_selectedFile == path) _selectedFile.clear();
+        } catch (const std::filesystem::filesystem_error& e) {
+            LogError("Failed to delete %s: %s", path.string().c_str(), e.what());
+        }
+    }
+    toDelete.clear(); // Clear after processing*/
+
+    // Process deletions with confirmation popup
+    static std::filesystem::path pendingDeletePath;
+    static bool pendingDeleteIsDirectory = false;
+    static bool popupActive = false;
+
+    // If no popup is active and there are items to delete, start processing the next item
+    if (!popupActive && !toDelete.empty()) {
+        auto [path, isDirectory] = toDelete.front();
+        toDelete.erase(toDelete.begin()); // Remove the item from the queue
+        pendingDeletePath = path;
+        pendingDeleteIsDirectory = isDirectory;
+        ImGui::OpenPopup("Confirm Delete");
+        popupActive = true;
+        LogInfo("Opened delete confirmation popup for %s", path.string().c_str());
+    }
+
+    // Delete confirmation popup
+    if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to delete %s?", pendingDeletePath.filename().string().c_str());
+        ImGui::Separator();
+        if (ImGui::Button("Yes")) {
+            try {
+                if (pendingDeleteIsDirectory) {
+                    std::filesystem::remove_all(pendingDeletePath);
+                    LogInfo("Deleted directory: %s", pendingDeletePath.string().c_str());
+                } else {
+                    std::filesystem::remove(pendingDeletePath);
+                    LogInfo("Deleted file: %s", pendingDeletePath.string().c_str());
+                }
+                // Invalidate parent cache (skip if deleting _curDirectory)
+                if (!pendingDeleteIsDirectory || pendingDeletePath != _curDirectory) {
+                    _dirCache.erase(pendingDeleteIsDirectory ? pendingDeletePath.parent_path() : pendingDeletePath.parent_path());
+                }
+                // Clear selected file if deleted
+                if (_selectedFile == pendingDeletePath) _selectedFile.clear();
+            } catch (const std::filesystem::filesystem_error& e) {
+                LogError("Failed to delete %s: %s", pendingDeletePath.string().c_str(), e.what());
+            }
+            ImGui::CloseCurrentPopup();
+            popupActive = false; // Allow next item to be processed
+            LogInfo("Confirmed deletion for %s", pendingDeletePath.string().c_str());
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No")) {
+            ImGui::CloseCurrentPopup();
+            popupActive = false; // Allow next item to be processed
+            LogInfo("Canceled deletion for %s", pendingDeletePath.string().c_str());
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
+}
+
+std::string ContentBrowserPanel::GenerateUniqueName(const std::filesystem::path& dir, const std::string& baseName, const std::string& extension) {
+    std::string name = baseName + extension;
+    int counter = 0;
+    while (std::filesystem::exists(dir / name)) {
+        name = baseName + std::to_string(++counter) + extension;
+    }
+    return name;
 }
 
 bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
@@ -131,16 +220,26 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
 
     // Check if cache exists and is up-to-date
     if (it != _dirCache.end() && it->second.valid) {
-        auto lastWriteTime = std::filesystem::last_write_time(path);
-        if (it->second.lastModified == lastWriteTime) {
-            needsUpdate = false;
+        try {
+            auto lastWriteTime = std::filesystem::last_write_time(path);
+            if (it->second.lastModified == lastWriteTime) {
+                needsUpdate = false;
+            }
+        } catch (const std::filesystem::filesystem_error& e) {
+            LogError("Failed to get last write time for %s: %s", path.string().c_str(), e.what());
+            needsUpdate = true; // Force update on error
         }
     }
 
     if (!needsUpdate) return false;
 
     CachedDir cache;
-    cache.lastModified = std::filesystem::last_write_time(path);
+    try {
+        cache.lastModified = std::filesystem::last_write_time(path);
+    } catch (const std::filesystem::filesystem_error& e) {
+        LogError("Failed to set cache last write time for %s: %s", path.string().c_str(), e.what());
+        return false;
+    }
 
     try {
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
@@ -171,10 +270,43 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
 
         cache.valid = true;
         _dirCache[path] = std::move(cache);
+        LogInfo("Cached directory: %s", path.string().c_str());
         return true;
     } catch (const std::filesystem::filesystem_error& e) {
         LogError("Failed to cache directory %s: %s", path.string().c_str(), e.what());
         return false;
+    }
+}
+
+void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, bool isDirectory, bool skipDelete) {
+    LogInfo("Context menu opened for %s", path.string().c_str());
+    std::filesystem::path targetDir = isDirectory ? path : path.parent_path();
+
+    if (ImGui::MenuItem("Create File")) {
+        std::filesystem::path newFilePath = targetDir / GenerateUniqueName(targetDir, "NewFile", ".txt");
+        try {
+            std::ofstream file(newFilePath);
+            if (!file) throw std::runtime_error("Failed to open file for writing");
+            file.close();
+            LogInfo("Created file: %s", newFilePath.string().c_str());
+            _dirCache.erase(targetDir); // Invalidate cache
+        } catch (const std::exception& e) {
+            LogError("Failed to create file %s: %s", newFilePath.string().c_str(), e.what());
+        }
+    }
+    if (ImGui::MenuItem("Create Folder")) {
+        std::filesystem::path newFolderPath = targetDir / GenerateUniqueName(targetDir, "NewFolder", "");
+        try {
+            std::filesystem::create_directory(newFolderPath);
+            LogInfo("Created folder: %s", newFolderPath.string().c_str());
+            _dirCache.erase(targetDir); // Invalidate cache
+        } catch (const std::filesystem::filesystem_error& e) {
+            LogError("Failed to create folder %s: %s", newFolderPath.string().c_str(), e.what());
+        }
+    }
+    if (!skipDelete && ImGui::MenuItem("Delete")) {
+        toDelete.emplace_back(path, isDirectory);
+        LogInfo("Added to delete queue: %s", path.string().c_str());
     }
 }
 
@@ -189,7 +321,23 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         std::string label = ICON_FA_FOLDER + std::string("##") + dirPath.string();
 
         ImGui::PushID(label.c_str());
-        if (ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth, "%s  %s", ICON_FA_FOLDER, filename.c_str())) {
+        bool isSelected = (dirPath == _selectedFile);
+        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FOLDER, filename.c_str());
+        // Context menu for both open and collapsed folders
+        if (ImGui::BeginPopupContextItem()) {
+            HandleContextMenu(dirPath, true);
+            ImGui::EndPopup();
+        }
+
+        if (isOpen) {
+            if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
+                _curDirectory = dirPath; // Navigate into directory
+                _selectedFile.clear();   // Clear selected file
+            } else if (ImGui::IsItemClicked()) {
+                _selectedFile = dirPath; // Select directory
+            }
             DrawDir(dirPath, rootPath); // Recursively draw subdirectory
             ImGui::TreePop();
         }
@@ -206,6 +354,12 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
         if (ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str())) {
+            // Context menu for files
+            if (ImGui::BeginPopupContextItem()) {
+                HandleContextMenu(filePath, false);
+                ImGui::EndPopup();
+            }
+
             if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
                 _selectedFile = filePath;
                 std::string pathString = _selectedFile.string();
@@ -216,6 +370,8 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
                     editor->SetSelectionAsset(
                         AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString));
                 }
+            } else if (ImGui::IsItemClicked()) {
+                _selectedFile = filePath; // Select file
             }
 
             // Drag and drop

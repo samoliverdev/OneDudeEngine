@@ -44,6 +44,8 @@ struct LoadData{
     std::vector<aiMesh*> meshs;
     std::vector<aiMaterial*> materials;
 
+    std::vector<int> materialIndexRemap;
+
     int boneCounter = 0;
 };
 
@@ -231,7 +233,7 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
     return textures;
 }
 
-int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
+/*int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
     int meshIndex = -1;
     for(int i = 0; i < scene->mNumMaterials; i++){
         if(mesh == scene->mMaterials[i]){
@@ -240,7 +242,7 @@ int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
         }
     }
     return meshIndex;
-}
+}*/
 
 /*Ref<Material> processMaterial(LoadData& loadData, aiMesh *mesh, const aiScene *scene, Ref<Shader> customShader){
     // process materials
@@ -582,7 +584,8 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
 
         Model::RenderTarget renderTarget;
         renderTarget.meshIndex = node->mMeshes[i];
-        renderTarget.materialIndex = mesh->mMaterialIndex;
+        renderTarget.materialIndex = data.materialIndexRemap[mesh->mMaterialIndex];
+        //renderTarget.materialIndex = mesh->mMaterialIndex;
         renderTarget.bindPoseIndex = GetNodeIndex(data, node);
 
         data.model->renderTargets.push_back(renderTarget);
@@ -630,20 +633,22 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         loadData.meshs.push_back(scene->mMeshes[i]);
     }
 
-    /*for(int i = 0; i < scene->mNumMaterials; i++){
+    /*loadData.materialIndexRemap.resize(scene->mNumMaterials);
+    for(int i = 0; i < scene->mNumMaterials; i++){
         Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
         loadData.model->materials.push_back(m);
         loadData.materials.push_back(scene->mMaterials[i]);
+        loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
     }*/
 
+    loadData.materialIndexRemap.resize(scene->mNumMaterials);
     std::unordered_set<unsigned int> usedMaterialIndices;
-    for (unsigned int i = 0; i < scene->mNumMeshes; ++i){
+    for(unsigned int i = 0; i < scene->mNumMeshes; ++i){
         const aiMesh* mesh = scene->mMeshes[i];
-        if(mesh->mMaterialIndex < scene->mNumMaterials) {
+        if(mesh->mMaterialIndex < scene->mNumMaterials){
             usedMaterialIndices.insert(mesh->mMaterialIndex);
         }
     }
-
     for(unsigned int i = 0; i < scene->mNumMaterials; ++i){
         aiString name;
         scene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
@@ -653,6 +658,7 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
             Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
             loadData.model->materials.push_back(m);
             loadData.materials.push_back(scene->mMaterials[i]);
+            loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
         }
     }
 

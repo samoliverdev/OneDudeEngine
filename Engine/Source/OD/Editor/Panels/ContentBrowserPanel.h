@@ -54,9 +54,12 @@ private:
     };
 
     std::unordered_map<std::filesystem::path, CachedDir, std::hash<std::filesystem::path>> _dirCache;
+    std::vector<std::pair<std::filesystem::path, bool>> toDelete; // Path and isDirectory flag
 
     void DrawDir(const std::filesystem::path& path, const std::filesystem::path& rootPath);
     bool CacheDirectory(const std::filesystem::path& path);
+    std::string GenerateUniqueName(const std::filesystem::path& dir, const std::string& baseName, const std::string& extension);
+    void HandleContextMenu(const std::filesystem::path& path, bool isDirectory, bool skipDelete = false);
 };
 
 }
