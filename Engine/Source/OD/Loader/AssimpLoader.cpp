@@ -630,10 +630,30 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         loadData.meshs.push_back(scene->mMeshes[i]);
     }
 
-    for(int i = 0; i < scene->mNumMaterials; i++){
+    /*for(int i = 0; i < scene->mNumMaterials; i++){
         Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
         loadData.model->materials.push_back(m);
         loadData.materials.push_back(scene->mMaterials[i]);
+    }*/
+
+    std::unordered_set<unsigned int> usedMaterialIndices;
+    for (unsigned int i = 0; i < scene->mNumMeshes; ++i){
+        const aiMesh* mesh = scene->mMeshes[i];
+        if(mesh->mMaterialIndex < scene->mNumMaterials) {
+            usedMaterialIndices.insert(mesh->mMaterialIndex);
+        }
+    }
+
+    for(unsigned int i = 0; i < scene->mNumMaterials; ++i){
+        aiString name;
+        scene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
+        LogInfo(("Material[" + std::to_string(i) + "]: " + std::string(name.C_Str())).c_str());
+
+        if(usedMaterialIndices.count(i) > 0){
+            Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
+            loadData.model->materials.push_back(m);
+            loadData.materials.push_back(scene->mMaterials[i]);
+        }
     }
 
     for(int i = 0; i < scene->mNumAnimations; i++){

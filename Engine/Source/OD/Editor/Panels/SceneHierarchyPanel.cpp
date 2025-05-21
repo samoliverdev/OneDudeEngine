@@ -5,9 +5,11 @@
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/LightComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Platform/Platform.h"
+#include "OD/Graphics/Model.h"
 //#include "OD/AnimationSystem/Animator.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <functional>
@@ -124,6 +126,29 @@ void SceneHierarchyPanel::OnGui(){
                         scene->CleanParent(*targetEntity);
                     }
                 }
+
+                const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
+                if(payload2 != nullptr){
+                    std::filesystem::path* path = (std::filesystem::path*)payload2->Data;
+
+                    auto getExtension = [](const std::filesystem::path& path) -> std::string {
+                        return path.has_extension() ? path.extension().string() : "";
+                    };
+                    auto getFileNameWithoutExtension = [](const std::filesystem::path& path) -> std::string {
+                        return path.stem().string();
+                    };
+
+                    Model m;
+                    if(m.HasFileExtension(getExtension(*path))){
+                        Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->string());
+                        Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
+                        ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
+                        mRenderer.SetModel(model);
+                    }
+
+                    LogInfo("Reciving File: %s", path->string().c_str());
+                }
+
                 ImGui::EndDragDropTarget();
             }
 

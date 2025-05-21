@@ -1,6 +1,7 @@
 #include "ViewportPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 
 namespace OD{
 
@@ -103,6 +104,28 @@ void ViewportPanel::OnGui(){
         if(payload != nullptr){
             std::filesystem::path* path = (std::filesystem::path*)payload->Data;
             LogInfo("%s", path->string().c_str());
+        }
+
+        const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
+        if(payload2 != nullptr){
+            std::filesystem::path* path = (std::filesystem::path*)payload2->Data;
+
+            auto getExtension = [](const std::filesystem::path& path) -> std::string {
+                return path.has_extension() ? path.extension().string() : "";
+            };
+            auto getFileNameWithoutExtension = [](const std::filesystem::path& path) -> std::string {
+                return path.stem().string();
+            };
+
+            Model m;
+            if(m.HasFileExtension(getExtension(*path))){
+                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->string());
+                Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
+                ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
+                mRenderer.SetModel(model);
+            }
+
+            LogInfo("Reciving File: %s", path->string().c_str());
         }
         
         ImGui::EndDragDropTarget();
