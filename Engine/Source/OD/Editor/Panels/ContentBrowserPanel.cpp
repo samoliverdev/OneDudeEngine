@@ -318,18 +318,30 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
     for (const auto& dir : cache.directories) {
         const auto& dirPath = dir.path();
         std::string filename = dirPath.filename().string();
-        std::string label = ICON_FA_FOLDER + std::string("##") + dirPath.string();
+        std::string label = /*ICON_FA_FOLDER +*/ std::string("##") + dirPath.string();
 
         ImGui::PushID(label.c_str());
         bool isSelected = (dirPath == _selectedFile);
         ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FOLDER, filename.c_str());
+        //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FOLDER, filename.c_str());
+
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        
         // Context menu for both open and collapsed folders
         if (ImGui::BeginPopupContextItem()) {
             HandleContextMenu(dirPath, true);
             ImGui::EndPopup();
         }
+        
+        // Render colored icon
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.843f, 0.0f, 1.0f)); // Yellow for folders
+        ImGui::Text("%s", ICON_FA_FOLDER);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        // Render filename in default color
+        ImGui::Text("%s", filename.c_str());
 
         if (isOpen) {
             if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
@@ -348,12 +360,23 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
     for (const auto& file : cache.files) {
         const auto& filePath = file.path();
         std::string filename = filePath.filename().string();
-        std::string label = ICON_FA_FILE + std::string("##") + filePath.string();
+        std::string label = /*ICON_FA_FILE +*/ std::string("##") + filePath.string();
 
         ImGui::PushID(label.c_str());
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
-        if (ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str())) {
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
+        
+        /*bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f)); // Light blue for files
+        ImGui::Text("%s", ICON_FA_FILE);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        // Render filename in default color
+        ImGui::Text("%s", filename.c_str());*/
+
+        if (isOpen) {
             // Context menu for files
             if (ImGui::BeginPopupContextItem()) {
                 HandleContextMenu(filePath, false);
