@@ -307,6 +307,7 @@ private:
     void _DestroyEntity(Entity entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     void _Unpack(Entity e, bool all);
+    Entity _DuplicateEntity(Entity e, bool isRoot);
 
     bool running = false;
 
