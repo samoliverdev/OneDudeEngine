@@ -146,6 +146,10 @@ void SceneHierarchyPanel::OnGui(){
                         mRenderer.SetModel(model);
                     }
 
+                    if(getExtension(*path) == ".prefab"){
+                        scene->InstantiatePrefab(path->string().c_str());
+                    }
+
                     LogInfo("Reciving File: %s", path->string().c_str());
                 }
 
@@ -227,6 +231,15 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
             //_toDestroy = true;
             //_toDestroyEntity = entity.id();
         }
+
+        if(info.Type() == EntityType::PrefabRoot && ImGui::MenuItem("Unpack Prefab")){
+            scene->UnpackPrefab(entity, false);
+        }
+
+        if(info.Type() == EntityType::PrefabRoot && ImGui::MenuItem("Unpack Prefab All")){
+            scene->UnpackPrefab(entity, true);
+        }
+
         if(scene->GetComponent<InfoComponent>(entity).Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){
             std::string path = Platform::SaveFile("*.prefab");
             if(path.empty() == false){

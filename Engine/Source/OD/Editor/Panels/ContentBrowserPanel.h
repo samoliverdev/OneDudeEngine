@@ -60,6 +60,7 @@ private:
     bool CacheDirectory(const std::filesystem::path& path);
     std::string GenerateUniqueName(const std::filesystem::path& dir, const std::string& baseName, const std::string& extension);
     void HandleContextMenu(const std::filesystem::path& path, bool isDirectory, bool skipDelete = false);
+    void HandleDragDrop(const std::filesystem::path& path, bool isDirectory);
 };
 
 }

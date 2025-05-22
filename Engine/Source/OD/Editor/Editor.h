@@ -89,6 +89,13 @@ private:
 
     ImVec2 viewportBounds[2];
 
+    struct SnapSettings{
+        bool enable = false;
+        float posGridSize = 0.25f;
+        float rotSnapAngle = 15;
+    };
+    SnapSettings snapSettings;
+
     inline void SetSelectionEntity(Entity entity){
         selectionEntity = entity;
         selectionOnAsset = false;

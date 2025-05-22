@@ -40,6 +40,31 @@ void ViewportPanel::OnGui(){
         ImGui::Spacing();
         ImGui::Separator();
 
+        if(ImGui::Button("Snap Settings")){
+            ImVec2 buttonPos = ImGui::GetItemRectMin();
+            ImVec2 buttonSize = ImGui::GetItemRectSize();
+            ImGui::SetNextWindowPos(ImVec2(buttonPos.x, buttonPos.y + buttonSize.y));
+            ImGui::OpenPopup("Snap Settings Popup");
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8)); // 8 pixels on all sides
+        if(ImGui::BeginPopup("Snap Settings Popup")){
+            //ImGui::Dummy(ImVec2(0, 4)); // small top padding
+
+            ImGui::Text("Grid Snap Settings");
+            ImGui::Checkbox("Enable", &editor->snapSettings.enable);
+            ImGui::InputFloat("Grid Size", &editor->snapSettings.posGridSize);
+            ImGui::InputFloat("Snap Angle", &editor->snapSettings.rotSnapAngle);
+
+            // Optional: Clamp values if needed
+            if(editor->snapSettings.posGridSize < 0.001f) editor->snapSettings.posGridSize = 0.001f;
+            if(editor->snapSettings.rotSnapAngle < 0.1f) editor->snapSettings.rotSnapAngle = 0.1f;
+
+            //ImGui::Dummy(ImVec2(0, 4)); // small bottom padding
+            ImGui::EndPopup();
+        }
+        ImGui::PopStyleVar();
+
         static const char* items[]{"One","Two","three"};
         static int Selecteditem = 0;
         if(ImGui::Combo("MyCombo", &Selecteditem, items, IM_ARRAYSIZE(items))){

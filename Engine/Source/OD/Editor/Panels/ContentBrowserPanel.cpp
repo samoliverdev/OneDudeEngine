@@ -90,6 +90,7 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
 #include "ContentBrowserPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
+#include <imgui/imgui_internal.h>
 #include <filesystem>
 #include <string>
 #include <algorithm>
@@ -310,6 +311,34 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     }
 }
 
+void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool isDirectory){
+    auto getExtension = [](const std::filesystem::path& path) -> std::string {
+        return path.has_extension() ? path.extension().string() : "";
+    };
+
+    if(ImGui::BeginDragDropTarget()){
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
+        if(payload != nullptr){
+            LogWarning("Save Prefab To: %s", path.string().c_str());
+            Entity* targetEntity = (Entity*)payload->Data;
+
+            InfoComponent& info = scene->GetComponent<InfoComponent>(*targetEntity);
+
+            if(info.Type() == EntityType::Stand){
+                if(isDirectory){
+                    scene->Save((path.string() + "/" + info.name + ".prefab").c_str(), *targetEntity);
+                } else if(getExtension(path) == ".prefab"){
+                    scene->Save(path.string().c_str(), *targetEntity);
+                }   
+            } else {
+                LogError("Trying create prefab from other prefab entity");
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+    }
+}
+
 void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::filesystem::path& rootPath) {
     CacheDirectory(path);
     auto& cache = _dirCache[path];
@@ -327,7 +356,9 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FOLDER, filename.c_str());
 
         bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
-        
+
+        HandleDragDrop(dirPath, true);
+            
         // Context menu for both open and collapsed folders
         if (ImGui::BeginPopupContextItem()) {
             HandleContextMenu(dirPath, true);
@@ -366,6 +397,8 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
         bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
+
+        HandleDragDrop(filePath, false);
         
         /*bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
         ImGui::SameLine();

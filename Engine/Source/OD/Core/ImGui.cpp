@@ -102,7 +102,7 @@ void ImGuiLayer::SetDarkTheme(){
     style.Colors[ImGuiCol_TextDisabled]          = ImVec4(0.50f, 0.50f, 0.50f, 1.00f); // Subtle disabled text
     style.Colors[ImGuiCol_WindowBg]              = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark background
     style.Colors[ImGuiCol_ChildBg]               = ImVec4(0.12f, 0.12f, 0.12f, 1.00f); // Slightly lighter child bg
-    style.Colors[ImGuiCol_PopupBg]               = ImVec4(0.15f, 0.15f, 0.15f, 0.95f); // Popup slightly lighter
+    style.Colors[ImGuiCol_PopupBg]               = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); //ImVec4(0.15f, 0.15f, 0.15f, 0.95f); // Popup slightly lighter
     style.Colors[ImGuiCol_Border]                = ImVec4(0.20f, 0.20f, 0.20f, 0.50f); // Subtle borders
     style.Colors[ImGuiCol_BorderShadow]          = ImVec4(0.00f, 0.00f, 0.00f, 0.00f); // No shadow
     style.Colors[ImGuiCol_FrameBg]               = ImVec4(0.18f, 0.18f, 0.18f, 0.54f); // Frame background

@@ -167,6 +167,31 @@ T& Scene::GetComponent(Entity id){
     return registry.get<T>(id);
 }
 
+template<typename T> 
+void Scene::AddComponentRecursive(Entity entity){
+    if(registry.any_of<T>(entity) == false){
+        registry.emplace<T>(entity);
+        if constexpr(HasOnCreate<T>::value) c.OnCreate(entity, *this);
+    }
+
+    TransformComponent& trans = registry.get<TransformComponent>(entity);
+    for(auto& child: trans.children){
+        AddComponentRecursive<T>(child);
+    }
+}
+
+template<typename T> 
+void Scene::RemoveComponentRecursive(Entity entity){
+    if(registry.any_of<T>(entity) == true){
+        registry.remove<T>(entity);
+    }
+
+    TransformComponent& trans = registry.get<TransformComponent>(entity);
+    for(auto& child: trans.children){
+        RemoveComponentRecursive<T>(child);
+    }
+}
+
 template <typename T>
 T* Scene::TryGetComponent(Entity id){
     return registry.try_get<T>(id);

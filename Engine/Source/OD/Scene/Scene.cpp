@@ -733,7 +733,35 @@ Entity Scene::InstantiatePrefab(const char* path){
         }
     }
 
+    TransformComponent& rootTrans = GetComponent<TransformComponent>(root);
+    rootTrans.parent = EntityNull;
+    rootTrans.hasParent = false;
+
     return root;
+}
+
+void Scene::_Unpack(Entity e, bool all){
+    InfoComponent& info = GetComponent<InfoComponent>(e);
+    TransformComponent& trans = GetComponent<TransformComponent>(e);
+
+    //if(isRoot && all == false){
+        info.entityType = EntityType::Stand;
+    //}
+
+    for(auto& child: trans.children){
+        InfoComponent& chInfo = GetComponent<InfoComponent>(child);
+        if(chInfo.entityType == EntityType::PrefabChild){
+            _Unpack(child, all);
+        } else if(chInfo.entityType == EntityType::PrefabRoot && all){
+            _Unpack(child, all);
+        } else {
+            _Unpack(child, all);
+        }
+    }
+}
+
+void Scene::UnpackPrefab(Entity entity, bool all){
+    _Unpack(entity, all);
 }
 
 void Scene::_DestroyEntity(Entity entity, bool removeFromParent){

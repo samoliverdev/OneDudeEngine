@@ -532,6 +532,31 @@ void Editor::DrawMainWorkspace(){
     */
 }
 
+inline float SnapValue(float value, float gridSize) {
+    return std::round(value / gridSize) * gridSize;
+}
+
+/// Snaps a glm::vec3 to the grid
+Vector3 SnapToGrid(const Vector3& position, float gridSize) {
+    return Vector3(
+        SnapValue(position.x, gridSize),
+        SnapValue(position.y, gridSize),
+        SnapValue(position.z, gridSize)
+    );
+}
+
+/// Snaps a quaternion by converting to Euler angles, snapping, and converting back
+Quaternion SnapToGrid(const Quaternion& rotation, float angleSnapDegrees) {
+    Vector3 euler = math::eulerAngles(rotation); // radians
+    euler = glm::degrees(euler); // convert to degrees
+
+    euler.x = SnapValue(euler.x, angleSnapDegrees);
+    euler.y = SnapValue(euler.y, angleSnapDegrees);
+    euler.z = SnapValue(euler.z, angleSnapDegrees);
+
+    return Quaternion(math::radians(euler)); // convert back to radians and then to quat
+}
+
 void Editor::DrawGizmos(){
     Assert(SceneManager::Get().GetActiveScene() != nullptr);
     Scene& scene = *SceneManager::Get().GetActiveScene();
@@ -565,10 +590,14 @@ void Editor::DrawGizmos(){
     Matrix4 trans = tc.GlobalModelMatrix();
 
     bool snap = Input::IsKey(KeyCode::Control);
-    float snapValue = 1;
-    if(gizmoType == Editor::GizmosType::Rotation) snapValue = 45;
 
-    float snapValues[3] = {snapValue, snapValue, snapValue};
+    float snapValues[3] = {0, 0, 0};
+    if(gizmoType == Editor::GizmosType::Rotation){
+        snapValues[2] = snapValues[1] = snapValues[0] = snapSettings.rotSnapAngle;
+    } else {
+        snapValues[2] = snapValues[1] = snapValues[0] = snapSettings.posGridSize;
+    }
+    if(snapSettings.enable) snap = true;
 
     ImGuizmo::OPERATION _gizmoType = ImGuizmo::OPERATION::TRANSLATE;
     if(gizmoType == Editor::GizmosType::Rotation) _gizmoType = ImGuizmo::OPERATION::ROTATE;
@@ -591,6 +620,11 @@ void Editor::DrawGizmos(){
         glm::vec3 sk;
         glm::vec4 p;
         glm::decompose((glm::mat4)trans, s, r, t, sk, p);
+
+        /*if(snapSettings.enable){
+            t = SnapToGrid(t, snapSettings.posGridSize);
+            r = SnapToGrid(r, snapSettings.rotSnapAngle);
+        }*/
 
         if(gizmoType == Editor::GizmosType::Translation) tc.Position(t);
         if(gizmoType == Editor::GizmosType::Rotation) tc.Rotation(r);

@@ -260,6 +260,9 @@ public:
     template<typename T> T& AddOrGetComponent(Entity entity);
     template<typename T> void RemoveComponent(Entity entity);
 
+    template<typename T> void AddComponentRecursive(Entity entity);
+    template<typename T> void RemoveComponentRecursive(Entity entity);
+
     template<typename T> Entity TryFindEntityWithComponentInParent(Entity entity);
 
     template<typename T> inline static void RegisterMetaComponent();
@@ -292,6 +295,8 @@ public:
     void Save(const char* path, Entity root);
     void Load(const char* path);
 
+    void UnpackPrefab(Entity entity, bool all = false);
+
     static void CreateLuaBind(sol::state& lua);
 
     inline auto& GetExecutor(){ return executor; }
@@ -301,7 +306,8 @@ private:
     void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(Entity entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
-    
+    void _Unpack(Entity e, bool all);
+
     bool running = false;
 
     std::vector<System*> physicsSystems;

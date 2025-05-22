@@ -188,6 +188,18 @@ void InspectorPanel::DrawComponents(Entity entity){
         if(entityType != EntityType::Stand) ImGui::BeginDisabled(true);
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
+
+        bool selfEnable = scene.HasComponent<SelfDisable>(e) == false;
+
+        if(ImGui::Checkbox("Enable", &selfEnable)){
+            if(selfEnable){
+                scene.RemoveComponentRecursive<SelfDisable>(e);
+            } else {
+                scene.AddComponentRecursive<SelfDisable>(e);
+            }
+        }
+        
+        //ImGui::SameLine();
         
         _strcpy(buffer, sizeof(buffer), info.name.c_str());
         if(ImGui::InputText("Name", buffer, sizeof(buffer))){
