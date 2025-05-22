@@ -114,13 +114,15 @@ void ContentBrowserPanel::OnGui() {
     ImGui::Begin("ContentBrowserPanel");
 
     // Navigation controls
-    if (ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
+    if(ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
         _curDirectory = _curDirectory.parent_path();
         _selectedFile.clear(); // Clear selected file when navigating
     }
 
     ImGui::SameLine();
     ImGui::Text("Current Directory: %s", _curDirectory.string().c_str());
+
+    //HandleDragDrop(_curDirectory, true);
 
     // Right-click context menu for the panel background
     if (ImGui::BeginPopupContextWindow()) {

@@ -558,7 +558,7 @@ Quaternion SnapToGrid(const Quaternion& rotation, float angleSnapDegrees) {
 }
 
 void Editor::DrawGizmos(){
-    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    /*Assert(SceneManager::Get().GetActiveScene() != nullptr);
     Scene& scene = *SceneManager::Get().GetActiveScene();
 
     if(scene.IsValid(selectionEntity) == false) return;
@@ -621,15 +621,170 @@ void Editor::DrawGizmos(){
         glm::vec4 p;
         glm::decompose((glm::mat4)trans, s, r, t, sk, p);
 
-        /*if(snapSettings.enable){
-            t = SnapToGrid(t, snapSettings.posGridSize);
-            r = SnapToGrid(r, snapSettings.rotSnapAngle);
-        }*/
-
         if(gizmoType == Editor::GizmosType::Translation) tc.Position(t);
         if(gizmoType == Editor::GizmosType::Rotation) tc.Rotation(r);
         if(gizmoType == Editor::GizmosType::Scale) tc.LocalScale(s);
+    }*/
+
+
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    Scene& scene = *SceneManager::Get().GetActiveScene();
+
+    // Exit if no entities are selected
+    if (selectedEntities.empty()) return;
+    if (gizmoType == Editor::GizmosType::None) return;
+
+    Camera cam = editorCam.cam;
+
+    if (SceneManager::Get().GetActiveScene()->Running()) {
+        Entity camE = scene.GetMainCamera();
+        if (scene.IsValid(camE) == false) return;
+
+        CameraComponent& cameraComponent = scene.GetComponent<CameraComponent>(camE);
+        cam = cameraComponent.GetCamera();
     }
+
+    ImGuizmo::Enable(true);
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
+
+    Matrix4 view = cam.view;
+    Matrix4 projection = cam.projection;
+
+    // Compute the gizmo's transform based on pivot mode
+    Matrix4 gizmoTransform = glm::mat4(1.0f);
+    Matrix4 originalGizmoTransform = glm::mat4(1.0f);
+    glm::vec3 centerPosition(0.0f); // Store center position for rotation
+    Entity pivotEntity; // Track the entity used for pivot rotation in Local mode
+    bool hasValidEntity = false;
+    int validCount = 0;
+
+    if (pivotMode == GizmoPivotMode::Center && selectedEntities.size() > 1) {
+        // Center mode: Use the average position, inherit rotation from the first valid entity
+        glm::vec3 averagePosition(0.0f);
+        for (const Entity& entity : selectedEntities) {
+            if (scene.IsValid(entity)) {
+                TransformComponent& tc = scene.GetComponent<TransformComponent>(entity);
+                averagePosition += glm::vec3(tc.GlobalModelMatrix()[3]);
+                if (validCount == 0) {
+                    // Use the first valid entity's transform for rotation and scale
+                    gizmoTransform = tc.GlobalModelMatrix();
+                    pivotEntity = entity;
+                }
+                validCount++;
+            }
+        }
+        if (validCount > 0) {
+            averagePosition /= static_cast<float>(validCount);
+            centerPosition = averagePosition; // Store for rotation
+            gizmoTransform[3] = glm::vec4(averagePosition, 1.0f); // Set translation to average
+            originalGizmoTransform = gizmoTransform; // Store original for delta calculation
+            hasValidEntity = true;
+        }
+    } else {
+        // Pivot mode: Use the transform of the first valid entity
+        for (const Entity& entity : selectedEntities) {
+            if (scene.IsValid(entity)) {
+                TransformComponent& tc = scene.GetComponent<TransformComponent>(entity);
+                gizmoTransform = tc.GlobalModelMatrix();
+                originalGizmoTransform = gizmoTransform; // Store original for delta calculation
+                centerPosition = glm::vec3(gizmoTransform[3]); // Use entity's position as center
+                pivotEntity = entity;
+                hasValidEntity = true;
+                break;
+            }
+        }
+    }
+
+    // Skip if no valid entities
+    if (!hasValidEntity) return;
+
+    bool snap = Input::IsKey(KeyCode::Control);
+    float snapValues[3] = {0, 0, 0};
+    if (gizmoType == Editor::GizmosType::Rotation) {
+        snapValues[2] = snapValues[1] = snapValues[0] = snapSettings.rotSnapAngle;
+    } else {
+        snapValues[2] = snapValues[1] = snapValues[0] = snapSettings.posGridSize;
+    }
+    if (snapSettings.enable) snap = true;
+
+    ImGuizmo::OPERATION _gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+    if (gizmoType == Editor::GizmosType::Rotation) _gizmoType = ImGuizmo::OPERATION::ROTATE;
+    if (gizmoType == Editor::GizmosType::Scale) _gizmoType = ImGuizmo::OPERATION::SCALE;
+
+    ImGuizmo::MODE _gizmoMode = (gizmoSpace == GizmoSpace::Local) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+
+    // Store a copy of the gizmo transform before manipulation
+    Matrix4 gizmoTransformBefore = gizmoTransform;
+
+    ImGuizmo::Manipulate(
+        Mathf::Raw(view),
+        Mathf::Raw(projection),
+        _gizmoType,
+        _gizmoMode,
+        Mathf::Raw(gizmoTransform),
+        nullptr,
+        (snap ? snapValues : nullptr)
+    );
+
+    if (ImGuizmo::IsUsing()) {
+        // Compute the delta transform
+        glm::mat4 newGizmoTransform = (glm::mat4)gizmoTransform;
+        glm::mat4 deltaTransform = newGizmoTransform * glm::inverse(originalGizmoTransform);
+
+        // Apply the delta transform to all selected entities
+        for (Entity entity : selectedEntities) {
+            if (!scene.IsValid(entity)) continue;
+            TransformComponent& tc = scene.GetComponent<TransformComponent>(entity);
+
+            glm::mat4 entityTransform = tc.GlobalModelMatrix();
+            glm::mat4 newEntityTransform;
+
+            if (gizmoType == Editor::GizmosType::Rotation && pivotMode == GizmoPivotMode::Center && selectedEntities.size() > 1) {
+                // Unity-like rotation around center pivot
+                glm::vec3 scale, translation, skew;
+                glm::quat deltaRotation;
+                glm::vec4 perspective;
+                glm::decompose(deltaTransform, scale, deltaRotation, translation, skew, perspective);
+
+                // Translate entity relative to center, apply rotation, translate back
+                glm::vec3 entityPos = glm::vec3(entityTransform[3]);
+                glm::vec3 relativePos = entityPos - centerPosition;
+                relativePos = deltaRotation * relativePos; // Rotate around center
+                glm::vec3 newPos = centerPosition + relativePos;
+
+                // Update rotation (compose with existing rotation)
+                glm::quat entityRotation = tc.Rotation();
+                tc.Rotation(deltaRotation * entityRotation);
+                tc.Position(newPos);
+            } else if (gizmoSpace == GizmoSpace::Local && gizmoType != Editor::GizmosType::Scale) {
+                // Local mode for translation or rotation
+                if (gizmoType == Editor::GizmosType::Translation) {
+                    glm::vec3 localTranslation = deltaTransform[3];
+                    tc.Position(tc.Position() + localTranslation);
+                } else if (gizmoType == Editor::GizmosType::Rotation) {
+                    glm::vec3 scale, translation, skew;
+                    glm::quat deltaRotation;
+                    glm::vec4 perspective;
+                    glm::decompose(deltaTransform, scale, deltaRotation, translation, skew, perspective);
+                    tc.Rotation(deltaRotation * tc.Rotation());
+                }
+            } else {
+                // Global mode or scale: Apply the full transform
+                newEntityTransform = deltaTransform * entityTransform;
+                glm::vec3 newScale, newTranslation, skew;
+                glm::quat newRotation;
+                glm::vec4 perspective;
+                glm::decompose(newEntityTransform, newScale, newRotation, newTranslation, skew, perspective);
+
+                if (gizmoType == Editor::GizmosType::Translation) tc.Position(newTranslation);
+                if (gizmoType == Editor::GizmosType::Rotation) tc.Rotation(newRotation);
+                if (gizmoType == Editor::GizmosType::Scale) tc.LocalScale(newScale);
+            }
+        }
+    }
+
 }
 
 }

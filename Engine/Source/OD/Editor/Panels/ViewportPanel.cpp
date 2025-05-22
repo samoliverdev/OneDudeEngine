@@ -65,16 +65,31 @@ void ViewportPanel::OnGui(){
         }
         ImGui::PopStyleVar();
 
-        static const char* items[]{"One","Two","three"};
+        float labelWidth = ImGui::CalcTextSize("Center").x;
+        ImGui::PushItemWidth(labelWidth + 30.0f); // Adicione um pouco para o botão de dropdown
+        ImGui::DrawEnumCombo<Editor::GizmoPivotMode>("##pivotMode", &editor->pivotMode);
+        ImGui::PopItemWidth();
+
+        labelWidth = ImGui::CalcTextSize("Global").x;
+        ImGui::PushItemWidth(labelWidth + 30.0f); // Adicione um pouco para o botão de dropdown
+        ImGui::DrawEnumCombo<Editor::GizmoSpace>("##gizmoSpace", &editor->gizmoSpace);
+        ImGui::PopItemWidth();
+
+        /*static const char* items[]{"One","Two","three"};
         static int Selecteditem = 0;
         if(ImGui::Combo("MyCombo", &Selecteditem, items, IM_ARRAYSIZE(items))){
             // Here event is fired
-        }
+        }*/
 
-        if(Selecteditem == 1){
+        /*if(ImGui::RadioButton("Pivot", editor->pivotMode == Editor::GizmoPivotMode::Pivot))
+            editor->pivotMode = Editor::GizmoPivotMode::Pivot;
+        if(ImGui::RadioButton("Center", editor->pivotMode == Editor::GizmoPivotMode::Center))
+            editor->pivotMode = Editor::GizmoPivotMode::Center;*/
+
+        /*if(Selecteditem == 1){
             StandRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<StandRenderPipeline>();
             textureId = renderPipeline->GetCameraRenderer().GetShadows().GetDirectionalShadowAtlas()->DepthAttachmentId();
-        }
+        }*/
 
         ImGui::EndMenuBar();
     }

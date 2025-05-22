@@ -48,8 +48,11 @@ public:
 
     inline void UnselectAll(){
         selectionEntity = EntityNull;
+        selectedEntities.clear();
+        _selectedEntities.clear();
+
         selectionAsset = nullptr;
-        selectionOnAsset = false;;
+        selectionOnAsset = false;
     }
 
     template <class Archive>
@@ -74,6 +77,9 @@ private:
     MainWorkspace mainWorkspace;
 
     Entity selectionEntity;
+    std::vector<Entity> selectedEntities;
+    std::unordered_set<Entity> _selectedEntities;
+
     Ref<Asset> selectionAsset;
     bool selectionOnAsset;
 
@@ -96,10 +102,31 @@ private:
     };
     SnapSettings snapSettings;
 
+    enum class GizmoPivotMode { Pivot, Center };
+    GizmoPivotMode pivotMode = GizmoPivotMode::Center;
+
+    enum class GizmoSpace { Local, Global };
+    GizmoSpace gizmoSpace = GizmoSpace::Local;
+
     inline void SetSelectionEntity(Entity entity){
         selectionEntity = entity;
+        selectedEntities.clear();
+        _selectedEntities.clear();
+        selectedEntities.push_back(entity);
+        _selectedEntities.insert(entity);
+
         selectionOnAsset = false;
     }
+
+    inline void AddSelectionEntity(Entity entity){
+        selectionEntity = entity;
+        selectedEntities.push_back(entity);
+        _selectedEntities.insert(entity);
+
+        selectionOnAsset = false;
+    }
+
+    inline int SelectedEntitiesCount(){ return selectedEntities.size(); }
     
     void HandleShotcuts();
     void PlayScene();

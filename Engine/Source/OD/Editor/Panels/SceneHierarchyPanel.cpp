@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Input.h"
 #include "OD/Scene/Scripts.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/LightComponent.h"
@@ -183,9 +184,11 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         if(scene->GetComponent<InfoComponent>(i).hidden == false) validChildren += 1;
     }
 
-    ImGuiTreeNodeFlags flags = 
-        ((entity == editor->selectionEntity) ? ImGuiTreeNodeFlags_Selected : 0) 
-        | (/*transform.Children().empty() == false*/ validChildren > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
+    ImGuiTreeNodeFlags flags = (
+        editor->_selectedEntities.count(entity) //(entity == editor->selectionEntity) 
+        ? ImGuiTreeNodeFlags_Selected : 0) 
+        | (/*transform.Children().empty() == false*/ validChildren > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf
+    );
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
     EntityType entityType = info.Type();
@@ -203,7 +206,13 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(ImGui::IsItemClicked()){
-        editor->SetSelectionEntity(entity);
+        bool holdMultSelection = Input::IsKey(KeyCode::Z);
+
+        if(holdMultSelection){
+            editor->AddSelectionEntity(entity);
+        } else {    
+            editor->SetSelectionEntity(entity);
+        } 
     }
 
     if(ImGui::BeginDragDropTarget()){
