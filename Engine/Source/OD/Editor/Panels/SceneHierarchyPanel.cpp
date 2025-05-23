@@ -80,15 +80,16 @@ void SceneHierarchyPanel::OnGui(){
         
         if(_toDestroy){
             LogInfo("To Destroy Entity2: %d", _toDestroyEntity);
-            editor->SetSelectionEntity(Entity());
+            editor->SetSelectionEntity(EntityNull);
             scene->DestroyEntity(_toDestroyEntity);
             _toDestroy = false;
             return;
         }
 
-        if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()){
+        //if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::GetIO().KeyShift){
+        if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !Input::IsKey(KeyCode::LShift)){
             //_editor->_selectionEntity = Entity();
-            editor->SetSelectionEntity(Entity());
+            editor->SetSelectionEntity(EntityNull);
         }
 
         if(ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)){
@@ -206,7 +207,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(ImGui::IsItemClicked()){
-        bool holdMultSelection = Input::IsKey(KeyCode::Z);
+        //bool holdMultSelection = ImGui::GetIO().KeyShift; //Input::IsKey(KeyCode::LShift);
+        bool holdMultSelection = Input::IsKey(KeyCode::LShift);// && !ImGui::GetIO().WantCaptureKeyboard;
 
         if(holdMultSelection){
             editor->AddSelectionEntity(entity);

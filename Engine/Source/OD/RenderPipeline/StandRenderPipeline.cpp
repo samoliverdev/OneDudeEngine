@@ -641,9 +641,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
     }
 
-    context->BeginDrawEntityIds();
+    /*context->BeginDrawEntityIds();
     context->DrawEntityIds(entityIdDrawTarget);
-    context->EndDrawEntityIds();
+    context->EndDrawEntityIds();*/
 
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();
@@ -881,6 +881,15 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     return out;
 }
 
+void CameraRenderer::RenderEntityIds(Camera cam, RenderContext* renderContext){
+    context->SetupCameraProperties(cam);
+    context->BeginDrawToScreen();
+
+    context->BeginDrawEntityIds();
+    context->DrawEntityIds(entityIdDrawTarget);
+    context->EndDrawEntityIds();
+}
+
 #pragma endregion
 
 #pragma region StandRenderPipeline
@@ -906,6 +915,10 @@ Framebuffer* StandRenderPipeline::FinalColor(){
 }
 
 int StandRenderPipeline::ReadEntityId(int x, int y){
+    if(overrideCamera != nullptr){
+        cameraRenderer.RenderEntityIds(*overrideCamera, renderContext);
+    }
+
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
 }
 

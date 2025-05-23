@@ -125,16 +125,17 @@ void ViewportPanel::OnGui(){
 
     if(Input::IsMouseButtonDown(MouseButton::Left) && editor->isOnManipulationGizmos == false){
         int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
-        LogInfo("ReadPixel(1): %d", entityId);
-
+    
         ImVec2 _mousePos = ImGui::GetMousePos();
         bool insideViewport =
         _mousePos.x >= editor->viewportBounds[0].x && _mousePos.x <= editor->viewportBounds[1].x &&
         _mousePos.y >= editor->viewportBounds[0].y && _mousePos.y <= editor->viewportBounds[1].y;
 
         if(insideViewport){
+            LogInfo("ReadPixel(1): %d", entityId);
+
             if(entityId >= 0){
-                bool holdMultSelection = Input::IsKey(KeyCode::Z);
+                bool holdMultSelection = Input::IsKey(KeyCode::LShift);
 
                 if(holdMultSelection){
                     editor->AddSelectionEntity((Entity)entityId);

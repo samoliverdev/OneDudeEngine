@@ -220,6 +220,8 @@ public:
     inline Lighting& GetLighting(){ return lighting; }
     inline Shadows& GetShadows(){ return shadows; }
 
+    void RenderEntityIds(Camera cam, RenderContext* renderContext);
+
 private:
     Shadows shadows;
     Lighting lighting;
