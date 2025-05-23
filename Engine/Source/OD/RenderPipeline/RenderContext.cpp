@@ -76,7 +76,7 @@ RenderContext::RenderContext(Scene* inScene){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
-    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.glsl"));
+    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.shader"));
 
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
