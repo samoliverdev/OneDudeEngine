@@ -30,13 +30,12 @@ public:
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) override;
 
     virtual void BindMaterial(Material& mat) override;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix) override;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData) override;
-    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count) override;
+    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
+    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
 
-    virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix) override;
-    virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count) override;
+    virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
+    virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) override;
     virtual void DrawModel(Model& model, Matrix4 modelMatrix) override;
 
@@ -138,6 +137,8 @@ public:
     void SetBlend(bool b);
     int BlendModeToGL(BlendMode blendMode);
     void SetBlendFunc(BlendMode sfactor, BlendMode dfactor);
+
+    void SendPerDrawData(PerDrawData& perDrawData);
 
     int SubShaderGetLocation(SubShader& shader, const char* name);
     void SubShaderSetFloat(SubShader& shader, const char* name, float value);

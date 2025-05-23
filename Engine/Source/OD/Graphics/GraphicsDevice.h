@@ -4,7 +4,7 @@
 #include "OD/Core/Color.h"
 #include "Camera.h"
 #include "RendererTypes.h"
-#include "Graphics.h"
+//#include "Graphics.h"
 #include "Framebuffer.h"
 #include "Texture.h"
 #include "SubShader.h"
@@ -22,6 +22,7 @@ class Texture2DArray;
 class Cubemap;
 class Shader;
 struct GraphicsStats;
+struct PerDrawData;
 
 struct GraphicsDeviceInfo{
     std::string apiName;
@@ -52,13 +53,12 @@ public:
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) = 0;
 
     virtual void BindMaterial(Material& mat) = 0;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix) = 0;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){}
-    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count) = 0;
+    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
+    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
 
-    virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix) = 0;
-    virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count) = 0;
+    virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
+    virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) = 0;
     virtual void DrawModel(Model& model, Matrix4 modelMatrix) = 0;
 

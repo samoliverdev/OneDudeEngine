@@ -18,10 +18,12 @@ struct OD_API DrawCommand{
     Mesh* meshs;// Ref<Mesh> meshs;
     float distance;
 
-    #if EnableExperimentalPerDrawCustomData
+    /*#if EnableExperimentalPerDrawCustomData
     bool useCustomData = false;
     Vector4 customData;
-    #endif
+    #endif*/
+
+    PerDrawData perDrawData;
 
     bool operator<(const DrawCommand& a) const;
 };
@@ -31,6 +33,7 @@ struct OD_API SkinnedDrawCommand{
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     std::vector<Matrix4>* posePalette;
+    PerDrawData perDrawData;
     float distance;
 
     bool operator<(const SkinnedDrawCommand& a) const;
@@ -69,7 +72,7 @@ struct OD_API RendererList{
     
     void Clean();
     void Sort();
-    void Submit();
+    void Submit(bool skipEntityId = true);
 
 private:
     CommandBucket0<DrawCommand> drawCommands;

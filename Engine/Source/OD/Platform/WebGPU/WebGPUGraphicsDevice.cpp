@@ -976,7 +976,7 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
     lastShader = mat.currentShader.get();
 }
 
-void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
+void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, OD::PerDrawData* perDrawData){
     if(&mesh != lastMesh){
         wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
         wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mesh.wgData.uvBuffer, 0, wgpuBufferGetSize(mesh.wgData.uvBuffer));
@@ -1004,7 +1004,7 @@ void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
     }
 }
 
-void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){
+void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, OD::PerDrawData* perDrawData){
     //DrawMesh(mesh, model); return;
     if(&mesh != lastMesh){
         wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mesh.wgData.vertexBuffer, 0, wgpuBufferGetSize(mesh.wgData.vertexBuffer));
@@ -1090,14 +1090,14 @@ void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs,
     }
 }
 
-void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
+void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, OD::PerDrawData* perDrawData){
     BindMaterial(mat);
-    DrawMesh(mesh, modelMatrix);
+    DrawMesh(mesh, modelMatrix, perDrawData);
 }
 
-void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count){
+void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, OD::PerDrawData* perDrawData){
     BindMaterial(mat);
-    DrawMeshSkinned(mesh, model, animMatrix, count);
+    DrawMeshSkinned(mesh, model, animMatrix, count, perDrawData);
 }
 
 void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){
@@ -1112,7 +1112,7 @@ void WebGPUGraphicsDevice::DrawModel(Model& model, Matrix4 modelMatrix){
         Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
         Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
         BindMaterial(*targetMaterial);
-        DrawMesh(*targetMesh, targetMatrix);
+        DrawMesh(*targetMesh, targetMatrix, nullptr);
     }
 }
 

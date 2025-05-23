@@ -65,10 +65,12 @@ struct OD_API RenderData{
     std::vector<Matrix4>* posePalette = nullptr;
     float distance;
 
-    #if EnableExperimentalPerDrawCustomData
+    /*#if EnableExperimentalPerDrawCustomData
     bool useCustomData = false;
     Vector4 customData;
-    #endif
+    #endif*/
+
+    PerDrawData perDrawData;
 };
 
 struct OD_API RenderContextSettings{
@@ -88,6 +90,11 @@ public:
     //void SetupRenderers(const std::vector<DrawingTarget*>& targets, const std::vector<ShadowDrawingTarget*>& shadowTargets);
     void SetupCameraProperties(Camera cam);
     void RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData);
+
+    void BeginDrawEntityIds();
+    void EndDrawEntityIds();
+    void DrawEntityIds(RendererList& commandBuffer);
+    int ReadPixeIntFromEntityIdsFramebuffer(int x, int y);
     
     void BeginDrawToScreen();
     void EndDrawToScreen();
@@ -132,11 +139,14 @@ public:
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
 
 private:
+    Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;
     Framebuffer* forwardOutColor;
     Framebuffer* finalColor;
     Framebuffer* postFx1;
     Framebuffer* postFx2;
+
+    Ref<Material> entityIdShader;
 
     Ref<Material> blitShader;
     Ref<Material> deferredGBufferShader;

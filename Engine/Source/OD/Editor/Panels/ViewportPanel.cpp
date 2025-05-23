@@ -1,4 +1,5 @@
 #include "ViewportPanel.h"
+#include "OD/Core/Input.h"
 #include "OD/Editor/Editor.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
@@ -122,6 +123,30 @@ void ViewportPanel::OnGui(){
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
+    if(Input::IsMouseButtonDown(MouseButton::Left) && editor->isOnManipulationGizmos == false){
+        int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
+        LogInfo("ReadPixel(1): %d", entityId);
+
+        ImVec2 _mousePos = ImGui::GetMousePos();
+        bool insideViewport =
+        _mousePos.x >= editor->viewportBounds[0].x && _mousePos.x <= editor->viewportBounds[1].x &&
+        _mousePos.y >= editor->viewportBounds[0].y && _mousePos.y <= editor->viewportBounds[1].y;
+
+        if(insideViewport){
+            if(entityId >= 0){
+                bool holdMultSelection = Input::IsKey(KeyCode::Z);
+
+                if(holdMultSelection){
+                    editor->AddSelectionEntity((Entity)entityId);
+                } else {    
+                    editor->SetSelectionEntity((Entity)entityId);
+                }
+            } else {
+                editor->UnselectAll();
+            }
+        }
+    }
+
     //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
     
     if(renderPipeline->FinalColor()->IsValid()){
@@ -132,7 +157,7 @@ void ViewportPanel::OnGui(){
         //textureId = SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(1);
         //SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->ColorAttachmentId(0);
     }
-
+    
     ImVec2 imagePos = ImGui::GetCursorPos();
     
     ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));

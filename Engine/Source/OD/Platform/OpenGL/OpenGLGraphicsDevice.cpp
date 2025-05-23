@@ -1064,7 +1064,18 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
     lastShader = mat.currentShader.get();
 }  
 
-void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
+void OpenGLGraphicsDevice::SendPerDrawData(PerDrawData& perDrawData){
+    if(perDrawData.int_0.size() > 0){
+        SubShaderSetInt(*lastShader, "perDrawInt_0", perDrawData.int_0[0]);
+    }
+    if(perDrawData.vector4_0.size() > 0){
+        SubShaderSetVector4(*lastShader, "perDrawVector4_0", perDrawData.vector4_0[0]);
+    }
+}
+
+void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
+    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
+
     if(MeshIsValid(mesh) == false){
         #ifdef GRAPHIC_LOG_ERROR
         LogError("DrawMesh::InvalidMesh");
@@ -1096,12 +1107,9 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){
     }
 }
 
-void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){
-    SubShaderSetVector4(*lastShader, "customData", customData);
-    DrawMesh(mesh, modelMatrix);
-}
+void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
+    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
 
-void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 modelMatrix, Matrix4* animMatrixs, int count){
     if(MeshIsValid(mesh) == false){
         #ifdef GRAPHIC_LOG_ERROR
         LogError("DrawMesh::InvalidMesh");
@@ -1161,14 +1169,14 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs,
     //glCheckError();
 }
 
-void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){
+void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
     BindMaterial(mat);
-    DrawMesh(mesh, modelMatrix);
+    DrawMesh(mesh, modelMatrix, perDrawData);
 }
 
-void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count){
+void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
     BindMaterial(mat);
-    DrawMeshSkinned(mesh, modelMatrix, animMatrixs, count);
+    DrawMeshSkinned(mesh, modelMatrix, animMatrixs, count, perDrawData);
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
@@ -2056,6 +2064,10 @@ void* OpenGLGraphicsDevice::FramebufferDepthAttachmentId(Framebuffer& framebuffe
 }
 
 int OpenGLGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y){
+    if(frambuffer.IsValid() == false) return 0;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, frambuffer.glData.renderId);
+
     Assert(attachmentIndex < frambuffer.glData.colorAttachments.size());
 
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
@@ -2064,6 +2076,8 @@ int OpenGLGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int atta
     int pixelData;
     glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
     glCheckError();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
     return pixelData;
 }

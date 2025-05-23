@@ -7,7 +7,7 @@
 #include "Framebuffer.h"
 #include "GraphicsDevice.h"
 
-#define EnableExperimentalPerDrawCustomData 1
+//#define EnableExperimentalPerDrawCustomData 1
 
 namespace sol{ class state; }
 
@@ -30,6 +30,11 @@ struct GraphicsStats{
 };
 
 enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
+
+struct OD_API PerDrawData {
+    std::vector<int> int_0;
+    std::vector<Vector4> vector4_0;
+};
 
 class OD_API Graphics {
     friend class Application;
@@ -54,13 +59,12 @@ public:
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
     static void BindMaterial(Material& mat);
-    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix);
-    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData);
-    static void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count);
+    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
+    static void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count);
 
-    static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix);
-    static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count);
+    static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
+    static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count);
     static void DrawModel(Model& model, Matrix4 modelMatrix);
 

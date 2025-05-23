@@ -230,6 +230,9 @@ private:
     RendererList blendDrawTarget;
     DrawingSettings blendDrawSettings;
 
+    RendererList entityIdDrawTarget;
+    DrawingSettings entityIdDrawSettings;
+
     //PostFXTest* postFXTest;
 
     Ref<Material> cubemapSkyMaterial = nullptr;
@@ -263,6 +266,8 @@ public:
 
     void OnDrawGizmos(Camera& cam) override;
     void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+
+    int ReadEntityId(int x, int y) override;
 
     inline CameraRenderer& GetCameraRenderer(){ return cameraRenderer; }
 

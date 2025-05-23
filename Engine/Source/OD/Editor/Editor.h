@@ -86,6 +86,7 @@ private:
     bool showSceneHierarchy = true;
     bool showInspector = true;
     bool open = true;
+    bool isOnManipulationGizmos = false;
 
     Vector2 viewportSize;
     GizmosType gizmoType;

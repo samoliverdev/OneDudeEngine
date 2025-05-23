@@ -12,6 +12,8 @@ public:
     virtual void SetOverrideFrameBuffer(Framebuffer* out) = 0;
     virtual void SetOverrideCamera(Camera* cam, Transform trans) = 0;
     virtual Framebuffer* FinalColor() = 0;
+
+    virtual int ReadEntityId(int x, int y){ return 0; }
 };
 
 }

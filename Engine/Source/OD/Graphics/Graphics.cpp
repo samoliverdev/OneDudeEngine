@@ -228,28 +228,24 @@ void Graphics::BindMaterial(Material& mat){
     graphicsDevice->BindMaterial(mat); 
 }
 
-void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix){ 
-    graphicsDevice->DrawMesh(mesh, modelMatrix); 
+void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
+    graphicsDevice->DrawMesh(mesh, modelMatrix, perDrawData); 
 }
 
-void Graphics::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, Vector4 customData){
-    graphicsDevice->DrawMesh(mesh, modelMatrix, customData); 
-}
-
-void Graphics::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count){ 
-    graphicsDevice->DrawMeshSkinned(mesh, model, animMatrix, count); 
+void Graphics::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){ 
+    graphicsDevice->DrawMeshSkinned(mesh, model, animMatrix, count, perDrawData); 
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){ 
     graphicsDevice->DrawMeshInstancing(mesh, modelMatrixs, count); 
 }
 
-void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix){ 
-    graphicsDevice->DrawMesh(mesh, mat, modelMatrix); 
+void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
+    graphicsDevice->DrawMesh(mesh, mat, modelMatrix, perDrawData); 
 }
 
-void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count){ 
-    graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count); 
+void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){ 
+    graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count, perDrawData); 
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 

@@ -439,6 +439,12 @@ void CameraRenderer::RunRenderDataLoop(){
 
     opaqueDrawTarget.Clean();
     blendDrawTarget.Clean();
+    entityIdDrawTarget.Clean();
+
+    entityIdDrawSettings.enableIntancing = true;
+    entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
+    entityIdDrawSettings.sortType = SortType::None;
+    entityIdDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
 
     //----------Opaque Settings-----------
     opaqueDrawSettings.enableIntancing = true;
@@ -522,6 +528,7 @@ void CameraRenderer::AddRenderData(RenderData& data){
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
+    context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
 }
 
 glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -633,6 +640,10 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
     }
+
+    context->BeginDrawEntityIds();
+    context->DrawEntityIds(entityIdDrawTarget);
+    context->EndDrawEntityIds();
 
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();
@@ -892,6 +903,10 @@ void StandRenderPipeline::SetOverrideCamera(Camera* cam, Transform trans){
 
 Framebuffer* StandRenderPipeline::FinalColor(){
     return renderContext->GetFinalColor();
+}
+
+int StandRenderPipeline::ReadEntityId(int x, int y){
+    return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
 }
 
 void StandRenderPipeline::Render(){

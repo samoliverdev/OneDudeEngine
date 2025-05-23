@@ -649,6 +649,8 @@ void Editor::DrawGizmos(){
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
 
+    isOnManipulationGizmos = ImGuizmo::IsOver();
+
     Matrix4 view = cam.view;
     Matrix4 projection = cam.projection;
 

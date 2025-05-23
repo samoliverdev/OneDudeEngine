@@ -60,7 +60,9 @@ public:
     void Reload(FrameBufferSpecification specification);
     void Resize(int width, int height);
     void Invalidate();
+    
     int ReadPixel(int attachmentIndex, int x, int y);
+
     bool IsValid();
     void* ColorAttachmentId(int index);
     void* DepthAttachmentId();

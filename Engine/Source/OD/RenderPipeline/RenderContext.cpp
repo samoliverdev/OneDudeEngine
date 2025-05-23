@@ -28,6 +28,15 @@ RenderContext::RenderContext(Scene* inScene){
     scene = inScene;
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
+
+    framebufferSpecification.colorAttachments = {
+        {FramebufferTextureFormat::RED_INTEGER}
+    };
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+    framebufferSpecification.sample = 1;
+    entityIdOutColor = new Framebuffer(framebufferSpecification);
+
     framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGBA32F}, 
         //{FramebufferTextureFormat::RGBA8}//, 
@@ -67,6 +76,8 @@ RenderContext::RenderContext(Scene* inScene){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
+    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.glsl"));
+
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
     //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
@@ -81,6 +92,7 @@ RenderContext::RenderContext(Scene* inScene){
 }
 
 RenderContext::~RenderContext(){
+    delete entityIdOutColor;
     delete deferredOutColor;
     delete forwardOutColor;
     delete finalColor;
@@ -105,11 +117,46 @@ void RenderContext::BeginDrawToScreen(){
         height = overrideFramebuffer->Height();
     }
 
+    entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
     forwardOutColor->Resize(width, height);
     finalColor->Resize(width, height);
     postFx1->Resize(width, height);
     postFx2->Resize(width, height);
+}
+
+void RenderContext::BeginDrawEntityIds(){
+    Graphics::BeginFramebuffer(*entityIdOutColor);
+    ScreenClean();
+}
+
+void RenderContext::EndDrawEntityIds(){
+    Graphics::EndFramebuffer();
+}
+
+void RenderContext::DrawEntityIds(RendererList& commandBuffer){
+    OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
+
+    //if(sort) commandBuffer.Sort();
+    commandBuffer.onUpdateMaterial = [&](Material& material){ 
+        //if(material.GetShader() == nullptr) return;
+        //SetStandUniforms(cam, *material.GetShader()); 
+
+        //Graphics::SetDepthTest(DepthTest::EQUAL);
+
+        /*if(deferred){
+            material.EnableKeyword("Deferred");
+        } else {
+            material.EnableKeyword("Forward");
+        }*/
+    };
+    commandBuffer.overrideMaterial = entityIdShader;
+    commandBuffer.Submit(false);
+    //commandBuffer.onUpdateMaterial = nullptr;
+}
+
+int RenderContext::ReadPixeIntFromEntityIdsFramebuffer(int x, int y){
+    return entityIdOutColor->ReadPixel(0, x, y);
 }
 
 void RenderContext::BeginForwardPass(){
@@ -327,6 +374,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = s.staticDatas[0].aabb;
+        
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -375,6 +425,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
             onReciveRenderData(data);
             _i += 1;
         }
@@ -406,6 +459,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -444,6 +500,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
             onReciveRenderData(data);
         }
     }
@@ -475,6 +534,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = (int)e;
 
         onReciveRenderData(data);
     }
@@ -511,6 +573,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = (int)e;
             
             onReciveRenderData(data);
         }
@@ -570,7 +635,8 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             data.targetMatrix,
             data.targetMaterial,
             data.targetMesh,
-            data.posePalette
+            data.posePalette,
+            data.perDrawData
         }, data.distance);
         return;
     }
@@ -588,10 +654,11 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             data.targetMaterial,
             data.targetMesh,
             data.distance,
-            #if EnableExperimentalPerDrawCustomData
+            data.perDrawData
+            /*#if EnableExperimentalPerDrawCustomData
             data.useCustomData,
             data.customData,
-            #endif
+            #endif*/
         }, data.distance);
     } 
 }

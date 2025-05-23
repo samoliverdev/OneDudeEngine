@@ -149,7 +149,7 @@ void RendererList::Sort(){
     skinnedDrawCommands.Sort();
 }
 
-void RendererList::Submit(){
+void RendererList::Submit(bool skipEntityId){
     OD_PROFILE_SCOPE("RendererList::Submit");
     Material* lastMat = nullptr;
 
@@ -196,13 +196,15 @@ void RendererList::Submit(){
         //Graphics::DrawMeshRaw(*cm.meshs);
         #if EnableExperimentalPerDrawCustomData
         if(cm.useCustomData){
+            Assert(false && "ToFix");
             Graphics::BindMaterial(*_mat);
-            Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
+            //Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
         } else {
             Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
         }
         #else
-        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        if(skipEntityId) cm.perDrawData.int_0.clear();
+        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
         #endif
         //}
     });
@@ -238,13 +240,15 @@ void RendererList::Submit(){
 
         #if EnableExperimentalPerDrawCustomData
         if(cm.useCustomData){
+            Assert(false && "ToFix");
             Graphics::BindMaterial(*_mat);
-            Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
+            //Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
         } else {
             Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
         }
         #else
-        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
+        if(skipEntityId) cm.perDrawData.int_0.clear();
+        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
         #endif
         //}
     });
@@ -318,7 +322,8 @@ void RendererList::Submit(){
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
 
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size());
+        if(skipEntityId) cm.perDrawData.int_0.clear();
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
         
         //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
         //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
@@ -346,7 +351,8 @@ void RendererList::Submit(){
         //_mat->GetShader()->SetMatrix4("model", cm.trans);
         //Graphics::DrawMeshRaw(*cm.meshs);
 
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size());
+        if(skipEntityId) cm.perDrawData.int_0.clear();
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
         
         //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
         //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
