@@ -143,6 +143,24 @@ void Editor::OnUpdate(float deltaTime){
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Z)){
         UndoManager::Get().Undo();
     }
+    if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Y)){
+        UndoManager::Get().Redo();
+    }
+    if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::D)){
+        auto* scene = SceneManager::Get().GetActiveScene();
+        if(/*scene->IsValid(selectionEntity)*/ _selectedEntities.size() > 0){
+            //scene->DuplicateEntity(selectionEntity);
+
+            std::vector<Entity> newEntities;
+            for(auto& i: _selectedEntities){
+                newEntities.push_back(scene->DuplicateEntity(i));
+            }
+            UnselectAll();
+            for(auto& i: newEntities){
+                AddSelectionEntity(i);
+            }
+        }
+    }
 
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
@@ -405,9 +423,8 @@ void Editor::DrawMainMenuBar(){
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
-
             if(ImGui::MenuItem("Undo", "Ctrl+Z")) UndoManager::Get().Undo();
-            if(ImGui::MenuItem("Redo", "Ctrl+Shift+Z")) UndoManager::Get().Redo();
+            if(ImGui::MenuItem("Redo", "Ctrl+Y")) UndoManager::Get().Redo();
 
             ImGui::EndMenu();
         }

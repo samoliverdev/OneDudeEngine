@@ -3,7 +3,7 @@
 namespace OD{
 
 UndoManager& UndoManager::Get(){
-    static UndoManager undoManager(10);
+    static UndoManager undoManager(50);
     return undoManager;
 }
 

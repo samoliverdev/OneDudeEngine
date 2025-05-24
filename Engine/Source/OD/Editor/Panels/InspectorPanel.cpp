@@ -1,6 +1,7 @@
 #include "InspectorPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Undo.h"
 #include "OD/Scene/Scripts.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/LightComponent.h"
@@ -189,6 +190,8 @@ void InspectorPanel::DrawComponents(Entity entity){
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
 
+        auto old = info;
+
         bool selfEnable = scene.HasComponent<SelfDisable>(e) == false;
 
         if(ImGui::Checkbox("Enable", &selfEnable)){
@@ -202,13 +205,26 @@ void InspectorPanel::DrawComponents(Entity entity){
         //ImGui::SameLine();
         
         _strcpy(buffer, sizeof(buffer), info.name.c_str());
-        if(ImGui::InputText("Name", buffer, sizeof(buffer))){
+        if(ImGui::InputText("Name", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)){
             info.name = std::string(buffer);
+            UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<InfoComponent>>(&scene, e, old, info));
         }
 
+        /*bool textEdited = false;
+        if (ImGui::InputText("Name", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+            textEdited = true;  // User pressed Enter after editing
+        } else if (ImGui::IsItemDeactivatedAfterEdit()) {
+            textEdited = true;  // User finished editing by losing focus (clicked away)
+        }
+        if (textEdited) {
+            info.name = std::string(buffer);
+            UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<InfoComponent>>(&scene, e, old, info));
+        }*/
+
         _strcpy(buffer, sizeof(buffer), info.tag.c_str());
-        if(ImGui::InputText("Tag", buffer, sizeof(buffer))){
+        if(ImGui::InputText("Tag", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)){
             info.tag = std::string(buffer);
+            UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<InfoComponent>>(&scene, e, old, info));
         }
 
         ImGui::Text("Id: %zd", (size_t)e);
