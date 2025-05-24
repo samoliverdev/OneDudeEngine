@@ -769,12 +769,17 @@ void RenderContext::DrawGizmos(){
 
     Editor* editor = Application::GetModuleByType<Editor>();
     if(editor != nullptr){
-        if(scene->IsValid(editor->GetSelectionEntity())){
+        //if(scene->IsValid(editor->GetSelectionEntity())){
             /*for(System* s: scene->GetPhysicsSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
             for(System* s: scene->GetStandSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
             for(System* s: scene->GetLateSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
             for(System* s: scene->GetRendererSystems()) s->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());*/
-            for(auto& s: scene->GetSystems()) s.second->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+        //    for(auto& s: scene->GetSystems()) s.second->OnDrawGizmosSelected(cm, editor->GetSelectionEntity());
+        //}
+
+        for(auto& i: editor->GetSelectedEntities()){
+            if(scene->IsValid(i) == false) continue;
+            for(auto& s: scene->GetSystems()) s.second->OnDrawGizmosSelected(cm, i);
         }
     }
 

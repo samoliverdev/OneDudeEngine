@@ -33,8 +33,8 @@ std::vector<std::string> split(const std::string& s, char delim){
     std::stringstream ss (s);
     std::string item;
 
-    while(getline (ss, item, delim)){
-        result.push_back (item);
+    while(getline(ss, item, delim)){
+        result.push_back(item);
     }
 
     return result;
@@ -117,7 +117,7 @@ void Editor::OnInit(){
     mainWorkspace.AddPanel(&profilePanel);
     mainWorkspace.AddPanel(&rendererStatsPanel);
 
-    std::ifstream is("res/Editor.Save");
+    std::ifstream is("Editor.Save");
     if(is.fail() == false){
         cereal::JSONInputArchive archive{is};
         archive(cereal::make_nvp("Editor", *this));
@@ -127,7 +127,7 @@ void Editor::OnInit(){
 void Editor::OnExit(){
     //LogInfo("Edito::OnExit");
 
-    std::ofstream os("res/Editor.Save");
+    std::ofstream os("Editor.Save");
     cereal::JSONOutputArchive archive{os};
     archive(cereal::make_nvp("Editor", *this));
 }

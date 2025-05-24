@@ -40,6 +40,7 @@ public:
     void AddMenuCommand(const std::string path, std::function<void()> command);
 
     inline Entity GetSelectionEntity(){ return selectionEntity; }
+    inline const std::unordered_set<Entity>& GetSelectedEntities() const { return _selectedEntities; }
 
     inline void SetSelectionAsset(Ref<Asset> asset){
         selectionAsset = asset;

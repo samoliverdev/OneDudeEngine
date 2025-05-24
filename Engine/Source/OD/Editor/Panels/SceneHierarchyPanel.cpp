@@ -237,6 +237,18 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
             scene->DuplicateEntity(entity);
         }
 
+        if(ImGui::MenuItem("Create Empty Entity")){
+            auto emptyEntity = scene->AddEntity("Empty Entity");
+            scene->SetParent(entity, emptyEntity);
+        }
+        if(ImGui::MenuItem("Add Prefab")){
+            std::string path = Platform::OpenFile("*.prefab");
+            if(path.empty() == false){
+                auto emptyEntity = scene->InstantiatePrefab(path.c_str());
+                scene->SetParent(entity, emptyEntity);
+            }
+        }
+
         if(info.Type() != EntityType::PrefabChild && ImGui::MenuItem("Delete Entity")){
             entityDeleted = true;
             //_toDestroy = true;
