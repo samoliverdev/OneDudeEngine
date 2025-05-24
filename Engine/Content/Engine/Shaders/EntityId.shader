@@ -21,28 +21,27 @@ Pass {
     #pragma SupportInstancing false
     #pragma MultiCompile _ SKINNED
 
-    MaterialData{ 
+    MaterialData           { 
         int a;
-    }
+}
 
     VertexInOut {
         Out(0) vec2 _texCoord;
     }
 
-    FragInOut{
-        In(0) vec2 _texCoord;
-        Out(0) int fragColor;
-    }
+    FragInOut{ In(0) vec2 _texCoord;
+        Out(0) int fragColor;}
 
     uniform int perDrawInt_0;
 
-    void vertex(){
+    void vertex ()  {
         mat4 targetModelMatrix = GetModelMatrix();
         _texCoord = texCoord.xy;
         OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 
-    void fragment(){ 
+    void fragment (               )
+    { 
         fragColor = perDrawInt_0; 
     }
 }

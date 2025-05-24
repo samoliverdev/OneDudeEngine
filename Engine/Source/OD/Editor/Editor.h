@@ -86,7 +86,21 @@ private:
     bool showSceneHierarchy = true;
     bool showInspector = true;
     bool open = true;
-    bool isOnManipulationGizmos = false;
+
+    struct GizmoInteractionState{
+        bool active = false;
+        bool isUsing;
+        bool isOver;
+    };
+    GizmoInteractionState gizmoInteractionState;
+
+    struct TransformChangeData{
+        TransformComponent oldTrans;
+        TransformComponent newTrans;
+    };
+    std::unordered_map<Entity, TransformChangeData> transformChangesData;
+
+    //bool isOnManipulationGizmos = false;
 
     Vector2 viewportSize;
     GizmosType gizmoType;

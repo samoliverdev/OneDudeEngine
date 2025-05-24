@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include "OD/Core/Asset.h"
+#include "OD/Core/Undo.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Framebuffer.h"
@@ -138,6 +139,10 @@ void Editor::OnUpdate(float deltaTime){
     if(SceneManager::Get().GetActiveScene() == nullptr) return;
     
     if(Input::IsKeyDown(KeyCode::F5)) open = !open;
+
+    if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Z)){
+        UndoManager::Get().Undo();
+    }
 
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
@@ -400,6 +405,10 @@ void Editor::DrawMainMenuBar(){
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
+
+            if(ImGui::MenuItem("Undo", "Ctrl+Z")) UndoManager::Get().Undo();
+            if(ImGui::MenuItem("Redo", "Ctrl+Shift+Z")) UndoManager::Get().Redo();
+
             ImGui::EndMenu();
         }
 
@@ -649,7 +658,13 @@ void Editor::DrawGizmos(){
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
 
-    isOnManipulationGizmos = ImGuizmo::IsOver();
+    gizmoInteractionState.isUsing  = ImGuizmo::IsUsing();
+    gizmoInteractionState.isOver = ImGuizmo::IsOver();
+
+    if(gizmoInteractionState.isUsing && !gizmoInteractionState.active){
+         // Início da manipulação
+        gizmoInteractionState.active = true;
+    }
 
     Matrix4 view = cam.view;
     Matrix4 projection = cam.projection;
@@ -730,14 +745,14 @@ void Editor::DrawGizmos(){
         (snap ? snapValues : nullptr)
     );
 
-    if (ImGuizmo::IsUsing()) {
+    if(ImGuizmo::IsUsing()) {
         // Compute the delta transform
         glm::mat4 newGizmoTransform = (glm::mat4)gizmoTransform;
         glm::mat4 deltaTransform = newGizmoTransform * glm::inverse(originalGizmoTransform);
 
         // Apply the delta transform to all selected entities
-        for (Entity entity : selectedEntities) {
-            if (!scene.IsValid(entity)) continue;
+        for(Entity entity : selectedEntities) {
+            if(!scene.IsValid(entity)) continue;
             TransformComponent& tc = scene.GetComponent<TransformComponent>(entity);
 
             glm::mat4 entityTransform = tc.GlobalModelMatrix();
@@ -756,21 +771,29 @@ void Editor::DrawGizmos(){
                 relativePos = deltaRotation * relativePos; // Rotate around center
                 glm::vec3 newPos = centerPosition + relativePos;
 
+                if(!transformChangesData.count(entity)) transformChangesData[entity].oldTrans = tc;
                 // Update rotation (compose with existing rotation)
                 glm::quat entityRotation = tc.Rotation();
                 tc.Rotation(deltaRotation * entityRotation);
                 tc.Position(newPos);
+                transformChangesData[entity].newTrans = tc;
             } else if (gizmoSpace == GizmoSpace::Local && gizmoType != Editor::GizmosType::Scale) {
                 // Local mode for translation or rotation
                 if (gizmoType == Editor::GizmosType::Translation) {
                     glm::vec3 localTranslation = deltaTransform[3];
+
+                    if(!transformChangesData.count(entity)) transformChangesData[entity].oldTrans = tc;
                     tc.Position(tc.Position() + localTranslation);
+                    transformChangesData[entity].newTrans = tc;
                 } else if (gizmoType == Editor::GizmosType::Rotation) {
                     glm::vec3 scale, translation, skew;
                     glm::quat deltaRotation;
                     glm::vec4 perspective;
                     glm::decompose(deltaTransform, scale, deltaRotation, translation, skew, perspective);
+                    
+                    if(!transformChangesData.count(entity)) transformChangesData[entity].oldTrans = tc;
                     tc.Rotation(deltaRotation * tc.Rotation());
+                    transformChangesData[entity].newTrans = tc;
                 }
             } else {
                 // Global mode or scale: Apply the full transform
@@ -780,11 +803,35 @@ void Editor::DrawGizmos(){
                 glm::vec4 perspective;
                 glm::decompose(newEntityTransform, newScale, newRotation, newTranslation, skew, perspective);
 
-                if (gizmoType == Editor::GizmosType::Translation) tc.Position(newTranslation);
-                if (gizmoType == Editor::GizmosType::Rotation) tc.Rotation(newRotation);
-                if (gizmoType == Editor::GizmosType::Scale) tc.LocalScale(newScale);
+                if(!transformChangesData.count(entity)) transformChangesData[entity].oldTrans = tc;
+                if(gizmoType == Editor::GizmosType::Translation) tc.Position(newTranslation);
+                if(gizmoType == Editor::GizmosType::Rotation) tc.Rotation(newRotation);
+                if(gizmoType == Editor::GizmosType::Scale) tc.LocalScale(newScale);
+                transformChangesData[entity].newTrans = tc;
             }
         }
+    }
+
+    if(!gizmoInteractionState.isUsing && gizmoInteractionState.active){
+        // Fim da manipulação
+
+        std::vector<TransformComponent> oldTrans;
+        std::vector<TransformComponent> newTrans;
+        std::vector<Entity> entities;
+        for(auto& i: transformChangesData){
+            if((Transform)i.second.oldTrans == (Transform)i.second.newTrans) continue;
+            entities.push_back(i.first);
+            oldTrans.push_back(i.second.oldTrans);
+            newTrans.push_back(i.second.newTrans);
+        }
+        if(entities.size() > 0){
+            UndoManager::Get().Execute(
+                CreateScope<UndoValueComponentBatchCommand<TransformComponent>>(&scene, entities, oldTrans, newTrans)
+            );
+        }
+        transformChangesData.clear();
+        
+        gizmoInteractionState.active = false;
     }
 
 }
