@@ -249,6 +249,7 @@ void InspectorPanel::DrawComponents(Entity entity){
                 rb.Position(Vector3(p[0], p[1], p[2]));
             }
         } else {*/
+            /*
             float p[] = {transform.LocalPosition().x, transform.LocalPosition().y, transform.LocalPosition().z};
             if(ImGui::DragFloat3("Position", p, 0.5f, 0, 0, "%.4f")){
                 transform.LocalPosition(Vector3(p[0], p[1], p[2]));
@@ -266,7 +267,70 @@ void InspectorPanel::DrawComponents(Entity entity){
         if(ImGui::DragFloat3("Scale", s, 0.5f, 0, 0, "%.4f")){
             transform.LocalScale(Vector3(s[0], s[1], s[2]));
             UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, old, transform));
-        } 
+        }
+        */
+
+        // Calculate label width to mimic default ImGui::DragFloat3 spacing
+        float availableWidth = ImGui::GetContentRegionAvail().x;
+        float fontSize = ImGui::GetFontSize();
+        // Use the longest label width plus padding to match default DragFloat3 label spacing
+        float longestLabelWidth = math::max(math::min(ImGui::CalcTextSize("Position").x, ImGui::CalcTextSize("Rotation").x), ImGui::CalcTextSize("Scale").x);
+        float labelWidth = longestLabelWidth + ImGui::GetStyle().ItemInnerSpacing.x + 4.0f; // Mimic default spacing
+        float minValueWidth = availableWidth * 0.50f; // Ensure value column is at least 50% of available width
+        labelWidth = math::clamp(availableWidth * 0.25f, labelWidth*0.5f, labelWidth*2);
+
+        // Begin table
+        if (ImGui::BeginTable("TransformTable", 2, 
+                ImGuiTableFlags_SizingStretchSame | 
+                ImGuiTableFlags_NoPadOuterX | 
+                ImGuiTableFlags_BordersInnerV)
+            ) {
+            
+            // Setup columns
+            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, labelWidth);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+            // Helper lambda to draw a row
+            auto DrawTransformRow = [&](const char* label, Vector3& value, const char* id, float dragSpeed, float min = 0.0f, float max = 0.0f) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f); // Slight indent for Unity-like look
+                ImGui::TextUnformatted(label);
+                ImGui::TableSetColumnIndex(1);
+                // Stretch inputs to fill available space, respecting minimum width
+                ImGui::PushItemWidth(math::max(minValueWidth, math::min(availableWidth - labelWidth - 10.0f, availableWidth - labelWidth)));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f)); // Tight padding
+                
+                float v[3] = {value.x, value.y, value.z};
+                if (ImGui::DragFloat3(id, v, dragSpeed, min, max, "%.1f")) {
+                    value = Vector3(v[0], v[1], v[2]);
+                    UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, transform, transform));
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Adjust %s (X, Y, Z)", label);
+                }
+                ImGui::PopStyleVar();
+                ImGui::PopItemWidth();
+            };
+
+            // Position
+            Vector3 position = transform.LocalPosition();
+            DrawTransformRow("Position", position, "##Position", 0.5f);
+            transform.LocalPosition(position);
+
+            // Rotation
+            Vector3 rotation = transform.LocalEulerAngles();
+            DrawTransformRow("Rotation", rotation, "##Rotation", 0.5f);
+            transform.LocalEulerAngles(rotation);
+
+            // Scale
+            Vector3 scale = transform.LocalScale();
+            DrawTransformRow("Scale", scale, "##Scale", 0.5f, 0.0f, 0.0f);
+            transform.LocalScale(scale);
+
+            ImGui::EndTable();
+        }
+    
         if(beginDisable) ImGui::EndDisabled();
     });
 

@@ -42,7 +42,7 @@ void LightComponent::OnGui(Entity& e, Scene& scene){
         light.color = Color{color[0], color[1], color[2], color[3]};
     }*/
 
-    ImGui::ColorEdit4("color", &light.color);
+    /*ImGui::ColorEdit4("color", &light.color);
 
     ImGui::DragFloat("intensity", &light.intensity, 0.025f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::DragFloat("specular", &light.specular, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
@@ -66,7 +66,88 @@ void LightComponent::OnGui(Entity& e, Scene& scene){
         
     }
 
-    ImGui::Checkbox("renderShadow", &light.renderShadow);
+    ImGui::Checkbox("renderShadow", &light.renderShadow);*/
+
+
+    ImGui::BeginTable(
+        "LightProperties", 2,
+        ImGuiTableFlags_SizingStretchSame | 
+        ImGuiTableFlags_NoPadOuterX | 
+        ImGuiTableFlags_BordersInnerV
+    );
+
+    float availableWidth = ImGui::GetContentRegionAvail().x;
+    float labelWidth = math::clamp(availableWidth * 0.25f, 50.0f, 100.0f);
+
+    // Set column widths
+    ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+    // Generic function to add a table row with a custom control
+    auto AddTableRow = [&](const char* label, const char* id, auto&& renderControl) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text(label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-1);
+        renderControl(id);
+        ImGui::PopItemWidth();
+    };
+
+    AddTableRow("Color", "##Color", [&](const char* id) {
+        ImGui::ColorEdit4(id, &light.color);
+    });
+
+    // Intensity
+    AddTableRow("Intensity", "##intensity", [&](const char* id) {
+        ImGui::DragFloat(id, &light.intensity, 0.025f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    });
+
+    // Specular
+    AddTableRow("Specular", "##specular", [&](const char* id) {
+        ImGui::DragFloat(id, &light.specular, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    });
+
+    // Falloff
+    AddTableRow("Falloff", "##falloff", [&](const char* id) {
+        ImGui::DragFloat(id, &light.falloff, 0.025f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    });
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Spacing(); ImGui::Spacing();
+
+    if (light.type == LightComponent::Type::Point) {
+        AddTableRow("Radius", "##radius", [&](const char* id) {
+            ImGui::DragFloat(id, &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+    }
+
+    if (light.type == LightComponent::Type::Spot) {
+        AddTableRow("Radius", "##radius_spot", [&](const char* id) {
+            ImGui::DragFloat(id, &light.radius, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+
+        if (light.coneAngleInner > light.coneAngleOuter) {
+            light.coneAngleInner = light.coneAngleOuter;
+        }
+
+        AddTableRow("Cone Angle Inner", "##coneAngleInner", [&](const char* id) {
+            ImGui::DragFloat(id, &light.coneAngleInner, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+
+        AddTableRow("Cone Angle Outer", "##coneAngleOuter", [&](const char* id) {
+            ImGui::DragFloat(id, &light.coneAngleOuter, 0.1f, 0, 1000, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+    }
+
+    // Checkbox row
+    AddTableRow("Render Shadow", "##renderShadow", [&](const char* id) {
+        ImGui::Checkbox(id, &light.renderShadow);
+    });
+
+    ImGui::EndTable();
+
 }
 
 void LightComponent::CreateLuaBind(sol::state& lua){
