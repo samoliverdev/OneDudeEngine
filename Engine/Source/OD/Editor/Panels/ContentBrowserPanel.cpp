@@ -419,14 +419,17 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
             }
 
             if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
-                _selectedFile = filePath;
+                auto relativePath = std::filesystem::relative(filePath, rootPath);
+                _selectedFile = relativePath;// filePath;
                 std::string pathString = _selectedFile.string();
                 std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
                 auto ext = _selectedFile.extension().string();
                 if (AssetTypesDB::Get().HasAssetByExtension(ext)) {
+                    //pathString = RemoveBasePath(pathString); 
                     editor->SetSelectionAsset(
-                        AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString));
+                        AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
+                    );
                 }
             } else if (ImGui::IsItemClicked()) {
                 _selectedFile = filePath; // Select file

@@ -84,8 +84,8 @@ private:
     Ref<Asset> selectionAsset;
     bool selectionOnAsset;
 
-    bool showSceneHierarchy = true;
-    bool showInspector = true;
+    //bool showSceneHierarchy = true;
+    //bool showInspector = true;
     bool open = true;
 
     struct GizmoInteractionState{

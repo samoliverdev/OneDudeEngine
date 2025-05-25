@@ -142,7 +142,10 @@ void SceneHierarchyPanel::OnGui(){
 
                     Model m;
                     if(m.HasFileExtension(getExtension(*path))){
-                        Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->string());
+                        auto _path = path->string();
+                        std::replace(_path.begin(), _path.end(), '\\', '/');
+
+                        Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
                         Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
                         ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
                         mRenderer.SetModel(model);

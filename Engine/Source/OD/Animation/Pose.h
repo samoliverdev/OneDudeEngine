@@ -28,6 +28,7 @@ public:
     void GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses);
     bool operator==(const Pose& other);
     bool operator!=(const Pose& other);
+    inline void Clear(){ joints.clear(); parents.clear(); }
 protected:
     std::vector<Transform> joints;
     std::vector<int> parents;

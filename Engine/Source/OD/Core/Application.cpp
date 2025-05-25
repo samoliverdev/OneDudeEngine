@@ -85,7 +85,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     running = true;
     appHasInited = true;
 
-    OD::AssetManager::Get().StartHotReload();
+    //OD::AssetManager::Get().StartHotReload();
 
     return true;
 }
@@ -245,7 +245,7 @@ bool Application::Run(){
 void Application::OnExit(){
     //LogInfo("Application::OnExit");
 
-    OD::AssetManager::Get().StopHotReload();
+    //OD::AssetManager::Get().StopHotReload();
 
     for(auto i: modules){
         i->OnExit();

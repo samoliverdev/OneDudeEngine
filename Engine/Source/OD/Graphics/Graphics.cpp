@@ -27,8 +27,15 @@ void GraphicsModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
     AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){ return AssetManager::Get().LoadAsset<Material>(path); });
+    
     AssetTypesDB::Get().RegisterAssetType<Model>(".model", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Model>(".obj", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Model>(".glb", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Model>(".gltf", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Model>(".fbx", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+
     AssetTypesDB::Get().RegisterAssetType<Shader>(".glsl", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Shader>(".shader", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
 
     LuaBindsDB::Get().RegisterLuaBind<Camera>();
     LuaBindsDB::Get().RegisterLuaBind<Cubemap>();

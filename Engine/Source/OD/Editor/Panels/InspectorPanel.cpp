@@ -239,6 +239,8 @@ void InspectorPanel::DrawComponents(Entity entity){
             beginDisable = true;
 
         if(beginDisable) ImGui::BeginDisabled(true);
+
+        auto old = transform;
         
         /*if(scene.HasComponent<RigidbodyComponent>(e)){
             RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
@@ -250,17 +252,20 @@ void InspectorPanel::DrawComponents(Entity entity){
             float p[] = {transform.LocalPosition().x, transform.LocalPosition().y, transform.LocalPosition().z};
             if(ImGui::DragFloat3("Position", p, 0.5f, 0, 0, "%.4f")){
                 transform.LocalPosition(Vector3(p[0], p[1], p[2]));
+                UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, old, transform));
             }
         //}  
 
         float r[] = {transform.LocalEulerAngles().x, transform.LocalEulerAngles().y, transform.LocalEulerAngles().z};
         if(ImGui::DragFloat3("Rotation", r, 0.5f, 0, 0, "%.4f")){
             transform.LocalEulerAngles(Vector3(r[0], r[1], r[2]));
+            UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, old, transform));
         }  
 
         float s[] = {transform.LocalScale().x, transform.LocalScale().y, transform.LocalScale().z};
         if(ImGui::DragFloat3("Scale", s, 0.5f, 0, 0, "%.4f")){
             transform.LocalScale(Vector3(s[0], s[1], s[2]));
+            UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, old, transform));
         } 
         if(beginDisable) ImGui::EndDisabled();
     });

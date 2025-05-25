@@ -23,31 +23,82 @@
 namespace OD{
 
 template<class Archive>
-void LoadArchive(const char* path, Archive& data){
+void LoadArchive(const std::string& path, Archive& data, const std::string& name = ""){
     std::ofstream os(path);
     cereal::JSONOutputArchive ar(os);
-    ArchiveDumpNVP(ar, data);
-}
 
-template<class Archive>
-void LoadOrCreateArchive(const char* path, Archive& data){
-    std::ifstream stream(path);
-    if(stream.fail()){
-        std::ofstream os(path);
-        cereal::JSONOutputArchive ar(os);
+    if(name.empty()){
         ArchiveDumpNVP(ar, data);
     } else {
-        cereal::JSONInputArchive ar{stream};
-        ArchiveDumpNVP(ar, data);
+        ArchiveDumpNamed(ar, name, data);
     }
 }
 
+template<class Archive>
+void LoadOrCreateArchive(const std::string& path, Archive& data, const std::string& name = ""){
+    /*std::ifstream stream(path);
+    if(stream.fail()){
+        std::ofstream os(path);
+        cereal::JSONOutputArchive ar(os);
+        
+        if(name.empty()){
+            ArchiveDumpNVP(ar, data);
+        } else { 
+            ArchiveDumpNamed(ar, name, data);
+        }
+    } else {
+        cereal::JSONInputArchive ar{stream};
+        
+        if(name.empty()){
+            ArchiveDumpNVP(ar, data);
+        } else { 
+            ArchiveDumpNamed(ar, name, data);
+        }
+    }*/
+
+    bool success = false;
+
+    try{
+        std::ifstream stream(path);
+        if(stream.is_open()){
+            cereal::JSONInputArchive ar(stream);
+            if(name.empty()){
+                ArchiveDumpNVP(ar, data);
+            } else {
+                ArchiveDumpNamed(ar, name, data);
+            }
+            success = true;
+        }
+    } catch(const std::exception& e){
+        LogError("Failed to load archive: %s", e.what());
+    }
+
+    if(!success){
+        std::ofstream os(path);
+        if(!os.is_open()){
+            LogError("Failed to open file for writing: %s", path.c_str());
+            return;
+        }
+
+        cereal::JSONOutputArchive ar(os);
+        if(name.empty()){
+            ArchiveDumpNVP(ar, data);
+        } else {
+            ArchiveDumpNamed(ar, name, data);
+        }
+    }
+}
 
 template<class Archive>
-void SaveArchive(const char* path, Archive& data){
+void SaveArchive(const std::string& path, Archive& data, const std::string& name = ""){
     std::ofstream os(path);
     cereal::JSONOutputArchive ar(os);
-    ArchiveDumpNVP(ar, data);
+
+    if(name.empty()){
+        ArchiveDumpNVP(ar, data);
+    } else {
+        ArchiveDumpNamed(ar, name, data);
+    }
 }
 
 }

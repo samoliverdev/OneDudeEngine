@@ -3,7 +3,10 @@
 #include "OD/Loader/GltfLoader2.h"
 #include "OD/Loader/ObjLoader.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationFull.h"
 #include <string>
+#include <fstream>
 
 namespace OD{
 
@@ -23,6 +26,12 @@ void Model::OnGui(){
 	ImGui::Text("Textures Count: %zd", textures.size());
 	ImGui::Text("Matrixs Count: %zd", matrixs.size());
 	ImGui::Text("Animation Clips Count: %zd", animationClips.size());
+
+	ImGui::InputFloat("LoadSettings::scale", &settings.scale);
+	
+	if(ImGui::Button("Apply Changes") && path != "Memory"){
+		Reload();
+	}
 }
 
 void Model::SetPath(const std::string& inPath){ 
@@ -35,8 +44,29 @@ void Model::SetShader(Ref<Shader> shader){
 	}
 }
 
+void Model::Clear(){
+	renderTargets.clear();
+    meshs.clear();
+    materials.clear();
+    textures.clear();
+    matrixs.clear();
+    skeleton.Clear();
+    animationClips.clear();
+}
+
+void Model::Reload(){
+    if(path == "Memory"){
+        LogError("Can Not Reload Texture2d From Memory");
+        return;
+    }
+
+	SaveArchive(path + ".meta", settings, "settings");
+    LoadFromFile(path);
+}
+
 bool Model::LoadFromFile(const std::string& path){
-    return Model::CreateFromFile(*this, path, {});
+	if(path.empty() == false && path != "Memory") LoadOrCreateArchive(path + ".meta", settings, "settings");
+    return Model::CreateFromFile(*this, path, settings);
 }
 
 std::vector<std::string> Model::GetFileAssociations(){ 
@@ -51,6 +81,8 @@ std::vector<std::string> Model::GetFileAssociations(){
 }
 
 bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings){
+	model.Clear();
+
 	#ifdef USE_ASSIMP
 	return AssimpLoadModel(model, path, loadSettings);
 	#endif

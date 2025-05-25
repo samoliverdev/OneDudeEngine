@@ -19,6 +19,7 @@ public:
     std::vector<std::string>& GetJointNames();
     std::string& GetJointName(unsigned int index);
     int FindJointByName(const std::string& name);
+    inline void Clear(){ restPose.Clear(); bindPose.Clear(); invBindPose.clear(); jointNames.clear(); }
 
 protected:
     Pose restPose;

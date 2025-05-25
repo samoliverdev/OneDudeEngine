@@ -40,6 +40,11 @@ public:
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
     float scale = 1.0f;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, scale);
+    }
 };
 
 class OD_API Model: public Asset{
@@ -68,10 +73,17 @@ public:
     std::vector<std::string> GetFileAssociations() override;
 
     void SetShader(Ref<Shader> customShader);
+
+    void Reload() override;
     
     static bool CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings = {});
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
+
+private: 
+    ModelLoadSettings settings;
+
+    void Clear();
 };
 
 }

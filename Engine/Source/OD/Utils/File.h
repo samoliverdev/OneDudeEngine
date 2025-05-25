@@ -33,4 +33,26 @@ inline std::filesystem::path GetAbsExeDirectory(){
     #endif
 }
 
+inline std::string RemoveBasePath(const std::string& fullPath, const std::string& basePath) {
+    // Ensure both paths use the same slash convention (Windows-style)
+    std::string normalizedFullPath = fullPath;
+    std::string normalizedBasePath = basePath;
+
+    // Optionally normalize slashes (if needed)
+    std::replace(normalizedFullPath.begin(), normalizedFullPath.end(), '\\', '/');
+    std::replace(normalizedBasePath.begin(), normalizedBasePath.end(), '\\', '/');
+
+    // Ensure basePath ends with a slash
+    if (!normalizedBasePath.empty() && normalizedBasePath.back() != '/')
+        normalizedBasePath += '/';
+
+    // Check if basePath is a prefix
+    if (normalizedFullPath.find(normalizedBasePath) == 0) {
+        return normalizedFullPath.substr(normalizedBasePath.length());
+    }
+
+    // If basePath isn't found, return original fullPath
+    return fullPath;
+}
+
 }
