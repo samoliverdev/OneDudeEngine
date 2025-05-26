@@ -262,6 +262,10 @@ void PhysicsSample::OnRender(float deltaTime){
 }
 
 void PhysicsSample::OnGUI(){
+
+    //bool t = true;
+    //ImGui::ShowDemoWindow(&t);
+
     /*
     ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 

@@ -29,6 +29,11 @@
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Collision/TransformedShape.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/CollisionCollector.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Ragdoll/Ragdoll.h>
@@ -110,7 +115,9 @@ namespace PhysicsLayers{
 class ObjectLayerPairFilterImpl : public ObjectLayerPairFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override{
-		switch (inObject1)
+		return true;
+
+		/*switch (inObject1)
 		{
 		case PhysicsLayers::NON_MOVING:
 			return inObject2 == PhysicsLayers::MOVING; // Non moving only collides with moving
@@ -119,7 +126,7 @@ public:
 		default:
 			JPH_ASSERT(false);
 			return false;
-		}
+		}*/
 	}
 };
 
@@ -140,7 +147,7 @@ class BPLayerInterfaceImpl final : public BroadPhaseLayerInterface{
 public:
     BPLayerInterfaceImpl(){
 		// Create a mapping table from object to broad phase layer
-		mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
+		mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::MOVING;//BroadPhaseLayers::NON_MOVING;
 		mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
 	}
 
@@ -172,6 +179,7 @@ private:
 class ObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override{
+		return true;
 		switch (inLayer1)
 		{
 		case PhysicsLayers::NON_MOVING:
@@ -219,6 +227,19 @@ public:
 	virtual void OnBodyDeactivated(const BodyID &inBodyID, uint64 inBodyUserData) override{
 		cout << "A body went to sleep" << endl;
 	}
+};
+
+class MyGroupFilter : public JPH::GroupFilter {
+public:
+    virtual bool CanCollide(const JPH::CollisionGroup &a, const JPH::CollisionGroup &b) const override {
+        /*int aMask = (int)a.GetSubGroupID();
+        int bMask = (int)b.GetSubGroupID();
+        int aLayer = (int)a.GetGroupID();
+        int bLayer = (int)b.GetGroupID();
+        return ((aMask & bLayer) != 0) && ((bMask & aLayer) != 0);*/
+
+		return (a.GetSubGroupID() & b.GetGroupID()) != 0 && (b.GetSubGroupID() & a.GetGroupID()) != 0;
+    }
 };
 
 class MyDebugRenderer: public DebugRendererSimple {
@@ -304,6 +325,8 @@ struct PhysicsWorld{
     ObjectVsBroadPhaseLayerFilterImpl objectVsBroadPhaseLayerFilter;
     ObjectLayerPairFilterImpl objectVsObjectLayerFilter;
     JPH::PhysicsSystem physicsSystem;
+	//MyGroupFilter groupFilter;
+	JPH::Ref<MyGroupFilter> groupFilter;
 
     TempAllocatorImpl* tempAllocator;
     JobSystemThreadPool jobSystem;
@@ -703,6 +726,18 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 	physicsWorld->renderer = new MyDebugRenderer();
 
+	JPH::Ref<MyGroupFilter> groupFilter = new MyGroupFilter();
+	physicsWorld->groupFilter = groupFilter;
+
+	// Check that doesn't collide with self
+	CollisionGroup g1(physicsWorld->groupFilter, Layer1, Layer0);
+	Assert(!g1.CanCollide(g1) == false);
+
+	// Check that collides with other group
+	CollisionGroup g2(physicsWorld->groupFilter, Layer1, AllLayers);
+	Assert(g1.CanCollide(g2) == false);
+	Assert(g2.CanCollide(g1) == false);
+
 	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
@@ -726,7 +761,7 @@ PhysicsSystem::~PhysicsSystem(){
     delete physicsWorld;
 }
 
-RagdollSettings* CreateRagdollSettings(RagdollComponent& ragdoll, TransformComponent& trans, Skeleton& skinnedSkeleton){
+RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton){
 	auto GetShape = [](CollisionShape shape) -> Shape* {
 		if(shape.type == CollisionShape::Type::Box) return new BoxShape(ToJolt(shape.size * 0.5f));
 		if(shape.type == CollisionShape::Type::Sphere) return new SphereShape(shape.radius);
@@ -801,7 +836,7 @@ RagdollSettings* CreateRagdollSettings(RagdollComponent& ragdoll, TransformCompo
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType = EMotionType::Dynamic;
-		part.mObjectLayer = PhysicsLayers::MOVING;
+		part.mObjectLayer = info.layer; //PhysicsLayers::MOVING;
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
 		if (p > 0){
@@ -877,7 +912,7 @@ void PhysicsSystem::PhysicsUpdate(){
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
 		if(ragdoll.data == nullptr){
 			ragdoll.data = new RagdollObject();
-			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(ragdoll, trans, skinned.GetModel()->skeleton);
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 		}
@@ -900,11 +935,129 @@ void PhysicsSystem::ShowDebugGizmos(){
 	Graphics::DrawLinesComamnd({0, 1, 0}, 1);
 }
 
+// Example: Filter for non-moving objects (e.g., static walls)
+class BroadPhaseLayerFilterImpl : public JPH::BroadPhaseLayerFilter {
+public:
+    bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override {
+        return inLayer == BroadPhaseLayers::MOVING; // Replace with your layer
+    }
+};
+
+struct MyObjectLayerFilter : public JPH::ObjectLayerFilter{
+    LayerMask allowedMask; // your LayerMask.mask
+
+    MyObjectLayerFilter(LayerMask inMask) : allowedMask(inMask) {}
+
+    virtual bool ShouldCollide(JPH::ObjectLayer inLayer) const override{
+        return (allowedMask.mask & inLayer) != 0;
+    }
+};
+
+class ClosestHitRayCollector : public JPH::CastRayCollector {
+public:
+    ClosestHitRayCollector() : mHitFraction(1.0f) {}
+
+    void AddHit(const JPH::RayCastResult& inResult) override {
+        // Only keep the closest hit
+        if (inResult.mFraction < mHitFraction) {
+            mHit = inResult;
+            mHitFraction = inResult.mFraction;
+        }
+    }
+
+    bool HadHit() const {
+        return mHitFraction < 1.0f;
+    }
+
+    const JPH::RayCastResult& GetHit() const {
+        return mHit;
+    }
+
+private:
+    JPH::RayCastResult mHit;
+    float mHitFraction;
+};
+
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
+	Assert(physicsWorld->world != nullptr); 
+
+	JPH::RRayCast ray;
+	ray.mOrigin = ToJolt(pos);
+	ray.mDirection = ToJolt(dir);
+
+	JPH::RayCastSettings settings;
+	settings.mBackFaceModeTriangles = JPH::EBackFaceMode::IgnoreBackFaces; // Ignore back-facing triangles
+	settings.mBackFaceModeConvex = JPH::EBackFaceMode::IgnoreBackFaces;   // Ignore back-facing convex shapes
+	settings.mTreatConvexAsSolid = false; // Treat convex shapes as solid
+
+	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	ClosestHitRayCollector collector;
+
+	//JPH::RayCastResult result;
+	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
+
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector);
+	if(collector.HadHit()){
+		const JPH::RayCastResult& result = collector.GetHit();
+		JPH::BodyID hitBodyID = result.mBodyID;
+		float hitFraction = result.mFraction; // From 0.0 to 1.0
+		JPH::Vec3 hitPosition = ray.mOrigin + ray.mDirection * hitFraction;
+
+		// Get the body that was hit
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), result.mBodyID);
+		if(!lock.Succeeded()) return false;
+
+		const JPH::Body &body = lock.GetBody();
+		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
+
+		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		hit.hitPoint = FromJolt(hitPoint);
+		hit.hitPoint = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+		return true;
+	}
+
     return false;
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask){
+    Assert(physicsWorld->world != nullptr); 
+
+	JPH::RRayCast ray;
+	ray.mOrigin = ToJolt(pos);
+	ray.mDirection = ToJolt(dir);
+
+	JPH::RayCastSettings settings;
+	settings.mBackFaceModeTriangles = JPH::EBackFaceMode::IgnoreBackFaces; // Ignore back-facing triangles
+	settings.mBackFaceModeConvex = JPH::EBackFaceMode::IgnoreBackFaces;   // Ignore back-facing convex shapes
+	settings.mTreatConvexAsSolid = false; // Treat convex shapes as solid
+
+	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	ClosestHitRayCollector collector;
+
+	//JPH::RayCastResult result;
+	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
+
+	MyObjectLayerFilter objectLayerFilter(mask);
+
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
+	if(collector.HadHit()){
+		const JPH::RayCastResult& result = collector.GetHit();
+		JPH::BodyID hitBodyID = result.mBodyID;
+		float hitFraction = result.mFraction; // From 0.0 to 1.0
+		JPH::Vec3 hitPosition = ray.mOrigin + ray.mDirection * hitFraction;
+
+		// Get the body that was hit
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), result.mBodyID);
+		if(!lock.Succeeded()) return false;
+
+		const JPH::Body &body = lock.GetBody();
+		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
+
+		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		hit.hitPoint = FromJolt(hitPoint);
+		hit.hitPoint = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+		return true;
+	}
 
     return false;
 }
@@ -1010,9 +1163,17 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
 
 	BodyCreationSettings settings(
-        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer /*PhysicsLayers::MOVING*/
+    );
+	settings.mUserData = static_cast<uint64>(entity); // safe cast
+	settings.mCollisionGroup = JPH::CollisionGroup(
+		physicsWorld->groupFilter,
+        info.layer,
+        rb.mask // stored in subgroup ID
     );
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
+
+	rb.SetAngularFactor(rb.angularFactor);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
