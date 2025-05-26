@@ -731,7 +731,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
 	// Check that doesn't collide with self
 	CollisionGroup g1(physicsWorld->groupFilter, Layer1, Layer0);
-	Assert(!g1.CanCollide(g1) == false);
+	Assert(g1.CanCollide(g1) == false);
 
 	// Check that collides with other group
 	CollisionGroup g2(physicsWorld->groupFilter, Layer1, AllLayers);
@@ -979,7 +979,7 @@ private:
 };
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
-	Assert(physicsWorld->world != nullptr); 
+	Assert(physicsWorld != nullptr); 
 
 	JPH::RRayCast ray;
 	ray.mOrigin = ToJolt(pos);
@@ -1020,7 +1020,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 }
 
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask){
-    Assert(physicsWorld->world != nullptr); 
+    Assert(physicsWorld != nullptr); 
 
 	JPH::RRayCast ray;
 	ray.mOrigin = ToJolt(pos);

@@ -13,7 +13,36 @@
 #include <assert.h>
 
 // runtime assertion
-#define Assert assert
+//#define Assert assert
+
+/*
+#define Assert(expr)                                                        \
+    do {                                                                    \
+        if (!(expr)) {                                                      \
+            fprintf(stderr, "Assertion failed: %s\n  File: %s\n  Line: %d\n", \
+                    #expr, __FILE__, __LINE__);                             \
+            abort();                                                        \
+        }                                                                   \
+    } while (0)
+*/
+
+#if defined(_MSC_VER)
+    #define DEBUG_BREAK() __debugbreak()
+#elif defined(__GNUC__) || defined(__clang__)
+    #include <signal.h>
+    #define DEBUG_BREAK() raise(SIGTRAP)
+#else
+    #define DEBUG_BREAK() abort()
+#endif
+
+#define Assert(expr)                                                        \
+    do {                                                                    \
+        if (!(expr)) {                                                      \
+            fprintf(stderr, "Assertion failed: %s  File: %s  Line: %d\n", \
+                    #expr, __FILE__, __LINE__);                             \
+            DEBUG_BREAK();                                                  \
+        }                                                                   \
+    } while (0)
 
 //OD_API void* __cdecl operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
 //OD_API void* __cdecl operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
