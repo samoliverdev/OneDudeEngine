@@ -1514,6 +1514,12 @@ void NavmeshSystem::LateUpdate(){
 			subflow.emplace([&](){ 
 			#endif
 				if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+					if(navmeshComponent.path.corners.size() <= 1){
+						navmeshComponent.reach = true;
+						navmeshComponent.desiredVelocity = Vector3Zero;
+						return;
+					}
+
 					Assert(navmeshComponent.path.corners.size() > 1);
 					if(navmeshComponent.reach) return;
 
@@ -1617,7 +1623,7 @@ void NavmeshSystem::OnDrawGizmos(Camera& cam){
 			Graphics::DrawLine(
 				navmeshComponent.path.corners[i] + Vector3(0, 0.1f, 0), 
 				navmeshComponent.path.corners[i+1] + Vector3(0, 0.1f, 0), 
-				Vector3(0, 1, 0), 
+				Vector3(1, 0, 0), 
 				1
 			);
 		}

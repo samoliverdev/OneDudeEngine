@@ -243,7 +243,7 @@ void Editor::PlayScene(){
     if(_curScenePath.empty()) scene->Save("res/temp.scene");
     scene->Start();*/
 
-    UnselectAll();
+    //UnselectAll();
     lastScene = SceneManager::Get().GetActiveScene();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
     //Scene* s = Scene::Copy(lastScene);

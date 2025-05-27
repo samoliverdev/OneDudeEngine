@@ -38,7 +38,7 @@
 #define Assert(expr)                                                        \
     do {                                                                    \
         if (!(expr)) {                                                      \
-            fprintf(stderr, "Assertion failed: %s  File: %s  Line: %d\n", \
+            fprintf(stderr, "Assertion failed: %s, file %s, line %d\n",     \
                     #expr, __FILE__, __LINE__);                             \
             DEBUG_BREAK();                                                  \
         }                                                                   \
