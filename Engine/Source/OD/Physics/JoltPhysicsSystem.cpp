@@ -147,8 +147,8 @@ class BPLayerInterfaceImpl final : public BroadPhaseLayerInterface{
 public:
     BPLayerInterfaceImpl(){
 		// Create a mapping table from object to broad phase layer
-		mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::MOVING;//BroadPhaseLayers::NON_MOVING;
-		mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
+		//mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::MOVING;//BroadPhaseLayers::NON_MOVING;
+		//mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
 	}
 
 	virtual uint GetNumBroadPhaseLayers() const override{
@@ -156,8 +156,9 @@ public:
 	}
 
 	virtual BroadPhaseLayer	GetBroadPhaseLayer(ObjectLayer inLayer) const override{
-		JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
-		return mObjectToBroadPhase[inLayer];
+		return BroadPhaseLayers::MOVING;
+		//JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
+		//return mObjectToBroadPhase[inLayer];
 	}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
@@ -172,7 +173,7 @@ public:
 #endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
 
 private:
-	BroadPhaseLayer mObjectToBroadPhase[PhysicsLayers::NUM_LAYERS];
+	//BroadPhaseLayer mObjectToBroadPhase[PhysicsLayers::NUM_LAYERS];
 };
 
 /// Class that determines if an object layer can collide with a broadphase layer
@@ -946,9 +947,12 @@ public:
 struct MyObjectLayerFilter : public JPH::ObjectLayerFilter{
     LayerMask allowedMask; // your LayerMask.mask
 
-    MyObjectLayerFilter(LayerMask inMask) : allowedMask(inMask) {}
+    MyObjectLayerFilter(LayerMask inMask):allowedMask(inMask){}
 
     virtual bool ShouldCollide(JPH::ObjectLayer inLayer) const override{
+		//return (inLayer & allowedMask.mask) != 0;;
+		//bool r = (inLayer & allowedMask.mask) != 0;
+		//return r;
         return (allowedMask.mask & inLayer) != 0;
     }
 };
@@ -959,7 +963,7 @@ public:
 
     void AddHit(const JPH::RayCastResult& inResult) override {
         // Only keep the closest hit
-        if (inResult.mFraction < mHitFraction) {
+        if(inResult.mFraction < mHitFraction){
             mHit = inResult;
             mHitFraction = inResult.mFraction;
         }
@@ -1038,6 +1042,10 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
 
 	MyObjectLayerFilter objectLayerFilter(mask);
+
+	MyObjectLayerFilter _objectLayerFilter({Layers::Layer0 | Layers::Layer1});
+	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
+	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);
 
 	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
 	if(collector.HadHit()){
@@ -1173,7 +1181,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     );
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
 
-	rb.SetAngularFactor(rb.angularFactor);
+	//rb.SetAngularFactor(rb.angularFactor);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){

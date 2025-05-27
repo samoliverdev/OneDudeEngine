@@ -18,12 +18,12 @@ namespace OD{
 GlobalSceneData globalSceneData;
 
 int LayerMask::GetLayerByName(const std::string& name){
-    Assert(globalSceneData.layerNames.size() == Layers::LayerMax);
+    Assert(globalSceneData.layerNames.size() == LayerMax);
 
     for(int i = 0; i < globalSceneData.layerNames.size(); i++){
         if(globalSceneData.layerNames[i] == name) return (1 << i);
     }
-    return Layers::LayerNone;
+    return LayerNone;
 }
 
 GlobalSceneData& GetGlobalSceneData(){
@@ -442,9 +442,9 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
         auto& transform = GetComponent<TransformComponent>(mesh);
         if(staticRenderer) AddComponent<StaticRendererComponent>(mesh);
 
-        if(overrideLayer != Layers::LayerNone && overrideLayer != Layers::LayerMax){
+        if(overrideLayer != LayerNone && overrideLayer != LayerMax){
             auto& info = GetComponent<InfoComponent>(mesh);
-            info.layer = overrideLayer;
+            info.layer = (Layers)overrideLayer;
         }
 
         meshRenderer.material = model->materials[i.materialIndex];

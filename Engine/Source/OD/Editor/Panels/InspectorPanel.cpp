@@ -230,6 +230,21 @@ void InspectorPanel::DrawComponents(Entity entity){
         ImGui::Text("Id: %zd", (size_t)e);
         //ImGui::Text("Type: %d", info.Type());
 
+        auto& layersName = GetGlobalSceneData().layerNames;
+        auto curSelected = layersName[GetLayerIndex((Layers)info.layer)];
+        if(ImGui::BeginCombo("Layer", curSelected.c_str())){
+            for(int i = 0; i < layersName.size(); i++){
+                bool isSelected = curSelected == layersName[i];
+                if(ImGui::Selectable(layersName[i].c_str(), isSelected)){
+                    curSelected = layersName[i];
+                    info.layer = IndexToLayer(i);
+                }
+                if(isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        //ImGui::DrawEnumCombo<Layers>("Layer", info.layer, layersName, layersName.size());
+
         if(entityType != EntityType::Stand) ImGui::EndDisabled();
     });
 

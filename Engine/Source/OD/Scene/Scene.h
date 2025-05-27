@@ -27,7 +27,7 @@ class Scene;
 class Model;
 
 enum OD_API_IMPORT Layers{
-    LayerNone = 0,
+    //LayerNone = 0,
     Layer0 = 1 << 0,  // 0001
     Layer1 = 1 << 1,  // 0010
     Layer2 = 1 << 2,  // 0100
@@ -38,11 +38,21 @@ enum OD_API_IMPORT Layers{
     Layer7 = 1 << 7, 
     Layer8 = 1 << 8,
     Layer9 = 1 << 9,
-
-    LayerMax = 10
+    //LayerMax = 10
 };
 
+constexpr int LayerNone = 0;
+constexpr int LayerMax = 10;
 constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;
+
+inline int GetLayerIndex(Layers layer){
+    assert(layer != LayerNone && layer < (1 << LayerMax)); // make sure it's a valid single-bit layer
+    return static_cast<int>(std::log2(static_cast<int>(layer)));
+}
+
+inline Layers IndexToLayer(int index){
+    return static_cast<Layers>(1 << index);
+}
 
 struct OD_API LayerMask{
     int mask = AllLayers;
@@ -166,7 +176,7 @@ struct OD_API InfoComponent{
 
     std::string name = "Entity";
     std::string tag =  "";
-    int layer = Layers::Layer0;
+    Layers layer = Layers::Layer0;
     bool enable = true;
     bool hidden = false;
     bool notSave = false;
@@ -269,7 +279,7 @@ public:
 
     bool IsValid(Entity entity);
 
-    Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = Layers::LayerNone);
+    Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = LayerNone);
     Entity InstantiatePrefab(const char* prefabPath);
     
     Entity GetMainCamera();
