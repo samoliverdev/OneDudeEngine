@@ -10,6 +10,13 @@ void BaseMeshSample::OnInit(){
         OD::TransformComponent{},
         OD::MeshRendererComponent{}
     );
+    auto character2 = CharacterType::Create(
+        gg,
+        [](auto& trans, auto& renderer){
+
+        }
+    );
+
 
     struct Position { float x, y; };
     struct Velocity { float dx, dy; };

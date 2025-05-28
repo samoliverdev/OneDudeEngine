@@ -22,6 +22,13 @@ void CrossFadeController::SetSkeleton(Skeleton& inSkeleton){
 }
 
 void CrossFadeController::Play(Clip* target){
+    if(target == nullptr){
+        targets.clear();
+        clip = nullptr;
+        time = 0;
+        return;
+    }
+
     targets.clear();
     clip = target;
     pose = skeleton.GetRestPose();

@@ -123,7 +123,7 @@ void AnimatorSystem::LateUpdate(){
             if(i == 0){
                 skinned.finalPose = layer.controller.GetCurrentPose();
             } else {
-                Blend(layer, skinned.finalPose, layer.controller.GetCurrentPose());
+                if(layer.controller.GetCurrentClip() != nullptr) Blend(layer, skinned.finalPose, layer.controller.GetCurrentPose());
             }
             i += 1;
         }
