@@ -1,5 +1,6 @@
 #include "CrossFadeController.h"
 #include "Blending.h"
+#include "OD/Core/Application.h"
 
 namespace OD{
 
@@ -42,8 +43,6 @@ void CrossFadeController::FadeTo(Clip* target, float fadeTime){
     }
 
     if(targets.size() >= 1){
-        //Clip* clip = _targets[_targets.size()-1].clip;
-        //if(clip == target) return;
         if(targets[targets.size()-1].clip == target) return;
     } else {
         if(clip == target) return;
@@ -52,7 +51,30 @@ void CrossFadeController::FadeTo(Clip* target, float fadeTime){
     targets.push_back(CrossFadeTarget(target, skeleton.GetRestPose(), fadeTime));
 }
 
+// Expereimenta, To Avoid Flicking
+void CrossFadeController::FadeTo2(Clip* target, float fadeTime) {
+    if(!wasSkeletonSet || target == nullptr) return;
+
+    float currentTime = internalTime; // Use your engine’s time
+    if(target == lastFadeTarget && (currentTime - lastFadeTime < fadeDebounce))
+        return;
+
+    // Already fading toward same target
+    if(!targets.empty()) {
+        if(targets.back().clip == target) return;
+    }
+
+    if(clip == target && targets.empty()) return;
+
+    // Log fade request
+    lastFadeTime = currentTime;
+    lastFadeTarget = target;
+
+    targets.push_back(CrossFadeTarget(target, skeleton.GetRestPose(), fadeTime));
+}
+
 void CrossFadeController::Update(float dt){
+    internalTime += dt;
     if(clip == nullptr || !wasSkeletonSet) return;
 
     unsigned int numTargets = targets.size();

@@ -14,6 +14,7 @@ public:
     void SetSkeleton(Skeleton& skeleton);
     void Play(Clip* target);
     void FadeTo(Clip* target, float fadeTime);
+    void FadeTo2(Clip* target, float fadeTime);
     void Update(float dt);
     void Update(float dt, Pose& pose); //INFO: Experimental
     Pose& GetCurrentPose();
@@ -30,6 +31,11 @@ protected:
     Pose pose;
     Skeleton skeleton;
     bool wasSkeletonSet = false;   
+
+    float internalTime = 0.0f;
+    float lastFadeTime = 0.0f;     // new member
+    Clip* lastFadeTarget = nullptr;
+    float fadeDebounce = 0.5f;     // seconds
 };
 
 }
