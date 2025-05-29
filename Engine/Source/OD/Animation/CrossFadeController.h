@@ -7,6 +7,8 @@ namespace OD{
 
 class OD_API CrossFadeController{
 public:
+    bool stopNoLoopAnim = true;
+
     CrossFadeController();
     CrossFadeController(Skeleton& skeleton);
     void SetSkeleton(Skeleton& skeleton);

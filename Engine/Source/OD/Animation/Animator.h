@@ -16,6 +16,7 @@ struct OD_API AnimatorComponent{
         CrossFadeController controller;
         std::vector<unsigned char> mask;
         LayerBlendMode blendMode = LayerBlendMode::Override;
+        bool blendIfClipIsNull = false;
     };
 
     friend struct AnimatorSystem;

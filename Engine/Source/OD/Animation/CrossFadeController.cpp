@@ -79,7 +79,7 @@ void CrossFadeController::Update(float dt){
         Blend(pose, pose, target.pose, t, -1);
     }
 
-    if(clip->GetLooping() == false && time >= clip->GetEndTime()){
+    if(stopNoLoopAnim && clip->GetLooping() == false && time >= clip->GetEndTime()){
         clip = nullptr;
     }
 }
