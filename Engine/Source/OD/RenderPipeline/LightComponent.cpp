@@ -182,12 +182,28 @@ void LightComponent::OnGui(Entity& e, Scene& scene){
         ImGui::PopItemWidth();
     };
 
+    #define _AddTableRow(label, func) AddTableRow(label, ## label, func)
+
     // Exemplo de uso
     AddTableRow("Type", "##type", [&](const char* id) {
+        //ImGui::DrawEnumCombo<LightComponent::Type>(id, &light.type);
+        float fullWidth = ImGui::GetContentRegionAvail().x;
+        float comboWidth = fullWidth * 0.75f; // Por exemplo, 65% para o combo
+        float checkboxWidth = fullWidth - comboWidth;
+
+        ImGui::PushItemWidth(comboWidth);
         ImGui::DrawEnumCombo<LightComponent::Type>(id, &light.type);
+        ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+
+        ImGui::PushItemWidth(checkboxWidth);
+        bool v;
+        ImGui::Checkbox("##enabled", &v); // Use um nome válido
+        ImGui::PopItemWidth();
     });
 
-    AddTableRow("Color", "##Color", [&](const char* id) {
+    _AddTableRow("Color", [&](const char* id) {
         ImGui::ColorEdit4(id, &light.color);
     });
 

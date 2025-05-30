@@ -177,13 +177,12 @@ private:
 struct OD_API RagdollComponent{
     friend struct PhysicsSystem;
 
+    RagdollComponent() = default;
+
     struct Part{
         CollisionShape shape;
         int parent = -1;
         int skinnedSkeletonIndex = -1;
-
-        Vector3 pos = Vector3Zero;
-        Quaternion rot = QuaternionIdentity;
 
         Vector3 constraintPos = Vector3Zero;
         Vector3 twistAxis = Vector3Zero;
@@ -191,11 +190,39 @@ struct OD_API RagdollComponent{
         float twistAngleMax = 0;
         float normalAngle = 0;
         float planeAngle = 0;
+
+        Vector3 pos = Vector3Zero;
+        Quaternion rot = QuaternionIdentity;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, shape);
+            ArchiveDumpNVP(ar, parent);
+            ArchiveDumpNVP(ar, skinnedSkeletonIndex);
+            ArchiveDumpNVP(ar, pos);
+            ArchiveDumpNVP(ar, rot);
+            ArchiveDumpNVP(ar, constraintPos);
+            ArchiveDumpNVP(ar, twistAxis);
+            ArchiveDumpNVP(ar, twistAngleMin);
+            ArchiveDumpNVP(ar, twistAngleMax);
+            ArchiveDumpNVP(ar, normalAngle);
+            ArchiveDumpNVP(ar, planeAngle);
+        }
     };
 
+    bool isDirty = true;
     std::vector<Part> parts;
+
     template <class Archive>
-    void serialize(Archive & ar){}
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, isDirty);
+        ArchiveDumpNVP(ar, parts);
+    }
+
+    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
+        COPY_OR_MOVE(isDirty);
+        COPY_OR_MOVE(parts);
+    });
 
 private:
     struct RagdollObject* data = nullptr;
@@ -390,7 +417,7 @@ private:
     void RemoveJoint(Entity entity, JointComponent& c);
 
     //#if defined(UseBulletPhysics)
-    class PhysicsWorld* physicsWorld;
+    class PhysicsWorld* physicsWorld = nullptr;
     //#endif
     
     std::vector<OnCollisionCallback> onCollisionEnterCallbacks;

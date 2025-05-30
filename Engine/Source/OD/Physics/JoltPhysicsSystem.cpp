@@ -771,50 +771,17 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		return nullptr;
 	};
 
-	// Create skeleton
 	JPH::Ref<JPH::Skeleton> skeleton = new JPH::Skeleton;
 
-	//std::vector<JPH::Ref<Shape>> shapes;
-	//shapes.resize(ragdoll.parts.size());
-
-	//std::vector<RVec3> positions;// Positions of body parts in world space
-	//positions.resize(ragdoll.parts.size());
-
-	//std::vector<Quat> rotations;// Rotations of body parts in world space
-	//rotations.resize(ragdoll.parts.size());
-
-	//std::vector<RVec3> constraint_positions(ragdoll.parts.size());// World space constraint positions
-
-	// World space twist axis directions
-	//std::vector<Vec3> twist_axis(ragdoll.parts.size());
-
-	// Constraint limits
-	//std::vector<float> twist_angle(ragdoll.parts.size());
-	//std::vector<float> normal_angle(ragdoll.parts.size());
-	//std::vector<float> plane_angle(ragdoll.parts.size());
-
 	for(int i = 0; i < ragdoll.parts.size(); i++){
-		Assert(ragdoll.parts[i].skinnedSkeletonIndex > 0);
+		Assert(ragdoll.parts[i].skinnedSkeletonIndex >= 0);
 		//Assert(ragdoll.parts[i].parent > 0);
 
-		
-		if(ragdoll.parts[i].parent >= 0)
+		if(ragdoll.parts[i].parent >= 0){
 			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex), ragdoll.parts[i].parent);
-		else
+		} else {
 			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex));
-		
-		/*shapes[i] = GetShape(ragdoll.parts[i].shape);
-
-		Transform boneTrans = skinnedSkeleton.GetBindPose().GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex);
-
-		positions[i] = ToJolt(trans.TransformPoint(boneTrans.LocalPosition() + ragdoll.parts[i].shape.center));
-		rotations[i] = ToJolt(boneTrans.LocalRotation());
-
-		constraint_positions[i] = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[i].constraintPos)));
-		twist_axis[i] = ToJolt(trans.TransformDirection(ragdoll.parts[i].twistAxis));
-		twist_angle[i] = ragdoll.parts[i].twistAngle;
-		normal_angle[i] = ragdoll.parts[i].normalAngle;
-		plane_angle[i] = ragdoll.parts[i].planeAngle;*/
+		}
 	}
 
 	// Create ragdoll settings
@@ -824,23 +791,27 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	for(int p = 0; p < skeleton->GetJointCount(); ++p){
 		auto shapes = GetShape(ragdoll.parts[p].shape);
 		Transform boneTrans = skinnedSkeleton.GetBindPose().GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
-		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition() + ragdoll.parts[p].shape.center));
-		auto rotations = ToJolt(boneTrans.LocalRotation());
+		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition()/* + ragdoll.parts[p].shape.center*/));
+		auto rotations = ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
 		auto twist_axis = ToJolt(trans.TransformDirection(ragdoll.parts[p].twistAxis));
 		//auto twist_angle = ragdoll.parts[p].twistAngle;
 		auto normal_angle = ragdoll.parts[p].normalAngle;
 		auto plane_angle = ragdoll.parts[p].planeAngle;
 
+		RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(ragdoll.parts[p].shape.center), Quat::sIdentity(), shapes);
+		RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
+
 		RagdollSettings::Part &part = settings->mParts[p];
-		part.SetShape(shapes);
+		part.SetShape(finalShape /*shapes*/);
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType = EMotionType::Dynamic;
 		part.mObjectLayer = info.layer; //PhysicsLayers::MOVING;
+		part.mUserData = static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
-		if (p > 0){
+		if(p > 0){
 			SwingTwistConstraintSettings *constraint = new SwingTwistConstraintSettings;
 			constraint->mDrawConstraintSize = 0.1f;
 			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
@@ -854,14 +825,9 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		}
 	}
 
-	// Optional: Stabilize the inertia of the limbs
-	settings->Stabilize();
-
-	// Disable parent child collisions so that we don't get collisions between constrained bodies
-	settings->DisableParentChildCollisions();
-
-	// Calculate the map needed for GetBodyIndexToConstraintIndex()
-	settings->CalculateBodyIndexToConstraintIndex();
+	settings->Stabilize();// Optional: Stabilize the inertia of the limbs
+	settings->DisableParentChildCollisions();// Disable parent child collisions so that we don't get collisions between constrained bodies
+	settings->CalculateBodyIndexToConstraintIndex();// Calculate the map needed for GetBodyIndexToConstraintIndex()
 
 	return settings;
 }
@@ -871,11 +837,12 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
-    const int cCollisionSteps = 1;
-	// Step the world
-	physicsWorld->physicsSystem.Update(
-        Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
-    );
+	if(GetScene()->Running() == true){
+		const int cCollisionSteps = 1;
+		physicsWorld->physicsSystem.Update(
+			Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
+		);
+	}
 
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
@@ -911,12 +878,43 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	auto view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
-		if(ragdoll.data == nullptr){
+		/*if(ragdoll.data == nullptr){
+			ragdoll.data = new RagdollObject();
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton);
+			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
+			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+		}*/
+		if(ragdoll.isDirty){
+			ragdoll.isDirty = false;
+			if(ragdoll.data != nullptr){
+				ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
+				delete ragdoll.data->ragdoll;
+			}
 			ragdoll.data = new RagdollObject();
 			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 		}
+
+		/*if(ragdoll.data != nullptr){
+			SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
+			skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
+			skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+
+			for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
+				RVec3 pos;
+				Quat rot;
+				bodyInterface.GetPositionAndRotation(i, pos, rot);
+				
+				int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
+				skinned.finalPose.SetGlobalTransform(boneIndex, Transform(
+					trans.InverseTransformPoint(FromJolt(pos)), 
+					math::inverse(trans.Rotation()) * FromJolt(rot), 
+					Vector3One
+				));
+			}	
+			skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose()); 
+		}*/
 	}
 }
 

@@ -103,8 +103,8 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
     std::hash<std::string> hasher;
 
     const ImGuiTreeNodeFlags treeNodeFlags = 
-        ImGuiTreeNodeFlags_DefaultOpen 
-        | ImGuiTreeNodeFlags_Framed 
+        //ImGuiTreeNodeFlags_DefaultOpen | 
+        ImGuiTreeNodeFlags_Framed 
         | ImGuiTreeNodeFlags_AllowItemOverlap
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
@@ -139,8 +139,8 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
 
 void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name, SceneManager::SerializeFuncs &sf){
     const ImGuiTreeNodeFlags treeNodeFlags = 
-        ImGuiTreeNodeFlags_DefaultOpen 
-        | ImGuiTreeNodeFlags_Framed 
+        //ImGuiTreeNodeFlags_DefaultOpen | 
+        ImGuiTreeNodeFlags_Framed 
         | ImGuiTreeNodeFlags_AllowItemOverlap
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;
