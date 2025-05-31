@@ -846,6 +846,17 @@ void PhysicsSystem::PhysicsUpdate(){
 
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
+	auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
+    for(auto e: viewMesh){
+		RigidbodyComponent& rb = viewMesh.get<RigidbodyComponent>(e);
+        TransformComponent& transform = viewMesh.get<TransformComponent>(e);
+        ModelRendererComponent& mesh = viewMesh.get<ModelRendererComponent>(e);
+
+		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
+			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel()->meshs[0]);
+		}
+	}
+
     auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
     for(auto e: view){
         RigidbodyComponent& rb = view.get<RigidbodyComponent>(e);
@@ -919,6 +930,7 @@ void PhysicsSystem::PhysicsUpdate(){
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
+	return;
 	ShowDebugGizmos();
 }
 
@@ -1179,7 +1191,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     );
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
 
-	//rb.SetAngularFactor(rb.angularFactor);
+	rb.SetAngularFactor(rb.angularFactor);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){

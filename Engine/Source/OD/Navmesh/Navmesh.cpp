@@ -1407,8 +1407,12 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 		// In case of partial path, make sure the end point is clamped to the last polygon.
 		float epos[3];
 		dtVcopy(epos, _endPos);
-		if(m_polys[m_npolys-1] != m_endRef)
+		if(m_polys[m_npolys-1] != m_endRef){
 			m_navQuery->closestPointOnPoly(m_polys[m_npolys-1], _endPos, epos, 0);
+			outPath.status = NavMeshPathStatus::PathPartial;
+		} else {
+			outPath.status = NavMeshPathStatus::PathComplete;
+		}
 		
 		m_navQuery->findStraightPath(
 			_startPos, epos, m_polys, m_npolys,
@@ -1421,7 +1425,7 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 			outPath.corners.push_back(Vector3(m_straightPath[i], m_straightPath[i+1], m_straightPath[i+2]));
 		}
 
-		outPath.status = NavMeshPathStatus::PathComplete;
+		//outPath.status = NavMeshPathStatus::PathComplete;
 		//LogWarningExtra("OK Count: %zd", outPath.corners.size());
 		return true;
 	}
