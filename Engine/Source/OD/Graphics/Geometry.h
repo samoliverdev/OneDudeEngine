@@ -84,7 +84,7 @@ inline AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
   
   return AABB(tmin, tmax);*/
 
-  // Usar o centro e extents diretos do AABB (mais preciso e mais rápido)
+  /*// Usar o centro e extents diretos do AABB (mais preciso e mais rápido)
   const Vector3& center = box.center;
   const Vector3& extents = box.extents;
 
@@ -98,7 +98,35 @@ inline AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
   Vector3 t_extents = abs_mat * extents;
 
   // Retornar a nova AABB com centro e extents transformados
-  return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);
+  return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);*/
+
+    /*const Vector3& center = box.center;
+    const Vector3& extents = box.extents;
+
+    // Transforma o centro
+    Vector3 t_center = m * Vector4(center, 1.0f);
+
+    // Monta matriz com as 3 primeiras colunas de m (transformação rotacional/escala)
+    glm::vec3 col0 = glm::vec3(m[0][0], m[1][0], m[2][0]);
+    glm::vec3 col1 = glm::vec3(m[0][1], m[1][1], m[2][1]);
+    glm::vec3 col2 = glm::vec3(m[0][2], m[1][2], m[2][2]);
+
+    // Matriz com valores absolutos das colunas
+    glm::mat3 abs_mat(glm::abs(col0), glm::abs(col1), glm::abs(col2));
+
+    // Transforma os extents com a matriz absoluta
+    Vector3 t_extents = abs_mat * extents;
+
+    return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);*/
+
+    Vector3 t_center = m * Vector4(box.center, 1.0f);
+    glm::mat3 abs_mat(
+        glm::abs(glm::vec3(m[0][0], m[1][0], m[2][0])),
+        glm::abs(glm::vec3(m[0][1], m[1][1], m[2][1])),
+        glm::abs(glm::vec3(m[0][2], m[1][2], m[2][2]))
+    );
+    Vector3 t_extents = abs_mat * box.extents;
+    return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);
 }
 
 }

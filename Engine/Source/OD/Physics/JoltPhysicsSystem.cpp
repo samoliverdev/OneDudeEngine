@@ -274,6 +274,29 @@ public:
 	JPH::Array<JPH::IndexedTriangle> joltTriangles;
 };
 
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
+	std::vector<Vector3> vertices;
+	std::vector<unsigned int> indices;
+
+	auto AppedFrom = [&](Mesh& mesh, Matrix4 model){
+        unsigned int vertexOffset = static_cast<unsigned int>(vertices.size());
+		for(auto& vertex : mesh.vertices){
+			vertices.push_back(model * Vector4(vertex, 1));
+		}
+        for(unsigned int index : mesh.indices){
+            indices.push_back(index + vertexOffset);
+        }
+    };
+
+	for(auto i: model->renderTargets){
+		auto targetMesh = model->meshs[i.meshIndex].get();
+		auto targetMatrix = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+		AppedFrom(*targetMesh, targetMatrix);
+	}
+
+	return CreateMeshShapeData(vertices, indices);
+}
+
 Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
     return CreateMeshShapeData(mesh->vertices, mesh->indices); // Usa a função abaixo
 }
@@ -853,7 +876,7 @@ void PhysicsSystem::PhysicsUpdate(){
         ModelRendererComponent& mesh = viewMesh.get<ModelRendererComponent>(e);
 
 		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
-			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel()->meshs[0]);
+			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel());
 		}
 	}
 
@@ -930,7 +953,6 @@ void PhysicsSystem::PhysicsUpdate(){
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
-	return;
 	ShowDebugGizmos();
 }
 

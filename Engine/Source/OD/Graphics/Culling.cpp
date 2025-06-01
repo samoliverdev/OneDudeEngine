@@ -225,6 +225,10 @@ void AABB::Expand(Vector3 amount){
     //extents += amount; 
 }
 
+void AABB::Expand2(Vector3 amount){ 
+    extents += amount; 
+}
+
 AABB AABB::Scaled(Vector3 s){
     AABB result = *this;
     result.Expand(s);
@@ -247,10 +251,15 @@ std::array<Vector3, 8> AABB::getVertice() const{
 //see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 bool AABB::isOnOrForwardPlane(Plane& plane) const{
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const float r = extents.x * math::abs(plane.normal.x) + extents.y * math::abs(plane.normal.y) +
-        extents.z * math::abs(plane.normal.z);
+    const float r = extents.x * math::abs(plane.normal.x) + 
+                    extents.y * math::abs(plane.normal.y) +
+                    extents.z * math::abs(plane.normal.z);
 
-    return -r <= plane.getSignedDistanceToPlane(center);
+    //return -r <= plane.getSignedDistanceToPlane(center);
+
+    const float d = plane.getSignedDistanceToPlane(center);
+    constexpr float epsilon = 1e-3f; // pode ajustar isso conforme precisão
+    return -r - epsilon <= d;
 }
 
 bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{

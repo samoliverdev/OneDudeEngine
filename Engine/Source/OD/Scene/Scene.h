@@ -316,7 +316,7 @@ private:
     void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(Entity entity, bool removeFromParent = false);
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
-    void _Unpack(Entity e, bool all);
+    void _Unpack(Entity e, bool all, bool unpackRoot);
     Entity _DuplicateEntity(Entity e, bool isRoot);
 
     bool running = false;

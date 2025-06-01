@@ -219,6 +219,7 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
             textures.push_back(texture);
         }
 
+        if(texture == nullptr || texture->IsValid() == false) continue;
         Assert(texture != nullptr);
         Assert(texture->IsValid() != false);
         textures.push_back(texture);

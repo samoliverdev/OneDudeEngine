@@ -114,6 +114,7 @@ struct OD_API AABB: public BoundingVolume{
 	}
 
 	void Expand(Vector3 amount);
+	void Expand2(Vector3 amount);
 	AABB Scaled(Vector3 s);
 
 	std::array<Vector3, 8> getVertice() const;

@@ -495,7 +495,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.targetMatrix =  t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+            //data.aabb.Expand2(Vector3(5.5f));
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
@@ -569,7 +571,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.posePalette = &c.posePalette;
             
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }

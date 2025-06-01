@@ -21,7 +21,7 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
 
     std::string ss("model");
     if(ImGui::DrawAsset<Model>(ss, mesh.model)){
-        mesh.boundingVolume = Model::GenerateAABB(*mesh.model);
+        if(mesh.model != nullptr) mesh.boundingVolume = Model::GenerateAABB(*mesh.model);
     }
 
     int subMeshIndex = mesh.subMeshIndex;

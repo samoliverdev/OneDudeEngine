@@ -777,28 +777,30 @@ Entity Scene::InstantiatePrefab(const char* path){
     return root;
 }
 
-void Scene::_Unpack(Entity e, bool all){
+void Scene::_Unpack(Entity e, bool all, bool unpackRoot){
     InfoComponent& info = GetComponent<InfoComponent>(e);
     TransformComponent& trans = GetComponent<TransformComponent>(e);
 
-    //if(isRoot && all == false){
+    if(info.entityType == EntityType::PrefabRoot && unpackRoot == true){
         info.entityType = EntityType::Stand;
-    //}
+    } else if(info.entityType == EntityType::PrefabChild){
+        info.entityType = EntityType::Stand;
+    }
 
     for(auto& child: trans.children){
         InfoComponent& chInfo = GetComponent<InfoComponent>(child);
         if(chInfo.entityType == EntityType::PrefabChild){
-            _Unpack(child, all);
-        } else if(chInfo.entityType == EntityType::PrefabRoot && all){
-            _Unpack(child, all);
+            _Unpack(child, all, true);
+        } else if(chInfo.entityType == EntityType::PrefabRoot && all == true){
+            _Unpack(child, all, true);
         } else {
-            _Unpack(child, all);
+            _Unpack(child, all, false);
         }
     }
 }
 
 void Scene::UnpackPrefab(Entity entity, bool all){
-    _Unpack(entity, all);
+    _Unpack(entity, all, true);
 }
 
 void Scene::_DestroyEntity(Entity entity, bool removeFromParent){

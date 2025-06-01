@@ -124,7 +124,7 @@ AABB Model::GenerateAABB(Model& model){
 
 	for(auto i: model.renderTargets){
 		auto mesh = model.meshs[i.meshIndex];
-        auto targetMatrix = model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex) * model.skeleton.GetInvBindPose()[i.bindPoseIndex];
+        auto targetMatrix = model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex); // * model.skeleton.GetInvBindPose()[i.bindPoseIndex];
 
 		for(auto vertex : mesh->vertices){
 			vertex = targetMatrix * Vector4(vertex.x, vertex.y, vertex.z, 1);

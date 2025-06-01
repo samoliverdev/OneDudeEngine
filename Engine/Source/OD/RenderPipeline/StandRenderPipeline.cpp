@@ -1133,6 +1133,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
 
             AABB aabb = c.GetAABB();
             AABB globalAABB = c.GetGlobalAABB(globalTransform);
+            globalAABB = transform_aabb_optimized_abs_center_extents(aabb, globalTransform.GetLocalModelMatrix());
 
             Vector3 color = Vector3(0,0,1);
             if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);

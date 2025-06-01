@@ -1,6 +1,6 @@
 BeginPass
     #pragma Name MainPass
-    #pragma DepthTest ALWAYS
+    #pragma DepthTest LESS
 
     #include Engine/ShaderLibrary/Base.glsl
     #include Engine/ShaderLibrary/Vertex.glsl

@@ -24,6 +24,7 @@ namespace OD{
 //using MeshShapeData = btBvhTriangleMeshShape;
 class MeshShapeData;
 
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Mesh>& mesh);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
 
