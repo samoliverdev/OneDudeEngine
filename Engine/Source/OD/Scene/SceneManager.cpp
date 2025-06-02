@@ -38,6 +38,13 @@ void SceneManager::OnExit(){
 void SceneManager::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("SceneManager::OnUpdate");
 
+    if(toLoad.empty() == false){
+        Scene* scene = NewScene();
+        scene->Load(toLoad.c_str());
+        scene->Start();
+        toLoad = "";
+    }
+
     if(GetActiveScene() == nullptr) return;
     GetActiveScene()->Update();
 }

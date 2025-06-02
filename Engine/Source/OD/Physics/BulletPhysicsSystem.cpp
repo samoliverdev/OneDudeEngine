@@ -7,6 +7,7 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include <set>
 #include <algorithm>
 #include <btBulletCollisionCommon.h>
@@ -90,6 +91,29 @@ public:
         delete triangleMesh;
     }
 };
+
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
+	std::vector<Vector3> vertices;
+	std::vector<unsigned int> indices;
+
+	auto AppedFrom = [&](Mesh& mesh, Matrix4 model){
+        unsigned int vertexOffset = static_cast<unsigned int>(vertices.size());
+		for(auto& vertex : mesh.vertices){
+			vertices.push_back(model * Vector4(vertex, 1));
+		}
+        for(unsigned int index : mesh.indices){
+            indices.push_back(index + vertexOffset);
+        }
+    };
+
+	for(auto i: model->renderTargets){
+		auto targetMesh = model->meshs[i.meshIndex].get();
+		auto targetMatrix = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+		AppedFrom(*targetMesh, targetMatrix);
+	}
+
+	return CreateMeshShapeData(vertices, indices);
+}
 
 Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
@@ -700,6 +724,17 @@ void PhysicsSystem::PhysicsUpdate(){
         physicsWorld->world->stepSimulation(Application::DeltaTime(), ACCURACY);
     }*/
 
+    auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
+    for(auto e: viewMesh){
+		RigidbodyComponent& rb = viewMesh.get<RigidbodyComponent>(e);
+        TransformComponent& transform = viewMesh.get<TransformComponent>(e);
+        ModelRendererComponent& mesh = viewMesh.get<ModelRendererComponent>(e);
+
+		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
+			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel());
+		}
+	}
+
     auto heightView = GetScene()->GetRegistry().view<HeightmapColliderComponent, TransformComponent>();
     for(auto e: heightView){
         HeightmapColliderComponent& rb = heightView.get<HeightmapColliderComponent>(e);
@@ -1098,6 +1133,13 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
     //PhysicsWorld* physicsWorld = this->scene->GetRegistry().ctx().get<PhysicsWorld*>();
+
+    if(c.type == RigidbodyComponent::Type::Static){
+        c.mass = 0;
+    }
+    if(c.type != RigidbodyComponent::Type::Static){
+        c.mass = math::clamp<float>(c.mass, 0.1f, 10000000);
+    }
 
     //LogInfo("Add Rigidbody");
     c.data = new PhysicObject();

@@ -81,7 +81,7 @@ void SceneHierarchyPanel::OnGui(){
         if(_toDestroy){
             LogInfo("To Destroy Entity2: %d", _toDestroyEntity);
             editor->SetSelectionEntity(EntityNull);
-            scene->DestroyEntity(_toDestroyEntity);
+            scene->DestroyEntityImmediate(_toDestroyEntity); //scene->DestroyEntity(_toDestroyEntity);
             _toDestroy = false;
             return;
         }
@@ -321,7 +321,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     if(entityDeleted){
         LogInfo("To Destroy Entity: %d", entity);
 
-        scene->DestroyEntity(entity);
+        scene->DestroyEntityImmediate(entity); //scene->DestroyEntity(entity);
         editor->SetSelectionEntity(EntityNull);
 
         //toDestroy = entity;

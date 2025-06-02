@@ -304,6 +304,18 @@ Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
 
+	// Check for empty input
+    if (vertices.empty() || indices.empty()) {
+        LogError("CreateMeshShapeData: Empty vertices or indices");
+        return nullptr;
+    }
+
+    // Check index count
+    if (indices.size() % 3 != 0) {
+        LogError("CreateMeshShapeData: Index count is not a multiple of 3!");
+        return nullptr;
+    }
+
     // Preenche os vértices convertidos
     //JPH::Array<JPH::Float3> joltVertices;
     out->joltVertices.reserve(vertices.size());
@@ -326,21 +338,69 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertic
 		out->convexPoints.push_back(JPH::Vec3(v.x, v.y, v.z));
 
 	if(indices.size() % 3 != 0) {
-		std::cerr << "CreateMeshShapeData: Index count is not a multiple of 3!\n";
+		LogError("CreateMeshShapeData: Index count is not a multiple of 3!");
 		return nullptr;
 	}
 
-    /*JPH::MeshShapeSettings settings(out->joltVertices, out->joltTriangles);
-    settings.SetEmbedded(); // Mantém os dados embutidos no shape
+	if (out->joltVertices.empty() || out->joltTriangles.empty()) {
+		LogError("Empty mesh data for entity ");
+		return nullptr;
+	}
+	// Additional validations
+    // 1. Check for valid vertex indices
+    for (const auto& tri : out->joltTriangles) {
+        if (tri.mIdx[0] >= out->joltVertices.size() ||
+            tri.mIdx[1] >= out->joltVertices.size() ||
+            tri.mIdx[2] >= out->joltVertices.size()) {
+            LogError("CreateMeshShapeData: Invalid vertex index in triangle");
+            return nullptr;
+        }
+    }
 
-    // Cria shape final
-    auto result = settings.Create();
-    if (result.HasError()) {
-        std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
+    // 2. Check for degenerate triangles
+    bool hasDegenerate = false;
+    for (const auto& tri : out->joltTriangles) {
+        JPH::Vec3 v0 = out->convexPoints[tri.mIdx[0]];
+        JPH::Vec3 v1 = out->convexPoints[tri.mIdx[1]];
+        JPH::Vec3 v2 = out->convexPoints[tri.mIdx[2]];
+        JPH::Vec3 edge1 = v1 - v0;
+        JPH::Vec3 edge2 = v2 - v0;
+        if (edge1.Cross(edge2).Length() < 1e-6f) {
+            LogError("CreateMeshShapeData: Degenerate triangle detected");
+            hasDegenerate = true;
+        }
+    }
+    if (hasDegenerate) {
+        return nullptr; // Stop if any degenerate triangles are found
+    }
+
+    // 3. Check for reasonable bounding box size
+    JPH::Vec3 minBounds(FLT_MAX, FLT_MAX, FLT_MAX);
+    JPH::Vec3 maxBounds(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (const auto& v : out->convexPoints) {
+        minBounds = JPH::Vec3::sMin(minBounds, v);
+        maxBounds = JPH::Vec3::sMax(maxBounds, v);
+    }
+    JPH::Vec3 extent = maxBounds - minBounds;
+    float maxExtent = extent.GetX();
+    maxExtent = std::max(maxExtent, extent.GetY());
+    maxExtent = std::max(maxExtent, extent.GetZ());
+    if (maxExtent > 1000.0f) { // Adjust threshold based on your game’s scale
+        LogError("CreateMeshShapeData: Mesh bounding box too large (extent: %s)", std::to_string(maxExtent).c_str());
         return nullptr;
     }
 
-    //out->meshShape = result.Get();*/
+    // 4. Check for non-manifold or duplicate vertices (optional, advanced)
+    std::set<uint32_t> uniqueVertices;
+    for (const auto& tri : out->joltTriangles) {
+        uniqueVertices.insert(tri.mIdx[0]);
+        uniqueVertices.insert(tri.mIdx[1]);
+        uniqueVertices.insert(tri.mIdx[2]);
+    }
+    if (uniqueVertices.size() < out->joltVertices.size()) {
+        LogWarning("CreateMeshShapeData: Mesh contains unused vertices");
+    }
+
     return out;
 }
 
@@ -705,7 +765,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
 	// This is the max amount of rigid bodies that you can add to the physics system. If you try to add more you'll get an error.
 	// Note: This value is low because this is a simple test. For a real project use something in the order of 65536.
-	const uint cMaxBodies = 1024;
+	const uint cMaxBodies = 8192; //65536; //8192;// 1024;
 
 	// This determines how many mutexes to allocate to protect rigid bodies from concurrent access. Set it to 0 for the default settings.
 	const uint cNumBodyMutexes = 0;
@@ -714,12 +774,12 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 	// body pairs based on their bounding boxes and will insert them into a queue for the narrowphase). If you make this buffer
 	// too small the queue will fill up and the broad phase jobs will start to do narrow phase work. This is slightly less efficient.
 	// Note: This value is low because this is a simple test. For a real project use something in the order of 65536.
-	const uint cMaxBodyPairs = 1024;
+	const uint cMaxBodyPairs = 65536; //262144; //65536;// 1024;
 
 	// This is the maximum size of the contact constraint buffer. If more contacts (collisions between bodies) are detected than this
 	// number then these contacts will be ignored and bodies will start interpenetrating / fall through the world.
 	// Note: This value is low because this is a simple test. For a real project use something in the order of 10240.
-	const uint cMaxContactConstraints = 1024;
+	const uint cMaxContactConstraints = 10240; //65536; //10240; //1024;
 
 	// Create mapping table from object layer to broadphase layer
 	// Note: As this is an interface, PhysicsSystem will take a reference to this so this instance needs to stay alive!
@@ -898,13 +958,13 @@ void PhysicsSystem::PhysicsUpdate(){
 		}
         Assert(rb.data != nullptr);
 
-        if(rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Static){
+        if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
             RVec3 pos;
             Quat rot;
             bodyInterface.GetPositionAndRotation(rb.data->bodyID, pos, rot);
             transform.Position(FromJolt(pos));
             transform.Rotation(FromJolt(rot));
-        } else {
+        } else if(rb.GetType() == RigidbodyComponent::Type::Kinematic){
             bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
             bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
         }
@@ -1170,6 +1230,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		//shape = shapeSettings.Create().Get();
 		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
 
+		Assert(rb.shape.mesh != nullptr);
+		Assert(rb.shape.mesh->joltVertices.size() > 0);
+		Assert(rb.shape.mesh->joltTriangles.size() > 0);
+		Assert(rb.shape.mesh->convexPoints.size() > 0);
+
 		if(rb.type == RigidbodyComponent::Type::Dynamic){
 			// Use Convex Hull for dynamic
 			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.mesh->convexPoints);
@@ -1198,9 +1263,16 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 
 	Assert(shape != nullptr);
 	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
-	
+
 	RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(rb.shape.center), Quat::sIdentity(), shape);
-	RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
+	//RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
+
+	auto offsetResult = offsetShapeSettings.Create();
+	if (offsetResult.HasError()) {
+        LogError("OffsetShape creation error for entity %s: %s", info.name.c_str(), offsetResult.GetError().c_str());
+        return;
+    }
+    RefConst<Shape> finalShape = offsetResult.Get();
 
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer /*PhysicsLayers::MOVING*/
@@ -1211,7 +1283,12 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         info.layer,
         rb.mask // stored in subgroup ID
     );
-    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, EActivation::Activate);
+    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
+	// Verify body creation
+    if (!bodyInterface.IsAdded(rb.data->bodyID)) {
+        LogError("Failed to add body for entity %s", info.name.c_str());
+        return;
+    }
 
 	rb.SetAngularFactor(rb.angularFactor);
 }

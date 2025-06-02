@@ -11,6 +11,8 @@ public:
 
     static SceneManager& Get();
 
+    inline void LoadScene(const std::string& path){ toLoad = path; }
+
     SceneState GetSceneState();
     inline bool InEditor();
     Scene* GetActiveScene();
@@ -66,6 +68,8 @@ private:
     bool inEditor;
 
     Scene* activeScene;
+
+    std::string toLoad;
 
     std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;
     std::unordered_map<std::string, SerializeFuncs> componentsSerializer;
