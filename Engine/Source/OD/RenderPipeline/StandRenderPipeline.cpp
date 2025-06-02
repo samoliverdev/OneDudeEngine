@@ -376,7 +376,14 @@ CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
     cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
-    brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
+
+    Ref<Texture2D> _brdfLUT = AssetManager::Get().LoadAsset<Texture2D>("brdfLUT");
+    if(_brdfLUT == nullptr){
+        _brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
+        AssetManager::Get().AddAsset<Texture2D>("brdfLUT", _brdfLUT);
+    }
+
+    brdfLUT = _brdfLUT; 
     spriteMesh = Mesh::CenterQuad(false);
     gamaCorrectionPP = new GamaCorrectionPP();
 

@@ -222,7 +222,6 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     if(ImGui::BeginDragDropTarget()){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
-
         if(payload != nullptr){
             Entity* targetEntity = (Entity*)payload->Data;
             LogInfo("this: %s to: %s", scene->GetComponent<InfoComponent>(entity).name.c_str(), scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
@@ -230,7 +229,38 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
                 children = *targetEntity;
             }
         }
-        
+        ImGui::EndDragDropTarget();
+
+        const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
+        if(payload2 != nullptr){
+            std::filesystem::path* path = (std::filesystem::path*)payload2->Data;
+
+            auto getExtension = [](const std::filesystem::path& path) -> std::string {
+                return path.has_extension() ? path.extension().string() : "";
+            };
+            auto getFileNameWithoutExtension = [](const std::filesystem::path& path) -> std::string {
+                return path.stem().string();
+            };
+
+            Model m;
+            if(m.HasFileExtension(getExtension(*path))){
+                auto _path = path->string();
+                std::replace(_path.begin(), _path.end(), '\\', '/');
+
+                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
+                Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
+                ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
+                mRenderer.SetModel(model);
+                scene->SetParent(entity, mEntity);
+            }
+
+            if(getExtension(*path) == ".prefab"){
+                auto instance = scene->InstantiatePrefab(path->string().c_str());
+                scene->SetParent(entity, instance);
+            }
+
+            LogInfo("Reciving File: %s", path->string().c_str());
+        }
         ImGui::EndDragDropTarget();
     }
 
@@ -269,8 +299,12 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         if(scene->GetComponent<InfoComponent>(entity).Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){
             std::string path = Platform::SaveFile("*.prefab");
             if(path.empty() == false){
+                auto relativePath = std::filesystem::relative(path, std::filesystem::current_path());
+                std::string pathString = relativePath.string();
+                std::replace(pathString.begin(), pathString.end(), '\\', '/');
+
                 Scene* scene = SceneManager::Get().GetActiveScene();
-                scene->Save(path.c_str(), entity);
+                scene->Save(pathString.c_str(), entity);
             } 
         }
         ImGui::EndPopup();

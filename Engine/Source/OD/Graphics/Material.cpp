@@ -549,7 +549,9 @@ void Material::OnGui(){
 
     //ImGui::EndDisabled();
 
-    if(toSave && this->path.empty() == false) Save(this->path);
+    if(toSave && this->path.empty() == false && this->path != "Memory"){
+        Save(this->path);
+    }
 
     if(this->path.empty() == true || this->path == "Memory"){
         if(ImGui::Button("Save As")){

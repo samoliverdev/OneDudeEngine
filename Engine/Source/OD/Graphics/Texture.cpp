@@ -58,6 +58,8 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
 }
 
 bool Texture2D::LoadFromFile(const std::string& path){
+    if(path.empty() == false && path != "Memory") LoadOrCreateArchive(path + ".meta", settings, "settings");
+    
     if(graphicsDevice->Texture2DCreate(*this, path, settings) == false){
         graphicsDevice->Texture2DDestroy(*this);
         return false;
@@ -218,7 +220,8 @@ void Texture2D::OnGui(){
     ImGui::Text("Width: %d Height: %d", width, height);
 
     if(save){
-        Save();
+        Reload();
+        //Save();
     }
 }
 
@@ -228,7 +231,8 @@ void Texture2D::Reload(){
         return;
     }
 
-    CreateFromFile(path, settings);
+    SaveArchive(path + ".meta", settings, "settings");
+    LoadFromFile(path);
 }
 
 void Texture2D::Save(){

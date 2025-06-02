@@ -90,6 +90,8 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
 #include "ContentBrowserPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Shader.h"
 #include <imgui/imgui_internal.h>
 #include <filesystem>
 #include <string>
@@ -285,7 +287,7 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     LogInfo("Context menu opened for %s", path.string().c_str());
     std::filesystem::path targetDir = isDirectory ? path : path.parent_path();
 
-    if (ImGui::MenuItem("Create File")) {
+    if(ImGui::MenuItem("Create File")){
         std::filesystem::path newFilePath = targetDir / GenerateUniqueName(targetDir, "NewFile", ".txt");
         try {
             std::ofstream file(newFilePath);
@@ -296,6 +298,13 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
         } catch (const std::exception& e) {
             LogError("Failed to create file %s: %s", newFilePath.string().c_str(), e.what());
         }
+    }
+    if(ImGui::MenuItem("Create Material")){
+        std::string path = Platform::SaveFile("*.material");
+        if(path.empty() == false){
+            Ref<Material> mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+            mat->Save(path);
+        } 
     }
     if (ImGui::MenuItem("Create Folder")) {
         std::filesystem::path newFolderPath = targetDir / GenerateUniqueName(targetDir, "NewFolder", "");
@@ -321,16 +330,20 @@ void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool
     if(ImGui::BeginDragDropTarget()){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
         if(payload != nullptr){
-            LogWarning("Save Prefab To: %s", path.string().c_str());
+            auto relativePath = std::filesystem::relative(path, _assetsDirectory);
+            std::string pathString = relativePath.string();
+            std::replace(pathString.begin(), pathString.end(), '\\', '/');
+
+            LogWarning("Save Prefab To: %s", pathString.c_str());
             Entity* targetEntity = (Entity*)payload->Data;
 
             InfoComponent& info = scene->GetComponent<InfoComponent>(*targetEntity);
 
             if(info.Type() == EntityType::Stand){
                 if(isDirectory){
-                    scene->Save((path.string() + "/" + info.name + ".prefab").c_str(), *targetEntity);
-                } else if(getExtension(path) == ".prefab"){
-                    scene->Save(path.string().c_str(), *targetEntity);
+                    scene->Save((pathString + "/" + info.name + ".prefab").c_str(), *targetEntity);
+                } else if(getExtension(relativePath) == ".prefab"){
+                    scene->Save(pathString.c_str(), *targetEntity);
                 }   
             } else {
                 LogError("Trying create prefab from other prefab entity");

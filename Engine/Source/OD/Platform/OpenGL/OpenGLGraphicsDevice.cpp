@@ -411,7 +411,7 @@ void OpenGLGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){
 }
 
 void OpenGLGraphicsDevice::EndRenderToScreen(){
-    Application::DrawImGui();
+    //Application::DrawImGui();
 }
 
 void OpenGLGraphicsDevice::Clean(float r, float g, float b, float a){

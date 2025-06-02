@@ -85,6 +85,13 @@ struct OD_API CollisionShape{
         shape.mesh = mesh;
         return shape;
     }
+
+    inline static CollisionShape MeshShape(){
+        CollisionShape shape;
+        shape.type = Type::Mesh;
+        shape.mesh = nullptr;
+        return shape;
+    }
 };
 
 struct OD_API RigidbodyComponent{

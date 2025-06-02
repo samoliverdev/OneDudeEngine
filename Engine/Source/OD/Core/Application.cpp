@@ -146,6 +146,7 @@ void Application::Loop(){
         OD_PROFILE_SCOPE("Application::Run::OnRender");
         for(auto i: modules) i->OnRender(deltaTime);
     }
+    DrawImGui();
     /*Platform::ImguiBegin();
     {
         if(graphicsDevice->ImGuiSupport()){
