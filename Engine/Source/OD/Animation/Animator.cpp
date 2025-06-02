@@ -25,6 +25,8 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
         ImGui::Text("Layer: %d, CurrentClip: %s, Time: %f", i, curAnim.c_str(), layer.controller.GetCurrentTime());
         i += 1;
     }
+
+    ImGui::Checkbox("Enable", &anim.enable);
 }
 
 void AnimatorComponent::Play(Clip* clip, int layer){

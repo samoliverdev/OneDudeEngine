@@ -97,8 +97,8 @@ struct OD_API CollisionShape{
 struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
 
-    int mask = AllLayers;
-    //LayerMask mask = {AllLayers};
+    //int mask = AllLayers;
+    LayerMask mask = {AllLayers};
 
     RigidbodyComponent() = default;
     /*RigidbodyComponent(const RigidbodyComponent& other);
@@ -144,6 +144,7 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(mass));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
+        ArchiveDump(ar, CEREAL_NVP(mask));
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
@@ -152,6 +153,7 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(angularFactor);
         COPY_OR_MOVE(mass);
         COPY_OR_MOVE(neverSleep);
+        COPY_OR_MOVE(mask);
     });
 
 private:

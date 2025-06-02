@@ -115,9 +115,9 @@ namespace PhysicsLayers{
 class ObjectLayerPairFilterImpl : public ObjectLayerPairFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override{
-		return true;
+		//return true;
 
-		/*switch (inObject1)
+		switch (inObject1)
 		{
 		case PhysicsLayers::NON_MOVING:
 			return inObject2 == PhysicsLayers::MOVING; // Non moving only collides with moving
@@ -126,7 +126,7 @@ public:
 		default:
 			JPH_ASSERT(false);
 			return false;
-		}*/
+		}
 	}
 };
 
@@ -147,8 +147,8 @@ class BPLayerInterfaceImpl final : public BroadPhaseLayerInterface{
 public:
     BPLayerInterfaceImpl(){
 		// Create a mapping table from object to broad phase layer
-		//mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::MOVING;//BroadPhaseLayers::NON_MOVING;
-		//mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
+		mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
+		mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
 	}
 
 	virtual uint GetNumBroadPhaseLayers() const override{
@@ -156,9 +156,8 @@ public:
 	}
 
 	virtual BroadPhaseLayer	GetBroadPhaseLayer(ObjectLayer inLayer) const override{
-		return BroadPhaseLayers::MOVING;
-		//JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
-		//return mObjectToBroadPhase[inLayer];
+		JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
+		return mObjectToBroadPhase[inLayer];
 	}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
@@ -173,14 +172,13 @@ public:
 #endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
 
 private:
-	//BroadPhaseLayer mObjectToBroadPhase[PhysicsLayers::NUM_LAYERS];
+	BroadPhaseLayer mObjectToBroadPhase[PhysicsLayers::NUM_LAYERS];
 };
 
 /// Class that determines if an object layer can collide with a broadphase layer
 class ObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override{
-		return true;
 		switch (inLayer1)
 		{
 		case PhysicsLayers::NON_MOVING:
@@ -239,7 +237,23 @@ public:
         int bLayer = (int)b.GetGroupID();
         return ((aMask & bLayer) != 0) && ((bMask & aLayer) != 0);*/
 
-		return (a.GetSubGroupID() & b.GetGroupID()) != 0 && (b.GetSubGroupID() & a.GetGroupID()) != 0;
+		/*Layers aLayer = (Layers)a.GetGroupID();
+		Layers bLayer = (Layers)b.GetGroupID();
+		int aMask = (int)a.GetSubGroupID();
+		int bMask = (int)b.GetSubGroupID();
+
+		bool r = (a.GetSubGroupID() & b.GetGroupID()) != 0 && (b.GetSubGroupID() & a.GetGroupID()) != 0;
+		return r;*/
+
+		int aLayer = a.GetGroupID();
+        int bLayer = b.GetGroupID();
+        int aMask = a.GetSubGroupID();
+        int bMask = b.GetSubGroupID();
+        bool canCollide = (aMask & bLayer) != 0 && (bMask & aLayer) != 0;
+        std::cout << "CanCollide: aLayer=" << aLayer << ", aMask=" << aMask
+                  << ", bLayer=" << bLayer << ", bMask=" << bMask
+                  << ", Result=" << canCollide << std::endl;
+        return canCollide;
     }
 };
 
@@ -601,6 +615,9 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
         if(update) rb.SetShape(shape);
     }
+
+	cereal::ImGuiArchive uiArchive;
+	uiArchive(rb.mask);
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
@@ -875,7 +892,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		auto shapes = GetShape(ragdoll.parts[p].shape);
 		Transform boneTrans = skinnedSkeleton.GetBindPose().GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
 		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition()/* + ragdoll.parts[p].shape.center*/));
-		auto rotations = ToJolt(trans.Rotation() * boneTrans.LocalRotation());
+		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.LocalRotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
 		auto twist_axis = ToJolt(trans.TransformDirection(ragdoll.parts[p].twistAxis));
 		//auto twist_angle = ragdoll.parts[p].twistAngle;
@@ -891,7 +908,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		part.mRotation = rotations;
 		part.mMotionType = EMotionType::Dynamic;
 		part.mObjectLayer = info.layer; //PhysicsLayers::MOVING;
-		part.mUserData = static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
+		part.mUserData = ragdoll.parts[p].skinnedSkeletonIndex; //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
 		if(p > 0){
@@ -990,8 +1007,8 @@ void PhysicsSystem::PhysicsUpdate(){
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 		}
 
-		/*if(ragdoll.data != nullptr){
-			SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
+		if(ragdoll.data != nullptr){
+			/*SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
 			skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
 			skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
@@ -1003,12 +1020,30 @@ void PhysicsSystem::PhysicsUpdate(){
 				int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
 				skinned.finalPose.SetGlobalTransform(boneIndex, Transform(
 					trans.InverseTransformPoint(FromJolt(pos)), 
-					math::inverse(trans.Rotation()) * FromJolt(rot), 
+					math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
 					Vector3One
 				));
 			}	
-			skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose()); 
-		}*/
+			skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());*/
+
+			/*if(skinned.skeletonEntities.size() > 0){
+				SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
+				skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
+				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+
+				for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
+					RVec3 pos;
+					Quat rot;
+					bodyInterface.GetPositionAndRotation(i, pos, rot);
+					
+					auto boneIndex = bodyInterface.GetUserData(i);
+					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
+					tt.Position(FromJolt(pos));
+					tt.Rotation(FromJolt(rot));
+				}	
+				skinned.UpdateSkeletonEntitesIn(skinned.finalPose, *scene);
+			}*/
+		}
 	}
 }
 
@@ -1275,13 +1310,13 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     RefConst<Shape> finalShape = offsetResult.Get();
 
 	BodyCreationSettings settings(
-        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer /*PhysicsLayers::MOVING*/
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
     );
 	settings.mUserData = static_cast<uint64>(entity); // safe cast
 	settings.mCollisionGroup = JPH::CollisionGroup(
 		physicsWorld->groupFilter,
         info.layer,
-        rb.mask // stored in subgroup ID
+        rb.mask.mask // stored in subgroup ID
     );
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
 	// Verify body creation
