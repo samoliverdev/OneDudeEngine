@@ -530,6 +530,8 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
         rb.NeverSleep(neverSleep);
     }
 
+	ImGui::DrawLayerMask("mask", rb.mask);
+
     CollisionShape shape = rb.GetShape();
 
     ImGui::Spacing();
@@ -615,9 +617,6 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
         if(update) rb.SetShape(shape);
     }
-
-	cereal::ImGuiArchive uiArchive;
-	uiArchive(rb.mask);
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
@@ -1007,7 +1006,7 @@ void PhysicsSystem::PhysicsUpdate(){
 			for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				bodyInterface.SetUserData(bodyID, static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex));
-				LogInfo("Set Body %d UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
+				LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
 			}
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 		}

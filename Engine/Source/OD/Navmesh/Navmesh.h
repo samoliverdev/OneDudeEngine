@@ -7,6 +7,7 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
+#include <DetourCrowd.h>
 #include <Recast.h>
 
 namespace OD{
@@ -137,6 +138,7 @@ struct OD_API NavMeshPath{
 };
 
 class OD_API Navmesh{
+	friend class NavmeshSystem;
 public:
 	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
@@ -211,8 +213,10 @@ private:
 	rcPolyMeshDetail* m_dmesh;
 	rcContext* m_ctx;
 	*/
-	class dtNavMesh* m_navMesh;
+	dtNavMesh* m_navMesh;
 	BakeData bakeData;
+
+	dtCrowd* m_crowd;
 
 	class dtNavMeshQuery* m_navQuery;
 	int m_partitionType;
@@ -241,15 +245,19 @@ struct OD_API NavmeshSkipTag{
 };
 
 struct OD_API NavmeshComponent{
+	enum class AgentUpdateMode{FindPath, Crowd};
+
 	//BuildSettings buildSettings;
+	AgentUpdateMode agentUpdateMode;
 	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
-	
+
     static inline void OnGui(Entity& e, Scene& scene);
 
 	template<class Archive> 
 	void serialize(Archive& ar){
 		//ArchiveDumpNVP(ar, buildSettings);
+		ArchiveDumpNVP(ar, agentUpdateMode);
 		ArchiveDumpNVP(ar, size);
 		ArchiveDumpNVP(ar, navmesh);
 	}
@@ -282,6 +290,8 @@ private:
 	int curPathIndex = -1;
 	bool reach = false;
 	bool hasInit = false;
+
+	int crowdId = -1;
 };
 
 class OD_API NavmeshSystem: public System{

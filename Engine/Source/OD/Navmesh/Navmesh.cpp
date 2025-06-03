@@ -11,9 +11,12 @@
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Graphics/Geometry.h"
+#include "OD/Physics/PhysicsSystem.h"
 #include <DebugDraw.h>
 #include <DetourDebugDraw.h>
 #include <DetourCommon.h>
+#include <DetourCrowd.h>
+#include <DetourObstacleAvoidance.h>
 
 #include <taskflow/taskflow.hpp> 
 #include <taskflow/algorithm/for_each.hpp>
@@ -185,6 +188,10 @@ Navmesh::~Navmesh(){
 	m_pmesh = 0;
 	rcFreePolyMeshDetail(m_dmesh);
 	m_dmesh = 0;*/
+
+	dtFreeNavMeshQuery(m_navQuery);
+
+	dtFreeCrowd(m_crowd);
 	
 	dtFreeNavMesh(m_navMesh);
 	m_navMesh = 0;
@@ -330,6 +337,7 @@ bool Navmesh::BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask){
 
     bakeData.m_ctx = new rcContext();
     m_navQuery = dtAllocNavMeshQuery();
+	
 	Vector3 bmin = bounds.GetMin(); //m_geom->getNavMeshBoundsMin();
 	Vector3 bmax = bounds.GetMax(); //m_geom->getNavMeshBoundsMax();
 	
@@ -660,6 +668,24 @@ bool Navmesh::BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask){
             LogError("Could not init Detour navmesh query");
 			return false;
 		}
+
+		m_crowd = dtAllocCrowd();
+		m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
+
+		/*struct dtObstacleAvoidanceParams params;
+		memcpy(&params, m_crowd->getObstacleAvoidanceParams(3), sizeof(dtObstacleAvoidanceParams));
+		params.velBias = 0.5f;
+		params.weightDesVel = 2.0f;
+		params.weightCurVel = 0.4f;
+		params.weightSide = 0.8f;
+		params.weightToi = 2.5f;
+		params.weightDir = 1.5f;
+		params.adaptiveDivs = 7;
+		params.adaptiveRings = 2;
+		params.adaptiveDepth = 3;
+		params.gridSize = 33;
+		params.gridDepth = 7;
+		m_crowd->setObstacleAvoidanceParams(3, &params);*/
 	}
 	
 	bakeData.m_ctx->stopTimer(RC_TIMER_TOTAL);
@@ -726,6 +752,9 @@ bool Navmesh::TileInit(Scene* scene, AABB bounds){
 		LogError("buildTiledNavigation: Could not init Detour navmesh query");
 		return false;
 	}
+
+	m_crowd = dtAllocCrowd();
+	m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
 	
 	return true;
 }
@@ -1487,79 +1516,252 @@ void NavmeshSystem::LateUpdate(){
 	OD_PROFILE_SCOPE("NavmeshSystem::Update");
 
 	Ref<Navmesh> navmesh = nullptr;
+	NavmeshComponent::AgentUpdateMode updateMode;
 
 	auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
 	for(auto e: navmeshView){
 		NavmeshComponent& navmeshComponent = navmeshView.get<NavmeshComponent>(e);
 		navmesh = navmeshComponent.navmesh;
+		updateMode = navmeshComponent.agentUpdateMode;
 	}
 
 	if(navmesh == nullptr) return;
 
-	#if InternalSystemsMulthread
-	scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
-	#endif
-		auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
-		for(auto e: navmeshAgentView){
-			NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
-			TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
+	if(updateMode == NavmeshComponent::AgentUpdateMode::FindPath){
+		#if InternalSystemsMulthread
+		scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+		#endif
+			auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
+			for(auto e: navmeshAgentView){
+				NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
+				TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
 
-			if(navmeshComponent.isDirty){
-				navmeshComponent.isDirty = false;
-				navmeshComponent.lastPos = transform.Position();
-				navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
-				navmeshComponent.curPathIndex = 1;//-1;
-				navmeshComponent.reach = false;
-			}
+				if(navmeshComponent.isDirty){
+					navmeshComponent.isDirty = false;
+					navmeshComponent.lastPos = transform.Position();
+					navmesh->FindPath(transform.Position(), navmeshComponent.destination, navmeshComponent.path);
+					navmeshComponent.curPathIndex = 1;//-1;
+					navmeshComponent.reach = false;
+				}
 
-			if(scene->Running() == false) continue;
+				if(scene->Running() == false) continue;
 
-			#if InternalSystemsMulthread
-			subflow.emplace([&](){ 
-			#endif
-				if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
-					if(navmeshComponent.path.corners.size() <= 1){
-						navmeshComponent.reach = true;
-						navmeshComponent.desiredVelocity = Vector3Zero;
-						return;
-					}
-
-					Assert(navmeshComponent.path.corners.size() > 1);
-					if(navmeshComponent.reach) return;
-
-					Vector3 pos = transform.Position();
-					Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
-					if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
-					Assert(Mathf::IsNan(dir) == false);
-
-					float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
-
-					if(distance <= navmeshComponent.stopDistance){
-						navmeshComponent.curPathIndex += 1;
-						if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
-							navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
+				#if InternalSystemsMulthread
+				subflow.emplace([&](){ 
+				#endif
+					if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+						if(navmeshComponent.path.corners.size() <= 1){
 							navmeshComponent.reach = true;
 							navmeshComponent.desiredVelocity = Vector3Zero;
 							return;
 						}
-					}
 
-					navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
-					
-					if(navmeshComponent.manualUpdate == false){
-						transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+						Assert(navmeshComponent.path.corners.size() > 1);
+						if(navmeshComponent.reach) return;
+
+						Vector3 pos = transform.Position();
+						Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
+						if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
+						Assert(Mathf::IsNan(dir) == false);
+
+						float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
+
+						if(distance <= navmeshComponent.stopDistance){
+							navmeshComponent.curPathIndex += 1;
+							if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
+								navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
+								navmeshComponent.reach = true;
+								navmeshComponent.desiredVelocity = Vector3Zero;
+								return;
+							}
+						}
+
+						navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
+						
+						if(navmeshComponent.manualUpdate == false){
+							transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+						}
+					} else {
+						navmeshComponent.curPathIndex = -1;
+						navmeshComponent.reach = false;
 					}
-				} else {
-					navmeshComponent.curPathIndex = -1;
-					navmeshComponent.reach = false;
+				#if InternalSystemsMulthread
+				});
+				#endif
+			}
+		#if InternalSystemsMulthread
+		});
+		#endif
+	}
+
+	if(updateMode == NavmeshComponent::AgentUpdateMode::Crowd){
+		auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
+		
+		for(auto [entity, agent, trans] : navmeshAgentView.each()){
+			if(agent.crowdId == -1){
+				dtCrowdAgentParams ap;
+				memset(&ap, 0, sizeof(ap));
+				ap.radius = navmesh->buildSettings.agentRadius;// 0.3f;
+				ap.height = navmesh->buildSettings.agentHeight;// 1.7f;
+				ap.maxAcceleration = 10.0f;
+				ap.maxSpeed = 3.0f;
+				ap.collisionQueryRange = ap.radius * 12.0f;
+				ap.pathOptimizationRange = ap.radius * 30.0f;
+				ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OBSTACLE_AVOIDANCE;
+				ap.obstacleAvoidanceType = 0;
+				ap.separationWeight = 2.0f;
+
+				ap.obstacleAvoidanceType = 3;
+				ap.separationWeight = 2.0f; // experimente valores entre 0.5 e 2.0
+
+				Vector3 pos = trans.Position();
+				int idx = navmesh->m_crowd->addAgent(&pos.x, &ap);
+				agent.crowdId = idx;
+			}
+
+			// Only request new path if dirty and hasn't already reached
+			if(agent.isDirty){
+				agent.isDirty = false;
+
+				agent.lastPos = trans.Position();
+				navmesh->FindPath(trans.Position(), agent.destination, agent.path);
+				agent.curPathIndex = 1;//-1;
+				agent.reach = false;
+
+				const dtCrowdAgent* crowdAgent = navmesh->m_crowd->getAgent(agent.crowdId);
+				if(crowdAgent && crowdAgent->active){
+					dtPolyRef ref;
+					dtQueryFilter m_filter;
+					m_filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
+					m_filter.setExcludeFlags(0);
+					float tolerance[3] = {2, 4, 2};
+					float destination[3] = {agent.destination.x, agent.destination.y, agent.destination.z};
+
+					navmesh->m_navQuery->findNearestPoly(destination, tolerance, &m_filter, &ref, nullptr);
+					navmesh->m_crowd->requestMoveTarget(agent.crowdId, ref, destination);
 				}
-			#if InternalSystemsMulthread
-			});
-			#endif
+			}
+
+			if(agent.manualUpdate == true/*&& scene->HasComponent<RigidbodyComponent>(entity)*/){
+				dtCrowdAgent* ca = navmesh->m_crowd->getEditableAgent(agent.crowdId);
+				if(ca){
+					//auto& rb = scene->GetComponent<RigidbodyComponent>(entity);
+
+					Vector3 pos = trans.Position();
+					//Vector3 vel = rb.Velocity();
+
+					ca->npos[0] = pos.x;
+					ca->npos[1] = pos.y;
+					ca->npos[2] = pos.z;
+
+					/*ca->vel[0] = vel.x;
+					ca->vel[1] = vel.y;
+					ca->vel[2] = vel.z;*/
+				}
+			}
 		}
-	#if InternalSystemsMulthread
-	});
-	#endif
+
+		// Update the crowd simulation
+		navmesh->m_crowd->update(Application::DeltaTime(), nullptr);
+
+		// Apply positions and check arrival
+		for(auto [entity, agent, trans] : navmeshAgentView.each()){
+			const dtCrowdAgent* a = navmesh->m_crowd->getAgent(agent.crowdId);
+			if(a && a->active){
+				//agent.path = a->targetPathqRef;
+
+				agent.desiredVelocity = Vector3(a->vel[0], a->vel[1], a->vel[2]);
+
+				// Update entity transform
+				if(agent.manualUpdate == false){
+					trans.Position(Vector3(a->npos[0], a->npos[1], a->npos[2]));
+				}/*else {
+					auto* editable = navmesh->m_crowd->getEditableAgent(agent.crowdId);
+					if(editable){
+						Vector3 curPos = trans.Position();
+						editable->npos[0] = curPos.x;
+						editable->npos[1] = curPos.y;
+						editable->npos[2] = curPos.z;
+					}
+				}*/
+			
+				// Check if agent reached destination
+				const float distSq = math::distance2(
+					Vector3(a->npos[0], a->npos[1], a->npos[2]),
+					agent.destination
+				);
+
+				const float reachThreshold = agent.stopDistance;
+				if(distSq <= (reachThreshold * reachThreshold)){
+					if(!agent.reach){
+						agent.reach = true;
+						navmesh->m_crowd->resetMoveTarget(agent.crowdId);
+					}
+				}
+			}
+		}
+	}
+
+	/*if(updateMode == NavmeshComponent::AgentUpdateMode::Crowd){
+		auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
+		for(auto [entity, agent, trans]: navmeshAgentView.each()){
+			if(agent.crowdId == -1){
+				dtCrowdAgentParams ap;
+				memset(&ap, 0, sizeof(ap));
+				ap.radius = 0.3f; //agent.radius;
+				ap.height = 1.7f; //agent.height;
+				ap.maxAcceleration = 10;// agent.maxAccel;
+				ap.maxSpeed = 3; //agent.maxSpeed;
+				ap.collisionQueryRange = ap.radius * 12.0f;// agent.radius * 12.0f;
+				ap.pathOptimizationRange = ap.radius * 30.0f; //agent.radius * 30.0f;
+				ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OBSTACLE_AVOIDANCE;
+				ap.obstacleAvoidanceType = 0;
+				ap.separationWeight = 2.0f;
+
+				Vector3 pos = trans.Position();
+				int idx = navmesh->m_crowd->addAgent(&pos.x, &ap);
+				agent.crowdId = idx;
+			}
+
+			if(!agent.reach){
+				const dtCrowdAgent* crowdAgent = navmesh->m_crowd->getAgent(agent.crowdId);
+				if(crowdAgent && crowdAgent->active){
+					dtPolyRef ref;
+					dtQueryFilter m_filter;
+					m_filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
+					m_filter.setExcludeFlags(0);
+					float tolerance[3] = {2, 4, 2};
+					float destination[3] = {agent.destination.x, agent.destination.y, agent.destination.z};
+					navmesh->m_navQuery->findNearestPoly(destination, tolerance, &m_filter, &ref, 0);
+					navmesh->m_crowd->requestMoveTarget(agent.crowdId, ref, destination);
+				}
+			}
+		}
+
+		navmesh->m_crowd->update(Application::DeltaTime(), nullptr);
+
+		for(auto [entity, agent, trans]: navmeshAgentView.each()){
+			const dtCrowdAgent* a = navmesh->m_crowd->getAgent(agent.crowdId);
+			if(a && a->active){
+				if(agent.manualUpdate == false) trans.Position(Vector3(a->npos[0], a->npos[1], a->npos[2]));
+				agent.desiredVelocity = Vector3(a->vel[0], a->vel[1], a->vel[2]);
+
+				// Check if the agent reached the destination
+				const float distSq = math::distance2(
+					Vector3(a->npos[0], a->npos[1], a->npos[2]),
+					agent.destination
+				);
+				
+				const float reachThreshold = agent.stopDistance;
+				if(distSq < (reachThreshold * reachThreshold)){
+					agent.reach = true;
+					navmesh->m_crowd->resetMoveTarget(agent.crowdId);
+				}
+			}
+		}
+	}
+	*/
+	
 	return;
 
 	auto navmeshAgentView = scene->GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
