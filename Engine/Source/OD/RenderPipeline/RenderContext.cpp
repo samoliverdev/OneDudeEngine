@@ -531,7 +531,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
         //INFO: Try optimize
-        if(c.finalPose.Size() > 0) c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose()); 
+        if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+            c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose());
+        } 
         data.posePalette = &c.posePalette;
         
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
@@ -556,6 +558,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
 
+        //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
+        if(c.posePalette.size() == 0) c.UpdatePosePalette();
+
         for(auto i: model->renderTargets){
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
@@ -565,7 +570,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
-            if(c.finalPose.Size() > 0){
+            if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
                 c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
             }
             data.posePalette = &c.posePalette;

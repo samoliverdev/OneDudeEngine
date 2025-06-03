@@ -79,6 +79,7 @@ struct OD_API MeshRendererComponent{
 struct OD_API SkinnedMeshRendererComponent: public MeshRendererComponent{
     Skeleton skeleton;
     Pose finalPose;
+    bool postUpdatePosePalette = false;
     std::vector<Matrix4> posePalette;
 
     template<class Archive>

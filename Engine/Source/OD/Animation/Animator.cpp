@@ -145,7 +145,9 @@ void AnimatorSystem::LateUpdate(){
             if(skinned.posePalette.size() < skinned.skeleton.GetRestPose().Size()) skinned.posePalette.resize(skinned.skeleton.GetRestPose().Size());
             if(i.controller.GetCurrentPose().Size() != skinned.skeleton.GetBindPose().Size()) i.controller.SetSkeleton(skinned.skeleton); //Info: This Can work better if the model is change
 
+            //FIXME: this probabily is not work well, make like HandlerAnimatorByModel
             i.controller.Update(Application::DeltaTime());
+            i.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, skinned.skeleton.GetInvBindPose()); 
             skinned.finalPose = i.controller.GetCurrentPose();
         }
     };

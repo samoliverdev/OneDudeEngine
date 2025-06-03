@@ -111,6 +111,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     
     Transform skeletonTransform;
     Pose finalPose;
+    bool postUpdatePosePalette = false;
     std::vector<Matrix4> posePalette;
 
     std::vector<Entity> skeletonEntities;
