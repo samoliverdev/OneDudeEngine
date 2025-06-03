@@ -33,6 +33,8 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
+    add_compile_options(/O2)
+
     if(USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
     endif()

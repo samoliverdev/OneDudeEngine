@@ -82,8 +82,15 @@ struct OD_API GlobalSceneData{
 OD_API GlobalSceneData& GetGlobalSceneData();
 
 struct OD_API SelfDisable{
-    template <class Archive>
-    void serialize(Archive & ar){}
+    template <class Archive> void serialize(Archive & ar){}
+};
+
+struct OD_API DontSave{
+    template <class Archive> void serialize(Archive & ar){}
+};
+
+struct OD_API HideInEditor{
+    template <class Archive> void serialize(Archive & ar){}
 };
 
 class OD_API TransformComponent{

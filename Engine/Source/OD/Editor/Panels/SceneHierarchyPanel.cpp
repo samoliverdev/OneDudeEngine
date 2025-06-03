@@ -177,8 +177,12 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     Entity children = EntityNull;
 
-    if(info.hidden) return;    
     if(root && transform.HasParent()) return;
+
+    if(showHide == false){
+        if(info.hidden) return;    
+        if(scene->HasComponent<HideInEditor>(entity)) return;
+    }
 
     //ImGui::Text(info.name.c_str());
 

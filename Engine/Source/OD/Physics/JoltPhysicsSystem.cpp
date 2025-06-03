@@ -907,7 +907,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType = EMotionType::Dynamic;
-		part.mObjectLayer = info.layer; //PhysicsLayers::MOVING;
+		part.mObjectLayer = PhysicsLayers::MOVING;
 		part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint

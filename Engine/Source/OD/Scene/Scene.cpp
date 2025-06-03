@@ -549,6 +549,9 @@ void Scene::Draw(){
 void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity entity, std::string prefabPath, bool isRoot){
     //entities.push_back(entity);
 
+    //TODO: Revisar DontSave if a entity has not "DontSave" but the parent has
+    if(registry.any_of<DontSave>(entity)) return;
+
     InfoComponent& infoComponent = registry.get<InfoComponent>(entity);
 
     if(isRoot == false && infoComponent.entityType == EntityType::PrefabRoot){
@@ -573,7 +576,7 @@ void Scene::Save(const char* path, Entity root){
 
     std::vector<Entity> entities;
     std::vector<Entity> entitiesAll;
-    
+
     /*auto entityView = registry.view<entt::entity>();
     std::vector<entt::entity> entities(entityView.begin(), entityView.end()); //std::vector<entt::entity> entities(entityView.rbegin(), entityView.rend());
     archive(cereal::make_nvp("Entities", entities));*/
@@ -583,16 +586,25 @@ void Scene::Save(const char* path, Entity root){
             return lhs < rhs;
         });
 
-        auto entityView = registry.view<TransformComponent, InfoComponent>();
+        //TODO: Revisar DontSave if a entity has not "DontSave" but the parent has
+        auto entityView = registry.view<TransformComponent, InfoComponent>(entt::exclude<DontSave>);
         entityView.use<InfoComponent>();
         for(auto e: entityView){
             InfoComponent& infoComponent = registry.get<InfoComponent>(e);
+            TransformComponent& transComponent = registry.get<TransformComponent>(e);
             if(infoComponent.entityType == EntityType::Stand){
                 entities.push_back(e);
                 entitiesAll.push_back(e);
             }
             if(infoComponent.entityType == EntityType::PrefabRoot){
-                entitiesAll.push_back(e);
+                if(transComponent.hasParent){
+                    InfoComponent& pp = registry.get<InfoComponent>(transComponent.parent);
+                    if(pp.entityType == EntityType::Stand){
+                        entitiesAll.push_back(e);
+                    }
+                } else {    
+                    entitiesAll.push_back(e);
+                }
             }
         }
     } else {
@@ -644,7 +656,7 @@ void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::ent
             for(auto j: components[i].children){
                 trans.children.push_back(loadLookup[j]);
             }
-        }    
+        }
     }
 }
 

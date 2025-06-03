@@ -69,7 +69,6 @@ void _SaveComponentTag(ODOutputArchive& archive, std::vector<entt::entity>& enti
     archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
 }
 
-
 template<typename T>
 void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName){
     std::vector<T> components;

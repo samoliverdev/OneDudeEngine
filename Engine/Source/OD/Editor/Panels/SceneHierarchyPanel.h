@@ -11,6 +11,8 @@ public:
     void OnGui() override;
 
 private:
+    bool showHide = false;
+
     Entity toDestroy;
     void DrawEntityNode(Entity entity, bool root);
 };
