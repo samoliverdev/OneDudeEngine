@@ -1,92 +1,3 @@
-/*
-#include "ContentBrowserPanel.h"
-#include "OD/Editor/Editor.h"
-#include "OD/Core/ImGui.h"
-#include <filesystem>
-#include <string>
-#include <algorithm>
-
-namespace OD{
-
-std::filesystem::path _assetsDirectory;
-std::filesystem::path _curDragDrop;
-
-ContentBrowserPanel::ContentBrowserPanel(){
-    name = "ContentBrowserPanel";
-    show = true;
-
-    _assetsDirectory = std::filesystem::current_path();
-    _curDirectory = _assetsDirectory;
-
-    LogInfo("ContentBrowserPanel CurDirectory: %s", _curDirectory.string().c_str());
-}
-
-void ContentBrowserPanel::OnGui(){
-    _assetsDirectory = std::filesystem::current_path();
-    _curDirectory = _assetsDirectory;
-
-    ImGui::Begin("ContentBrowserPanel");
-    DrawDir(_assetsDirectory, _assetsDirectory);
-
-    ImGui::End();
-}
-
-void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::path rootPath){
-    std::hash<std::string> hasher;
-    
-    // Draw Directorys
-    for(auto& p: std::filesystem::directory_iterator(path)){
-        auto& _path = p.path();
-        auto relativePath = std::filesystem::relative(_path, path );
-        std::string relativePathString = relativePath.string();
-
-        if(p.is_directory() == false) continue;
-
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
-        if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, "%s  %s", ICON_FA_FOLDER, relativePathString.c_str())){
-            if(p.is_directory()) DrawDir(_path, rootPath);
-            ImGui::TreePop();
-        }
-    }
-
-    // Draw Files
-    for(auto& p: std::filesystem::directory_iterator(path)){
-        auto& _path = p.path();
-        auto relativePath = std::filesystem::relative(_path, path);
-        auto relativePath2 = std::filesystem::relative(_path, rootPath);
-        std::string relativePathString = relativePath.string();
-
-        if(p.is_directory() == true) continue;
-        if(_path.extension() == ".meta") continue;
-
-        ImGuiTreeNodeFlags flags = (_path == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
-        if(ImGui::TreeNodeEx((void*)hasher(relativePathString), flags, "%s  %s", ICON_FA_FILE, relativePathString.c_str())){
-            if(ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)){
-                _selectedFile = _path;
-                std::string _pathString = _selectedFile.string();
-                std::replace(_pathString.begin(), _pathString.end(), '\\', '/'); // replace all 'x' to 'y'
-
-                if(AssetTypesDB::Get().HasAssetByExtension(_selectedFile.extension().string())){
-                    editor->SetSelectionAsset(AssetTypesDB::Get().assetFuncs[_selectedFile.extension().string()].CreateFromFile(_pathString));
-                }
-            }
-
-            if(ImGui::BeginDragDropSource()){
-                _curDragDrop = relativePath2; //_path;
-                ImGui::SetDragDropPayload(FILE_MOVE_PAYLOAD, &_curDragDrop, sizeof(_curDragDrop), ImGuiCond_Once);
-                ImGui::EndDragDropSource();
-            }
-
-            if(p.is_directory()) DrawDir(_path, rootPath);
-            ImGui::TreePop();
-        }
-    }
-}
-
-}
-*/
-
-///*
 #include "ContentBrowserPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
@@ -94,9 +5,8 @@ void ContentBrowserPanel::DrawDir(std::filesystem::path path, std::filesystem::p
 #include "OD/Graphics/Shader.h"
 #include <imgui/imgui_internal.h>
 #include <filesystem>
-#include <string>
-#include <algorithm>
 #include <fstream>
+#include <chrono>
 
 namespace OD {
 
@@ -109,103 +19,157 @@ ContentBrowserPanel::ContentBrowserPanel() {
     _assetsDirectory = std::filesystem::current_path();
     _curDirectory = _assetsDirectory;
 
-    LogInfo("ContentBrowserPanel CurDirectory: %s", _curDirectory.string().c_str());
+    LogInfo("ContentBrowserPanel CurDirectory: {}", _curDirectory.string().c_str());
+
+    UpdateFileCache();
 }
 
 void ContentBrowserPanel::OnGui() {
     ImGui::Begin("ContentBrowserPanel");
 
-    // Navigation controls
-    if(ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
+    static char searchBuffer[128] = "";
+    static std::filesystem::path lastDirectory;
+    if (_curDirectory != lastDirectory) {
+        searchBuffer[0] = '\0';
+        searchQuery.clear();
+        extensionFilter.clear();
+        _filteredFiles.clear();
+        lastDirectory = _curDirectory;
+    }
+
+    ImGui::Text("Search:");
+    ImGui::SameLine();
+    bool searchChanged = ImGui::InputText("##SearchFiles", searchBuffer, sizeof(searchBuffer));
+    if (searchChanged) {
+        std::string newQuery = std::string(searchBuffer);
+        std::transform(newQuery.begin(), newQuery.end(), newQuery.begin(), ::tolower);
+        if (newQuery != searchQuery) {
+            searchQuery = newQuery;
+            UpdateFilteredFiles();
+        }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("X")) {
+        searchBuffer[0] = '\0';
+        searchQuery.clear();
+        extensionFilter.clear();
+        _filteredFiles.clear();
+    }
+
+    ImGui::SameLine();
+    ImGui::Text("Filter:");
+    ImGui::SameLine();
+    static const char* extensions[] = { "All", ".obj", ".png", ".txt", ".material", ".prefab" };
+    static int currentExtension;
+    if (ImGui::Combo("##ExtensionFilter", &currentExtension, extensions, IM_ARRAYSIZE(extensions))) {
+        extensionFilter = (currentExtension == 0) ? "" : extensions[currentExtension];
+        UpdateFilteredFiles();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Refresh")) {
+        _dirCache.clear();
+        UpdateFileCache();
+        UpdateFilteredFiles();
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::Button("Back") && _curDirectory != _assetsDirectory) {
         _curDirectory = _curDirectory.parent_path();
-        _selectedFile.clear(); // Clear selected file when navigating
+        _selectedFile.clear();
     }
 
     ImGui::SameLine();
     ImGui::Text("Current Directory: %s", _curDirectory.string().c_str());
 
-    //HandleDragDrop(_curDirectory, true);
+    contextMenuOpen = false; // Shared across OnGui, DrawDir, DrawMatchingFiles
+    if (!searchQuery.empty() || !extensionFilter.empty()) {
+        DrawMatchingFiles(_assetsDirectory);
+    } else {
+        DrawDir(_curDirectory, _assetsDirectory);
+    }
 
-    // Right-click context menu for the panel background
-    if (ImGui::BeginPopupContextWindow()) {
-        HandleContextMenu(_curDirectory, true, true); // Treat as directory
+    // Background context menu only if no other menu is open
+    if (!contextMenuOpen && ImGui::BeginPopupContextWindow("BackgroundContext")) {
+        contextMenuOpen = true;
+        LogInfo("Opening background context menu for {}", _curDirectory.string().c_str());
+        HandleContextMenu(_curDirectory, true, true);
         ImGui::EndPopup();
     }
 
-    DrawDir(_curDirectory, _assetsDirectory);
-
-    /*// Process deletions at the end of OnGui
-    for (const auto& [path, isDirectory] : toDelete) {
-        try {
-            if (isDirectory) {
-                std::filesystem::remove_all(path);
-                LogInfo("Deleted directory: %s", path.string().c_str());
-            } else {
-                std::filesystem::remove(path);
-                LogInfo("Deleted file: %s", path.string().c_str());
-            }
-            // Invalidate parent cache (skip if deleting _curDirectory)
-            if (!isDirectory || path != _curDirectory) {
-                _dirCache.erase(isDirectory ? path.parent_path() : path.parent_path());
-            }
-            // Clear selected file if deleted
-            if (_selectedFile == path) _selectedFile.clear();
-        } catch (const std::filesystem::filesystem_error& e) {
-            LogError("Failed to delete %s: %s", path.string().c_str(), e.what());
-        }
-    }
-    toDelete.clear(); // Clear after processing*/
-
-    // Process deletions with confirmation popup
     static std::filesystem::path pendingDeletePath;
     static bool pendingDeleteIsDirectory = false;
     static bool popupActive = false;
 
-    // If no popup is active and there are items to delete, start processing the next item
     if (!popupActive && !toDelete.empty()) {
         auto [path, isDirectory] = toDelete.front();
-        toDelete.erase(toDelete.begin()); // Remove the item from the queue
+        toDelete.erase(toDelete.begin());
         pendingDeletePath = path;
         pendingDeleteIsDirectory = isDirectory;
         ImGui::OpenPopup("Confirm Delete");
         popupActive = true;
-        LogInfo("Opened delete confirmation popup for %s", path.string().c_str());
+        LogInfo("Opened delete confirmation popup for {}", path.string().c_str());
     }
 
-    // Delete confirmation popup
     if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Are you sure you want to delete %s?", pendingDeletePath.filename().string().c_str());
         ImGui::Separator();
         if (ImGui::Button("Yes")) {
             try {
+                // Check if deleting affects current directory or its contents
+                bool affectsCurrentDir = pendingDeleteIsDirectory &&
+                    (pendingDeletePath == _curDirectory ||
+                     std::filesystem::relative(_curDirectory, pendingDeletePath).string().find("..") == std::string::npos);
+
+                // Perform deletion
                 if (pendingDeleteIsDirectory) {
                     std::filesystem::remove_all(pendingDeletePath);
-                    LogInfo("Deleted directory: %s", pendingDeletePath.string().c_str());
+                    LogInfo("Deleted directory: {}", pendingDeletePath.string().c_str());
                 } else {
                     std::filesystem::remove(pendingDeletePath);
-                    LogInfo("Deleted file: %s", pendingDeletePath.string().c_str());
+                    LogInfo("Deleted file: {}", pendingDeletePath.string().c_str());
                 }
-                // Invalidate parent cache (skip if deleting _curDirectory)
-                if (!pendingDeleteIsDirectory || pendingDeletePath != _curDirectory) {
-                    _dirCache.erase(pendingDeleteIsDirectory ? pendingDeletePath.parent_path() : pendingDeletePath.parent_path());
+
+                // Update current directory if needed
+                if (affectsCurrentDir) {
+                    _curDirectory = _assetsDirectory;
+                    LogInfo("Reset _curDirectory to {} after deletion", _curDirectory.string().c_str());
                 }
-                // Clear selected file if deleted
+
+                // Update caches: avoid processing deleted directory
+                _dirCache.erase(pendingDeletePath);
+                _dirCache.erase(pendingDeletePath.parent_path());
+                if (affectsCurrentDir || pendingDeleteIsDirectory) {
+                    _fileCache.clear();
+                    _filteredFiles.clear();
+                    UpdateFileCache(); // Full rebuild
+                    LogInfo("Rebuilt full cache after deleting {}", pendingDeletePath.string().c_str());
+                } else {
+                    UpdateFileCache(pendingDeletePath.parent_path());
+                    UpdateFilteredFiles();
+                    LogInfo("Updated cache for parent {}", pendingDeletePath.parent_path().string().c_str());
+                }
+
                 if (_selectedFile == pendingDeletePath) _selectedFile.clear();
-            } catch (const std::filesystem::filesystem_error& e) {
-                LogError("Failed to delete %s: %s", pendingDeletePath.string().c_str(), e.what());
+            } catch (const std::exception& e) {
+                LogError("Error deleting {}: {}", pendingDeletePath.string().c_str(), e.what());
             }
             ImGui::CloseCurrentPopup();
-            popupActive = false; // Allow next item to be processed
-            LogInfo("Confirmed deletion for %s", pendingDeletePath.string().c_str());
+            popupActive = false;
+            LogInfo("Confirmed deletion for {}", pendingDeletePath.string().c_str());
         }
         ImGui::SameLine();
         if (ImGui::Button("No")) {
             ImGui::CloseCurrentPopup();
-            popupActive = false; // Allow next item to be processed
-            LogInfo("Canceled deletion for %s", pendingDeletePath.string().c_str());
+            popupActive = false;
+            LogInfo("Canceled deletion for {}", pendingDeletePath.string().c_str());
         }
         ImGui::EndPopup();
     }
+
+    contextMenuOpen = false; // Reset for next frame
 
     ImGui::End();
 }
@@ -220,19 +184,24 @@ std::string ContentBrowserPanel::GenerateUniqueName(const std::filesystem::path&
 }
 
 bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
+    // Skip if path doesn't exist
+    if (!std::filesystem::exists(path)) {
+        LogWarning("Skipping cache for non-existent path: {}", path.string().c_str());
+        return false;
+    }
+
     auto it = _dirCache.find(path);
     bool needsUpdate = true;
 
-    // Check if cache exists and is up-to-date
     if (it != _dirCache.end() && it->second.valid) {
         try {
             auto lastWriteTime = std::filesystem::last_write_time(path);
             if (it->second.lastModified == lastWriteTime) {
                 needsUpdate = false;
             }
-        } catch (const std::filesystem::filesystem_error& e) {
-            LogError("Failed to get last write time for %s: %s", path.string().c_str(), e.what());
-            needsUpdate = true; // Force update on error
+        } catch (const std::exception& e) {
+            LogError("Failed to get last write time for {}: {}", path.string().c_str(), e.what());
+            needsUpdate = true;
         }
     }
 
@@ -241,8 +210,8 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
     CachedDir cache;
     try {
         cache.lastModified = std::filesystem::last_write_time(path);
-    } catch (const std::filesystem::filesystem_error& e) {
-        LogError("Failed to set cache last write time for %s: %s", path.string().c_str(), e.what());
+    } catch (const std::exception& e) {
+        LogError("Failed to set cache last write time for {}: {}", path.string().c_str(), e.what());
         return false;
     }
 
@@ -251,7 +220,6 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
             const auto& entryPath = entry.path();
             const auto& filename = entryPath.filename().string();
 
-            // Skip hidden files and .meta files (C++17 compatible)
             if (!filename.empty() && filename[0] == '.' || entryPath.extension() == ".meta") {
                 continue;
             }
@@ -263,7 +231,6 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
             }
         }
 
-        // Sort directories and files for consistent display
         std::sort(cache.directories.begin(), cache.directories.end(),
                   [](const auto& a, const auto& b) {
                       return a.path().filename().string() < b.path().filename().string();
@@ -275,76 +242,94 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
 
         cache.valid = true;
         _dirCache[path] = std::move(cache);
-        LogInfo("Cached directory: %s", path.string().c_str());
+        LogInfo("Cached directory: {}", path.string().c_str());
         return true;
-    } catch (const std::filesystem::filesystem_error& e) {
-        LogError("Failed to cache directory %s: %s", path.string().c_str(), e.what());
+    } catch (const std::exception& e) {
+        LogError("Failed to cache directory {}: {}", path.string().c_str(), e.what());
         return false;
     }
 }
 
 void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, bool isDirectory, bool skipDelete) {
-    LogInfo("Context menu opened for %s", path.string().c_str());
+    static int frameCount = ImGui::GetFrameCount();
+    if (frameCount != ImGui::GetFrameCount()) {
+        frameCount = ImGui::GetFrameCount();
+        LogInfo("Context menu opened for {} (isDirectory: {}, skipDelete: {}, frame: {})",
+                path.string().c_str(), isDirectory, skipDelete, frameCount);
+    }
+
     std::filesystem::path targetDir = isDirectory ? path : path.parent_path();
 
-    if(ImGui::MenuItem("Create File")){
+    if (ImGui::MenuItem("Create File")) {
         std::filesystem::path newFilePath = targetDir / GenerateUniqueName(targetDir, "NewFile", ".txt");
         try {
             std::ofstream file(newFilePath);
             if (!file) throw std::runtime_error("Failed to open file for writing");
             file.close();
-            LogInfo("Created file: %s", newFilePath.string().c_str());
-            _dirCache.erase(targetDir); // Invalidate cache
+            LogInfo("Created file: {}", newFilePath.string().c_str());
+            _dirCache.erase(targetDir);
+            UpdateFileCache(targetDir);
+            UpdateFilteredFiles();
         } catch (const std::exception& e) {
-            LogError("Failed to create file %s: %s", newFilePath.string().c_str(), e.what());
+            LogError("Failed to create file {}: {}", newFilePath.string().c_str(), e.what());
         }
     }
-    if(ImGui::MenuItem("Create Material")){
+    if (ImGui::MenuItem("Create Material")) {
         std::string path = Platform::SaveFile("*.material");
-        if(path.empty() == false){
+        if (!path.empty()) {
             Ref<Material> mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
             mat->Save(path);
-        } 
+            UpdateFileCache(std::filesystem::path(path).parent_path());
+            UpdateFilteredFiles();
+        }
     }
     if (ImGui::MenuItem("Create Folder")) {
         std::filesystem::path newFolderPath = targetDir / GenerateUniqueName(targetDir, "NewFolder", "");
         try {
             std::filesystem::create_directory(newFolderPath);
-            LogInfo("Created folder: %s", newFolderPath.string().c_str());
-            _dirCache.erase(targetDir); // Invalidate cache
+            LogInfo("Created folder: {}", newFolderPath.string().c_str());
+            _dirCache.erase(targetDir);
+            UpdateFileCache(targetDir);
+            UpdateFilteredFiles();
         } catch (const std::filesystem::filesystem_error& e) {
-            LogError("Failed to create folder %s: %s", newFolderPath.string().c_str(), e.what());
+            LogError("Failed to create folder {}: {}", newFolderPath.string().c_str(), e.what());
         }
     }
     if (!skipDelete && ImGui::MenuItem("Delete")) {
         toDelete.emplace_back(path, isDirectory);
-        LogInfo("Added to delete queue: %s", path.string().c_str());
+        LogInfo("Added to delete queue: {}", path.string().c_str());
     }
 }
 
-void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool isDirectory){
+void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool isDirectory) {
     auto getExtension = [](const std::filesystem::path& path) -> std::string {
         return path.has_extension() ? path.extension().string() : "";
     };
 
-    if(ImGui::BeginDragDropTarget()){
+    if (ImGui::BeginDragDropTarget()) {
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
-        if(payload != nullptr){
+        if (payload != nullptr) {
             auto relativePath = std::filesystem::relative(path, _assetsDirectory);
             std::string pathString = relativePath.string();
             std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
-            LogWarning("Save Prefab To: %s", pathString.c_str());
+            LogWarning("Save Prefab To: {}", pathString.c_str());
             Entity* targetEntity = (Entity*)payload->Data;
 
             InfoComponent& info = scene->GetComponent<InfoComponent>(*targetEntity);
 
-            if(info.Type() == EntityType::Stand){
-                if(isDirectory){
-                    scene->Save((pathString + "/" + info.name + ".prefab").c_str(), *targetEntity);
-                } else if(getExtension(relativePath) == ".prefab"){
+            if (info.Type() == EntityType::Stand) {
+                std::filesystem::path updatePath;
+                if (isDirectory) {
+                    pathString = pathString + "/" + info.name + ".prefab";
                     scene->Save(pathString.c_str(), *targetEntity);
-                }   
+                    updatePath = path;
+                } else if (getExtension(relativePath) == ".prefab") {
+                    scene->Save(pathString.c_str(), *targetEntity);
+                    updatePath = path.parent_path();
+                }
+                UpdateFileCache(updatePath);
+                UpdateFilteredFiles();
             } else {
                 LogError("Trying create prefab from other prefab entity");
             }
@@ -354,101 +339,239 @@ void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool
     }
 }
 
-void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::filesystem::path& rootPath) {
-    CacheDirectory(path);
-    auto& cache = _dirCache[path];
-
-    // Draw directories
-    for (const auto& dir : cache.directories) {
-        const auto& dirPath = dir.path();
-        std::string filename = dirPath.filename().string();
-        std::string label = /*ICON_FA_FOLDER +*/ std::string("##") + dirPath.string();
-
-        ImGui::PushID(label.c_str());
-        bool isSelected = (dirPath == _selectedFile);
-        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
-
-        //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FOLDER, filename.c_str());
-
-        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
-
-        HandleDragDrop(dirPath, true);
-            
-        // Context menu for both open and collapsed folders
-        if (ImGui::BeginPopupContextItem()) {
-            HandleContextMenu(dirPath, true);
-            ImGui::EndPopup();
+void ContentBrowserPanel::UpdateFileCache(const std::filesystem::path& path) {
+    if (path.empty()) {
+        _fileCache.clear();
+        try {
+            CollectAllFiles(_assetsDirectory, _fileCache);
+            LogInfo("Full file cache updated with {} files", _fileCache.size());
+        } catch (const std::exception& e) {
+            LogError("Failed to update full file cache: {}", e.what());
         }
-        
-        // Render colored icon
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.843f, 0.0f, 1.0f)); // Yellow for folders
-        ImGui::Text("%s", ICON_FA_FOLDER);
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        // Render filename in default color
-        ImGui::Text("%s", filename.c_str());
-
-        if (isOpen) {
-            if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
-                _curDirectory = dirPath; // Navigate into directory
-                _selectedFile.clear();   // Clear selected file
-            } else if (ImGui::IsItemClicked()) {
-                _selectedFile = dirPath; // Select directory
-            }
-            DrawDir(dirPath, rootPath); // Recursively draw subdirectory
-            ImGui::TreePop();
-        }
-        ImGui::PopID();
+        return;
     }
 
-    // Draw files
-    for (const auto& file : cache.files) {
-        const auto& filePath = file.path();
+    // Skip if path doesn't exist
+    if (!std::filesystem::exists(path)) {
+        LogWarning("Skipping cache update for non-existent path: {}", path.string().c_str());
+        return;
+    }
+
+    try {
+        CacheDirectory(path);
+        _fileCache.erase(
+            std::remove_if(_fileCache.begin(), _fileCache.end(),
+                [&path](const auto& file) { return file.entry.path().parent_path() == path; }),
+            _fileCache.end());
+        std::vector<FileEntry> newFiles;
+        CollectAllFiles(path, newFiles);
+        _fileCache.insert(_fileCache.end(), newFiles.begin(), newFiles.end());
+        LogInfo("Incremental file cache updated for {} with {} total files", path.string().c_str(), _fileCache.size());
+    } catch (const std::exception& e) {
+        LogError("Failed to update file cache for {}: {}", path.string().c_str(), e.what());
+    }
+}
+
+void ContentBrowserPanel::CollectAllFiles(const std::filesystem::path& path, std::vector<FileEntry>& outFiles) {
+    // Skip if path doesn't exist
+    if (!std::filesystem::exists(path)) {
+        LogWarning("Skipping collect files for non-existent path: {}", path.string().c_str());
+        return;
+    }
+
+    try {
+        CacheDirectory(path);
+        auto& cache = _dirCache[path];
+
+        for (const auto& file : cache.files) {
+            FileEntry entry;
+            entry.entry = file;
+            entry.filenameLower = file.path().filename().string();
+            std::transform(entry.filenameLower.begin(), entry.filenameLower.end(), entry.filenameLower.begin(), ::tolower);
+            outFiles.push_back(entry);
+        }
+
+        for (const auto& dir : cache.directories) {
+            CollectAllFiles(dir.path(), outFiles);
+        }
+    } catch (const std::exception& e) {
+        LogError("Failed to collect files for {}: {}", path.string().c_str(), e.what());
+    }
+}
+
+void ContentBrowserPanel::UpdateFilteredFiles() {
+    auto start = std::chrono::high_resolution_clock::now();
+    _filteredFiles.clear();
+    if (searchQuery.empty() && extensionFilter.empty()) return;
+
+    for (const auto& file : _fileCache) {
+        bool matchesQuery = searchQuery.empty() || file.filenameLower.find(searchQuery) != std::string::npos;
+        bool matchesExtension = extensionFilter.empty() ||
+                                file.entry.path().extension().string() == extensionFilter;
+        if (matchesQuery && matchesExtension) {
+            _filteredFiles.push_back(file);
+        }
+    }
+
+    std::sort(_filteredFiles.begin(), _filteredFiles.end(),
+              [](const auto& a, const auto& b) {
+                  return a.entry.path().filename().string() < b.entry.path().filename().string();
+              });
+    auto end = std::chrono::high_resolution_clock::now();
+    LogInfo("Filtered {} files for query '{}' and extension '{}' in {} ms",
+            _filteredFiles.size(), searchQuery.c_str(), extensionFilter.c_str(),
+            std::chrono::duration<double, std::milli>(end - start).count());
+}
+
+void ContentBrowserPanel::DrawMatchingFiles(const std::filesystem::path& rootPath) {
+    ImGui::BeginChild("SearchResults", ImVec2(0, 0), true);
+
+    //extern bool contextMenuOpen; // Declared in OnGui
+    for (const auto& file : _filteredFiles) {
+        const auto& filePath = file.entry.path();
         std::string filename = filePath.filename().string();
-        std::string label = /*ICON_FA_FILE +*/ std::string("##") + filePath.string();
+        std::string label = std::string("##") + filePath.string();
 
         ImGui::PushID(label.c_str());
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
-        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
 
         HandleDragDrop(filePath, false);
-        
-        /*bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f)); // Light blue for files
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f));
         ImGui::Text("%s", ICON_FA_FILE);
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        // Render filename in default color
-        ImGui::Text("%s", filename.c_str());*/
+        ImGui::Text("%s", filename.c_str());
+
+        if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
+            contextMenuOpen = true;
+            LogInfo("Opening file context menu for {}", filePath.string().c_str());
+            HandleContextMenu(filePath, false);
+            ImGui::EndPopup();
+        }
 
         if (isOpen) {
-            // Context menu for files
-            if (ImGui::BeginPopupContextItem()) {
-                HandleContextMenu(filePath, false);
-                ImGui::EndPopup();
-            }
-
             if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
-                auto relativePath = std::filesystem::relative(filePath, rootPath);
-                _selectedFile = relativePath;// filePath;
+                _selectedFile = std::filesystem::relative(filePath, rootPath);
                 std::string pathString = _selectedFile.string();
                 std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
                 auto ext = _selectedFile.extension().string();
                 if (AssetTypesDB::Get().HasAssetByExtension(ext)) {
-                    //pathString = RemoveBasePath(pathString); 
                     editor->SetSelectionAsset(
                         AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
                     );
                 }
             } else if (ImGui::IsItemClicked()) {
-                _selectedFile = filePath; // Select file
+                _selectedFile = filePath;
             }
 
-            // Drag and drop
+            if (ImGui::BeginDragDropSource()) {
+                auto relativePath = std::filesystem::relative(filePath, rootPath);
+                _curDragDrop = relativePath;
+                ImGui::SetDragDropPayload(FILE_MOVE_PAYLOAD, &_curDragDrop, sizeof(_curDragDrop), ImGuiCond_Once);
+                ImGui::EndDragDropSource();
+            }
+
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
+    }
+
+    ImGui::EndChild();
+}
+
+void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::filesystem::path& rootPath) {
+    CacheDirectory(path);
+    auto& cache = _dirCache[path];
+
+    //extern bool contextMenuOpen; // Declared in OnGui
+    for (const auto& dir : cache.directories) {
+        const auto& dirPath = dir.path();
+        std::string filename = dirPath.filename().string();
+        std::string label = std::string("##") + dirPath.string();
+
+        ImGui::PushID(label.c_str());
+        bool isSelected = (dirPath == _selectedFile);
+        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+
+        HandleDragDrop(dirPath, true);
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.843f, 0.0f, 1.0f));
+        ImGui::Text("%s", ICON_FA_FOLDER);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::Text("%s", filename.c_str());
+
+        if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
+            contextMenuOpen = true;
+            LogInfo("Opening directory context menu for {}", dirPath.string().c_str());
+            HandleContextMenu(dirPath, true);
+            ImGui::EndPopup();
+        }
+
+        if (isOpen) {
+            if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
+                _curDirectory = dirPath;
+                _selectedFile.clear();
+            } else if (ImGui::IsItemClicked()) {
+                _selectedFile = dirPath;
+            }
+            DrawDir(dirPath, rootPath);
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
+    }
+
+    for (const auto& file : cache.files) {
+        const auto& filePath = file.path();
+        std::string filename = filePath.filename().string();
+        std::string label = std::string("##") + filePath.string();
+
+        ImGui::PushID(label.c_str());
+        ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
+
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+
+        HandleDragDrop(filePath, false);
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f));
+        ImGui::Text("%s", ICON_FA_FILE);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::Text("%s", filename.c_str());
+
+        if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
+            contextMenuOpen = true;
+            LogInfo("Opening file context menu for {}", filePath.string().c_str());
+            HandleContextMenu(filePath, false);
+            ImGui::EndPopup();
+        }
+
+        if (isOpen) {
+            if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
+                auto relativePath = std::filesystem::relative(filePath, rootPath);
+                _selectedFile = relativePath;
+                std::string pathString = _selectedFile.string();
+                std::replace(pathString.begin(), pathString.end(), '\\', '/');
+
+                auto ext = _selectedFile.extension().string();
+                if (AssetTypesDB::Get().HasAssetByExtension(ext)) {
+                    editor->SetSelectionAsset(
+                        AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
+                    );
+                }
+            } else if (ImGui::IsItemClicked()) {
+                _selectedFile = filePath;
+            }
+
             if (ImGui::BeginDragDropSource()) {
                 auto relativePath = std::filesystem::relative(filePath, rootPath);
                 _curDragDrop = relativePath;
@@ -463,4 +586,3 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
 }
 
 }
-//*/

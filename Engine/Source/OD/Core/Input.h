@@ -24,6 +24,8 @@ enum class KeyCode {
     Space = 32,
     //8
 
+    Delete = 261,
+
     Left = 0x25,
     Up = 0x26,
     Right = 0x27,
@@ -92,7 +94,7 @@ enum class KeyCode {
     RAlt = 346,
     //6
 };
-#define KeyCodeMaxKeys 347
+#define KeyCodeMaxKeys 348
 
 class Application;
 

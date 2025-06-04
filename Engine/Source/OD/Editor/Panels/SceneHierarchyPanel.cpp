@@ -167,6 +167,13 @@ void SceneHierarchyPanel::OnGui(){
         //ImGui::EndChild();
     //}
     ImGui::End();
+
+    if(Input::IsKeyDown(KeyCode::Delete) && editor->SelectedEntitiesCount() > 0){
+        for(auto& i: editor->_selectedEntities){
+            scene->DestroyEntity(i);
+        }
+        editor->UnselectAll();
+    }
 }
 
 void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
@@ -270,10 +277,6 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     bool entityDeleted = false;
     if(ImGui::BeginPopupContextItem()){
-        if(ImGui::MenuItem("Duplicate Entity")){
-            scene->DuplicateEntity(entity);
-        }
-
         if(ImGui::MenuItem("Create Empty Entity")){
             auto emptyEntity = scene->AddEntity("Empty Entity");
             scene->SetParent(entity, emptyEntity);
@@ -292,12 +295,23 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
             //_toDestroyEntity = entity.id();
         }
 
+        if(info.Type() == EntityType::Stand && ImGui::MenuItem("Select All Childres")){
+            editor->UnselectAll();
+            for(auto& i: transform.Children()){
+                editor->AddSelectionEntity(i);
+            }
+        }
+
         if(info.Type() == EntityType::PrefabRoot && ImGui::MenuItem("Unpack Prefab")){
             scene->UnpackPrefab(entity, false);
         }
 
         if(info.Type() == EntityType::PrefabRoot && ImGui::MenuItem("Unpack Prefab All")){
             scene->UnpackPrefab(entity, true);
+        }
+
+        if(ImGui::MenuItem("Duplicate Entity")){
+            scene->DuplicateEntity(entity);
         }
 
         if(scene->GetComponent<InfoComponent>(entity).Type() == EntityType::Stand && ImGui::MenuItem("Save Prefab")){

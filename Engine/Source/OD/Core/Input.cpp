@@ -112,6 +112,7 @@ void Input::Update(){
         KeyCode::Alt,
         KeyCode::Escape,
         KeyCode::Space,
+        KeyCode::Delete,
         KeyCode::Left,
         KeyCode::Up,
         KeyCode::Right,

@@ -131,8 +131,12 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
 struct OD_API GizmosDrawComponent{
     Vector3 globalScale = {0.05f, 0.05f, 0.05f};
 
-    inline static void OnGui(Entity& e, Scene& scene){}
-    template <class Archive> void serialize(Archive& ar){}
+    //inline static void OnGui(Entity& e, Scene& scene){}
+
+    template <class Archive> 
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, globalScale);    
+    }
 };
 
 };

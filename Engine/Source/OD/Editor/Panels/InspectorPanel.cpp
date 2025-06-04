@@ -317,7 +317,7 @@ void InspectorPanel::DrawComponents(Entity entity){
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f)); // Tight padding
                 
                 float v[3] = {value.x, value.y, value.z};
-                if (ImGui::DragFloat3(id, v, dragSpeed, min, max, "%.1f")) {
+                if (ImGui::DragFloat3(id, v, dragSpeed, min, max, "%.3f")) {
                     value = Vector3(v[0], v[1], v[2]);
                     UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<TransformComponent>>(&scene, e, transform, transform));
                 }
@@ -375,7 +375,7 @@ void InspectorPanel::ShowAddComponent(Entity entity){
     if(ImGui::Button("Add Component"))
         ImGui::OpenPopup("AddComponent");
 
-    if(ImGui::BeginPopup("AddComponent")){
+    /*if(ImGui::BeginPopup("AddComponent")){
         for(auto& i: SceneManager::Get().coreComponentsSerializer){
             if(ImGui::MenuItem(i.first.c_str())){
                 i.second.addComponent(editor->selectionEntity, *scene);
@@ -395,7 +395,133 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         }
 
         ImGui::EndPopup();
+    }*/
+
+    /*if(ImGui::BeginPopup("AddComponent")){
+        // Static buffer for search input
+        static char searchBuffer[128] = "";
+        static std::string searchQuery;
+
+        // Search bar
+        ImGui::Text("Search:");
+        ImGui::SameLine();
+        if (ImGui::InputText("##SearchComponents", searchBuffer, sizeof(searchBuffer))) {
+            searchQuery = std::string(searchBuffer);
+            // Convert search query to lowercase for case-insensitive comparison
+            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Filter and display core components
+        for (auto& i : SceneManager::Get().coreComponentsSerializer) {
+            std::string componentName = i.first;
+            std::string componentNameLower = componentName;
+            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
+
+            // Show component if it matches the search query (or if search is empty)
+            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
+                if (ImGui::MenuItem(i.first.c_str())) {
+                    i.second.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Filter and display other components
+        for (auto& i : SceneManager::Get().componentsSerializer) {
+            std::string componentName = i.first;
+            std::string componentNameLower = componentName;
+            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
+
+            // Show component if it matches the search query (or if search is empty)
+            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
+                if (ImGui::MenuItem(i.first.c_str())) {
+                    i.second.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+
+        ImGui::EndPopup();
+    }*/
+
+    // Set popup style (optional: rounded corners, max size)
+    ImGui::SetNextWindowSizeConstraints(ImVec2(200, 100), ImVec2(400, 300)); // Min and max size for the popup
+
+     // Static variables for search
+    static char searchBuffer[128] = "";
+    static std::string searchQuery;
+
+    // Clear search buffer when popup closes
+    if (!ImGui::IsPopupOpen("AddComponent")) {
+        searchBuffer[0] = '\0'; // Clear the buffer
+        searchQuery.clear();    // Clear the query
     }
+
+    if (ImGui::BeginPopup("AddComponent")) {
+        // Static buffer for search input
+        //static char searchBuffer[128] = "";
+        //static std::string searchQuery;
+
+        // Search bar
+        ImGui::Text("Search:");
+        ImGui::SameLine();
+        if (ImGui::InputText("##SearchComponents", searchBuffer, sizeof(searchBuffer))) {
+            searchQuery = std::string(searchBuffer);
+            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Create a scrollable child window with fixed height
+        ImGui::BeginChild("ComponentList", ImVec2(0, 200), true); // 200 is the fixed height, adjust as needed
+
+        // Filter and display core components
+        for (auto& i : SceneManager::Get().coreComponentsSerializer) {
+            std::string componentName = i.first;
+            std::string componentNameLower = componentName;
+            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
+
+            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
+                if (ImGui::MenuItem(i.first.c_str())) {
+                    i.second.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Filter and display other components
+        for (auto& i : SceneManager::Get().componentsSerializer) {
+            std::string componentName = i.first;
+            std::string componentNameLower = componentName;
+            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
+
+            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
+                if (ImGui::MenuItem(i.first.c_str())) {
+                    i.second.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+
+        ImGui::EndChild(); // End scrollable region
+
+        ImGui::EndPopup();
+    }
+
 }
 
 }

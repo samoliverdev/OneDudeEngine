@@ -1,36 +1,10 @@
-/*
-#pragma once
-#include "OD/Defines.h"
-#include "OD/Editor/EditorPanel.h"
-#include <filesystem>
-
-namespace OD{
-
-class Editor;
-
-class OD_API ContentBrowserPanel: public EditorPanel{
-public:
-    ContentBrowserPanel();
-    void OnGui() override;
-
-private:
-    std::filesystem::path _curDirectory;
-    std::filesystem::path _selectedFile;
-
-    void DrawDir(std::filesystem::path path, std::filesystem::path rootPath);
-};
-
-}
-*/
-
-///*
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Editor/EditorPanel.h"
 #include <filesystem>
 #include <unordered_map>
 #include <vector>
-#include <chrono>
+#include <string>
 
 namespace OD {
 
@@ -42,9 +16,19 @@ public:
     void OnGui() override;
 
 private:
+    struct FileEntry {
+        std::filesystem::directory_entry entry;
+        std::string filenameLower; // Preprocessed lowercase filename
+    };
+
     std::filesystem::path _curDirectory;
     std::filesystem::path _selectedFile;
     std::filesystem::path _assetsDirectory;
+    std::string searchQuery; // Class member for search query
+    std::string extensionFilter; // Selected extension filter (e.g., ".obj")
+    std::vector<FileEntry> _fileCache; // Cache for all files
+    std::vector<FileEntry> _filteredFiles; // Cache for filtered matching files
+    bool contextMenuOpen = false;
 
     struct CachedDir {
         std::vector<std::filesystem::directory_entry> directories;
@@ -61,7 +45,10 @@ private:
     std::string GenerateUniqueName(const std::filesystem::path& dir, const std::string& baseName, const std::string& extension);
     void HandleContextMenu(const std::filesystem::path& path, bool isDirectory, bool skipDelete = false);
     void HandleDragDrop(const std::filesystem::path& path, bool isDirectory);
+    void UpdateFileCache(const std::filesystem::path& path = "");
+    void CollectAllFiles(const std::filesystem::path& path, std::vector<FileEntry>& outFiles);
+    void UpdateFilteredFiles();
+    void DrawMatchingFiles(const std::filesystem::path& rootPath);
 };
 
 }
-//*/
