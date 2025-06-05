@@ -435,16 +435,17 @@ void ContentBrowserPanel::DrawMatchingFiles(const std::filesystem::path& rootPat
         ImGui::PushID(label.c_str());
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
-        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
 
         HandleDragDrop(filePath, false);
 
-        ImGui::SameLine();
+        /*ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f));
         ImGui::Text("%s", ICON_FA_FILE);
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::Text("%s", filename.c_str());
+        ImGui::Text("%s", filename.c_str());*/
 
         if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
             contextMenuOpen = true;
@@ -537,16 +538,17 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         ImGui::PushID(label.c_str());
         ImGuiTreeNodeFlags flags = (filePath == _selectedFile ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;
 
-        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+        bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
 
         HandleDragDrop(filePath, false);
 
-        ImGui::SameLine();
+        /*ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.678f, 0.847f, 0.902f, 1.0f));
         ImGui::Text("%s", ICON_FA_FILE);
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::Text("%s", filename.c_str());
+        ImGui::Text("%s", filename.c_str());*/
 
         if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
             contextMenuOpen = true;
@@ -572,7 +574,7 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
                 _selectedFile = filePath;
             }
 
-            if (ImGui::BeginDragDropSource()) {
+            if(ImGui::BeginDragDropSource()){
                 auto relativePath = std::filesystem::relative(filePath, rootPath);
                 _curDragDrop = relativePath;
                 ImGui::SetDragDropPayload(FILE_MOVE_PAYLOAD, &_curDragDrop, sizeof(_curDragDrop), ImGuiCond_Once);

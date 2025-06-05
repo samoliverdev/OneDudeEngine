@@ -474,3 +474,220 @@ void Platform::EndOffscreenContextCurrent(){
 }*/
 
 }
+
+#ifdef _WIN32
+
+#include <windows.h>
+#include <shobjidl.h> // For ITaskbarList3
+#include <objbase.h>  
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h> // For glfwGetWin32Window
+#include <commctrl.h> // For progress bar
+#include <atomic>
+#include <thread>
+
+// Globals for taskbar progress
+static ITaskbarList3* g_Taskbar = nullptr;
+static HWND g_TaskbarHwnd = nullptr;
+
+// Globals for popup progress window
+static HWND g_ProgressWnd = nullptr;
+static HWND g_ProgressBar = nullptr;
+static std::atomic<bool> g_Running{ false };
+static std::thread g_ProgressThread;
+
+// Forward declarations
+LRESULT CALLBACK ProgressWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+void CreateProgressWindow() {
+    /*InitCommonControls();
+
+    WNDCLASSW wc = { 0 };
+    wc.lpfnWndProc = ProgressWndProc;
+    wc.hInstance = GetModuleHandleW(NULL);
+    wc.lpszClassName = L"ODProgressWindow";
+
+    RegisterClassW(&wc);
+
+    const int winWidth = 320;
+    const int winHeight = 100;
+
+    // Calcula o centro da tela
+    int screenWidth = OD::Application::ScreenWidth(); //GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = OD::Application::ScreenHeight(); //GetSystemMetrics(SM_CYSCREEN);
+    int posX = (screenWidth - winWidth) / 2;
+    int posY = (screenHeight - winHeight) / 2;
+
+    g_ProgressWnd = CreateWindowExW(
+        0, wc.lpszClassName, L"Processing Progress",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+        posX, posY, winWidth, winHeight,
+        NULL, NULL, wc.hInstance, NULL
+    );
+
+    g_ProgressBar = CreateWindowEx(
+        0, PROGRESS_CLASS, NULL,
+        WS_CHILD | WS_VISIBLE,
+        20, 40, 280, 20,
+        g_ProgressWnd, NULL, wc.hInstance, NULL
+    );
+
+    SendMessage(g_ProgressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+    SendMessage(g_ProgressBar, PBM_SETSTEP, (WPARAM)1, 0);
+
+    ShowWindow(g_ProgressWnd, SW_SHOW);
+    UpdateWindow(g_ProgressWnd);*/
+
+    InitCommonControls();
+
+    WNDCLASSW wc = { 0 };
+    wc.lpfnWndProc = ProgressWndProc;
+    wc.hInstance = GetModuleHandleW(NULL);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // Ou crie um pincel escuro customizado
+    wc.lpszClassName = L"ODProgressWindow";
+
+    RegisterClassW(&wc);
+
+    const int winWidth = 320;
+    const int winHeight = 100;
+
+    // Centraliza a janela
+    int screenWidth = OD::Application::ScreenWidth();
+    int screenHeight = OD::Application::ScreenHeight();
+    int posX = (screenWidth - winWidth) / 2;
+    int posY = (screenHeight - winHeight) / 2;
+
+    g_ProgressWnd = CreateWindowExW(
+        WS_EX_LAYERED | WS_EX_TOOLWINDOW, // Layered permite transparência e WS_EX_TOOLWINDOW remove da barra de tarefas
+        wc.lpszClassName, L"",
+        WS_POPUP | WS_VISIBLE, // WS_POPUP remove a moldura
+        posX, posY, winWidth, winHeight,
+        NULL, NULL, wc.hInstance, NULL
+    );
+
+    // Escurecer fundo da janela
+    SetLayeredWindowAttributes(g_ProgressWnd, 0, 255, LWA_ALPHA);
+    HBRUSH darkBrush = CreateSolidBrush(RGB(30, 30, 30)); // fundo escuro
+    SetClassLongPtrW(g_ProgressWnd, GCLP_HBRBACKGROUND, (LONG_PTR)darkBrush);
+
+    // Barra de progresso estilo moderno
+    g_ProgressBar = CreateWindowEx(
+        0, PROGRESS_CLASS, NULL,
+        WS_CHILD | WS_VISIBLE | PBS_SMOOTH,
+        20, 40, 280, 20,
+        g_ProgressWnd, NULL, wc.hInstance, NULL
+    );
+
+    SendMessage(g_ProgressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+    SendMessage(g_ProgressBar, PBM_SETSTEP, (WPARAM)1, 0);
+
+    ShowWindow(g_ProgressWnd, SW_SHOW);
+    UpdateWindow(g_ProgressWnd);
+}
+
+void UpdateProgressWindow(int percent) {
+    if (g_ProgressBar) {
+        SendMessage(g_ProgressBar, PBM_SETPOS, (WPARAM)percent, 0);
+        UpdateWindow(g_ProgressBar);
+    }
+}
+
+void CloseProgressWindow() {
+    if (g_ProgressWnd) {
+        DestroyWindow(g_ProgressWnd);
+        g_ProgressWnd = nullptr;
+        g_ProgressBar = nullptr;
+    }
+}
+
+LRESULT CALLBACK ProgressWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    /*switch (msg) {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);*/
+
+    switch (msg) {
+    case WM_DESTROY:
+        // NÃO CHAME PostQuitMessage AQUI!
+        return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+// Run a message loop on a thread to keep the progress window responsive
+void ProgressWindowThread() {
+    MSG msg;
+    while (g_Running.load()) {
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void OD::Platform::SetTaskbarProgress(unsigned long long current, unsigned long long total) {
+    if (!g_Taskbar) {
+        HRESULT hr = ::CoCreateInstance(
+            CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER,
+            __uuidof(ITaskbarList3),
+            reinterpret_cast<void**>(&g_Taskbar)
+        );
+        if (FAILED(hr) || !OD::window) return;
+
+        g_Taskbar->HrInit();
+        g_TaskbarHwnd = glfwGetWin32Window(window);
+        if (!g_TaskbarHwnd) return;
+
+        g_Taskbar->SetProgressState(g_TaskbarHwnd, TBPF_NORMAL);
+    }
+
+    if (g_Taskbar) {
+        g_Taskbar->SetProgressValue(g_TaskbarHwnd, current, total);
+    }
+}
+
+void OD::Platform::ClearTaskbarProgress() {
+    if (g_Taskbar && g_TaskbarHwnd) {
+        g_Taskbar->SetProgressState(g_TaskbarHwnd, TBPF_NOPROGRESS);
+        g_Taskbar->Release();
+        g_Taskbar = nullptr;
+        g_TaskbarHwnd = nullptr;
+    }
+}
+
+// NEW functions to control popup progress window:
+void OD::Platform::ShowPopupProgress() {
+    if (g_Running.load()) return; // already running
+
+    g_Running.store(true);
+    CreateProgressWindow();
+    g_ProgressThread = std::thread(ProgressWindowThread);
+}
+
+void OD::Platform::UpdatePopupProgress(unsigned int percent) {
+    UpdateProgressWindow(percent);
+}
+
+void OD::Platform::HidePopupProgress() {
+    g_Running.store(false);
+    if (g_ProgressThread.joinable())
+        g_ProgressThread.join();
+    CloseProgressWindow();
+}
+
+#else
+
+// Dummy stubs for non-Windows platforms
+
+void OD::Platform::SetTaskbarProgress(unsigned long long, unsigned long long) {}
+void OD::Platform::ClearTaskbarProgress() {}
+
+void OD::Platform::ShowPopupProgress() {}
+void OD::Platform::UpdatePopupProgress(unsigned int) {}
+void OD::Platform::HidePopupProgress() {}
+
+
+#endif

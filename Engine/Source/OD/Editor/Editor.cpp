@@ -87,6 +87,23 @@ void DrawCustomMenu(const std::string& name, MenuNode& node){
     }
 }
 
+Entity Editor::GetTargetSelected(Entity entity){
+    if(entity == EntityNull) return entity;
+
+    Assert(SceneManager::Get().GetActiveScene() != nullptr);
+    InfoComponent& info = SceneManager::Get().GetActiveScene()->GetComponent<InfoComponent>(entity);
+    TransformComponent& trans = SceneManager::Get().GetActiveScene()->GetComponent<TransformComponent>(entity);
+
+    if(info.Type() != EntityType::Stand && trans.HasParent()){
+        InfoComponent& infoParent = SceneManager::Get().GetActiveScene()->GetComponent<InfoComponent>(trans.Parent());
+        if(infoParent.Type() == EntityType::Stand) return entity;
+
+        return GetTargetSelected(trans.Parent());
+    }
+
+    return entity;
+}
+
 void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);
 

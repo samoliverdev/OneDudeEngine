@@ -56,6 +56,10 @@ public:
         selectionOnAsset = false;
     }
 
+    inline void AddCustomPanel(EditorPanel* panel){
+        mainWorkspace.AddPanel(panel);
+    }
+
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, sceneHierarchyPanel.show);
@@ -125,6 +129,8 @@ private:
     GizmoSpace gizmoSpace = GizmoSpace::Local;
 
     inline void SetSelectionEntity(Entity entity){
+        entity = GetTargetSelected(entity);
+
         selectionEntity = entity;
         selectedEntities.clear();
         _selectedEntities.clear();
@@ -135,6 +141,8 @@ private:
     }
 
     inline void AddSelectionEntity(Entity entity){
+        entity = GetTargetSelected(entity);
+        
         selectionEntity = entity;
         selectedEntities.push_back(entity);
         _selectedEntities.insert(entity);
@@ -143,6 +151,8 @@ private:
     }
 
     inline int SelectedEntitiesCount(){ return selectedEntities.size(); }
+
+    Entity GetTargetSelected(Entity input);
     
     void HandleShotcuts();
     void PlayScene();

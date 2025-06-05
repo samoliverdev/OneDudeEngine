@@ -34,6 +34,13 @@ public:
     static std::string OpenFile(const char* filter = "");
     static std::string SaveFile(const char* filter = "");
 
+    static void SetTaskbarProgress(unsigned long long, unsigned long long);
+    static void ClearTaskbarProgress();
+
+    static void ShowPopupProgress();
+    static void UpdatePopupProgress(unsigned int);
+    static void HidePopupProgress();
+
 private:
     static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
     static void SystemShutdown(void* plat_state);
