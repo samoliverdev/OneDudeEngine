@@ -5,6 +5,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
+#include "OD/Physics/PhysicsSystem.h"
 #include <string>
 #include <fstream>
 
@@ -66,7 +67,17 @@ void Model::Reload(){
 
 bool Model::LoadFromFile(const std::string& path){
 	if(path.empty() == false && path != "Memory") LoadOrCreateArchive(path + ".meta", settings, "settings");
-    return Model::CreateFromFile(*this, path, settings);
+    
+	//return Model::CreateFromFile(*this, path, settings);
+
+	bool r = Model::CreateFromFile(*this, path, settings);
+	if(r == false) return false;
+
+	if(settings.generateColliderData){
+		modelShapeData = CreateMeshShapeData(*this);
+	}
+
+	return true;
 }
 
 std::vector<std::string> Model::GetFileAssociations(){ 

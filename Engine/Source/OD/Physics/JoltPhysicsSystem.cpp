@@ -288,7 +288,7 @@ public:
 	JPH::Array<JPH::IndexedTriangle> joltTriangles;
 };
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
+Ref<MeshShapeData> OD_API CreateMeshShapeData(Model& model){
 	std::vector<Vector3> vertices;
 	std::vector<unsigned int> indices;
 
@@ -302,17 +302,17 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
         }
     };
 
-	for(auto i: model->renderTargets){
-		auto targetMesh = model->meshs[i.meshIndex].get();
-		auto targetMatrix = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+	for(auto i: model.renderTargets){
+		auto targetMesh = model.meshs[i.meshIndex].get();
+		auto targetMatrix = model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 		AppedFrom(*targetMesh, targetMatrix);
 	}
 
 	return CreateMeshShapeData(vertices, indices);
 }
 
-Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
-    return CreateMeshShapeData(mesh->vertices, mesh->indices); // Usa a função abaixo
+Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
+    return CreateMeshShapeData(mesh.vertices, mesh.indices); // Usa a função abaixo
 }
 
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
@@ -340,11 +340,21 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertic
     //JPH::Array<JPH::IndexedTriangle> joltTriangles;
     out->joltTriangles.reserve(indices.size() / 3);
     for(size_t i = 0; i < indices.size(); i += 3) {
-        out->joltTriangles.push_back(JPH::IndexedTriangle(
+		uint32_t i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+		JPH::Vec3 v0 = ToJolt(vertices[i0]);
+		JPH::Vec3 v1 = ToJolt(vertices[i1]);
+		JPH::Vec3 v2 = ToJolt(vertices[i2]);
+		if ((v1 - v0).Cross(v2 - v0).Length() >= 1e-6f) {
+			out->joltTriangles.push_back(JPH::IndexedTriangle(i0, i1, i2));
+		} else {
+			LogWarning("Skipped degenerate triangle: %u, %u, %u", i0, i1, i2);
+		}
+
+        /*out->joltTriangles.push_back(JPH::IndexedTriangle(
             indices[i],
             indices[i + 1],
             indices[i + 2]
-        ));
+        ));*/
     }
 
 	out->convexPoints.reserve(out->joltVertices.size());
@@ -372,7 +382,7 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertic
     }
 
     // 2. Check for degenerate triangles
-    bool hasDegenerate = false;
+    /*bool hasDegenerate = false;
     for (const auto& tri : out->joltTriangles) {
         JPH::Vec3 v0 = out->convexPoints[tri.mIdx[0]];
         JPH::Vec3 v1 = out->convexPoints[tri.mIdx[1]];
@@ -384,9 +394,9 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertic
             hasDegenerate = true;
         }
     }
-    if (hasDegenerate) {
+    if(hasDegenerate){
         return nullptr; // Stop if any degenerate triangles are found
-    }
+    }*/
 
     // 3. Check for reasonable bounding box size
     JPH::Vec3 minBounds(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -952,7 +962,7 @@ void PhysicsSystem::PhysicsUpdate(){
         ModelRendererComponent& mesh = viewMesh.get<ModelRendererComponent>(e);
 
 		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
-			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel());
+			rb.shape.mesh = mesh.GetModel()->modelShapeData == nullptr ? CreateMeshShapeData(*mesh.GetModel()) : mesh.GetModel()->modelShapeData;
 		}
 	}
 

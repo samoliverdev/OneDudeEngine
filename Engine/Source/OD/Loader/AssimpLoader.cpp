@@ -607,13 +607,22 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         //aiProcess_FlipUVs | 
         aiProcess_CalcTangentSpace |
         aiProcess_PopulateArmatureData
-        //| aiProcess_GlobalScale 
+        | aiProcess_GlobalScale 
         //| aiProcess_OptimizeGraph 
     );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         LogError("ERROR::ASSIMP:: %s", importer.GetErrorString());
         return false;
+    }
+
+    float scale = loadSettings.scale;
+    if (scene->mMetaData) {
+        double fbxUnitScale = 1.0;
+        if (scene->mMetaData->Get("UnitScaleFactor", fbxUnitScale)) {
+            scale *= static_cast<float>(fbxUnitScale);
+            LogInfo("Applying automatic FBX scale: %.4f", scale);
+        }
     }
 
     aiMatrix4x4 scaleMatrix;

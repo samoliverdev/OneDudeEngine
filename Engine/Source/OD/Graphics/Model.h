@@ -40,10 +40,12 @@ public:
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
     float scale = 1.0f;
+    bool generateColliderData = true;
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scale);
+        ArchiveDumpNVP(ar, generateColliderData);
     }
 };
 
@@ -62,6 +64,8 @@ public:
     std::vector<Matrix4> matrixs;
     Skeleton skeleton;
     std::vector<Ref<Clip>> animationClips;
+
+    Ref<class MeshShapeData> modelShapeData = nullptr;
 
     Ref<Clip> FindClipByName(const std::string& name);
 

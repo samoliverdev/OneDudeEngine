@@ -24,8 +24,8 @@ namespace OD{
 //using MeshShapeData = btBvhTriangleMeshShape;
 class MeshShapeData;
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model);
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Mesh>& mesh);
+Ref<MeshShapeData> OD_API CreateMeshShapeData(Model& model);
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const Mesh& mesh);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
 
 struct OD_API CollisionShape{
@@ -75,7 +75,7 @@ struct OD_API CollisionShape{
     inline static CollisionShape MeshShape(Ref<Mesh> mesh){
         CollisionShape shape;
         shape.type = Type::Mesh;
-        shape.mesh = CreateMeshShapeData(mesh);
+        shape.mesh = CreateMeshShapeData(*mesh);
         return shape;
     }
 
