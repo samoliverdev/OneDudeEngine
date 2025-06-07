@@ -6,8 +6,11 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Physics/PhysicsSystem.h"
+#include "OD/Core/Application.h"
 #include <string>
 #include <fstream>
+
+#include "OD/Editor/Editor.h"
 
 namespace OD{
 
@@ -32,6 +35,19 @@ void Model::OnGui(){
 	
 	if(ImGui::Button("Apply Changes") && path != "Memory"){
 		Reload();
+	}
+
+	if(path.empty() == false || path != "Memory"){
+		auto* editor = Application::GetModuleByType<Editor>();
+		auto* framebuffer = editor->AssetPreviewFramebuffer();
+		editor->SetModelAssetPreview(path);
+
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+		float aspect = framebuffer->Width() / framebuffer->Height();
+		ImGui::Image(framebuffer->ColorAttachmentId(0), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+	} else {
+		ImGui::Text("Can not preview this model!!!");
 	}
 }
 

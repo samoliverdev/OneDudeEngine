@@ -9,6 +9,7 @@
 #include "OD/Platform/Platform.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
+#include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
@@ -104,6 +105,69 @@ Entity Editor::GetTargetSelected(Entity entity){
     return entity;
 }
 
+inline void AlignToViewAABB(Transform& cameraTransform, const AABB& aabb, float verticalFOVDegrees = 60.0f, float aspectRatio = 16.0f/9.0f, Vector3 viewDirection = Vector3Back, Vector3 upDirection = Vector3Up) {
+    #undef max
+    // 1. Obter o centro do AABB
+    Vector3 center = aabb.center;
+    Vector3 extents = aabb.extents;
+
+    // 2. Calcular o raio da esfera que engloba o AABB
+    float radius = math::length(extents);
+
+    // 3. Converter FOV vertical de graus para radianos
+    float verticalFOVRadians = Mathf::Deg2Rad(verticalFOVDegrees);
+
+    // 4. Calcular a distância necessária para caber o AABB na vertical do frustum
+    float distanceY = radius / std::sin(verticalFOVRadians / 2.0f);
+
+    // 5. Calcular a distância horizontal necessária (com base na proporção da tela)
+    float horizontalFOVRadians = 2.0f * std::atan(std::tan(verticalFOVRadians / 2.0f) * aspectRatio);
+    float distanceX = radius / std::sin(horizontalFOVRadians / 2.0f);
+
+    // 6. Usar a maior distância para garantir que o AABB esteja completamente visível
+    float distance = std::max(distanceX, distanceY);
+
+    // 7. Calcular a nova posição da câmera
+    Vector3 cameraPos = center - viewDirection * distance;
+
+    // 8. Aplicar nova posição e rotação para olhar para o centro do AABB
+    cameraTransform.LocalPosition(cameraPos);
+    cameraTransform.LookAt(center, upDirection);
+}
+
+inline void AlignCameraToAABB_Isometric(Transform& cameraTransform, const AABB& bounds, float verticalFovDeg, float aspectRatio, float borderScale = 1.2f, float yawDeg = 45.0f, float pitchDeg = 30.0f) {
+    using namespace math;
+
+    // Centro e tamanho da AABB
+    Vector3 center = bounds.center;
+    Vector3 extents = bounds.extents;
+
+    // Converte ângulos para radianos
+    float yawRad   = Mathf::Deg2Rad(yawDeg);
+    float pitchRad = Mathf::Deg2Rad(pitchDeg);
+
+    // Direção da câmera: ajustada para vir de cima olhando para baixo
+    Vector3 viewDir = normalize(Vector3(
+        std::cos(pitchRad) * std::sin(yawRad),  // X
+       -std::sin(pitchRad),                     // Y (NEGATIVO para vir de cima!)
+        std::cos(pitchRad) * std::cos(yawRad)   // Z
+    ));
+
+    // Calcula o raio da AABB
+    float radius = length(extents);
+
+    // Calcula a distância ideal com base no FOV
+    float halfFovRad = Mathf::Deg2Rad(verticalFovDeg * 0.5f);
+    float viewDistance = (radius * borderScale) / std::tan(halfFovRad);
+
+    // Define a posição da câmera deslocada na direção oposta ao viewDir
+    Vector3 cameraPos = center - viewDir * viewDistance;
+
+    // Define a posição e rotação da câmera
+    cameraTransform.LocalPosition(cameraPos);
+    cameraTransform.LookAt(center);
+}
+
 void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);
 
@@ -113,6 +177,9 @@ void Editor::OnInit(){
     framebuffer = new Framebuffer(framebufferSpecification);
     //framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     framebuffer->Invalidate();
+
+    assetPreviewFramebuffer = new Framebuffer(framebufferSpecification);
+    assetPreviewFramebuffer->Invalidate();
 
     viewportSize.x = framebuffer->Width();
     viewportSize.y = framebuffer->Height();
@@ -139,9 +206,56 @@ void Editor::OnInit(){
         cereal::JSONInputArchive archive{is};
         archive(cereal::make_nvp("Editor", *this));
     }
+
+    assetPreviewScene = new Scene();
+    BaseRenderPipeline* renderP = assetPreviewScene->GetSystemDynamic<BaseRenderPipeline>();
+    renderP->SetOverrideCamera(&assetPrevieweCam.cam, assetPrevieweCam.transform);
+    renderP->SetOverrideFrameBuffer(assetPreviewFramebuffer);
+    assetPreviewFramebuffer->Resize(400, 400);
+
+    assetPrevieweCam.transform.LocalPosition({0, 1, 5});
+
+    modelPreview = assetPreviewScene->AddEntity("ModelPreview");
+    ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(modelPreview);
+    model.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"));
+
+    //OD::AlignToViewAABB(assetPrevieweCam.transform, model.GetAABB(), 45.0f, 16.0f/9.0f);
+    OD::AlignCameraToAABB_Isometric(
+        assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f
+    );
+    assetPrevieweCam.target = model.GetAABB().center;
+    assetPrevieweCam.OnStart();
+}
+
+void Editor::SetModelAssetPreview(Ref<Model> m){
+    ModelRendererComponent& model = assetPreviewScene->GetComponent<ModelRendererComponent>(modelPreview);
+    model.SetModel(m);
+
+    if(lastModelAssetPreview != m){
+        OD::AlignCameraToAABB_Isometric(assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f);
+        assetPrevieweCam.target = model.GetAABB().center;
+        assetPrevieweCam.OnStart();
+    }
+    lastModelAssetPreview = m;
+}
+
+void Editor::SetModelAssetPreview(const std::string& path){
+    ModelRendererComponent& model = assetPreviewScene->GetComponent<ModelRendererComponent>(modelPreview);
+    model.SetModel(AssetManager::Get().LoadAsset<Model>(path));
+
+    if(lastModelAssetPreview != model.GetModel()){
+        OD::AlignCameraToAABB_Isometric(assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f);
+        assetPrevieweCam.target = model.GetAABB().center;
+        assetPrevieweCam.OnStart();
+    }
+    lastModelAssetPreview = model.GetModel();
 }
 
 void Editor::OnExit(){
+    delete assetPreviewScene;
+    delete assetPreviewFramebuffer;
+    delete framebuffer;
+
     //LogInfo("Edito::OnExit");
 
     std::ofstream os("Editor.Save");
@@ -227,10 +341,21 @@ void Editor::OnUpdate(float deltaTime){
     }*/
 
     HandleShotcuts();
+
+    assetPrevieweCam.OnUpdate();
+    assetPrevieweCam.cam.isDebug = true;
+    assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
+    assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.LocalPosition();
+    assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetLocalModelMatrix());
+    assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix2(
+        math::transpose(assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view)
+    );
+    assetPreviewScene->Update();
+    assetPreviewScene->Draw();
 }
 
 void Editor::OnRender(float deltaTime){
-
+    //assetPreviewScene->Draw();
 }
 
 void Editor::OnGUI(){

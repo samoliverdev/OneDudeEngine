@@ -22,7 +22,7 @@ endif()
 message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 
 
-#if(MSVC)
+if(MSVC)
     if(USE_DYNAMIC_MSVC_RUNTIME_DLL)
         cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
@@ -44,7 +44,7 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
     #add_compile_options(-fsanitize=address -g)
     #add_link_options(-fsanitize=address -g)
     
-#endif()
+endif()
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
@@ -61,8 +61,10 @@ if(EMSCRIPTEN)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
 elseif(WIN32)
     #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    if(MSVC)
     add_compile_options(/bigobj)
     add_compile_options(/MP)
+    endif()
 
     #add_compile_options(/arch:AVX)
     #add_compile_definitions(__AVX__)

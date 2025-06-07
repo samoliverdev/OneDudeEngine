@@ -60,6 +60,11 @@ public:
         mainWorkspace.AddPanel(panel);
     }
 
+    inline Framebuffer* AssetPreviewFramebuffer(){ return assetPreviewFramebuffer; }
+
+    void SetModelAssetPreview(Ref<Model> model);
+    void SetModelAssetPreview(const std::string& path);
+
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, sceneHierarchyPanel.show);
@@ -114,6 +119,12 @@ private:
     EditorCamera editorCam;
 
     ImVec2 viewportBounds[2];
+
+    Scene* assetPreviewScene;
+    AssetPreviewCamera assetPrevieweCam;
+    Framebuffer* assetPreviewFramebuffer;
+    Entity modelPreview;
+    Ref<Model> lastModelAssetPreview;
 
     struct SnapSettings{
         bool enable = false;
