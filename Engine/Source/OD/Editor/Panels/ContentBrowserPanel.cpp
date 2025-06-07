@@ -24,6 +24,32 @@ ContentBrowserPanel::ContentBrowserPanel() {
     UpdateFileCache();
 }
 
+void ContentBrowserPanel::GoTo(const std::string& path) {
+    if (show == false) return;
+
+    std::filesystem::path targetPath = path;
+    if (!targetPath.is_absolute()) {
+        targetPath = _assetsDirectory / path;
+    }
+    try {
+        targetPath = std::filesystem::canonical(targetPath).lexically_normal();
+    } catch (const std::exception& e) {
+        //LogError("GoTo: Failed to canonicalize path %s: {}", path.c_str(), e.what());
+        return;
+    }
+
+    if (!std::filesystem::exists(targetPath)) {
+        //LogError("GoTo: Path does not exist: %s", path.c_str());
+        return;
+    }
+
+    _selectedFile = targetPath;
+    _goToPath = targetPath;
+
+    //LogInfo("GoTo: Selected %s, goToPath %s", _selectedFile.string().c_str(), _goToPath.string().c_str());
+}
+
+
 void ContentBrowserPanel::OnGui() {
     ImGui::Begin("ContentBrowserPanel");
 
@@ -170,6 +196,7 @@ void ContentBrowserPanel::OnGui() {
     }
 
     contextMenuOpen = false; // Reset for next frame
+    _goToPath.clear();
 
     ImGui::End();
 }
@@ -489,6 +516,22 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
     CacheDirectory(path);
     auto& cache = _dirCache[path];
 
+    auto isParentOfGoTo = [this](const std::filesystem::path& dirPath) -> bool {
+        if (_goToPath.empty()) {
+            //LogInfo("GoTo empty for %s", dirPath.c_str());
+            return false;
+        }
+        try {
+            auto rel = std::filesystem::relative(_goToPath, dirPath);
+            bool isParent = !rel.empty() && rel.string().find("..") == std::string::npos;
+            //LogInfo("GoTo check: %s, rel=%s, parent=%d", dirPath.c_str(), rel.c_str(), isParent);
+            return isParent;
+        } catch (const std::exception& e) {
+            //LogError("GoTo error: %s: {}", dirPath.c_str(), e.what());
+            return false;
+        }
+    };
+
     //extern bool contextMenuOpen; // Declared in OnGui
     for (const auto& dir : cache.directories) {
         const auto& dirPath = dir.path();
@@ -498,6 +541,11 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
         ImGui::PushID(label.c_str());
         bool isSelected = (dirPath == _selectedFile);
         ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        if (isParentOfGoTo(dirPath)) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+            //LogInfo("Expanding: %s", dirPath.c_str());
+        }
 
         bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
 
@@ -540,6 +588,10 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
 
         //bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags);
         bool isOpen = ImGui::TreeNodeEx(label.c_str(), flags, "%s  %s", ICON_FA_FILE, filename.c_str());
+
+        if(_goToPath == filePath) {
+            ImGui::SetScrollHereY();  // or SetScrollFromPosY(ImGui::GetCursorPosY(), 0.5f)
+        }
 
         HandleDragDrop(filePath, false);
 

@@ -31,6 +31,10 @@ void InspectorPanel::OnGui(){
         ImGui::Spacing();
         ShowAddComponent(editor->selectionEntity);
     } else if(editor->selectionOnAsset == true && editor->selectionAsset != nullptr){
+        if(ImGui::Button("GoTo")){
+            editor->contentBrowserPanel.GoTo(editor->selectionAsset->Path());
+        }
+        ImGui::Separator();
         editor->selectionAsset->OnGui();
     }
     ImGui::End();

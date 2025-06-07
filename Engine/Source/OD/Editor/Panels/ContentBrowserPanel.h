@@ -15,6 +15,8 @@ public:
     ContentBrowserPanel();
     void OnGui() override;
 
+    void GoTo(const std::string& path);
+
 private:
     struct FileEntry {
         std::filesystem::directory_entry entry;
@@ -24,6 +26,8 @@ private:
     std::filesystem::path _curDirectory;
     std::filesystem::path _selectedFile;
     std::filesystem::path _assetsDirectory;
+    std::filesystem::path _goToPath;
+
     std::string searchQuery; // Class member for search query
     std::string extensionFilter; // Selected extension filter (e.g., ".obj")
     std::vector<FileEntry> _fileCache; // Cache for all files
