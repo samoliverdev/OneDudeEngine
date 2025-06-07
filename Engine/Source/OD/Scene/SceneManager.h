@@ -47,7 +47,7 @@ private:
         std::function<bool(Entity&,Scene&)> hasComponent;
         std::function<void(Entity&,Scene&)> addComponent;
         std::function<void(Entity&,Scene&)> removeComponent;
-        std::function<void(Entity&, Entity&,Scene&)> copyComponent;
+        std::function<void(Entity&, Entity&,Scene&,Scene&)> copyComponent;
         std::function<void(Entity&,Scene&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
         std::function<void(ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name)> snapshotOut;

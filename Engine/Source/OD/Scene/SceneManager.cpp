@@ -16,6 +16,10 @@ void SceneManagerModuleInit(){
     SceneManager::Get().RegisterTagComponent<SelfDisable>("SelfDisable");
     SceneManager::Get().RegisterTagComponent<DontSave>("DontSave");
     SceneManager::Get().RegisterTagComponent<HideInEditor>("HideInEditor");
+
+    AssetTypesDB::Get().RegisterAssetType<Prefab>(".prefab", 
+        [](const std::string& path){ return AssetManager::Get().LoadAsset<Prefab>(path); }
+    );
 }
 
 SceneManager& SceneManager::Get(){

@@ -250,7 +250,7 @@ public:
 
     inline bool Running(){ return running; }
 
-    Scene();
+    Scene(bool withoutDefaultSystems = false);
     Scene(Scene& other);
     ~Scene();
 
@@ -288,6 +288,7 @@ public:
 
     Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = LayerNone);
     Entity InstantiatePrefab(const char* prefabPath);
+    Entity InstantiatePrefab(const class Prefab& prefab);
     
     Entity GetMainCamera();
 
@@ -325,6 +326,7 @@ private:
     void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     void _Unpack(Entity e, bool all, bool unpackRoot);
     Entity _DuplicateEntity(Entity e, bool isRoot);
+    Entity _DuplicateEntity(Entity e, bool isRoot, Scene& other);
 
     bool running = false;
 
@@ -341,6 +343,21 @@ private:
 
     tf::Executor executor;
     tf::Taskflow taskflow;
+};
+
+class Prefab: public Asset{
+    friend class Scene;
+public:
+    Prefab();
+
+    inline Entity Root(){ return root; }
+
+    void OnGui() override;
+    bool LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
+private:
+    Scene* scene = nullptr;
+    Entity root = EntityNull;
 };
 
 struct OD_API EntityHandle{

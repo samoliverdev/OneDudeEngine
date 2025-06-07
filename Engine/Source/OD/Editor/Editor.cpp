@@ -215,8 +215,8 @@ void Editor::OnInit(){
 
     assetPrevieweCam.transform.LocalPosition({0, 1, 5});
 
-    modelPreview = assetPreviewScene->AddEntity("ModelPreview");
-    ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(modelPreview);
+    assetPreviewEntity = assetPreviewScene->AddEntity("ModelPreview");
+    ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(assetPreviewEntity);
     model.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"));
 
     //OD::AlignToViewAABB(assetPrevieweCam.transform, model.GetAABB(), 45.0f, 16.0f/9.0f);
@@ -228,27 +228,63 @@ void Editor::OnInit(){
 }
 
 void Editor::SetModelAssetPreview(Ref<Model> m){
-    ModelRendererComponent& model = assetPreviewScene->GetComponent<ModelRendererComponent>(modelPreview);
-    model.SetModel(m);
-
     if(lastModelAssetPreview != m){
+        if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
+
+        assetPreviewEntity = assetPreviewScene->AddEntity("Asset Preview");
+        ModelRendererComponent& model = assetPreviewScene->AddOrGetComponent<ModelRendererComponent>(assetPreviewEntity);
+        model.SetModel(m);
+
         OD::AlignCameraToAABB_Isometric(assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f);
         assetPrevieweCam.target = model.GetAABB().center;
         assetPrevieweCam.OnStart();
     }
+
     lastModelAssetPreview = m;
+    lastPrefabAssetPreview = nullptr;
 }
 
 void Editor::SetModelAssetPreview(const std::string& path){
-    ModelRendererComponent& model = assetPreviewScene->GetComponent<ModelRendererComponent>(modelPreview);
-    model.SetModel(AssetManager::Get().LoadAsset<Model>(path));
+    auto m = AssetManager::Get().LoadAsset<Model>(path);
 
-    if(lastModelAssetPreview != model.GetModel()){
+    if(lastModelAssetPreview != m){
+        if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
+
+        assetPreviewEntity = assetPreviewScene->AddEntity("Asset Preview");
+        ModelRendererComponent& model = assetPreviewScene->AddOrGetComponent<ModelRendererComponent>(assetPreviewEntity);
+        model.SetModel(m);
+
         OD::AlignCameraToAABB_Isometric(assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f);
         assetPrevieweCam.target = model.GetAABB().center;
         assetPrevieweCam.OnStart();
     }
-    lastModelAssetPreview = model.GetModel();
+
+    lastModelAssetPreview = m;
+    lastPrefabAssetPreview = nullptr;
+}
+
+void Editor::SetPrefabAssetPreview(Ref<Prefab> prefab){
+
+}
+
+void Editor::SetPrefabAssetPreview(const std::string& path){
+    auto prefab = AssetManager::Get().LoadAsset<Prefab>(path);
+
+    if(lastPrefabAssetPreview != prefab){
+        if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
+
+        //assetPreviewEntity = assetPreviewScene->InstantiatePrefab(prefab->Path().c_str());
+        assetPreviewEntity = assetPreviewScene->InstantiatePrefab(*prefab);
+
+        AABB aabb({0, 0, 0}, 10, 10, 10);
+
+        OD::AlignCameraToAABB_Isometric(assetPrevieweCam.transform, aabb, 60.0f, 16.0f / 9.0f, 1.5f);
+        assetPrevieweCam.target = aabb.center;
+        assetPrevieweCam.OnStart();
+    }
+
+    lastPrefabAssetPreview = prefab;
+    lastModelAssetPreview = nullptr;
 }
 
 void Editor::OnExit(){

@@ -11,7 +11,10 @@
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/LuaScripting/LuaMetaUltis.h"
+#include "OD/Core/Application.h"
 #include <fstream>
+
+#include "OD/Editor/Editor.h"
 
 namespace OD{
 
@@ -208,8 +211,11 @@ void Entity::CreateLuaBind(sol::state& lua){
 
 #pragma region Scene
 
-Scene::Scene(){
+Scene::Scene(bool withoutDefaultSystems){
     //LogInfo("NewScene");
+
+    if(withoutDefaultSystems == true) return;
+    
     for(auto i: SceneManager::Get().addSystemFuncs){
         //LogInfo("Adding system: %s", i.first);
         //i.second(*this);
@@ -307,14 +313,47 @@ Entity Scene::_DuplicateEntity(Entity e, bool isRoot){
     registry.emplace_or_replace<InfoComponent>(other, registry.get<InfoComponent>(e));
     
     for(auto i: SceneManager::Get().coreComponentsSerializer){
-        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this);
+        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this, *this);
     }
     for(auto i: SceneManager::Get().componentsSerializer){
-        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this);
+        if(i.second.hasComponent(e, *this)) i.second.copyComponent(e, other, *this, *this);
     }
 
     for(auto i: trans.children){
         auto ne = _DuplicateEntity(i, false);
+        SetParent(other, ne);
+    }
+
+    return other;
+}
+
+Entity Scene::_DuplicateEntity(Entity e, bool isRoot, Scene& source){
+    Assert(source.IsValid(e) == true);
+
+    TransformComponent& trans = source.registry.get<TransformComponent>(e);
+
+    Entity other = registry.create();
+    
+    auto& t = registry.emplace_or_replace<TransformComponent>(other, trans);
+    t.children.clear();
+
+    if(isRoot && t.HasParent()){
+        //SetParent(t.parent, other);
+        t.hasParent = false;
+        t.parent = EntityNull;
+    }
+
+    registry.emplace_or_replace<InfoComponent>(other, source.registry.get<InfoComponent>(e));
+    
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        if(i.second.hasComponent(e, source)) i.second.copyComponent(e, other, source, *this);
+    }
+    for(auto i: SceneManager::Get().componentsSerializer){
+        if(i.second.hasComponent(e, source)) i.second.copyComponent(e, other, source, *this);
+    }
+
+    for(auto i: trans.children){
+        auto ne = _DuplicateEntity(i, false, source);
         SetParent(other, ne);
     }
 
@@ -352,6 +391,10 @@ Entity Scene::DuplicateEntity(Entity e){
 
     return other;
     */
+}
+
+Entity Scene::InstantiatePrefab(const Prefab& prefab){
+    return _DuplicateEntity(prefab.root, true, *prefab.scene);
 }
 
 void Scene::DestroyEntity(Entity entity){
@@ -905,5 +948,38 @@ void EntityHandle::CreateLuaBind(sol::state& lua){
 }
 
 #pragma endregion
+
+Prefab::Prefab(){
+
+}
+
+void Prefab::OnGui(){
+    if(path.empty() == false || path != "Memory"){
+		auto* editor = Application::GetModuleByType<Editor>();
+		auto* framebuffer = editor->AssetPreviewFramebuffer();
+		editor->SetPrefabAssetPreview(path);
+
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+		float aspect = framebuffer->Width() / framebuffer->Height();
+		ImGui::Image(framebuffer->ColorAttachmentId(0), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+	} else {
+		ImGui::Text("Can not preview this model!!!");
+	}
+}
+
+bool Prefab::LoadFromFile(const std::string& inpath){
+    path = inpath;
+    if(scene != nullptr) delete scene;
+
+    scene = new Scene(true);
+    root = scene->InstantiatePrefab(path.c_str());
+
+    return true;
+}
+
+std::vector<std::string> Prefab::GetFileAssociations(){
+    return {".prefab"};
+}
 
 }

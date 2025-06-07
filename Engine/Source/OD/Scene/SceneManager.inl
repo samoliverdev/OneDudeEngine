@@ -140,7 +140,9 @@ void SceneManager::RegisterCoreComponent(const std::string& name){
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
-    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ scene.GetRegistry().emplace_or_replace<T>(other, scene.GetComponent<T>(e)); };
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
+        target.GetRegistry().emplace_or_replace<T>(other, source.GetComponent<T>(e)); 
+    };
 
     funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){
@@ -225,8 +227,8 @@ void SceneManager::RegisterTagComponent(const std::string& name){
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.GetRegistry().emplace<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
-    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ 
-        scene.GetRegistry().emplace_or_replace<T>(other, T()); 
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
+        target.GetRegistry().emplace_or_replace<T>(other, T()); 
     };
 
     funcs.onGui = [](Entity& e, Scene& scene){
@@ -267,7 +269,9 @@ void SceneManager::RegisterComponent(const std::string& name){
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
-    funcs.copyComponent = [](Entity& e, Entity& other, Scene& scene){ scene.GetRegistry().emplace_or_replace<T>(other, scene.GetComponent<T>(e)); };
+    funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
+        target.GetRegistry().emplace_or_replace<T>(other, source.GetComponent<T>(e)); 
+    };
 
     funcs.onGui = [](Entity& e, Scene& scene){
         if constexpr(HasOnGui<T>::value){

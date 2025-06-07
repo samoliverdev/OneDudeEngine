@@ -64,6 +64,8 @@ public:
 
     void SetModelAssetPreview(Ref<Model> model);
     void SetModelAssetPreview(const std::string& path);
+    void SetPrefabAssetPreview(Ref<Prefab> prefab);
+    void SetPrefabAssetPreview(const std::string& path);
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -123,8 +125,9 @@ private:
     Scene* assetPreviewScene;
     AssetPreviewCamera assetPrevieweCam;
     Framebuffer* assetPreviewFramebuffer;
-    Entity modelPreview;
+    Entity assetPreviewEntity = EntityNull;
     Ref<Model> lastModelAssetPreview;
+    Ref<Prefab> lastPrefabAssetPreview;
 
     struct SnapSettings{
         bool enable = false;
