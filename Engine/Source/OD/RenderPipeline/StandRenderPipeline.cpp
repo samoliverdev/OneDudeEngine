@@ -1109,7 +1109,11 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
     for(auto e: drawGizmosView){
         auto& g = drawGizmosView.get<GizmosDrawComponent>(e);
         auto& t = drawGizmosView.get<TransformComponent>(e);
-        Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+        Graphics::DrawWireCube(
+            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetLocalModelMatrix(), 
+            g.color, 
+            1
+        );
     }
 }
 
@@ -1196,7 +1200,11 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
     if(scene->HasComponent<GizmosDrawComponent>(e)){
         auto& g = scene->GetComponent<GizmosDrawComponent>(e);
         auto& t = scene->GetComponent<TransformComponent>(e);
-        Graphics::DrawWireCube(Transform(t.Position(), t.Rotation(), g.globalScale).GetLocalModelMatrix(), Vector3(0, 1, 0), 1);
+        Graphics::DrawWireCube(
+            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetLocalModelMatrix(), 
+            g.color, 
+            1
+        );
     }
 }
 

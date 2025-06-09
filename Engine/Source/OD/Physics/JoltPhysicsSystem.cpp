@@ -250,9 +250,9 @@ public:
         int aMask = a.GetSubGroupID();
         int bMask = b.GetSubGroupID();
         bool canCollide = (aMask & bLayer) != 0 && (bMask & aLayer) != 0;
-        std::cout << "CanCollide: aLayer=" << aLayer << ", aMask=" << aMask
+        /*std::cout << "CanCollide: aLayer=" << aLayer << ", aMask=" << aMask
                   << ", bLayer=" << bLayer << ", bMask=" << bMask
-                  << ", Result=" << canCollide << std::endl;
+                  << ", Result=" << canCollide << std::endl;*/
         return canCollide;
     }
 };

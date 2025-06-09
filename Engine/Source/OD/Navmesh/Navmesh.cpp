@@ -1611,8 +1611,8 @@ void NavmeshSystem::LateUpdate(){
 				ap.obstacleAvoidanceType = 0;
 				ap.separationWeight = 2.0f;
 
-				ap.obstacleAvoidanceType = 3;
-				ap.separationWeight = 2.0f; // experimente valores entre 0.5 e 2.0
+				ap.obstacleAvoidanceType = 2;
+				ap.separationWeight = 1.0f; // experimente valores entre 0.5 e 2.0
 
 				Vector3 pos = trans.Position();
 				int idx = navmesh->m_crowd->addAgent(&pos.x, &ap);
@@ -1670,7 +1670,7 @@ void NavmeshSystem::LateUpdate(){
 			if(a && a->active){
 				//agent.path = a->targetPathqRef;
 
-				agent.desiredVelocity = Vector3(a->vel[0], a->vel[1], a->vel[2]);
+				agent.desiredVelocity = Vector3(a->dvel[0], a->dvel[1], a->dvel[2]);
 
 				// Update entity transform
 				if(agent.manualUpdate == false){

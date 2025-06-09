@@ -5,6 +5,7 @@
 #include "OD/Graphics/Model.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Core/Color.h"
 
 namespace OD{
 
@@ -129,13 +130,15 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
 };
 
 struct OD_API GizmosDrawComponent{
-    Vector3 globalScale = {0.05f, 0.05f, 0.05f};
-
-    //inline static void OnGui(Entity& e, Scene& scene){}
+    Vector3 center = {0, 0, 0};
+    Vector3 size = {0.05f, 0.05f, 0.05f};
+    Color color = {0, 1, 0, 1};
 
     template <class Archive> 
     void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, globalScale);    
+        ArchiveDumpNVP(ar, center);
+        ArchiveDumpNVP(ar, size);   
+        ArchiveDumpNVP(ar, color);    
     }
 };
 

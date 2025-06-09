@@ -152,8 +152,8 @@ void SceneHierarchyPanel::OnGui(){
                     }
 
                     if(getExtension(*path) == ".prefab"){
-                        //scene->InstantiatePrefab(path->string().c_str());
-                        scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
+                        scene->InstantiatePrefab(path->string().c_str());
+                        //scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
                     }
 
                     LogInfo("Reciving File: %s", path->string().c_str());
