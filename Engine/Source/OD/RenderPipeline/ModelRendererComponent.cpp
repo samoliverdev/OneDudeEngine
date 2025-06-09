@@ -10,10 +10,6 @@ namespace OD{
 void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
     ModelRendererComponent& mesh = scene.GetComponent<ModelRendererComponent>(e);
 
-    /*cereal::ImGuiArchive uiArchive;
-    uiArchive(mesh);
-    return;*/
-
     if(ImGui::TreeNode("localTransform")){
         Transform::OnGui(mesh.localTransform);
         ImGui::TreePop();
@@ -40,6 +36,23 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
         ImGui::TreePop();
     }
 
+    if(mesh.model != nullptr && mesh.model->renderTargets.size() != mesh.renderTargetVisibility.size()){
+        mesh.renderTargetVisibility.resize(mesh.model->renderTargets.size());
+        for(auto& i: mesh.renderTargetVisibility) i = true;
+    }
+    if(ImGui::TreeNode("renderTargetVisibility")){
+        for(int i = 0; i < mesh.renderTargetVisibility.size(); ++i){
+            bool temp = mesh.renderTargetVisibility[i];
+            if(ImGui::Checkbox(
+                mesh.model->skeleton.GetJointName(mesh.model->renderTargets[i].bindPoseIndex).c_str(), 
+                &temp
+            )){
+                mesh.renderTargetVisibility[i] = temp;
+            }
+        }
+        ImGui::TreePop();
+    }
+
     /*ImGui::Spacing(); ImGui::Spacing(); 
 
     if(mesh.model != nullptr && ImGui::TreeNode("Info")){
@@ -56,6 +69,8 @@ void ModelRendererComponent::SetModel(Ref<Model> m){
 
     model = m;
     materialsOverride.resize(model->materials.size());
+    renderTargetVisibility.resize(model->renderTargets.size());
+    for(auto& i: renderTargetVisibility) i = true;
 
     boundingVolume = Model::GenerateAABB(*model);
     //boundingVolumeSphere = Model::GenerateSphereBV(*model);
@@ -211,6 +226,23 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
             index += 1;
         }
 
+        ImGui::TreePop();
+    }   
+
+    if(mesh.model != nullptr && mesh.model->renderTargets.size() != mesh.renderTargetVisibility.size()){
+        mesh.renderTargetVisibility.resize(mesh.model->renderTargets.size());
+        for(auto& i: mesh.renderTargetVisibility) i = true;
+    }
+    if(ImGui::TreeNode("renderTargetVisibility")){
+        for(int i = 0; i < mesh.renderTargetVisibility.size(); ++i){
+            bool temp = mesh.renderTargetVisibility[i];
+            if(ImGui::Checkbox(
+                mesh.model->skeleton.GetJointName(mesh.model->renderTargets[i].bindPoseIndex).c_str(), 
+                &temp
+            )){
+                mesh.renderTargetVisibility[i] = temp;
+            }
+        }
         ImGui::TreePop();
     }
 

@@ -408,6 +408,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         int _i = 0;
         for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
             if(s.staticDatas[_i].isDirt){
                 s.staticDatas[_i].isDirt = false;
                 s.staticDatas[_i].m = t.GlobalModelMatrix();
@@ -487,7 +489,10 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
 
+        int _i = 0;
         for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
@@ -506,6 +511,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.int_0[0] = ((int)e) + 1;
 
             onReciveRenderData(data);
+            _i += 1;
         }
     }
     }
@@ -561,7 +567,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
         if(c.posePalette.size() == 0) c.UpdatePosePalette();
 
+        int _i = 0;
         for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
@@ -587,6 +595,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.int_0[0] = (int)e;
             
             onReciveRenderData(data);
+            _i += 1;
         }
     }
     }

@@ -44,12 +44,14 @@ struct OD_API ModelRendererComponent{
     }
 
     inline std::vector<Ref<Material>>& GetMaterialsOverride(){ return materialsOverride; }
+    inline const std::vector<bool>& GetRenderTargetVisibility() const { return renderTargetVisibility; }
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, localTransform);
         ArchiveDumpNVP(ar, subMeshIndex);
         ArchiveDumpNVP(ar, boundingVolume);
+        ArchiveDumpNVP(ar, renderTargetVisibility);
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
@@ -57,49 +59,13 @@ struct OD_API ModelRendererComponent{
         ArchiveDumpNVP(ar, materialVectorRef);
     }
 
-    /*template<class Archive>
-    void save(Archive & ar) const{
-        std::string path = model == nullptr ? "" : model->Path();
-        std::vector<std::string> materialsOverridePaths;
-
-        for(auto i: materialsOverride){
-            materialsOverridePaths.push_back(i == nullptr ? "" : i->Path());
-        }
-
-        ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
-        ArchiveDump(ar, CEREAL_NVP(path));
-        ArchiveDump(ar, CEREAL_NVP(materialsOverridePaths));
-    }
-
-    template<class Archive>
-    void load(Archive & ar){
-        std::string path;
-        std::vector<std::string> materialsOverridePaths;
-
-        ArchiveDump(ar, CEREAL_NVP(subMeshIndex));
-        ArchiveDump(ar, CEREAL_NVP(path));
-        ArchiveDump(ar, CEREAL_NVP(materialsOverridePaths));
-
-
-        if(path.empty() == false){
-            SetModel(AssetManager::Get().LoadAsset<Model>(path));
-        }
-
-        if(model != nullptr) Assert(materialsOverride.size() == materialsOverride.size()); 
-
-        int index = 0;
-        for(auto i: materialsOverridePaths){
-            if(i.empty() == false) materialsOverride[index] = AssetManager::Get().LoadAsset<Material>(i);
-            index += 1;
-        }
-    }*/
-
     AABB GetAABB();
     AABB GetGlobalAABB(TransformComponent& transform);
     AABB GetGlobalAABB(Transform& transform);
 
 protected:
     AABB boundingVolume;
+    std::vector<bool> renderTargetVisibility;
     std::vector<Ref<Material>> materialsOverride;
     Ref<Model> model = nullptr;
     int subMeshIndex = -1;
