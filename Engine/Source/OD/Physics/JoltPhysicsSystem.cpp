@@ -8,6 +8,9 @@
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
+#include "OD/Editor/Editor.h"
+#include <unordered_set>
+
 #include <set>
 #include <algorithm>
 
@@ -40,6 +43,7 @@
 #include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
+
 
 #include <iostream>
 #include <cstdarg>
@@ -456,6 +460,30 @@ public:
 
 struct RagdollObject{
 	JPH::Ref<Ragdoll> ragdoll;
+};
+
+class SelectedBodyDrawFilter: public JPH::BodyDrawFilter{
+public:	
+	std::unordered_set<JPH::BodyID> selectedBodies;
+
+	void UpdateSelected(){
+		selectedBodies.clear();
+		Editor* editor = Application::GetModuleByType<Editor>();
+		Scene* scene = SceneManager::Get().GetActiveScene();
+		for(auto& e: editor->GetSelectedEntities()){
+			if(scene->HasComponent<RigidbodyComponent>(e) == false) continue;
+
+			RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(e);
+			if(rb.InternalData() == nullptr) continue;
+
+			selectedBodies.insert(rb.InternalData()->bodyID);
+		}
+	}
+
+	bool ShouldDraw(const JPH::Body& inBody) const override {
+		//return true;
+		return selectedBodies.count(inBody.GetID());
+	}
 };
 
 #pragma endregion
@@ -1074,7 +1102,10 @@ void PhysicsSystem::ShowDebugGizmos(){
 	//if(GetScene()->Running() == false) return;
 	//BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
-	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer);
+	SelectedBodyDrawFilter selectedBodyDrawFilter;
+	selectedBodyDrawFilter.UpdateSelected();
+
+	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer, &selectedBodyDrawFilter);
 	Graphics::DrawLinesComamnd({0, 1, 0}, 1);
 }
 

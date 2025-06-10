@@ -65,6 +65,7 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
 
 void ModelRendererComponent::SetModel(Ref<Model> m){
     Assert(m != nullptr);
+    Assert(this != nullptr);
     //Assert(m->materials.size() > 0);
 
     model = m;

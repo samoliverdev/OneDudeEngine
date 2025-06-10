@@ -335,6 +335,7 @@ Entity Scene::_DuplicateEntity(Entity e, bool isRoot, Scene& source){
     Entity other = registry.create();
     
     auto& t = registry.emplace_or_replace<TransformComponent>(other, trans);
+    t.registry = &registry;
     t.children.clear();
 
     if(isRoot && t.HasParent()){
@@ -859,6 +860,8 @@ void Scene::UnpackPrefab(Entity entity, bool all){
 }
 
 void Scene::_DestroyEntity(Entity entity, bool removeFromParent){
+    if(registry.valid(entity) == false) return;
+
     Assert(registry.valid(entity));
     Assert(registry.any_of<TransformComponent>(entity));
     TransformComponent& transform = registry.get<TransformComponent>(entity);

@@ -213,12 +213,12 @@ private:
 	rcPolyMeshDetail* m_dmesh;
 	rcContext* m_ctx;
 	*/
-	dtNavMesh* m_navMesh;
+	
 	BakeData bakeData;
-
+	dtNavMesh* m_navMesh;
+	class dtNavMeshQuery* m_navQuery;
 	dtCrowd* m_crowd;
 
-	class dtNavMeshQuery* m_navQuery;
 	int m_partitionType;
 	unsigned char m_navMeshDrawFlags = 0;
 	NavmeshBuildData builData;
@@ -292,6 +292,7 @@ private:
 	bool hasInit = false;
 
 	int crowdId = -1;
+	Ref<Navmesh> navmesh = nullptr;
 };
 
 class OD_API NavmeshSystem: public System{
@@ -305,6 +306,8 @@ public:
     virtual void LateUpdate() override;
 	virtual void OnDrawGizmos(Camera& cam) override;
 	virtual void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+private:
+	static void OnRemoveAgent(entt::registry& r, entt::entity e);
 };
 
 void NavmeshModuleInit();

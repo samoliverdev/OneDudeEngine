@@ -1509,8 +1509,22 @@ void NavmeshAgentComponent::SetDestination(Vector3 d){
 	hasInit = true;
 }
 
-NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){}
-NavmeshSystem::~NavmeshSystem(){}
+NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){
+	scene->GetRegistry().on_destroy<NavmeshAgentComponent>().connect<&OnRemoveAgent>();
+}
+
+NavmeshSystem::~NavmeshSystem(){
+	scene->GetRegistry().on_destroy<NavmeshAgentComponent>().disconnect<&OnRemoveAgent>();
+}
+
+void NavmeshSystem::OnRemoveAgent(entt::registry& r, entt::entity e){
+	NavmeshAgentComponent& agent = r.get<NavmeshAgentComponent>(e);
+	if(agent.crowdId != -1){
+		agent.navmesh->m_crowd->removeAgent(agent.crowdId);
+		agent.navmesh = nullptr;
+		agent.crowdId = -1;
+	}
+}
 
 void NavmeshSystem::LateUpdate(){
 	OD_PROFILE_SCOPE("NavmeshSystem::Update");
@@ -1518,13 +1532,16 @@ void NavmeshSystem::LateUpdate(){
 	Ref<Navmesh> navmesh = nullptr;
 	NavmeshComponent::AgentUpdateMode updateMode;
 
+	int navmeshCount = 0;
 	auto navmeshView = scene->GetRegistry().view<NavmeshComponent>();
 	for(auto e: navmeshView){
 		NavmeshComponent& navmeshComponent = navmeshView.get<NavmeshComponent>(e);
 		navmesh = navmeshComponent.navmesh;
 		updateMode = navmeshComponent.agentUpdateMode;
+		navmeshCount += 1;
 	}
 
+	Assert(navmeshCount <= 1);
 	if(navmesh == nullptr) return;
 
 	if(updateMode == NavmeshComponent::AgentUpdateMode::FindPath){
@@ -1611,12 +1628,13 @@ void NavmeshSystem::LateUpdate(){
 				ap.obstacleAvoidanceType = 0;
 				ap.separationWeight = 2.0f;
 
-				ap.obstacleAvoidanceType = 2;
+				ap.obstacleAvoidanceType = 3;
 				ap.separationWeight = 1.0f; // experimente valores entre 0.5 e 2.0
 
 				Vector3 pos = trans.Position();
 				int idx = navmesh->m_crowd->addAgent(&pos.x, &ap);
 				agent.crowdId = idx;
+				agent.navmesh = navmesh;
 			}
 
 			// Only request new path if dirty and hasn't already reached
@@ -1688,7 +1706,7 @@ void NavmeshSystem::LateUpdate(){
 				// Check if agent reached destination
 				const float distSq = math::distance2(
 					Vector3(a->npos[0], a->npos[1], a->npos[2]),
-					agent.destination
+					Vector3(agent.destination.x, a->npos[1], agent.destination.z)  //agent.destination
 				);
 
 				const float reachThreshold = agent.stopDistance;
@@ -1696,6 +1714,8 @@ void NavmeshSystem::LateUpdate(){
 					if(!agent.reach){
 						agent.reach = true;
 						navmesh->m_crowd->resetMoveTarget(agent.crowdId);
+						auto* editable = navmesh->m_crowd->getEditableAgent(agent.crowdId);
+						editable->vel[0] = 0; editable->vel[1] = 0; editable->vel[2] = 0;
 					}
 				}
 			}

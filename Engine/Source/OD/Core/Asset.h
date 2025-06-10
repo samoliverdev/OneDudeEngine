@@ -4,11 +4,14 @@
 #include "OD/Serialization/Serialization.h"
 #include <entt/entt.hpp>
 #include <mutex>
+
 #include "OD/Utils/Allocators.h"
 
 #include <efsw/efsw.hpp>
 
 namespace OD{
+
+//#define USE_EXPERIMENTAL_ALLOCATOR
 
 class OD_API Asset{
 public:
@@ -93,7 +96,10 @@ private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
     std::unordered_map<Type, std::unordered_map<std::string, Ref<Asset>>> data;
+    
+    #ifdef USE_EXPERIMENTAL_ALLOCATOR
     std::unordered_map<Type, void*> allocator;
+    #endif
 
     std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
 
@@ -197,6 +203,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     LogInfo("LoadAsset: %s", path.c_str());
 
+    #ifdef USE_EXPERIMENTAL_ALLOCATOR
     //INFO: Add Experimental Alloctor
     void* allo = allocator[GetType<T>()];
     if(allo == nullptr){
@@ -205,11 +212,13 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     }
     ArenaLinearAllocator<T>* alloc = reinterpret_cast<ArenaLinearAllocator<T>*>(allo);
     Ref<T> asset = alloc->AllocShared();
+    #else
 
-    //Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));
-    //Ref<Asset> asset = AssetTypesDB::Get().assetFuncsTypes[GetType<T>()].Create();
+    Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));
+    Ref<Asset> asset = AssetTypesDB::Get().assetFuncsTypes[GetType<T>()].Create();
 
     //Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
+    #endif
 
     asset->LoadFromFile(path);
     db[path] = asset;

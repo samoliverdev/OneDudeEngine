@@ -156,6 +156,8 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(mask);
     });
 
+    inline const class PhysicObject* InternalData(){ return data; }
+
 private:
     CollisionShape shape;
     Type type = Type::Dynamic;

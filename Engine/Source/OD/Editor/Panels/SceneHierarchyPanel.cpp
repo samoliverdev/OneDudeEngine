@@ -152,8 +152,8 @@ void SceneHierarchyPanel::OnGui(){
                     }
 
                     if(getExtension(*path) == ".prefab"){
-                        scene->InstantiatePrefab(path->string().c_str());
-                        //scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
+                        //scene->InstantiatePrefab(path->string().c_str());
+                        scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
                     }
 
                     LogInfo("Reciving File: %s", path->string().c_str());
@@ -194,20 +194,19 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     //ImGui::Text(info.name.c_str());
 
+    EntityType entityType = info.Type();
+
     int validChildren = 0;
     for(auto i: transform.Children()){
         //Entity e(i, entity.GetScene());
         if(scene->GetComponent<InfoComponent>(i).hidden == false) validChildren += 1;
     }
+    //if(entityType != EntityType::Stand) validChildren = 0;
 
-    ImGuiTreeNodeFlags flags = (
-        editor->_selectedEntities.count(entity) //(entity == editor->selectionEntity) 
-        ? ImGuiTreeNodeFlags_Selected : 0) 
-        | (/*transform.Children().empty() == false*/ validChildren > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf
-    );
+    ImGuiTreeNodeFlags flags = 
+        (editor->_selectedEntities.count(entity)? ImGuiTreeNodeFlags_Selected : 0) | 
+        (validChildren > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-
-    EntityType entityType = info.Type();
 
     if(entityType == EntityType::PrefabRoot) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 125, 205)));
     if(entityType == EntityType::PrefabChild) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(55, 155, 205)));
