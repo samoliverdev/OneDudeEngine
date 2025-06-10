@@ -190,6 +190,7 @@ struct OD_API InfoComponent{
 
     //inline EntityId Id() const { return id; }
     inline EntityType Type() const { return entityType; }
+    inline const std::string& PrefabPath() const { return prefabPath; }
 
     template <class Archive>
     void serialize(Archive & ar);

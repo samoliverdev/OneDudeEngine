@@ -1706,7 +1706,7 @@ void NavmeshSystem::LateUpdate(){
 				// Check if agent reached destination
 				const float distSq = math::distance2(
 					Vector3(a->npos[0], a->npos[1], a->npos[2]),
-					Vector3(agent.destination.x, a->npos[1], agent.destination.z)  //agent.destination
+					agent.destination
 				);
 
 				const float reachThreshold = agent.stopDistance;

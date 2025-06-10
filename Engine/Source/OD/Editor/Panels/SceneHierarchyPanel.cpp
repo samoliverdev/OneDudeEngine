@@ -152,8 +152,8 @@ void SceneHierarchyPanel::OnGui(){
                     }
 
                     if(getExtension(*path) == ".prefab"){
-                        //scene->InstantiatePrefab(path->string().c_str());
-                        scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
+                        scene->InstantiatePrefab(path->string().c_str());
+                        //scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
                     }
 
                     LogInfo("Reciving File: %s", path->string().c_str());
@@ -201,7 +201,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         //Entity e(i, entity.GetScene());
         if(scene->GetComponent<InfoComponent>(i).hidden == false) validChildren += 1;
     }
-    //if(entityType != EntityType::Stand) validChildren = 0;
+    if(entityType != EntityType::Stand) validChildren = 0;
 
     ImGuiTreeNodeFlags flags = 
         (editor->_selectedEntities.count(entity)? ImGuiTreeNodeFlags_Selected : 0) | 
@@ -329,8 +329,10 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(opened){
-        for(auto i: transform.Children()){
-            DrawEntityNode(i, false);
+        if(entityType == EntityType::Stand){
+            for(auto i: transform.Children()){
+                DrawEntityNode(i, false);
+            }
         }
 
         ImGui::TreePop();
