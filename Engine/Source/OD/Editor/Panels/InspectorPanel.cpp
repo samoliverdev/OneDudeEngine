@@ -26,6 +26,12 @@ void InspectorPanel::OnGui(){
     //if(ImGui::Begin("Inspector")){
     ImGui::Begin("Inspector");
     if(scene->IsValid(editor->selectionEntity) && editor->selectionOnAsset == false){
+        InfoComponent& info = scene->GetComponent<InfoComponent>(editor->selectionEntity);
+        if(info.Type() == EntityType::PrefabRoot && ImGui::Button("GoTo")){
+            editor->contentBrowserPanel.GoTo(info.PrefabPath());
+            ImGui::Separator();
+        }
+
         DrawComponents(editor->selectionEntity);
         ImGui::Separator();
         ImGui::Spacing();
