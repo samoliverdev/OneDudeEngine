@@ -97,7 +97,7 @@ vec3 AmbientLight(Surface surfaceWS){
     vec3 kS = F;
     vec3 kD = vec3(1.0 - kS);
     kD *= 1.0 - surfaceWS.metallic;	  
-    vec3 irradiance = _AmbientLight + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity;
+    vec3 irradiance = _AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity;
     vec3 diffuse = irradiance * surfaceWS.color;
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
@@ -105,7 +105,7 @@ vec3 AmbientLight(Surface surfaceWS){
 	//float mip = PerceptualRoughnessToMipmapLevel(surfaceWS.smoothness); //surfaceWS.smoothness * MAX_REFLECTION_LOD
 	float mip = surfaceWS.smoothness * MAX_REFLECTION_LOD;
     //vec3 prefilteredColor = _AmbientLight + textureLod(_PrefilterMap, R, mip).rgb * _SkyLightIntensity;    
-    vec3 prefilteredColor = _AmbientLight + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;   
+    vec3 prefilteredColor = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;   
     vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), surfaceWS.smoothness)).rg;
     vec3 specular = /*_AmbientLight +*/ (prefilteredColor * (F * brdf.x + brdf.y));
 

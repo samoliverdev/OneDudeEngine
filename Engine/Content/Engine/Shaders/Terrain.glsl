@@ -32,8 +32,10 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
+#include Engine/ShaderLibrary/UniformsDef.glsl
+#include Engine/ShaderLibrary/TexturesDef.glsl
+
 BeginUniform(0, 0, Main)
-    #include Engine/ShaderLibrary/UniformsDef.glsl
     Uniform vec3 viewPos;
     Uniform float metersPerHeightfieldTexel;// = 1;
     Uniform vec2 uvOffset;// = vec2(0);
@@ -51,7 +53,6 @@ EndUniform()
 
 uniform vec4 customData;
 
-#include Engine/ShaderLibrary/TexturesDef.glsl
 Texture2D(0, 6, heightMap, heightMapSampler)
 Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
 Texture2D(0, 8, heightMapNorth, heightMapNorthSampler)

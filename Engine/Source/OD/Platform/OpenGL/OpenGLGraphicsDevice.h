@@ -120,6 +120,11 @@ public:
     virtual void MaterialOnSetShader(Material& shader) override;
     virtual void MaterialOnUnsetShader(Material& shader) override;
 
+    virtual bool UniformBufferCreate(UniformBuffer& buffer) override;
+    virtual void UniformBufferDestroy(UniformBuffer& buffer) override;
+    virtual bool UniformBufferIsValid(UniformBuffer& buffer) override;
+    virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset) override;
+
     virtual void Initialize() override;
     virtual void Shutdown() override;
     virtual void _Begin() override;
@@ -154,10 +159,12 @@ public:
     void Texture2DBind(Texture2D& tex, int index);
     void Texture2DArrayBind(Texture2DArray& tex, int index);
     void CubemapBind(Cubemap& cubemap, int index);
+    void UniformBufferBind(UniformBuffer& buffer, int index);
     void SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index);
     void SubShaderSetTexture2DArray(SubShader& shader, const char* name, Texture2DArray& value, int index);
     void SubShaderSetCubemap(SubShader& shader, const char* name, Cubemap& value, int index);
     void SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex);
+    bool SubShaderSetUniformBuffer(SubShader& shader, const char* name, UniformBuffer& buffer, int index);
 
     void Texture2DGenerate(Texture2D& tex, unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data);
 

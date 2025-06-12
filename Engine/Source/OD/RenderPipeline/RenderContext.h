@@ -79,6 +79,42 @@ struct OD_API RenderContextSettings{
     bool enableWireframe = false;
 };
 
+#define MAX_DIRECTIONAL_LIGHT_COUNT 4
+#define MAX_OTHER_LIGHT_COUNT 16
+#define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
+#define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
+#define MAX_CASCADE_COUNT 4
+
+struct alignas(16) PipelineData{
+    Matrix4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+    Matrix4 _OtherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
+
+    Vector4 _DirectionalLightColors[MAX_DIRECTIONAL_LIGHT_COUNT];
+    Vector4 _DirectionalLightDirections[MAX_DIRECTIONAL_LIGHT_COUNT];
+    Vector4 _DirectionalLightShadowData[MAX_DIRECTIONAL_LIGHT_COUNT];
+    Vector4 _OtherLightColors[MAX_OTHER_LIGHT_COUNT];
+    Vector4 _OtherLightPositions[MAX_OTHER_LIGHT_COUNT];
+    Vector4 _OtherLightDirections[MAX_OTHER_LIGHT_COUNT];
+    Vector4 _OtherLightSpotAngles[MAX_OTHER_LIGHT_COUNT];
+    Vector4 _OtherLightShadowData[MAX_OTHER_LIGHT_COUNT];
+    Vector4 _CascadeCullingSpheres[MAX_CASCADE_COUNT];
+
+    Vector4 _ShadowAtlasSize;
+    Vector4 _ShadowDistanceFade;
+    Vector4 _AmbientLight;   
+    Vector4 _IrradianceMapScale;
+
+    float _SkyLightIntensity;
+    float _ShadowDistance;
+    float _Pad0;
+    float _Pad1;
+
+    int _DirectionalLightCount;
+    int _OtherLightCount;
+    int _CascadeCount;
+    int _Pad2;
+};
+
 class OD_API RenderContext{
 public:
     RenderContext(Scene* scene);
@@ -133,7 +169,10 @@ public:
     //-------Settings---------
     Ref<Material> skyMaterial = nullptr;
     Framebuffer* overrideFramebuffer = nullptr;
-    bool isDeferred = false;
+    bool isDeferred = false;    
+
+    PipelineData pipelineData;
+    Ref<UniformBuffer> pipelineDataBuffer;
 
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }

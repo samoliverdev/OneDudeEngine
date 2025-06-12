@@ -199,6 +199,21 @@ void Material::SetCubemap(const char* name, Ref<Cubemap> tex){
     isDirty = true;
 }
 
+void Material::SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind){
+    MaterialMap& map = maps[name];
+    map.type = MaterialMap::Type::Buffer;
+    map.buffer = buffer;
+    map.uniformBufferBind = bind;
+    isDirty = true;
+}
+
+void Material::SetGlobalUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind){
+    MaterialMap& map = globalMaps[name];
+    map.type = MaterialMap::Type::Buffer;
+    map.buffer = buffer;
+    map.uniformBufferBind = bind;
+}
+
 void Material::SetGlobalInt(const char* name, int value){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Int;

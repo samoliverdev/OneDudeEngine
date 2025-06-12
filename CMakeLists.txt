@@ -139,6 +139,8 @@ set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 
+#add_subdirectory(Engine/ThirdParty/glm-1.0.1) 
+
 if(EMSCRIPTEN)
     message("Using emscripten!2")
     message(${ENGINE_SHARED_LIBRARY})
@@ -269,6 +271,7 @@ endif()
 
 target_include_directories(Engine PUBLIC 
     Engine/ThirdParty/
+    Engine/ThirdParty/glm-1.0.1/
     Engine/ThirdParty/glad46core/
     Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/tinyobjloader/

@@ -35,6 +35,7 @@ GLenum meshDrawModeLookup[] = {
 OpenGLGraphicsDevice::OpenGLGraphicsDevice(){
     info.apiName = "OpenGL";
     info.version = OpenGLVersion;
+    info.supportUniformBuffer = true;
 }
 
 void OpenGLGraphicsDevice::LoadContext(void* data){
@@ -672,6 +673,12 @@ void OpenGLGraphicsDevice::CubemapBind(Cubemap& cubemap, int index){
     glCheckError();
 }
 
+void OpenGLGraphicsDevice::UniformBufferBind(UniformBuffer& buffer, int index){
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
+    glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer.glData.id);
+    glCheckError();
+}
+
 void OpenGLGraphicsDevice::SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index){
     Graphics::GetStats().uniformSet += 1;
     //glActiveTexture(GL_TEXTURE0 + index); glCheckError();
@@ -723,6 +730,20 @@ void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char
 
     //glCheckError();
     SubShaderSetInt(shader, name, index);
+}
+
+bool OpenGLGraphicsDevice::SubShaderSetUniformBuffer(SubShader& shader, const char* name, UniformBuffer& buffer, int index){
+    Graphics::GetStats().uniformSet += 1;
+    UniformBufferBind(buffer, index);
+
+    GLuint blockIndex = glGetUniformBlockIndex(shader.glData.id, name);
+    if(blockIndex != GL_INVALID_INDEX) {
+        glUniformBlockBinding(shader.glData.id, blockIndex, index);
+        glCheckError();
+        return true; 
+    } 
+
+    return false;
 }
 
 /*void SubShaderSetUniforBuffer(GLSubShaderData& shader, const char* name, UniformBuffer& buffer, int index){
@@ -962,6 +983,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
             if(map.type == MaterialMap::Type::Matrix4){
                 SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
             }
+            if(map.type == MaterialMap::Type::Buffer){
+                if(i.second.buffer == nullptr) continue;
+                Assert(i.second.buffer != nullptr);
+                SubShaderSetUniformBuffer(shader, i.first.c_str(), *i.second.buffer, material.currentBufferSlot);
+                material.currentBufferSlot += 1;
+            }
             if(map.type == MaterialMap::Type::Texture){
                 if(i.second.texture == nullptr) continue;
                 Assert(i.second.texture != nullptr);
@@ -995,6 +1022,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
     auto SubmitGraphicDatas = [&](Material& material){
         stats.materialSubmitDatas += 1;
         material.currentTextureSlot = 0;
+        material.currentBufferSlot = 0;
         material.UpdateCurrentShader();
 
         Assert(material.GetShader() != nullptr);
@@ -1039,9 +1067,10 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         unsigned int index = glGetUniformBlockIndex(mat.currentShader->glData.id, "CamDraw");   
         if(index != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 0, cameraDataBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader->glData.id, index, 0);
+            glUniformBlockBinding(mat.currentShader->glData.id, index, mat.currentBufferSlot); // 0);
+            mat.currentBufferSlot += 1;
             glCheckError(); 
         } else {
             SubShaderSetMatrix4(*mat.currentShader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
@@ -1050,9 +1079,10 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
         if(index2 != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 1, mat.glData.mainBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader->glData.id, index2, 1);
+            glUniformBlockBinding(mat.currentShader->glData.id, index2, mat.currentBufferSlot); // 1);
+            mat.currentBufferSlot += 1;
             glCheckError(); 
         }       
         #else
@@ -3236,6 +3266,21 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
         //printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
     }
 
+    // Get uniform buffer block names
+    GLint uniformBlockCount = 0;
+    glGetProgramiv(shader.glData.id, GL_ACTIVE_UNIFORM_BLOCKS, &uniformBlockCount);
+
+    for (GLuint i = 0; i < static_cast<GLuint>(uniformBlockCount); ++i){
+        GLchar blockName[bufSize];
+        GLsizei blockNameLength = 0;
+        glGetActiveUniformBlockName(shader.glData.id, i, bufSize, &blockNameLength, blockName);
+        glCheckError();
+
+        if (blockNameLength > 0){
+            shader.glData._uniforms.push_back(std::string(blockName));
+        }
+    }
+
     /*UniformBufferDef mainBufferDef;
     if(getUniformInfo(program, "MaterialData", mainBufferDef)){
         LogInfo("--------TotalSize %zd ---------------", mainBufferDef.size);
@@ -3321,6 +3366,34 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
 }
 
 void OpenGLGraphicsDevice::MaterialOnUnsetShader(Material& shader){}
+
+bool OpenGLGraphicsDevice::UniformBufferCreate(UniformBuffer& buffer){
+    glGenBuffers(1, &buffer.glData.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
+    glCheckError();
+    
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glCheckError();
+    return true;
+}
+
+void OpenGLGraphicsDevice::UniformBufferDestroy(UniformBuffer& buffer){
+    if(buffer.glData.id != 0) glDeleteBuffers(1, &buffer.glData.id);
+    buffer.glData.id = 0;
+    glCheckError();
+}
+
+bool OpenGLGraphicsDevice::UniformBufferIsValid(UniformBuffer& buffer){
+    return buffer.glData.id != 0;
+}
+
+void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset){
+    Assert(UniformBufferIsValid(buffer) == true);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
+    glCheckError();
+    glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+    glCheckError();
+}
 
 bool OpenGLGraphicsDevice::ImGuiSupport(){
     return true;

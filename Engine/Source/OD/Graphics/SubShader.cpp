@@ -809,7 +809,7 @@ bool ShaderLoadFile(const std::string& path, ShaderSourceData& out){
         out.baseSource = _Load(path, out);
         for(auto& i: out.passes) i.UpdateProperties();
         
-        LogInfo("%s", out.baseSource.c_str());
+        //LogInfo("%s", out.baseSource.c_str());
         return true;
     }
 

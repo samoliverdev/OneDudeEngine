@@ -9,12 +9,13 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 view;
 EndUniform()
 
+#include Engine/ShaderLibrary/UniformsDef.glsl
+#include Engine/ShaderLibrary/TexturesDef.glsl
+
 BeginUniform(0, 0, Main)
-    #include Engine/ShaderLibrary/UniformsDef.glsl
     Uniform vec3 viewPos;
 EndUniform()
 
-#include Engine/ShaderLibrary/TexturesDef.glsl
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)

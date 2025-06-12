@@ -5,6 +5,7 @@
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Cubemap.h"
+#include "OD/Graphics/UniformBuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Platform/OpenGL/GL.h"
 
@@ -14,7 +15,7 @@ namespace OD{
 
 struct OD_API MaterialMap{
     enum class OD_API_IMPORT Type{
-        None = 0, Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, TextureArray, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List
+        None = 0, Int, Float, Vector2, Vector3, Vector4, Matrix4, Texture, TextureArray, Cubemap, Framebuffer, FloatList, Vector4List, Matrix4List, Buffer
     };
 
     Type type;
@@ -23,6 +24,7 @@ struct OD_API MaterialMap{
     Ref<Texture2D> texture;
     Ref<Texture2DArray> textureArray;
     Ref<Cubemap> cubemap;
+    Ref<UniformBuffer> buffer;
 
     struct Vec{
         Vector4 vector;
@@ -41,6 +43,8 @@ struct OD_API MaterialMap{
         /*Ref<Texture2D> texture;
         Ref<Texture2DArray> textureArray;
         Ref<Cubemap> cubemap;*/
+
+        int uniformBufferBind;
         
         struct{
             Framebuffer* framebuffer;
@@ -113,6 +117,7 @@ public:
     void SetTexture(const char* name, Ref<Texture2DArray> tex);
     void SetTexture(const char* name, Framebuffer* tex, int attachment);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
+    void SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 
     static void SetGlobalInt(const char* name, int value);
     static void SetGlobalFloat(const char* name, float value);
@@ -126,6 +131,7 @@ public:
     static void SetGlobalTexture(const char* name, Ref<Texture2D> tex);
     static void SetGlobalTexture(const char* name, Framebuffer* tex, int attachment);
     static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
+    static void SetGlobalUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 
     void DisableKeyword(const std::string& keyword);
     void EnableKeyword(const std::string& keyword);
@@ -158,6 +164,7 @@ public:
 private:
     bool enableInstancing = false;
     int currentTextureSlot = 0;
+    int currentBufferSlot = 0;
 
     std::set<std::string> enabledKeywords{};
 

@@ -87,6 +87,8 @@ RenderContext::RenderContext(Scene* inScene){
     spriteMesh = Mesh::CenterQuad(false);
     fullScreenQuad = Mesh::FullScreenQuad();
 
+    pipelineDataBuffer = UniformBuffer::Create();
+
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
 }

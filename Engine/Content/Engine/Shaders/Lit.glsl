@@ -28,20 +28,10 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
-/*BeginUniform(3, 0, RenderPipeline)
-    #include Engine/ShaderLibrary/UniformsDef.glsl
-EndUniform()*/
-
-/*layout(std140) uniform MaterialData{
-    vec4 color2;
-    float arr[4];
-    float smoothness2;
-    float metallic2;
-    float pad[2];
-};*/
+#include Engine/ShaderLibrary/UniformsDef.glsl
+#include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    #include Engine/ShaderLibrary/UniformsDef.glsl
     Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform vec4 color;
@@ -53,7 +43,6 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;
 EndUniform()
 
-#include Engine/ShaderLibrary/TexturesDef.glsl
 Texture2D(0, 6, mainTex, mainTexSampler)
 Texture2D(0, 7, normalMap, normalMapSampler)
 Texture2D(0, 8, emissionMap, emissionMapSampler)

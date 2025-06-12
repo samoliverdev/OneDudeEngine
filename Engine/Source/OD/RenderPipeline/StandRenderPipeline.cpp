@@ -15,6 +15,7 @@
 #include "ModelRendererComponent.h"
 #include "SpriteRendererComponent.h"
 #include <taskflow/taskflow.hpp>
+#include <cstring>
 
 namespace OD{
 
@@ -134,24 +135,21 @@ void Shadows::Render(){
         RenderOtherShadows();
 
     Material::SetGlobalFloat("_ShadowBias", settings.directional.shadowBias);
-    Material::SetGlobalFloat(shadowDistanceId, settings.maxDistance);
+    context->pipelineData._ShadowDistance = settings.maxDistance;
 
     float f = 1.0f - settings.directional.cascadeFade;
-    Material::SetGlobalVector4(
-        Shadows::shadowDistanceFadeId,
-        Vector4(
-            1.0f / settings.maxDistance, 
-            1.0f / settings.distanceFade, 
-            0, //1.0f / (1.0f - f * f), 
-            1.0f
-        )
+    context->pipelineData._ShadowDistanceFade = Vector4(
+        1.0f / settings.maxDistance, 
+        1.0f / settings.distanceFade, 
+        0, //1.0f / (1.0f - f * f), 
+        1.0f
     );
     
     float altlasSize = (int)settings.directional.altasSize;
     Vector4 altasSizes = Vector4Zero;
     altasSizes.x = altlasSize;
     altasSizes.y = 1.0f / altlasSize;
-    Material::SetGlobalVector4(shadowAtlasSizeId, altasSizes);
+    context->pipelineData._ShadowAtlasSize =  altasSizes;
 }
 
 void Shadows::RenderDirectionalShadows(){
@@ -182,10 +180,19 @@ void Shadows::RenderDirectionalShadows(){
         }
     }
 
-    Material::SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
-    Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, maxShadowedDirectionalLightCount * maxCascades); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalFloat(cascadeCullingSpheresId, cascadeCullingSpheres, settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
+    //Material::SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
+    //Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, maxShadowedDirectionalLightCount * maxCascades); //FIXME: Revise this 8 propety calculate shadowData size
+    //Material::SetGlobalFloat(cascadeCullingSpheresId, cascadeCullingSpheres, settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
     Material::SetGlobalTexture(dirShadowAtlasId, directionalShadowAtlas, -1);
+    context->pipelineData._CascadeCount = settings.directional.cascadeCount;
+    std::memcpy(context->pipelineData._DirectionalShadowMatrices, dirShadowMatrices, (maxShadowedDirectionalLightCount * maxCascades) * sizeof(Matrix4)); //FIXME: Revise this 8 propety calculate shadowData size
+    for(int i = 0; i < settings.directional.cascadeCount; i++){
+        context->pipelineData._CascadeCullingSpheres[i] = Vector4(cascadeCullingSpheres[i]);//FIXME: Revise this 8 propety calculate shadowData size
+    };
+
+    Assert(sizeof(float) == sizeof(int));
+    Assert(sizeof(Vector3) == 16);
+    Assert(sizeof(Vector4) == 16);
 }
 
 void Shadows::RenderOtherShadows(){
@@ -206,7 +213,7 @@ void Shadows::RenderOtherShadows(){
     }
 
     Material::SetGlobalTexture(otherShadowAltasId, otherShadowAtlas, -1);
-    Material::SetGlobalMatrix4(otherShadowMatricesId, otherShadowMatrices, Shadows::maxShadowedOtherLightCount);
+    std::memcpy(context->pipelineData._OtherShadowMatrices, otherShadowMatrices, Shadows::maxShadowedOtherLightCount * sizeof(Matrix4));
 }
 
 void Shadows::RenderSpotShadows(int index, int split, int tileSize){
@@ -353,20 +360,20 @@ void Lighting::SetupDirectionalLight(){
 
 void Lighting::UpdateGlobalShaders(){
     OD_PROFILE_SCOPE("Lighting::UpdateGlobalShaders");
-    Material::SetGlobalInt(dirLightCountId, curDirLightsCount);
+    context->pipelineData._DirectionalLightCount = curDirLightsCount;
     if(curDirLightsCount > 0){
-        Material::SetGlobalVector4(dirLightColorsId, dirLightColors, curDirLightsCount);
-        Material::SetGlobalVector4(dirLightDirectionsId, dirLightDirections, curDirLightsCount);
-        Material::SetGlobalVector4(dirLightShadowDataId, dirLightShadowData, curDirLightsCount);
+        std::memcpy(context->pipelineData._DirectionalLightColors, dirLightColors, curDirLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._DirectionalLightDirections, dirLightDirections, curDirLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._DirectionalLightShadowData, dirLightShadowData, curDirLightsCount * sizeof(Vector4));
     }
 
-    Material::SetGlobalInt(otherLightCountId, curOtherLightsCount);
+    context->pipelineData._OtherLightCount = curOtherLightsCount;
     if(curOtherLightsCount > 0){
-        Material::SetGlobalVector4(otherLightColorsId, otherLightColors, curOtherLightsCount);
-        Material::SetGlobalVector4(otherLightPositionsId, otherLightPositions, curOtherLightsCount);
-        Material::SetGlobalVector4(otherLightDirectionId, otherLightDirections, curOtherLightsCount);
-        Material::SetGlobalVector4(otherLightSpotAnglesId, otherLightSpotAngles, curOtherLightsCount);
-        Material::SetGlobalVector4(otherLightShadowDataId, otherLightShadowData, curOtherLightsCount);
+        std::memcpy(context->pipelineData._OtherLightColors, otherLightColors, curOtherLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._OtherLightPositions, otherLightDirections, curOtherLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._OtherLightDirections, otherLightDirections, curOtherLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._OtherLightSpotAngles, otherLightSpotAngles, curOtherLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._OtherLightShadowData, otherLightShadowData, curOtherLightsCount * sizeof(Vector4));
     }
 }
 #pragma endregion
@@ -625,28 +632,24 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
     context->skyMaterial = targetSkyMaterial;
 
-    Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
+    context->pipelineData._AmbientLight = environmentSettings.ambient;
 
     if(environmentSettings.environmentLight == EnvironmentLight::Color){
-        Material::SetGlobalVector3("_AmbientLight", environmentSettings.ambient);
-        Material::SetGlobalFloat("_SkyLightIntensity", 0);
-        Material::SetGlobalVector3("_IrradianceMapScale", Vector3Zero);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-        //Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        context->pipelineData._AmbientLight = environmentSettings.ambient;
+        context->pipelineData._SkyLightIntensity = 0;
+        context->pipelineData._IrradianceMapScale = Vector4Zero;
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
-        //Assert(environmentSettings.skyIrradianceMapF != nullptr);
-        //Assert(environmentSettings.skyPrefilterMapF != nullptr);
-        //Material::SetGlobalTexture("_IrradianceMap", environmentSettings.skyIrradianceMapF.get(), 0);
-        //Material::SetGlobalTexture("_PrefilterMap", environmentSettings.skyPrefilterMapF.get(), 0);
-
-        //Assert(false && "Outdate for now");
-        Material::SetGlobalVector3("_AmbientLight", Vector3Zero);
         Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-        Material::SetGlobalFloat("_SkyLightIntensity", environmentSettings.skyLightIntensity);
+        context->pipelineData._AmbientLight = Vector4Zero;
+        context->pipelineData._SkyLightIntensity = environmentSettings.skyLightIntensity;
     }
+
+    context->pipelineDataBuffer->SetData(&context->pipelineData, sizeof(PipelineData), 0);
+    Material::SetGlobalUniformBuffer("PipelineData", context->pipelineDataBuffer, 0);
 
     /*context->BeginDrawEntityIds();
     context->DrawEntityIds(entityIdDrawTarget);

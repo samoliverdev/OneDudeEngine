@@ -94,6 +94,10 @@ struct GLShaderData{
 
 };
 
+struct GLUniformBufferData{
+    unsigned int id = 0;
+};
+
 struct UniformBufferDef{
     struct Member{
         size_t pos = 0;
@@ -119,6 +123,7 @@ struct GLMaterialData{
 #define SubShaderDataGL GLSubShaderData glData;
 #define ShaderDataGL GLShaderData glData;
 #define MaterialDataGL GLMaterialData glData{};
+#define UniformBufferDataGL GLUniformBufferData glData{};
 
 int glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 
@@ -140,5 +145,6 @@ int glCheckError_(const char *file, int line, std::function<void()> callback = n
 #define SubShaderDataGL
 #define ShaderDataGL 
 #define MaterialDataGL
+#define UniformBufferDataGL
 
 #endif

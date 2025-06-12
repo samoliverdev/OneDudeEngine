@@ -11,10 +11,10 @@ uniform sampler2D _BrdfLUT;*/
 const float MAX_REFLECTION_LOD = 4.0;
 
 vec3 SampleEnvironmentDiffuse(Surface surfaceWS){
-    return _AmbientLight + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity;
+    return _AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity;
 
     vec4 environment = SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal);
-    return _AmbientLight + (environment.rgb * _SkyLightIntensity);
+    return _AmbientLight.rgb + (environment.rgb * _SkyLightIntensity);
 }
 
 float PerceptualRoughnessToMipmapLevel(float perceptualRoughness){
@@ -51,7 +51,7 @@ vec3 SampleEnvironmentSpecular(Surface surfaceWS, BRDF brdf){
     F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
     vec3 F = FresnelSchlickRoughness(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), F0, brdf.roughness);
     vec2 envBRDF = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), brdf.roughness)).rg;
-    return _AmbientLight + (environment * (F * envBRDF.x + envBRDF.y));
+    return _AmbientLight.rgb + (environment * (F * envBRDF.x + envBRDF.y));
     //*/
 }
 

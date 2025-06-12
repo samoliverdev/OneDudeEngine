@@ -27,6 +27,7 @@ struct PerDrawData;
 struct GraphicsDeviceInfo{
     std::string apiName;
     int version;
+    bool supportUniformBuffer;
 };
 
 class OD_API GraphicsDevice {
@@ -142,6 +143,11 @@ public:
     virtual void MaterialDestroy(Material& shader) = 0;
     virtual void MaterialOnSetShader(Material& shader) = 0;
     virtual void MaterialOnUnsetShader(Material& shader) = 0;
+
+    virtual bool UniformBufferCreate(UniformBuffer& buffer){ return false; }
+    virtual void UniformBufferDestroy(UniformBuffer& buffer){}
+    virtual bool UniformBufferIsValid(UniformBuffer& buffer){ return false; }
+    virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
 
     virtual void Initialize() = 0;
     virtual void Shutdown() = 0;
