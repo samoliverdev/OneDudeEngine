@@ -19,6 +19,8 @@
 
 namespace OD{
 
+//#define UseExperimentalRunComputeRenderList
+
 ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
     ShadowTextureSize::_256, // VeryLow
     ShadowTextureSize::_512, // Low
@@ -100,6 +102,42 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
     }
 }
 
+void Shadows::AddRunComputeRenderList(){
+    ShadowDrawingSettings s;
+
+    //if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass.get();
+
+    int index = -1;
+    for(int i = 0; i < shadowedDirectionalLightCount; i++){
+        for(int j = 0; j < settings.directional.cascadeCount; j++){
+            index += 1;
+
+            context->GetScene()->GetTaskflow().emplace([&, index](){
+                context->RunComputeRenderListShadow(
+                    {shadowDirectionalLightsSplits[index].frustum, true}, 
+                    s,
+                    shadowDirectionalLightsBuffers[index],
+                    shadowPass.get()
+                );
+            });
+        }
+    } 
+
+    index = -1;
+    for(int i = 0; i < shadowedOtherLightCount; i++){
+        index += 1;
+
+        context->GetScene()->GetTaskflow().emplace([&, index](){
+            context->RunComputeRenderListShadow(
+                {shadowOtherLightsSplits[index].frustum, true}, 
+                s,
+                shadowOtherLightsBuffers[index],
+                shadowPass.get()
+            );
+        });
+    } 
+}
+
 void Shadows::AddRenderData(RenderData& data){
     //TODO: Check Split data Culling
 
@@ -111,7 +149,6 @@ void Shadows::AddRenderData(RenderData& data){
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
-
             if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
@@ -120,7 +157,6 @@ void Shadows::AddRenderData(RenderData& data){
     index = -1;
     for(int i = 0; i < shadowedOtherLightCount; i++){
         index += 1;
-
         if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false) continue;
         context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
     } 
@@ -474,69 +510,52 @@ void CameraRenderer::RunRenderDataLoop(){
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
 
-    //tf::Taskflow taskflow;
-    //tf::Executor executor;
+    #ifdef UseExperimentalRunComputeRenderList
+
+    auto meshRenderView = context->GetScene()->GetRegistry().view<TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto [entity, trans, info]: meshRenderView.each()){
+        context->GetScene()->GetTaskflow().emplace([&](){
+            trans.UpdateGlobalTransformCacheIfNeeded();
+        });
+    }
+    context->GetScene()->GetExecutor().run(context->GetScene()->GetTaskflow()).wait(); 
+    context->GetScene()->GetTaskflow().clear();
+
+    context->GetScene()->GetTaskflow().emplace([&](){
+        context->RunComputeRenderList(
+            {camera.frustum, true}, 
+            opaqueDrawSettings,
+            opaqueDrawTarget
+        );
+    });
+    context->GetScene()->GetTaskflow().emplace([&](){
+        context->RunComputeRenderList(
+            {camera.frustum, true}, 
+            blendDrawSettings,
+            blendDrawTarget
+        );
+    });
+    context->GetScene()->GetTaskflow().emplace([&](){
+        context->RunComputeRenderList(
+            {camera.frustum, true}, 
+            entityIdDrawSettings,
+            entityIdDrawTarget
+        );
+    });
+    shadows.AddRunComputeRenderList();
+
+    context->GetScene()->GetExecutor().run(context->GetScene()->GetTaskflow()).wait(); 
+    context->GetScene()->GetTaskflow().clear();
+
+    #else
 
     context->RenderDataLoop([&](RenderData& data){
         AddRenderData(data); 
         shadows.AddRenderData(data); 
     });
-
-    /*auto meshView = context->GetScene()->GetRegistry().view<MeshRendererComponent, TransformComponent>();
-    for(auto e: meshView){
-        auto& c = meshView.get<MeshRendererComponent>(e);
-        auto& t = meshView.get<TransformComponent>(e);
-        if(c.mesh == nullptr) continue;
-        if(c.material == nullptr) continue;
-        //if(transform_aabb_optimized_abs_center_extents(c.boundingVolume, t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
-
-        RenderData data;
-        data.distance = math::distance2(camera.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
-        data.targetMatrix =  t.GlobalModelMatrix();
-        data.posePalette = nullptr;
-        //data.aabb = c.GetGlobalAABB(t);
-        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
-        //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
-
-        AddRenderData(data); 
-        shadows.AddRenderData(data); 
-    }
-
-    auto meshRenderView = context->GetScene()->GetRegistry().group<ModelRendererComponent, TransformComponent>();
-    for(auto e: meshRenderView){
-        auto& c = meshRenderView.get<ModelRendererComponent>(e);
-        auto& t = meshRenderView.get<TransformComponent>(e);
-        if(c.GetModel() == nullptr) continue;
-        //if(transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()).isOnFrustum(cam.frustum) == false) continue;
-
-        //OD_PROFILE_SCOPE("RenderContext::SetupLoop::1");
-
-        for(auto i: c.GetModel()->renderTargets){
-            RenderData data;
-            data.distance = math::distance2(camera.viewPos, t.Position());
-            data.targetMaterial = c.GetModel()->materials[i.materialIndex].get();
-            data.targetMesh = c.GetModel()->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix();// * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
-            data.posePalette = nullptr;
-            //data.aabb = c.GetGlobalAABB(t);
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
-            //if(data.aabb.isOnFrustum(cam.frustum) == false) continue;
-
-            //data.aabb = c.GetAABB();
-            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
-            }
-
-            AddRenderData(data); 
-            shadows.AddRenderData(data); 
-        }
-    }*/
-
-    //executor.run(taskflow).wait();
+    #endif
 }
 
 void CameraRenderer::AddRenderData(RenderData& data){

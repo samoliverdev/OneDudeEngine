@@ -1,8 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
 #include "RenderContext.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
-#include <magic_enum/magic_enum.hpp>
 
 namespace OD{
 
@@ -14,7 +14,7 @@ public:
     float exposure = 1;
 
     ToneMappingPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
+    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
     void OnGui() override;
 
     template <class Archive>

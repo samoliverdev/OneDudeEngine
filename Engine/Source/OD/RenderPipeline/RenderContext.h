@@ -123,9 +123,17 @@ public:
     void Begin();
     void End();
 
+    struct ComputeRenderListSettings{
+        Frustum frustum;
+        bool checkOnFrustum;
+    };
+    void RunComputeRenderList(ComputeRenderListSettings settings, DrawingSettings drawSettings, RendererList& renderList);
+    void RunComputeRenderListShadow(ComputeRenderListSettings settings, ShadowDrawingSettings drawSettings, RendererList& renderList, Material* shadowPass);
+
     //void SetupRenderers(const std::vector<DrawingTarget*>& targets, const std::vector<ShadowDrawingTarget*>& shadowTargets);
     void SetupCameraProperties(Camera cam);
     void RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData);
+    void RenderDataLoop2(std::function<void(RenderData&)> onReciveRenderData);
 
     void BeginDrawEntityIds();
     void EndDrawEntityIds();

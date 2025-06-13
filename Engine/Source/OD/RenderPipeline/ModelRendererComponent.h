@@ -35,7 +35,7 @@ struct OD_API ModelRendererComponent{
 
     static void OnGui(Entity& e, Scene& scene);
 
-    inline Ref<Model> GetModel(){ return model; }
+    inline Ref<Model> GetModel() const { return model; }
     void SetModel(Ref<Model> m);
 
     inline void SetAABB(Vector3 center = Vector3Zero, Vector3 size = Vector3One){
@@ -65,7 +65,7 @@ struct OD_API ModelRendererComponent{
         ArchiveDumpNVP(ar, materialVectorRef);
     }
 
-    AABB GetAABB();
+    AABB GetAABB() const;
     AABB GetGlobalAABB(TransformComponent& transform);
     AABB GetGlobalAABB(Transform& transform);
 

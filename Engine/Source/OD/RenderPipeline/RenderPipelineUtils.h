@@ -2,6 +2,8 @@
 //#include <EASTL/vector.h>
 //#include <EASTL/unordered_map.h>
 
+#include <concurrentqueue.h>
+
 namespace OD{
 
 template<typename Value>

@@ -110,7 +110,8 @@ public:
     inline Vector3 Up(){ return Rotation() * Vector3Up; }
     inline Vector3 Down(){ return Rotation() * Vector3Down; }
 
-    Matrix4 GlobalModelMatrix();
+    const Matrix4& GlobalModelMatrixReadSafe() const;
+    const Matrix4& GlobalModelMatrix();
     inline Matrix4 GetLocalModelMatrix(){ return transform.GetLocalModelMatrix(); }
 
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
@@ -124,6 +125,8 @@ public:
 
     //Transforms position from local space to world space.
     Vector3 TransformPoint(Vector3 point);  
+
+    const Vector3& PositionReadSafe() const;
 
     Vector3 Position();
     void Position(Vector3 position);
@@ -202,6 +205,8 @@ public:
     
     void SetGlobalAsDirty();
 
+    void UpdateGlobalTransformCacheIfNeeded();
+
 private:
     Transform transform;
     #ifdef ExperimentalTransformOptimzation
@@ -215,8 +220,6 @@ private:
     bool hasParent = false;
 
     entt::registry* registry = nullptr;
-
-    void UpdateGlobalTransformCacheIfNeeded();
 };
 
 enum class EntityType{

@@ -34,7 +34,7 @@ void SynthCitySample::OnInit(){
     lightComponent.color = {1,1,1};
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
-    lightComponent.renderShadow = false;
+    lightComponent.renderShadow = true;
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);

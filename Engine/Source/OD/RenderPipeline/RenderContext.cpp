@@ -344,6 +344,560 @@ void RenderContext::ScreenClean(){
     Graphics::Clean(0, 0, 1, 1);
 }
 
+void RenderContext::RunComputeRenderListShadow(ComputeRenderListSettings settings, ShadowDrawingSettings drawSettings, RendererList& renderList, Material* shadowPass){
+    RenderDataLoop2([&](auto& data){
+        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) return;
+        if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass;
+        AddDrawShadow(data, drawSettings, renderList);
+    });
+}
+
+void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, DrawingSettings drawSettings, RendererList& renderList){
+    RenderDataLoop2([&](auto& data){
+        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) return;
+        AddDrawRenderers(data, drawSettings, renderList);
+    });
+
+    /*auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: staticMeshView){
+        auto& info = staticMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = staticMeshView.get<MeshRendererComponent>(e);
+        auto& t = staticMeshView.get<TransformComponent>(e);
+        auto& s = staticMeshView.get<StaticRendererComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        if(s.staticDatas.size() != 1) s.staticDatas.resize(1);
+        if(s.staticDatas[0].isDirt){
+            s.staticDatas[0].isDirt = false;
+            s.staticDatas[0].m = t.GlobalModelMatrix();
+            s.staticDatas[0].aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, s.staticDatas[0].m);
+        }
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  s.staticDatas[0].m;
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = s.staticDatas[0].aabb;
+        
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
+
+        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        AddDrawRenderers(data, drawSettings, renderList);
+    }
+
+    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: meshStaticRenderView){
+        auto& info = meshStaticRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
+        auto& t = meshStaticRenderView.get<TransformComponent>(e);
+        auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
+    
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        if(s.staticDatas.size() != model->renderTargets.size()){
+            s.staticDatas.resize(model->renderTargets.size());
+            for(auto& i: s.staticDatas) i.isDirt = true;
+        }
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
+            if(s.staticDatas[_i].isDirt){
+                s.staticDatas[_i].isDirt = false;
+                s.staticDatas[_i].m = t.GlobalModelMatrix();
+                s.staticDatas[_i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), s.staticDatas[_i].m);
+            }
+
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  s.staticDatas[_i].m;
+            data.aabb = s.staticDatas[_i].aabb;
+            data.posePalette = nullptr;
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
+            _i += 1;
+
+            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            AddDrawRenderers(data, drawSettings, renderList);
+        }
+    }
+
+    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: meshView){
+        auto& info = meshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = meshView.get<MeshRendererComponent>(e);
+        auto& t = meshView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix = t.GlobalModelMatrix();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
+
+        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        AddDrawRenderers(data, drawSettings, renderList);
+    }
+
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: meshRenderView){
+        auto& info = meshRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        auto& t = meshRenderView.get<TransformComponent>(e);
+
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        //if(c.renderData.size() != model->renderTargets.size()) continue;
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.posePalette = nullptr;
+            //data.aabb = c.GetGlobalAABB(t);
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+            //data.aabb.Expand2(Vector3(5.5f));
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
+            _i += 1;
+
+            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            AddDrawRenderers(data, drawSettings, renderList);
+        }
+    }
+
+    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: skinnedMeshView){
+        auto& info = skinnedMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        SkinnedMeshRendererComponent& c = skinnedMeshView.get<SkinnedMeshRendererComponent>(e);
+        TransformComponent& t = skinnedMeshView.get<TransformComponent>(e);
+
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  t.GlobalModelMatrix();;
+        //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+        
+        //INFO: Try optimize
+        if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+            c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose());
+        } 
+        data.posePalette = &c.posePalette;
+        
+        //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = (int)e;
+
+        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        AddDrawRenderers(data, drawSettings, renderList);
+    }
+
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto [e, c, t, info]: skinnedView.each()){
+        //auto& info = skinnedView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+        //SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
+        //TransformComponent& t = skinnedView.get<TransformComponent>(e);
+
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
+        if(c.posePalette.size() == 0) c.UpdatePosePalette();
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            
+            //INFO: Try optimize
+            if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+                c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
+            }
+            data.posePalette = &c.posePalette;
+            
+            //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = (int)e;
+            
+            _i += 1;
+
+            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            AddDrawRenderers(data, drawSettings, renderList);
+        }
+    }*/
+}
+
+void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRenderData){
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::0");
+    /*auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: staticMeshView){
+        auto& info = staticMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = staticMeshView.get<MeshRendererComponent>(e);
+        auto& t = staticMeshView.get<TransformComponent>(e);
+        auto& s = staticMeshView.get<StaticRendererComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        if(s.staticDatas.size() != 1) s.staticDatas.resize(1);
+        if(s.staticDatas[0].isDirt){
+            s.staticDatas[0].isDirt = false;
+            s.staticDatas[0].m = t.GlobalModelMatrix();
+            s.staticDatas[0].aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, s.staticDatas[0].m);
+        }
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  s.staticDatas[0].m;
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = s.staticDatas[0].aabb;
+        
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
+
+        onReciveRenderData(data);
+    }*/
+    //}
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::1");
+    /*auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: meshStaticRenderView){
+        auto& info = meshStaticRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
+        auto& t = meshStaticRenderView.get<TransformComponent>(e);
+        auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
+    
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        if(s.staticDatas.size() != model->renderTargets.size()){
+            s.staticDatas.resize(model->renderTargets.size());
+            for(auto& i: s.staticDatas) i.isDirt = true;
+        }
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
+            if(s.staticDatas[_i].isDirt){
+                s.staticDatas[_i].isDirt = false;
+                s.staticDatas[_i].m = t.GlobalModelMatrix();
+                s.staticDatas[_i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), s.staticDatas[_i].m);
+            }
+
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.Position());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  s.staticDatas[_i].m;
+            data.aabb = s.staticDatas[_i].aabb;
+            data.posePalette = nullptr;
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
+            onReciveRenderData(data);
+            _i += 1;
+        }
+    }*/
+    //}
+
+    //////////////////////////////////////////////////////////
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
+    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: meshView){
+        const auto& info = meshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        const auto& c = meshView.get<MeshRendererComponent>(e);
+        const auto& t = meshView.get<TransformComponent>(e);
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+        data.targetMaterial = c.material.get();
+        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix = t.GlobalModelMatrixReadSafe();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
+
+        onReciveRenderData(data);
+    }
+    //}
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
+    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: meshRenderView){
+        const auto& info = meshRenderView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        const auto& t = meshRenderView.get<TransformComponent>(e);
+
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        //if(c.renderData.size() != model->renderTargets.size()) continue;
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix = t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.posePalette = nullptr;
+            //data.aabb = c.GetGlobalAABB(t);
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrixReadSafe());
+            //data.aabb.Expand2(Vector3(5.5f));
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+
+            onReciveRenderData(data);
+            _i += 1;
+        }
+    }
+    //}
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
+    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: skinnedMeshView){
+        const auto& info = skinnedMeshView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+
+        SkinnedMeshRendererComponent& c = skinnedMeshView.get<SkinnedMeshRendererComponent>(e);
+        const TransformComponent& t = skinnedMeshView.get<TransformComponent>(e);
+
+        if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = c.mesh.get();
+        data.targetMatrix =  t.GlobalModelMatrixReadSafe();
+        //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+        
+        //INFO: Try optimize
+        /*if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+            c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose());
+        }*/ 
+        data.posePalette = &c.posePalette;
+        
+        //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+        data.perDrawData.int_0.resize(1);
+        data.perDrawData.int_0[0] = (int)e;
+
+        onReciveRenderData(data);
+    }
+    //}
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto e: skinnedMeshView){
+        const auto& info = skinnedView.get<InfoComponent>(e);
+        if(info.enable == false) continue;
+        SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
+        const TransformComponent& t = skinnedView.get<TransformComponent>(e);
+
+        Ref<Model> model = c.GetModel();
+        if(model == nullptr) continue;
+
+        //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
+        //if(c.posePalette.size() == 0) c.UpdatePosePalette();
+
+        int _i = 0;
+        for(auto i: model->renderTargets){
+            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+            RenderData data;
+            data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+            data.targetMaterial = model->materials[i.materialIndex].get();
+            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMatrix =  t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+            
+            //INFO: Try optimize
+            /*if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+                c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
+            }*/
+            data.posePalette = &c.posePalette;
+            
+            //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
+
+            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            }
+
+            data.perDrawData.int_0.resize(1);
+            data.perDrawData.int_0[0] = (int)e;
+            
+            onReciveRenderData(data);
+            _i += 1;
+        }
+    }
+    //}
+
+    //{
+    //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::6");
+    /*auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    for(auto entity: spriteView){
+        auto& info = spriteView.get<InfoComponent>(entity);
+        if(info.enable == false) continue;
+
+        TransformComponent& t = spriteView.get<TransformComponent>(entity);
+        SpriteRendererComponent& c = spriteView.get<SpriteRendererComponent>(entity);
+        //if(c.mesh == nullptr) continue;
+        if(c.material == nullptr) continue;
+
+        AABB aabb(Vector3(0), c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1);
+        Transform scale;
+        scale.LocalScale(Vector3(c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1));
+
+        c.material->SetVector4("color", c.color);
+        c.material->SetTexture("mainTex", c.sprite);
+
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, t.Position());
+        data.targetMaterial = c.material.get();
+        data.targetMesh = spriteMesh.get();
+        data.targetMatrix =  t.GlobalModelMatrix() * scale.GetLocalModelMatrix();
+        data.posePalette = nullptr;
+        //data.aabb = c.GetGlobalAABB(t);
+        data.aabb = transform_aabb_optimized_abs_center_extents(aabb, data.targetMatrix);
+
+        onReciveRenderData(data);
+    }*/
+    //}
+}
+
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
@@ -684,13 +1238,6 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
         }, data.distance);
     } 
 }
-
-/*void RenderContext::SetStandUniforms(Camera& cam, SubShader& shader){
-    //Shader::Bind(shader);
-    shader.SetMatrix4("view", cam.view);
-    shader.SetMatrix4("projection", cam.projection);
-    shader.SetVector3("viewPos", cam.viewPos);
-}*/
 
 void RenderContext::RenderSkyboxLater(){
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
@@ -1050,6 +1597,7 @@ std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Mat
     return frustumCorners;
 }
 
+
 glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane, Frustum* outFrustom = nullptr){
     const auto proj = glm::perspective(cam.fov, (float)cam.width / (float)cam.height, nearPlane, farPlane);
     const auto corners = getFrustumCornersWorldSpace2(proj, cam.view);
@@ -1085,7 +1633,7 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     }
 
     // Tune this parameter according to the scene
-    constexpr float zMult = 10.0f;
+    constexpr float zMult = 10; //10.0f;
     if(minZ < 0){
         minZ *= zMult;
     } else {
@@ -1135,8 +1683,8 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
     for(int i = 0; i < count; i++){
         splitData[i].projViewMatrix = lightMatrixs[i];
         //splitData[i].splitDistance = shadowCascadeLevels[i];
-        splitData[i].frustum = frustums[i];
-        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose( lightMatrixs[i] ));
+        //splitData[i].frustum = frustums[i];
+        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(lightMatrixs[i]));
     }
 }
 

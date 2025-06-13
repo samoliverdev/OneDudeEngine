@@ -65,7 +65,11 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(){
     #endif
 }
 
-Matrix4 TransformComponent::GlobalModelMatrix(){
+const Matrix4& TransformComponent::GlobalModelMatrixReadSafe() const{
+    return globalTransform.localModelMatrix;
+}
+
+const Matrix4& TransformComponent::GlobalModelMatrix(){
     /*Matrix4 result = transform.GetLocalModelMatrix();
     for(TransformComponent* p = registry->try_get<TransformComponent>(parent); p != nullptr; p = registry->try_get<TransformComponent>(p->parent)){
         result = p->GetLocalModelMatrix() * result;
@@ -88,7 +92,7 @@ Matrix4 TransformComponent::GlobalModelMatrix(){
         }
     }*/
     UpdateGlobalTransformCacheIfNeeded();
-    return globalTransform.GetLocalModelMatrix();
+    return globalTransform.localModelMatrix;
 
     #else
 
@@ -123,6 +127,10 @@ Vector3 TransformComponent::TransformPoint(Vector3 point){
 //Quaternion InverseTransformRot(Quaternion world, Quaternion rot){
 //    return Quaternion::Inverse(world) * rot;
 //}
+
+const Vector3& TransformComponent::PositionReadSafe() const{
+    return globalTransform.localPosition;
+}
 
 Vector3 TransformComponent::Position(){ 
     #ifdef ExperimentalTransformOptimzation

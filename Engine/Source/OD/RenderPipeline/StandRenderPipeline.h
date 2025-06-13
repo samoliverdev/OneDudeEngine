@@ -98,6 +98,7 @@ public:
     ~Shadows();
 
     void Setup(RenderContext* context, ShadowSettings settings, Camera cam);
+    void AddRunComputeRenderList();
     void AddRenderData(RenderData& data);
     void Render();
 
@@ -118,6 +119,7 @@ private:
     RenderContext* context;
     ShadowSettings settings;
     Camera cam;
+    ShadowDrawingSettings drawSettings;
 
     inline static const int maxShadowedDirectionalLightCount = 4;
     inline static const int maxShadowedOtherLightCount = 16;

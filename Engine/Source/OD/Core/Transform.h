@@ -18,7 +18,7 @@ public:
     Transform(Vector3 pos, Quaternion rot = QuaternionIdentity, Vector3 scale = Vector3(1, 1, 1)):
         localPosition(pos), localRotation(rot), localScale(scale), isDirt(true){}
     Transform(const Matrix4& m);
-
+    
     Matrix4 GetLocalModelMatrix();
 
     inline Vector3 Forward() const { return localRotation * Vector3Forward; }

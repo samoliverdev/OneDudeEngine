@@ -77,7 +77,7 @@ void ModelRendererComponent::SetModel(Ref<Model> m){
     //boundingVolumeSphere = Model::GenerateSphereBV(*model);
 }
 
-AABB ModelRendererComponent::GetAABB(){
+AABB ModelRendererComponent::GetAABB() const {
     return boundingVolume;
 }
 

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
+set(CMAKE_CXX_STANDARD 17)
 
 option(ENGINE_SHARED_LIBRARY "" ON)
 option(USE_ASSIMP "Use Assimp support" ON)
@@ -33,7 +34,8 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
-    add_compile_options(/O2 /arch:SSE2)
+    #add_compile_options(/O2)
+    add_compile_options(/arch:SSE2)
     #add_compile_options(/Qvec-report:2)
 
     if(USE_SANITIZE_ADDRESS)
@@ -50,7 +52,7 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 
 #----------------Engine------------------
-set(CMAKE_CXX_STANDARD 17)
+
 
 if(EMSCRIPTEN)
     message("Using emscripten!")
