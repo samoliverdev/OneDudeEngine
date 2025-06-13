@@ -94,7 +94,7 @@ Transform Pose::operator[](unsigned int index){
     return GetGlobalTransform(index);
 }
 
-void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
+void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out){
     /*
     unsigned int size = Size();
     if(out.size() != size){
@@ -138,7 +138,7 @@ void Pose::GetMatrixPalette(std::vector<Matrix4>& out){
 }
 
 //TODO: To Revise this function
-void Pose::GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses){
+void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out, const AlignedVector<Matrix4>& invBindPoses){
 #if 0
     // Less Otimized
     unsigned int size = Size();

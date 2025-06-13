@@ -250,6 +250,26 @@ std::array<Vector3, 8> AABB::getVertice() const{
 
 //see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 bool AABB::isOnOrForwardPlane(Plane& plane) const{
+    #if 0
+
+    // Cria vetores com os valores absolutos das normais e extents
+    __m128 ext = _mm_set_ps(0.0f, extents.z, extents.y, extents.x); // [0, z, y, x]
+    __m128 norm = _mm_set_ps(0.0f, fabsf(plane.normal.z), fabsf(plane.normal.y), fabsf(plane.normal.x));
+    
+    // Multiplica componente a componente: extents * |normal|
+    __m128 r = _mm_mul_ps(ext, norm); // [0, z*|z|, y*|y|, x*|x|]
+
+    // Soma horizontal para obter raio: r.x + r.y + r.z
+    __m128 shuf1 = _mm_shuffle_ps(r, r, _MM_SHUFFLE(2, 1, 0, 3));
+    __m128 shuf2 = _mm_add_ps(r, shuf1);
+    float radius = _mm_cvtss_f32(shuf2) + _mm_cvtss_f32(_mm_shuffle_ps(shuf2, shuf2, _MM_SHUFFLE(1, 1, 1, 1)));
+
+    constexpr float epsilon = 1e-3f;
+    float dist = plane.getSignedDistanceToPlane(center);
+    return (-radius - epsilon <= dist);
+
+    #else
+
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
     const float r = extents.x * math::abs(plane.normal.x) + 
                     extents.y * math::abs(plane.normal.y) +
@@ -260,6 +280,8 @@ bool AABB::isOnOrForwardPlane(Plane& plane) const{
     const float d = plane.getSignedDistanceToPlane(center);
     constexpr float epsilon = 1e-3f; // pode ajustar isso conforme precisão
     return -r - epsilon <= d;
+
+    #endif
 }
 
 bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
@@ -324,9 +346,9 @@ bool AABB::isOnAABB(AABB& other){
 
     // Extrai os resultados dos 3 primeiros componentes
     int mask = _mm256_movemask_ps(result);
-    return (mask & 0b0111) == 0b0111;
+    return (mask & 0b0111) == 0b0111;*/
 
-#elif defined(__SSE__)
+#if 0
     // SSE version
     __m128 a_min = _mm_set_ps(0.0f, GetMin().z, GetMin().y, GetMin().x);
     __m128 a_max = _mm_set_ps(0.0f, GetMax().z, GetMax().y, GetMax().x);
@@ -340,7 +362,7 @@ bool AABB::isOnAABB(AABB& other){
     int mask = _mm_movemask_ps(result);
     return (mask & 0b0111) == 0b0111;
 
-#else*/
+#else
     // Scalar fallback
     Vector3 aMin = GetMin();
     Vector3 aMax = GetMax();
@@ -350,7 +372,7 @@ bool AABB::isOnAABB(AABB& other){
     return (aMin.x <= bMax.x && aMax.x >= bMin.x) &&
         (aMin.y <= bMax.y && aMax.y >= bMin.y) &&
         (aMin.z <= bMax.z && aMax.z >= bMin.z);
-//#endif
+#endif
 }
 
 }

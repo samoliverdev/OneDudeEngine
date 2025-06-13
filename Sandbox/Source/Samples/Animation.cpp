@@ -151,7 +151,7 @@ void AnimationSample::OnRender(float deltaTime){
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    std::vector<Matrix4>& invBindPose = char1Skeleton.GetInvBindPose();
+    AlignedVector<Matrix4>& invBindPose = char1Skeleton.GetInvBindPose();
     for(int i = 0; i < char1Anim.mPosePalette.size(); ++i){
         char1Anim.mPosePalette[i] = char1Anim.mPosePalette[i] * invBindPose[i];
     }

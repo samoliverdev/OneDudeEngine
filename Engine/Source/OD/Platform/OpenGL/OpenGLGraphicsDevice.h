@@ -204,6 +204,14 @@ public:
     Material* lastMat = nullptr;
     SubShader* lastShader = nullptr;
     bool begin = false;
+
+    struct PerDrawInstanceData {
+        GLuint vbo = 0;
+        void* mappedPtr = nullptr;
+        size_t capacity = 0;
+    };
+    std::vector<PerDrawInstanceData> perInstancingDrawData;
+    int curPerInstancingDrawData;
 };
 
 }

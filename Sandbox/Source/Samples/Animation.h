@@ -6,7 +6,7 @@ using namespace OD;
 
 struct AnimationInstance{
 	Pose mAnimatedPose;
-	std::vector<Matrix4> mPosePalette;
+	AlignedVector<Matrix4> mPosePalette;
 	unsigned int mClip = 0;
 	float mPlayback;
 	Transform mModel;

@@ -15,7 +15,7 @@ public:
 
     Pose& GetBindPose();
     Pose& GetRestPose();
-    std::vector<Matrix4>& GetInvBindPose();
+    AlignedVector<Matrix4> & GetInvBindPose();
     std::vector<std::string>& GetJointNames();
     std::string& GetJointName(unsigned int index);
     int FindJointByName(const std::string& name);
@@ -24,7 +24,7 @@ public:
 protected:
     Pose restPose;
     Pose bindPose;
-    std::vector<Matrix4> invBindPose;
+    AlignedVector<Matrix4> invBindPose;
     std::vector<std::string> jointNames;
 
     void UpdateInverseBindPose();

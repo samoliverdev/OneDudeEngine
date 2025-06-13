@@ -16,6 +16,12 @@ struct OD_API MeshRendererComponent{
     bool useCustomData = false;
     Vector4 customData;
 
+    struct RenderData{
+        Matrix4 model;
+        AABB aabb;
+    };
+    RenderData renderData;
+
     static void OnGui(Entity& e, Scene& scene);
 
     template<class Archive>
@@ -80,7 +86,7 @@ struct OD_API SkinnedMeshRendererComponent: public MeshRendererComponent{
     Skeleton skeleton;
     Pose finalPose;
     bool postUpdatePosePalette = false;
-    std::vector<Matrix4> posePalette;
+    AlignedVector<Matrix4> posePalette;
 
     template<class Archive>
     void serialize(Archive& ar){

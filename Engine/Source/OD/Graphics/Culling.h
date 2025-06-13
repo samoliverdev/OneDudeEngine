@@ -6,7 +6,7 @@
 
 namespace OD{
 
-struct OD_API Plane{
+struct OD_API alignas(16) Plane{
     Vector3 normal = Vector3Up;
     float distance = 0;
 
@@ -30,7 +30,7 @@ struct OD_API Plane{
 	}
 };
 
-struct OD_API Frustum{
+struct OD_API alignas(16) Frustum{
     Plane topFace;
     Plane bottomFace;
 
@@ -77,7 +77,7 @@ struct OD_API SquareAABB: public BoundingVolume{
 	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
 };
 
-struct OD_API AABB: public BoundingVolume{
+struct OD_API alignas(16) AABB: public BoundingVolume{
 	Vector3 center = Vector3(0);
 	Vector3 extents = Vector3(0);
 

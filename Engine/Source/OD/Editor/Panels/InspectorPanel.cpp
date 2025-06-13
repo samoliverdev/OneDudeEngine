@@ -8,8 +8,6 @@
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 #include "OD/Physics/PhysicsSystem.h"
-//#include "OD/AnimationSystem/Animator.h"
-#include <glm/gtc/type_ptr.hpp>
 #include <functional>
 #include <string>
 

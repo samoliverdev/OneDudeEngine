@@ -178,5 +178,5 @@ inline Type GetType(){
 /*#define HAS_TEMPLATE_FUNC(func, name)                                        \
     template <typename T, typename = int> struct name : std::false_type {}; \
     template <typename T> struct name<T, decltype(&T::template func)> : std::true_type {};*/  //Not Working
-
+   
 }

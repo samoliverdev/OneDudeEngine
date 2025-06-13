@@ -56,6 +56,9 @@ struct GLMeshData{
     unsigned int weightsVbo = 0;  
     
     unsigned int ebo = 0;
+
+    void* instancingMappedPtr = nullptr;
+    size_t instancingBufferCapacity = 0;
 };
 
 struct GLFramebufferData{

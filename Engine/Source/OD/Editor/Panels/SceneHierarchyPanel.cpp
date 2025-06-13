@@ -12,7 +12,6 @@
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Model.h"
 //#include "OD/AnimationSystem/Animator.h"
-#include <glm/gtc/type_ptr.hpp>
 #include <functional>
 #include <string>
 #include <imgui/imgui_internal.h>

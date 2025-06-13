@@ -1,19 +1,14 @@
 #pragma once
 #include <math.h>
 #include <float.h>
-//#include <string>
-
-#define GLM_FORCE_QUAT_DATA_XYZW
 
 //#define GLM_FORCE_PURE
-
-#define GLM_FORCE_INTRINSICS
-#define GLM_FORCE_ALIGNED
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-
-#define GLM_FORCE_SSE2
 //#define GLM_FORCE_AVX2
+#define GLM_FORCE_SSE2
+#define GLM_FORCE_ALIGNED
+//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
+#define GLM_FORCE_QUAT_DATA_XYZW
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/glm.hpp>
@@ -24,6 +19,35 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/hash.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
+#include <memory>
+
+template<typename T, size_t Alignment>
+struct AlignedAllocator {
+    using value_type = T;
+    T* allocate(size_t n) {
+        #ifdef _MSC_VER
+        return static_cast<T*>(_aligned_malloc(n * sizeof(T), Alignment));
+        #else
+        return static_cast<T*>(std::aligned_alloc(Alignment, n * sizeof(T)));
+        #endif
+    }
+    void deallocate(T* p, size_t) noexcept {
+        #ifdef _MSC_VER
+        _aligned_free(p);
+        #else
+        std::free(p);
+        #endif
+    }
+    template<typename U> struct rebind { using other = AlignedAllocator<U, Alignment>; };
+};
+
+#include <vector>
+
+// Template alias for aligned vectors
+template<typename T>
+using AlignedVector = std::vector<T, AlignedAllocator<T, 16>>;
 
 namespace glm{
 

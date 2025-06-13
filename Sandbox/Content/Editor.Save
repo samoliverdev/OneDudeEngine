@@ -4,7 +4,7 @@
         "contentBrowserPanel.show": true,
         "inspectorPanel.show": true,
         "viewportPanel.show": true,
-        "profilePanel.show": false,
+        "profilePanel.show": true,
         "rendererStatsPanel.show": true
     }
 }

@@ -66,7 +66,7 @@ inline AABB transform_aabb_optimized_min_max(AABB box, Matrix4 m){
 // To minimize the 8 dot products, it is sufficient to negate the maximum dot product
 // On AMD GCN, it is free to take the absolute value of the input to an operation
 // On AMD GCN, this gives a series of instructions taking 30 cycles for both mat3 and mat4 and significantly reduces register pressure (about 10-12VGPR).
-inline AABB transform_aabb_optimized_abs_center_extents(AABB box, Matrix4 m){
+inline AABB transform_aabb_optimized_abs_center_extents(const AABB& box, const Matrix4& m){
   // transform to center/extents box representation
   /*Vector3 center = (box.GetMax() + box.GetMin()) * 0.5f;
   Vector3 extents = box.GetMax() - center;

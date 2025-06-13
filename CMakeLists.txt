@@ -6,7 +6,7 @@ option(BUILD_SANDBOX "BUILD_SANDBOX" ON)
 option(BUILD_EDITOR "BUILD_EDITOR" ON)
 option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" ON)
 option(SUPPORT_OPENGL "SUPPORT_OPENGL" ON)
-option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" ON)
+option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" OFF)
 
 option(USE_DYNAMIC_MSVC_RUNTIME_DLL "USE_DYNAMIC_MSVC_RUNTIME_DLL" ON)
 option(USE_SANITIZE_ADDRESS "USE_SANITIZE_ADDRESS" OFF)
@@ -22,7 +22,7 @@ endif()
 message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 
 
-if(MSVC)
+#if(MSVC)
     if(USE_DYNAMIC_MSVC_RUNTIME_DLL)
         cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
@@ -33,7 +33,8 @@ if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
-    #add_compile_options(/O2)
+    add_compile_options(/O2 /arch:SSE2)
+    #add_compile_options(/Qvec-report:2)
 
     if(USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
@@ -44,7 +45,7 @@ if(MSVC)
     #add_compile_options(-fsanitize=address -g)
     #add_link_options(-fsanitize=address -g)
     
-endif()
+#endif()
 
 #option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 

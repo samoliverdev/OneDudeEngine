@@ -35,6 +35,36 @@ GlobalSceneData& GetGlobalSceneData(){
 
 #pragma region TransformComponent
 
+void TransformComponent::SetGlobalAsDirty(){
+    #ifdef ExperimentalTransformOptimzation
+    globalIsDirty = true;
+    for(auto& i: children){
+        TransformComponent& t = registry->get<TransformComponent>(i);
+        t.SetGlobalAsDirty();
+    }
+    #endif
+}
+
+void TransformComponent::UpdateGlobalTransformCacheIfNeeded(){
+    #ifdef ExperimentalTransformOptimzation
+    if(globalIsDirty){
+        globalIsDirty = false;
+        if(hasParent){
+            TransformComponent& p = registry->get<TransformComponent>(parent);
+            globalTransform.localModelMatrix = p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
+            globalTransform.localPosition = p.TransformPoint(LocalPosition());
+            globalTransform.localRotation = p.Rotation() * LocalRotation();
+            globalTransform.localScale = p.Scale() * LocalScale(); // Aqui está a escala acumulada
+        } else {
+            globalTransform.localModelMatrix = transform.GetLocalModelMatrix();
+            globalTransform.localPosition = LocalPosition();
+            globalTransform.localRotation = LocalRotation();
+            globalTransform.localScale = LocalScale(); // sem pai, usa local diretamente
+        }
+    }
+    #endif
+}
+
 Matrix4 TransformComponent::GlobalModelMatrix(){
     /*Matrix4 result = transform.GetLocalModelMatrix();
     for(TransformComponent* p = registry->try_get<TransformComponent>(parent); p != nullptr; p = registry->try_get<TransformComponent>(p->parent)){
@@ -42,11 +72,32 @@ Matrix4 TransformComponent::GlobalModelMatrix(){
     }
     return result;*/
 
+    #ifdef ExperimentalTransformOptimzation
+
+    /*if(globalIsDirty){
+        globalIsDirty = false;
+        if(hasParent){
+            TransformComponent& p = registry->get<TransformComponent>(parent);
+            globalTransform.localModelMatrix = p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
+            globalTransform.localPosition = p.TransformPoint(LocalPosition());
+            globalTransform.localRotation = p.Rotation() * LocalRotation();
+        } else {
+            globalTransform.localModelMatrix = transform.GetLocalModelMatrix();
+            globalTransform.localPosition = LocalPosition();
+            globalTransform.localRotation = LocalRotation();
+        }
+    }*/
+    UpdateGlobalTransformCacheIfNeeded();
+    return globalTransform.GetLocalModelMatrix();
+
+    #else
+
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
         return p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
     }
     return transform.GetLocalModelMatrix();
+    #endif
 }
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
@@ -74,14 +125,34 @@ Vector3 TransformComponent::TransformPoint(Vector3 point){
 //}
 
 Vector3 TransformComponent::Position(){ 
+    #ifdef ExperimentalTransformOptimzation
+
+    /*if(globalIsDirty){
+        globalIsDirty = false;
+        if(hasParent){
+            TransformComponent& p = registry->get<TransformComponent>(parent);
+            globalTransform.localPosition = p.TransformPoint(LocalPosition());
+        } else {
+            globalTransform.localPosition = LocalPosition();
+        }
+    }*/
+    UpdateGlobalTransformCacheIfNeeded();
+    return globalTransform.localPosition;
+
+    #else 
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
         return p.TransformPoint(LocalPosition());
     }
     return LocalPosition();
+    #endif
 }
 
 void TransformComponent::Position(Vector3 position){
+    #ifdef ExperimentalTransformOptimzation
+    SetGlobalAsDirty();
+    #endif
+
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
         LocalPosition(p.InverseTransformPoint(position));
@@ -91,14 +162,35 @@ void TransformComponent::Position(Vector3 position){
 }
 
 Quaternion TransformComponent::Rotation(){
+    #ifdef ExperimentalTransformOptimzation
+
+    /*if(globalIsDirty){
+        globalIsDirty = false;
+        if(hasParent){
+            TransformComponent& p = registry->get<TransformComponent>(parent);
+            globalTransform.localRotation = p.Rotation() * LocalRotation();
+        } else {
+            globalTransform.localRotation = LocalRotation();
+        }
+    }*/
+    UpdateGlobalTransformCacheIfNeeded();
+    return globalTransform.localRotation;
+
+    #else 
+
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
         return p.Rotation() * LocalRotation();
     } 
     return LocalRotation();
+    #endif
 }
 
 void TransformComponent::Rotation(Quaternion rotation){
+    #ifdef ExperimentalTransformOptimzation
+    SetGlobalAsDirty();
+    #endif
+
     //Assert(false);
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
@@ -111,8 +203,16 @@ void TransformComponent::Rotation(Quaternion rotation){
 }
 
 Vector3 TransformComponent::Scale(){
+    #ifdef ExperimentalTransformOptimzation
+    
+    UpdateGlobalTransformCacheIfNeeded();
+    return globalTransform.localScale;
+    
+    #else
+
     Transform t(GlobalModelMatrix());
     return t.LocalScale();
+    #endif
 }
 
 bool TransformComponent::FindEntityInChildren(const std::string& name, Entity& out){
@@ -466,6 +566,9 @@ void Scene::SetParent(Entity parent, Entity child){
     _parent.children.emplace_back(child);
     _child.parent = parent;
     _child.hasParent = true;
+
+    _parent.SetGlobalAsDirty();
+    _child.SetGlobalAsDirty();
 }
 
 bool Scene::IsValid(Entity id){

@@ -18,7 +18,7 @@ void SynthCitySample::OnInit(){
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
-    /*envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
     envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
     envComp.settings.colorGradingPostFX->enable = true;
@@ -26,7 +26,7 @@ void SynthCitySample::OnInit(){
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
     envComp.settings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(envComp.settings.skyCubemap);
-    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);*/
+    envComp.settings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(envComp.settings.skyCubemap);
     
 
     Entity light = scene->AddEntity("Light");
@@ -38,16 +38,18 @@ void SynthCitySample::OnInit(){
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
-    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(-37.4206, -34.8714, 38.0931));
-    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-21.3550, -30.5680, 0));
+    scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0.934, 0.476, 0.548));
+    scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-15.355, 50.432, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 160;
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
-    Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>(
-        "Sandbox/Models/PolygonCity/City.fbx"
-    );
-    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    //Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/PolygonCity/City.fbx");
+
+    Ref<Model> cityModel = CreateRef<Model>();
+    Model::CreateFromFile(*cityModel, "C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
+
+    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
     for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
 
     /*Entity floorEntity = scene->AddEntity("City");

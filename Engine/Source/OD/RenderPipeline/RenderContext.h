@@ -49,20 +49,20 @@ struct OD_API ShadowSplitData{
 };
 
 struct OD_API CommandBaseData{
+    Matrix4 targetMatrix;
     Ref<Material> targetMaterial;
     Ref<Mesh> targetMesh;
-    Matrix4 targetMatrix;
-    std::vector<Matrix4>* posePalette = nullptr;
+    AlignedVector<Matrix4>* posePalette = nullptr;
     float distance;
 };
 
-struct OD_API RenderData{
+struct OD_API alignas(16) RenderData{
     Matrix4 targetMatrix;
     AABB aabb;
+    AlignedVector<Matrix4>* posePalette = nullptr;
     Material* targetMaterial;
     Material* customShadowPass = nullptr;
     Mesh* targetMesh;
-    std::vector<Matrix4>* posePalette = nullptr;
     float distance;
 
     /*#if EnableExperimentalPerDrawCustomData

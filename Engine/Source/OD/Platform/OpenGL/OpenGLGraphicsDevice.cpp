@@ -382,6 +382,8 @@ void OpenGLGraphicsDevice::Begin(){
     begin = true;
     lastMat = nullptr;
     lastShader = nullptr;
+
+    curPerInstancingDrawData = 0;
 }
 
 void OpenGLGraphicsDevice::End(){
@@ -899,21 +901,21 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                     Assert(m.size >= sizeof(float));
                     memcpy((char*)material.glData.mainUniformData + m.pos, &map.valueFloat, sizeof(float));
                 } else if(map.type == MaterialMap::Type::Vector2){
-                    #ifdef GLM_FORCE_ALIGNED
+                    //#ifdef GLM_FORCE_ALIGNED
                         Assert(m.size >= (sizeof(float) * 2));
                         memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 2);
-                    #else
+                    /*#else
                         Assert(m.size >= sizeof(Vector2));
                         memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
-                    #endif
+                    #endif*/
                 } else if(map.type == MaterialMap::Type::Vector3){
-                    #ifdef GLM_FORCE_ALIGNED
+                    //#ifdef GLM_FORCE_ALIGNED
                         Assert(m.size >= (sizeof(float) * 3));
                         memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 3);
-                    #else
+                    /*#else
                         Assert(m.size >= sizeof(Vector3));
                         memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
-                    #endif
+                    #endif*/
                 } else if(map.type == MaterialMap::Type::Vector4){
                     Assert(m.size >= sizeof(Vector4));
                     memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector4));
@@ -1649,7 +1651,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
 }
 
 void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count){
-    #ifdef USE_VAO
+    /*#ifdef USE_VAO
     Assert(mesh.glData.vao != 0);
     glBindVertexArray(mesh.glData.vao);
     glCheckError();
@@ -1659,7 +1661,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
         if(mesh.glData.instancingModelMatrixsVbo == 0){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW //GL_STREAM_DRAW
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -1681,7 +1683,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_STATIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
         }
     }
@@ -1689,7 +1691,141 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     #ifdef USE_VAO
     glBindVertexArray(0);
     glCheckError();
+    #endif*/
+
+    /*
+    static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
+    #ifdef USE_VAO
+    Assert(mesh.glData.vao != 0);
+    glBindVertexArray(mesh.glData.vao);
+    glCheckError();
     #endif
+
+    Assert(count > 0);
+    if (count <= 0) return;
+
+    const size_t matrixSize = sizeof(Matrix4);
+    const size_t frameSize = matrixSize * count;
+    const size_t requiredBufferSize = frameSize * MAX_FRAMES_IN_FLIGHT;
+
+    // Allocate or resize buffer if needed
+    if (mesh.glData.instancingModelMatrixsVbo == 0 || mesh.glData.instancingBufferCapacity < requiredBufferSize) {
+        if (mesh.glData.instancingModelMatrixsVbo != 0)
+            glDeleteBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
+
+        glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo); glCheckError();
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); glCheckError();
+        glBufferStorage(GL_ARRAY_BUFFER, requiredBufferSize, nullptr,
+            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        mesh.glData.instancingBufferCapacity = requiredBufferSize;
+
+        mesh.glData.instancingMappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, requiredBufferSize,
+            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+
+        // Setup vertex attributes for mat4 (4 vec4s)
+        std::size_t vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(10); 
+        glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(0));
+        glEnableVertexAttribArray(11); 
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(1 * vec4Size));
+        glEnableVertexAttribArray(12); 
+        glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(2 * vec4Size));
+        glEnableVertexAttribArray(13); 
+        glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(3 * vec4Size));
+        glCheckError();
+
+        glVertexAttribDivisor(10, 1);
+        glVertexAttribDivisor(11, 1);
+        glVertexAttribDivisor(12, 1);
+        glVertexAttribDivisor(13, 1);
+        glCheckError();
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); glCheckError();
+    }
+
+    // Use a ring buffer offset
+    static uint32_t currentFrame = 0;
+    const size_t frameOffset = currentFrame * frameSize;
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    // Copy data to persistent mapped memory
+    std::memcpy((char*)mesh.glData.instancingMappedPtr + frameOffset, modelMatrixs, frameSize);
+
+    // Rebind buffer for draw (not needed every time if using VAO, but done here for safety)
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
+    glCheckError();
+
+    #ifdef USE_VAO
+    glBindVertexArray(0);
+    glCheckError();
+    #endif
+    */  
+
+    Assert(count > 0);
+    if (count <= 0) return;
+
+    const size_t matrixSize = sizeof(Matrix4);
+    const size_t bufferSize = matrixSize * count;
+
+    // Ensure the pool is large enough
+    if (curPerInstancingDrawData >= perInstancingDrawData.size()) {
+        perInstancingDrawData.resize(curPerInstancingDrawData + 1);
+    }
+
+    PerDrawInstanceData& drawData = perInstancingDrawData[curPerInstancingDrawData];
+    curPerInstancingDrawData++;
+
+    // Create or resize buffer if needed
+    if (drawData.vbo == 0 || drawData.capacity < bufferSize) {
+        if (drawData.vbo != 0)
+            glDeleteBuffers(1, &drawData.vbo);
+
+        glGenBuffers(1, &drawData.vbo); glCheckError();
+        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
+
+        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,
+            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        
+        drawData.capacity = bufferSize;
+
+        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
+            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
+    }
+
+    // Copy matrices to mapped buffer
+    std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+
+    // Bind VAO if enabled
+    #ifdef USE_VAO
+    Assert(mesh.glData.vao != 0);
+    glBindVertexArray(mesh.glData.vao); glCheckError();
+    #endif
+
+    // Set attribute layout for mat4 instance data
+    std::size_t vec4Size = sizeof(glm::vec4);
+    glEnableVertexAttribArray(10);
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(0));
+    glEnableVertexAttribArray(11);
+    glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(1 * vec4Size));
+    glEnableVertexAttribArray(12);
+    glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(2 * vec4Size));
+    glEnableVertexAttribArray(13);
+    glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(3 * vec4Size));
+    glCheckError();
+
+    glVertexAttribDivisor(10, 1);
+    glVertexAttribDivisor(11, 1);
+    glVertexAttribDivisor(12, 1);
+    glVertexAttribDivisor(13, 1);
+    glCheckError();
+
+    #ifdef USE_VAO
+    glBindVertexArray(0); glCheckError();
+    #endif
+
 }
 
 void OpenGLGraphicsDevice::MeshDestroy(Mesh& mesh){

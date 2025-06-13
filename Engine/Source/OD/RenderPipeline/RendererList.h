@@ -12,7 +12,7 @@ namespace OD{
 class Material;
 class Mesh;
 
-struct OD_API DrawCommand{
+struct OD_API alignas(16) DrawCommand{
     Matrix4 trans;
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
@@ -28,21 +28,21 @@ struct OD_API DrawCommand{
     bool operator<(const DrawCommand& a) const;
 };
 
-struct OD_API SkinnedDrawCommand{
+struct OD_API alignas(16) SkinnedDrawCommand{
     Matrix4 trans;
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
-    std::vector<Matrix4>* posePalette;
+    AlignedVector<Matrix4>* posePalette;
     PerDrawData perDrawData;
     float distance;
 
     bool operator<(const SkinnedDrawCommand& a) const;
 };
 
-struct OD_API DrawInstancingCommand{
+struct OD_API alignas(16) DrawInstancingCommand{
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
-    std::vector<Matrix4> trans;
+    AlignedVector<Matrix4> trans;
     
     bool operator<(const DrawCommand& a) const;
 };
@@ -66,9 +66,9 @@ struct OD_API RendererList{
 
     void SetOverrideMaterial(Ref<Material> shader);
 
-    void AddDrawCommand(DrawCommand comand, float distance = 0);  
-    void AddDrawInstancingCommand(DrawCommand comand);
-    void AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distance = 0); 
+    void AddDrawCommand(DrawCommand&& comand, float distance = 0);  
+    void AddDrawInstancingCommand(DrawCommand&& comand);
+    void AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance = 0); 
     
     void Clean();
     void Sort();

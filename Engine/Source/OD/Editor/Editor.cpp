@@ -13,7 +13,6 @@
 #include "OD/Core/Input.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
-#include <glm/gtx/matrix_decompose.hpp>
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Utils/File.h"

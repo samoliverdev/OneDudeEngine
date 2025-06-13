@@ -8,6 +8,8 @@ namespace OD {
     
 class Scene;
 
+#define ExperimentalTransformOptimzation
+
 class OD_API alignas(16) Transform{
     friend class TransformComponent;
     //friend class Scene;
@@ -120,27 +122,39 @@ public:
     }
 
     inline static Transform Inverse(Transform& t){
-        /*Transform inv;
+        #ifdef ExperimentalTransformOptimzation
+        
+        Transform inv;
         inv.LocalRotation(math::inverse(t.LocalRotation()));
         inv.localScale.x = fabs(t.localScale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.x;
         inv.localScale.y = fabs(t.localScale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.y;
         inv.localScale.z = fabs(t.localScale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.z;
-        Vector3 invTranslation = t.LocalPosition() * -1.0f;
+        Vector3 invTranslation = -t.LocalPosition();// * -1.0f;
         inv.LocalPosition( inv.LocalRotation() * (inv.LocalScale() * invTranslation) );
-        return inv;*/
+        return inv;
+        
+        #else
 
         return Transform(math::inverse(t.GetLocalModelMatrix()));
+
+        #endif
     }
 
     inline static Transform Combine(Transform& a, Transform& b){
-        /*Transform out;
+        #ifdef ExperimentalTransformOptimzation
+
+        Transform out;
         out.LocalScale(a.LocalScale() * b.LocalScale());
         out.LocalRotation(b.LocalRotation() * a.LocalRotation());
         out.LocalPosition(a.LocalRotation() * (a.LocalScale() * b.LocalPosition()));
         out.LocalPosition(a.LocalPosition() + out.LocalPosition());
-        return out;*/
+        return out;
+
+        #else
 
         return Transform(a.GetLocalModelMatrix() * b.GetLocalModelMatrix());
+
+        #endif
     }
 
     static void OnGui(Transform& e);
@@ -161,7 +175,7 @@ protected:
     Vector3 localScale = Vector3One; //float _pad1;
     Vector3 localEulerAngles = Vector3Zero; //float _pad2;
     bool isDirt = true;
-    char _pad3[15];
+    //char _pad3[15];
 };
 
 }

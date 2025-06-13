@@ -28,7 +28,7 @@ void RendererList::SetOverrideMaterial(Ref<Material> material){
     overrideMaterial = material;
 }
 
-void RendererList::AddDrawCommand(DrawCommand comand, float distance){
+void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
@@ -39,9 +39,9 @@ void RendererList::AddDrawCommand(DrawCommand comand, float distance){
 
     //m.lock();
     if(sortType == SortType::None){
-        drawCommandsNorSort.Add(comand.material, comand);
+        drawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
-        drawCommands.Add(comand);
+        drawCommands.Add(std::move(comand));
     }
     //drawCommands.Add(comand.material, comand);
     //m.unlock();
@@ -52,7 +52,7 @@ void RendererList::AddDrawCommand(DrawCommand comand, float distance){
     }*/
 }   
 
-void RendererList::AddDrawInstancingCommand(DrawCommand comand){
+void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
@@ -60,24 +60,24 @@ void RendererList::AddDrawInstancingCommand(DrawCommand comand){
     c.material = comand.material;
     c.meshs = comand.meshs;
     //m.lock();
-    c.trans.push_back(comand.trans);
+    c.trans.push_back(std::move(comand.trans));
     //m.unlock();
 
     //drawIntancingCommandsMaterials.insert(comand.material);
 } 
 
-void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand comand, float distance){
+void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
     //m.lock();
 
     if(sortType == SortType::None){
-        skinnedDrawCommandsNorSort.Add(comand.material, comand);
+        skinnedDrawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
         skinnedDrawCommands.Add(
             {distance, comand.material->MaterialId()}, 
-            comand
+            std::move(comand)
         );
     }
     //m.unlock();

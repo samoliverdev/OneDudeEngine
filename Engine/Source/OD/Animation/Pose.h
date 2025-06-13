@@ -24,13 +24,14 @@ public:
     Matrix4 GetGlobalMatrix(unsigned int index);
     Matrix4 GetLocalMatrix(unsigned int index);
     Transform operator[](unsigned int index);
-    void GetMatrixPalette(std::vector<Matrix4>& out);
-    void GetMatrixPalette(std::vector<Matrix4>& out, const std::vector<Matrix4>& invBindPoses);
+    void GetMatrixPalette(AlignedVector<Matrix4>& out);
+    void GetMatrixPalette(AlignedVector<Matrix4>& out, const AlignedVector<Matrix4>& invBindPoses);
     bool operator==(const Pose& other);
     bool operator!=(const Pose& other);
     inline void Clear(){ joints.clear(); parents.clear(); }
 protected:
-    std::vector<Transform> joints;
+    //std::vector<Transform> joints;
+    AlignedVector<Transform> joints;
     std::vector<int> parents;
 };
 

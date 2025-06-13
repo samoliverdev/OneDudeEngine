@@ -12,12 +12,12 @@ namespace OD{
 class StandRenderPipeline;
 
 struct OD_API StaticRendererComponent{
-    struct OD_API StaticData{
+    struct OD_API alignas(16) StaticData{
         Matrix4 m;
         AABB aabb;
         bool isDirt = true;
     };
-    std::vector<StaticData> staticDatas;
+    AlignedVector<StaticData> staticDatas;
 
     template <class Archive> void serialize(Archive& ar){}
 };
@@ -26,6 +26,12 @@ struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
 
     Transform localTransform;
+
+    struct alignas(16) RenderData{
+        Matrix4 model;
+        AABB aabb;
+    };
+    AlignedVector<RenderData> renderData;
 
     static void OnGui(Entity& e, Scene& scene);
 
@@ -79,7 +85,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     Transform skeletonTransform;
     Pose finalPose;
     bool postUpdatePosePalette = false;
-    std::vector<Matrix4> posePalette;
+    AlignedVector<Matrix4> posePalette;
 
     std::vector<Entity> skeletonEntities;
 

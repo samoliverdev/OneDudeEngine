@@ -193,6 +193,8 @@ void Shadows::RenderDirectionalShadows(){
     Assert(sizeof(float) == sizeof(int));
     Assert(sizeof(Vector3) == 16);
     Assert(sizeof(Vector4) == 16);
+    static_assert(alignof(Transform) == 16, "Transform is not 16-byte aligned");
+    static_assert(sizeof(Transform) % 16 == 0, "Transform size is not a multiple of 16");
 }
 
 void Shadows::RenderOtherShadows(){
@@ -953,6 +955,50 @@ void StandRenderPipeline::Render(){
     }*/
 
     //*/
+
+    /*auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: meshView){
+        auto& info = meshView.get<InfoComponent>(e);
+        auto& c = meshView.get<MeshRendererComponent>(e);
+        auto& t = meshView.get<TransformComponent>(e);
+
+        scene->GetTaskflow().emplace([&](){
+            if(info.enable == false) return;
+            if(c.mesh == nullptr) return;
+            if(c.material == nullptr) return;
+
+            c.renderData.model = t.GlobalModelMatrix();
+            c.renderData.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, c.renderData.model);
+        });
+    }*/
+    /*auto modelView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+    );
+    for(auto e: modelView){
+        auto& c = modelView.get<ModelRendererComponent>(e);
+        auto& info = modelView.get<InfoComponent>(e);
+        auto& t = modelView.get<TransformComponent>(e);
+
+        scene->GetTaskflow().emplace([&](){
+            if(info.enable == false || c.model == nullptr){
+                c.renderData.clear();
+                return;
+            }
+
+            c.renderData.resize(c.model->renderTargets.size());
+            for(int i = 0; i < c.model->renderTargets.size(); i++){
+                c.renderData[i].model = 
+                    t.GlobalModelMatrix() 
+                    * c.localTransform.GetLocalModelMatrix() 
+                    * c.model->skeleton.GetBindPose().GetGlobalMatrix(c.model->renderTargets[i].bindPoseIndex);
+                c.renderData[i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+            }
+        });
+    }*/
+    /*GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
+    GetScene()->GetTaskflow().clear();*/
 
     //----------Scene Render-------------
     renderContext->Begin();

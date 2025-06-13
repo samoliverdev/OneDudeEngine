@@ -17,7 +17,7 @@ void Skeleton::Set(const Pose& rest, const Pose& bind, const std::vector<std::st
 
 Pose& Skeleton::GetBindPose(){ return bindPose; }
 Pose& Skeleton::GetRestPose(){ return restPose; }
-std::vector<Matrix4>& Skeleton::GetInvBindPose(){ return invBindPose; }
+AlignedVector<Matrix4>& Skeleton::GetInvBindPose(){ return invBindPose; }
 std::vector<std::string>& Skeleton::GetJointNames(){ return jointNames; }
 std::string& Skeleton::GetJointName(unsigned int index){ return jointNames[index]; }
 

@@ -93,6 +93,8 @@ struct OD_API HideInEditor{
     template <class Archive> void serialize(Archive & ar){}
 };
 
+#define ExperimentalTransformOptimzation
+
 class OD_API TransformComponent{
     friend struct Scene;
     friend class cereal::access;
@@ -131,14 +133,44 @@ public:
 
     Vector3 Scale();
 
-    inline Vector3 LocalPosition(){ return transform.LocalPosition(); }
-    inline void LocalPosition(Vector3 pos){ transform.LocalPosition(pos); }
+    inline Vector3 LocalPosition(){ 
+        return transform.LocalPosition(); 
+    }
+    
+    inline void LocalPosition(Vector3 pos){ 
+        #ifdef ExperimentalTransformOptimzation
+        SetGlobalAsDirty();
+        #endif
+        transform.LocalPosition(pos); 
+    }
+    
     inline Vector3 LocalEulerAngles(){ return transform.LocalEulerAngles(); }
-    inline void LocalEulerAngles(Vector3 euler){ transform.LocalEulerAngles(euler); }
+    
+    inline void LocalEulerAngles(Vector3 euler){ 
+        #ifdef ExperimentalTransformOptimzation
+        SetGlobalAsDirty();
+        #endif
+        transform.LocalEulerAngles(euler); 
+    }
+    
     inline Quaternion LocalRotation(){ return transform.LocalRotation(); }
-    inline void LocalRotation(Quaternion rot){ transform.LocalRotation(rot); }
+    
+    inline void LocalRotation(Quaternion rot){ 
+        #ifdef ExperimentalTransformOptimzation
+        SetGlobalAsDirty();
+        #endif
+        transform.LocalRotation(rot); 
+    }
+    
     inline Vector3 LocalScale(){ return transform.LocalScale(); }
-    inline void LocalScale(Vector3 scale){ transform.LocalScale(scale); }
+    
+    inline void LocalScale(Vector3 scale){
+        #ifdef ExperimentalTransformOptimzation
+        SetGlobalAsDirty();
+        #endif 
+        transform.LocalScale(scale); 
+    }
+    
     inline void SetLocalModelMatrix(Matrix4 matrix){ transform = Transform(matrix); }
 
     inline Entity Parent(){ return parent; }
@@ -151,25 +183,40 @@ public:
     void serialize(Archive & ar);
 
     inline operator Transform() {
+        #ifdef ExperimentalTransformOptimzation
+        return Transform(Position(), Rotation(), Scale()); 
+        #else
         return Transform(GlobalModelMatrix());
-        //return Transform(Position(), Rotation(), LocalScale()); 
+        #endif
     }
 
     inline Transform ToTransform(){ 
+        #ifdef ExperimentalTransformOptimzation
+        return Transform(Position(), Rotation(), LocalScale()); 
+        #else
         return Transform(GlobalModelMatrix()); 
-        //return Transform(Position(), Rotation(), LocalScale()); 
+        #endif
     }
 
     static void CreateLuaBind(sol::state& lua);
+    
+    void SetGlobalAsDirty();
 
 private:
     Transform transform;
+    #ifdef ExperimentalTransformOptimzation
+    Transform globalTransform;
+    bool globalIsDirty = true;
+    #endif
+
     std::vector<Entity> children;
 
     Entity parent = entt::null;
     bool hasParent = false;
 
     entt::registry* registry = nullptr;
+
+    void UpdateGlobalTransformCacheIfNeeded();
 };
 
 enum class EntityType{

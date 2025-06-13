@@ -360,7 +360,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         if(c.mesh == nullptr) continue;
         if(c.material == nullptr) continue;
 
-        if(s.staticDatas.size() != 0) s.staticDatas.resize(1);
+        if(s.staticDatas.size() != 1) s.staticDatas.resize(1);
         if(s.staticDatas[0].isDirt){
             s.staticDatas[0].isDirt = false;
             s.staticDatas[0].m = t.GlobalModelMatrix();
@@ -459,7 +459,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.targetMaterial = c.material.get();
         data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
         data.targetMesh = c.mesh.get();
-        data.targetMatrix =  t.GlobalModelMatrix();
+        data.targetMatrix = t.GlobalModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
@@ -491,6 +491,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
 
+        //if(c.renderData.size() != model->renderTargets.size()) continue;
+
         int _i = 0;
         for(auto i: model->renderTargets){
             if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
@@ -499,7 +501,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
             data.targetMesh = model->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
