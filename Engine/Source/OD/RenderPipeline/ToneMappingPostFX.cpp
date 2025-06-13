@@ -2,6 +2,7 @@
 #include "OD/Base.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Serialization/CerealImGui.h"
+#include "RenderContext.h"
 #include <magic_enum/magic_enum.hpp>
 
 namespace OD{

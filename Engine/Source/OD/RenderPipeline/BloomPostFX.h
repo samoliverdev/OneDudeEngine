@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "RenderContext.h"
+#include "PostFX.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Graphics/Framebuffer.h"
 namespace OD{
@@ -18,7 +18,7 @@ public:
 
     BloomPostFX();
     void OnSetup() override;
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, class RenderContext* context) override;
+    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
     void OnGui() override;
 
     template <class Archive>

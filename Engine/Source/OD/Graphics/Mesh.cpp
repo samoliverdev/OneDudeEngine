@@ -9,11 +9,16 @@ namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
 
+IdPool meshIdPool;
+
 Mesh::Mesh(){
     isReadable = true;
+    id = meshIdPool.Pop();
 }
 
 Mesh::Mesh(const Mesh& other){
+    id = meshIdPool.Pop();
+
     if(other.isReadable == false){
         #ifdef GRAPHIC_LOG_ERROR
         LogError("Trying copy mesh what is not isReadable");
@@ -36,6 +41,7 @@ Mesh::Mesh(const Mesh& other){
 }
 
 Mesh::~Mesh(){
+    meshIdPool.Push(id);
     graphicsDevice->MeshDestroy(*this);
 }
 

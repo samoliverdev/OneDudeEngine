@@ -1223,7 +1223,6 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             data.targetMaterial,
             data.targetMesh,
         });
-
     } else {
         target.AddDrawCommand({
             data.targetMatrix,
@@ -1596,7 +1595,6 @@ std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Mat
     
     return frustumCorners;
 }
-
 
 glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPlane, const float farPlane, Frustum* outFrustom = nullptr){
     const auto proj = glm::perspective(cam.fov, (float)cam.width / (float)cam.height, nearPlane, farPlane);

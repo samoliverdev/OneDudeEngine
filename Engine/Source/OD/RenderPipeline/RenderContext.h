@@ -3,6 +3,7 @@
 #include "OD/Graphics/Framebuffer.h"
 #include "RendererList.h"
 #include "LightComponent.h"
+#include "PostFX.h"
 
 namespace OD{
 
@@ -10,16 +11,6 @@ class Scene;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
-
-class OD_API PostFX{
-public:
-    bool enable = true;
-
-    virtual ~PostFX(){}
-    virtual void OnSetup(){}
-    virtual void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){}
-    virtual void OnGui(){}
-};
 
 struct OD_API DrawingSettings{
     bool enableIntancing = true;

@@ -7,6 +7,8 @@
 #include "RenderPipelineUtils.h"
 //#include <EASTL/vector.h>
 
+#define UseExperimentalCommandBucket5
+
 namespace OD{
 
 class Material;
@@ -39,10 +41,13 @@ struct OD_API alignas(16) SkinnedDrawCommand{
     bool operator<(const SkinnedDrawCommand& a) const;
 };
 
-struct OD_API alignas(16) DrawInstancingCommand{
-    Material* material;// Ref<Material> material;
-    Mesh* meshs;// Ref<Mesh> meshs;
-    AlignedVector<Matrix4> trans;
+struct OD_API DrawInstancingCommand{
+    //AlignedVector<Matrix4> trans;
+    //ReusableVector<Matrix4> trans;
+    ReusableVector<Matrix4> trans;
+
+    Material* material;
+    Mesh* meshs;
     
     bool operator<(const DrawCommand& a) const;
 };
@@ -80,7 +85,11 @@ private:
 
     //CommandBucket1<MaterialBind2, DrawCommand> drawCommands;
 
+    #ifdef UseExperimentalCommandBucket5
+    CommandBucket5<DrawInstancingCommand> drawIntancingCommands;
+    #else
     CommandBucket4<Material*, Mesh*, DrawInstancingCommand> drawIntancingCommands;
+    #endif
 
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
     CommandBucket3<Material*, SkinnedDrawCommand> skinnedDrawCommandsNorSort;

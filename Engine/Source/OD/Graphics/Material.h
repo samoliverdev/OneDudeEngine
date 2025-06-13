@@ -93,11 +93,12 @@ class OD_API Material: public Asset{
 public:
     Material();
     Material(Ref<Shader> s);
+    ~Material();
 
     Ref<Shader> GetShader();
     void SetShader(Ref<Shader> s);
 
-    uint32_t MaterialId();
+    inline uint32_t MaterialId(){ return id; }
 
     bool IsBlend();
     bool EnableInstancingValid();
@@ -177,7 +178,6 @@ private:
     Ref<SubShader> currentShader = nullptr;
 
     uint32_t id = 0;
-    static uint32_t baseId;
 
     bool isDirty = true;
     

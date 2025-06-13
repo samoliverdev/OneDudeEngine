@@ -2,7 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
-#include "RenderContext.h"
+#include "PostFX.h"
 
 #include <type_traits>
 
@@ -20,7 +20,7 @@ public:
     float saturation = 0;
 
     ColorGradingPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, class RenderContext* context) override;
+    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
 
     inline void OnGui() override {
         cereal::ImGuiArchive colorGradring;

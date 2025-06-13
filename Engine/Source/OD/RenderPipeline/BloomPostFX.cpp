@@ -3,6 +3,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Shader.h"
+#include "RenderContext.h"
 
 namespace OD{
 

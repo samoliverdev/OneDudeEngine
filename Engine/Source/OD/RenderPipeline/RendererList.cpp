@@ -56,14 +56,15 @@ void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
+    #ifdef UseExperimentalCommandBucket5
+    DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
+    #else
     DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
+    #endif
+
     c.material = comand.material;
     c.meshs = comand.meshs;
-    //m.lock();
     c.trans.push_back(std::move(comand.trans));
-    //m.unlock();
-
-    //drawIntancingCommandsMaterials.insert(comand.material);
 } 
 
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
@@ -94,11 +95,16 @@ void RendererList::Clean(){
     skinnedDrawCommandsNorSort.Clear();
 
     for(auto& i: drawIntancingCommands.commands){
+        #ifdef UseExperimentalCommandBucket5
+        for(auto& j: i){
+            j.trans.clear();
+        }
+        #else
         for(auto& j: i.second){
             j.second.trans.clear();
         }
+        #endif
     }
-
 
     /*drawCommandsMaterials.clear();
     drawIntancingCommandsMaterials.clear();
@@ -145,7 +151,7 @@ void RendererList::Sort(){
     }
 
     drawCommands.Sort();
-    drawIntancingCommands.Sort();
+    //drawIntancingCommands.Sort();
     skinnedDrawCommands.Sort();
 }
 

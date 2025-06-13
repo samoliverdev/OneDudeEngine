@@ -5,6 +5,7 @@
 #include <memory>
 #include <typeinfo>
 #include <typeindex>
+#include <queue> 
 
 //#include <new>
 //#include <cstddef>
@@ -107,6 +108,55 @@ static const char* LogColors[] = {
 
 namespace OD {
 
+class IdPool{
+public:
+    IdPool() = default;
+
+    int Pop(){
+        if (!freeIds.empty()) {
+            int id = freeIds.front();
+            freeIds.pop();
+            return id;
+        }
+        return nextId++;
+    }
+
+    void Push(int id){
+        assert(id < nextId && "Trying to release invalid ID");
+        freeIds.push(id);
+    }
+
+    int TotalIssued() const{
+        return nextId;
+    }
+
+private:
+    int nextId = 0;
+    std::queue<int> freeIds;
+};
+
+template<typename T>
+struct ReusableVector{
+    std::vector<T> data;
+    size_t count = 0;
+
+    void clear(){ count = 0; }
+
+    void push_back(const T& v){
+        if (count >= data.size()) data.push_back(v);
+        else data[count] = v;
+        count++;
+    }
+
+    T& operator[](size_t i){ return data[i]; }
+    const T& operator[](size_t i) const { return data[i]; }
+
+    size_t size() const { return count; }
+
+    typename std::vector<T>::iterator begin(){ return data.begin(); }
+    typename std::vector<T>::iterator end(){ return data.begin() + count; }
+};
+
 using uuid64 = size_t;
 uuid64 generate_uuid();
 
@@ -179,4 +229,5 @@ inline Type GetType(){
     template <typename T, typename = int> struct name : std::false_type {}; \
     template <typename T> struct name<T, decltype(&T::template func)> : std::true_type {};*/  //Not Working
    
+
 }

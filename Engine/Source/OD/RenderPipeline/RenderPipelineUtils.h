@@ -165,5 +165,49 @@ struct CommandBucket4{
     }
 };
 
+template<typename Value>
+struct CommandBucket5 {
+    // commands[materialId][meshId]
+    std::vector<std::vector<Value>> commands;
+
+    // Get reference to value at [key1][key2], auto-resizes
+    inline Value& Get(int key1, int key2) {
+        if (key1 >= commands.size())
+            commands.resize(key1 + 1);
+
+        auto& inner = commands[key1];
+
+        if (key2 >= inner.size())
+            inner.resize(key2 + 1);
+
+        return inner[key2];
+    }
+
+    // Get how many key1 entries exist (outer size)
+    inline int Size() const {
+        return static_cast<int>(commands.size());
+    }
+
+    // Clear all but keep memory
+    inline void Clear() {
+        for (auto& inner : commands) {
+            inner.clear();
+        }
+    }
+
+    // Destroy all and free memory
+    inline void Free() {
+        commands.clear();
+    }
+
+    // Iterate over all values
+    inline void Each(const std::function<void(Value& value)>& func) {
+        for (auto& inner : commands) {
+            for (auto& val : inner) {
+                func(val);
+            }
+        }
+    }
+};
 
 }

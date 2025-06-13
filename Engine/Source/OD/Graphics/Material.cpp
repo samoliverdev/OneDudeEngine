@@ -22,18 +22,20 @@ void MaterialMap::OnLoad(std::string& texPath){
     }
 }
 
-uint32_t Material::baseId = 0;
 std::unordered_map<std::string, MaterialMap> Material::globalMaps{};
+IdPool materialIdPool;
 
 Material::Material(){
-    id = baseId;
-    baseId += 1;
+    id = materialIdPool.Pop();
 }
 
 Material::Material(Ref<Shader> s){
     SetShader(s);
-    id = baseId;
-    baseId += 1;
+    id = materialIdPool.Pop();
+}
+
+Material::~Material(){
+    materialIdPool.Push(id);
 }
 
 Ref<Shader> Material::GetShader(){ 
@@ -47,10 +49,6 @@ void Material::SetShader(Ref<Shader> s){
     UpdateMaps(); 
 
     graphicsDevice->MaterialOnSetShader(*this);
-}
-
-uint32_t Material::MaterialId(){ 
-    return id; 
 }
 
 bool Material::IsBlend(){

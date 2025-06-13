@@ -105,7 +105,11 @@ public:
 
     //inline unsigned int RendererId(){ return vao; }
 
+    inline int Id(){ return id; }
+
 private:
+    int id;
+
     bool isReadable = false;
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;

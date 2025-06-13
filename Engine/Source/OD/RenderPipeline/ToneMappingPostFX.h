@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "RenderContext.h"
+#include "PostFX.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
 
