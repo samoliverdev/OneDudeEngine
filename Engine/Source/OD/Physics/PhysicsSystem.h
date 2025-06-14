@@ -189,6 +189,7 @@ private:
 struct OD_API RagdollComponent{
     friend struct PhysicsSystem;
 
+
     RagdollComponent() = default;
 
     struct Part{
@@ -222,17 +223,28 @@ struct OD_API RagdollComponent{
         }
     };
 
+    Layers layer = Layers::Layer0;
+    LayerMask mask = {AllLayers};
+
+    enum class Type{Dynamic, Kinematic, Static};
+    Type type;
     bool isDirty = true;
     std::vector<Part> parts;
 
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, layer);
+        ArchiveDumpNVP(ar, mask);
         ArchiveDumpNVP(ar, isDirty);
+        ArchiveDumpNVP(ar, type);
         ArchiveDumpNVP(ar, parts);
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
+        COPY_OR_MOVE(layer);
+        COPY_OR_MOVE(mask);
         COPY_OR_MOVE(isDirty);
+        COPY_OR_MOVE(type);
         COPY_OR_MOVE(parts);
     });
 
@@ -415,6 +427,8 @@ struct OD_API PhysicsSystem: public System{
 
 private:
     void CheckForCollisionEvents();
+
+    static void OnRemoveRagdoll(entt::registry& r, entt::entity e);
 
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
     void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);

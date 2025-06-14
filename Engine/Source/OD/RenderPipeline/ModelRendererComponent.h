@@ -25,6 +25,7 @@ struct OD_API StaticRendererComponent{
 struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
 
+    bool draw = true;
     Transform localTransform;
 
     struct alignas(16) RenderData{

@@ -1116,6 +1116,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     for(auto [e, c, t, info]: skinnedView.each()){
         //auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
+        if(c.draw == false) continue;
         //SkinnedModelRendererComponent& c = skinnedView.get<SkinnedModelRendererComponent>(e);
         //TransformComponent& t = skinnedView.get<TransformComponent>(e);
 

@@ -204,6 +204,8 @@ void SkinnedModelRendererComponent::UpdateSkeletonEntitesIn(Pose& pose, Scene& s
 void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     SkinnedModelRendererComponent& mesh = scene.GetComponent<SkinnedModelRendererComponent>(e);
 
+    ImGui::Checkbox("Draw", &mesh.draw);
+
     if(ImGui::TreeNode("localTransform")){
         Transform::OnGui(mesh.localTransform);
     }

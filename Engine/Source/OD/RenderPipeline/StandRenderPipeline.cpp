@@ -517,7 +517,7 @@ void CameraRenderer::RunRenderDataLoop(){
     );
     for(auto [entity, trans, info]: meshRenderView.each()){
         context->GetScene()->GetTaskflow().emplace([&](){
-            trans.UpdateGlobalTransformCacheIfNeeded();
+            trans.UpdateGlobalTransformCacheIfNeeded();//INFO: I think this is not thread safe!!!
         });
     }
     context->GetScene()->GetExecutor().run(context->GetScene()->GetTaskflow()).wait(); 

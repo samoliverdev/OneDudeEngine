@@ -88,7 +88,7 @@ private:
     RendererStatsPanel rendererStatsPanel;
     MainWorkspace mainWorkspace;
 
-    Entity selectionEntity;
+    Entity selectionEntity = EntityNull;
     std::vector<Entity> selectedEntities;
     std::unordered_set<Entity> _selectedEntities;
 

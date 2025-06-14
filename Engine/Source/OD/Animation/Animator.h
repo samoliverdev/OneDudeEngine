@@ -11,6 +11,8 @@ namespace OD{
 
 //TODO: Make Serializable
 struct OD_API AnimatorComponent{
+    bool enable = true;
+    
     enum class LayerBlendMode { Override };
     struct Layer{
         CrossFadeController controller;
@@ -41,7 +43,7 @@ private:
     std::vector<Layer> layers = {{}};
     //CrossFadeController controller;
 
-    bool enable = true;
+    
 };
 
 struct OD_API AnimatorSystem: public System{

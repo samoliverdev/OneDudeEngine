@@ -160,12 +160,15 @@ public:
 	}
 
 	virtual BroadPhaseLayer	GetBroadPhaseLayer(ObjectLayer inLayer) const override{
+		//return BroadPhaseLayers::MOVING;
 		JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
 		return mObjectToBroadPhase[inLayer];
 	}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
 	virtual const char* GetBroadPhaseLayerName(BroadPhaseLayer inLayer) const override {
+		//return "MOVING";
+
 		switch ((BroadPhaseLayer::Type)inLayer)
 		{
 		case (BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
@@ -183,6 +186,8 @@ private:
 class ObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override{
+		//return true;
+
 		switch (inLayer1)
 		{
 		case PhysicsLayers::NON_MOVING:
@@ -263,20 +268,22 @@ public:
 
 class MyDebugRenderer: public DebugRendererSimple {
 public:
-    virtual void DrawLine(JPH::RVec3 from, JPH::RVec3 to, JPH::Color color) override {
-		Graphics::AddDrawLineCommand(
-            Vector3(FromJolt(from)), 
-            Vector3(FromJolt(to))
-        );
-        return;
+	bool useLineCommand = true;
 
-        // Aqui você converte os vetores para seu tipo de vetor e desenha uma linha
-        Graphics::DrawLine(
-            FromJolt(from), 
-            FromJolt(to), 
-            Vector3(color.r, color.g, color.b),
-            2
-        );
+    virtual void DrawLine(JPH::RVec3 from, JPH::RVec3 to, JPH::Color color) override {
+		if(useLineCommand){
+			Graphics::AddDrawLineCommand(
+				Vector3(FromJolt(from)), 
+				Vector3(FromJolt(to))
+			);
+		} else{ 
+			Graphics::DrawLine(
+				FromJolt(from), 
+				FromJolt(to), 
+				Vector3(color.r, color.g, color.b),
+				2
+			);
+		}
     }
 
 	virtual void DrawText3D(JPH::RVec3Arg inPosition, const string_view &inString, JPH::ColorArg inColor, float inHeight) override{}
@@ -481,7 +488,7 @@ public:
 	}
 
 	bool ShouldDraw(const JPH::Body& inBody) const override {
-		//return true;
+		return true;
 		return selectedBodies.count(inBody.GetID());
 	}
 };
@@ -878,6 +885,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
 	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
+	this->scene->GetRegistry().on_destroy<RagdollComponent>().connect<&OnRemoveRagdoll>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 }
@@ -888,6 +896,7 @@ void* PhysicsSystem::GetInternlWorld(){
 
 PhysicsSystem::~PhysicsSystem(){
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
+	this->scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
 
     UnregisterTypes();
 
@@ -899,7 +908,7 @@ PhysicsSystem::~PhysicsSystem(){
     delete physicsWorld;
 }
 
-RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton){
+RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter){
 	auto GetShape = [](CollisionShape shape) -> Shape* {
 		if(shape.type == CollisionShape::Type::Box) return new BoxShape(ToJolt(shape.size * 0.5f));
 		if(shape.type == CollisionShape::Type::Sphere) return new SphereShape(shape.radius);
@@ -943,8 +952,16 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		part.SetShape(finalShape /*shapes*/);
 		part.mPosition = positions;
 		part.mRotation = rotations;
-		part.mMotionType = EMotionType::Dynamic;
-		part.mObjectLayer = PhysicsLayers::MOVING;
+		part.mMotionType =  EMotionType::Dynamic;
+		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
+		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
+		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
+		part.mObjectLayer = PhysicsLayers::MOVING; //ragdoll.layer;
+		part.mCollisionGroup = JPH::CollisionGroup(
+			filter,
+			ragdoll.layer,
+			ragdoll.mask.mask // stored in subgroup ID
+		);
 		part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
@@ -1039,14 +1056,34 @@ void PhysicsSystem::PhysicsUpdate(){
 				delete ragdoll.data->ragdoll;
 			}
 			ragdoll.data = new RagdollObject();
-			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton);
-			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
-			for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton, physicsWorld->groupFilter);
+			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+			/*for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				bodyInterface.SetUserData(bodyID, static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex));
 				LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
-			}
+			}*/
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+
+			if(skinned.finalPose.Size() > 0 && skinned.skeletonEntities.size() > 0){
+				//skinned.UpdateSkeletonEntites(skinned.finalPose, *scene);
+				/*for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
+					int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
+					Assert(boneIndex != 0);
+					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
+					bodyInterface.SetPosition(i, ToJolt(tt.Position()), EActivation::Activate);
+            		bodyInterface.SetRotation(i, ToJolt(tt.Rotation()), EActivation::Activate);
+				}*/
+
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+					Assert(boneIndex != 0);
+					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
+					bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
+            		bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
+				}
+			}
 		}
 
 		if(ragdoll.data != nullptr){
@@ -1068,23 +1105,43 @@ void PhysicsSystem::PhysicsUpdate(){
 			}	
 			skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());*/
 
-			if(skinned.skeletonEntities.size() > 0){
-				SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
-				//skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
+			if(skinned.skeletonEntities.size() > 0 && ragdoll.type == RagdollComponent::Type::Dynamic){
 				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
-				for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
 					RVec3 pos;
 					Quat rot;
 					bodyInterface.GetPositionAndRotation(i, pos, rot);
 					
-					int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex; //static_cast<int>(bodyInterface.GetUserData(i));
 					Assert(boneIndex != 0);
 					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
 					tt.Position(FromJolt(pos));
 					tt.Rotation(FromJolt(rot));
 				}
 				skinned.UpdateSkeletonEntitesIn(skinned.finalPose, *scene);
+				//skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
+				skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+			}
+
+			if(skinned.skeletonEntities.size() > 0 && ragdoll.type != RagdollComponent::Type::Dynamic){
+				//skinned.UpdateSkeletonEntites(skinned.finalPose, *scene);
+				/*for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
+					int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
+					Assert(boneIndex != 0);
+					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
+					bodyInterface.SetPosition(i, ToJolt(tt.Position()), EActivation::Activate);
+            		bodyInterface.SetRotation(i, ToJolt(tt.Rotation()), EActivation::Activate);
+				}*/
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+					Assert(boneIndex != 0);
+					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
+					bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
+            		bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
+				}
 			}
 		}
 	}
@@ -1105,14 +1162,20 @@ void PhysicsSystem::ShowDebugGizmos(){
 	SelectedBodyDrawFilter selectedBodyDrawFilter;
 	selectedBodyDrawFilter.UpdateSelected();
 
+	physicsWorld->renderer->useLineCommand = true;
 	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer, &selectedBodyDrawFilter);
 	Graphics::DrawLinesComamnd({0, 1, 0}, 1);
+
+	physicsWorld->renderer->useLineCommand = false;
+	physicsWorld->physicsSystem.DrawConstraints(physicsWorld->renderer);
+	physicsWorld->physicsSystem.DrawConstraintLimits(physicsWorld->renderer);
 }
 
 // Example: Filter for non-moving objects (e.g., static walls)
 class BroadPhaseLayerFilterImpl : public JPH::BroadPhaseLayerFilter {
 public:
     bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override {
+		return true;
         return inLayer == BroadPhaseLayers::MOVING; // Replace with your layer
     }
 };
@@ -1271,6 +1334,14 @@ void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
     onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
 }
 
+void PhysicsSystem::OnRemoveRagdoll(entt::registry& r, entt::entity e){
+	RagdollComponent& ragdoll = r.get<RagdollComponent>(e);
+    if(ragdoll.data == nullptr) return;
+
+	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
+	delete ragdoll.data->ragdoll;
+}
+
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
     if(rb.data == nullptr) return;
@@ -1356,7 +1427,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     RefConst<Shape> finalShape = offsetResult.Get();
 
 	BodyCreationSettings settings(
-        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING //info.layer 
     );
 	settings.mUserData = static_cast<uint64>(entity); // safe cast
 	settings.mCollisionGroup = JPH::CollisionGroup(

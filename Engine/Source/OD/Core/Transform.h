@@ -8,7 +8,8 @@ namespace OD {
     
 class Scene;
 
-#define ExperimentalTransformOptimzation
+//TODO: This is bug my Bone Aim
+//#define ExperimentalTransformOptimzation
 
 class OD_API alignas(16) Transform{
     friend class TransformComponent;
