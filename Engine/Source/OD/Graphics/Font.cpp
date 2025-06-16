@@ -335,6 +335,189 @@ bool Font::LoadFromFile(const std::string& inPath){
     return success;
 }
 
+TextMetrics Font::CalculateTextMetrics(const std::string& text){
+    /*
+    const auto& fontGeometry = data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+    double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+
+    double width = 0.0;
+    double maxWidth = 0.0;
+    double height = fsScale * metrics.lineHeight;
+    bool firstLine = true;
+
+    const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+
+    for (size_t i = 0; i < text.size(); i++) {
+        char character = text[i];
+        if (character == '\r') continue;
+
+        if (character == '\n') {
+            maxWidth = std::max(maxWidth, width);
+            width = 0;
+            height += fsScale * metrics.lineHeight;
+            firstLine = false;
+            continue;
+        }
+
+        if (character == ' ') {
+            double advance = spaceGlyphAdvance;
+            if (i < text.size() - 1) {
+                char next = text[i + 1];
+                double dAdvance;
+                fontGeometry.getAdvance(dAdvance, character, next);
+                advance = dAdvance;
+            }
+            width += fsScale * advance;
+            continue;
+        }
+
+        if (character == '\t') {
+            width += 4.0 * (fsScale * spaceGlyphAdvance);
+            continue;
+        }
+
+        auto glyph = fontGeometry.getGlyph(character);
+        if (!glyph)
+            glyph = fontGeometry.getGlyph('?');
+        if (!glyph)
+            continue;
+
+        double advance = glyph->getAdvance();
+        if (i < text.size() - 1) {
+            char next = text[i + 1];
+            fontGeometry.getAdvance(advance, character, next);
+        }
+        width += fsScale * advance;
+    }
+
+    maxWidth = std::max(maxWidth, width);
+    return OD::Vector2((float)maxWidth, (float)height);
+    */
+
+    /*const auto& fontGeometry = data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+    double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+
+    double x = 0.0;
+    double y = 0.0;
+    double maxX = 0.0;
+    int lineCount = 1; // Start with one line
+
+    for (size_t i = 0; i < text.size(); i++) {
+        char c = text[i];
+
+        if (c == '\r') continue;
+
+        if (c == '\n') {
+            maxX = std::max(maxX, x);
+            x = 0;
+            y += metrics.lineHeight * fsScale;
+            lineCount++;
+            continue;
+        }
+
+        if (c == ' ') {
+            double advance;
+            if (i < text.size() - 1) {
+                char next = text[i + 1];
+                fontGeometry.getAdvance(advance, c, next);
+            } else {
+                advance = fontGeometry.getGlyph(' ')->getAdvance();
+            }
+            x += advance * fsScale;
+            continue;
+        }
+
+        if (c == '\t') {
+            double advance = fontGeometry.getGlyph(' ')->getAdvance();
+            x += 4 * advance * fsScale;
+            continue;
+        }
+
+        const auto* glyph = fontGeometry.getGlyph(c);
+        if (!glyph) {
+            glyph = fontGeometry.getGlyph('?');
+            if (!glyph) continue;
+        }
+
+        double advance;
+        if (i < text.size() - 1) {
+            char next = text[i + 1];
+            fontGeometry.getAdvance(advance, c, next);
+        } else {
+            advance = glyph->getAdvance();
+        }
+
+        x += advance * fsScale;
+        maxX = std::max(maxX, x);
+    }
+
+    double totalHeight = metrics.lineHeight * fsScale * lineCount;
+
+    return {
+        Vector2((float)maxX, (float)totalHeight),
+        lineCount
+    };*/
+
+    const auto& fontGeometry = data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+    double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+
+    double x = 0.0;
+    double y = 0.0;
+    double maxX = 0.0;
+    int lineCount = 1;
+
+    const float spaceAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+
+    for (size_t i = 0; i < text.size(); i++) {
+        char character = text[i];
+        if (character == '\r') continue;
+
+        if (character == '\n') {
+            maxX = std::max(maxX, x);
+            x = 0;
+            y += fsScale * metrics.lineHeight;
+            lineCount++;
+            continue;
+        }
+
+        if (character == ' ') {
+            float advance = spaceAdvance;
+            if (i < text.size() - 1) {
+                char nextCharacter = text[i + 1];
+                double dAdvance;
+                fontGeometry.getAdvance(dAdvance, character, nextCharacter);
+                advance = (float)dAdvance;
+            }
+            x += fsScale * advance;
+            continue;
+        }
+
+        auto glyph = fontGeometry.getGlyph(character);
+        if (!glyph) glyph = fontGeometry.getGlyph('?');
+        if (!glyph) continue;
+
+        double pl, pb, pr, pt;
+        glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+        double width = (pr - pl) * fsScale;
+
+        double advance = glyph->getAdvance();
+        if (i < text.size() - 1) {
+            char nextCharacter = text[i + 1];
+            fontGeometry.getAdvance(advance, character, nextCharacter);
+        }
+
+        x += fsScale * advance;
+    }
+
+    maxX = std::max(maxX, x);
+    double height = lineCount * fsScale * metrics.lineHeight;
+
+    return { Vector2((float)maxX, (float)height), lineCount };
+}
+
 void Font::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Font>(
         "Font",

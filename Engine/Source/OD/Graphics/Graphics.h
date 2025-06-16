@@ -55,6 +55,8 @@ public:
     static void EndRenderToScreen();
 
     static void Clean(float r, float g, float b, float a);
+    static void CleanColorOnly(float r, float g, float b, float a);
+    static void CleanDepthOnly();
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
@@ -78,6 +80,7 @@ public:
     static void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix);
 
     static void DrawText(Font& f, Material& s, std::string text, Matrix4 model);
+    static void DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY);
 
     static void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass = 0);
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);

@@ -225,6 +225,14 @@ void Graphics::Clean(float r, float g, float b, float a){
     graphicsDevice->Clean(r, g, b, a); 
 }
 
+void Graphics::CleanColorOnly(float r, float g, float b, float a){
+    graphicsDevice->CleanColorOnly(r, g, b, a);
+}
+
+void Graphics::CleanDepthOnly(){
+    graphicsDevice->CleanDepthOnly();
+}
+
 void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){ 
     graphicsDevice->SetViewport(x, y, w, h); 
 }
@@ -286,6 +294,10 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
 
 void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model){
     graphicsDevice->DrawText(f, s, text, model); 
+}
+
+void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY){
+    graphicsDevice->DrawText(f, s, text, model, anchorX, anchorY); 
 }
 
 void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){

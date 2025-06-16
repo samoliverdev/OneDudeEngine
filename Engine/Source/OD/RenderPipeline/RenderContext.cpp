@@ -284,11 +284,14 @@ void RenderContext::EndDrawToScreen(){
     Graphics::EndFramebuffer();
 }
 
+
+Framebuffer* finalFramebuffer;
+
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     //Graphics::SetDepthMask(false);
 
     bool step = false;
-    Framebuffer* finalFramebuffer = postFx1;
+    /*Framebuffer**/ finalFramebuffer = postFx1;
     Graphics::BlitFramebuffer(forwardOutColor, postFx1);
     //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
 
@@ -317,9 +320,26 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     }
 
     //Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
+    /*Graphics::BeginFramebuffer(*forwardOutColor);
+    blitShader->SetTexture("mainTex", finalFramebuffer, 0);
+    Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
+    Graphics::EndFramebuffer();*/
+}
+
+void RenderContext::BeginUIPass(){
     Graphics::BeginFramebuffer(*forwardOutColor);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
+
+    auto uiCamera = Camera{
+        OD::Matrix4Identity, 
+        OD::math::ortho(0.0f, (float)cam.width, 0.0f, (float)cam.height, -10.0f, 10.0f)
+    };
+    Graphics::SetCamera(uiCamera);
+    //Graphics::CleanDepthOnly();
+}
+
+void RenderContext::EndUIPass(){
     Graphics::EndFramebuffer();
 }
 

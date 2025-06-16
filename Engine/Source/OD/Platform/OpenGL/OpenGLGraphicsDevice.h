@@ -26,6 +26,8 @@ public:
     virtual void EndRenderToScreen() override;
 
     virtual void Clean(float r, float g, float b, float a) override;
+    virtual void CleanColorOnly(float r, float g, float b, float a) override;
+    virtual void CleanDepthOnly() override;
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) override;
 
@@ -49,6 +51,7 @@ public:
     virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) override;
 
     virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model) override;
+    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY) override;
     virtual void DrawText(Font& f, Material& s, std::string text, Vector3 pos, float scale) override;
 
     virtual void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0) override;

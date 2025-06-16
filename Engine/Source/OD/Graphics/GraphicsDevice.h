@@ -50,6 +50,8 @@ public:
     virtual void EndRenderToScreen() = 0;
 
     virtual void Clean(float r, float g, float b, float a) = 0;
+    virtual void CleanColorOnly(float r, float g, float b, float a){}
+    virtual void CleanDepthOnly(){}
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) = 0;
 
@@ -73,6 +75,7 @@ public:
     virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) = 0;
 
     virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model){}
+    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY){}
     virtual void DrawText(Font& f, Material& s, std::string text, Vector3 pos, float scale){}
 
     virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip) = 0;

@@ -18,6 +18,11 @@ struct MSDFData{
     msdf_atlas::FontGeometry fontGeometry;
 };
 
+struct OD_API TextMetrics {
+    Vector2 size;
+    int lineCount;
+};
+
 class OD_API Font: public Asset{
     friend class OpenGLGraphicsDevice;
 public:
@@ -46,6 +51,8 @@ public:
     }
 
     static void CreateLuaBind(sol::state& lua);
+
+    TextMetrics CalculateTextMetrics(const std::string& text);
 
     /*template <class Archive>
     void serialize(Archive& ar){

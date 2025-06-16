@@ -2,7 +2,7 @@
     Name MainPass
     CullFace NONE
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
-    DepthMask False
+    DepthMask True
     DepthTest DISABLE
 #pragma EndPassDef
 

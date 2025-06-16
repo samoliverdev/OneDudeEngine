@@ -130,6 +130,9 @@ public:
     void EndDrawEntityIds();
     void DrawEntityIds(RendererList& commandBuffer);
     int ReadPixeIntFromEntityIdsFramebuffer(int x, int y);
+
+    void BeginUIPass();
+    void EndUIPass();
     
     void BeginDrawToScreen();
     void EndDrawToScreen();

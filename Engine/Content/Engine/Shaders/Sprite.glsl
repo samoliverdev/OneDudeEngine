@@ -1,36 +1,45 @@
-#version 330 core
+#pragma BeginPassDef
+    Name MainPass
+    CullFace NONE
+    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+    DepthMask True
+    DepthTest DISABLE
+#pragma EndPassDef
 
-#pragma CullFace NONE
-#pragma DepthTest LESS
-#pragma Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
-#pragma DepthMask False
+#include Engine/ShaderLibrary/Base.glsl
 
-#if defined(VERTEX)
-layout (location = 0) in vec3 _pos;
-layout (location = 1) in vec2 _texCoord;
-out vec2 texCoord;
+BeginUniform(0, 0, Main)
+    Uniform vec4 color;
+EndUniform()
+Texture2D(0, 1, mainTex, mainSampler)
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
+#if defined(MainPass)
+    #if defined(VERTEX)
+    layout(location = 0) in vec3 _pos;
+    layout(location = 1) in vec2 _texCoord;
+    out vec2 texCoord;
 
-void main() {
-    texCoord = _texCoord;
-    gl_Position = projection * view * model * vec4(_pos, 1.0);
-}
-#endif
+    BeginUniform(2, 0, CamDraw)
+        Uniform mat4 projection;
+        Uniform mat4 view;
+    EndUniform()
 
-#if defined(FRAGMENT)
-in vec2 texCoord;
-out vec4 fragColor;
+    uniform mat4 model;
 
-uniform sampler2D mainTex;
-uniform vec4 color;
+    void main(){
+        texCoord = _texCoord;
+        gl_Position = projection * view * model * vec4(_pos, 1.0);
+    }
+    #endif
 
-void main() {
-    vec4 texColor = texture(mainTex, texCoord);
-    //if(texColor.a < 0.1) discard;
+    #if defined(FRAGMENT)
+    in vec2 texCoord;
+    out vec4 fragColor;
 
-    fragColor = texColor * vec4(color.rgb, 1.0);
-}
+    void main(){
+        vec4 texColor = texture(mainTex, texCoord);
+        //if(texColor.a < 0.1) discard;
+        fragColor = texColor * vec4(color.rgb, 1.0);
+    }
+    #endif
 #endif

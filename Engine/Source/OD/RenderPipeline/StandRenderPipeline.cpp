@@ -718,6 +718,12 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     //for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
 
+    context->BeginUIPass();
+    for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
+        i->OnRender(camera);
+    }
+    context->EndUIPass();
+
     context->EndDrawToScreen();
 }
 
@@ -1027,7 +1033,8 @@ void StandRenderPipeline::Render(){
     shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->directionalshadowQuality];
     shadow.other.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->othershadowQuality];
 
-    
+    cameraRenderer.renderStagePasses = &renderStagePasses;
+
     if(overrideCamera != nullptr){
         Entity mainCamera = GetScene()->GetMainCamera();
         auto targetRenderPath = CameraRenderer::RenderingPath::Forward;

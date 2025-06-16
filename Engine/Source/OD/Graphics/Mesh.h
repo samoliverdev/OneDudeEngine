@@ -20,7 +20,8 @@ enum class MeshDrawMode{
     TRIANGLES = 0,
     LINES,
     POINTS,
-    QUADS
+    QUADS,
+    TRIANGLES_STRIP
 };
 
 class OD_API Mesh: public Asset{

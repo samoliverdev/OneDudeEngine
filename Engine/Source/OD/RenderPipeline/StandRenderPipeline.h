@@ -91,6 +91,20 @@ struct OD_API ShadowSettings{
     Other other{ShadowTextureSize::_2048};
 };
 
+class OD_API IRenderPass{
+public:
+    virtual void OnRender(const Camera& cam){}
+};
+
+enum class RenderStage{
+    UI = 0,
+    Count = 1
+};
+
+struct OD_API RenderStagePasses{
+    std::vector<IRenderPass*> renderPass[(int)RenderStage::Count];
+};
+
 class Shadows{
     friend class Lighting;
 public:
@@ -213,6 +227,7 @@ public:
     };
 
     Camera camera;
+    RenderStagePasses* renderStagePasses;
     RenderContext* context;
     RenderingPath renderingPath;
     
@@ -274,6 +289,7 @@ public:
     int ReadEntityId(int x, int y) override;
 
     inline CameraRenderer& GetCameraRenderer(){ return cameraRenderer; }
+    inline RenderStagePasses& GetRenderStagePasses(){ return renderStagePasses; }
 
 private:
     ShadowSettings shadow;
@@ -286,6 +302,8 @@ private:
 
     Camera* overrideCamera = nullptr;
     Transform overrideCameraTrans;
+
+    RenderStagePasses renderStagePasses;
 };
 
 void StandRenderPipelineModuleInit();
