@@ -69,6 +69,10 @@ void BaseMeshSample::OnInit(){
     meshMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Sandbox/Shaders/test.glsl"));
 
     auto lit = OD::Shader::CreateFromFile("Engine/Shaders/Lit.glsl");
+
+    font = OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
+    Assert(font != nullptr);
+    fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){
@@ -82,23 +86,33 @@ void BaseMeshSample::OnUpdate(float deltaTime){
     }
 }   
 
+#undef DrawText
+
 void BaseMeshSample::OnRender(float deltaTime){
-    OD:: Graphics::Begin();
+    OD::Graphics::Begin();
+
+    OD::Graphics::BeginRenderToScreen({0.5f, 0.1f, 0.1f, 1.0f});
 
     OD::Camera cam = {OD::Matrix4Identity, OD::Matrix4Identity};
     OD::Graphics::SetCamera(cam);
-    OD::Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
 
-    //Graphics::DrawMesh(mesh, *meshMat, Matrix4Identity);
-    OD::Graphics::BeginRenderToScreen();
     OD::Graphics::DrawMesh(mesh, *meshMat, OD::math::translate(OD::Vector3(0.5f, 0, 0)));
     OD::Graphics::DrawMesh(mesh, *meshMat, OD::math::translate(OD::Vector3(-0.5f, 0, 0)));
-    OD::Graphics::EndRenderToScreen();
     
+    cam = {OD::Matrix4Identity, OD::math::ortho(0.0f, (float)OD::Application::ScreenWidth(), 0.0f, (float)OD::Application::ScreenHeight(), -10.0f, 10.0f)};
+    OD::Graphics::SetCamera(cam);
+    OD::Transform tt;
+    tt.LocalPosition(OD::Vector3(25*2, 25*2, 0));
+    tt.LocalScale(OD::Vector3(25*2));
+    OD::Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetLocalModelMatrix());
+    
+    OD::Graphics::EndRenderToScreen();
+
     OD::Graphics::End();
 }
 
 void BaseMeshSample::OnGUI(){
+    OD::ImGuiLayer::SetCleanAll(false);
     static bool show;
     ImGui::ShowDemoWindow(&show);
 }

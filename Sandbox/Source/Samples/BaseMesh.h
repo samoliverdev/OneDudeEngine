@@ -6,7 +6,9 @@ struct BaseMeshSample: OD::Module {
     OD::Mesh mesh;
     //Ref<SubShader> meshShader;
     //Ref<SubShader> fontShader;
-    //Ref<Font> font;
+    
+    OD::Ref<OD::Font> font;
+    OD::Ref<OD::Material> fontMat;
 
     OD::Ref<OD::Material> meshMat;
 

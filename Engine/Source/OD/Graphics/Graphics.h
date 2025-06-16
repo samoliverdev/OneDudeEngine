@@ -77,6 +77,8 @@ public:
 
     static void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix);
 
+    static void DrawText(Font& f, Material& s, std::string text, Matrix4 model);
+
     static void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass = 0);
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);

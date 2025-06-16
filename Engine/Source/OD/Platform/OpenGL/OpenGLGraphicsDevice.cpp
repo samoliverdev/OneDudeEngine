@@ -1403,6 +1403,145 @@ void OpenGLGraphicsDevice::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix
     DrawMesh(*fullScreenQuad, mat, modelMatrix);
 }
 
+void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matrix4 model){
+    const auto& fontGeometry = f.data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+    Ref<Texture2D> fontAtlas = f.fontAtlas;
+
+    s.SetTexture("mainTex", fontAtlas);
+    BindMaterial(s);
+    Assert(lastShader != nullptr);
+    SubShaderSetMatrix4(*lastShader, "model", model);
+
+    #ifdef USE_VAO
+    glBindVertexArray(textQuadVAO);
+    glCheckError();
+    #endif
+
+    double x = 0.0;
+    double fsScale = /*1.0 /*/ (metrics.ascenderY - metrics.descenderY);
+    double y = 0.0;
+
+    const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+    
+    for(size_t i = 0; i < text.size(); i++){
+        char character = text[i];
+        if(character == '\r') continue;
+
+        if(character == '\n'){
+            x = 0;
+            y -= fsScale * metrics.lineHeight + 0; //textParams.LineSpacing;
+            continue;
+        }
+
+        if(character == ' '){
+            float advance = spaceGlyphAdvance;
+            if(i < text.size() - 1){
+                char nextCharacter = text[i + 1];
+                double dAdvance;
+                fontGeometry.getAdvance(dAdvance, character, nextCharacter);
+                advance = (float)dAdvance;
+            }
+
+            x += fsScale * advance + 0; //textParams.Kerning;
+            continue;
+        }
+
+        if(character == '\t'){
+            // NOTE(Yan): is this right?
+            x += 4.0f * (fsScale * spaceGlyphAdvance + 0 /*textParams.Kerning*/);
+            continue;
+        }
+
+        auto glyph = fontGeometry.getGlyph(character);
+        if(!glyph)
+            glyph = fontGeometry.getGlyph('?');
+        if(!glyph)
+            return;
+
+        double al, ab, ar, at;
+        glyph->getQuadAtlasBounds(al, ab, ar, at);
+        glm::vec2 texCoordMin((float)al, (float)ab);
+        glm::vec2 texCoordMax((float)ar, (float)at);
+
+        double pl, pb, pr, pt;
+        glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+        glm::vec2 quadMin((float)pl, (float)pb);
+        glm::vec2 quadMax((float)pr, (float)pt);
+
+        quadMin *= fsScale, quadMax *= fsScale;
+        quadMin += glm::vec2(x, y);
+        quadMax += glm::vec2(x, y);
+
+        float texelWidth = 1.0f / fontAtlas->Width();
+        float texelHeight = 1.0f / fontAtlas->Height();
+        texCoordMin *= glm::vec2(texelWidth, texelHeight);
+        texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+        float vertices[6][5] = {
+            { quadMin.x, quadMax.y, 0, texCoordMin.x, texCoordMax.y },            
+            { quadMin.x, quadMin.y, 0, texCoordMin.x, texCoordMin.y },
+            { quadMax.x, quadMin.y, 0, texCoordMax.x, texCoordMin.y },
+
+            { quadMin.x, quadMax.y, 0, texCoordMin.x, texCoordMax.y },
+            { quadMax.x, quadMin.y, 0, texCoordMax.x, texCoordMin.y },
+            { quadMax.x, quadMax.y, 0, texCoordMax.x, texCoordMax.y }           
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCheckError();
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glCheckError();
+
+        // render here
+        /*s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
+        s_Data.TextVertexBufferPtr->Color = textParams.Color;
+        s_Data.TextVertexBufferPtr->TexCoord = texCoordMin;
+        s_Data.TextVertexBufferPtr->EntityID = entityID;
+        s_Data.TextVertexBufferPtr++;
+
+        s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
+        s_Data.TextVertexBufferPtr->Color = textParams.Color;
+        s_Data.TextVertexBufferPtr->TexCoord = { texCoordMin.x, texCoordMax.y };
+        s_Data.TextVertexBufferPtr->EntityID = entityID;
+        s_Data.TextVertexBufferPtr++;
+
+        s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
+        s_Data.TextVertexBufferPtr->Color = textParams.Color;
+        s_Data.TextVertexBufferPtr->TexCoord = texCoordMax;
+        s_Data.TextVertexBufferPtr->EntityID = entityID;
+        s_Data.TextVertexBufferPtr++;
+
+        s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
+        s_Data.TextVertexBufferPtr->Color = textParams.Color;
+        s_Data.TextVertexBufferPtr->TexCoord = { texCoordMax.x, texCoordMin.y };
+        s_Data.TextVertexBufferPtr->EntityID = entityID;
+        s_Data.TextVertexBufferPtr++;
+
+        s_Data.TextIndexCount += 6;
+        s_Data.Stats.QuadCount++;*/
+
+        if(i < text.size() - 1){
+            double advance = glyph->getAdvance();
+            char nextCharacter = text[i + 1];
+            fontGeometry.getAdvance(advance, character, nextCharacter);
+            x += fsScale * advance + 0; //textParams.Kerning;
+        }
+    }
+
+    #ifdef USE_VAO
+    glBindVertexArray(0);
+    glCheckError();
+    #endif
+}
+
+void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Vector3 pos, float scale){
+    
+}
+
 void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){
     Assert(false && "Deprecated");
 

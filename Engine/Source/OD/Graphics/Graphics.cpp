@@ -37,6 +37,8 @@ void GraphicsModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<Shader>(".glsl", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
     AssetTypesDB::Get().RegisterAssetType<Shader>(".shader", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
 
+    AssetTypesDB::Get().RegisterAssetType<Font>(".ttf", [](const std::string& path){ return AssetManager::Get().LoadAsset<Font>(path); });
+
     LuaBindsDB::Get().RegisterLuaBind<Camera>();
     LuaBindsDB::Get().RegisterLuaBind<Cubemap>();
     LuaBindsDB::Get().RegisterLuaBind<Font>();
@@ -280,6 +282,10 @@ void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color
 }
 void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){ 
     graphicsDevice->DrawWireCube(modelMatrix, color, lineWidth); 
+}
+
+void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model){
+    graphicsDevice->DrawText(f, s, text, model); 
 }
 
 void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){

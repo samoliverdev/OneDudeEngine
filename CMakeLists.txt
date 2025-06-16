@@ -169,6 +169,17 @@ add_subdirectory(Engine/ThirdParty/efsw)
 add_compile_definitions(JPH_DEBUG_RENDERER)
 add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
 
+set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
+set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
+set(MSDF_ATLAS_MSDFGEN_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "" FORCE)
+if(USE_STATIC_MSVC_RUNTIME_LIBRARY)
+    set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "" FORCE)
+else()
+    set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
+endif()
+add_subdirectory(Engine/ThirdParty/msdf-atlas-gen)
+
 if(SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glslang)
     add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
@@ -301,6 +312,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/taskflow/
     Engine/ThirdParty/SPIRV-Reflect/
     Engine/ThirdParty/efsw/include/
+    Engine/ThirdParty/msdf-atlas-gen/msdf-atlas-gen
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
@@ -318,6 +330,7 @@ target_link_libraries(Engine PUBLIC
     Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     Jolt
     efsw
+    msdf-atlas-gen
     #glslang glslang-default-resource-limits
     #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 

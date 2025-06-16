@@ -1,6 +1,9 @@
 #pragma BeginPassDef
     Name MainPass
     CullFace NONE
+    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+    DepthMask False
+    DepthTest DISABLE
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

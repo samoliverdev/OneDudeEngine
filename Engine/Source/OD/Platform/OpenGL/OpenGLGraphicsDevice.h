@@ -48,6 +48,9 @@ public:
 
     virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) override;
 
+    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model) override;
+    virtual void DrawText(Font& f, Material& s, std::string text, Vector3 pos, float scale) override;
+
     virtual void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) override;

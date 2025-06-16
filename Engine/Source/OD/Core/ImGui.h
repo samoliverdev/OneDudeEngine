@@ -189,7 +189,6 @@ namespace ImGui{
         return changed;
     }
 
-
     inline void DrawLayerMask(const char* label, OD::LayerMask& value){
         auto& layerNames = OD::GetGlobalSceneData().layerNames; // Retrieve global layer names
         if (layerNames.empty()) return;
