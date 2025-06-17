@@ -331,11 +331,13 @@ void RenderContext::BeginUIPass(){
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
 
-    auto uiCamera = Camera{
+    /*auto uiCamera = Camera{
         OD::Matrix4Identity, 
         OD::math::ortho(0.0f, (float)cam.width, 0.0f, (float)cam.height, -10.0f, 10.0f)
+        //OD::math::ortho(0.0f, (float)cam.width, (float)cam.height, 0.0f, -10.0f, 10.0f)
     };
-    Graphics::SetCamera(uiCamera);
+    Graphics::SetCamera(uiCamera);*/
+    //Graphics::SetCamera(cam);
     //Graphics::CleanDepthOnly();
 }
 

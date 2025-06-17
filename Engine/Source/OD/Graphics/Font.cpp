@@ -335,7 +335,7 @@ bool Font::LoadFromFile(const std::string& inPath){
     return success;
 }
 
-TextMetrics Font::CalculateTextMetrics(const std::string& text){
+TextMetrics Font::CalculateTextMetrics(const std::string& text, const TextParams& textParams){
     /*
     const auto& fontGeometry = data->fontGeometry;
     const auto& metrics = fontGeometry.getMetrics();
@@ -478,7 +478,7 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text){
         if (character == '\n') {
             maxX = std::max(maxX, x);
             x = 0;
-            y += fsScale * metrics.lineHeight;
+            y += fsScale * metrics.lineHeight + textParams.lineSpacing;
             lineCount++;
             continue;
         }
@@ -491,7 +491,13 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text){
                 fontGeometry.getAdvance(dAdvance, character, nextCharacter);
                 advance = (float)dAdvance;
             }
-            x += fsScale * advance;
+            x += fsScale * advance + textParams.kerning;
+            continue;
+        }
+
+        if(character == '\t'){
+            // NOTE(Yan): is this right?
+            x += 4.0f * (fsScale * spaceAdvance + textParams.kerning);
             continue;
         }
 
@@ -515,7 +521,7 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text){
     maxX = std::max(maxX, x);
     double height = lineCount * fsScale * metrics.lineHeight;
 
-    return { Vector2((float)maxX, (float)height), lineCount };
+    return { Vector2((float)maxX, (float)height), lineCount, metrics.ascenderY, metrics.descenderY };
 }
 
 void Font::CreateLuaBind(sol::state& lua){

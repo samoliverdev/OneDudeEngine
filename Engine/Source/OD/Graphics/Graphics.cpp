@@ -292,12 +292,8 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
     graphicsDevice->DrawWireCube(modelMatrix, color, lineWidth); 
 }
 
-void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model){
-    graphicsDevice->DrawText(f, s, text, model); 
-}
-
-void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY){
-    graphicsDevice->DrawText(f, s, text, model, anchorX, anchorY); 
+void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& params){
+    graphicsDevice->DrawText(f, s, text, model, alignWithTop, params); 
 }
 
 void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){

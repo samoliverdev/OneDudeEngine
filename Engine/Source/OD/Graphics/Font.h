@@ -21,6 +21,13 @@ struct MSDFData{
 struct OD_API TextMetrics {
     Vector2 size;
     int lineCount;
+    double ascenderY;
+    double descenderY;
+};
+
+struct OD_API TextParams{
+    float kerning = 0.0f;
+    float lineSpacing = 0.0f;
 };
 
 class OD_API Font: public Asset{
@@ -52,7 +59,7 @@ public:
 
     static void CreateLuaBind(sol::state& lua);
 
-    TextMetrics CalculateTextMetrics(const std::string& text);
+    TextMetrics CalculateTextMetrics(const std::string& text, const TextParams& params = {});
 
     /*template <class Archive>
     void serialize(Archive& ar){

@@ -19,6 +19,7 @@ class Model;
 class Framebuffer;
 class Font;
 class Material;
+struct TextParams;
 
 struct GraphicsStats{
     int drawCalls;
@@ -79,8 +80,7 @@ public:
 
     static void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix);
 
-    static void DrawText(Font& f, Material& s, std::string text, Matrix4 model);
-    static void DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY);
+    static void DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& params);
 
     static void DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass = 0);
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);

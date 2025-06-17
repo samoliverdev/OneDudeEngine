@@ -23,6 +23,7 @@ class Cubemap;
 class Shader;
 struct GraphicsStats;
 struct PerDrawData;
+struct TextParams;
 
 struct GraphicsDeviceInfo{
     std::string apiName;
@@ -74,9 +75,7 @@ public:
 
     virtual void DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix) = 0;
 
-    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model){}
-    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model, float anchorX, float anchorY){}
-    virtual void DrawText(Font& f, Material& s, std::string text, Vector3 pos, float scale){}
+    virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& params){}
 
     virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip) = 0;
     virtual void EndFramebuffer() = 0;
