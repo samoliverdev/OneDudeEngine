@@ -93,7 +93,7 @@ struct OD_API HideInEditor{
     template <class Archive> void serialize(Archive & ar){}
 };
 
-#define ExperimentalTransformOptimzation
+//#define ExperimentalTransformOptimzation
 
 class OD_API TransformComponent{
     friend struct Scene;
@@ -111,7 +111,7 @@ public:
     inline Vector3 Down(){ return Rotation() * Vector3Down; }
 
     const Matrix4& GlobalModelMatrixReadSafe() const;
-    const Matrix4& GlobalModelMatrix();
+    const Matrix4 GlobalModelMatrix();
     inline Matrix4 GetLocalModelMatrix(){ return transform.GetLocalModelMatrix(); }
 
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.

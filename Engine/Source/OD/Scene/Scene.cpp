@@ -66,10 +66,15 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(){
 }
 
 const Matrix4& TransformComponent::GlobalModelMatrixReadSafe() const{
+    #ifdef ExperimentalTransformOptimzation
     return globalTransform.localModelMatrix;
+    #else
+    Assert(false);
+    return Matrix4Identity;
+    #endif
 }
 
-const Matrix4& TransformComponent::GlobalModelMatrix(){
+const Matrix4 TransformComponent::GlobalModelMatrix(){
     /*Matrix4 result = transform.GetLocalModelMatrix();
     for(TransformComponent* p = registry->try_get<TransformComponent>(parent); p != nullptr; p = registry->try_get<TransformComponent>(p->parent)){
         result = p->GetLocalModelMatrix() * result;
@@ -129,7 +134,12 @@ Vector3 TransformComponent::TransformPoint(Vector3 point){
 //}
 
 const Vector3& TransformComponent::PositionReadSafe() const{
+    #ifdef ExperimentalTransformOptimzation
     return globalTransform.localPosition;
+    #else 
+    Assert(false);
+    return Vector3Zero;
+    #endif
 }
 
 Vector3 TransformComponent::Position(){ 

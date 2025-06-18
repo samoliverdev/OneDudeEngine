@@ -104,7 +104,7 @@ void BaseMeshSample::OnRender(float deltaTime){
     OD::Transform tt;
     tt.LocalPosition(OD::Vector3(25*2, 25*2, 0));
     tt.LocalScale(OD::Vector3(25*2));
-    OD::Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetLocalModelMatrix());
+    OD::Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetLocalModelMatrix(), false, {});
     
     OD::Graphics::EndRenderToScreen();
 

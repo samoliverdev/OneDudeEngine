@@ -119,7 +119,7 @@ namespace PhysicsLayers{
 class ObjectLayerPairFilterImpl : public ObjectLayerPairFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override{
-		//return true;
+		return true;
 
 		switch (inObject1)
 		{
@@ -160,14 +160,14 @@ public:
 	}
 
 	virtual BroadPhaseLayer	GetBroadPhaseLayer(ObjectLayer inLayer) const override{
-		//return BroadPhaseLayers::MOVING;
+		return BroadPhaseLayers::MOVING;
 		JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
 		return mObjectToBroadPhase[inLayer];
 	}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
 	virtual const char* GetBroadPhaseLayerName(BroadPhaseLayer inLayer) const override {
-		//return "MOVING";
+		return "MOVING";
 
 		switch ((BroadPhaseLayer::Type)inLayer)
 		{
@@ -186,7 +186,7 @@ private:
 class ObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override{
-		//return true;
+		return true;
 
 		switch (inLayer1)
 		{
@@ -956,7 +956,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
 		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
 		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
-		part.mObjectLayer = PhysicsLayers::MOVING; //ragdoll.layer;
+		part.mObjectLayer = ragdoll.layer; //PhysicsLayers::MOVING;
 		part.mCollisionGroup = JPH::CollisionGroup(
 			filter,
 			ragdoll.layer,
@@ -1235,7 +1235,6 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
 	//JPH::RayCastResult result;
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
-
 	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
@@ -1279,9 +1278,9 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 
 	MyObjectLayerFilter objectLayerFilter(mask);
 
-	MyObjectLayerFilter _objectLayerFilter({Layers::Layer0 | Layers::Layer1});
+	/*MyObjectLayerFilter _objectLayerFilter({Layers::Layer0 | Layers::Layer1});
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
-	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);
+	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
 	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
 	if(collector.HadHit()){
@@ -1427,7 +1426,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     RefConst<Shape> finalShape = offsetResult.Get();
 
 	BodyCreationSettings settings(
-        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, PhysicsLayers::MOVING //info.layer 
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
     );
 	settings.mUserData = static_cast<uint64>(entity); // safe cast
 	settings.mCollisionGroup = JPH::CollisionGroup(
