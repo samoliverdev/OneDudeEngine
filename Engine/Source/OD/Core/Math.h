@@ -1,6 +1,8 @@
 #pragma once
-#include <math.h>
-#include <float.h>
+//#include <math.h>
+//#include <float.h>
+#include <cmath>
+#include <cfloat>
 
 //#define GLM_FORCE_PURE
 //#define GLM_FORCE_AVX2
