@@ -16,6 +16,7 @@ BeginUniform(0, 0, Main)
 EndUniform()
 Texture2D(0, 1, heightMap, heightMapSampler)
 
+//#define USE_PERDRAW
 uniform vec4 customData;
 
 #if defined(VERTEX) && defined(MainPass)
@@ -28,8 +29,11 @@ uniform vec4 customData;
     uniform vec2 heightmapOffset = vec2(0, 0);*/
 
     void main(){
+        #ifdef USE_PERDRAW
         vec2 _heightmapOffset = vec2(customData.x, customData.y);
-        //_heightmapOffset = heightmapOffset;
+        #else
+        vec2 _heightmapOffset = heightmapOffset;
+        #endif
 
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;

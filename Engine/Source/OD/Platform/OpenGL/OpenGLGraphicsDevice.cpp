@@ -281,9 +281,10 @@ void OpenGLGraphicsDevice::Initialize(){
 
     gismoMaterial = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
 
+    // TODO: Maybe delete this opengl data
     CreateLineVAO(&lineVAO, &lineVBO, 2);
     CreateLineVAO(&lineCommandsVAO, &lineCommandsVBO, MAX_LINES_VERTEX_DRAWCALL*2);
-    CreateWiredCubeVAO(wiredCubeVAO, wiredCubeEBO, wiredCubeVBO);
+    CreateWiredCubeVAO(wiredCubeVAO, wiredCubeEBO, wiredCubeVBO); 
     CreateTextQuadVAO(textQuadVAO, textQuadVBO);
 
     GLint maxLayers;
@@ -1070,6 +1071,15 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
             glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
             glCheckError();
         }
+        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
+        if(index2 != GL_INVALID_INDEX){
+            glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
+            glCheckError(); 
+            glUniformBlockBinding(mat.currentShader->glData.id, index2, mat.currentBufferSlot); // 1);
+            mat.currentBufferSlot += 1;
+            glCheckError(); 
+        }  
         #endif
     }
     lastMat = &mat;
@@ -1088,7 +1098,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
             SubShaderSetMatrix4(*mat.currentShader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
             SubShaderSetMatrix4(*mat.currentShader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
         }
-        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
+        /*unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
         if(index2 != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
@@ -1096,7 +1106,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
             glUniformBlockBinding(mat.currentShader->glData.id, index2, mat.currentBufferSlot); // 1);
             mat.currentBufferSlot += 1;
             glCheckError(); 
-        }       
+        }*/       
         #else
         //SubShaderBind(*mat.currentShader);
         SubShaderSetMatrix4(*mat.currentShader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);

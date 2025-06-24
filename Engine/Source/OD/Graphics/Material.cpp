@@ -425,6 +425,8 @@ void Material::OnGui(){
         toSave = true;
     }*/
 
+    ImGui::LabelText("Id", "%d", id);
+
     Ref<Shader> tempShader = shader;
     std::string s("shader");
     if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != shader){
@@ -497,6 +499,7 @@ void Material::OnGui(){
         }
 
         if(map.type == MaterialMap::Type::Texture){
+            //if(map.texture == nullptr) continue;
             const float widthSize = 60;
             float aspect = 1;
 

@@ -21,8 +21,8 @@
 
 #pragma BeginPassDef
     Name MainPass
-    SupportInstancing true
-    MultiCompile _ SKINNED INSTANCING
+    SupportInstancing false
+    MultiCompile _ SKINNED
     MultiCompile Opaque Blend
     CullFace BACK
     DepthTest LESS
@@ -51,6 +51,7 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;// = 0.5;
 EndUniform()
 
+//#define USE_PERDRAW
 uniform vec4 customData;
 
 Texture2D(0, 6, heightMap, heightMapSampler)
@@ -111,8 +112,11 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     }
 
     void main(){
+        #ifdef USE_PERDRAW
         vec2 _heightmapOffset = vec2(customData.x, customData.y);
-        //_heightmapOffset = heightmapOffset;
+        #else
+        vec2 _heightmapOffset = heightmapOffset;
+        #endif
 
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;
@@ -305,8 +309,11 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     //uniform vec2 heightmapOffset = vec2(0, 0);
 
     void main(){
+        #ifdef USE_PERDRAW
         vec2 _heightmapOffset = vec2(customData.x, customData.y);
-        //_heightmapOffset = heightmapOffset;
+        #else
+        vec2 _heightmapOffset = heightmapOffset;
+        #endif
 
         //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
         vec4 base = texture(mainTex, fsIn.texCoord * heightmapTilling + _heightmapOffset);
