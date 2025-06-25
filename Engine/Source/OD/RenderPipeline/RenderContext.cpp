@@ -53,8 +53,8 @@ RenderContext::RenderContext(Scene* inScene){
         {FramebufferTextureFormat::RGB32F}, // Normal
         {FramebufferTextureFormat::RGBA16F}, // Albedo
         {FramebufferTextureFormat::RGB16F}, // Emission
-        {FramebufferTextureFormat::RGB16F}, // Spec, Metalic, AO
-        {FramebufferTextureFormat::RED_INTEGER} // Object ID
+        {FramebufferTextureFormat::RGB16F}//, // Spec, Metalic, AO
+        //{FramebufferTextureFormat::RED_INTEGER} // Object ID
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE

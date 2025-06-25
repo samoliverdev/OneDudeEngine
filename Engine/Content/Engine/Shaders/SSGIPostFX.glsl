@@ -8,14 +8,11 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
-Texture2D(0, 4, texNoise, texNoiseSampler)
 Texture2D(0, 5, mainTex, mainTexSampler)
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
-Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 9, gEmission, gEmissionSampler)
-Texture2D(0, 10, gOther, gOtherSampler)
-Texture2D(0, 12, gDepth, gDepthSampler)
+Texture2D(0, 11, noise, noiseSampler)
+Texture2D(0, 12, lastIndirect, lastIndirectSampler)
 
 BeginUniform(0, 0, Main)
     Uniform vec2 screenSize;
@@ -59,6 +56,11 @@ EndUniform()
         return mod(52.9829189 * mod(0.06711056 * float(st.x) + 0.00583715 * float(st.y), 1.0), 1.0);
     }
 
+    // Blue noise sampling function
+    float getNoise(vec2 uv, float offset) {
+        return texture(noise, uv * screenSize / 64.0 + vec2(offset, 0.0)).r - 0.5;
+    }
+
     // https://graphics.stanford.edu/%7Eseander/bithacks.html
     /*uint bitCount(uint value) {
         value = value - ((value >> 1u) & 0x55555555u);
@@ -76,6 +78,8 @@ EndUniform()
         return outBitfield | currentBitfield;
     }
 
+    //#define USE_BLUE_NOISE
+
     void main(){
         uint indirect = 0u;
         uint occlusion = 0u;
@@ -87,23 +91,17 @@ EndUniform()
         vec3 position = texture(gPosition, texCoord).rgb; position = (view * vec4(position, 1)).xyz;
         vec3 camera = normalize(-position);
         vec3 normal = normalize(texture(gNormal, texCoord).rgb); normal = normalize(mat3(view) * normal);
-
-        /*if (length(position) < 0.001) { // Skip invalid positions
-            vec3 directLighting = texture(mainTex, texCoord).rgb;
-            fragColor = vec4(directLighting, 1.0);
-            return;
-        }
-
-        if(length(normal) < 0.1){ // Skip invalid normals
-            vec3 directLighting = texture(mainTex, texCoord).rgb;
-            fragColor = vec4(directLighting, 1.0);
-            return;
-        }*/
-
         float sliceRotation = twoPi / (sliceCount - 1.0);
         float sampleScale = (-sampleRadius * projection[0][0]) / position.z;
         float sampleOffset = 0.01;
-        float jitter = randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
+
+        //float jitter = randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
+
+        #ifdef USE_BLUE_NOISE
+            float jitter = getNoise(texCoord, 0.0);
+        #else
+            float jitter = randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
+        #endif
 
         for (float slice = 0.0; slice < sliceCount + 0.5; slice += 1.0) {
             float phi = sliceRotation * (slice + jitter) + pi;
@@ -119,18 +117,23 @@ EndUniform()
             float n = signN * acos(cosN);
 
             for(float currentSample = 0.0; currentSample < sampleCount + 0.5; currentSample += 1.0){
-                float sampleStep = (currentSample + jitter) / sampleCount + sampleOffset;
-                vec2 sampleUV = texCoord - sampleStep * sampleScale * omega * aspect;
+                #ifdef USE_BLUE_NOISE
+                    float sampleJitter = getNoise(texCoord, currentSample * 0.1);
+                    float sampleStep = (currentSample + sampleJitter) / sampleCount + sampleOffset;
+                #else
+                    float sampleStep = (currentSample + jitter) / sampleCount + sampleOffset;
+                #endif
 
-                /*if(sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0){
+                vec2 sampleUV = texCoord - sampleStep * sampleScale * omega * aspect;
+                if(sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0){
                     continue;
-                }*/
+                }
 
                 vec3 samplePosition = texture(gPosition, sampleUV).rgb; samplePosition = (view * vec4(samplePosition, 1)).xyz;
                 vec3 sampleNormal = normalize(texture(gNormal, sampleUV).rgb); sampleNormal = normalize(mat3(view) * sampleNormal);
                 vec3 sampleLight = texture(mainTex, sampleUV).rgb;
                 vec3 sampleDistance = samplePosition - position;
-                float sampleLength = length(sampleDistance);
+                float sampleLength = max(length(sampleDistance), 0.0001); // Avoid division by zero length(sampleDistance);
                 vec3 sampleHorizon = sampleDistance / sampleLength;
 
                 frontBackHorizon.x = dot(sampleHorizon, camera);
@@ -151,10 +154,14 @@ EndUniform()
         visibility /= sliceCount;
         lighting /= sliceCount;
 
+        // Multi-bounce: Add dampened previous-frame indirect lighting
+        vec3 prevLighting = texture(lastIndirect, texCoord).rgb * 0.5; // Dampen by 50%
+        lighting += prevLighting;
+
         vec3 directLighting = texture(mainTex, texCoord).rgb; // Direct lighting
 
-        //fragColor = vec4(lighting, visibility);
-        fragColor = vec4(directLighting + lighting, visibility);
+        fragColor = vec4(lighting, visibility);
+        //fragColor = vec4(directLighting + lighting, visibility);
         //fragColor = vec4(directLighting * visibility, 1);
         //fragColor = vec4(vec3(visibility), 1);
     }

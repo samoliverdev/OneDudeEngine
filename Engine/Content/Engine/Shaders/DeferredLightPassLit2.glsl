@@ -4,33 +4,62 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
-#if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
+BeginUniform(2, 0, CamDraw)
+    Uniform mat4 projection;
+    Uniform mat4 view;
+EndUniform()
 
+#include Engine/ShaderLibrary/UniformsDef.glsl
+#include Engine/ShaderLibrary/TexturesDef.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec3 viewPos;
+EndUniform()
+
+Texture2D(0, 6, gPosition, gPositionSampler)
+Texture2D(0, 7, gNormal, gNormalSampler)
+Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 9, gEmission, gEmissionSampler)
+Texture2D(0, 10, gOther, gOtherSampler)
+
+#if defined(VERTEX) && defined(MainPass)
+    /*layout(location = 0) in vec3 _pos;
+    layout(location = 1) in vec2 _texCoord;
     out vec3 pos;
-    out vec2 texCoord;
+    out vec2 texCoord;*/
+
+    In(0) vec3 vPos;
+    In(1) vec2 vTexCoord;
+    Out(0) vec3 pos;
+    Out(1) vec2 texCoord;
 
     void main() {
-        pos = _pos;
+        /*pos = _pos;
         texCoord = _texCoord;
-        gl_Position = vec4(pos, 1.0);
+        gl_Position = vec4(pos, 1.0);*/
+
+        pos = vPos;
+        #if defined(WebGPU_API)
+        texCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
+        #else
+        texCoord = vTexCoord;
+        #endif
+        OutPosition = vec4(pos, 1.0);
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D gPosition;
+    /*uniform sampler2D gPosition;
     uniform sampler2D gNormal;
     uniform sampler2D gAlbedoSpec;
     uniform sampler2D gEmission;
     uniform sampler2D gOther;
-
-    //in vec3 pos;
-    in vec2 texCoord;
-    out vec4 FragColor;
-
     uniform vec3 viewPos;
-    uniform mat4 view;
+    uniform mat4 view;*/
+
+    In(0) vec3 pos;
+    In(1) vec2 texCoord;
+    Out(0) vec4 FragColor;
 
     #include Engine/ShaderLibrary/Core.glsl
     #include Engine/ShaderLibrary/Common.glsl
@@ -53,21 +82,18 @@
         surface.position = FragPos;
         surface.normal = Normal;
         surface.viewDirection = normalize(viewPos - FragPos);
-        surface.depth = -(view * vec4(FragPos, 1)).z;
+        surface.depth = -(view * vec4(FragPos, 1.0)).z;
         surface.color = Albedo.rgb;
-        surface.alpha = 1;
-        surface.occlusion = AO;
+        surface.alpha = AO;
+        surface.occlusion = 1.0;
         surface.metallic = Metallic;
-        surface.smoothness = 1 - Specular;
+        surface.smoothness = Specular;
 
-        /*BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);
-        color += Emission; //GetEmission(uv);
-        FragColor = vec4(color, surface.alpha);*/
-
+        //FragColor = vec4(Normal, 1);
+        //return;
+        
         vec3 color = GetFinalColor(surface);
-        color += Emission;
+        color += Emission; //GetEmission(uv);
         FragColor = vec4(color, surface.alpha);
     }
 #endif

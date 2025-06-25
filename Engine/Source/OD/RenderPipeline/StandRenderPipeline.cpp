@@ -910,11 +910,11 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     std::vector<PostFX*> out;
 
     for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
+    if(environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
+    if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
-    if(environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
-    if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
     out.push_back(gamaCorrectionPP);
 
     return out;

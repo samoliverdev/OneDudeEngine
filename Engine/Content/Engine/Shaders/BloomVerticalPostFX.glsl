@@ -5,6 +5,8 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
+Texture2D(0, 0, mainTex, mainTexSampler)
+
 #if defined(VERTEX) && defined(MainPass)
 	layout (location = 0) in vec3 _pos;
 	layout (location = 1) in vec2 _texCoord;
@@ -20,8 +22,6 @@
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-	uniform sampler2D mainTex;
-
 	in vec3 pos;
 	in vec2 texCoord;
 
