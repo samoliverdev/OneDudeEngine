@@ -70,6 +70,13 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         }
     }
 
+    if(environment.settings.bloomPostFX != nullptr){
+        if(ImGui::TreeNode("SSAOPostFX")){
+            environment.settings.ssaoPostFX->OnGui();
+            ImGui::TreePop();
+        }
+    }
+
     if(ImGui::TreeNode("CustomPostFX")){
         for(auto& i: environment.settings.customPostPrecessings){
             i->OnGui();

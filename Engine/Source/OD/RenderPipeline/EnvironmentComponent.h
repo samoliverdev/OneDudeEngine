@@ -7,6 +7,7 @@
 #include "ToneMappingPostFX.h"
 #include "ColorGradingPostFX.h"
 #include "BloomPostFX.h"
+#include "SSAOPostFX.h"
 
 namespace OD{
 
@@ -50,6 +51,7 @@ struct OD_API EnvironmentSettings{
     Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
     Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
     Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
+    Ref<SSAOPostFX> ssaoPostFX = CreateRef<SSAOPostFX>();
 
     std::vector<Ref<PostFX>> customPostPrecessings;
     
@@ -66,6 +68,7 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, toneMappingPostFX);
         ArchiveDumpNVP(ar, colorGradingPostFX);
         ArchiveDumpNVP(ar, bloomPostFX);
+        ArchiveDumpNVP(ar, ssaoPostFX);
     }
 
     //bool hasInited = false;
