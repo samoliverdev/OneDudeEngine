@@ -638,6 +638,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         terrain.terrainHeight, 
         terrainMeshWidth / (float)terrain.heightmap->height
     ));
+    #ifdef UseBulletPhysics
     colliderTrans.LocalPosition(
         Vector3(
             terrainMeshWidth / 2.0f,
@@ -645,6 +646,15 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
             -(terrainMeshWidth / 2.0f)
         )
     );
+    #else 
+    colliderTrans.LocalPosition(
+        Vector3(
+            0,
+            0,
+            -terrainMeshWidth
+        )
+    );
+    #endif 
     HeightmapColliderComponent& heightmapCollider = GetScene()->AddComponent<HeightmapColliderComponent>(terrain.collider);
     heightmapCollider.width = terrain.heightmap->width;
     heightmapCollider.length = terrain.heightmap->height;
@@ -819,6 +829,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         terrain.terrainHeight, 
         terrainMeshWidth / (float)terrain.heightmap->height
     ));
+    #ifdef UseBulletPhysics
     colliderTrans.LocalPosition(
         Vector3(
             terrainMeshWidth / 2.0f,
@@ -826,6 +837,15 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             -(terrainMeshWidth / 2.0f)
         )
     );
+    #else 
+    colliderTrans.LocalPosition(
+        Vector3(
+            0,
+            0,
+            -terrainMeshWidth
+        )
+    );
+    #endif 
     }
 }
 

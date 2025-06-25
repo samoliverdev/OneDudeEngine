@@ -373,6 +373,10 @@ private:
     btHeightfieldTerrainShape* shape = nullptr;
     btCollisionObject* body = nullptr;
     #endif
+
+    #if defined(UseJoltPhysics)
+    class PhysicObject* data = nullptr; 
+    #endif
 };
 
 struct OD_API RayResult{
@@ -429,6 +433,7 @@ private:
     void CheckForCollisionEvents();
 
     static void OnRemoveRagdoll(entt::registry& r, entt::entity e);
+    static void OnRemoveHeightmap(entt::registry& r, entt::entity e);
 
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
     void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);

@@ -29,6 +29,7 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
@@ -269,8 +270,17 @@ public:
 class MyDebugRenderer: public DebugRendererSimple {
 public:
 	bool useLineCommand = true;
+	Scene* scene = nullptr;
 
     virtual void DrawLine(JPH::RVec3 from, JPH::RVec3 to, JPH::Color color) override {
+		/*if(scene != nullptr){
+            TransformComponent& cam = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
+            if(math::distance(cam.Position(), FromJolt(from)) > 50) return;
+        }*/
+
+		static int counter = 0;
+		if (++counter % 8 != 0) return; // desenha só 25%
+
 		if(useLineCommand){
 			Graphics::AddDrawLineCommand(
 				Vector3(FromJolt(from)), 
@@ -870,6 +880,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     physicsWorld->tempAllocator = new TempAllocatorImpl(10 * 1024 * 1024);
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 	physicsWorld->renderer = new MyDebugRenderer();
+	physicsWorld->renderer->scene = scene;
 
 	JPH::Ref<MyGroupFilter> groupFilter = new MyGroupFilter();
 	physicsWorld->groupFilter = groupFilter;
@@ -887,6 +898,7 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().connect<&OnRemoveRagdoll>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
+	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().connect<&OnRemoveHeightmap>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 }
 
@@ -897,6 +909,7 @@ void* PhysicsSystem::GetInternlWorld(){
 PhysicsSystem::~PhysicsSystem(){
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
+	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().connect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
 
@@ -1145,6 +1158,65 @@ void PhysicsSystem::PhysicsUpdate(){
 			}
 		}
 	}
+
+	//TODO: Update This, make handle dirty and organaze the code
+	auto heightView = GetScene()->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();
+	for(auto e : heightView){
+		auto& rb = heightView.get<HeightmapColliderComponent>(e);
+		auto& transform = heightView.get<TransformComponent>(e);
+		auto& info = heightView.get<InfoComponent>(e);
+
+		if (rb.data == nullptr){
+			rb.data = new PhysicObject();
+			// Create heightfield shape
+			uint32 sampleCount = rb.width; // width == length, pois é quadrado
+			JPH::Vec3 offset = JPH::Vec3(
+				0, // para centralizar em X
+				0,
+				0 // para centralizar em -Z
+			);
+			JPH::Vec3 scale = ToJolt(transform.Scale());// Aplica escala do Transform
+
+			JPH::HeightFieldShapeSettings heightFieldSettings(
+				rb.heights.data(),   // float* inSamples
+				offset,              // Vec3Arg inOffset
+				scale,               // Vec3Arg inScale
+				sampleCount,         // uint32 inSampleCount
+				nullptr,             // material indices (optional)
+				JPH::PhysicsMaterialList() // default material list
+			);
+
+			// opcional: ajustar block size ou bits por sample para performance
+			heightFieldSettings.mBlockSize = 4;
+			heightFieldSettings.mBitsPerSample = 8;
+			heightFieldSettings.mMinHeightValue = rb.minHeight;
+			heightFieldSettings.mMaxHeightValue = rb.maxHeight;
+
+			JPH::ShapeSettings::ShapeResult shapeResult = heightFieldSettings.Create();
+			if(shapeResult.HasError()){
+				Assert(false);
+				continue;
+			}
+
+			RefConst<Shape> finalShape = shapeResult.Get();
+
+			// Create body
+			JPH::BodyCreationSettings bodySettings(
+				finalShape,
+				ToJolt(transform.Position()),
+				ToJolt(transform.Rotation()),
+				JPH::EMotionType::Static, // Heightfields are usually static
+				info.layer // Your custom collision layer
+			);
+
+			rb.data->bodyID = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+		} else {
+			bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
+            bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+
+			// For scale, you must recreate the shape with new scale (Jolt doesn't support dynamic scaling).
+		}
+	}
 }
 
 void PhysicsSystem::OnDrawGizmos(Camera& cam){
@@ -1339,6 +1411,17 @@ void PhysicsSystem::OnRemoveRagdoll(entt::registry& r, entt::entity e){
 
 	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
 	delete ragdoll.data->ragdoll;
+}
+
+void PhysicsSystem::OnRemoveHeightmap(entt::registry& r, entt::entity e){
+	HeightmapColliderComponent& shape = r.get<HeightmapColliderComponent>(e);
+    if(shape.data == nullptr) return;
+
+	PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    BodyInterface &bodyInterface = physicsSystem->physicsWorld->physicsSystem.GetBodyInterface();
+    bodyInterface.RemoveBody(shape.data->bodyID);
+    bodyInterface.DestroyBody(shape.data->bodyID);
+	delete shape.data;
 }
 
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){

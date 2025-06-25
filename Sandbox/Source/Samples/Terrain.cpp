@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "Ultis/Ultis.h"
 #include "Ultis/FastNoiseLiteCpp.h"
+#include "Physics.h"
 
 Ref<Heightmap> TerrainSample::GenerateHeightmap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset){
     //auto noise = fnlCreateState();
@@ -55,6 +56,7 @@ void TerrainSample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
     Application::Vsync(false);
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
+    SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
 
     Scene* scene = SceneManager::Get().NewScene();
 
@@ -104,30 +106,30 @@ void TerrainSample::OnInit(){
     terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
     terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
 
-    Entity navmesh = scene->AddEntity("Navmesh");
+    /*Entity navmesh = scene->AddEntity("Navmesh");
     auto& nav = scene->AddComponent<NavmeshComponent>(navmesh);
     nav.navmesh = CreateRef<Navmesh>();
-    nav.navmesh->Bake(scene, AABB(Vector3(0), 1000, 1000, 1000), {}); 
+    nav.navmesh->Bake(scene, AABB(Vector3(0), 1000, 1000, 1000), {});*/ 
 
     Application::AddModule<Editor>();
     //scene->Start();
-
-    struct A{
-        void print(){}
-    };
-    
-    struct B{
-        inline void Print(){ a.print(); }
-    private:
-        A a;
-    };
-    B b;
-    b.Print();
 }
 
 void TerrainSample::OnUpdate(float deltaTime){
     if(Input::IsKeyDown(KeyCode::T)) RenderContext::GetSettings().enableWireframe = !RenderContext::GetSettings().enableWireframe;
     if(Input::IsKeyDown(KeyCode::Y)) RenderContext::GetSettings().enableGizmosRuntime = !RenderContext::GetSettings().enableGizmosRuntime;
+
+    Scene* scene = SceneManager::Get().GetActiveScene();
+    if(scene->Running() == false) return;
+
+    if(Input::IsKeyDown(KeyCode::R)){
+        Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
+        TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
+
+        scene->GetComponent<TransformComponent>(e).Position(camTrans.Position() + camTrans.Back() * 2.0f);
+        scene->GetComponent<TransformComponent>(e).Rotation(QuaternionIdentity);
+        scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>()->timeToDestroy = 100000000;
+    }
 }   
 
 void TerrainSample::OnRender(float deltaTime){}
