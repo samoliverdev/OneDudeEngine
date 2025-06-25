@@ -8,6 +8,7 @@
 #include "ColorGradingPostFX.h"
 #include "BloomPostFX.h"
 #include "SSAOPostFX.h"
+#include "SSGIPostFX.h"
 
 namespace OD{
 
@@ -52,6 +53,7 @@ struct OD_API EnvironmentSettings{
     Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
     Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
     Ref<SSAOPostFX> ssaoPostFX = CreateRef<SSAOPostFX>();
+    Ref<SSGIPostFX> ssgiPostFX = CreateRef<SSGIPostFX>();
 
     std::vector<Ref<PostFX>> customPostPrecessings;
     
@@ -69,6 +71,7 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, colorGradingPostFX);
         ArchiveDumpNVP(ar, bloomPostFX);
         ArchiveDumpNVP(ar, ssaoPostFX);
+        ArchiveDumpNVP(ar, ssgiPostFX);
     }
 
     //bool hasInited = false;

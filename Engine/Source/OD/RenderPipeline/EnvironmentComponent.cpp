@@ -70,9 +70,16 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         }
     }
 
-    if(environment.settings.bloomPostFX != nullptr){
+    if(environment.settings.ssaoPostFX != nullptr){
         if(ImGui::TreeNode("SSAOPostFX")){
             environment.settings.ssaoPostFX->OnGui();
+            ImGui::TreePop();
+        }
+    }
+
+    if(environment.settings.ssgiPostFX != nullptr){
+        if(ImGui::TreeNode("SSGIPostFX")){
+            environment.settings.ssgiPostFX->OnGui();
             ImGui::TreePop();
         }
     }

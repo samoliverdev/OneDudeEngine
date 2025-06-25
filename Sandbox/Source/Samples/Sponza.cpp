@@ -51,7 +51,7 @@ void SponzaSample::OnInit(){
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
-    //cam.renderingPath = CameraComponent::RenderingPath::Deferred;
+    cam.renderingPath = CameraComponent::RenderingPath::Deferred;
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(7, 2.5, 0));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-8, 90, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 10;
@@ -67,7 +67,7 @@ void SponzaSample::OnInit(){
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
-    Entity pointLight = scene->AddEntity("Point Light");
+    /*Entity pointLight = scene->AddEntity("Point Light");
     LightComponent& lightComponent2 = scene->AddComponent<LightComponent>(pointLight);
     lightComponent2.color = {1,1,0.8f};
     lightComponent2.type = LightComponent::Type::Point;
@@ -83,7 +83,7 @@ void SponzaSample::OnInit(){
     lightComponent3.intensity = 3;
     lightComponent3.radius = 5;
     lightComponent3.renderShadow = false;
-    scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));
+    scene->GetComponent<TransformComponent>(pointLight2).Position(Vector3(3, 0.02f, 0));*/
 
     Application::AddModule<Editor>();
     //scene->Start();
