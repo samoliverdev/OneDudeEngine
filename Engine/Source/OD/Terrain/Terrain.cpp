@@ -29,6 +29,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
     ImGui::DragFloat("terrainLength", &terrain.terrainLength);
     ImGui::DragFloat("terrainHeight", &terrain.terrainHeight);
     ImGui::DragInt("chunkWidthCount", &terrain.chunkWidthCount);
+    ImGui::DragFloat2("texTilling", &terrain.texTilling.x);
 
     if(ImGui::Button("Rebuild")) terrain.isDirt = true;
 }
@@ -808,7 +809,14 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         meshComponent.material->SetTexture("heightMap", terrain.heightmapTex);
         meshComponent.material->SetFloat("heightScale", terrain.terrainHeight);
         //meshComponent.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
-        //meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
+        //meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);,
+
+        meshComponent.material->SetTexture("splatmap", terrain.splatmap);
+        meshComponent.material->SetTexture("tex0", terrain.layer0);
+        meshComponent.material->SetTexture("tex1", terrain.layer1);
+        meshComponent.material->SetTexture("tex2", terrain.layer2);
+        meshComponent.material->SetTexture("tex3", terrain.layer3);
+        meshComponent.material->SetTexture("tex4", terrain.layer4);
     }
 
     GetScene()->GetComponent<TransformComponent>(terrain.meshsRoot).LocalScale(
@@ -883,6 +891,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
         terrain.mat->SetVector4("color", Vector4(1, 1, 1, 1));
         terrain.mat->SetTexture("heightMap", terrain.heightmapTex);
         terrain.mat->SetVector2("heightmapTilling", Vector2(offset, offset));
+        terrain.mat->SetVector2("texTilling", terrain.texTilling);
         terrain.mat->SetFloat("heightScale", terrain.terrainHeight);
 
         terrain.matShadow = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
@@ -911,6 +920,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
     //terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
     terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
+    terrainMeshRenderer.material->SetVector2("texTilling", terrain.texTilling);
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
     terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);
 

@@ -63,6 +63,8 @@ struct OD_API TerrainComponent{
     float terrainLength = 1000/2;
     float terrainHeight = 500/2;
 
+    Vector2 texTilling = {1, 1};
+
     Ref<Texture2D> splatmap = nullptr;
     Ref<Texture2D> layer0 = nullptr;
     Ref<Texture2D> layer1 = nullptr;
@@ -86,6 +88,7 @@ struct OD_API TerrainComponent{
         ArchiveDumpNVP(ar, terrainWidth);
         ArchiveDumpNVP(ar, terrainLength);
         ArchiveDumpNVP(ar, terrainHeight);
+        ArchiveDumpNVP(ar, texTilling);
     }
 private:
     

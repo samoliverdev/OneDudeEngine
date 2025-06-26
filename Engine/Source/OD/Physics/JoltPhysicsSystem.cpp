@@ -485,8 +485,12 @@ public:
 
 	void UpdateSelected(){
 		selectedBodies.clear();
-		Editor* editor = Application::GetModuleByType<Editor>();
 		Scene* scene = SceneManager::Get().GetActiveScene();
+		if(scene == nullptr) return;
+
+		Editor* editor = Application::GetModuleByType<Editor>();
+		if(editor == nullptr) return;
+		
 		for(auto& e: editor->GetSelectedEntities()){
 			if(scene->HasComponent<RigidbodyComponent>(e) == false) continue;
 

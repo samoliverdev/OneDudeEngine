@@ -41,6 +41,7 @@ BeginUniform(0, 0, Main)
     Uniform vec2 uvOffset;// = vec2(0);
     Uniform vec2 heightmapTilling;// = vec2(1, 1);
     Uniform vec2 heightmapOffset;// = vec2(0, 0);
+    Uniform vec2 texTilling;// = vec2(1, 1);
     Uniform float heightScale;
     Uniform vec4 color;// = vec4(1,1,1,1);
     Uniform float normalStrength;// = 1;
@@ -315,32 +316,35 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         vec2 _heightmapOffset = heightmapOffset;
         #endif
 
+        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
+
+        vec2 baseUV = fsIn.texCoord * texTilling;
+
         //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
-        vec4 base = texture(mainTex, fsIn.texCoord * heightmapTilling + _heightmapOffset);
+        vec4 base = texture(mainTex, baseUV);
         base = base * color;
         //base = color;
 
-        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
         base = mix(
-            texture(tex0, fsIn.texCoord * heightmapTilling + _heightmapOffset),
-            texture(tex1, fsIn.texCoord * heightmapTilling + _heightmapOffset),
+            texture(tex0, baseUV),
+            texture(tex1, baseUV),
             splatmap.r
         );
         base = mix(
             base,
-            texture(tex2, fsIn.texCoord * heightmapTilling + _heightmapOffset),
+            texture(tex2, baseUV),
             splatmap.g
         );
         base = mix(
             base,
-            texture(tex3, fsIn.texCoord * heightmapTilling + _heightmapOffset),
+            texture(tex3, baseUV),
             splatmap.b
         );
-        /*base = mix(
+        base = mix(
             base,
-            texture(tex4, fsIn.texCoord * heightmapTilling + heightmapOffset),
+            texture(tex4, baseUV),
             splatmap.a
-        );*/
+        );
 
         //float height = texture(heightMap, fsIn.texCoord + fsIn.uvOffset_).r * 1;
         //base = vec4(height, height, height, 1);
