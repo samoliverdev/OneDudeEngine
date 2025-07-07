@@ -41,7 +41,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<RectTransformComponet>("RectTransformComponet");
+    SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent");
     SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent");
     SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent");
     SceneManager::Get().RegisterCoreComponent<UITextComponent>("UITextComponent");
@@ -429,7 +429,39 @@ CameraRenderer::CameraRenderer(){
     }
 
     brdfLUT = _brdfLUT; 
-    spriteMesh = Mesh::CenterQuad(false);
+    
+    //spriteMesh = Mesh::CenterQuad(false);
+    spriteMesh = CreateRef<Mesh>();
+    spriteMesh->vertices = {
+        {-0.5f, -0.5f, 0},
+        {-0.5f,  0.5f, 0},
+        { 0.5f, -0.5f, 0},
+        { 0.5f,  0.5f, 0},
+    };
+    /*spriteMesh->vertices = {
+        {0.0f, 0.0f, 0},   // bottom-left
+        {0.0f, 1.0f, 0},   // top-left
+        {1.0f, 0.0f, 0},   // bottom-right
+        {1.0f, 1.0f, 0},   // top-right
+    };*/
+    spriteMesh->uv = {
+        {0, 0, 0},
+        {0, 1, 0},
+        {1, 0, 0},
+        {1, 1, 0},
+    };
+    spriteMesh->drawMode = MeshDrawMode::TRIANGLES_STRIP;
+    spriteMesh->Submit();
+
+    spriteMaterial = CreateRef<Material>();
+    spriteMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Sprite.glsl"));
+
+    spriteMaterial->SetVector4("color", Vector4(1));
+    spriteMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
+
+    font = OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
+    fontMaterial = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
+
     gamaCorrectionPP = new GamaCorrectionPP();
 
     cubeMesh = CreateRef<Mesh>();
@@ -719,6 +751,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     //RenderUI();
 
     context->BeginUIPass();
+    RenderUI();
     for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
         i->OnRender(camera);
     }
@@ -751,8 +784,94 @@ void CameraRenderer::RenderSprites(){
     }*/
 }
 
+void RenderUIRecursive(
+    Scene& scene, Entity entity, const Ref<Mesh>& mesh, 
+    const Ref<Material>& defaultMaterial, 
+    const Ref<Font>& defaultFont,
+    const Ref<Material>& defaultFontMaterial
+){
+    if (!scene.HasComponent<RectTransformComponent>(entity))
+        return;
+
+    auto& rect = scene.GetComponent<RectTransformComponent>(entity);
+
+    Matrix4 model = math::translate(Vector3(rect.finalPosition, 0.0f)) *
+                    math::scale(Vector3(rect.finalSize, 1.0f));
+
+    if (scene.HasComponent<UIImageComponent>(entity)) {
+        auto& img = scene.GetComponent<UIImageComponent>(entity);
+        Ref<Material> mat = img.material ? img.material : defaultMaterial;
+        mat->SetVector4("color", img.color.Linear());
+
+        Graphics::DrawMesh(*mesh, *mat, model);
+    }
+
+    if(scene.HasComponent<UITextComponent>(entity)){
+        auto& tex = scene.GetComponent<UITextComponent>(entity);
+        /*// Get relative text size (in font normalized space) and convert to pixels by * size
+        Vector2 textSize = font->CalculateTextMetrics(text).size * size;
+
+        // Apply anchor
+        p.x -= textSize.x * anchorX;
+        p.y += textSize.y * anchorY;
+
+        auto metrics = font->CalculateTextMetrics(text);
+        Vector2 textSize = metrics.size * size;
+
+        // Apply anchor
+        p.x -= textSize.x * anchorX;
+
+        // Fix Y: Text metrics size includes ascender and descender, 
+        // but the draw baseline is aligned to ascender by default
+        float baseline = metrics.ascenderY * size;
+        p.y -= baseline; // Shift text baseline to top (like panel)
+
+        // Apply anchorY from top
+        p.y -= textSize.y * anchorY;
+
+        // Build model matrix with translation and scale (uniform scale = font height in pixels)
+        Matrix4 model = math::translate(Vector3(p, 0.0f)) * math::scale(Vector3(size));*/
+
+        Graphics::DrawText(*defaultFont, *defaultFontMaterial, tex.text, model, true, {});
+    }
+
+    // Renderiza filhos recursivamente
+    auto& transform = scene.GetComponent<TransformComponent>(entity);
+    for (Entity child : transform.Children()) {
+        RenderUIRecursive(scene, child, mesh, defaultMaterial, defaultFont, defaultFontMaterial);
+    }
+}
+
 //Fixme: Shadow Bug
 void CameraRenderer::RenderUI(){
+    auto uiCamera = Camera{
+        OD::Matrix4Identity, 
+        OD::math::ortho(0.0f, (float)camera.width, 0.0f, (float)camera.height, -10.0f, 10.0f)
+    };
+    uiCamera.width = camera.width;
+    uiCamera.height = camera.height;
+    Graphics::SetCamera(uiCamera);
+
+    RecalculateUI(*context->GetScene(), uiCamera);
+
+    /*auto view = context->GetScene()->GetRegistry().view<RectTransformComponent, UIImageComponent, TransformComponent>();
+    for(auto entity : view){
+        const auto& ui = context->GetScene()->GetComponent<RectTransformComponent>(entity);
+        auto& uiImage = context->GetScene()->GetComponent<UIImageComponent>(entity);
+
+        Matrix4 model = math::translate(Vector3(ui.finalPosition, 0)) * math::scale(Vector3(ui.finalSize, 1));
+        spriteMaterial->SetVector4("color", uiImage.color.Linear());
+        Graphics::DrawMesh(*spriteMesh, *spriteMaterial, model);
+    }*/
+
+    auto canvasView = context->GetScene()->GetRegistry().view<CanvasComponent, TransformComponent>();
+    for (auto canvasEntity : canvasView) {
+        auto& transform = context->GetScene()->GetComponent<TransformComponent>(canvasEntity);
+        for (Entity child : transform.Children()) {
+            RenderUIRecursive(*context->GetScene(), child, spriteMesh, spriteMaterial, font, fontMaterial);
+        }
+    }
+
     /*
     Graphics::SetBlend(true);
     Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);

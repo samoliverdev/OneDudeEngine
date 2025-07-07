@@ -256,8 +256,13 @@ private:
 
     Ref<Material> cubemapSkyMaterial = nullptr;
     Ref<Texture2D> brdfLUT = nullptr;
-    Ref<Mesh> spriteMesh = nullptr;
     Ref<Mesh> cubeMesh = nullptr;
+
+    Ref<Mesh> spriteMesh = nullptr;
+    Ref<Material> spriteMaterial = nullptr;
+
+    Ref<Font> font = nullptr;
+    Ref<Material> fontMaterial = nullptr;
 
     GamaCorrectionPP* gamaCorrectionPP = nullptr;
 

@@ -2,73 +2,108 @@
 #include "OD/Defines.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Scene/Scene.h"
+#include "OD/Graphics/Camera.h"
+#include "OD/Core/Color.h"
 
 namespace OD{
 
+class Material;
+class Texture2D;
+class Font;
+
 struct OD_API CanvasComponent{
-    enum class ScalerMode{
-        ConstatPixelSize,
+    enum class ScaleMode {
+        ConstantPixelSize,
         ScaleWithScreenSize
     };
-    enum class ScreenMatchMode{
-        //MatchWidthOrHeight
+    enum class ScreenMatchMode {
+        MatchWidthOrHeight,
         MatchWidth,
         MatchHeight,
         Expand
     };
 
-    ScalerMode scalerMode;
-    ScreenMatchMode screenMatchMode;
+    Vector2 referenceResolution = {1920, 1080};
+    ScaleMode scaleMode = ScaleMode::ScaleWithScreenSize;
+    ScreenMatchMode screenMatchMode = ScreenMatchMode::MatchWidthOrHeight;
+    float matchValue = 0.5f;
+    float scaleFactor = 1.0f;
 
-    float scale = 1;
-    Vector2 size = {1280, 720};
+    inline void CalculateCanvasScale(float width, float height) {
+        if (scaleMode == ScaleMode::ScaleWithScreenSize) {
+            float scaleX = width / referenceResolution.x;
+            float scaleY = height / referenceResolution.y;
 
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDump(ar, CEREAL_NVP(scalerMode));
-        ArchiveDump(ar, CEREAL_NVP(screenMatchMode));
-        ArchiveDump(ar, CEREAL_NVP(scale));
-        ArchiveDump(ar, CEREAL_NVP(size));
+            switch (screenMatchMode) {
+                case ScreenMatchMode::MatchWidthOrHeight: {
+                    float logX = std::log2(scaleX);
+                    float logY = std::log2(scaleY);
+                    float logInterp = logX * (1.0f - matchValue) + logY * matchValue;
+                    scaleFactor = std::pow(2.0f, logInterp);
+                    break;
+                }
+                case ScreenMatchMode::MatchWidth:
+                    scaleFactor = scaleX;
+                    break;
+                case ScreenMatchMode::MatchHeight:
+                    scaleFactor = scaleY;
+                    break;
+                case ScreenMatchMode::Expand:
+                    scaleFactor = std::max(scaleX, scaleY);
+                    break;
+            }
+        } else {
+            scaleFactor = 1.0f;
+        }
     }
 
-    inline Vector2 GetResulutionScale(float width, float height){
-        if(scalerMode == ScalerMode::ConstatPixelSize){
-            return {scale, scale};
-        }
-        if(scalerMode == ScalerMode::ScaleWithScreenSize && screenMatchMode == ScreenMatchMode::MatchWidth){
-            Vector2 resulutionOffset = {width/size.x, height/size.y};
-            Vector2 resulutionScale = {resulutionOffset.x/resulutionOffset.y, resulutionOffset.x/resulutionOffset.y};
-            return resulutionScale;
-        }
-        if(scalerMode == ScalerMode::ScaleWithScreenSize && screenMatchMode == ScreenMatchMode::MatchHeight){
-            Vector2 resulutionOffset = {width/size.x, height/size.y};
-            Vector2 resulutionScale = {resulutionOffset.y/resulutionOffset.x, resulutionOffset.y/resulutionOffset.x};
-            return resulutionScale;
-        }
-        if(scalerMode == ScalerMode::ScaleWithScreenSize && screenMatchMode == ScreenMatchMode::Expand){
-            Vector2 resulutionOffset = {width/size.x, height/size.y};
-            Vector2 resulutionScale = {resulutionOffset.x, resulutionOffset.y};
-            return resulutionScale;
-        }
-
-        return {1, 1};
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ArchiveDump(ar, CEREAL_NVP(referenceResolution));
+        ArchiveDump(ar, CEREAL_NVP(scaleMode));
+        ArchiveDump(ar, CEREAL_NVP(screenMatchMode));
+        ArchiveDump(ar, CEREAL_NVP(matchValue));
     }
 };
 
-struct OD_API RectTransformComponet{
-    Vector2 pos = {0, 0};
+void RecalculateUI(Scene& scene, Camera& camera);
 
-    Vector2 anchors = {0, 0};
-    Vector2 size = {100, 100};
+struct OD_API RectTransformComponent{
+     Vector2 anchorMin = {0.0f, 0.0f};
+    Vector2 anchorMax = {1.0f, 1.0f};
+    Vector2 pivot = {0.5f, 0.5f};
+    Vector2 offsetMin = {0.0f, 0.0f};
+    Vector2 offsetMax = {0.0f, 0.0f};
+    Vector2 finalPosition;
+    Vector2 finalSize;
 
-    Entity canvasRoot;
+    void SetRect(Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size) {
+        anchorMin = anchor;
+        anchorMax = anchor;
+        this->pivot = pivot;
+        offsetMin = position - size * pivot;
+        offsetMax = offsetMin + size;
+    }
+
+    void SetRectStretch(Vector2 anchorMin_, Vector2 anchorMax_, Vector2 offsetMin_, Vector2 offsetMax_, Vector2 pivot_ = {0.5f, 0.5f}) {
+        anchorMin = anchorMin_;
+        anchorMax = anchorMax_;
+        offsetMin = offsetMin_;
+        offsetMax = offsetMax_;
+        pivot = pivot_;
+    }
 
     template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDump(ar, CEREAL_NVP(pos));
-        ArchiveDump(ar, CEREAL_NVP(size));
-        ArchiveDump(ar, CEREAL_NVP(anchors));
+    void serialize(Archive& ar) {
+        ArchiveDumpNVP(ar, anchorMin);
+        ArchiveDumpNVP(ar, anchorMax);
+        ArchiveDumpNVP(ar, pivot);
+        ArchiveDumpNVP(ar, offsetMin);
+        ArchiveDumpNVP(ar, offsetMax);
     }
+
+    static void OnGui(Entity& e, Scene& scene);
 };
 
 struct OD_API UIImageComponent{

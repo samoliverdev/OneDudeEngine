@@ -170,8 +170,8 @@ void ECSSample::OnInit(){
     /*audioSource.clip = AssetManager::Get().LoadAsset<AudioClip>("res/Game/Sounds/2ne1_2.mp3");
     audioSource.Play();*/
 
-    //Application::AddModule<Editor>();
-    scene.Start();
+    Application::AddModule<Editor>();
+    //scene.Start();
 }
 
 void ECSSample::OnUpdate(float deltaTime){

@@ -198,6 +198,37 @@ void PhysicsSample::OnInit(){
         //scene->GetComponent<RigidbodyComponent>(other).ApplyImpulse(Vector3Up * 25.0f);
     });*/
 
+    Entity canvas = scene->AddEntity("Canvas");
+    auto& canvasComp = scene->AddComponent<CanvasComponent>(canvas);
+    canvasComp.scaleMode = CanvasComponent::ScaleMode::ScaleWithScreenSize;
+    canvasComp.screenMatchMode = CanvasComponent::ScreenMatchMode::MatchWidthOrHeight;
+    canvasComp.matchValue = 0.5f;
+    scene->AddComponent<RectTransformComponent>(canvas).SetRectStretch(
+        {0.0f, 0.0f}, // anchorMin
+        {1.0f, 1.0f}, // anchorMax
+        {0.0f, 0.0f}, // offsetMin
+        {0.0f, 0.0f}, // offsetMax
+        {0.0f, 0.0f}  // pivot
+    );
+
+    // Create panel
+    Entity panel = scene->AddEntity("RootPanel");
+    auto& panelRect = scene->AddComponent<RectTransformComponent>(panel);
+    scene->AddComponent<UIImageComponent>(panel);
+    panelRect.SetRect({1.0f, 0.5f}, {0.5f, 0.5f}, {-150, 0}, {200, 100});
+
+    Entity button = scene->AddEntity("Button1");
+    scene->AddComponent<RectTransformComponent>(button).SetRect({0.5f, 1.0f}, {0.5f, 0.5f}, {0, 0}, {100, 50});
+    scene->AddComponent<UIImageComponent>(button).color = {1, 0.92, 0.016, 1};
+
+    Entity text = scene->AddEntity("Text");
+    scene->AddComponent<RectTransformComponent>(text).SetRect({0.0f, 1.0f}, {0.5f, 1.0f}, {0, 0}, {100, 50});
+    scene->AddComponent<UITextComponent>(text).text = "Test";
+
+    scene->SetParent(canvas, panel);
+    scene->SetParent(panel, button);
+    scene->SetParent(button, text);
+
     Entity luaScript = scene->AddEntity("LuaScript");
     LuaScriptComponent& _luaScript = scene->AddComponent<LuaScriptComponent>(luaScript);
     _luaScript.scriptPath = "Sandbox/LuaScripts/Test.lua";
