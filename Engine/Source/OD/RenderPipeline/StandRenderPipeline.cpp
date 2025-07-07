@@ -808,31 +808,75 @@ void RenderUIRecursive(
 
     if(scene.HasComponent<UITextComponent>(entity)){
         auto& tex = scene.GetComponent<UITextComponent>(entity);
-        /*// Get relative text size (in font normalized space) and convert to pixels by * size
-        Vector2 textSize = font->CalculateTextMetrics(text).size * size;
+        
+        //Graphics::DrawText(*defaultFont, *defaultFontMaterial, tex.text, model, true, {});
 
-        // Apply anchor
-        p.x -= textSize.x * anchorX;
-        p.y += textSize.y * anchorY;
+        /*Ref<Font> font = tex.font ? tex.font : defaultFont;
+        Ref<Material> mat = tex.material ? tex.material : defaultFontMaterial;
 
-        auto metrics = font->CalculateTextMetrics(text);
-        Vector2 textSize = metrics.size * size;
+        Vector2 pivotOffset = rect.finalSize * rect.pivot; // Offset to align text center with finalPosition
+        Vector2 textPos = rect.finalPosition - pivotOffset;
 
-        // Apply anchor
-        p.x -= textSize.x * anchorX;
+        // Build model matrix for text
+        Matrix4 textModel = math::translate(Vector3(textPos, 0.0f)) *
+                            math::scale(Vector3(rect.finalSize, 1.0f)); // Same scale as sprite
 
-        // Fix Y: Text metrics size includes ascender and descender, 
-        // but the draw baseline is aligned to ascender by default
-        float baseline = metrics.ascenderY * size;
-        p.y -= baseline; // Shift text baseline to top (like panel)
+        // Set material properties
+        mat->SetVector4("color", tex.color.Linear());
 
-        // Apply anchorY from top
-        p.y -= textSize.y * anchorY;
+        // Draw text
+        Graphics::DrawText(*font, *mat, tex.text, textModel, true, {});*/
 
-        // Build model matrix with translation and scale (uniform scale = font height in pixels)
-        Matrix4 model = math::translate(Vector3(p, 0.0f)) * math::scale(Vector3(size));*/
+        /*Ref<Font> font = tex.font ? tex.font : defaultFont;
+        Ref<Material> mat = tex.material ? tex.material : defaultFontMaterial;
+        // Calculate text size in pixels (using tex.scale for size)
+        Vector2 textSize = font->CalculateTextMetrics(tex.text).size * tex.scale;
 
-        Graphics::DrawText(*defaultFont, *defaultFontMaterial, tex.text, model, true, {});
+        // Adjust for text mesh's pivot (center at {0.5, -0.5} in mesh space)
+        // Use unscaled text metrics to compute pivot offset
+        Vector2 unscaledTextSize = font->CalculateTextMetrics(tex.text).size;
+        //Vector2 textMeshCenter = {0.5f, -0.5f}; // Text mesh pivot point
+        Vector2 pivotOffset = unscaledTextSize * (rect.pivot) * tex.scale;
+        Vector2 textPos = rect.finalPosition - pivotOffset;
+        //textPos = rect.finalPosition;
+
+        // Build model matrix for text
+        Matrix4 textModel = math::translate(Vector3(textPos, 0.0f)) *
+                            math::scale(Vector3(tex.scale)); // Scale by tex.scale only
+
+        Graphics::DrawText(*font, *mat, tex.text, textModel, true, {});*/
+
+        float canvasScale = 1.0f;
+        CanvasComponent* canvas = scene.TryGetComponentInParent<CanvasComponent>(entity);
+        if(canvas != nullptr){
+            canvasScale = canvas->scaleFactor;
+        }
+
+        bool alignWithTop = true;
+    
+        Ref<Font> font = tex.font ? tex.font : defaultFont;
+        Ref<Material> mat = tex.material ? tex.material : defaultFontMaterial;
+
+        // Calculate text size in pixels, including canvas scale
+        Vector2 unscaledTextSize = font->CalculateTextMetrics(tex.text).size;
+        Vector2 textSize = unscaledTextSize * tex.scale * canvasScale;
+
+        // Adjust for text mesh's pivot based on alignWithTop
+        Vector2 textMeshCenter = alignWithTop ? Vector2{0.5f, -0.5f} : Vector2{0.5f, 0.5f};
+
+        // Compute pivot offset to align text center with rect.finalPosition
+        Vector2 pivotOffset = (textMeshCenter) * textSize;// Vector2 pivotOffset = (rect.pivot - textMeshCenter) * textSize;
+        Vector2 textPos = rect.finalPosition - pivotOffset;
+
+        // Build model matrix for text
+        Matrix4 textModel = math::translate(Vector3(textPos, 0.0f)) *
+                            math::scale(Vector3(tex.scale * canvasScale)); // Scale by tex.scale and canvasScale
+
+        // Set material properties
+        mat->SetVector4("color", tex.color.Linear());
+
+        // Draw text
+        Graphics::DrawText(*font, *mat, tex.text, textModel, alignWithTop, {});
     }
 
     // Renderiza filhos recursivamente

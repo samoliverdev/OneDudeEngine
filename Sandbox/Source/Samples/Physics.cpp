@@ -222,8 +222,10 @@ void PhysicsSample::OnInit(){
     scene->AddComponent<UIImageComponent>(button).color = {1, 0.92, 0.016, 1};
 
     Entity text = scene->AddEntity("Text");
-    scene->AddComponent<RectTransformComponent>(text).SetRect({0.0f, 1.0f}, {0.5f, 1.0f}, {0, 0}, {100, 50});
-    scene->AddComponent<UITextComponent>(text).text = "Test";
+    scene->AddComponent<RectTransformComponent>(text).SetRect({0.5f, 0.5f}, {0.5f, 0.5f}, {0, 0}, {100, 50});
+    auto& uiTex = scene->AddComponent<UITextComponent>(text);
+    uiTex.text = "Test";
+    uiTex.scale = 60;
 
     scene->SetParent(canvas, panel);
     scene->SetParent(panel, button);

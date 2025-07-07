@@ -261,7 +261,7 @@ void RectTransformComponent::OnGui(Entity& e, Scene& scene) {
 
         if (changed && oldPivot != rect.pivot && isFixed) {
             Vector2 size = rect.offsetMax - rect.offsetMin;
-            Vector2 pos = rect.offsetMin + size * oldPivot;
+            Vector2 pos = rect.offsetMin + size * rect.pivot;//oldPivot;
             rect.offsetMin = pos - size * rect.pivot;
             rect.offsetMax = rect.offsetMin + size;
         }
