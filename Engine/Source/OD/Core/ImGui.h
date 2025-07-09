@@ -6,6 +6,7 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Platform/Platform.h"
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 #include <filesystem>
 #include <IconFontCppHeaders/IconsFontAwesome5.h>
 #include <magic_enum/magic_enum.hpp>
@@ -257,7 +258,85 @@ namespace ImGui{
             ImGui::EndPopup();
         }
     }
+
+    constexpr ImGuiID GlobalTableID = (ImGuiID)23443434;
+
+    /*inline void BeginGlobalTable(const char* name){
+        ImGui::BeginTableEx(
+            name, ImGui::GlobalTableID, 2,
+            ImGuiTableFlags_NoSavedSettings |
+            ImGuiTableFlags_Resizable |                    // Permite redimensionar colunas manualmente
+            //ImGuiTableFlags_SizingStretchSame |            // Faz com que as colunas preencham o espaço igualmente
+            ImGuiTableFlags_SizingStretchProp |
+            ImGuiTableFlags_NoPadOuterX | 
+            ImGuiTableFlags_BordersInnerV
+        );
+        ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    }
+
+    inline void EndGlobalTable(){
+        ImGui::EndTable();
+    }
+
+    template<typename Func>
+    void GlobalTableRow(const char* label, const char* id, Func&& renderControl) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text(label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-1);
+        renderControl(id);
+        ImGui::PopItemWidth();
+    }
+
+    template<typename ImGuiFunc, typename... Args>
+    void GlobalTableRow2(const char* label, const char* id, ImGuiFunc imguiFunc, Args&&... args) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-1);
+        imguiFunc(id, std::forward<Args>(args)...);
+        ImGui::PopItemWidth();
+    }
+
+    template<typename Func, typename... Args>
+    void GlobalTableRow3(const char* label, Func imguiFunc, Args&&... args) {
+        char id[64];
+        snprintf(id, sizeof(id), "##%s", label);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-1);
+
+        imguiFunc(id, std::forward<Args>(args)...);  // Call the ImGui function
+
+        ImGui::PopItemWidth();
+    }*/
 }
+
+#define IMGUI_BeginGlobalTable(name) \
+    ImGui::BeginTableEx(name, ImGui::GlobalTableID, 2,ImGuiTableFlags_NoSavedSettings |ImGuiTableFlags_Resizable |ImGuiTableFlags_SizingStretchProp |ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_BordersInnerV); \
+    ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthStretch, 1.0f); \
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+
+#define IMGUI_EndGlobalTable() \
+    ImGui::EndTable();
+
+#define IMGUI_GlobalTableRow(label, func) \
+    ImGui::TableNextRow();             \
+    ImGui::TableSetColumnIndex(0);     \
+    ImGui::TextUnformatted(label);     \
+    ImGui::TableSetColumnIndex(1);     \
+    ImGui::PushItemWidth(-1);          \
+    func;                              \
+    ImGui::PopItemWidth();
+
+//#define OD_GlobalTableRow(label, func, code) ImGui::TableNextRow(); ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted(label); ImGui::TableSetColumnIndex(1); ImGui::PushItemWidth(-1); if(func) { code } ImGui::PopItemWidth();
+
 
 namespace OD{
 

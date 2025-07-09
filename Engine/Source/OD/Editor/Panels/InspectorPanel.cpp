@@ -310,7 +310,7 @@ void InspectorPanel::DrawComponents(Entity entity){
             ) {
             
             // Setup columns
-            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, labelWidth);
+            ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, labelWidth);
             ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
             // Helper lambda to draw a row

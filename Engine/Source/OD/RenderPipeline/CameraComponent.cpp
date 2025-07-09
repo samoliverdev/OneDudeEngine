@@ -63,8 +63,8 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DragFloat("nearClipPlane", &cam.nearClipPlane);
     ImGui::DragFloat("farClipPlane", &cam.farClipPlane);*/
 
-    ImGui::BeginTableEx(
-        "CameraProperties", (ImGuiID)23443434, 2,
+    /*ImGui::BeginTableEx(
+        "CameraProperties", ImGui::GlobalTableID, 2,
         ImGuiTableFlags_NoSavedSettings |
         ImGuiTableFlags_Resizable |                    // Permite redimensionar colunas manualmente
         //ImGuiTableFlags_SizingStretchSame |            // Faz com que as colunas preencham o espaço igualmente
@@ -114,7 +114,26 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
         ImGui::DragFloat(id, &cam.farClipPlane);
     });
 
-    ImGui::EndTable();
+    ImGui::EndTable();*/
+
+    IMGUI_BeginGlobalTable("CameraProperties");
+
+    IMGUI_GlobalTableRow("projection", ImGui::DrawEnumCombo<CameraComponent::Type>("##projection", &cam.type));
+    IMGUI_GlobalTableRow("renderingPath", ImGui::DrawEnumCombo<CameraComponent::RenderingPath>("##renderingPath", &cam.renderingPath));
+    if(cam.type == CameraComponent::Type::Orthographic){
+        IMGUI_GlobalTableRow("size", ImGui::DragFloat("##size", &cam.orthographicSize));
+    }
+    if(cam.type == CameraComponent::Type::Perspective){
+        IMGUI_GlobalTableRow("fieldOfView", ImGui::DragFloat("##fieldOfView", &cam.fieldOfView));
+    }
+    IMGUI_GlobalTableRow("nearClipPlane", ImGui::DragFloat("##nearClipPlane", &cam.nearClipPlane));
+    IMGUI_GlobalTableRow("farClipPlane", 
+        {
+            ImGui::DragFloat("##farClipPlane", &cam.farClipPlane);
+        }
+    );
+
+    IMGUI_EndGlobalTable();
 }
 
 void CameraComponent::CreateLuaBind(sol::state& lua){

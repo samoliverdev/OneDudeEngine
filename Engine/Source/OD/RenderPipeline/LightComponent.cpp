@@ -155,7 +155,7 @@ void LightComponent::OnGui(Entity& e, Scene& scene){
     */
 
     ImGui::BeginTableEx(
-        "CameraProperties", (ImGuiID)23443434, 2,
+        "CameraProperties", ImGui::GlobalTableID, 2,
         ImGuiTableFlags_NoSavedSettings |
         ImGuiTableFlags_Resizable |                    // Permite redimensionar colunas manualmente
         //ImGuiTableFlags_SizingStretchSame |            // Faz com que as colunas preencham o espaço igualmente
