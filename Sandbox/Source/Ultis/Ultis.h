@@ -1,9 +1,13 @@
 #pragma once
-
-#include <OD/OD.h>
+#include <OD/Scene/Scripts.h>
+#include <OD/Platform/Platform.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string>
+
+namespace OD{
+   class Material;
+}
 
 using namespace OD;
 

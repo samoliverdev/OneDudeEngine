@@ -2,6 +2,17 @@
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
 #include "Ultis/FastNoiseLiteCpp.h"
+#include <OD/Terrain/Terrain.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/RenderContext.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/Core/Application.h>
+#include <OD/Core/Input.h>
+#include <OD/Core/Instrumentor.h>
+#include <OD/Editor/Editor.h>
 
 #undef max
 #undef min

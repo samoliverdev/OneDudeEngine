@@ -1,5 +1,13 @@
 #include "BaseMesh.h"
 #include "ECSTest.h"
+#include <OD/Graphics/Font.h>
+#include <OD/Graphics/Material.h>
+#include <OD/Graphics/Graphics.h>
+#include <OD/Scene/Scene.h>
+#include <OD/Core/Input.h>
+#include <OD/Core/Application.h>
+#include <OD/Core/ImGui.h>
+#include <OD/RenderPipeline/MeshRendererComponent.h>
 
 void BaseMeshSample::OnInit(){
     using CharacterType = OD::GroupOfComps<OD::TransformComponent, OD::MeshRendererComponent>;

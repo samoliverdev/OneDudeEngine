@@ -1,5 +1,6 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+#include <OD/Scene/Scene.h>
 #include "Ultis/CameraMovement.h"
 #include <future>
 #include <soloud.h>

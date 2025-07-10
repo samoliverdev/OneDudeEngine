@@ -41,8 +41,8 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent");
     SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent");
+    SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent");
     SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent");
     SceneManager::Get().RegisterCoreComponent<UITextComponent>("UITextComponent");
     SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent");
@@ -868,14 +868,9 @@ void RenderUIRecursive(
         Vector2 pivotOffset = (textMeshCenter) * textSize;// Vector2 pivotOffset = (rect.pivot - textMeshCenter) * textSize;
         Vector2 textPos = rect.finalPosition - pivotOffset;
 
-        // Build model matrix for text
-        Matrix4 textModel = math::translate(Vector3(textPos, 0.0f)) *
-                            math::scale(Vector3(tex.scale * canvasScale)); // Scale by tex.scale and canvasScale
+        Matrix4 textModel = math::translate(Vector3(textPos, 0.0f)) * math::scale(Vector3(tex.scale * canvasScale));
 
-        // Set material properties
         mat->SetVector4("color", tex.color.Linear());
-
-        // Draw text
         Graphics::DrawText(*font, *mat, tex.text, textModel, alignWithTop, {});
     }
 

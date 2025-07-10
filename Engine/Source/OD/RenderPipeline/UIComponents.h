@@ -1,16 +1,15 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Graphics/Texture.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Scene/Scene.h"
-#include "OD/Graphics/Camera.h"
 #include "OD/Core/Color.h"
+#include "OD/Scene/Scene.h"
 
 namespace OD{
 
 class Material;
 class Texture2D;
 class Font;
+struct Camera; 
 
 struct OD_API CanvasComponent{
     enum class ScaleMode {
@@ -28,35 +27,10 @@ struct OD_API CanvasComponent{
     ScaleMode scaleMode = ScaleMode::ScaleWithScreenSize;
     ScreenMatchMode screenMatchMode = ScreenMatchMode::MatchWidthOrHeight;
     float matchValue = 0.5f;
+    float defaultScale = 1;
     float scaleFactor = 1.0f;
 
-    inline void CalculateCanvasScale(float width, float height) {
-        if (scaleMode == ScaleMode::ScaleWithScreenSize) {
-            float scaleX = width / referenceResolution.x;
-            float scaleY = height / referenceResolution.y;
-
-            switch (screenMatchMode) {
-                case ScreenMatchMode::MatchWidthOrHeight: {
-                    float logX = std::log2(scaleX);
-                    float logY = std::log2(scaleY);
-                    float logInterp = logX * (1.0f - matchValue) + logY * matchValue;
-                    scaleFactor = std::pow(2.0f, logInterp);
-                    break;
-                }
-                case ScreenMatchMode::MatchWidth:
-                    scaleFactor = scaleX;
-                    break;
-                case ScreenMatchMode::MatchHeight:
-                    scaleFactor = scaleY;
-                    break;
-                case ScreenMatchMode::Expand:
-                    scaleFactor = std::max(scaleX, scaleY);
-                    break;
-            }
-        } else {
-            scaleFactor = 1.0f;
-        }
-    }
+    void CalculateCanvasScale(float width, float height);
 
     template <class Archive>
     void serialize(Archive& ar) {
@@ -64,13 +38,14 @@ struct OD_API CanvasComponent{
         ArchiveDump(ar, CEREAL_NVP(scaleMode));
         ArchiveDump(ar, CEREAL_NVP(screenMatchMode));
         ArchiveDump(ar, CEREAL_NVP(matchValue));
+        ArchiveDump(ar, CEREAL_NVP(defaultScale));
     }
 };
 
-void RecalculateUI(Scene& scene, Camera& camera);
+void OD_API RecalculateUI(Scene& scene, Camera& camera);
 
 struct OD_API RectTransformComponent{
-     Vector2 anchorMin = {0.0f, 0.0f};
+    Vector2 anchorMin = {0.0f, 0.0f};
     Vector2 anchorMax = {1.0f, 1.0f};
     Vector2 pivot = {0.5f, 0.5f};
     Vector2 offsetMin = {0.0f, 0.0f};
@@ -78,7 +53,7 @@ struct OD_API RectTransformComponent{
     Vector2 finalPosition;
     Vector2 finalSize;
 
-    void SetRect(Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size) {
+    inline void SetRect(Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size) {
         anchorMin = anchor;
         anchorMax = anchor;
         this->pivot = pivot;
@@ -86,7 +61,7 @@ struct OD_API RectTransformComponent{
         offsetMax = offsetMin + size;
     }
 
-    void SetRectStretch(Vector2 anchorMin_, Vector2 anchorMax_, Vector2 offsetMin_, Vector2 offsetMax_, Vector2 pivot_ = {0.5f, 0.5f}) {
+    inline void SetRectStretch(Vector2 anchorMin_, Vector2 anchorMax_, Vector2 offsetMin_, Vector2 offsetMax_, Vector2 pivot_ = {0.5f, 0.5f}) {
         anchorMin = anchorMin_;
         anchorMax = anchorMax_;
         offsetMin = offsetMin_;

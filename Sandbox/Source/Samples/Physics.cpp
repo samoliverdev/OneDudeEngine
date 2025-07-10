@@ -1,10 +1,21 @@
 #include "Physics.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include "Ultis/CameraMovement.h"
+#include <assert.h>
 #include <entt/entt.hpp>
 #include <sol/sol.hpp>
+#include <OD/Core/Application.h>
+#include <OD/Core/Input.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/Physics/PhysicsSystem.h>
 #include <OD/LuaScripting/LuaScripts.h>
-#include "Ultis/CameraMovement.h"
+#include <OD/RenderPipeline/UIComponents.h>
+#include <OD/Editor/Editor.h>
 
 void PhysicsCubeS::OnStart(){
     sol::state lua;

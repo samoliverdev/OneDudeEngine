@@ -1,9 +1,11 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+#include <OD/Scene/Scene.h>
+#include <OD/Navmesh/Navmesh.h>
 
 using namespace OD;
 
-struct CharacterControllerSample: OD::Module {
+struct CharacterControllerSample: Module {
     Entity camera;
     Navmesh navmesh;
 

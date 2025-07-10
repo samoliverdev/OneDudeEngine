@@ -1,8 +1,18 @@
 #include "ECS.h"
 //#include <OD/AnimationSystem/Animator.h>
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include <OD/Scene/SceneManager.h>
+#include <OD/Graphics/Shader.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Texture.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/Audio/AudioSystem.h>
+#include <OD/Core/Application.h>
+#include <OD/Editor/Editor.h>
 /*#include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_speech.h>
@@ -10,6 +20,7 @@
 #include <thread>
 #include <future>
 #include <fstream>
+#include <assert.h>
 //#include <OD/RenderPipeline/StandRenderPipeline.h>
 
 void ECSSample::AddTransparent(Vector3 pos){

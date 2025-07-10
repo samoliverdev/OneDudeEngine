@@ -1,6 +1,12 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+#include <OD/Graphics/Camera.h>
 #include "Ultis/CameraMovement.h"
+
+namespace OD{
+    class Model;
+    class SubShader;
+}
 
 using namespace OD;
 

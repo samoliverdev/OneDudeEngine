@@ -1,6 +1,16 @@
 #include "Joint.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
+#include <OD/Core/Application.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Shader.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/RenderContext.h>
+#include <OD/Physics/PhysicsSystem.h>
+#include <OD/Editor/Editor.h>
 
 void JointSample::OnInit(){
     LogInfo("Game Init");

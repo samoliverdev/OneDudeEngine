@@ -1,5 +1,9 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+
+namespace OD{
+    class Scene;
+}
 
 struct SerializationSample: public OD::Module{
     OD::Scene* scene;

@@ -1,6 +1,6 @@
 #include "Ultis.h"
+#include <OD/Graphics/Material.h>
 #include <iostream>
-
 
 Random::Random(unsigned int seed){
    srand(seed);

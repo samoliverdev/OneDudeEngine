@@ -1,12 +1,10 @@
 #pragma once
-#include <OD/OD.h>
-
+#include <OD/Core/Module.h>
+#include <OD/Scene/Scene.h>
 using namespace OD;
 
-struct SynthCitySample: OD::Module {
-    //CameraMovement camMove;
+struct SynthCitySample: Module{
     Entity camera;
-
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

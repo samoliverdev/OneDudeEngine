@@ -1,7 +1,5 @@
 #pragma once
-#include <OD/OD.h>
-
-using namespace OD;
+#include <OD/Core/Module.h>
 
 struct JointSample: public OD::Module {
     void OnInit() override;

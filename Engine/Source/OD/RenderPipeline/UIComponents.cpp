@@ -113,6 +113,34 @@ void RectTransformComponent::OnGui(Entity& e, Scene& scene) {
     }
 }*/
 
+void CanvasComponent::CalculateCanvasScale(float width, float height){
+    if (scaleMode == ScaleMode::ScaleWithScreenSize) {
+        float scaleX = width / referenceResolution.x;
+        float scaleY = height / referenceResolution.y;
+
+        switch (screenMatchMode) {
+            case ScreenMatchMode::MatchWidthOrHeight: {
+                float logX = std::log2(scaleX);
+                float logY = std::log2(scaleY);
+                float logInterp = logX * (1.0f - matchValue) + logY * matchValue;
+                scaleFactor = std::pow(2.0f, logInterp);
+                break;
+            }
+            case ScreenMatchMode::MatchWidth:
+                scaleFactor = scaleX;
+                break;
+            case ScreenMatchMode::MatchHeight:
+                scaleFactor = scaleY;
+                break;
+            case ScreenMatchMode::Expand:
+                scaleFactor = std::max(scaleX, scaleY);
+                break;
+        }
+    } else {
+        scaleFactor = defaultScale;  //1.0f;
+    }
+}
+
 int GetAnchorPresetIndex(const Vector2& min, const Vector2& max) {
     struct Preset { Vector2 min, max; };
     static Preset presets[] = {

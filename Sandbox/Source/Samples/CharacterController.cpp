@@ -1,7 +1,19 @@
 #include "CharacterController.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include <OD/Scene/Scripts.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/Animation/Animator.h>
+#include <OD/Audio/AudioClip.h>
+#include <OD/Audio/AudioSystem.h>
+#include <OD/Physics/PhysicsSystem.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/Core/Input.h>
+#include <OD/Core/Application.h>
+#include <OD/Editor/Editor.h>
+#include <assert.h>
 #include <entt/entt.hpp>
 
 struct CameraController: public Script{

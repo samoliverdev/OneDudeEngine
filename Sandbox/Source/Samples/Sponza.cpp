@@ -1,8 +1,16 @@
 #include "Sponza.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include <assert.h>
 #include <fstream>
+#include <OD/Core/Application.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Cubemap.h>
+#include <OD/Editor/Editor.h>
 //#include <OD/RenderPipeline/DeferredRenderPipeline.h>
 
 void SponzaSample::OnInit(){

@@ -1,6 +1,7 @@
 #pragma once
+#include <OD/Core/Transform.h>
+#include <OD/Scene/Scripts.h>
 
-#include <OD/OD.h>
 using namespace OD;
 
 class CameraMovement{

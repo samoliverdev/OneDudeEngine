@@ -1,5 +1,8 @@
 #include "LoadScene.h"
 #include "StandardAsset/Module.h"
+#include <OD/Core/Application.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/Editor/Editor.h>
 
 void LoadSceneSample::OnInit(){
     LogInfo("Game Init");

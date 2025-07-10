@@ -1,11 +1,21 @@
 #include "DynamicModule.h"
 #include "Physics.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
-#include <entt/entt.hpp>
+#include <OD/Core/Application.h>
+#include <OD/Core/Input.h>
+#include <OD/Scene/Scripts.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/Physics/PhysicsSystem.h>
+#include <OD/Editor/Editor.h>
+#include <assert.h>
 #include <fstream>
 #include <stdio.h>
+#include <entt/entt.hpp>
 
 inline bool FileExists(const std::string& name){
     std::ifstream f(name.c_str());

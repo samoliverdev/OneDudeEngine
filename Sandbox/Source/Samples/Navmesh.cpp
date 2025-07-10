@@ -1,6 +1,15 @@
 #include "Navmesh.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include <OD/Scene/SceneManager.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Navmesh/Navmesh.h>
+#include <OD/Core/Application.h>
+#include <OD/Editor/Editor.h>
+#include <assert.h>
 #include <entt/entt.hpp>
 
 void NavmeshSample::OnInit(){

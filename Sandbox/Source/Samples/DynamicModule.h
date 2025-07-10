@@ -1,5 +1,6 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Scene/Scene.h>
+#include <OD/Core/Module.h>
 
 using namespace OD;
 

@@ -1,5 +1,7 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+#include <OD/Terrain/Heightmap.h>
+#include <OD/Scene/Scene.h>
 
 using namespace OD;
 

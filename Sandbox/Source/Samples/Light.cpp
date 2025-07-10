@@ -1,4 +1,7 @@
 #include "Light.h"
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Graphics.h>
+#include <OD/Core/Application.h>
 #include <assert.h>
 
 void LightSample::OnInit(){

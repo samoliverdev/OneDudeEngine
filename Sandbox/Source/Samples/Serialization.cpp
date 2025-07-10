@@ -1,6 +1,9 @@
 #include "Serialization.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
+#include <OD/Scene/SceneManager.h>
+#include <OD/Core/Application.h>
+#include <OD/Editor/Editor.h>
 #include <cereal/cereal.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/memory.hpp>

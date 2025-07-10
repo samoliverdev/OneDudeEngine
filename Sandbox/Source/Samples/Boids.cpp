@@ -1,6 +1,15 @@
 #include "Boids.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
+#include <OD/Scene/Scene.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/Graphics/Graphics.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/Core/Application.h>
+#include <OD/Editor/Editor.h>
 #include <fstream>
 
 #undef max

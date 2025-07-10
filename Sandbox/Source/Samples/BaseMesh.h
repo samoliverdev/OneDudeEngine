@@ -1,6 +1,13 @@
 #pragma once
-#include <OD/OD.h>
+#include <OD/Core/Module.h>
+#include <OD/Graphics/Mesh.h>
 //#include <taskflow/taskflow.hpp> 
+
+namespace OD{
+    class Mesh;
+    class Font;
+    class Material;
+}
 
 struct BaseMeshSample: OD::Module {
     OD::Mesh mesh;

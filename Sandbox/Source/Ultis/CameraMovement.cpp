@@ -1,4 +1,6 @@
 #include "CameraMovement.h"
+#include <OD/Core/Input.h>
+#include <OD/Core/Application.h>
 
 void CameraMovement::OnStart(){
     pitch = transform->LocalEulerAngles().x;

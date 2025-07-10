@@ -1,8 +1,16 @@
 #include "SynthCity.h"
 //#include <OD/RenderPipeline/StandRenderPipeline2.h>
+#include <OD/Scene/SceneManager.h>
+#include <OD/RenderPipeline/CameraComponent.h>
+#include <OD/RenderPipeline/LightComponent.h>
+#include <OD/RenderPipeline/EnvironmentComponent.h>
+#include <OD/Editor/Editor.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Shader.h>
+#include <OD/Core/Application.h>
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
 #include "Ultis/Ultis.h"
+#include <assert.h>
 
 void SynthCitySample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
