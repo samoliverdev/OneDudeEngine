@@ -113,7 +113,8 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "cfenv": "cpp",
-        "glad.c": "cpp"
+        "glad.c": "cpp",
+        "bvh": "cpp"
     },
     "Lua.diagnostics.disable": [
         "undefined-global"

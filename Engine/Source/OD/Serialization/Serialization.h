@@ -100,4 +100,31 @@ void serialize(Archive &archive, glm::quat &q){
     );
 }
 
+template<class Archive>
+void serialize(Archive &archive, glm::ivec2 &v){
+    archive(
+        CEREAL_NVP(v.x), 
+        CEREAL_NVP(v.y)
+    );
+}
+
+template<class Archive>
+void serialize(Archive &archive, glm::ivec3 &v){
+    archive(
+        CEREAL_NVP(v.x), 
+        CEREAL_NVP(v.y), 
+        CEREAL_NVP(v.z)
+    );
+}
+
+template<class Archive>
+void serialize(Archive &archive, glm::ivec4 &v){
+    archive(
+        CEREAL_NVP(v.x), 
+        CEREAL_NVP(v.y), 
+        CEREAL_NVP(v.z), 
+        CEREAL_NVP(v.w)
+    );
+}
+
 }

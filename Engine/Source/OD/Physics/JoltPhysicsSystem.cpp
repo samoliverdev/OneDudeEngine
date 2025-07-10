@@ -8,6 +8,7 @@
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
+#include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/Editor/Editor.h"
 #include <unordered_set>
 
@@ -278,8 +279,8 @@ public:
             if(math::distance(cam.Position(), FromJolt(from)) > 50) return;
         }*/
 
-		static int counter = 0;
-		if (++counter % 8 != 0) return; // desenha só 25%
+		//static int counter = 0;
+		//if (++counter % 8 != 0) return; // desenha só 25%
 
 		if(useLineCommand){
 			Graphics::AddDrawLineCommand(
@@ -1025,6 +1026,17 @@ void PhysicsSystem::PhysicsUpdate(){
 
 		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
 			rb.shape.mesh = mesh.GetModel()->modelShapeData == nullptr ? CreateMeshShapeData(*mesh.GetModel()) : mesh.GetModel()->modelShapeData;
+		}
+	}
+
+	auto viewMesh2 = GetScene()->GetRegistry().view<RigidbodyComponent, MeshRendererComponent, TransformComponent>();
+    for(auto e: viewMesh2){
+		RigidbodyComponent& rb = viewMesh2.get<RigidbodyComponent>(e);
+        TransformComponent& transform = viewMesh2.get<TransformComponent>(e);
+        MeshRendererComponent& mesh = viewMesh2.get<MeshRendererComponent>(e);
+
+		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
+			rb.shape.mesh = CreateMeshShapeData(*mesh.mesh);
 		}
 	}
 

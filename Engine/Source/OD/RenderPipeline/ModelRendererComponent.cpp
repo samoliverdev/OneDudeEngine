@@ -18,6 +18,7 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
     std::string ss("model");
     if(ImGui::DrawAsset<Model>(ss, mesh.model)){
         if(mesh.model != nullptr) mesh.boundingVolume = Model::GenerateAABB(*mesh.model);
+        mesh.SetModel(mesh.model);
     }
 
     int subMeshIndex = mesh.subMeshIndex;
@@ -214,7 +215,9 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     }
 
     std::string ss("model");
-    ImGui::DrawAsset<Model>(ss, mesh.model);
+    if(ImGui::DrawAsset<Model>(ss, mesh.model)){
+        mesh.SetModel(mesh.model);
+    }
 
     int subMeshIndex = mesh.subMeshIndex;
     if(ImGui::DragInt("subMeshIndex", &subMeshIndex)){

@@ -9,7 +9,7 @@
             "layer": 1,
             "active": false,
             "entityType": 1,
-            "prefabPath": "Sandbox/root.prefab"
+            "prefabPath": "Sandbox/cube.prefab"
         }
     ],
     "InfoComponentEntities": [

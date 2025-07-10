@@ -18,6 +18,7 @@
 #include "Samples/Terrain.h"
 #include "Samples/ProceduralTerrain2.h"
 #include "Samples/Joint.h"
+#include "Samples/LoadScene.h"
 #include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -29,9 +30,10 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 5;
+    int i = -1;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
+    if(i == -1) return new LoadSceneSample();
     if(i == 0) return new BaseMeshSample();
     if(i == 1) return new LoadModelSample();
     if(i == 2) return new LightSample();

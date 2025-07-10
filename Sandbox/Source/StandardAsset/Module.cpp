@@ -1,0 +1,66 @@
+#include "Module.h"
+#include "OD/Scene/SceneManager.h"
+#include "OD/Physics/PhysicsSystem.h"
+#include "OD/Animation/Animator.h"
+#include "Camera/FreeCamera.h"
+#include "Camera/ThirdPersonCamera.h"
+#include "Character/CharacterMovement.h"
+#include "Character/CharacterAnimation.h"
+#include "Greyboxing/Greyboxing.h"
+
+namespace Standard{
+
+void ModuleInit(){
+    SceneManager::Get().RegisterComponent<FreeCamera>("FreeCamera");
+    SceneManager::Get().RegisterComponent<ThirdPersonCamera>("ThirdPersonCamera");
+    SceneManager::Get().RegisterComponent<CharacterMovement>("CharacterMovement");
+    SceneManager::Get().RegisterComponent<CharacterAnimation>("CharacterAnimation");
+    SceneManager::Get().RegisterComponent<Greyboxing>("Greyboxing");
+    SceneManager::Get().RegisterSystem<StandardAssetSystem>("StandardAssetSystem");
+}
+
+StandardAssetSystem::StandardAssetSystem(Scene* inscene):System(inscene){
+
+}
+
+StandardAssetSystem::~StandardAssetSystem(){
+
+}
+
+void StandardAssetSystem::Update(){
+    auto greyboxingView = scene->GetRegistry().view<Greyboxing, TransformComponent>();
+    for(auto [entity, greyboxing, trans]: greyboxingView.each()){
+        if(greyboxing.isDirty == true){
+            greyboxing.isDirty = false;
+            greyboxing.UpdateMesh(*scene, entity);
+        }
+    }
+
+    if(scene->Running() == false) return;
+
+    auto freeCameraView = scene->GetRegistry().view<FreeCamera, TransformComponent>();
+    for(auto [entity, camera, trans]: freeCameraView.each()){
+        if(camera.hasStarted == false) camera.OnStart(trans);
+        camera.OnUpdate(trans);
+    }
+
+    auto tpsCameraView = scene->GetRegistry().view<ThirdPersonCamera, TransformComponent>();
+    for(auto [entity, camera, trans]: tpsCameraView.each()){
+        if(camera.hasStarted == false) camera.OnStart();
+        camera.OnUpdate(*scene, trans);
+    }
+
+    auto charMovemetView = scene->GetRegistry().view<CharacterMovement, TransformComponent, RigidbodyComponent>();
+    for(auto [entity, movement, trans, rb]: charMovemetView.each()){
+        if(movement.hasStarted == false) movement.OnStart(rb);
+        movement.OnUpdate(*scene, trans, rb);
+    }
+
+    auto charAnimationView = scene->GetRegistry().view<CharacterAnimation, CharacterMovement, TransformComponent, AnimatorComponent>();
+    for(auto [entity, charAnim, movement, trans, anim]: charAnimationView.each()){
+        if(charAnim.hasStarted == false) charAnim.OnStart();
+        charAnim.OnUpdate(trans, anim, movement);
+    }
+}
+
+}

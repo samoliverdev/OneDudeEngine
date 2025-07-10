@@ -9,9 +9,9 @@ namespace OD{
 
 struct OD_API MeshRendererComponent{
     AABB boundingVolume;
-    Ref<Mesh> mesh;
-    Ref<Material> material;
-    Ref<Material> customShadowPass;
+    Ref<Mesh> mesh = nullptr;
+    Ref<Material> material = nullptr;
+    Ref<Material> customShadowPass = nullptr;
 
     bool useCustomData = false;
     Vector4 customData;
@@ -29,8 +29,8 @@ struct OD_API MeshRendererComponent{
         //AssetRefSerialize<Mesh> meshRef(mesh);
         //ArchiveDumpNVP(ar, meshRef);
 
-        AssetRefSerialize<Material> materialRef(material);
-        ArchiveDumpNVP(ar, materialRef);
+        //AssetRefSerialize<Material> materialRef(material);
+        //ArchiveDumpNVP(ar, materialRef);
     }
 
     void UpdateAABB(Vector3 scale = Vector3One);
@@ -45,8 +45,8 @@ struct OD_API SkinnedMeshRendererComponent: public MeshRendererComponent{
 
     template<class Archive>
     void serialize(Archive& ar){
-        AssetRefSerialize<Material> materialRef(material);
-        ArchiveDumpNVP(ar, materialRef);
+        //AssetRefSerialize<Material> materialRef(material);
+        //ArchiveDumpNVP(ar, materialRef);
     }
 
     inline void UpdatePosePalette(){
