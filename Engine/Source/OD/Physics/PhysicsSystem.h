@@ -96,6 +96,7 @@ struct OD_API CollisionShape{
 
 struct OD_API RigidbodyComponent{
     friend struct PhysicsSystem;
+    friend class SelectedBodyDrawFilter;
 
     //int mask = AllLayers;
     LayerMask mask = {AllLayers};
@@ -188,6 +189,7 @@ private:
 
 struct OD_API RagdollComponent{
     friend struct PhysicsSystem;
+    friend class SelectedBodyDrawFilter;
 
     RagdollComponent() = default;
 

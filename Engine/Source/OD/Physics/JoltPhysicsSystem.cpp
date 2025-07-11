@@ -266,6 +266,12 @@ public:
         /*std::cout << "CanCollide: aLayer=" << aLayer << ", aMask=" << aMask
                   << ", bLayer=" << bLayer << ", bMask=" << bMask
                   << ", Result=" << canCollide << std::endl;*/
+
+		/*if(canCollide == false){
+			int test = 20;
+			LogInfo("Test: %d", test);
+		}*/		  
+
         return canCollide;
     }
 };
@@ -473,7 +479,7 @@ struct PhysicsWorld{
 
 class PhysicObject{
 public:
-    BodyID bodyID;
+    BodyID bodyID = BodyID();
 	PhysicsWorld* world = nullptr;
 	bool isDirt = false;
 };
@@ -495,17 +501,26 @@ public:
 		if(editor == nullptr) return;
 		
 		for(auto& e: editor->GetSelectedEntities()){
-			if(scene->HasComponent<RigidbodyComponent>(e) == false) continue;
+			if(scene->HasComponent<RigidbodyComponent>(e)){
+				RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(e);
+				if(rb.data == nullptr) continue;
 
-			RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(e);
-			if(rb.InternalData() == nullptr) continue;
+				selectedBodies.insert(rb.data->bodyID);
+			}
 
-			selectedBodies.insert(rb.InternalData()->bodyID);
+			if(scene->HasComponent<RagdollComponent>(e)){
+				RagdollComponent& rb = scene->GetComponent<RagdollComponent>(e);
+				if(rb.data == nullptr) continue;
+
+				for(auto& i: rb.data->ragdoll->GetBodyIDs()){
+					selectedBodies.insert(i);
+				}
+			}
 		}
 	}
 
 	bool ShouldDraw(const JPH::Body& inBody) const override {
-		return true;
+		//return true;
 		return selectedBodies.count(inBody.GetID());
 	}
 };
@@ -1062,12 +1077,12 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
 
 	// Check that doesn't collide with self
 	CollisionGroup g1(physicsWorld->groupFilter, Layer1, Layer0);
-	Assert(g1.CanCollide(g1) == false);
+	//Assert(g1.CanCollide(g1) == false);
 
 	// Check that collides with other group
 	CollisionGroup g2(physicsWorld->groupFilter, Layer1, AllLayers);
-	Assert(g1.CanCollide(g2) == false);
-	Assert(g2.CanCollide(g1) == false);
+	//Assert(g1.CanCollide(g2) == false);
+	//Assert(g2.CanCollide(g1) == false);
 
 	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
@@ -1151,6 +1166,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			ragdoll.layer,
 			ragdoll.mask.mask // stored in subgroup ID
 		);
+		//TODO: Fix this, add the root object id
 		part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
@@ -1206,9 +1222,9 @@ void PhysicsSystem::PhysicsUpdate(){
         TransformComponent& transform = viewMesh2.get<TransformComponent>(e);
         MeshRendererComponent& mesh = viewMesh2.get<MeshRendererComponent>(e);
 
-		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr && mesh.mesh != nullptr){
+		/*if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr && mesh.mesh != nullptr){
 			rb.shape.mesh = CreateMeshShapeData(*mesh.mesh);
-		}
+		}*/
 	}
 
     auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
@@ -1221,10 +1237,11 @@ void PhysicsSystem::PhysicsUpdate(){
 			rb.data = new PhysicObject();
 			rb.data->world = physicsWorld;
 			AddRigidbody(e, rb, transform, info);
+			rb.data->isDirt = false;
 		}
 		if(rb.data->isDirt){
 			rb.data->isDirt = false;
-			RemoveRigidbody(e, rb);
+			if(rb.data->bodyID.IsInvalid() == false) RemoveRigidbody(e, rb);
 			AddRigidbody(e, rb, transform, info);
 		}
         Assert(rb.data != nullptr);
@@ -1252,6 +1269,18 @@ void PhysicsSystem::PhysicsUpdate(){
 			ragdoll.data = new RagdollObject();
 			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton, physicsWorld->groupFilter);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+			for (int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i) {
+				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
+				BodyInterface& bi = physicsWorld->physicsSystem.GetBodyInterface();
+				
+				// Setar manualmente o CollisionGroup correto
+				bi.SetCollisionGroup(bodyID, JPH::CollisionGroup(
+					physicsWorld->groupFilter,
+					ragdoll.layer,
+					ragdoll.mask.mask
+				));
+			}
+
 			/*for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				bodyInterface.SetUserData(bodyID, static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex));

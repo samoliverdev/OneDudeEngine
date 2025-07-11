@@ -1,6 +1,7 @@
 #include "Greyboxing.h"
-#include "OD/RenderPipeline/MeshRendererComponent.h"
-#include "OD/Core/ImGui.h"
+#include <OD/RenderPipeline/MeshRendererComponent.h>
+#include <OD/Core/ImGui.h>
+#include <OD/Physics/PhysicsSystem.h>
 
 namespace Standard{
 
@@ -526,6 +527,9 @@ void Greyboxing::UpdateMesh(Scene& scene, Entity e, Ref<Material> defaultMateria
         meshRenderer.mesh = CreateSphereMesh(radius, resolution, pivot);
         meshRenderer.UpdateAABB();
     }
+
+    RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+    rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
 }
 
 }
