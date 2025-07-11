@@ -189,7 +189,6 @@ private:
 struct OD_API RagdollComponent{
     friend struct PhysicsSystem;
 
-
     RagdollComponent() = default;
 
     struct Part{
@@ -231,11 +230,13 @@ struct OD_API RagdollComponent{
     bool isDirty = true;
     std::vector<Part> parts;
 
+    static void OnGui(Entity& e, Scene& scene);
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, layer);
         ArchiveDumpNVP(ar, mask);
-        ArchiveDumpNVP(ar, isDirty);
+        //ArchiveDumpNVP(ar, isDirty);
         ArchiveDumpNVP(ar, type);
         ArchiveDumpNVP(ar, parts);
     }
@@ -243,7 +244,7 @@ struct OD_API RagdollComponent{
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
         COPY_OR_MOVE(layer);
         COPY_OR_MOVE(mask);
-        COPY_OR_MOVE(isDirty);
+        //COPY_OR_MOVE(isDirty);
         COPY_OR_MOVE(type);
         COPY_OR_MOVE(parts);
     });

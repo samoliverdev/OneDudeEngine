@@ -98,6 +98,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     void UpdateSkeletonEntitesIn(Pose& animatedPose, Scene& scene);
 
     inline void UpdatePosePalette(){
+        finalPose = model->skeleton.GetRestPose();
         GetModel()->skeleton.GetRestPose().GetMatrixPalette(posePalette, model->skeleton.GetInvBindPose());
     }
 };

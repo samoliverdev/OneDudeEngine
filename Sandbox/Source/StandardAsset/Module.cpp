@@ -20,7 +20,8 @@ void ModuleInit(){
 }
 
 StandardAssetSystem::StandardAssetSystem(Scene* inscene):System(inscene){
-
+    defaultMaterial = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    defaultMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("StandardAsset/Textures/GreyboxTextures/greybox_grey_grid.png"));
 }
 
 StandardAssetSystem::~StandardAssetSystem(){
@@ -32,7 +33,7 @@ void StandardAssetSystem::Update(){
     for(auto [entity, greyboxing, trans]: greyboxingView.each()){
         if(greyboxing.isDirty == true){
             greyboxing.isDirty = false;
-            greyboxing.UpdateMesh(*scene, entity);
+            greyboxing.UpdateMesh(*scene, entity, defaultMaterial);
         }
     }
 

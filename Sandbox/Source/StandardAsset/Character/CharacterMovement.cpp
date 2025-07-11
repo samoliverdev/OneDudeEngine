@@ -31,7 +31,11 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
 
     Assert(Mathf::IsNan(moveDir) == false);
 
-    rb.Velocity(moveDir * moveSpeed);
+    float currentY = rb.Velocity().y;
+    Vector3 velocity = moveDir * moveSpeed;
+    velocity.y = currentY; 
+
+    rb.Velocity(velocity);
     if(moveDir != Vector3Zero){
         rb.Rotation(
             math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), turnSpeed * Application::DeltaTime())

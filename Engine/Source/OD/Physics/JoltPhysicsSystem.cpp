@@ -242,6 +242,8 @@ public:
 class MyGroupFilter : public JPH::GroupFilter {
 public:
     virtual bool CanCollide(const JPH::CollisionGroup &a, const JPH::CollisionGroup &b) const override {
+		//return true;
+
         /*int aMask = (int)a.GetSubGroupID();
         int bMask = (int)b.GetSubGroupID();
         int aLayer = (int)a.GetGroupID();
@@ -521,6 +523,174 @@ void CollisionBodyComponent::SetShape(CollisionShape inShape){
 void CollisionBodyComponent::UpdateSettings(){
     
 }
+
+void RagdollComponent::OnGui(Entity& e, Scene& scene){
+	RagdollComponent& ragdoll = scene.GetComponent<RagdollComponent>(e);
+
+    ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
+	ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
+	ImGui::DrawLayerMask("Layer", ragdoll.mask);
+	ImGui::Spacing();
+
+	Skeleton* skeleton = nullptr;
+	if(scene.HasComponent<SkinnedModelRendererComponent>(e)){
+		SkinnedModelRendererComponent& skinned = scene.GetComponent<SkinnedModelRendererComponent>(e);
+		if(skinned.GetModel() != nullptr) skeleton = &skinned.GetModel()->skeleton; 
+	}
+
+    int index = 0;
+    for(auto& part : ragdoll.parts){
+        ImGui::PushID(index);
+        if(ImGui::TreeNodeEx(("Part " + std::to_string(index)).c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth)){
+            Vector3 oldPos = part.pos;
+            Quaternion oldRot = part.rot;
+
+			/*if (ImGui::DragInt("Parent Index", &part.parent, 1))
+                ragdoll.isDirty = true;
+
+            if (ImGui::DragInt("Skinned Index", &part.skinnedSkeletonIndex, 1))
+                ragdoll.isDirty = true;*/
+
+			if(skeleton){
+				auto& boneNames = skeleton->GetJointNames();
+				int boneCount = static_cast<int>(boneNames.size());
+
+				// Create C-string array from std::string list
+				std::vector<const char*> boneNameCStrs;
+				boneNameCStrs.reserve(boneNames.size());
+				for(auto& name : boneNames)
+					boneNameCStrs.push_back(name.c_str());
+
+				// Parent Bone DropDown
+				int currentParent = part.parent;
+				int partCount = static_cast<int>(ragdoll.parts.size());
+				if(currentParent >= partCount || currentParent < -1)
+					currentParent = -1;
+
+				std::string labelParent = "Parent Part##" + std::to_string(index);
+				std::string previewParent = (currentParent >= 0 && currentParent < partCount)
+					? ("[" + std::to_string(currentParent) + "] Part") : "<None>";
+
+				if(ImGui::BeginCombo(labelParent.c_str(), previewParent.c_str())){
+					if(ImGui::Selectable("<None>", currentParent == -1)){
+						part.parent = -1;
+						ragdoll.isDirty = true;
+					}
+
+					for(int i = 0; i < partCount; ++i){
+						if (i == index) continue; // evita selecionar a si mesmo como pai
+						std::string name = "[" + std::to_string(i) + "] Part";
+						bool selected = (part.parent == i);
+						if(ImGui::Selectable(name.c_str(), selected)){
+							part.parent = i;
+							ragdoll.isDirty = true;
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+
+				// Skinned Bone DropDown
+				int currentSkin = part.skinnedSkeletonIndex;
+				if(currentSkin >= boneCount || currentSkin < -1)
+					currentSkin = -1;
+
+				std::string labelSkin = "Skinned Bone##" + std::to_string(index);
+				std::string previewSkin = (currentSkin >= 0 && currentSkin < boneCount) 
+					? boneNames[currentSkin] : "<None>";
+
+				if(ImGui::BeginCombo(labelSkin.c_str(), previewSkin.c_str())){
+					if(ImGui::Selectable("<None>", currentSkin == -1)){
+						part.skinnedSkeletonIndex = -1;
+						ragdoll.isDirty = true;
+					}
+
+					for(int i = 0; i < boneCount; ++i){
+						bool selected = (part.skinnedSkeletonIndex == i);
+						if(ImGui::Selectable(boneNames[i].c_str(), selected)){
+							part.skinnedSkeletonIndex = i;
+							ragdoll.isDirty = true;
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+
+			} else {
+				// Fallback
+				if(ImGui::DragInt("Parent Index", &part.parent, 1))
+					ragdoll.isDirty = true;
+				if(ImGui::DragInt("Skinned Index", &part.skinnedSkeletonIndex, 1))
+					ragdoll.isDirty = true;
+			}
+
+            if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
+                ragdoll.isDirty = true;
+
+            if(ImGui::DragFloat4("Rotation (Quat)", &part.rot.x, 0.01f))
+                ragdoll.isDirty = true;
+
+			if(ImGui::TreeNode("Limits")){
+				if(ImGui::DragFloat3("Constraint Pos", &part.constraintPos.x, 0.01f))
+					ragdoll.isDirty = true;
+
+				if(ImGui::DragFloat3("Twist Axis", &part.twistAxis.x, 0.01f))
+					ragdoll.isDirty = true;
+
+				if(ImGui::DragFloat("Twist Min", &part.twistAngleMin, 0.1f))
+					ragdoll.isDirty = true;
+
+				if(ImGui::DragFloat("Twist Max", &part.twistAngleMax, 0.1f))
+					ragdoll.isDirty = true;
+
+				if(ImGui::DragFloat("Normal Angle", &part.normalAngle, 0.1f))
+					ragdoll.isDirty = true;
+
+				if(ImGui::DragFloat("Plane Angle", &part.planeAngle, 0.1f))
+					ragdoll.isDirty = true;
+
+				ImGui::TreePop();
+			}
+
+            if(ImGui::TreeNode("Collision Shape")){
+                auto prevType = part.shape.type;
+                if(ImGui::DrawEnumCombo<CollisionShape::Type>("Shape Type", &part.shape.type)){
+                    if(part.shape.type != prevType)
+                        ragdoll.isDirty = true;
+                }
+
+                if(ImGui::DragFloat3("Center", &part.shape.center.x, 0.01f))
+                    ragdoll.isDirty = true;
+
+                if(part.shape.type == CollisionShape::Type::Box){
+                    if(ImGui::DragFloat3("Size", &part.shape.size.x, 0.01f))
+                        ragdoll.isDirty = true;
+                } else if(part.shape.type == CollisionShape::Type::Sphere){
+                    if (ImGui::DragFloat("Radius", &part.shape.radius, 0.01f))
+                        ragdoll.isDirty = true;
+                } else if(part.shape.type == CollisionShape::Type::Capsule){
+                    if(ImGui::DragFloat("Radius", &part.shape.radius, 0.01f))
+                        ragdoll.isDirty = true;
+                    if(ImGui::DragFloat("Height", &part.shape.height, 0.01f))
+                        ragdoll.isDirty = true;
+                }
+
+                ImGui::TreePop();
+            }
+			ImGui::TreePop();
+        }
+        ImGui::PopID();
+        index++;
+    }
+
+    if(ImGui::Button("Add Part")){
+        ragdoll.parts.emplace_back();
+        ragdoll.isDirty = true;
+    }
+
+	ImGui::Checkbox("IsDirty", &ragdoll.isDirty);
+}
+
 
 #pragma region RigidbodyComponent
 
@@ -938,6 +1108,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	JPH::Ref<JPH::Skeleton> skeleton = new JPH::Skeleton;
 
 	for(int i = 0; i < ragdoll.parts.size(); i++){
+		if(ragdoll.parts[i].skinnedSkeletonIndex < 0) continue;
 		Assert(ragdoll.parts[i].skinnedSkeletonIndex >= 0);
 		//Assert(ragdoll.parts[i].parent > 0);
 
@@ -1005,7 +1176,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 void PhysicsSystem::PhysicsUpdate(){
-    if(GetScene()->Running() == false) return;
+    //if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
@@ -1035,7 +1206,7 @@ void PhysicsSystem::PhysicsUpdate(){
         TransformComponent& transform = viewMesh2.get<TransformComponent>(e);
         MeshRendererComponent& mesh = viewMesh2.get<MeshRendererComponent>(e);
 
-		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
+		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr && mesh.mesh != nullptr){
 			rb.shape.mesh = CreateMeshShapeData(*mesh.mesh);
 		}
 	}
@@ -1072,12 +1243,6 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	auto view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
-		/*if(ragdoll.data == nullptr){
-			ragdoll.data = new RagdollObject();
-			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton);
-			ragdoll.data->ragdoll = settings->CreateRagdoll(0, 0, &physicsWorld->physicsSystem);
-			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
-		}*/
 		if(ragdoll.isDirty){
 			ragdoll.isDirty = false;
 			if(ragdoll.data != nullptr){
@@ -1094,16 +1259,7 @@ void PhysicsSystem::PhysicsUpdate(){
 			}*/
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 
-			if(skinned.finalPose.Size() > 0 && skinned.skeletonEntities.size() > 0){
-				//skinned.UpdateSkeletonEntites(skinned.finalPose, *scene);
-				/*for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
-					int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
-					Assert(boneIndex != 0);
-					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
-					bodyInterface.SetPosition(i, ToJolt(tt.Position()), EActivation::Activate);
-            		bodyInterface.SetRotation(i, ToJolt(tt.Rotation()), EActivation::Activate);
-				}*/
-
+			/*if(skinned.finalPose.Size() > 0 && skinned.skeletonEntities.size() > 0){
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -1112,29 +1268,42 @@ void PhysicsSystem::PhysicsUpdate(){
 					bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
             		bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
 				}
+			}*/
+		}
+
+		if(ragdoll.type != RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
+			for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+				int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+				Assert(boneIndex != 0);
+				Transform tt = Transform(trans.GlobalModelMatrix() * skinned.finalPose[boneIndex].GetLocalModelMatrix());
+				bodyInterface.SetPosition(bodyID, ToJolt(tt.LocalPosition()), EActivation::Activate);
+				bodyInterface.SetRotation(bodyID, ToJolt(tt.LocalRotation()), EActivation::Activate);
 			}
 		}
 
-		if(ragdoll.data != nullptr){
-			/*SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(entity);
-			skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-			skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+		if(ragdoll.data != nullptr && GetScene()->Running() == true){
+			if(ragdoll.type == RagdollComponent::Type::Dynamic){
+				skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
+				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
-			for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
-				RVec3 pos;
-				Quat rot;
-				bodyInterface.GetPositionAndRotation(i, pos, rot);
-				
-				int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
-				skinned.finalPose.SetGlobalTransform(boneIndex, Transform(
-					trans.InverseTransformPoint(FromJolt(pos)), 
-					math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
-					Vector3One
-				));
-			}	
-			skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());*/
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					RVec3 pos;
+					Quat rot;
+					bodyInterface.GetPositionAndRotation(i, pos, rot);
+					
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+					skinned.finalPose.SetGlobalTransform(boneIndex, Transform(
+						trans.InverseTransformPoint(FromJolt(pos)), 
+						math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
+						Vector3One
+					));
+				}	
+				skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+			}
 
-			if(skinned.skeletonEntities.size() > 0 && ragdoll.type == RagdollComponent::Type::Dynamic){
+			/*if(skinned.skeletonEntities.size() > 0 && ragdoll.type == RagdollComponent::Type::Dynamic){
 				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
@@ -1153,16 +1322,7 @@ void PhysicsSystem::PhysicsUpdate(){
 				//skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
 				skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
 			}
-
 			if(skinned.skeletonEntities.size() > 0 && ragdoll.type != RagdollComponent::Type::Dynamic){
-				//skinned.UpdateSkeletonEntites(skinned.finalPose, *scene);
-				/*for(auto i: ragdoll.data->ragdoll->GetBodyIDs()){
-					int boneIndex = static_cast<int>(bodyInterface.GetUserData(i));
-					Assert(boneIndex != 0);
-					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
-					bodyInterface.SetPosition(i, ToJolt(tt.Position()), EActivation::Activate);
-            		bodyInterface.SetRotation(i, ToJolt(tt.Rotation()), EActivation::Activate);
-				}*/
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -1171,7 +1331,7 @@ void PhysicsSystem::PhysicsUpdate(){
 					bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
             		bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
 				}
-			}
+			}*/
 		}
 	}
 
@@ -1479,6 +1639,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		//shapeSettings.SetDensity(rb.mass);
 		//shape = shapeSettings.Create().Get();
 		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
+
+		if(rb.shape.mesh == nullptr) return;
+		if(rb.shape.mesh->joltVertices.size() <= 0) return;
+		if(rb.shape.mesh->joltTriangles.size() <= 0) return;
+		if(rb.shape.mesh->convexPoints.size() <= 0) return;
 
 		Assert(rb.shape.mesh != nullptr);
 		Assert(rb.shape.mesh->joltVertices.size() > 0);

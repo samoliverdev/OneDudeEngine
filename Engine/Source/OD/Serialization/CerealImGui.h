@@ -82,6 +82,8 @@ public:
     
     ImGuiArchive(): InputArchive<ImGuiArchive>(this){}
     ~ImGuiArchive(){}
+
+    int test = 20; //if constexpr (std::is_same_v<Archive, cereal::ImGuiArchive>){
     
     template <class T>
     void draw(std::string name, T& value){

@@ -368,12 +368,14 @@ Scene::Scene(Scene& other){
 }
 
 Scene::~Scene(){
-    registry.clear();
+    //registry.clear();
     /*for(System* i: standSystems) delete i;
     for(System* i: rendererSystems) delete i;
     for(System* i: physicsSystems) delete i;*/
 
     for(auto& i: systems) delete i.second;
+
+    registry.clear();//INFO: Maybe this order fix same crashs
     
     systems.clear();
     standSystems.clear();

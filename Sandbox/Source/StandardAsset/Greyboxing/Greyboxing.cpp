@@ -4,7 +4,8 @@
 
 namespace Standard{
 
-Ref<Material> defaultMaterial = nullptr;
+//INFO: Never again define ref as static/global variable!!!!!!    
+//Ref<Material> defaultMaterial = nullptr; 
 
 Ref<Mesh> CreatePlaneMesh(Vector2 size, IVector2 resolution, MeshPivot pivot){
     Ref<Mesh> mesh = CreateRef<Mesh>();
@@ -497,11 +498,8 @@ void Greyboxing::OnGui(Entity& e, Scene& scene){
     IMGUI_EndGlobalTable();
 }
 
-void Greyboxing::UpdateMesh(Scene& scene, Entity e){
-    if(defaultMaterial == nullptr){
-        defaultMaterial = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
-        defaultMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("StandardAsset/Textures/GreyboxTextures/greybox_grey_grid.png"));
-    }
+void Greyboxing::UpdateMesh(Scene& scene, Entity e, Ref<Material> defaultMaterial){
+    Assert(defaultMaterial != nullptr);
     MeshRendererComponent& meshRenderer = scene.AddOrGetComponent<MeshRendererComponent>(e);
     meshRenderer.material = material == nullptr ? defaultMaterial : material; 
 

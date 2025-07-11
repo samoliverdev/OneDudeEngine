@@ -42,7 +42,7 @@ struct Greyboxing{
 
     bool isDirty = true;
 
-    void UpdateMesh(Scene& scene, Entity e);
+    void UpdateMesh(Scene& scene, Entity e, Ref<Material> defaultMaterial);
 
     static void OnGui(Entity& e, Scene& scene);
 

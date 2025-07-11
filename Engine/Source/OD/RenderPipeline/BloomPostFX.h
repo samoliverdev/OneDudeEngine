@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "PostFX.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Framebuffer.h"
 namespace OD{
     
@@ -34,6 +35,11 @@ public:
         if(threshold < 0) threshold = 0;
         thresholdKnee = math::clamp<float>(thresholdKnee, 0, 1);
         if(intensity < 0) intensity = 0;
+
+        // This test works
+        /*if constexpr (std::is_same_v<Archive, cereal::ImGuiArchive>){
+            LogInfo("Test: %d", ar.test);
+        }*/
     }
 
 private:
