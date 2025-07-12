@@ -101,8 +101,6 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
 
     In(0) vec3 outPos;
     In(1) vec3 outNormal;
@@ -168,25 +166,26 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         return saturate(dot(surface.normal, light.direction) * light.attenuation) * light.color;
     }
 
-    vec3 GetLighting(Surface surface, BRDF brdf, Light light){
+    vec3 GetLighting(Surface surface, Light light){
 	    float diff = Square(saturate(dot(surface.normal, light.direction)));
         vec3 DirectBRDF = diff * surface.color;
 
         return IncomingLight(surface, light) * DirectBRDF;// DirectBRDF(surface, brdf, light);
     }
 
-    vec3 GetLighting(Surface surfaceWS, BRDF brdf, GI gi){
+    vec3 GetFinalLighting(Surface surfaceWS){
         ShadowData shadowData = GetShadowData(surfaceWS);
-        vec3 IndirectBRDF = gi.diffuse * surfaceWS.color;
+        //vec3 IndirectBRDF = gi.diffuse * surfaceWS.color;
+        vec3 IndirectBRDF = (_AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, surfaceWS.normal).rgb * _SkyLightIntensity) * surfaceWS.color;
 
         vec3 color = IndirectBRDF;// gi.diffuse;// IndirectBRDF(surfaceWS, brdf, gi.diffuse, gi.specular);
         for(int i = 0; i < GetDirectionalLightCount(); i++){
             Light light = GetDirectionalLight(i, surfaceWS, shadowData);
-            color += GetLighting(surfaceWS, brdf, light);
+            color += GetLighting(surfaceWS, light);
         }
         for(int j = 0; j < GetOtherLightCount(); j++){
             Light light = GetOtherLight(j, surfaceWS, shadowData);
-            color += GetLighting(surfaceWS, brdf, light);
+            color += GetLighting(surfaceWS, light);
         }
 
         return color;
@@ -229,9 +228,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         
         #else
 
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);
+        vec3 color = GetFinalLighting(surface);
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
         #endif

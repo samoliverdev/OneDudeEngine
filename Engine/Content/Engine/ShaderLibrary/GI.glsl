@@ -44,14 +44,14 @@ vec3 SampleEnvironmentSpecular(Surface surfaceWS, BRDF brdf){
     ///*
     vec3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
     float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
-    vec3 environment = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, uvw, mip).rgb * _SkyLightIntensity; //textureLod(_PrefilterMap, uvw, mip).rgb * _SkyLightIntensity;
+    vec3 environment = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, uvw, mip).rgb * _SkyLightIntensity;
     //return environment;
-    //return _AmbientLight + environment;
+    //return _AmbientLight.rgb + environment;
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, surfaceWS.color, surfaceWS.metallic);
     vec3 F = FresnelSchlickRoughness(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), F0, brdf.roughness);
     vec2 envBRDF = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), brdf.roughness)).rg;
-    return _AmbientLight.rgb + (environment * (F * envBRDF.x + envBRDF.y));
+    return /*_AmbientLight.rgb +*/ (environment * (F * envBRDF.x + envBRDF.y));
     //*/
 }
 
@@ -64,6 +64,7 @@ GI GetGI(Surface surfaceWS, BRDF brdf){
     GI gi;
     gi.diffuse = SampleEnvironmentDiffuse(surfaceWS); //_AmbientLight; //SampleLightMap(lightMapUV) + SampleLightProbe(surfaceWS);
     gi.specular = SampleEnvironmentSpecular(surfaceWS, brdf);
+
     //gi.diffuse = _AmbientLight;
     //gi.specular = _AmbientLight;
     return gi;

@@ -220,7 +220,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     //Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
     #endif
 
-    asset->LoadFromFile(path);
+    if(asset->LoadFromFile(path) == false) return nullptr;
     db[path] = asset;
     
     //return reinterpret_cast<const Ref<T>&>(asset);
