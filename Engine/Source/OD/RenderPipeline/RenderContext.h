@@ -143,6 +143,10 @@ public:
     void BeginDeferredPass();
     void EndDeferredPass();
 
+    void DeferredCopyToForwardPass();
+    void DrawDeferredLight(int index = -1);
+    void DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone);
+
     void EndDeferredPassAndCopyToForwardPass();
     
     void ScreenClean();
@@ -193,9 +197,14 @@ private:
     Ref<Material> deferredGBufferShader;
     Ref<Material> deferredLightPassShader;
     Ref<Material> deferredLightPass;
+    Ref<Material> deferredLightDirSinglePass;
+    Ref<Material> deferredLightDirSingleOtherPass;
     Ref<Mesh> skyboxMesh;
     Ref<Mesh> spriteMesh;
     Ref<Mesh> fullScreenQuad;
+
+    Ref<Model> sphereMesh;
+    Ref<Model> coneMesh;
     
     Camera cam;
     Scene* scene;

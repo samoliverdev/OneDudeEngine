@@ -83,9 +83,18 @@ RenderContext::RenderContext(Scene* inScene){
     //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
     deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
+    deferredLightDirSinglePass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassSingleLit.glsl"));
+    deferredLightDirSingleOtherPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassSingleOtherLit.glsl"));
+
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
     fullScreenQuad = Mesh::FullScreenQuad();
+
+    sphereMesh = CreateRef<Model>();
+    Model::CreateFromFile(*sphereMesh, "Engine/Models/Sphere.obj", {nullptr, 1, false});
+
+    coneMesh = CreateRef<Model>();
+    Model::CreateFromFile(*coneMesh, "Engine/Models/Cone.obj", {nullptr, 1, false});
 
     pipelineDataBuffer = UniformBuffer::Create();
 
@@ -179,6 +188,64 @@ void RenderContext::BeginDeferredPass(){
 
 void RenderContext::EndDeferredPass(){
     Graphics::EndFramebuffer();
+}
+
+void RenderContext::DeferredCopyToForwardPass(){
+    Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
+}
+
+void RenderContext::DrawDeferredLight(int index){
+    if(index < 0){
+        /*deferredLightPass->SetTexture("gPosition", deferredOutColor, 0);
+        deferredLightPass->SetTexture("gNormal", deferredOutColor, 1);
+        deferredLightPass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
+        deferredLightPass->SetTexture("gEmission", deferredOutColor, 3);
+        deferredLightPass->SetTexture("gOther", deferredOutColor, 4);
+        Graphics::BindMaterial(*deferredLightPass);
+        Graphics::DrawMesh(*fullScreenQuad, *deferredLightPass, Matrix4Identity);*/
+
+        deferredLightDirSinglePass->EnableKeyword("INDIRECT");
+        deferredLightDirSinglePass->SetTexture("gPosition", deferredOutColor, 0);
+        deferredLightDirSinglePass->SetTexture("gNormal", deferredOutColor, 1);
+        deferredLightDirSinglePass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
+        deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
+        deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 4);
+        Graphics::BindMaterial(*deferredLightDirSinglePass);
+        Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
+    } else {
+        deferredLightDirSinglePass->EnableKeyword("DIRECTIONAL");
+        deferredLightDirSinglePass->SetTexture("gPosition", deferredOutColor, 0);
+        deferredLightDirSinglePass->SetTexture("gNormal", deferredOutColor, 1);
+        deferredLightDirSinglePass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
+        deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
+        deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 4);
+        deferredLightDirSinglePass->SetInt("lightIndex", index);
+        Graphics::BindMaterial(*deferredLightDirSinglePass);
+        Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
+    }
+}
+
+void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone){
+    //deferredLightDirSingleOtherPass->EnableKeyword("OTHER");
+    deferredLightDirSingleOtherPass->SetTexture("gPosition", deferredOutColor, 0);
+    deferredLightDirSingleOtherPass->SetTexture("gNormal", deferredOutColor, 1);
+    deferredLightDirSingleOtherPass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
+    deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
+    deferredLightDirSingleOtherPass->SetTexture("gOther", deferredOutColor, 4);
+    deferredLightDirSingleOtherPass->SetInt("lightIndex", index);
+    deferredLightDirSingleOtherPass->SetFloat("screenWidth", cam.width);
+    deferredLightDirSingleOtherPass->SetFloat("screenHeight", cam.height);
+
+    glm::mat4 rotation = glm::mat4(1.0f); // identidade como fallback
+    if(glm::length(dir) > 1e-4f){
+        rotation = glm::toMat4(glm::quatLookAt(dir, Vector3Up));
+    }
+    glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos);
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(size));
+    Matrix4 worldMatrix = translation * rotation * scale;
+
+    Graphics::BindMaterial(*deferredLightDirSingleOtherPass);
+    Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
 }
 
 void RenderContext::EndDeferredPassAndCopyToForwardPass(){

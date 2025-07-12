@@ -1192,7 +1192,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 void PhysicsSystem::PhysicsUpdate(){
-    //if(GetScene()->Running() == false) return;
+    if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

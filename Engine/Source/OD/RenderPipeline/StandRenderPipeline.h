@@ -179,6 +179,7 @@ private:
 };
 
 class Lighting{
+    friend class CameraRenderer;
 public:
     void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
 	void SetupDirectionalLight();

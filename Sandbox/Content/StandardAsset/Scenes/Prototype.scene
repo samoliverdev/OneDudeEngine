@@ -7,7 +7,8 @@
         4,
         5,
         6,
-        7
+        7,
+        8
     ],
     "InfoComponents": [
         {
@@ -73,6 +74,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "PointLight",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -83,7 +92,8 @@
         4,
         5,
         6,
-        7
+        7,
+        8
     ],
     "TransformComponents": [
         {
@@ -296,6 +306,32 @@
             "children": [],
             "parent": 4294967295,
             "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -2.137310266494751,
+                "v.y": 1.2274888753890992,
+                "v.z": 0.0050098104402422909
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
         }
     ],
     "TransformComponentEntities": [
@@ -306,7 +342,8 @@
         4,
         5,
         6,
-        7
+        7,
+        8
     ],
     "ThirdPersonCameras": [
         {
@@ -634,10 +671,29 @@
             "shadowStrength": 1.0,
             "shadowBias": 0.0,
             "shadowNormalBias": 0.0
+        },
+        {
+            "type": 1,
+            "color": {
+                "r": 0.0,
+                "g": 1.0,
+                "b": 0.8453607559204102,
+                "a": 1.0
+            },
+            "intensity": 10.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": true,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
         }
     ],
     "LightComponentEntities": [
-        4
+        4,
+        8
     ],
     "MeshRendererComponents": [
         {},
@@ -828,7 +884,7 @@
         {
             "type": 0,
             "shape": {
-                "type": 1,
+                "type": 3,
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,

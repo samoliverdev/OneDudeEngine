@@ -1,0 +1,78 @@
+#pragma BeginPassDef
+    Name MainPass
+    Blend ONE ONE
+    DepthMask False
+    CullFace FRONT
+#pragma EndPassDef
+
+#include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/UniformsDef.glsl
+#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec3 viewPos;
+    Uniform int lightIndex;
+    Uniform float screenWidth; 
+    Uniform float screenHeight;
+EndUniform()
+
+Texture2D(0, 6, gPosition, gPositionSampler)
+Texture2D(0, 7, gNormal, gNormalSampler)
+Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 9, gEmission, gEmissionSampler)
+Texture2D(0, 10, gOther, gOtherSampler)
+
+#if defined(VERTEX) && defined(MainPass)
+    void main() {
+        mat4 targetModelMatrix = GetModelMatrix();
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(MainPass)
+    Out(0) vec4 FragColor;
+
+    #include Engine/ShaderLibrary/Core.glsl
+    #include Engine/ShaderLibrary/Common.glsl
+    #include Engine/ShaderLibrary/Surface.glsl
+    #include Engine/ShaderLibrary/Shadows.glsl
+    #include Engine/ShaderLibrary/Light.glsl
+    #include Engine/ShaderLibrary/BRDF.glsl
+    #include Engine/ShaderLibrary/GI.glsl
+    #include Engine/ShaderLibrary/Lighting.glsl
+
+    void main(){
+        vec2 screenUV = gl_FragCoord.xy / vec2(screenWidth, screenHeight);
+
+        // retrieve data from G-buffer
+        vec3 FragPos = texture(gPosition, screenUV).rgb;
+        vec3 Normal = texture(gNormal, screenUV).rgb;
+        vec3 Albedo = texture(gAlbedoSpec, screenUV).rgb;
+        vec3 Emission = texture(gEmission, screenUV).rgb;
+        float Specular = texture(gOther, screenUV).r;
+        float Metallic = texture(gOther, screenUV).g;
+        float AO = texture(gOther, screenUV).b;
+
+        Surface surface;
+        surface.position = FragPos;
+        surface.normal = Normal;
+        surface.viewDirection = normalize(viewPos - FragPos);
+        surface.depth = -(view * vec4(FragPos, 1.0)).z;
+        surface.color = Albedo.rgb;
+        surface.alpha = AO;
+        surface.occlusion = 1.0;
+        surface.metallic = Metallic;
+        surface.smoothness = Specular;
+
+        BRDF brdf = GetBRDF(surface);
+        GI gi = GetGI(surface, brdf);
+
+        ShadowData shadowData = GetShadowData(surface);
+        Light light = GetOtherLight(lightIndex, surface, shadowData);
+        vec3 color = GetLighting(surface, brdf, light);
+        FragColor = vec4(color, surface.alpha);
+
+        //FragColor = vec4(1.0, 0.0, 1.0, 1.0); // bright magenta
+    }
+#endif

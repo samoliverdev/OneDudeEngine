@@ -408,7 +408,7 @@ void Lighting::UpdateGlobalShaders(){
     context->pipelineData._OtherLightCount = curOtherLightsCount;
     if(curOtherLightsCount > 0){
         std::memcpy(context->pipelineData._OtherLightColors, otherLightColors, curOtherLightsCount * sizeof(Vector4));
-        std::memcpy(context->pipelineData._OtherLightPositions, otherLightDirections, curOtherLightsCount * sizeof(Vector4));
+        std::memcpy(context->pipelineData._OtherLightPositions, otherLightPositions, curOtherLightsCount * sizeof(Vector4));
         std::memcpy(context->pipelineData._OtherLightDirections, otherLightDirections, curOtherLightsCount * sizeof(Vector4));
         std::memcpy(context->pipelineData._OtherLightSpotAngles, otherLightSpotAngles, curOtherLightsCount * sizeof(Vector4));
         std::memcpy(context->pipelineData._OtherLightShadowData, otherLightShadowData, curOtherLightsCount * sizeof(Vector4));
@@ -734,7 +734,31 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         //context->EndDeferredPass();
+        #if 0
         context->EndDeferredPassAndCopyToForwardPass();
+        #else
+        context->EndDeferredPass();
+        context->BeginForwardPass();
+        Graphics::Clean(0, 0, 0, 1);
+
+        context->DrawDeferredLight(-1);
+        for(int i = 0; i < lighting.curDirLightsCount; i++){
+            context->DrawDeferredLight(i);
+        }
+        for(int i = 0; i < lighting.curOtherLightsCount; i++){
+            float radiusRecovered = glm::inversesqrt(glm::max(lighting.otherLightPositions[i].w, 1e-6f));
+            context->DrawDeferredLightOther(
+                i, 
+                lighting.otherLightPositions[i], 
+                lighting.otherLightDirections[i], 
+                radiusRecovered,
+                lighting.otherLightDirections[i] != Vector4Zero
+            );
+        }
+
+        context->DeferredCopyToForwardPass();
+
+        #endif
         //context->BeginForwardPass();
 
         //context->RenderSkyboxLater();

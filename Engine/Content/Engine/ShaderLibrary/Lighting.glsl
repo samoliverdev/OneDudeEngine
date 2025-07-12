@@ -25,4 +25,14 @@ vec3 GetLighting(Surface surfaceWS, BRDF brdf, GI gi){
 	return color;
 }
 
+vec3 GetLightingSingleDirectinal(Surface surfaceWS, BRDF brdf, GI gi, int lightIndex){
+	ShadowData shadowData = GetShadowData(surfaceWS);
+
+	vec3 color = IndirectBRDF(surfaceWS, brdf, gi.diffuse, gi.specular);
+	Light light = GetDirectionalLight(lightIndex, surfaceWS, shadowData);
+	color += GetLighting(surfaceWS, brdf, light);
+
+	return color;
+}
+
 #endif
