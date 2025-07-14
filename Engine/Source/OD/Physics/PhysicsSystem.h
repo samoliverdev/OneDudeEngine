@@ -231,6 +231,12 @@ struct OD_API RagdollComponent{
     Type type;
     bool isDirty = true;
     std::vector<Part> parts;
+    
+    bool syncWithFinalPose = false;
+    bool useTorqueControl = false;
+    float gain = 10;
+    float damping = 1;
+    float stiffness = 10; 
 
     static void OnGui(Entity& e, Scene& scene);
 
@@ -241,6 +247,12 @@ struct OD_API RagdollComponent{
         //ArchiveDumpNVP(ar, isDirty);
         ArchiveDumpNVP(ar, type);
         ArchiveDumpNVP(ar, parts);
+
+        ArchiveDumpNVP(ar, syncWithFinalPose);
+        ArchiveDumpNVP(ar, useTorqueControl);
+        ArchiveDumpNVP(ar, gain);
+        ArchiveDumpNVP(ar, damping);
+        ArchiveDumpNVP(ar, stiffness);
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
@@ -249,6 +261,12 @@ struct OD_API RagdollComponent{
         //COPY_OR_MOVE(isDirty);
         COPY_OR_MOVE(type);
         COPY_OR_MOVE(parts);
+
+        COPY_OR_MOVE(syncWithFinalPose);
+        COPY_OR_MOVE(useTorqueControl);
+        COPY_OR_MOVE(gain);
+        COPY_OR_MOVE(damping);
+        COPY_OR_MOVE(stiffness);
     });
 
 private:

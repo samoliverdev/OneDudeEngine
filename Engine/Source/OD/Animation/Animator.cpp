@@ -27,6 +27,8 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
     }
 
     ImGui::Checkbox("Enable", &anim.enable);
+
+    ImGui::InputInt("ToPlay", &anim.toPlay);
 }
 
 void AnimatorComponent::Play(Clip* clip, int layer){
@@ -77,7 +79,17 @@ int AnimatorComponent::LayerCount(){
 AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
 
 int AnimatorSystem::Type(){ 
-    return SystemType::Late; 
+    return SystemType::Late | SystemType::Stand; 
+}
+
+void AnimatorSystem::Update(){
+    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+    for(auto [entity, anim, skinned]: view.each()){
+        if(anim.toPlay >= 0 && skinned.GetModel() != nullptr){
+            anim.Play(skinned.GetModel()->animationClips[anim.toPlay].get());
+            anim.toPlay = -1;
+        }
+    }
 }
 
 void AnimatorSystem::LateUpdate(){

@@ -36,6 +36,7 @@ public:
     std::vector<Vector3> tangents;
     std::vector<Vector4> weights;
 	std::vector<IVector4> influences;
+    
     std::vector<unsigned int> indices;
 
     std::vector<Matrix4> instancingModelMatrixs;

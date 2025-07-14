@@ -40,7 +40,7 @@ public:
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
     float scale = 1.0f;
-    bool generateColliderData = true;
+    bool generateColliderData = false; //true;
 
     template <class Archive>
     void serialize(Archive& ar){

@@ -8,7 +8,8 @@
         5,
         6,
         7,
-        8
+        8,
+        9
     ],
     "InfoComponents": [
         {
@@ -82,6 +83,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Ragdoll",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -93,7 +102,8 @@
         5,
         6,
         7,
-        8
+        8,
+        9
     ],
     "TransformComponents": [
         {
@@ -176,18 +186,18 @@
         },
         {
             "transform.localPosition": {
-                "v.x": -3.745068073272705,
-                "v.y": 1.0,
-                "v.z": 0.0005264798528514802
+                "v.x": -2.8386754989624025,
+                "v.y": 0.8330175280570984,
+                "v.z": 0.0
             },
             "transform.localRotation": {
-                "q.x": 0.0001726334885461256,
+                "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
             "transform.localEulerAngles": {
-                "v.x": 0.01978234015405178,
+                "v.x": 0.0,
                 "v.y": -0.0,
                 "v.z": 0.0
             },
@@ -332,6 +342,32 @@
             "children": [],
             "parent": 4294967295,
             "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.9845501780509949,
+                "v.y": 0.0,
+                "v.z": 2.528311014175415
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false
         }
     ],
     "TransformComponentEntities": [
@@ -343,7 +379,8 @@
         5,
         6,
         7,
-        8
+        8,
+        9
     ],
     "ThirdPersonCameras": [
         {
@@ -647,11 +684,68 @@
                     ""
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": 1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.0000013709068298339844,
+                    "v.y": 0.9022648930549622,
+                    "v.z": 0.021623283624649049
+                },
+                "extents": {
+                    "v.x": 0.9734249114990234,
+                    "v.y": 0.9023671746253967,
+                    "v.z": 0.18213430047035218
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "StandardAsset/Models/YBot.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    false
+                ],
+                "path": [
+                    "StandardAsset/Materials/YbotJoints.material",
+                    "StandardAsset/Materials/YbotSurface.material"
+                ]
+            }
         }
     ],
     "SkinnedModelRendererComponentEntities": [
         6,
-        7
+        7,
+        9
     ],
     "LightComponents": [
         {
@@ -705,11 +799,17 @@
     ],
     "AnimatorComponents": [
         {
-            "enable": true
+            "enable": true,
+            "toPlay": -1
+        },
+        {
+            "enable": true,
+            "toPlay": 1
         }
     ],
     "AnimatorComponentEntities": [
-        6
+        6,
+        9
     ],
     "RagdollComponents": [
         {
@@ -851,11 +951,515 @@
                     "normalAngle": 0.0,
                     "planeAngle": 0.0
                 }
-            ]
+            ],
+            "syncWithFinalPose": false,
+            "useTorqueControl": false,
+            "gain": 10.0,
+            "damping": 1.0,
+            "stiffness": 1.0
+        },
+        {
+            "layer": 1,
+            "mask": {
+                "mask": 1023
+            },
+            "type": 0,
+            "parts": [
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.0,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 0.30000001192092898,
+                            "v.y": 0.20000000298023225,
+                            "v.z": 0.25
+                        },
+                        "radius": 1.0,
+                        "height": 1.0
+                    },
+                    "parent": -1,
+                    "skinnedSkeletonIndex": 3,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.0,
+                            "v.z": 0.03999999910593033
+                        },
+                        "size": {
+                            "v.x": 0.30000001192092898,
+                            "v.y": 0.3499999940395355,
+                            "v.z": 0.30000001192092898
+                        },
+                        "radius": 1.0,
+                        "height": 1.0
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 6,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": -0.1899999976158142,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -25.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 25.0
+                },
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.07000000029802323,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 0.15000000596046449,
+                            "v.y": 0.25,
+                            "v.z": 0.20000000298023225
+                        },
+                        "radius": 1.0,
+                        "height": 1.0
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 8,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": -0.05999999865889549,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -45.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.23000000417232514
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 58,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -90.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.30000001192092898
+                    },
+                    "parent": 3,
+                    "skinnedSkeletonIndex": 59,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 90.0,
+                    "twistAngleMax": 180.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 0.23000000417232514,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.23000000417232514
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 63,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -90.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.30000001192092898
+                    },
+                    "parent": 5,
+                    "skinnedSkeletonIndex": 64,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 90.0,
+                    "twistAngleMax": 180.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.14000000059604646,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.20000000298023225
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 11,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 90.0,
+                    "planeAngle": 90.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.30000001192092898
+                    },
+                    "parent": 7,
+                    "skinnedSkeletonIndex": 12,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": -1.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 90.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.14000000059604646,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.20000000298023225
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 35,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 90.0,
+                    "planeAngle": 90.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.30000001192092898
+                    },
+                    "parent": 9,
+                    "skinnedSkeletonIndex": 36,
+                    "pos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "rot": {
+                        "q.x": 0.0,
+                        "q.y": 0.0,
+                        "q.z": 0.0,
+                        "q.w": 1.0
+                    },
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 1.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 90.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                }
+            ],
+            "syncWithFinalPose": true,
+            "useTorqueControl": false,
+            "gain": 10.0,
+            "damping": 1.0,
+            "stiffness": 10.0
         }
     ],
     "RagdollComponentEntities": [
-        7
+        7,
+        9
     ],
     "RigidbodyComponents": [
         {
@@ -882,7 +1486,7 @@
             }
         },
         {
-            "type": 0,
+            "type": 1,
             "shape": {
                 "type": 3,
                 "center": {

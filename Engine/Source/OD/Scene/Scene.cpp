@@ -672,12 +672,12 @@ void Scene::Update(){
 
     //if(_running == false) return;
 
-    for(auto s: physicsSystems) s->PhysicsUpdate();
+    /*for(auto s: physicsSystems) s->PhysicsUpdate();
     {
         OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
         taskflow.clear();
-    }
+    }*/
 
     //if(running == false) return;
     for(auto s: standSystems){
@@ -697,6 +697,13 @@ void Scene::Update(){
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
         executor.run(taskflow).wait();
+        taskflow.clear();
+    }
+
+    for(auto s: physicsSystems) s->PhysicsUpdate();
+    {
+        OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
+        executor.run(taskflow).wait(); 
         taskflow.clear();
     }
 

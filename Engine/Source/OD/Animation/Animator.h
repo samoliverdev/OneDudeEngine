@@ -28,6 +28,7 @@ struct OD_API AnimatorComponent{
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, enable);
+        ArchiveDumpNVP(ar, toPlay);
     }
 
     static void OnGui(Entity& e, Scene& scene);
@@ -43,7 +44,7 @@ private:
     std::vector<Layer> layers = {{}};
     //CrossFadeController controller;
 
-    
+    int toPlay = -1;
 };
 
 struct OD_API AnimatorSystem: public System{
@@ -51,6 +52,7 @@ struct OD_API AnimatorSystem: public System{
     //inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 
     virtual int Type() override;
+    virtual void Update() override;
     virtual void LateUpdate() override;
 };
 

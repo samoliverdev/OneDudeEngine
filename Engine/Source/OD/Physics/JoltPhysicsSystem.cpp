@@ -542,6 +542,13 @@ void CollisionBodyComponent::UpdateSettings(){
 void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	RagdollComponent& ragdoll = scene.GetComponent<RagdollComponent>(e);
 
+	ImGui::Checkbox("SyncWithFinalPose", &ragdoll.syncWithFinalPose);
+	ImGui::Checkbox("UseTorqueControl", &ragdoll.useTorqueControl);
+	//ImGui::DragFloat("Gain", &ragdoll.gain);
+	ImGui::DragFloat("Damping", &ragdoll.damping);
+	ImGui::DragFloat("Stiffness", &ragdoll.stiffness);
+	ImGui::Spacing();
+
     ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
 	ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
 	ImGui::DrawLayerMask("Layer", ragdoll.mask);
@@ -1192,9 +1199,76 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 void PhysicsSystem::PhysicsUpdate(){
-    if(GetScene()->Running() == false) return;
+    //if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
+
+	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+
+	auto _view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
+	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
+		if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
+			float gain = ragdoll.gain;
+			float damping = ragdoll.damping;     // Novo: adicionar na struct
+			float stiffness = ragdoll.stiffness;
+
+			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					/*
+					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+					Assert(boneIndex != 0);
+
+					Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+					Quat targetRot = ToJolt(targetTransform.LocalRotation());
+					Quat currentRot;
+					RVec3 currentPos;
+					bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+					Quat deltaRot = targetRot * currentRot.Conjugated();
+					Vec3 axis;
+					float angle;
+					deltaRot.GetAxisAngle(axis, angle);
+
+					Vec3 angularVelocity = axis * angle * gain;
+					bodyInterface.SetAngularVelocity(bodyID, angularVelocity);
+					*/
+
+					///*
+					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+					if (boneIndex <= 0) continue;
+
+					Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+					Quat targetRot = ToJolt(targetTransform.LocalRotation());
+
+					Quat currentRot;
+					RVec3 currentPos;
+					bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+					Quat deltaRot = targetRot * currentRot.Conjugated();
+					Vec3 axis;
+					float angle;
+					deltaRot.GetAxisAngle(axis, angle);
+
+					// Atual: velocidade angular do corpo
+					Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+
+					// PD controller: torque = P * erro - D * velocidade
+					Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+
+					// Aplica torque
+					//bodyInterface.AddTorque(bodyID, torque);
+					if(ragdoll.useTorqueControl)
+						bodyInterface.AddTorque(bodyID, torque);
+					else
+						bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+					//*/
+				}
+			}
+			
+		}
+	}
 
 	if(GetScene()->Running() == true){
 		const int cCollisionSteps = 1;
@@ -1202,8 +1276,6 @@ void PhysicsSystem::PhysicsUpdate(){
 			Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
 		);
 	}
-
-    BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
 	auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
     for(auto e: viewMesh){
@@ -1314,7 +1386,11 @@ void PhysicsSystem::PhysicsUpdate(){
 		if(ragdoll.data != nullptr && GetScene()->Running() == true){
 			if(ragdoll.type == RagdollComponent::Type::Dynamic){
 				skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+				
+				//skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+				//auto& pose = skinned.finalPose;
+
+				auto pose = skinned.GetModel()->skeleton.GetRestPose();
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
@@ -1323,44 +1399,14 @@ void PhysicsSystem::PhysicsUpdate(){
 					bodyInterface.GetPositionAndRotation(i, pos, rot);
 					
 					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-					skinned.finalPose.SetGlobalTransform(boneIndex, Transform(
+					pose.SetGlobalTransform(boneIndex, Transform(
 						trans.InverseTransformPoint(FromJolt(pos)), 
 						math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
 						Vector3One
 					));
 				}	
-				skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+				pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
 			}
-
-			/*if(skinned.skeletonEntities.size() > 0 && ragdoll.type == RagdollComponent::Type::Dynamic){
-				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
-
-				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
-					RVec3 pos;
-					Quat rot;
-					bodyInterface.GetPositionAndRotation(i, pos, rot);
-					
-					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex; //static_cast<int>(bodyInterface.GetUserData(i));
-					Assert(boneIndex != 0);
-					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
-					tt.Position(FromJolt(pos));
-					tt.Rotation(FromJolt(rot));
-				}
-				skinned.UpdateSkeletonEntitesIn(skinned.finalPose, *scene);
-				//skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-				skinned.finalPose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
-			}
-			if(skinned.skeletonEntities.size() > 0 && ragdoll.type != RagdollComponent::Type::Dynamic){
-				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-					Assert(boneIndex != 0);
-					TransformComponent& tt = scene->GetComponent<TransformComponent>(skinned.skeletonEntities[boneIndex]);
-					bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
-            		bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
-				}
-			}*/
 		}
 	}
 
