@@ -64,4 +64,8 @@ void StandardAssetSystem::Update(){
     }
 }
 
+void StandardAssetSystem::LateUpdate(){
+    
+}
+
 }

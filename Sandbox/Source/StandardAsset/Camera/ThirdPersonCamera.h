@@ -19,13 +19,17 @@ public:
     float currentX = 0.0f;
     float currentY = 0.0f;
 
-    Entity lookAtTarget;
+    Entity lookAtTarget = EntityNull;
 
     double lastMousePosX = 0.0;
     double lastMousePosY = 0.0;
 
+    float smoothMouseX = 0.0f;
+    float smoothMouseY = 0.0f;
+    float smoothingFactor = 25.0f; // Higher = more responsive
+    
     bool hasStarted = false;
-
+    
     void OnStart();
     void OnUpdate(Scene& scene, OD::TransformComponent& transform);
 

@@ -91,12 +91,21 @@ InputState mouseButtonStates[MaxMouseButtons];
     MouseButton::Middle
 };*/
 
+static double lastMouseX = 0.0;
+static double lastMouseY = 0.0;
+static double mouseDeltaX = 0.0;
+static double mouseDeltaY = 0.0;
+
 bool Input::IsKeyDown(KeyCode key){
     return keysStates[(int)key].lastPressed == false && keysStates[(int)key].pressed == true;
 }
 
 bool Input::IsKeyUp(KeyCode key){
     return keysStates[(int)key].lastPressed == true && keysStates[(int)key].pressed == false;
+}
+
+Vector2 Input::GetMouseDelta() {
+    return Vector2((float)mouseDeltaX, (float)mouseDeltaY);
 }
 
 void Input::Update(){
@@ -195,6 +204,15 @@ void Input::Update(){
         mouseButtonStates[(int)i].lastPressed = mouseButtonStates[(int)i].pressed;
         mouseButtonStates[(int)i].pressed = IsMouseButton(i);
     }
+
+    double currentX, currentY;
+    GetMousePosition(&currentX, &currentY);
+
+    mouseDeltaX = currentX - lastMouseX;
+    mouseDeltaY = currentY - lastMouseY;
+
+    lastMouseX = currentX;
+    lastMouseY = currentY;
 }
 
 bool Input::IsMouseButtonDown(MouseButton button){

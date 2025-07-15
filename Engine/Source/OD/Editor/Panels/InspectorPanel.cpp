@@ -91,8 +91,8 @@ void DrawComponent(Entity e, const char* name){
 template<typename T, typename UIFunction>
 void DrawComponent(Entity e, Scene& scene, const char* name, UIFunction function){
     const ImGuiTreeNodeFlags treeNodeFlags = 
-        ImGuiTreeNodeFlags_DefaultOpen 
-        | ImGuiTreeNodeFlags_Framed 
+        /*ImGuiTreeNodeFlags_DefaultOpen 
+        |*/ ImGuiTreeNodeFlags_Framed 
         | ImGuiTreeNodeFlags_AllowItemOverlap
         | ImGuiTreeNodeFlags_SpanAvailWidth
         | ImGuiTreeNodeFlags_FramePadding;

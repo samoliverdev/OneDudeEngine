@@ -17,8 +17,11 @@ public:
     float turnSpeed = 20;
 
     bool hasStarted = false;
-
+    
+    bool onGround = true;
+    Vector3 groundNormal = Vector3Zero; 
     Vector3 moveDir = Vector3Zero;
+    bool lastStickToTheFloor = true;
 
     void OnStart(RigidbodyComponent& rb);
     void OnUpdate(Scene& scene, TransformComponent& transform, RigidbodyComponent& rb);
@@ -30,6 +33,8 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, moveSpeed);
         ArchiveDumpNVP(ar, turnSpeed);
+
+        ArchiveDumpNVP(ar, onGround);
     }
 };
 

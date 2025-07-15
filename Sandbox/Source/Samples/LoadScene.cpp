@@ -6,7 +6,7 @@
 
 void LoadSceneSample::OnInit(){
     LogInfo("Game Init");
-    Application::Vsync(false);
+    Application::Vsync(true);
 
     Standard::ModuleInit();
 

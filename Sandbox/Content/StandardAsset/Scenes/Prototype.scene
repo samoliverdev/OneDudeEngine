@@ -14,7 +14,7 @@
     ],
     "InfoComponents": [
         {
-            "name": "Camera",
+            "name": "TPSCamera",
             "tag": "",
             "layer": 1,
             "active": false,
@@ -426,7 +426,7 @@
             "autoHiddenCursor": true,
             "upOffset": 1.399999976158142,
             "distance": 4.0,
-            "sensivity": 5.0,
+            "sensivity": 8.0,
             "yMin": -50.0,
             "yMax": 50.0
         }
@@ -504,7 +504,8 @@
     "CharacterMovements": [
         {
             "moveSpeed": 6.0,
-            "turnSpeed": 20.0
+            "turnSpeed": 10.0,
+            "onGround": true
         }
     ],
     "CharacterMovementEntities": [

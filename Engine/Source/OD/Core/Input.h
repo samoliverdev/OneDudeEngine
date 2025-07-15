@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Core/Math.h"
 //#include "Lua.h"
 
 namespace sol{ class state; }
@@ -111,6 +112,8 @@ public:
     static bool IsMouseButtonUp(MouseButton button);
 
     static void GetMousePosition(double* x, double* y);
+
+    static Vector2 GetMouseDelta();
 
     static void CreateLuaBind(sol::state& lua);
 

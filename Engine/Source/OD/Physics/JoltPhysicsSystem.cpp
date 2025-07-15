@@ -1574,7 +1574,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
 		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
 		hit.hitPoint = FromJolt(hitPoint);
-		hit.hitPoint = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
 		return true;
 	}
 

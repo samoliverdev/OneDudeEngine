@@ -634,7 +634,7 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
 }*/   
 
 Entity Scene::GetMainCamera(){
-    auto camView = registry.view<CameraComponent>();
+    auto camView = registry.view<CameraComponent>(entt::exclude<SelfDisable>);
     for(auto e: camView){
         CameraComponent& cam = camView.get<CameraComponent>(e);
         if(cam.isMain == false) continue;
