@@ -385,6 +385,79 @@ Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot) {
     return mesh;
 }
 
+Ref<Mesh> CreateRampMesh(Vector3 size, MeshPivot pivot, bool includeBottomFace){
+    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Vector3 offset = (pivot == MeshPivot::Center) ? -size * 0.5f : Vector3(0);
+    float x = size.x;
+    float y = size.y;
+    float z = size.z;
+
+    auto AddFace = [&](Vector3 a, Vector3 b, Vector3 c, int uvType = 0){
+        a += offset;
+        b += offset;
+        c += offset;
+
+        Vector3 n = glm::normalize(glm::cross(b - a, c - a));
+
+        mesh->vertices.push_back(a);
+        mesh->vertices.push_back(b);
+        mesh->vertices.push_back(c);
+
+        mesh->normals.push_back(n);
+        mesh->normals.push_back(n);
+        mesh->normals.push_back(n);
+
+        if(uvType == 1){
+            mesh->uv.push_back(Vector3(a.x, a.y, 0));
+            mesh->uv.push_back(Vector3(b.x, b.y, 0));
+            mesh->uv.push_back(Vector3(c.x, c.y, 0));
+        } else if(uvType == 2){
+            mesh->uv.push_back(Vector3(a.z, a.y, 0));
+            mesh->uv.push_back(Vector3(b.z, b.y, 0));
+            mesh->uv.push_back(Vector3(c.z, c.y, 0));
+        } else {
+            mesh->uv.push_back(Vector3(a.x, a.z, 0));
+            mesh->uv.push_back(Vector3(b.x, b.z, 0));
+            mesh->uv.push_back(Vector3(c.x, c.z, 0));
+        }
+
+        int base = mesh->vertices.size() - 3;
+        mesh->indices.push_back(base);
+        mesh->indices.push_back(base + 1);
+        mesh->indices.push_back(base + 2);
+    };
+
+    // Posições base
+    Vector3 p0(0, 0, 0); // frente esq baixo
+    Vector3 p1(x, 0, 0); // frente dir baixo
+    Vector3 p2(x, 0, z); // trás dir baixo
+    Vector3 p3(0, 0, z); // trás esq baixo
+    Vector3 p4(0, y, z); // trás esq topo
+    Vector3 p5(x, y, z); // trás dir topo
+
+    // Top (rampa)
+    AddFace(p4, p1, p0);
+    AddFace(p4, p5, p1);
+
+    // Front
+    AddFace(p3, p2, p5, 1);
+    AddFace(p3, p5, p4, 1);
+
+    // Traseira
+    AddFace(p2, p1, p5, 2);
+    AddFace(p0, p3, p4, 2);
+
+    // Inferior
+    if(includeBottomFace){
+        AddFace(p1, p2, p3);
+        AddFace(p1, p3, p0);
+    }
+
+    mesh->CalculateTangent();
+    mesh->Submit();
+    return mesh;
+}
+
 void Greyboxing::OnGui(Entity& e, Scene& scene){
     Greyboxing& greyboxing = scene.GetComponent<Greyboxing>(e);
 
@@ -496,6 +569,19 @@ void Greyboxing::OnGui(Entity& e, Scene& scene){
         );
     }
 
+    if(greyboxing.shape == Greyboxing::Shape::Ramp){
+        IMGUI_GlobalTableRow("Pivot", {
+            if(ImGui::DrawEnumCombo<MeshPivot>("##Pivot", &greyboxing.pivot)){
+                greyboxing.isDirty = true;
+            }}
+        );
+        IMGUI_GlobalTableRow("Size", {
+            if(ImGui::DragFloat3("##Size", &greyboxing.cubeSize.x)){
+                greyboxing.isDirty = true;
+            }} 
+        );
+    }
+
     IMGUI_EndGlobalTable();
 }
 
@@ -525,6 +611,10 @@ void Greyboxing::UpdateMesh(Scene& scene, Entity e, Ref<Material> defaultMateria
     }
     if(shape == Greyboxing::Shape::Sphere){
         meshRenderer.mesh = CreateSphereMesh(radius, resolution, pivot);
+        meshRenderer.UpdateAABB();
+    }
+    if(shape == Greyboxing::Shape::Ramp){
+        meshRenderer.mesh = CreateRampMesh(cubeSize, pivot);
         meshRenderer.UpdateAABB();
     }
 

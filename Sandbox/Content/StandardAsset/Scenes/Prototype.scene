@@ -9,7 +9,8 @@
         6,
         7,
         8,
-        9
+        9,
+        10
     ],
     "InfoComponents": [
         {
@@ -91,6 +92,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Sphere",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -103,7 +112,8 @@
         6,
         7,
         8,
-        9
+        9,
+        10
     ],
     "TransformComponents": [
         {
@@ -186,9 +196,9 @@
         },
         {
             "transform.localPosition": {
-                "v.x": -2.8386754989624025,
+                "v.x": -5.5,
                 "v.y": 0.8330175280570984,
-                "v.z": 0.0
+                "v.z": 5.5
             },
             "transform.localRotation": {
                 "q.x": 0.0,
@@ -260,7 +270,8 @@
             },
             "children": [
                 2,
-                3
+                3,
+                10
             ],
             "parent": 4294967295,
             "hasParent": false
@@ -368,6 +379,32 @@
             "children": [],
             "parent": 4294967295,
             "hasParent": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -5.5,
+                "v.y": 0.8330175280570984,
+                "v.z": 9.5
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localEulerAngles": {
+                "v.x": 0.0,
+                "v.y": -0.0,
+                "v.z": 0.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 5,
+            "hasParent": true
         }
     ],
     "TransformComponentEntities": [
@@ -380,7 +417,8 @@
         6,
         7,
         8,
-        9
+        9,
+        10
     ],
     "ThirdPersonCameras": [
         {
@@ -418,16 +456,16 @@
             "height": 2.0
         },
         {
-            "shape": 4,
+            "shape": 5,
             "pivot": 0,
             "planeSize": {
                 "v.x": 100.0,
                 "v.y": 100.0
             },
             "cubeSize": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
+                "v.x": 4.0,
+                "v.y": 2.0,
+                "v.z": 4.0
             },
             "resolution": {
                 "v.x": 32,
@@ -436,11 +474,32 @@
             },
             "radius": 1.0,
             "height": 2.0
+        },
+        {
+            "shape": 1,
+            "pivot": 0,
+            "planeSize": {
+                "v.x": 100.0,
+                "v.y": 100.0
+            },
+            "cubeSize": {
+                "v.x": 4.0,
+                "v.y": 2.0,
+                "v.z": 4.0
+            },
+            "resolution": {
+                "v.x": 8,
+                "v.y": 8,
+                "v.z": 8
+            },
+            "radius": 1.0,
+            "height": 2.0
         }
     ],
     "GreyboxingEntities": [
         2,
-        3
+        3,
+        10
     ],
     "CharacterMovements": [
         {
@@ -791,11 +850,13 @@
     ],
     "MeshRendererComponents": [
         {},
+        {},
         {}
     ],
     "MeshRendererComponentEntities": [
         2,
-        3
+        3,
+        10
     ],
     "AnimatorComponents": [
         {
@@ -1530,11 +1591,35 @@
             "mask": {
                 "mask": 1023
             }
+        },
+        {
+            "type": 1,
+            "shape": {
+                "type": 3,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            }
         }
     ],
     "RigidbodyComponentEntities": [
         2,
         3,
-        6
+        6,
+        10
     ]
 }

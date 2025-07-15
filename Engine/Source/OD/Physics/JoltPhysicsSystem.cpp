@@ -1182,7 +1182,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			constraint->mDrawConstraintSize = 0.1f;
 			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
 			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
-			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = Vec3::sAxisZ();
+			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = Vec3::sAxisZ(); //TODO: FIX THIS, Make like twist_axis
 			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
 			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
 			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
@@ -1199,7 +1199,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 void PhysicsSystem::PhysicsUpdate(){
-    //if(GetScene()->Running() == false) return;
+    if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

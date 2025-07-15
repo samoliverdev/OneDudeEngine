@@ -17,6 +17,7 @@ Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot);
 Ref<Mesh> CreateCylinderMesh(float radius, float height, IVector2 resolution, MeshPivot pivot);
 Ref<Mesh> CreateConeMesh(float radius, float height, int radialSegments, int heightSegments, bool addBaseCap, MeshPivot pivot);
 Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot);
+Ref<Mesh> CreateRampMesh(Vector3 size, MeshPivot pivot, bool includeBottomFace = true);
 
 struct Greyboxing{
     enum class Shape{
@@ -24,7 +25,8 @@ struct Greyboxing{
         Cube,
         Cylinder,
         Cone,
-        Sphere
+        Sphere,
+        Ramp
     };
     
     Shape shape = Shape::Plane;
