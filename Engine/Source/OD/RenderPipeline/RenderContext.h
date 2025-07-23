@@ -55,6 +55,7 @@ struct OD_API alignas(16) RenderData{
     Material* customShadowPass = nullptr;
     Mesh* targetMesh;
     float distance;
+    bool awalsDraw = false;
 
     /*#if EnableExperimentalPerDrawCustomData
     bool useCustomData = false;

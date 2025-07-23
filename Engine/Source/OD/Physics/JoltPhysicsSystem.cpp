@@ -543,6 +543,7 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	RagdollComponent& ragdoll = scene.GetComponent<RagdollComponent>(e);
 
 	ImGui::Checkbox("SyncWithFinalPose", &ragdoll.syncWithFinalPose);
+	ImGui::Checkbox("SyncFromTheHips", &ragdoll.syncFromTheHips);
 	ImGui::Checkbox("UseTorqueControl", &ragdoll.useTorqueControl);
 	//ImGui::DragFloat("Gain", &ragdoll.gain);
 	ImGui::DragFloat("Damping", &ragdoll.damping);
@@ -647,6 +648,13 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 			}
 
 			ImGui::DrawEnumCombo<RagdollComponent::Part::OverrideType>("OverrideType", &part.overrideType);
+
+			if(ragdoll.syncWithFinalPose){
+				if(ImGui::Checkbox("DisableSync", &part.disableSync))
+                	ragdoll.isDirty = true;
+				if(ImGui::Checkbox("IsHips", &part.isHips))
+                	ragdoll.isDirty = true;
+			}
 
             /*if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
                 ragdoll.isDirty = true;
@@ -1221,7 +1229,17 @@ void PhysicsSystem::PhysicsUpdate(){
 			float stiffness = ragdoll.stiffness;
 
 			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
+				int hipIndex = -1;
+
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					if(ragdoll.parts[p].isHips){
+						hipIndex = p; 
+						break;
+					}
+				}
+
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					if(ragdoll.parts[p].disableSync) continue;
 					/*
 					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -1241,37 +1259,76 @@ void PhysicsSystem::PhysicsUpdate(){
 					Vec3 angularVelocity = axis * angle * gain;
 					bodyInterface.SetAngularVelocity(bodyID, angularVelocity);
 					*/
+					
+					if(ragdoll.syncFromTheHips && hipIndex != -1){
+						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						if (boneIndex <= 0) continue;
 
-					///*
-					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-					if (boneIndex <= 0) continue;
+						int hipPartIndex = hipIndex;
+						BodyID hipBodyID = ragdoll.data->ragdoll->GetBodyIDs()[hipPartIndex];
+						int hipBoneIndex = ragdoll.parts[hipPartIndex].skinnedSkeletonIndex;
 
-					Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-					Quat targetRot = ToJolt(targetTransform.LocalRotation());
+						// 1. Get local rotation from animation (relative to animated hip)
+						Transform boneAnimGlobal = skinned.finalPose.GetGlobalTransform(boneIndex);
 
-					Quat currentRot;
-					RVec3 currentPos;
-					bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+						// 2. Get current hip transform from physics
+						Quat hipRot;
+						RVec3 hipPos;
+						bodyInterface.GetPositionAndRotation(hipBodyID, hipPos, hipRot);
+						Transform hipPhysTransform = Transform(FromJolt(hipPos), FromJolt(hipRot), Vector3One);
 
-					Quat deltaRot = targetRot * currentRot.Conjugated();
-					Vec3 axis;
-					float angle;
-					deltaRot.GetAxisAngle(axis, angle);
+						// 3. Rebuild the target bone transform in world space using local anim pose in current hip space
+						Transform boneTargetWorld = Transform::Combine(hipPhysTransform, boneAnimGlobal);
+						Quat targetRot = ToJolt(boneTargetWorld.LocalRotation());
 
-					// Atual: velocidade angular do corpo
-					Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+						// 4. Get current bone rotation from physics
+						Quat currentRot;
+						RVec3 currentPos;
+						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
 
-					// PD controller: torque = P * erro - D * velocidade
-					Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+						// 5. Compute delta rotation and torque
+						Quat deltaRot = targetRot * currentRot.Conjugated();
+						Vec3 axis;
+						float angle;
+						deltaRot.GetAxisAngle(axis, angle);
 
-					// Aplica torque
-					//bodyInterface.AddTorque(bodyID, torque);
-					if(ragdoll.useTorqueControl)
-						bodyInterface.AddTorque(bodyID, torque);
-					else
-						bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
-					//*/
+						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+
+						if (ragdoll.useTorqueControl)
+							bodyInterface.AddTorque(bodyID, torque);
+						else
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+					} else {
+						// Work, but in world space
+						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						if (boneIndex <= 0) continue;
+
+						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+						Quat targetRot = ToJolt(targetTransform.LocalRotation());
+
+						Quat currentRot;
+						RVec3 currentPos;
+						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+						Quat deltaRot = targetRot * currentRot.Conjugated();
+						Vec3 axis;
+						float angle;
+						deltaRot.GetAxisAngle(axis, angle);
+
+						// Atual: velocidade angular do corpo
+						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+
+						// PD controller: torque = P * erro - D * velocidade
+						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+
+						if(ragdoll.useTorqueControl)
+							bodyInterface.AddTorque(bodyID, torque);
+						else
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+					}
 				}
 			}
 			
@@ -1340,7 +1397,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	auto view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
-		if(ragdoll.isDirty){
+		if(ragdoll.isDirty && skinned.GetModel() != nullptr){
 			ragdoll.isDirty = false;
 			if(ragdoll.data != nullptr){
 				ragdoll.data->ragdoll->RemoveFromPhysicsSystem();

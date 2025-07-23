@@ -947,6 +947,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = (int)e;
+            if(c.updateWhenOffscreen) data.awalsDraw = true;
             
             onReciveRenderData(data);
             _i += 1;
@@ -1241,6 +1242,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = (int)e;
+            if(c.updateWhenOffscreen) data.awalsDraw = true;
             
             onReciveRenderData(data);
             _i += 1;

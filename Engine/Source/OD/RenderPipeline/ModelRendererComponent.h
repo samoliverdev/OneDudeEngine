@@ -86,6 +86,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     Transform skeletonTransform;
     Pose finalPose;
     bool postUpdatePosePalette = false;
+    bool updateWhenOffscreen = false;
     AlignedVector<Matrix4> posePalette;
 
     std::vector<Entity> skeletonEntities;
@@ -100,6 +101,21 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     inline void UpdatePosePalette(){
         finalPose = model->skeleton.GetRestPose();
         GetModel()->skeleton.GetRestPose().GetMatrixPalette(posePalette, model->skeleton.GetInvBindPose());
+    }
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, localTransform);
+        ArchiveDumpNVP(ar, subMeshIndex);
+        ArchiveDumpNVP(ar, boundingVolume);
+        ArchiveDumpNVP(ar, renderTargetVisibility);
+
+        ArchiveDumpNVP(ar, updateWhenOffscreen);
+
+        AssetRefSerialize<Model> modelRef(model);
+        ArchiveDumpNVP(ar, modelRef);
+        AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
+        ArchiveDumpNVP(ar, materialVectorRef);
     }
 };
 

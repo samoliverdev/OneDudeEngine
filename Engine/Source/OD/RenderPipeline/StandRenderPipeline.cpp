@@ -149,7 +149,7 @@ void Shadows::AddRenderData(RenderData& data){
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
-            if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false) continue;
+            if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false && data.awalsDraw == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
     } 
@@ -157,7 +157,7 @@ void Shadows::AddRenderData(RenderData& data){
     index = -1;
     for(int i = 0; i < shadowedOtherLightCount; i++){
         index += 1;
-        if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false) continue;
+        if(data.aabb.isOnFrustum(shadowOtherLightsSplits[index].frustum) == false && data.awalsDraw == false) continue;
         context->AddDrawShadow(data, s, shadowOtherLightsBuffers[index]);
     } 
 }
@@ -591,7 +591,7 @@ void CameraRenderer::RunRenderDataLoop(){
 }
 
 void CameraRenderer::AddRenderData(RenderData& data){
-    if(data.aabb.isOnFrustum(camera.frustum) == false) return;
+    if(data.aabb.isOnFrustum(camera.frustum) == false && data.awalsDraw == false) return;
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);

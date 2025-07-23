@@ -252,6 +252,8 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
         ImGui::TreePop();
     }
 
+    ImGui::Checkbox("updateWhenOffscreen", &mesh.updateWhenOffscreen);
+
     /*if(mesh.model == nullptr){
         ImGui::Text("Path: None");
     } else {

@@ -208,6 +208,9 @@ struct OD_API RagdollComponent{
         float normalAngle = 0;
         float planeAngle = 0;
 
+        bool disableSync = false;
+        bool isHips = false;
+
         //TODO: Maybe add this again later, this is to be used with a no skinned bone
         //Vector3 pos = Vector3Zero;
         //Quaternion rot = QuaternionIdentity;
@@ -220,6 +223,8 @@ struct OD_API RagdollComponent{
             ArchiveDumpNVP(ar, overrideType);
             //ArchiveDumpNVP(ar, pos);
             //ArchiveDumpNVP(ar, rot);
+            ArchiveDumpNVP(ar, disableSync);
+            ArchiveDumpNVP(ar, isHips);
             ArchiveDumpNVP(ar, constraintPos);
             ArchiveDumpNVP(ar, twistAxis);
             ArchiveDumpNVP(ar, twistAngleMin);
@@ -238,6 +243,7 @@ struct OD_API RagdollComponent{
     std::vector<Part> parts;
     
     bool syncWithFinalPose = false;
+    bool syncFromTheHips = true;
     bool useTorqueControl = false;
     float gain = 10;
     float damping = 1;
@@ -254,6 +260,7 @@ struct OD_API RagdollComponent{
         ArchiveDumpNVP(ar, parts);
 
         ArchiveDumpNVP(ar, syncWithFinalPose);
+        ArchiveDumpNVP(ar, syncFromTheHips);
         ArchiveDumpNVP(ar, useTorqueControl);
         ArchiveDumpNVP(ar, gain);
         ArchiveDumpNVP(ar, damping);
