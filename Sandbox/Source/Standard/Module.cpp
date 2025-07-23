@@ -21,7 +21,7 @@ void ModuleInit(){
 
 StandardAssetSystem::StandardAssetSystem(Scene* inscene):System(inscene){
     defaultMaterial = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
-    defaultMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("StandardAsset/Textures/GreyboxTextures/greybox_grey_grid.png"));
+    defaultMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Standard/Textures/GreyboxTextures/greybox_grey_grid.png"));
 }
 
 StandardAssetSystem::~StandardAssetSystem(){

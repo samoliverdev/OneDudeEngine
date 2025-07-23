@@ -1,7 +1,7 @@
 {
     "Material": {
         "enableInstancing": false,
-        "shaderPath": "Engine/Shaders/Lit2.glsl",
+        "shaderPath": "Engine/Shaders/Lit.glsl",
         "maps": [
             {
                 "key": "color",
@@ -49,7 +49,7 @@
                 "key": "mainTex",
                 "value": {
                     "type": 7,
-                    "texPath": "StandardAsset\\Textures\\GreyboxTextures\\greybox_teal_grid.png"
+                    "texPath": "Standard\\Textures\\GreyboxTextures\\greybox_grey_grid.png"
                 }
             },
             {

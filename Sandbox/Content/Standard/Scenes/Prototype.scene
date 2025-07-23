@@ -515,7 +515,7 @@
         {
             "baseModelRef": {
                 "isNull": false,
-                "path": "StandardAsset/Models/YBot.glb"
+                "path": "Standard/Models/YBot.glb"
             }
         }
     ],
@@ -677,7 +677,7 @@
             ],
             "modelRef": {
                 "isNull": false,
-                "path": "StandardAsset/Models/YBot.glb"
+                "path": "Standard/Models/YBot.glb"
             },
             "materialVectorRef": {
                 "isNull": [
@@ -685,8 +685,8 @@
                     false
                 ],
                 "path": [
-                    "StandardAsset/Materials/YbotJoints.material",
-                    "StandardAsset/Materials/YbotSurface.material"
+                    "Standard/Materials/YbotJoints.material",
+                    "Standard/Materials/YbotSurface.material"
                 ]
             }
         },
@@ -788,7 +788,7 @@
             ],
             "modelRef": {
                 "isNull": false,
-                "path": "StandardAsset/Models/YBot.glb"
+                "path": "Standard/Models/YBot.glb"
             },
             "materialVectorRef": {
                 "isNull": [
@@ -796,8 +796,8 @@
                     false
                 ],
                 "path": [
-                    "StandardAsset/Materials/YbotJoints.material",
-                    "StandardAsset/Materials/YbotSurface.material"
+                    "Standard/Materials/YbotJoints.material",
+                    "Standard/Materials/YbotSurface.material"
                 ]
             }
         }

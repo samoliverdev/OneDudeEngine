@@ -20,7 +20,7 @@
                 "key": "metallic",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.0,
+                    "valueFloat": 0.8519999980926514,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -49,7 +49,7 @@
                 "key": "mainTex",
                 "value": {
                     "type": 7,
-                    "texPath": "StandardAsset\\Textures\\GreyboxTextures\\greybox_green_grid.png"
+                    "texPath": "Standard\\Textures\\GreyboxTextures\\greybox_orange_grid.png"
                 }
             },
             {
@@ -92,7 +92,7 @@
                 "key": "occlusion",
                 "value": {
                     "type": 2,
-                    "valueFloat": 1.0,
+                    "valueFloat": 0.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -101,7 +101,7 @@
                 "key": "smoothness",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.5,
+                    "valueFloat": 0.597000002861023,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }

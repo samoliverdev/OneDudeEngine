@@ -1,5 +1,5 @@
 #include "LoadScene.h"
-#include "StandardAsset/Module.h"
+#include "Standard/Module.h"
 #include <OD/Core/Application.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/Editor/Editor.h>
@@ -13,7 +13,7 @@ void LoadSceneSample::OnInit(){
     auto& SceneManager = SceneManager::Get();
     OD::Scene* scene = SceneManager.NewScene();
 
-    scene->Load("StandardAsset/Scenes/Prototype.scene");
+    scene->Load("Standard/Scenes/Prototype.scene");
 
     Application::AddModule<Editor>();
     //scene->Start();
