@@ -371,7 +371,10 @@ void InspectorPanel::DrawComponents(Entity entity){
     
     for(auto& i: SceneManager::Get().coreComponentsSerializer){
         //LogInfo("%s", i.first.c_str());
-        DrawComponentFromCoreComponents(entity, i.first, i.second);
+        //DrawComponentFromCoreComponents(entity, i.first, i.second);
+
+        std::string displayName = i.first.substr(i.first.find_last_of('/') + 1);
+        DrawComponentFromCoreComponents(entity, displayName, i.second);
     }
 
     ImGui::Spacing();
@@ -379,92 +382,18 @@ void InspectorPanel::DrawComponents(Entity entity){
     ImGui::Spacing(); 
 
     for(auto& i: SceneManager::Get().componentsSerializer){
-        DrawComponentFromSerializeFuncs(entity, i.first, i.second);
+        //DrawComponentFromSerializeFuncs(entity, i.first, i.second);
+        
+        std::string displayName = i.first.substr(i.first.find_last_of('/') + 1);
+        DrawComponentFromSerializeFuncs(entity, displayName, i.second);
     }
 
     //if(entityType != EntityType::Stand) ImGui::EndDisabled();
 }
 
 void InspectorPanel::ShowAddComponent(Entity entity){
-    if(ImGui::Button("Add Component"))
+    /*if(ImGui::Button("Add Component"))
         ImGui::OpenPopup("AddComponent");
-
-    /*if(ImGui::BeginPopup("AddComponent")){
-        for(auto& i: SceneManager::Get().coreComponentsSerializer){
-            if(ImGui::MenuItem(i.first.c_str())){
-                i.second.addComponent(editor->selectionEntity, *scene);
-                ImGui::CloseCurrentPopup();
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing(); 
-
-        for(auto& i: SceneManager::Get().componentsSerializer){
-            if(ImGui::MenuItem(i.first.c_str())){
-                i.second.addComponent(editor->selectionEntity, *scene);
-                ImGui::CloseCurrentPopup();
-            }
-        }
-
-        ImGui::EndPopup();
-    }*/
-
-    /*if(ImGui::BeginPopup("AddComponent")){
-        // Static buffer for search input
-        static char searchBuffer[128] = "";
-        static std::string searchQuery;
-
-        // Search bar
-        ImGui::Text("Search:");
-        ImGui::SameLine();
-        if (ImGui::InputText("##SearchComponents", searchBuffer, sizeof(searchBuffer))) {
-            searchQuery = std::string(searchBuffer);
-            // Convert search query to lowercase for case-insensitive comparison
-            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        // Filter and display core components
-        for (auto& i : SceneManager::Get().coreComponentsSerializer) {
-            std::string componentName = i.first;
-            std::string componentNameLower = componentName;
-            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
-
-            // Show component if it matches the search query (or if search is empty)
-            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
-                if (ImGui::MenuItem(i.first.c_str())) {
-                    i.second.addComponent(editor->selectionEntity, *scene);
-                    ImGui::CloseCurrentPopup();
-                }
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        // Filter and display other components
-        for (auto& i : SceneManager::Get().componentsSerializer) {
-            std::string componentName = i.first;
-            std::string componentNameLower = componentName;
-            std::transform(componentNameLower.begin(), componentNameLower.end(), componentNameLower.begin(), ::tolower);
-
-            // Show component if it matches the search query (or if search is empty)
-            if (searchQuery.empty() || componentNameLower.find(searchQuery) != std::string::npos) {
-                if (ImGui::MenuItem(i.first.c_str())) {
-                    i.second.addComponent(editor->selectionEntity, *scene);
-                    ImGui::CloseCurrentPopup();
-                }
-            }
-        }
-
-        ImGui::EndPopup();
-    }*/
 
     // Set popup style (optional: rounded corners, max size)
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 100), ImVec2(400, 300)); // Min and max size for the popup
@@ -533,6 +462,128 @@ void InspectorPanel::ShowAddComponent(Entity entity){
 
         ImGui::EndChild(); // End scrollable region
 
+        ImGui::EndPopup();
+    }*/
+
+    using ComponentEntry = SceneManager::SerializeFuncs;
+
+    if(ImGui::Button("Add Component"))
+        ImGui::OpenPopup("AddComponent");
+
+    ImGui::SetNextWindowSizeConstraints(ImVec2(200, 100), ImVec2(400, 300));
+
+    static char searchBuffer[128] = "";
+    static std::string searchQuery;
+
+    if(!ImGui::IsPopupOpen("AddComponent")){
+        searchBuffer[0] = '\0';
+        searchQuery.clear();
+    }
+
+    if(ImGui::BeginPopup("AddComponent")){
+        ImGui::Text("Search:");
+        ImGui::SameLine();
+        if(ImGui::InputText("##SearchComponents", searchBuffer, sizeof(searchBuffer))){
+            searchQuery = std::string(searchBuffer);
+            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::BeginChild("ComponentList", ImVec2(0, 200), true);
+
+        auto extractFilteredComponents = [&](const auto& componentMap){
+            std::vector<std::pair<std::vector<std::string>, ComponentEntry>> filtered;
+            for(auto& [name, entry] : componentMap){
+                std::string fullName = entry.groupName.empty() ? name: entry.groupName + "/" + name;
+                std::string fullNameLower = fullName;
+                std::transform(fullNameLower.begin(), fullNameLower.end(), fullNameLower.begin(), ::tolower);
+
+                if(searchQuery.empty() || fullNameLower.find(searchQuery) != std::string::npos){
+                    std::vector<std::string> path;
+                    std::stringstream ss(fullName);
+                    std::string segment;
+                    while(std::getline(ss, segment, '/'))
+                        path.push_back(segment);
+                    filtered.emplace_back(path, entry);
+                }
+            }
+            return filtered;
+        };
+
+        auto filteredCore = extractFilteredComponents(SceneManager::Get().coreComponentsSerializer);
+        auto filteredOther = extractFilteredComponents(SceneManager::Get().componentsSerializer);
+
+        // FLAT: when searching, show all entries flattened, first core, then other
+        if(!searchQuery.empty()){
+            for (auto& [path, entry] : filteredCore) {
+                std::string fullName = std::accumulate(std::next(path.begin()), path.end(), path[0],
+                    [](const std::string& a, const std::string& b) { return a + "/" + b; });
+
+                if (ImGui::MenuItem(fullName.c_str())) {
+                    entry.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            ImGui::Separator();
+
+            for (auto& [path, entry] : filteredOther) {
+                std::string fullName = std::accumulate(std::next(path.begin()), path.end(), path[0],
+                    [](const std::string& a, const std::string& b) { return a + "/" + b; });
+
+                if (ImGui::MenuItem(fullName.c_str())) {
+                    entry.addComponent(editor->selectionEntity, *scene);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        } 
+        // GROUPED: show core first, then other
+        else {
+            std::function<void(const std::vector<std::pair<std::vector<std::string>, ComponentEntry>>&, size_t)> renderGroup;
+            renderGroup = [&](const std::vector<std::pair<std::vector<std::string>, ComponentEntry>>& list, size_t depth) {
+                std::map<std::string, std::vector<std::pair<std::vector<std::string>, ComponentEntry>>> groups;
+                std::vector<std::pair<std::vector<std::string>, ComponentEntry>> leafItems;
+
+                for (const auto& [path, entry] : list) {
+                    if (depth + 1 < path.size()) {
+                        groups[path[depth]].push_back({ path, entry });
+                    } else {
+                        leafItems.push_back({ path, entry });
+                    }
+                }
+
+                for (auto& [groupName, groupList] : groups) {
+                    if (ImGui::BeginMenu(groupName.c_str())) {
+                        renderGroup(groupList, depth + 1);
+                        ImGui::EndMenu();
+                    }
+                }
+
+                for (auto& [path, entry] : leafItems) {
+                    if (ImGui::MenuItem(path.back().c_str())) {
+                        entry.addComponent(editor->selectionEntity, *scene);
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+            };
+
+            // Render core first
+            if (!filteredCore.empty()) {
+                renderGroup(filteredCore, 0);
+                if (!filteredOther.empty())
+                    ImGui::Separator(); // Visual separator
+            }
+
+            // Render non-core after
+            if (!filteredOther.empty()) {
+                renderGroup(filteredOther, 0);
+            }
+        }
+
+        ImGui::EndChild();
         ImGui::EndPopup();
     }
 

@@ -11,11 +11,11 @@
 namespace Standard{
 
 void ModuleInit(){
-    SceneManager::Get().RegisterComponent<FreeCamera>("FreeCamera");
-    SceneManager::Get().RegisterComponent<ThirdPersonCamera>("ThirdPersonCamera");
-    SceneManager::Get().RegisterComponent<CharacterMovement>("CharacterMovement");
-    SceneManager::Get().RegisterComponent<CharacterAnimation>("CharacterAnimation");
-    SceneManager::Get().RegisterComponent<Greyboxing>("Greyboxing");
+    SceneManager::Get().RegisterComponent<FreeCamera>("FreeCamera", "Standard/Camera");
+    SceneManager::Get().RegisterComponent<ThirdPersonCamera>("ThirdPersonCamera", "Standard");
+    SceneManager::Get().RegisterComponent<CharacterMovement>("CharacterMovement", "Standard");
+    SceneManager::Get().RegisterComponent<CharacterAnimation>("CharacterAnimation", "Standard");
+    SceneManager::Get().RegisterComponent<Greyboxing>("Greyboxing", "Standard");
     SceneManager::Get().RegisterSystem<StandardAssetSystem>("StandardAssetSystem");
 }
 

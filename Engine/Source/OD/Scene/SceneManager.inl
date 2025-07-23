@@ -131,12 +131,13 @@ HAS_MEM_FUNC(OnGui, HasOnGui);
 //HAS_TEMPLATE_FUNC(serialize, HasSerialize);
 
 template<typename T>
-void SceneManager::RegisterCoreComponent(const std::string& name){
+void SceneManager::RegisterCoreComponent(const std::string& name, const std::string& groupName){
     //Assert(coreComponentsSerializer.find(name) == coreComponentsSerializer.end());
     //LogInfo("OnRegisterCoreComponent: %s", name.c_str());
 
     SerializeFuncs funcs;
 
+    funcs.groupName = groupName;
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
@@ -219,11 +220,12 @@ void SceneManager::RegisterCoreComponentSimple(const char* name){
 }*/
 
 template<typename T> 
-void SceneManager::RegisterTagComponent(const std::string& name){
+void SceneManager::RegisterTagComponent(const std::string& name, const std::string& groupName){
     Assert(componentsSerializer.find(name) == componentsSerializer.end());
 
     SerializeFuncs funcs;
 
+    funcs.groupName = groupName;
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.GetRegistry().emplace<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
@@ -261,11 +263,12 @@ void SceneManager::RegisterTagComponent(const std::string& name){
 }
 
 template<typename T>
-void SceneManager::RegisterComponent(const std::string& name){
+void SceneManager::RegisterComponent(const std::string& name, const std::string& groupName){
     Assert(componentsSerializer.find(name) == componentsSerializer.end());
 
     SerializeFuncs funcs;
 
+    funcs.groupName = groupName;
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };

@@ -20,13 +20,13 @@ public:
     Scene* NewScene();
     void DestroyActiveScene();
 
-    template<typename T> void RegisterCoreComponent(const std::string& name);
+    template<typename T> void RegisterCoreComponent(const std::string& name, const std::string& groupName = "");
     template<typename T> void UnRegisterCoreComponent(const std::string& name);
 
-    template<typename T> void RegisterTagComponent(const std::string& name);
+    template<typename T> void RegisterTagComponent(const std::string& name, const std::string& groupName = "");
 
     //template<typename T> void RegisterCoreComponentSimple(const char* name);
-    template<typename T> void RegisterComponent(const std::string& name);
+    template<typename T> void RegisterComponent(const std::string& name, const std::string& groupName = "");
     template<typename T> void RegisterScript(const std::string& name);
     template<typename T> void RegisterSystem(const std::string& name);    
     
@@ -44,6 +44,8 @@ private:
     SceneManager(){}
 
     struct SerializeFuncs{
+        std::string groupName;
+
         std::function<bool(Entity&,Scene&)> hasComponent;
         std::function<void(Entity&,Scene&)> addComponent;
         std::function<void(Entity&,Scene&)> removeComponent;

@@ -41,10 +41,10 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent");
-    SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent");
-    SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent");
-    SceneManager::Get().RegisterCoreComponent<UITextComponent>("UITextComponent");
+    SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent", "UI");
+    SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent", "UI");
+    SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent", "UI");
+    SceneManager::Get().RegisterCoreComponent<UITextComponent>("UIImageComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
