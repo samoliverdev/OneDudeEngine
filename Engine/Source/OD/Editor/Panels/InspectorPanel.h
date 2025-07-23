@@ -17,6 +17,14 @@ private:
     void ShowAddComponent(Entity entity);
     void DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::SerializeFuncs &f);
     void DrawComponentFromSerializeFuncs(Entity e, std::string name, SceneManager::SerializeFuncs &sf);
+
+    struct CopyComponent{
+        Entity target = EntityNull;
+        SceneManager::SerializeFuncs funcs;
+    };
+    CopyComponent copyComponentData;
+
+    void ComponentOptionsMenu(Entity e, SceneManager::SerializeFuncs &f, bool& removeComponent);
 };
 
 }

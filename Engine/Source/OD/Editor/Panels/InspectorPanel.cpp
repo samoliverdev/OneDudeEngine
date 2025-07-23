@@ -107,6 +107,22 @@ void DrawComponent(Entity e, Scene& scene, const char* name, UIFunction function
     }
 }
 
+void InspectorPanel::ComponentOptionsMenu(Entity e, SceneManager::SerializeFuncs &f, bool& removeComponent){
+    if(ImGui::BeginPopupContextItem()){
+        if(ImGui::MenuItem("Remove Component")){
+            removeComponent = true;
+        }
+        if(ImGui::MenuItem("Copy Component")){
+            copyComponentData.target = e;
+            copyComponentData.funcs = f;
+        }
+        if(ImGui::MenuItem("Paste Component") && scene->IsValid(copyComponentData.target)){
+            copyComponentData.funcs.copyComponent(copyComponentData.target, e, *scene, *scene);
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name, SceneManager::SerializeFuncs &f){
     std::hash<std::string> hasher;
 
@@ -122,12 +138,7 @@ void InspectorPanel::DrawComponentFromCoreComponents(Entity e, std::string name,
 
         bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
 
-        if(ImGui::BeginPopupContextItem()){
-            if(ImGui::MenuItem("Remove Component")){
-                removeComponent = true;
-            }
-            ImGui::EndPopup();
-        }
+        ComponentOptionsMenu(e, f, removeComponent);
 
         if(open){
             auto entityType = scene->GetComponent<InfoComponent>(e).Type();
@@ -159,12 +170,7 @@ void InspectorPanel::DrawComponentFromSerializeFuncs(Entity e, std::string name,
 
         bool open = ImGui::TreeNodeEx((void*)hasher(name), treeNodeFlags, name.c_str());
 
-        if(ImGui::BeginPopupContextItem()){
-            if(ImGui::MenuItem("Remove Component")){
-                removeComponent = true;
-            }
-            ImGui::EndPopup();
-        }
+        ComponentOptionsMenu(e, sf, removeComponent);
 
         if(open){
             auto entityType = scene->GetComponent<InfoComponent>(e).Type();
