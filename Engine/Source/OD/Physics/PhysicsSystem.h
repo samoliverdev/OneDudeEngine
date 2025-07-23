@@ -198,6 +198,9 @@ struct OD_API RagdollComponent{
         int parent = -1;
         int skinnedSkeletonIndex = -1;
 
+        enum class OverrideType{None, Dynamic, Kinematic, Static};
+        OverrideType overrideType = OverrideType::None;
+
         Vector3 constraintPos = Vector3Zero;
         Vector3 twistAxis = Vector3Zero;
         float twistAngleMin = 0;
@@ -205,16 +208,18 @@ struct OD_API RagdollComponent{
         float normalAngle = 0;
         float planeAngle = 0;
 
-        Vector3 pos = Vector3Zero;
-        Quaternion rot = QuaternionIdentity;
+        //TODO: Maybe add this again later, this is to be used with a no skinned bone
+        //Vector3 pos = Vector3Zero;
+        //Quaternion rot = QuaternionIdentity;
 
         template <class Archive>
         void serialize(Archive& ar){
             ArchiveDumpNVP(ar, shape);
             ArchiveDumpNVP(ar, parent);
             ArchiveDumpNVP(ar, skinnedSkeletonIndex);
-            ArchiveDumpNVP(ar, pos);
-            ArchiveDumpNVP(ar, rot);
+            ArchiveDumpNVP(ar, overrideType);
+            //ArchiveDumpNVP(ar, pos);
+            //ArchiveDumpNVP(ar, rot);
             ArchiveDumpNVP(ar, constraintPos);
             ArchiveDumpNVP(ar, twistAxis);
             ArchiveDumpNVP(ar, twistAngleMin);

@@ -1242,8 +1242,8 @@
                         "v.y": 0.0,
                         "v.z": 0.0
                     },
-                    "twistAngleMin": 90.0,
-                    "twistAngleMax": 180.0,
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 135.0,
                     "normalAngle": 0.0,
                     "planeAngle": 0.0
                 },
@@ -1330,8 +1330,8 @@
                         "v.y": 0.0,
                         "v.z": 0.0
                     },
-                    "twistAngleMin": 90.0,
-                    "twistAngleMax": 180.0,
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 135.0,
                     "normalAngle": 0.0,
                     "planeAngle": 0.0
                 },

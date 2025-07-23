@@ -551,7 +551,7 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 
     ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
 	ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
-	ImGui::DrawLayerMask("Layer", ragdoll.mask);
+	ImGui::DrawLayerMask("Mask", ragdoll.mask);
 	ImGui::Spacing();
 
 	Skeleton* skeleton = nullptr;
@@ -564,8 +564,8 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
     for(auto& part : ragdoll.parts){
         ImGui::PushID(index);
         if(ImGui::TreeNodeEx(("Part " + std::to_string(index)).c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth)){
-            Vector3 oldPos = part.pos;
-            Quaternion oldRot = part.rot;
+            //Vector3 oldPos = part.pos;
+            //Quaternion oldRot = part.rot;
 
 			/*if (ImGui::DragInt("Parent Index", &part.parent, 1))
                 ragdoll.isDirty = true;
@@ -646,11 +646,13 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 					ragdoll.isDirty = true;
 			}
 
-            if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
+			ImGui::DrawEnumCombo<RagdollComponent::Part::OverrideType>("OverrideType", &part.overrideType);
+
+            /*if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
                 ragdoll.isDirty = true;
 
             if(ImGui::DragFloat4("Rotation (Quat)", &part.rot.x, 0.01f))
-                ragdoll.isDirty = true;
+                ragdoll.isDirty = true;*/
 
 			if(ImGui::TreeNode("Limits")){
 				if(ImGui::DragFloat3("Constraint Pos", &part.constraintPos.x, 0.01f))
@@ -1152,6 +1154,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.LocalRotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
 		auto twist_axis = ToJolt(trans.TransformDirection(ragdoll.parts[p].twistAxis));
+		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ())));
 		//auto twist_angle = ragdoll.parts[p].twistAngle;
 		auto normal_angle = ragdoll.parts[p].normalAngle;
 		auto plane_angle = ragdoll.parts[p].planeAngle;
@@ -1167,6 +1170,11 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
 		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
 		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
+		if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::None){
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
+		}
 		part.mObjectLayer = ragdoll.layer; //PhysicsLayers::MOVING;
 		part.mCollisionGroup = JPH::CollisionGroup(
 			filter,
@@ -1182,7 +1190,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			constraint->mDrawConstraintSize = 0.1f;
 			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
 			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
-			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = Vec3::sAxisZ(); //TODO: FIX THIS, Make like twist_axis
+			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = planeAxisWorld;
 			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
 			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
 			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
@@ -1199,7 +1207,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 void PhysicsSystem::PhysicsUpdate(){
-    if(GetScene()->Running() == false) return;
+    //if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
