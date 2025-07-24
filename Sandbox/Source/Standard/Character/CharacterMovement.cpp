@@ -26,7 +26,7 @@ float CharacterMovement::GetAxisVertical(){
 void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, RigidbodyComponent& rb) {
     RayResult hit;
     if (scene.GetSystem<PhysicsSystem>()->Raycast(transform.Position() + Vector3Up * 0.1f, Vector3Down * 0.25f, hit)) {
-        LogInfo("Hitting: %s", scene.GetComponent<InfoComponent>(hit.entity).name.c_str());
+        //LogInfo("Hitting: %s", scene.GetComponent<InfoComponent>(hit.entity).name.c_str());
         onGround = true;
         groundNormal = hit.hitNormal;
     } else {

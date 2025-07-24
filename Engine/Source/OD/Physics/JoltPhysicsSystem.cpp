@@ -486,6 +486,7 @@ public:
 
 struct RagdollObject{
 	JPH::Ref<Ragdoll> ragdoll;
+	PhysicsWorld* world = nullptr;
 };
 
 class SelectedBodyDrawFilter: public JPH::BodyDrawFilter{
@@ -723,6 +724,93 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Checkbox("IsDirty", &ragdoll.isDirty);
 }
 
+Vector3 RagdollComponent::Position(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetPosition(bodyID));
+}
+
+void RagdollComponent::Position(int boneIndex, Vector3 position){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetPosition(bodyID, ToJolt(position), EActivation::Activate);
+}
+
+Quaternion RagdollComponent::Rotation(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return QuaternionIdentity;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetRotation(bodyID));
+}
+
+void RagdollComponent::Rotation(int boneIndex, Quaternion rotation){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetRotation(bodyID, ToJolt(rotation), EActivation::Activate);
+}
+
+Vector3 RagdollComponent::Velocity(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetLinearVelocity(bodyID));
+}
+
+void RagdollComponent::Velocity(int boneIndex, Vector3 v){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetLinearVelocity(bodyID, ToJolt(v));
+}
+
+Vector3 RagdollComponent::AngularVelocity(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetAngularVelocity(bodyID));
+}
+
+void RagdollComponent::AngularVelocity(int boneIndex, Vector3 v){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetAngularVelocity(bodyID, ToJolt(v));
+}
+
+void RagdollComponent::ApplyForce(int boneIndex, Vector3 v){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddForce(bodyID, ToJolt(v));
+}
+
+void RagdollComponent::ApplyTorque(int boneIndex, Vector3 v){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddTorque(bodyID, ToJolt(v));
+}
+
+void RagdollComponent::ApplyImpulse(int boneIndex, Vector3 v){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddImpulse(bodyID, ToJolt(v));
+}
 
 #pragma region RigidbodyComponent
 
@@ -1128,7 +1216,7 @@ PhysicsSystem::~PhysicsSystem(){
     delete physicsWorld;
 }
 
-RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter){
+RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter, Pose* customSetupPose = nullptr){
 	auto GetShape = [](CollisionShape shape) -> Shape* {
 		if(shape.type == CollisionShape::Type::Box) return new BoxShape(ToJolt(shape.size * 0.5f));
 		if(shape.type == CollisionShape::Type::Sphere) return new SphereShape(shape.radius);
@@ -1151,13 +1239,16 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		}
 	}
 
+	Pose& setupPose = skinnedSkeleton.GetRestPose();
+	if(customSetupPose != nullptr) setupPose = *customSetupPose;
+
 	// Create ragdoll settings
 	RagdollSettings *settings = new RagdollSettings;
 	settings->mSkeleton = skeleton;
 	settings->mParts.resize(skeleton->GetJointCount());
 	for(int p = 0; p < skeleton->GetJointCount(); ++p){
 		auto shapes = GetShape(ragdoll.parts[p].shape);
-		Transform boneTrans = skinnedSkeleton.GetRestPose().GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
+		Transform boneTrans = setupPose.GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
 		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition()/* + ragdoll.parts[p].shape.center*/));
 		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.LocalRotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
@@ -1404,7 +1495,8 @@ void PhysicsSystem::PhysicsUpdate(){
 				delete ragdoll.data->ragdoll;
 			}
 			ragdoll.data = new RagdollObject();
-			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton, physicsWorld->groupFilter);
+			ragdoll.data->world = physicsWorld;
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton, physicsWorld->groupFilter, skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
 			for (int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i) {
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
@@ -1416,6 +1508,10 @@ void PhysicsSystem::PhysicsUpdate(){
 					ragdoll.layer,
 					ragdoll.mask.mask
 				));
+
+				if(ragdoll.overrideStartVelocity != Vector3Zero){
+					bi.SetLinearVelocity(bodyID, ToJolt(ragdoll.overrideStartVelocity));
+				}
 			}
 
 			/*for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){

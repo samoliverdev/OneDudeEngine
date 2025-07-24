@@ -249,6 +249,27 @@ struct OD_API RagdollComponent{
     float damping = 1;
     float stiffness = 10; 
 
+    Vector3 overrideStartVelocity = Vector3Zero;
+
+    inline int TryFindHipIndex(){
+        for(int i = 0; i < parts.size(); i++){
+            if(parts[i].isHips) return i;
+        }
+        return -1;
+    }
+
+    Vector3 Position(int boneIndex);
+    void Position(int boneIndex, Vector3 position);
+    Quaternion Rotation(int boneIndex);
+    void Rotation(int boneIndex, Quaternion rotation);
+    Vector3 Velocity(int boneIndex);
+    void Velocity(int boneIndex, Vector3 v);
+    Vector3 AngularVelocity(int boneIndex);
+    void AngularVelocity(int boneIndex, Vector3 v);
+    void ApplyForce(int boneIndex, Vector3 v);
+    void ApplyTorque(int boneIndex, Vector3 v);
+    void ApplyImpulse(int boneIndex, Vector3 v);
+
     static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
