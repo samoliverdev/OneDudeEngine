@@ -19,11 +19,13 @@ public:
     void Update(float dt, Pose& pose); //INFO: Experimental
     Pose& GetCurrentPose();
     Clip* GetCurrentClip();
+
+    float GetCurrentNormalizedTime();
     
     inline bool WasSkeletonSet(){ return wasSkeletonSet; }
     inline Skeleton& GetSkeleton(){ return skeleton; }
     inline float GetCurrentTime(){ return time; }
-
+    
 protected:
     std::vector<CrossFadeTarget> targets;
     Clip* clip;

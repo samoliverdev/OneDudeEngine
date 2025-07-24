@@ -13,6 +13,8 @@ namespace Standard{
 
 class CharacterMovement{
 public:
+    bool enable = true;
+
     float moveSpeed = 6;
     float turnSpeed = 20;
 
@@ -31,6 +33,8 @@ public:
 
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, enable);
+
         ArchiveDumpNVP(ar, moveSpeed);
         ArchiveDumpNVP(ar, turnSpeed);
 

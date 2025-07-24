@@ -22,6 +22,13 @@ void CrossFadeController::SetSkeleton(Skeleton& inSkeleton){
     wasSkeletonSet = true;
 }
 
+float CrossFadeController::GetCurrentNormalizedTime(){
+    Clip* cur = GetCurrentClip();
+    if(cur == nullptr) return time;
+
+    return math::clamp<float>(time / cur->GetDuration(), 0.0f, 1.0f);
+}
+
 void CrossFadeController::Play(Clip* target){
     if(target == nullptr){
         targets.clear();

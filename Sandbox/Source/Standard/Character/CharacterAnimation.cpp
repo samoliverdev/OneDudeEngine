@@ -17,12 +17,14 @@ void CharacterAnimation::OnStart(){
 }
 
 void CharacterAnimation::OnUpdate(TransformComponent& transform, AnimatorComponent& anim, CharacterMovement& movement){
+    if(enable == false) return; 
+    
     if(baseModel == nullptr) return;
 
     if(movement.moveDir == Vector3Zero){
-        if(anim.GetLayer(0).controller.GetCurrentClip() != idleAnimation) anim.FadeTo(idleAnimation, 0.1f);
+        if(anim.GetLayer(0).controller.GetCurrentClip() != idleAnimation) anim.FadeTo(idleAnimation, fadeTime);
     } else {
-        if(anim.GetLayer(0).controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, 0.1f);
+        if(anim.GetLayer(0).controller.GetCurrentClip() != runningAnimation) anim.FadeTo(runningAnimation, fadeTime);
     }
 }
 

@@ -14,18 +14,24 @@ class CharacterMovement;
 
 class CharacterAnimation{
 public:
+    bool enable = true;
+
+    float fadeTime = 0.2f;
+
     Ref<Model> baseModel = nullptr;
 
     Clip* idleAnimation;
     Clip* runningAnimation;
 
     bool hasStarted = false;
-
+    
     void OnStart();
     void OnUpdate(TransformComponent& transform, AnimatorComponent& anim, CharacterMovement& movement);
 
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, enable);
+
         AssetRefSerialize<Model> baseModelRef(baseModel);
         ArchiveDumpNVP(ar, baseModelRef);
     }

@@ -1551,7 +1551,9 @@ void PhysicsSystem::PhysicsUpdate(){
 				//skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 				//auto& pose = skinned.finalPose;
 
-				auto pose = skinned.GetModel()->skeleton.GetRestPose();
+				//auto pose = skinned.GetModel()->skeleton.GetRestPose();
+				skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+				auto& pose = skinned.finalPose;
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
@@ -1567,6 +1569,8 @@ void PhysicsSystem::PhysicsUpdate(){
 					));
 				}	
 				pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+
+				//skinned.finalPose = pose;
 			}
 		}
 	}
