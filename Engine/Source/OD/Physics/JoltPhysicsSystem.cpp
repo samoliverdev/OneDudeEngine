@@ -318,7 +318,7 @@ public:
 	JPH::Array<JPH::IndexedTriangle> joltTriangles;
 };
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(Model& model){
+Ref<MeshShapeData> CreateMeshShapeData(Model& model){
 	std::vector<Vector3> vertices;
 	std::vector<unsigned int> indices;
 
@@ -345,7 +345,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
     return CreateMeshShapeData(mesh.vertices, mesh.indices); // Usa a função abaixo
 }
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
+Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
 
 	// Check for empty input
