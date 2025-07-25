@@ -100,6 +100,7 @@ struct OD_API RigidbodyComponent{
 
     //int mask = AllLayers;
     LayerMask mask = {AllLayers};
+    bool interpolate = false;
 
     RigidbodyComponent() = default;
     /*RigidbodyComponent(const RigidbodyComponent& other);
@@ -142,6 +143,7 @@ struct OD_API RigidbodyComponent{
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDump(ar, CEREAL_NVP(type));
+        ArchiveDump(ar, CEREAL_NVP(interpolate));
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(mass));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
@@ -151,6 +153,7 @@ struct OD_API RigidbodyComponent{
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
         COPY_OR_MOVE(shape);
         COPY_OR_MOVE(type);
+        COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(angularFactor);
         COPY_OR_MOVE(mass);
         COPY_OR_MOVE(neverSleep);
@@ -165,6 +168,9 @@ private:
     Vector3 angularFactor = {1, 1, 1};
     float mass = 1;
     bool neverSleep = false;
+
+    Vector3 previousPosition = Vector3Zero;
+    Quaternion previousRotation = QuaternionIdentity;
 
     class PhysicObject* data = nullptr;
 
@@ -211,6 +217,9 @@ struct OD_API RagdollComponent{
         bool disableSync = false;
         bool isHips = false;
 
+        Vector3 previousPosition = Vector3Zero;
+        Quaternion previousRotation = QuaternionIdentity;
+
         //TODO: Maybe add this again later, this is to be used with a no skinned bone
         //Vector3 pos = Vector3Zero;
         //Quaternion rot = QuaternionIdentity;
@@ -239,6 +248,7 @@ struct OD_API RagdollComponent{
 
     enum class Type{Dynamic, Kinematic, Static};
     Type type;
+    bool interpolate = false;
     bool isDirty = true;
     std::vector<Part> parts;
     
@@ -278,6 +288,7 @@ struct OD_API RagdollComponent{
         ArchiveDumpNVP(ar, mask);
         //ArchiveDumpNVP(ar, isDirty);
         ArchiveDumpNVP(ar, type);
+        ArchiveDumpNVP(ar, interpolate);
         ArchiveDumpNVP(ar, parts);
 
         ArchiveDumpNVP(ar, syncWithFinalPose);
@@ -293,6 +304,7 @@ struct OD_API RagdollComponent{
         COPY_OR_MOVE(mask);
         //COPY_OR_MOVE(isDirty);
         COPY_OR_MOVE(type);
+        COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(parts);
 
         COPY_OR_MOVE(syncWithFinalPose);

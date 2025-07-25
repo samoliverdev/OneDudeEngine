@@ -553,6 +553,7 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Spacing();
 
     ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
+	ImGui::Checkbox("Interpolate", &ragdoll.interpolate);
 	ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
 	ImGui::DrawLayerMask("Mask", ragdoll.mask);
 	ImGui::Spacing();
@@ -870,6 +871,8 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
         ImGui::EndCombo();
     }
+
+	ImGui::Checkbox("interpolate", &rb.interpolate);
 
     float mass = rb.Mass();
     if(ImGui::DragFloat("mass", &mass)){
@@ -1309,19 +1312,67 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 1; //5;
 
+constexpr bool EnableFixedRate = true;
+constexpr bool EnableInterpolation = true;
+
 void PhysicsSystem::PhysicsUpdate(){
-    //if(GetScene()->Running() == false) return;
+	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
+	
+	//if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
 	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
+	auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
 	auto _view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
+
+	auto PreInterpolate = [&](){
+		for(auto [entity, rb, trans, info]: view.each()){
+			if(rb.type == RigidbodyComponent::Type::Dynamic && rb.interpolate && rb.data != nullptr){
+				BodyID bodyID = rb.data->bodyID;
+				Quat rot;
+				RVec3 pos;
+				bodyInterface.GetPositionAndRotation(bodyID, pos, rot);
+				rb.previousPosition = FromJolt(pos);
+				rb.previousRotation = FromJolt(rot);
+			}
+		}
+
+		for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
+			if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
+				if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate && EnableInterpolation){
+					for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+						if(ragdoll.parts[p].previousPosition == Vector3Zero) continue;
+
+						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+						Quat rot;
+						RVec3 pos;
+						bodyInterface.GetPositionAndRotation(bodyID, pos, rot);
+						ragdoll.parts[p].previousPosition = FromJolt(pos);
+						ragdoll.parts[p].previousRotation = FromJolt(rot);
+					}
+				}
+			}
+		}
+	};
+	
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
 		if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
 			float gain = ragdoll.gain;
 			float damping = ragdoll.damping;     // Novo: adicionar na struct
 			float stiffness = ragdoll.stiffness;
+
+			/*if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate){
+				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+					Quat rot;
+					RVec3 pos;
+					bodyInterface.GetPositionAndRotation(bodyID, pos, rot);
+					ragdoll.parts[p].previousPosition = FromJolt(pos);
+					ragdoll.parts[p].previousRotation = FromJolt(rot);
+				}
+			}*/
 
 			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
 				int hipIndex = -1;
@@ -1442,26 +1493,39 @@ void PhysicsSystem::PhysicsUpdate(){
 			delta_time, cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
 		);*/
 
-		float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
-		physicsAccumulator += deltaTime;
+		//constexpr float fixedTimeStep = 1.0f / 30.0f; // 60 Hz physics update
 
-		int steps = 0;
-		while(physicsAccumulator >= fixedTimeStep && steps < maxSubSteps){
-			float scaledFixedTimeStep = fixedTimeStep * Time::TimeScale();
-			//LogInfo("CurTimeScale: %f", Time::TimeScale());
+		if(EnableFixedRate){
+			float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
+			physicsAccumulator += deltaTime;
 
-			if(scaledFixedTimeStep > 0.0f){
-				const int cCollisionSteps = 1;
-				physicsWorld->physicsSystem.Update(
-					scaledFixedTimeStep, //fixedTimeStep,
-					cCollisionSteps,
-					physicsWorld->tempAllocator,
-					&physicsWorld->jobSystem
-				);
+			int steps = 0;
+			while(physicsAccumulator >= fixedTimeStep && steps < maxSubSteps){
+				float scaledFixedTimeStep = fixedTimeStep * Time::TimeScale();
+				//LogInfo("CurTimeScale: %f", Time::TimeScale());
+
+				if(EnableInterpolation) PreInterpolate();
+
+				if(scaledFixedTimeStep > 0.0f){
+					const int cCollisionSteps = 1;
+					physicsWorld->physicsSystem.Update(
+						scaledFixedTimeStep, //fixedTimeStep,
+						cCollisionSteps,
+						physicsWorld->tempAllocator,
+						&physicsWorld->jobSystem
+					);
+				}
+
+				physicsAccumulator -= fixedTimeStep;
+				steps++;
 			}
+		} else {
+			if(EnableInterpolation) PreInterpolate();
 
-			physicsAccumulator -= fixedTimeStep;
-			steps++;
+			const int cCollisionSteps = 1;
+			physicsWorld->physicsSystem.Update(
+				Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
+			);
 		}
 	}
 
@@ -1487,7 +1551,7 @@ void PhysicsSystem::PhysicsUpdate(){
 		}*/
 	}
 
-    auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
+    //auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
     for(auto e: view){
         RigidbodyComponent& rb = view.get<RigidbodyComponent>(e);
         TransformComponent& transform = view.get<TransformComponent>(e);
@@ -1510,8 +1574,17 @@ void PhysicsSystem::PhysicsUpdate(){
             RVec3 pos;
             Quat rot;
             bodyInterface.GetPositionAndRotation(rb.data->bodyID, pos, rot);
-            transform.Position(FromJolt(pos));
-            transform.Rotation(FromJolt(rot));
+
+			if(rb.interpolate && rb.previousPosition != Vector3Zero && EnableInterpolation){
+				float alpha = physicsAccumulator / fixedTimeStep;
+				Vector3 interpolatedPos = math::mix(rb.previousPosition, FromJolt(pos), alpha);
+				Quaternion interpolatedRot = math::slerp(rb.previousRotation, FromJolt(rot), alpha);
+				transform.Position(interpolatedPos);
+            	transform.Rotation(interpolatedRot);
+			} else {
+            	transform.Position(FromJolt(pos));
+            	transform.Rotation(FromJolt(rot));
+			}
         } else if(rb.GetType() == RigidbodyComponent::Type::Kinematic){
             bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
             bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
@@ -1592,13 +1665,27 @@ void PhysicsSystem::PhysicsUpdate(){
 					RVec3 pos;
 					Quat rot;
 					bodyInterface.GetPositionAndRotation(i, pos, rot);
+
+					if(ragdoll.interpolate){
+						float alpha = physicsAccumulator / fixedTimeStep;
+						Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
+						Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
+
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						pose.SetGlobalTransform(boneIndex, Transform(
+							trans.InverseTransformPoint(interpolatedPos), 
+							math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * interpolatedRot, //math::inverse(trans.Rotation()) * FromJolt(rot), 
+							Vector3One
+						));
+					} else{
 					
-					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-					pose.SetGlobalTransform(boneIndex, Transform(
-						trans.InverseTransformPoint(FromJolt(pos)), 
-						math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
-						Vector3One
-					));
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						pose.SetGlobalTransform(boneIndex, Transform(
+							trans.InverseTransformPoint(FromJolt(pos)), 
+							math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), //math::inverse(trans.Rotation()) * FromJolt(rot), 
+							Vector3One
+						));
+					}
 				}	
 				pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
 
