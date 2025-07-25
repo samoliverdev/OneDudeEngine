@@ -53,7 +53,7 @@ struct OD_API AnimatorSystem: public System{
 
     virtual int Type() override;
     virtual void Update() override;
-    virtual void LateUpdate() override;
+    virtual void AnimationUpdate() override;
 };
 
 void AnimatorModuleInit();

@@ -2,6 +2,7 @@
 #include "SceneManager.h"
 #include "Scripts.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Model.h"
@@ -379,6 +380,7 @@ Scene::~Scene(){
     
     systems.clear();
     standSystems.clear();
+    animationSystems.clear();
     rendererSystems.clear();
     physicsSystems.clear();
     lateSystems.clear();
@@ -656,6 +658,7 @@ Entity Scene::FindEntityByName(const std::string& name){
 }
 
 void Scene::Start(){
+    Time::TimeScale(1);
     running = true;
 }
 
@@ -690,13 +693,13 @@ void Scene::Update(){
         taskflow.clear();
     }
 
-    for(auto s: lateSystems){
+    for(auto s: animationSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
-        s->LateUpdate();
+        s->AnimationUpdate();
     }
     {
-        OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
-        executor.run(taskflow).wait();
+        OD_PROFILE_SCOPE("Scene::AnimationUpdate::Sync");
+        executor.run(taskflow).wait(); 
         taskflow.clear();
     }
 
@@ -704,6 +707,16 @@ void Scene::Update(){
     {
         OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
+        taskflow.clear();
+    }
+
+    for(auto s: lateSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->LateUpdate();
+    }
+    {
+        OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
+        executor.run(taskflow).wait();
         taskflow.clear();
     }
 

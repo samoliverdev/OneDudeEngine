@@ -79,7 +79,7 @@ int AnimatorComponent::LayerCount(){
 AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
 
 int AnimatorSystem::Type(){ 
-    return SystemType::Late | SystemType::Stand; 
+    return SystemType::Stand | SystemType::Animation; 
 }
 
 void AnimatorSystem::Update(){
@@ -92,7 +92,7 @@ void AnimatorSystem::Update(){
     }
 }
 
-void AnimatorSystem::LateUpdate(){
+void AnimatorSystem::AnimationUpdate(){
     #ifdef __EMSCRIPTEN__
     return;
     #endif

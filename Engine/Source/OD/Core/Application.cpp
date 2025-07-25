@@ -8,6 +8,7 @@
 #include "Project.h"
 #include "ImGui.h"
 #include "Input.h"
+#include "Time.h"
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "Lua.h"
@@ -122,6 +123,8 @@ void Application::Loop(){
     float currentFrame = Platform::GetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame; 
+
+    Time::UnscaledDeltaTime(deltaTime);
 
     Platform::PumpMessages();
     //Platform::PreUpdate();
@@ -276,7 +279,7 @@ void Application::Exit(){
 
 void Application::GetFramebufferSize(int* width, int* height){}
 
-float Application::DeltaTime(){ return deltaTime; }
+float Application::DeltaTime(){ return deltaTime * Time::TimeScale(); }
 int Application::ScreenWidth(){ return width; }
 int Application::ScreenHeight(){ return heigth; }
 

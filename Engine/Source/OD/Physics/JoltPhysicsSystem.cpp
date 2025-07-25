@@ -3,6 +3,7 @@
 #if defined(UseJoltPhysics)
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
@@ -1305,6 +1306,9 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	return settings;
 }
 
+constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
+constexpr int maxSubSteps = 1; //5;
+
 void PhysicsSystem::PhysicsUpdate(){
     //if(GetScene()->Running() == false) return;
 
@@ -1427,10 +1431,38 @@ void PhysicsSystem::PhysicsUpdate(){
 	}
 
 	if(GetScene()->Running() == true){
-		const int cCollisionSteps = 1;
+		/*const int cCollisionSteps = 1;
 		physicsWorld->physicsSystem.Update(
 			Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
-		);
+		);*/
+
+		/*float delta_time = 1.0f / 60.0f;
+		const int cCollisionSteps = 1;
+		physicsWorld->physicsSystem.Update(
+			delta_time, cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
+		);*/
+
+		float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
+		physicsAccumulator += deltaTime;
+
+		int steps = 0;
+		while(physicsAccumulator >= fixedTimeStep && steps < maxSubSteps){
+			float scaledFixedTimeStep = fixedTimeStep * Time::TimeScale();
+			//LogInfo("CurTimeScale: %f", Time::TimeScale());
+
+			if(scaledFixedTimeStep > 0.0f){
+				const int cCollisionSteps = 1;
+				physicsWorld->physicsSystem.Update(
+					scaledFixedTimeStep, //fixedTimeStep,
+					cCollisionSteps,
+					physicsWorld->tempAllocator,
+					&physicsWorld->jobSystem
+				);
+			}
+
+			physicsAccumulator -= fixedTimeStep;
+			steps++;
+		}
 	}
 
 	auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();

@@ -509,6 +509,8 @@ private:
     std::vector<OnCollisionCallback> onCollisionExitCallbacks;
     std::vector<OnCollisionCallback> onTriggerEnterCallbacks;
     std::vector<OnCollisionCallback> onTriggerExitCallbacks;
+
+    float physicsAccumulator = 0.0f;
 };
 
 void PhysicsModuleInit();

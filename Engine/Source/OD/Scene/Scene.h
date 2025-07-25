@@ -268,10 +268,11 @@ void _RemoveComponent(Scene* scene, Entity entity);
 
 enum SystemType{//FIXME: Maybe Rename
     None = 0,
-    Physics =  1 << 0, 
     Stand = 1 << 1, 
-    Late = 1 << 2,
-    Renderer = 1 << 3
+    Animation = 1 << 2, 
+    Physics =  1 << 3, 
+    Late = 1 << 4,
+    Renderer = 1 << 5
 };
 
 class OD_API System{
@@ -280,8 +281,9 @@ public:
     virtual ~System(){}
 
     virtual int Type(){ return SystemType::Stand; } //FIXME: Maybe Rename
-    virtual void PhysicsUpdate(){}
     virtual void Update(){}
+    virtual void AnimationUpdate(){}
+    virtual void PhysicsUpdate(){}
     virtual void LateUpdate(){}
     virtual void Render(){}
     virtual void OnDrawGizmos(Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
@@ -353,6 +355,7 @@ public:
     inline Registry& GetRegistry(){ return registry; }
     inline const auto& GetSystems(){ return systems; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
+    inline const std::vector<System*>& GetAnimationSystems(){ return animationSystems; }
     inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
     inline const std::vector<System*>& GetLateSystems(){ return lateSystems; }
     inline const std::vector<System*>& GetRendererSystems(){ return rendererSystems; }
@@ -381,8 +384,9 @@ private:
 
     bool running = false;
 
-    std::vector<System*> physicsSystems;
     std::vector<System*> standSystems;
+    std::vector<System*> animationSystems;
+    std::vector<System*> physicsSystems;
     std::vector<System*> lateSystems;
     std::vector<System*> rendererSystems;
     std::unordered_map<Type, System*> systems;

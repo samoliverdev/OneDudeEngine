@@ -272,6 +272,7 @@ void Scene::AddSystem(){
 
     if(newSystem->Type() & SystemType::Physics) physicsSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Stand) standSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::Animation) animationSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Late) lateSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Renderer) rendererSystems.push_back(newSystem);
 }
@@ -288,6 +289,7 @@ void Scene::RemoveSystem(){
 
     physicsSystems.erase(std::remove(physicsSystems.begin(), physicsSystems.end(), s), physicsSystems.end());
     standSystems.erase(std::remove(standSystems.begin(), standSystems.end(), s), standSystems.end());
+    animationSystems.erase(std::remove(animationSystems.begin(), animationSystems.end(), s), animationSystems.end());
     lateSystems.erase(std::remove(lateSystems.begin(), lateSystems.end(), s), lateSystems.end());
     rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
     
