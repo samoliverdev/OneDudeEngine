@@ -1245,6 +1245,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 	Pose& setupPose = skinnedSkeleton.GetRestPose();
 	if(customSetupPose != nullptr) setupPose = *customSetupPose;
+	ragdoll.startPose = setupPose;
 
 	// Create ragdoll settings
 	RagdollSettings *settings = new RagdollSettings;
@@ -1284,6 +1285,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			ragdoll.layer,
 			ragdoll.mask.mask // stored in subgroup ID
 		);
+		//part.mAngularDamping = 0;
+		//part.mLinearDamping = 0;
 		//TODO: Fix this, add the root object id
 		part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
@@ -1313,7 +1316,7 @@ constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 1; //5;
 
 constexpr bool EnableFixedRate = true;
-constexpr bool EnableInterpolation = true;
+constexpr bool EnableInterpolation = false;
 
 void PhysicsSystem::PhysicsUpdate(){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
@@ -1357,22 +1360,13 @@ void PhysicsSystem::PhysicsUpdate(){
 		}
 	};
 	
+	{
+	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PreUpdate");
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
 		if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
 			float gain = ragdoll.gain;
 			float damping = ragdoll.damping;     // Novo: adicionar na struct
 			float stiffness = ragdoll.stiffness;
-
-			/*if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate){
-				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-					Quat rot;
-					RVec3 pos;
-					bodyInterface.GetPositionAndRotation(bodyID, pos, rot);
-					ragdoll.parts[p].previousPosition = FromJolt(pos);
-					ragdoll.parts[p].previousRotation = FromJolt(rot);
-				}
-			}*/
 
 			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
 				int hipIndex = -1;
@@ -1383,30 +1377,15 @@ void PhysicsSystem::PhysicsUpdate(){
 						break;
 					}
 				}
+				Assert(hipIndex == 0);
+				Assert(ragdoll.parts.size() == ragdoll.data->ragdoll->GetBodyIDs().size());
+				Assert(ragdoll.startPose.Size() == skinned.finalPose.Size());
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					if(ragdoll.parts[p].disableSync) continue;
-					/*
-					BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-					int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-					Assert(boneIndex != 0);
-
-					Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-					Quat targetRot = ToJolt(targetTransform.LocalRotation());
-					Quat currentRot;
-					RVec3 currentPos;
-					bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
-
-					Quat deltaRot = targetRot * currentRot.Conjugated();
-					Vec3 axis;
-					float angle;
-					deltaRot.GetAxisAngle(axis, angle);
-
-					Vec3 angularVelocity = axis * angle * gain;
-					bodyInterface.SetAngularVelocity(bodyID, angularVelocity);
-					*/
 					
-					if(ragdoll.syncFromTheHips && hipIndex != -1){
+					if(ragdoll.syncFromTheHips && hipIndex != -1 /*&& ragdoll.parts[p].isHips == false*/){
+						Assert(hipIndex == 0);
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 						if (boneIndex <= 0) continue;
@@ -1442,7 +1421,7 @@ void PhysicsSystem::PhysicsUpdate(){
 						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
 						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
 
-						if (ragdoll.useTorqueControl)
+						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
 							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
@@ -1450,16 +1429,23 @@ void PhysicsSystem::PhysicsUpdate(){
 						// Work, but in world space
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						if (boneIndex <= 0) continue;
+						//if (boneIndex <= 0) continue;
+						if(boneIndex < 0) continue;
 
 						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
 						Quat targetRot = ToJolt(targetTransform.LocalRotation());
+						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
+						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
+
 
 						Quat currentRot;
 						RVec3 currentPos;
 						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
 
-						Quat deltaRot = targetRot * currentRot.Conjugated();
+						//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
+						//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
+
+						Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
 						Vec3 axis;
 						float angle;
 						deltaRot.GetAxisAngle(axis, angle);
@@ -1470,17 +1456,24 @@ void PhysicsSystem::PhysicsUpdate(){
 						// PD controller: torque = P * erro - D * velocidade
 						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
 
+						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
+
+						///*
 						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
 							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+						//*/
 					}
 				}
 			}
 			
 		}
 	}
+	}
 
+	{
+	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::Update");
 	if(GetScene()->Running() == true){
 		/*const int cCollisionSteps = 1;
 		physicsWorld->physicsSystem.Update(
@@ -1528,7 +1521,10 @@ void PhysicsSystem::PhysicsUpdate(){
 			);
 		}
 	}
+	}
 
+	{
+	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PostUpdate");	
 	auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
     for(auto e: viewMesh){
 		RigidbodyComponent& rb = viewMesh.get<RigidbodyComponent>(e);
@@ -1601,7 +1597,12 @@ void PhysicsSystem::PhysicsUpdate(){
 			}
 			ragdoll.data = new RagdollObject();
 			ragdoll.data->world = physicsWorld;
-			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(info, trans, ragdoll, skinned.GetModel()->skeleton, physicsWorld->groupFilter, skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr);
+			JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(
+				info, trans, ragdoll, 
+				skinned.GetModel()->skeleton, 
+				physicsWorld->groupFilter, 
+				nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
+			);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
 			for (int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i) {
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
@@ -1613,6 +1614,14 @@ void PhysicsSystem::PhysicsUpdate(){
 					ragdoll.layer,
 					ragdoll.mask.mask
 				));
+
+				ragdoll.parts[i].initedRot = FromJolt(bi.GetRotation(bodyID));
+
+				if(skinned.finalPose.Size() > 0){
+					auto positions = ToJolt(trans.TransformPoint(skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).LocalPosition()));
+					auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).LocalRotation()); 
+					bi.SetPositionAndRotation(bodyID, positions, rotations, JPH::EActivation::Activate);
+				}
 
 				if(ragdoll.overrideStartVelocity != Vector3Zero){
 					bi.SetLinearVelocity(bodyID, ToJolt(ragdoll.overrideStartVelocity));
@@ -1637,7 +1646,7 @@ void PhysicsSystem::PhysicsUpdate(){
 				}
 			}*/
 		}
-
+		///*
 		if(ragdoll.type != RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
 			for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
@@ -1692,6 +1701,7 @@ void PhysicsSystem::PhysicsUpdate(){
 				//skinned.finalPose = pose;
 			}
 		}
+		//*/
 	}
 
 	//TODO: Update This, make handle dirty and organaze the code
@@ -1751,6 +1761,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 			// For scale, you must recreate the shape with new scale (Jolt doesn't support dynamic scaling).
 		}
+	}
 	}
 }
 

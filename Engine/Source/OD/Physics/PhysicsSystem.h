@@ -3,6 +3,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
+#include "OD/Animation/Pose.h"
 
 //#define UseBulletPhysics
 #define UseJoltPhysics
@@ -224,6 +225,8 @@ struct OD_API RagdollComponent{
         //Vector3 pos = Vector3Zero;
         //Quaternion rot = QuaternionIdentity;
 
+        Quaternion initedRot = QuaternionIdentity;
+
         template <class Archive>
         void serialize(Archive& ar){
             ArchiveDumpNVP(ar, shape);
@@ -308,11 +311,14 @@ struct OD_API RagdollComponent{
         COPY_OR_MOVE(parts);
 
         COPY_OR_MOVE(syncWithFinalPose);
+        COPY_OR_MOVE(syncFromTheHips);
         COPY_OR_MOVE(useTorqueControl);
         COPY_OR_MOVE(gain);
         COPY_OR_MOVE(damping);
         COPY_OR_MOVE(stiffness);
     });
+
+    Pose startPose;
 
 private:
     struct RagdollObject* data = nullptr;
