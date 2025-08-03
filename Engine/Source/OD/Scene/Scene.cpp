@@ -38,6 +38,7 @@ GlobalSceneData& GetGlobalSceneData(){
 
 void TransformComponent::SetGlobalAsDirty(){
     #ifdef ExperimentalTransformOptimzation
+    Assert(false);
     globalIsDirty = true;
     for(auto& i: children){
         TransformComponent& t = registry->get<TransformComponent>(i);
@@ -46,13 +47,64 @@ void TransformComponent::SetGlobalAsDirty(){
     #endif
 }
 
+void TransformComponent::UpdateAllTransformMatrix(Scene& scene){
+    #ifdef ExperimentalTransformOptimzation
+
+    /*auto view = scene.GetRegistry().view<TransformComponent>();
+    for(auto entity : view){
+        TransformComponent& t = view.get<TransformComponent>(entity);
+        t.UpdateGlobalTransformCacheIfNeeded();
+    }*/
+
+    std::unordered_map<Entity, tf::Task> entityTasks;
+
+    // First pass: create one task per entity
+    auto view = scene.GetRegistry().view<TransformComponent>();
+    for(auto entity : view){
+        tf::Task task = scene.GetTaskflow().emplace([&, entity](){
+            TransformComponent& t = view.get<TransformComponent>(entity);
+            t.UpdateGlobalTransformCacheIfNeeded();
+            if(t.HasParent()){
+                TransformComponent& p = scene.GetComponent<TransformComponent>(t.Parent());
+                t.globalTransform.localModelMatrix = p.globalTransform.localModelMatrix * t.transform.GetLocalModelMatrix();
+                t.globalTransform.localPosition = p.TransformPoint(t.LocalPosition());
+                t.globalTransform.localRotation = p.Rotation() * t.LocalRotation();
+                t.globalTransform.localScale = p.Scale() * t.LocalScale(); // Aqui está a escala acumulada
+            } else {
+                t.globalTransform.localModelMatrix = t.transform.GetLocalModelMatrix();
+                t.globalTransform.localPosition = t.LocalPosition();
+                t.globalTransform.localRotation = t.LocalRotation();
+                t.globalTransform.localScale = t.LocalScale(); // sem pai, usa local diretamente
+            }
+        }).name("UpdateTransform");
+
+        entityTasks[entity] = task;
+    }
+
+    // Second pass: set up dependencies
+    for(auto [entity, task] : entityTasks){
+        TransformComponent& t = scene.GetComponent<TransformComponent>(entity);
+        if(t.HasParent()){
+            Entity parent = t.Parent();
+            if(auto it = entityTasks.find(parent); it != entityTasks.end()){
+                it->second.precede(task);  // parent -> child
+            }
+        }
+    }
+
+    scene.GetExecutor().run(scene.GetTaskflow()).wait();
+    scene.GetTaskflow().clear();
+    #endif
+}
+
 void TransformComponent::UpdateGlobalTransformCacheIfNeeded(){
     #ifdef ExperimentalTransformOptimzation
-    if(globalIsDirty){
-        globalIsDirty = false;
+    //if(globalIsDirty){
+        //globalIsDirty = false;
         if(hasParent){
             TransformComponent& p = registry->get<TransformComponent>(parent);
-            globalTransform.localModelMatrix = p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
+            p.UpdateGlobalTransformCacheIfNeeded();
+            globalTransform.localModelMatrix = /*p.GlobalModelMatrix() **/ p.globalTransform.localModelMatrix * transform.GetLocalModelMatrix();
             globalTransform.localPosition = p.TransformPoint(LocalPosition());
             globalTransform.localRotation = p.Rotation() * LocalRotation();
             globalTransform.localScale = p.Scale() * LocalScale(); // Aqui está a escala acumulada
@@ -62,7 +114,7 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(){
             globalTransform.localRotation = LocalRotation();
             globalTransform.localScale = LocalScale(); // sem pai, usa local diretamente
         }
-    }
+    //}
     #endif
 }
 
@@ -97,7 +149,7 @@ const Matrix4 TransformComponent::GlobalModelMatrix(){
             globalTransform.localRotation = LocalRotation();
         }
     }*/
-    UpdateGlobalTransformCacheIfNeeded();
+    //UpdateGlobalTransformCacheIfNeeded();
     return globalTransform.localModelMatrix;
 
     #else
@@ -155,7 +207,7 @@ Vector3 TransformComponent::Position(){
             globalTransform.localPosition = LocalPosition();
         }
     }*/
-    UpdateGlobalTransformCacheIfNeeded();
+    //UpdateGlobalTransformCacheIfNeeded();
     return globalTransform.localPosition;
 
     #else 
@@ -169,7 +221,7 @@ Vector3 TransformComponent::Position(){
 
 void TransformComponent::Position(Vector3 position){
     #ifdef ExperimentalTransformOptimzation
-    SetGlobalAsDirty();
+    //SetGlobalAsDirty();
     #endif
 
     if(hasParent){
@@ -192,7 +244,7 @@ Quaternion TransformComponent::Rotation(){
             globalTransform.localRotation = LocalRotation();
         }
     }*/
-    UpdateGlobalTransformCacheIfNeeded();
+    //UpdateGlobalTransformCacheIfNeeded();
     return globalTransform.localRotation;
 
     #else 
@@ -207,7 +259,7 @@ Quaternion TransformComponent::Rotation(){
 
 void TransformComponent::Rotation(Quaternion rotation){
     #ifdef ExperimentalTransformOptimzation
-    SetGlobalAsDirty();
+    //SetGlobalAsDirty();
     #endif
 
     //Assert(false);
@@ -224,7 +276,7 @@ void TransformComponent::Rotation(Quaternion rotation){
 Vector3 TransformComponent::Scale(){
     #ifdef ExperimentalTransformOptimzation
     
-    UpdateGlobalTransformCacheIfNeeded();
+    //UpdateGlobalTransformCacheIfNeeded();
     return globalTransform.localScale;
     
     #else
@@ -446,6 +498,7 @@ Entity Scene::_DuplicateEntity(Entity e, bool isRoot){
         SetParent(other, ne);
     }
 
+    registry.get<TransformComponent>(other).UpdateGlobalTransformCacheIfNeeded();
     return other;
 }
 
@@ -480,6 +533,7 @@ Entity Scene::_DuplicateEntity(Entity e, bool isRoot, Scene& source){
         SetParent(other, ne);
     }
 
+    registry.get<TransformComponent>(other).UpdateGlobalTransformCacheIfNeeded();
     return other;
 }
 
@@ -589,8 +643,9 @@ void Scene::SetParent(Entity parent, Entity child){
     _child.parent = parent;
     _child.hasParent = true;
 
-    _parent.SetGlobalAsDirty();
-    _child.SetGlobalAsDirty();
+    //_parent.SetGlobalAsDirty();
+    //_child.SetGlobalAsDirty();
+    _child.UpdateGlobalTransformCacheIfNeeded();
 }
 
 bool Scene::IsValid(Entity id){
@@ -682,6 +737,11 @@ void Scene::Update(){
         taskflow.clear();
     }*/
 
+    /*if(transIsDirty){
+        transIsDirty = false;
+        TransformComponent::UpdateAllTransformMatrix(*this);
+    }*/
+
     //if(running == false) return;
     for(auto s: standSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
@@ -719,6 +779,8 @@ void Scene::Update(){
         executor.run(taskflow).wait();
         taskflow.clear();
     }
+    
+    TransformComponent::UpdateAllTransformMatrix(*this);
 
     }catch(...){
         Assert(false && "Scene::Update Catch Error"); //TODO: Make the scene stop and the Editor handle this too.
@@ -883,6 +945,8 @@ void Scene::Load(const char* path){
     }
 
     LogWarning("LoadingScene: %s Succefu", path);
+
+    TransformComponent::UpdateAllTransformMatrix(*this);
 }
 
 void Scene::_Load(const char* path, entt::entity prefab){

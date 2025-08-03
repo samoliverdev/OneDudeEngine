@@ -93,10 +93,10 @@ struct OD_API HideInEditor{
     template <class Archive> void serialize(Archive & ar){}
 };
 
-//#define ExperimentalTransformOptimzation
+#define ExperimentalTransformOptimzation
 
 class OD_API TransformComponent{
-    friend struct Scene;
+    friend class Scene;
     friend class cereal::access;
 public:
     //static constexpr auto in_place_delete = true;
@@ -141,40 +141,49 @@ public:
     }
     
     inline void LocalPosition(Vector3 pos){ 
-        #ifdef ExperimentalTransformOptimzation
-        SetGlobalAsDirty();
-        #endif
         transform.LocalPosition(pos); 
+        #ifdef ExperimentalTransformOptimzation
+        //SetGlobalAsDirty();
+        UpdateGlobalTransformCacheIfNeeded();
+        #endif
     }
     
     inline Vector3 LocalEulerAngles(){ return transform.LocalEulerAngles(); }
     
     inline void LocalEulerAngles(Vector3 euler){ 
-        #ifdef ExperimentalTransformOptimzation
-        SetGlobalAsDirty();
-        #endif
         transform.LocalEulerAngles(euler); 
+        #ifdef ExperimentalTransformOptimzation
+        //SetGlobalAsDirty();
+        UpdateGlobalTransformCacheIfNeeded();
+        #endif
     }
     
     inline Quaternion LocalRotation(){ return transform.LocalRotation(); }
     
     inline void LocalRotation(Quaternion rot){ 
-        #ifdef ExperimentalTransformOptimzation
-        SetGlobalAsDirty();
-        #endif
         transform.LocalRotation(rot); 
+        #ifdef ExperimentalTransformOptimzation
+        //SetGlobalAsDirty();
+        UpdateGlobalTransformCacheIfNeeded();
+        #endif
     }
     
     inline Vector3 LocalScale(){ return transform.LocalScale(); }
     
     inline void LocalScale(Vector3 scale){
-        #ifdef ExperimentalTransformOptimzation
-        SetGlobalAsDirty();
-        #endif 
         transform.LocalScale(scale); 
+        #ifdef ExperimentalTransformOptimzation
+        //SetGlobalAsDirty();
+        UpdateGlobalTransformCacheIfNeeded();
+        #endif
     }
     
-    inline void SetLocalModelMatrix(Matrix4 matrix){ transform = Transform(matrix); }
+    inline void SetLocalModelMatrix(Matrix4 matrix){ 
+        #ifdef ExperimentalTransformOptimzation
+        Assert(false);
+        #endif
+        transform = Transform(matrix); 
+    }
 
     inline Entity Parent(){ return parent; }
     inline bool HasParent(){ /*return parent != entt::null;*/ return hasParent; }
@@ -186,19 +195,19 @@ public:
     void serialize(Archive & ar);
 
     inline operator Transform() {
-        #ifdef ExperimentalTransformOptimzation
+        /*#ifdef ExperimentalTransformOptimzation
         return Transform(Position(), Rotation(), Scale()); 
-        #else
+        #else*/
         return Transform(GlobalModelMatrix());
-        #endif
+        //#endif
     }
 
     inline Transform ToTransform(){ 
-        #ifdef ExperimentalTransformOptimzation
+        /*#ifdef ExperimentalTransformOptimzation
         return Transform(Position(), Rotation(), LocalScale()); 
-        #else
+        #else*/
         return Transform(GlobalModelMatrix()); 
-        #endif
+        //#endif
     }
 
     static void CreateLuaBind(sol::state& lua);
@@ -206,6 +215,8 @@ public:
     void SetGlobalAsDirty();
 
     void UpdateGlobalTransformCacheIfNeeded();
+
+    static void UpdateAllTransformMatrix(class Scene& scene);
 
 private:
     Transform transform;
@@ -398,6 +409,8 @@ private:
 
     tf::Executor executor;
     tf::Taskflow taskflow;
+
+    bool transIsDirty = true;
 };
 
 class Prefab: public Asset{
