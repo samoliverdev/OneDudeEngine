@@ -1325,7 +1325,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
-	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock(); //physicsWorld->physicsSystem.GetBodyInterface();
 
 	auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
 	auto _view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
@@ -1363,7 +1363,9 @@ void PhysicsSystem::PhysicsUpdate(){
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PreUpdate");
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
-		if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
+		GetScene()->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
+
+		if(ragdoll.data != nullptr && scene->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
 			float gain = ragdoll.gain;
 			float damping = ragdoll.damping;     // Novo: adicionar na struct
 			float stiffness = ragdoll.stiffness;
@@ -1468,9 +1470,13 @@ void PhysicsSystem::PhysicsUpdate(){
 				}
 			}
 			
-		}
+		} });
+		
 	}
 	}
+
+	scene->GetExecutor().run(scene->GetTaskflow()).wait();
+	scene->GetTaskflow().clear();
 
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::Update");
@@ -1604,9 +1610,9 @@ void PhysicsSystem::PhysicsUpdate(){
 				nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
 			);
 			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
-			for (int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i) {
+			for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
-				BodyInterface& bi = physicsWorld->physicsSystem.GetBodyInterface();
+				BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
 				
 				// Setar manualmente o CollisionGroup correto
 				bi.SetCollisionGroup(bodyID, JPH::CollisionGroup(
@@ -1660,6 +1666,8 @@ void PhysicsSystem::PhysicsUpdate(){
 
 		if(ragdoll.data != nullptr && GetScene()->Running() == true){
 			if(ragdoll.type == RagdollComponent::Type::Dynamic){
+				scene->GetTaskflow().emplace([&skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
+
 				skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
 				
 				//skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
@@ -1697,6 +1705,8 @@ void PhysicsSystem::PhysicsUpdate(){
 					}
 				}	
 				pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+
+				});
 
 				//skinned.finalPose = pose;
 			}
