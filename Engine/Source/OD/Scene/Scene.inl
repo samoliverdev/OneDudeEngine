@@ -4,15 +4,64 @@
 namespace OD{
 
 //-----------TransformComponent---------
+template<typename... Components, typename Func>
+void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func){
+    #ifdef ExperimentalTransformOptimzation
+
+    auto& registry = scene.GetRegistry();
+    auto& taskflow = scene.GetTaskflow();
+    auto& executor = scene.GetExecutor();
+
+    std::unordered_map<Entity, tf::Task> entityTasks;
+
+    auto view = registry.view<TransformComponent, Components...>();
+
+    // First pass: create tasks for each entity
+    for(auto entity : view){
+        tf::Task task = taskflow.emplace([&, entity](){
+            auto& transform = registry.get<TransformComponent>(entity);
+            if constexpr(sizeof...(Components) > 0){
+                func(entity, transform, registry.get<Components>(entity)...);
+            } else {
+                func(entity, transform);
+            }
+        }).name("TransformTask");
+
+        entityTasks[entity] = task;
+    }
+
+    // Second pass: setup dependencies (parent before child)
+    for(auto [entity, task]: entityTasks){
+        auto& transform = registry.get<TransformComponent>(entity);
+        if(transform.HasParent()){
+            TransformComponent& p = scene.GetComponent<TransformComponent>(transform.Parent());
+            if(p.isCollection) continue;
+
+            Entity parent = transform.Parent();
+            if (auto it = entityTasks.find(parent); it != entityTasks.end()) {
+                it->second.precede(task); // parent -> child
+            }
+        }
+    }
+
+    executor.run(taskflow).wait();
+    taskflow.clear();
+
+#endif
+}
+
 template <class Archive>
 void TransformComponent::serialize(Archive & ar){
     ArchiveDump(ar, CEREAL_NVP(transform.localPosition)); 
     ArchiveDump(ar, CEREAL_NVP(transform.localRotation));
-    ArchiveDump(ar, CEREAL_NVP(transform.localEulerAngles)); 
+    //ArchiveDump(ar, CEREAL_NVP(transform.localEulerAngles)); 
     ArchiveDump(ar, CEREAL_NVP(transform.localScale));
     ArchiveDump(ar, CEREAL_NVP(children));
     ArchiveDump(ar, CEREAL_NVP(parent));
     ArchiveDump(ar, CEREAL_NVP(hasParent));
+    #ifdef ExperimentalTransformOptimzation
+    ArchiveDump(ar, CEREAL_NVP(isCollection));
+    #endif
 }
 
 //-----------InfoComponent---------

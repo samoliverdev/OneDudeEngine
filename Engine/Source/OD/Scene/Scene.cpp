@@ -49,6 +49,15 @@ void TransformComponent::SetGlobalAsDirty(){
 
 void TransformComponent::UpdateAllTransformMatrix(Scene& scene){
     #ifdef ExperimentalTransformOptimzation
+    ForEachWithTransformTaskflow(scene, [](Entity entity, TransformComponent& t) {
+        t.UpdateGlobalTransformCacheIfNeeded(false);
+    });
+
+    /*ForEachWithTransformTaskflow<InfoComponent>(scene, [](Entity e, TransformComponent& t, InfoComponent& a){
+        t.UpdateGlobalTransformCacheIfNeeded(false);
+    });*/
+
+    return;
 
     std::unordered_map<Entity, tf::Task> entityTasks;
 

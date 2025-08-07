@@ -235,6 +235,9 @@ public:
     void UpdateGlobalTransformCacheIfNeeded(bool updateChild = true);
 
     static void UpdateAllTransformMatrix(class Scene& scene);
+    
+    template<typename... Components, typename Func>
+    static void ForEachWithTransformTaskflow(Scene& scene, Func&& func);
 
     #ifdef ExperimentalTransformOptimzation
     bool isCollection = false;
