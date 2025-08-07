@@ -269,6 +269,13 @@ void InspectorPanel::DrawComponents(Entity entity){
 
         if(beginDisable) ImGui::BeginDisabled(true);
 
+        #ifdef ExperimentalTransformOptimzation
+        if(ImGui::Checkbox("isCollection", &transform.isCollection)){
+            transform.UpdateGlobalTransformCacheIfNeeded();
+        }
+        if(transform.isCollection) return;
+        #endif
+
         auto old = transform;
         
         /*if(scene.HasComponent<RigidbodyComponent>(e)){

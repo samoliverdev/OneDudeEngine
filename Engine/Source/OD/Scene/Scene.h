@@ -137,6 +137,9 @@ public:
     Vector3 Scale();
 
     inline Vector3 LocalPosition(){ 
+        #ifdef ExperimentalTransformOptimzation
+        if(isCollection) return Vector3Zero;
+        #endif
         return transform.LocalPosition(); 
     }
     
@@ -148,7 +151,12 @@ public:
         #endif
     }
     
-    inline Vector3 LocalEulerAngles(){ return transform.LocalEulerAngles(); }
+    inline Vector3 LocalEulerAngles(){ 
+        #ifdef ExperimentalTransformOptimzation
+        if(isCollection) return Vector3Zero;
+        #endif
+        return transform.LocalEulerAngles(); 
+    }
     
     inline void LocalEulerAngles(Vector3 euler){ 
         transform.LocalEulerAngles(euler); 
@@ -158,7 +166,12 @@ public:
         #endif
     }
     
-    inline Quaternion LocalRotation(){ return transform.LocalRotation(); }
+    inline Quaternion LocalRotation(){ 
+        #ifdef ExperimentalTransformOptimzation
+        if(isCollection) return QuaternionIdentity;
+        #endif
+        return transform.LocalRotation(); 
+    }
     
     inline void LocalRotation(Quaternion rot){ 
         transform.LocalRotation(rot); 
@@ -168,7 +181,12 @@ public:
         #endif
     }
     
-    inline Vector3 LocalScale(){ return transform.LocalScale(); }
+    inline Vector3 LocalScale(){ 
+        #ifdef ExperimentalTransformOptimzation
+        if(isCollection) return Vector3One;
+        #endif
+        return transform.LocalScale(); 
+    }
     
     inline void LocalScale(Vector3 scale){
         transform.LocalScale(scale); 
@@ -214,9 +232,13 @@ public:
     
     void SetGlobalAsDirty();
 
-    void UpdateGlobalTransformCacheIfNeeded();
+    void UpdateGlobalTransformCacheIfNeeded(bool updateChild = true);
 
     static void UpdateAllTransformMatrix(class Scene& scene);
+
+    #ifdef ExperimentalTransformOptimzation
+    bool isCollection = false;
+    #endif
 
 private:
     Transform transform;
