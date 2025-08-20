@@ -19,7 +19,8 @@ public:
     virtual std::string& Path();
     virtual void OnGui(){}
     virtual void Reload(){ LoadFromFile(path); }
-    virtual void Save(){}
+    virtual void Save(){}//INFO: Maybe remove later
+    virtual bool SaveAs(const std::string& path){ return false; }//INFO: Maybe Rename
     virtual bool LoadFromFile(const std::string& path);
     virtual std::vector<std::string> GetFileAssociations();
     bool HasFileExtension(const std::string& fileExtension);

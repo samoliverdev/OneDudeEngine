@@ -11,6 +11,8 @@ namespace OD{
 void TerrainModuleInit(){
     SceneManager::Get().RegisterCoreComponent<TerrainComponent>("TerrainComponent");
     SceneManager::Get().RegisterSystem<TerrainSystem>("TerrainSystem");
+    
+    AssetTypesDB::Get().RegisterAssetType<Heightmap>(".heightmap", [](const std::string& path){ return AssetManager::Get().LoadAsset<Heightmap>(path); });
 }
 
 int ManhattanDistance(IVector2 a, IVector2 b){
@@ -30,6 +32,19 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
     ImGui::DragFloat("terrainHeight", &terrain.terrainHeight);
     ImGui::DragInt("chunkWidthCount", &terrain.chunkWidthCount);
     ImGui::DragFloat2("texTilling", &terrain.texTilling.x);
+
+    if(ImGui::DrawAsset<Heightmap>("Heightmap", terrain.heightmap)){
+        if(terrain.heightmap != nullptr){
+            terrain.heightMapIsDirt = true;
+        }
+    }
+
+    ImGui::DrawAsset<Texture2D>("Layer0", terrain.layer0);
+    ImGui::DrawAsset<Texture2D>("Layer1", terrain.layer1);
+    ImGui::DrawAsset<Texture2D>("Layer2", terrain.layer2);
+    ImGui::DrawAsset<Texture2D>("Layer3", terrain.layer3);
+    ImGui::DrawAsset<Texture2D>("Layer4", terrain.layer4);
+    ImGui::DrawAsset<Texture2D>("Splatmap", terrain.splatmap);
 
     if(ImGui::Button("Rebuild")) terrain.isDirt = true;
 }
@@ -91,6 +106,11 @@ void TerrainSystem::PhysicsUpdate(){
         TransformComponent& trans = terrainView.get<TransformComponent>(e);
         TerrainComponent& terrain = terrainView.get<TerrainComponent>(e);
         Assert(GetScene()->IsValid(EntityNull) == false);
+
+        if(terrain.heightmap == nullptr){
+            DestroyTerrain(terrain);
+            return;
+        }
 
         if(GetScene()->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
             CreateTerrain(terrain, e);
@@ -486,6 +506,7 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
         scene.SetParent(meshsRoot, e);
         meshToNavmeshChunks.push_back(e);
 
+        scene.AddTagComponent<DontSave>(e);
 
         MeshRendererComponent& _meshToNavmesh = scene.AddComponent<MeshRendererComponent>(e);
         {
@@ -538,9 +559,9 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
 void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
     if(GetScene()->IsValid(terrain.meshsRoot)){
         scene->DestroyEntity(terrain.meshsRoot);
-        terrain.meshsRoot = Entity();
-        terrain.collider = Entity();
-        terrain.meshToNavmesh = Entity();
+        terrain.meshsRoot = EntityNull;
+        terrain.collider = EntityNull;
+        terrain.meshToNavmesh = EntityNull;
         terrain.meshToNavmeshChunks.clear();
     }
 
@@ -560,6 +581,8 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     terrain.meshsRoot = GetScene()->AddEntity("Root");
     GetScene()->GetComponent<InfoComponent>(terrain.meshsRoot).hidden = false;//true;
     GetScene()->SetParent(e, terrain.meshsRoot);
+
+    GetScene()->AddTagComponent<DontSave>(terrain.meshsRoot);
     
     terrain.chunkSize = terrain.mapChunkSize - 1;
     terrain.lods = std::vector<int>{
@@ -631,6 +654,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
 
     //Create Collider
     terrain.collider = GetScene()->AddEntity("Collider");
+    GetScene()->AddTagComponent<DontSave>(terrain.collider);
     GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
@@ -871,6 +895,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     InfoComponent& info = GetScene()->GetComponent<InfoComponent>(chunkData.entity);
     info.hidden = false;// true;
 
+    GetScene()->AddTagComponent<DontSave>(chunkData.entity);
     GetScene()->AddComponent<NavmeshSkipTag>(chunkData.entity);
 
     float offset = 1.0f / (float)terrain.chunkWidthCount;

@@ -438,6 +438,8 @@ struct OD_API HeightmapColliderComponent{
 
     template <class Archive>
     void serialize(Archive & ar){}
+
+    //TODO: Add DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED here
     
 private:
 

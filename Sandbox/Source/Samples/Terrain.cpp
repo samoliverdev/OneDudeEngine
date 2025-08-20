@@ -110,6 +110,7 @@ void TerrainSample::OnInit(){
     terrainComponent.SetHeightmap(
         GenerateHeightmap(heightmapSize, heightmapSize, 50, 0.25f/(4*1), 4, 0.5f, 2.0f, Vector2(0, 0))
     );
+    terrainComponent.GetHeightmap()->SaveAs("Sandbox/Datas/Terrain.heightmap");
     terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
     terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
     terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg");
@@ -134,12 +135,29 @@ void TerrainSample::OnUpdate(float deltaTime){
     if(scene->Running() == false) return;
 
     if(Input::IsKeyDown(KeyCode::R)){
+        for(int i = 0; i < 5; i++){
         Entity e = SceneManager::Get().GetActiveScene()->AddEntity("PhysicsCube");
         TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
 
         scene->GetComponent<TransformComponent>(e).Position(camTrans.Position() + camTrans.Back() * 2.0f);
         scene->GetComponent<TransformComponent>(e).Rotation(QuaternionIdentity);
         scene->AddComponent<ScriptComponent>(e).AddScript<PhysicsCubeS>()->timeToDestroy = 100000000;
+        }
+    }
+
+    if(Input::IsKeyDown(KeyCode::T)){
+        Entity terrain = scene->FindEntityByName("Terrain");
+        TerrainComponent& terr = scene->GetComponent<TerrainComponent>(terrain);
+        terr.GetHeightmap()->SaveAs("Sandbox/Datas/Terrain.heightmap");
+    }
+
+    if(Input::IsKeyDown(KeyCode::Y)){
+        Entity terrain = scene->FindEntityByName("Terrain");
+        Ref<Heightmap> heightmap = CreateRef<Heightmap>();
+        heightmap->LoadFromFile("Sandbox/Datas/Terrain.heightmap");
+
+        TerrainComponent& terr = scene->GetComponent<TerrainComponent>(terrain);
+        terr.SetHeightmap(heightmap);
     }
 }   
 

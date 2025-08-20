@@ -529,7 +529,7 @@ void AnimatorSample::OnInit(){
     const int Size = 32*1.5f;
     for(int x = -(Size/2); x <= (Size/2); x++){
         for(int y = -(Size/2); y <= (Size/2); y++){
-            Entity charEntity = scene->AddEntity("Character");
+            Entity charEntity = scene->AddEntity("Character_" + std::to_string(x) + "_" + std::to_string(y));
             
             TransformComponent& charTrans = scene->GetComponent<TransformComponent>(charEntity);
             charTrans.Position(Vector3(x*2, 0, y*2));
@@ -552,6 +552,29 @@ void AnimatorSample::OnInit(){
     Application::AddModule<Editor>();
 
     LogInfo("AnimationCount: %zd", charModel->animationClips.size());
+
+    auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
+	auto& entities = *view.handle();
+    size_t total_entities = entities.size(); // Should be 100
+    size_t entities_per_task = total_entities / 4; // 25 entities per task
+    size_t remaining_entities = total_entities % 4; // Handle any remainder
+    size_t start_idx = 0;
+
+    for(int i = 0; i < 4; i++){
+        size_t count = entities_per_task + (i < remaining_entities ? 1 : 0);
+
+        scene->GetTaskflow().emplace([&, i, count](){
+        for(size_t i = start_idx; i < start_idx + count && i < entities.size(); ++i){
+			auto entity = entities[i];
+			InfoComponent& info = view.get<InfoComponent>(entity);
+            AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
+            LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
+        }
+        });
+    }
+
+    scene->GetExecutor().run(scene->GetTaskflow()).wait();
+    scene->GetTaskflow().clear();
 }
 
 void AnimatorSample::OnUpdate(float deltaTime){

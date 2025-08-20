@@ -76,6 +76,7 @@ struct OD_API TerrainComponent{
     int chunkWidthCount = 4*2;
     int meshToNavmeshLod = 8;
     
+    inline Ref<Heightmap> GetHeightmap(){ return heightmap; }
     void SetHeightmap(Ref<Heightmap> heightmap);
     //void SubmitHeightmap();
 
@@ -83,12 +84,29 @@ struct OD_API TerrainComponent{
 
     template <class Archive>
     void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, heightmap);
+        //ArchiveDumpNVP(ar, heightmap);
         ArchiveDumpNVP(ar, lodBias);
         ArchiveDumpNVP(ar, terrainWidth);
         ArchiveDumpNVP(ar, terrainLength);
         ArchiveDumpNVP(ar, terrainHeight);
         ArchiveDumpNVP(ar, texTilling);
+
+        AssetRefSerialize<Heightmap> _heightmap(heightmap);
+        ArchiveDump(ar, CEREAL_NVP(_heightmap));
+
+        AssetRefSerialize<Texture2D> _splatmap(splatmap);
+        ArchiveDump(ar, CEREAL_NVP(_splatmap));
+
+        AssetRefSerialize<Texture2D> _layer0(layer0);
+        ArchiveDump(ar, CEREAL_NVP(_layer0));
+        AssetRefSerialize<Texture2D> _layer1(layer1);
+        ArchiveDump(ar, CEREAL_NVP(_layer1));
+        AssetRefSerialize<Texture2D> _layer2(layer2);
+        ArchiveDump(ar, CEREAL_NVP(_layer2));
+        AssetRefSerialize<Texture2D> _layer3(layer3);
+        ArchiveDump(ar, CEREAL_NVP(_layer3));
+        AssetRefSerialize<Texture2D> _layer4(layer4);
+        ArchiveDump(ar, CEREAL_NVP(_layer4));
     }
 private:
     
@@ -126,7 +144,7 @@ private:
     std::vector<TerrainLod> lodsMesh;
 
     bool isDirt = true;
-    bool heightMapIsDirt = false;
+    bool heightMapIsDirt = true; //false;
 
     void CreateMeshToNavmesh(Scene& scene);
 };

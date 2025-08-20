@@ -86,7 +86,7 @@ namespace ImGui{
     }
 
     template<class T>
-    bool DrawAsset(std::string& name, OD::Ref<T>& asset, const OD::Ref<T> preview = nullptr){
+    bool DrawAsset(const std::string& name, OD::Ref<T>& asset, const OD::Ref<T> preview = nullptr){
         bool changed = false;
 
         ImGui::BeginGroup();

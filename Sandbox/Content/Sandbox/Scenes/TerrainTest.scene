@@ -1,0 +1,418 @@
+{
+    "Entities": [
+        0,
+        1,
+        2,
+        3,
+        4
+    ],
+    "InfoComponents": [
+        {
+            "name": "Env",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Light",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Camera",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Terrain",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4
+    ],
+    "TransformComponents": [
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -2.0,
+                "v.y": 4.0,
+                "v.z": -1.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.1767035573720932,
+                "q.y": -0.8194911479949951,
+                "q.z": 0.3394443988800049,
+                "q.w": 0.42660006880760195
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": -37.42060089111328,
+                "v.y": 0.0,
+                "v.z": 38.093101501464847
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 256.0,
+                "v.y": 100.0,
+                "v.z": -256.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localScale": {
+                "v.x": 50.0,
+                "v.y": 200.0,
+                "v.z": 50.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "transform.localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "transform.localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "transform.localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        }
+    ],
+    "TransformComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "environmentSky": 0,
+                "environmentLight": 1,
+                "ambient": {
+                    "r": 0.10999999940395355,
+                    "g": 0.1599999964237213,
+                    "b": 0.25,
+                    "a": 1.0
+                },
+                "cleanColor": {
+                    "r": 0.5,
+                    "g": 0.10000000149011612,
+                    "b": 0.800000011920929,
+                    "a": 1.0
+                },
+                "directionalshadowQuality": 3,
+                "othershadowQuality": 2,
+                "shadowDistance": 1000.0,
+                "shadowBias": 0.000009999999747378752,
+                "toneMappingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "enable": false,
+                            "mode": -1,
+                            "exposure": 1.0
+                        }
+                    }
+                },
+                "colorGradingPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "enable": false,
+                            "postExposure": 0.0,
+                            "contrast": 0.0,
+                            "colorFilter": {
+                                "v.x": 1.0,
+                                "v.y": 1.0,
+                                "v.z": 1.0,
+                                "v.w": 1.0
+                            },
+                            "hueShift": 0.0,
+                            "saturation": 0.0
+                        }
+                    }
+                },
+                "bloomPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "enable": false,
+                            "maxIterations": 3,
+                            "downscaleLimit": 3,
+                            "bicubicUpsampling": true,
+                            "threshold": 0.5,
+                            "thresholdKnee": 1.0,
+                            "intensity": 1.0
+                        }
+                    }
+                },
+                "ssaoPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483652,
+                        "data": {
+                            "enable": false,
+                            "intensity": 0.5,
+                            "radius": 0.5,
+                            "bias": 0.02500000037252903
+                        }
+                    }
+                },
+                "ssgiPostFX": {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483653,
+                        "data": {
+                            "enable": false,
+                            "sampleRadius": 1.0,
+                            "hitThickness": 0.5,
+                            "sampleCount": 4.0,
+                            "sliceCount": 4.0
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        0
+    ],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 60.0,
+            "nearClipPlane": 0.10000000149011612,
+            "farClipPlane": 10000.0,
+            "renderingPath": 0
+        }
+    ],
+    "CameraComponentEntities": [
+        2
+    ],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "intensity": 1.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": true,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
+        }
+    ],
+    "LightComponentEntities": [
+        1
+    ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "localPosition": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localRotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "localEulerAngles": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "localScale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/Cube.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    true
+                ],
+                "path": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        3
+    ],
+    "TerrainComponents": [
+        {
+            "lodBias": 1.0,
+            "terrainWidth": 500.0,
+            "terrainLength": 500.0,
+            "terrainHeight": 420.0,
+            "texTilling": {
+                "v.x": 1.0,
+                "v.y": 1.0
+            },
+            "_heightmap": {
+                "isNull": false,
+                "path": "Sandbox/Datas/Terrain.heightmap"
+            },
+            "_splatmap": {
+                "isNull": false,
+                "path": "Sandbox/Textures/rgb-splat-map.png"
+            },
+            "_layer0": {
+                "isNull": false,
+                "path": "Sandbox/Textures/block.png"
+            },
+            "_layer1": {
+                "isNull": false,
+                "path": "Sandbox/Textures/brickwall.jpg"
+            },
+            "_layer2": {
+                "isNull": false,
+                "path": "Sandbox/Textures/floor.jpg"
+            },
+            "_layer3": {
+                "isNull": false,
+                "path": "Sandbox/Textures/Rock.jpg"
+            },
+            "_layer4": {
+                "isNull": false,
+                "path": "Sandbox/Textures/block.png"
+            }
+        }
+    ],
+    "TerrainComponentEntities": [
+        4
+    ],
+    "ScriptComponents": [
+        {}
+    ],
+    "ScriptComponentEntities": [
+        2
+    ]
+}

@@ -56,7 +56,18 @@ void TransformComponent::serialize(Archive & ar){
     ArchiveDump(ar, CEREAL_NVP(transform.localRotation));
     //ArchiveDump(ar, CEREAL_NVP(transform.localEulerAngles)); 
     ArchiveDump(ar, CEREAL_NVP(transform.localScale));
-    ArchiveDump(ar, CEREAL_NVP(children));
+    
+    if constexpr (Archive::is_saving::value){
+        std::vector<Entity> _children;
+        for(auto i: children){
+            if(registry->any_of<DontSave>(i) == false){
+                _children.push_back(i);
+            }
+        }
+        ArchiveDumpNamed(ar, "children", _children);
+    } else {
+        ArchiveDump(ar, CEREAL_NVP(children));
+    }
     ArchiveDump(ar, CEREAL_NVP(parent));
     ArchiveDump(ar, CEREAL_NVP(hasParent));
     #ifdef ExperimentalTransformOptimzation

@@ -1,10 +1,11 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Core/Asset.h"
 #include <vector>
 
 namespace OD{
 
-struct OD_API Heightmap{
+struct OD_API Heightmap: public Asset{
     Heightmap(){
         width = 128;
         height = 128;
@@ -56,6 +57,10 @@ struct OD_API Heightmap{
     std::vector<float> data;
     int width;
     int height;
+
+    bool LoadFromFile(const std::string& _path) override;
+    bool SaveAs(const std::string& _path) override;
+    std::vector<std::string> GetFileAssociations() override;
 };
 
 }
