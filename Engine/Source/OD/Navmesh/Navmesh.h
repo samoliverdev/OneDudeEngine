@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
+#include "OD/Core/Asset.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
@@ -9,6 +10,19 @@
 #include <DetourNavMeshQuery.h>
 #include <DetourCrowd.h>
 #include <Recast.h>
+
+namespace cereal {
+
+template<class Archive>
+void serialize(Archive& ar, dtNavMeshParams& p) {
+    ar(cereal::make_nvp("orig", p.orig),
+       cereal::make_nvp("tileWidth", p.tileWidth),
+       cereal::make_nvp("tileHeight", p.tileHeight),
+       cereal::make_nvp("maxTiles", p.maxTiles),
+       cereal::make_nvp("maxPolys", p.maxPolys));
+}
+
+} 
 
 namespace OD{
 
@@ -137,20 +151,19 @@ struct OD_API NavMeshPath{
 	NavMeshPathStatus status = NavMeshPathStatus::PathInvalid;
 };
 
-class OD_API Navmesh{
+class OD_API Navmesh: public Asset{
 	friend class NavmeshSystem;
 public:
-	BuildSettings buildSettings;
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
 
 	struct BakeData;
 
 	~Navmesh();
 
-	bool Bake(Scene* scene, AABB bounds, LayerMask layerMask = {});
-	bool BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask = {});
-	bool BakeAllTiles(Scene* scene, AABB bounds, LayerMask layerMask = {});
-	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos);
+	bool Bake(Scene* scene, AABB bounds, BuildSettings buildSettings, LayerMask layerMask = {});
+	bool BakeSingle(Scene* scene, AABB bounds, BuildSettings buildSettings, LayerMask layerMask = {});
+	bool BakeAllTiles(Scene* scene, AABB bounds, BuildSettings buildSettings, LayerMask layerMask = {});
+	bool BakeTile(Scene* scene, AABB bounds, const Vector3 pos, BuildSettings buildSettings);
 	bool RemoveTile(Scene* scene, AABB bounds, const Vector3 pos);
 
 	void Cleanup(BakeData& data);
@@ -159,11 +172,99 @@ public:
 	bool FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath);
 	bool SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius = 2.0f);
 
-	template<class Archive> 
+	bool LoadFromFile(const std::string& _path) override;
+    bool SaveAs(const std::string& _path) override;
+    std::vector<std::string> GetFileAssociations() override;
+
+	/*template<class Archive> 
 	void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, buildSettings);
 		ArchiveDumpNVP(ar, mask);
+	}*/
+
+	/*
+	template<class Archive>
+	void save(Archive& ar) const {
+		// Save build settings and mask
+		ar(cereal::make_nvp("BuildSettings", buildSettings));
+		ar(cereal::make_nvp("Mask", mask));
+
+		if (!m_navMesh) {
+			int tileCount = 0;
+			ar(cereal::make_nvp("TileCount", tileCount));
+			return;
+		}
+
+		// Save params
+		const dtNavMeshParams* params = m_navMesh->getParams();
+		ar(cereal::make_nvp("NavMeshParams", *params));
+
+		// Count valid tiles
+		int tileCount = 0;
+		for (int i = 0; i < m_navMesh->getMaxTiles(); i++) {
+			const dtMeshTile* tile = ((const dtNavMesh*)m_navMesh)->getTile(i);
+			if (tile && tile->header && tile->dataSize > 0) {
+				tileCount++;
+			}
+		}
+		ar(cereal::make_nvp("TileCount", tileCount));
+
+		// Serialize each tile
+		for (int i = 0; i < m_navMesh->getMaxTiles(); i++) {
+			const dtMeshTile* tile = ((const dtNavMesh*)m_navMesh)->getTile(i);
+			if (!tile || !tile->header || !tile->dataSize) continue;
+
+			std::vector<uint8_t> blob(tile->dataSize);
+			std::memcpy(blob.data(), tile->data, tile->dataSize);
+
+			ar(cereal::make_nvp("TileData", blob));
+		}
 	}
+
+	template<class Archive>
+	void load(Archive& ar) {
+		ar(cereal::make_nvp("BuildSettings", buildSettings));
+		ar(cereal::make_nvp("Mask", mask));
+
+		int tileCount = 0;
+		ar(cereal::make_nvp("TileCount", tileCount));
+
+		if (tileCount <= 0) {
+			m_navMesh = nullptr;
+			return;
+		}
+
+		// Load params
+		dtNavMeshParams params{};
+		ar(cereal::make_nvp("NavMeshParams", params));
+
+		dtNavMesh* navMesh = dtAllocNavMesh();
+		if (!navMesh || dtStatusFailed(navMesh->init(&params))) {
+			if (navMesh) dtFreeNavMesh(navMesh);
+			m_navMesh = nullptr;
+			return;
+		}
+
+		// Read all tiles
+		for (int i = 0; i < tileCount; i++) {
+			std::vector<uint8_t> blob;
+			ar(cereal::make_nvp("TileData", blob));
+
+			unsigned char* data = (unsigned char*)dtAlloc((int)blob.size(), DT_ALLOC_PERM);
+			std::memcpy(data, blob.data(), blob.size());
+
+			dtStatus status = navMesh->addTile(data, (int)blob.size(), DT_TILE_FREE_DATA, 0, nullptr);
+			if (dtStatusFailed(status)) {
+				dtFree(data);
+			}
+		}
+
+		m_navMesh = navMesh;
+
+		if (!m_navQuery) m_navQuery = dtAllocNavMeshQuery();
+		m_navQuery->init(m_navMesh, 2048);
+	}
+	*/
 
 private:
 	bool TileInit(Scene* scene, AABB bounds);
@@ -173,6 +274,7 @@ private:
 
 	bool hasInitTile = false;
 
+	BuildSettings buildSettings;
 	LayerMask mask;
 
 	struct BakeData{
@@ -248,6 +350,9 @@ struct OD_API NavmeshComponent{
 	enum class AgentUpdateMode{FindPath, Crowd};
 
 	//BuildSettings buildSettings;
+	BuildSettings buildSettings;
+	LayerMask mask;
+
 	AgentUpdateMode agentUpdateMode;
 	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
@@ -259,7 +364,12 @@ struct OD_API NavmeshComponent{
 		//ArchiveDumpNVP(ar, buildSettings);
 		ArchiveDumpNVP(ar, agentUpdateMode);
 		ArchiveDumpNVP(ar, size);
-		ArchiveDumpNVP(ar, navmesh);
+		ArchiveDumpNVP(ar, buildSettings);
+		ArchiveDumpNVP(ar, mask);
+		//ArchiveDumpNVP(ar, navmesh);
+
+		AssetRefSerialize<Navmesh> _navmesh(navmesh);
+        ArchiveDump(ar, CEREAL_NVP(_navmesh));
 	}
 };
 

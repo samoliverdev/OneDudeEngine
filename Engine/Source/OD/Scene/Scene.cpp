@@ -946,6 +946,8 @@ void Scene::Load(const char* path){
         }
     }
 
+    this->path = path;
+
     LogWarning("LoadingScene: %s Succefu", path);
 
     TransformComponent::UpdateAllTransformMatrix(*this);

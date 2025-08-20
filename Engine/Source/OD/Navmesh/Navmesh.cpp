@@ -28,6 +28,8 @@ void NavmeshModuleInit(){
 	SceneManager::Get().RegisterCoreComponent<NavmeshComponent>("NavmeshComponent");
 	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent");
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
+
+	AssetTypesDB::Get().RegisterAssetType<Navmesh>(".navmesh", [](const std::string& path){ return AssetManager::Get().LoadAsset<Navmesh>(path); });
 }
 
 void NavmeshComponent::OnGui(Entity& e, Scene& scene){
@@ -46,8 +48,14 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 				AABB(
 					trans.Position(), 
 					navmeshComponent.size.x, navmeshComponent.size.y, navmeshComponent.size.z
-				)
-			); 
+				),
+				navmeshComponent.buildSettings,
+				navmeshComponent.mask
+			);
+			if(scene.Path() != "Memory"){
+				std::string savePath = scene.Path() + "_Navmesh_" + std::to_string((size_t)e) + ".navmesh";
+				navmeshComponent.navmesh->SaveAs(savePath);
+			}
 		}
 	}
 }
@@ -320,15 +328,17 @@ bool Navmesh::RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mes
     return true;
 }
 
-bool Navmesh::Bake(Scene* scene, AABB bounds, LayerMask layerMask){
+bool Navmesh::Bake(Scene* scene, AABB bounds, BuildSettings inbuildSettings, LayerMask layerMask){
 	OD_LOG_PROFILE("Navmesh::Bake");
 	bounds.Expand(Vector3(0.5f));
 
-	if(buildSettings.useTile) return BakeAllTiles(scene, bounds, layerMask);
-	return BakeSingle(scene, bounds, layerMask);
+	if(buildSettings.useTile) return BakeAllTiles(scene, bounds, buildSettings, layerMask);
+	return BakeSingle(scene, bounds, buildSettings, layerMask);
 }
 
-bool Navmesh::BakeSingle(Scene* scene, AABB bounds, LayerMask layerMask){
+bool Navmesh::BakeSingle(Scene* scene, AABB bounds, BuildSettings inbuildSettings, LayerMask layerMask){
+	buildSettings = inbuildSettings;
+	
 	if(buildSettings.useTile == true) return false;
 	mask = layerMask;
 
@@ -759,7 +769,8 @@ bool Navmesh::TileInit(Scene* scene, AABB bounds){
 	return true;
 }
 
-bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds, LayerMask layerMask){
+bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds, BuildSettings inbuildSettings, LayerMask layerMask){
+	buildSettings = inbuildSettings;
 	if(buildSettings.useTile == false) return false;
 	mask = layerMask;
 
@@ -878,7 +889,9 @@ bool Navmesh::BakeAllTiles(Scene* scene, AABB bounds, LayerMask layerMask){
 	return true;
 }
 
-bool Navmesh::BakeTile(Scene* scene, AABB bounds, const Vector3 pos){
+bool Navmesh::BakeTile(Scene* scene, AABB bounds, const Vector3 pos, BuildSettings inbuildSettings){
+	buildSettings = inbuildSettings;
+
 	if(buildSettings.useTile == false) return false;
 	
 	if(hasInitTile == false){
@@ -1496,6 +1509,97 @@ bool Navmesh::SamplePosition(Vector3 position, Vector3& outClosestPoint, float m
     }
 
     return false; // No valid position found
+}
+
+// Save the navmesh state to a file
+bool Navmesh::SaveAs(const std::string& path){
+	if (!m_navMesh) return false;
+
+    FILE* fp = fopen(path.c_str(), "wb");
+    if (!fp) return false;
+
+    // Save navmesh params first
+    const dtNavMeshParams* params = m_navMesh->getParams();
+    fwrite(params, sizeof(dtNavMeshParams), 1, fp);
+
+    // Save tiles
+    for (int i = 0; i < m_navMesh->getMaxTiles(); i++) {
+        const dtMeshTile* tile = ((const dtNavMesh*)m_navMesh)->getTile(i);
+        if (!tile || !tile->header || !tile->dataSize) continue;
+
+        fwrite(&tile->dataSize, sizeof(int), 1, fp);
+        fwrite(tile->data, tile->dataSize, 1, fp);
+    }
+
+    fclose(fp);
+    this->path = path;
+    return true;
+}
+
+// Load navmesh from a file
+bool Navmesh::LoadFromFile(const std::string& path){
+	Cleanup(bakeData);
+
+    FILE* fp = fopen(path.c_str(), "rb");
+    if (!fp) return false;
+
+    // Read navmesh params
+    dtNavMeshParams params{};
+    if (fread(&params, sizeof(dtNavMeshParams), 1, fp) != 1) {
+        fclose(fp);
+        return false;
+    }
+
+    // Allocate + init navmesh
+    dtNavMesh* navMesh = dtAllocNavMesh();
+    if (!navMesh || dtStatusFailed(navMesh->init(&params))) {
+        if (navMesh) dtFreeNavMesh(navMesh);
+        fclose(fp);
+        return false;
+    }
+
+    // Load all tiles
+    while (true) {
+        int dataSize = 0;
+        if (fread(&dataSize, sizeof(int), 1, fp) != 1) break;
+        if (dataSize <= 0) break;
+
+        unsigned char* data = (unsigned char*)dtAlloc(dataSize, DT_ALLOC_PERM);
+        if (!data) {
+            fclose(fp);
+            dtFreeNavMesh(navMesh);
+            return false;
+        }
+
+        if (fread(data, dataSize, 1, fp) != 1) {
+            dtFree(data);
+            break;
+        }
+
+        dtStatus status = navMesh->addTile(data, dataSize, DT_TILE_FREE_DATA, 0, nullptr);
+        if (dtStatusFailed(status)) {
+            dtFree(data);
+            fclose(fp);
+            dtFreeNavMesh(navMesh);
+            return false;
+        }
+    }
+
+    fclose(fp);
+
+    // Replace old navmesh
+    m_navMesh = navMesh;
+
+    // Init query
+    if (!m_navQuery) m_navQuery = dtAllocNavMeshQuery();
+    m_navQuery->init(m_navMesh, 2048);
+
+    this->path = path;
+    return true;
+}
+
+std::vector<std::string> Navmesh::GetFileAssociations(){
+	return {".navmesh"};
 }
 
 Vector3 NavmeshAgentComponent::GetDestination(){ 

@@ -14,7 +14,7 @@ void LoadSceneSample::OnInit(){
     OD::Scene* scene = SceneManager.NewScene();
 
     //scene->Load("Standard/Scenes/Prototype.scene");
-    scene->Load("Sandbox/Scenes/TerrainTest.scene");
+    scene->Load("Sandbox/Scenes/TerrainTest2.scene");
 
     Application::AddModule<Editor>();
     //scene->Start();
