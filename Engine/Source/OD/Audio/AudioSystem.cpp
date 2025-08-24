@@ -13,7 +13,7 @@ void AudioModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
     AssetTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
 
-    SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent");
+    SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent", "Audio");
     SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
 }
 

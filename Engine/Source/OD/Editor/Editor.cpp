@@ -187,6 +187,7 @@ void Editor::OnInit(){
 
     editorCam.OnStart();
     editorCam.moveSpeed = 60;
+    editorCam.fastMoveSpeed = 300;
 
     sceneHierarchyPanel.SetEditor(this);
     inspectorPanel.SetEditor(this);

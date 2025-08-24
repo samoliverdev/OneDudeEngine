@@ -12,7 +12,7 @@
 namespace OD{
 
 void AnimatorModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent");
+    SceneManager::Get().RegisterCoreComponent<AnimatorComponent>("AnimatorComponent", "Animation");
     SceneManager::Get().RegisterSystem<AnimatorSystem>("AnimatorSystem");
 }
 

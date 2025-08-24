@@ -16,10 +16,15 @@ void EditorCamera::OnUpdate(){
     Vector3 pos = transform.LocalPosition();
 
     if(Input::IsMouseButton(MouseButton::Right)){
-        if(Input::IsKey(KeyCode::W)) pos += transform.Back() * moveSpeed * Application::DeltaTime();
-        if(Input::IsKey(KeyCode::S)) pos += transform.Forward() * moveSpeed * Application::DeltaTime();
-        if(Input::IsKey(KeyCode::A)) pos += transform.Left() * moveSpeed * Application::DeltaTime();
-        if(Input::IsKey(KeyCode::D)) pos += transform.Right() * moveSpeed * Application::DeltaTime();
+        float targetSpeed = moveSpeed;
+        if(Input::IsKey(KeyCode::Shift)){
+            targetSpeed = fastMoveSpeed;
+        }
+
+        if(Input::IsKey(KeyCode::W)) pos += transform.Back() * targetSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::S)) pos += transform.Forward() * targetSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::A)) pos += transform.Left() * targetSpeed * Application::DeltaTime();
+        if(Input::IsKey(KeyCode::D)) pos += transform.Right() * targetSpeed * Application::DeltaTime();
     }
 
     double xpos;

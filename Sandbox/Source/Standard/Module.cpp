@@ -7,6 +7,7 @@
 #include "Character/CharacterMovement.h"
 #include "Character/CharacterAnimation.h"
 #include "Greyboxing/Greyboxing.h"
+#include "Generator/HeightmapGenerator.h"
 
 namespace Standard{
 
@@ -16,6 +17,7 @@ void ModuleInit(){
     SceneManager::Get().RegisterComponent<CharacterMovement>("CharacterMovement", "Standard");
     SceneManager::Get().RegisterComponent<CharacterAnimation>("CharacterAnimation", "Standard");
     SceneManager::Get().RegisterComponent<Greyboxing>("Greyboxing", "Standard");
+    SceneManager::Get().RegisterComponent<HeightmapGenerator>("HeightmapGenerator", "Standard");
     SceneManager::Get().RegisterSystem<StandardAssetSystem>("StandardAssetSystem");
 }
 

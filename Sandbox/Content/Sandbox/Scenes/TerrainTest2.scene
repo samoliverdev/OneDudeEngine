@@ -95,10 +95,10 @@
                 "v.z": -1.0
             },
             "transform.localRotation": {
-                "q.x": 0.1767035573720932,
-                "q.y": -0.8194911479949951,
-                "q.z": 0.3394443988800049,
-                "q.w": 0.42660006880760195
+                "q.x": -0.7067119479179382,
+                "q.y": -0.5822538137435913,
+                "q.z": 0.25923410058021548,
+                "q.w": -0.30715012550354006
             },
             "transform.localScale": {
                 "v.x": 1.0,
@@ -112,9 +112,9 @@
         },
         {
             "transform.localPosition": {
-                "v.x": -37.42060089111328,
-                "v.y": 0.0,
-                "v.z": 38.093101501464847
+                "v.x": 0.0,
+                "v.y": 1117.0,
+                "v.z": 0.0
             },
             "transform.localRotation": {
                 "q.x": 0.0,
@@ -206,6 +206,36 @@
         3,
         4,
         5
+    ],
+    "FreeCameras": [
+        {
+            "moveSpeed": 300.0,
+            "rotSpeed": 50.0
+        }
+    ],
+    "FreeCameraEntities": [
+        2
+    ],
+    "HeightmapGenerators": [
+        {
+            "width": 2049,
+            "height": 2049,
+            "scale": 0.10000000149011612,
+            "octaves": 8,
+            "persistance": 0.25,
+            "lacunarity": 2.5,
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0
+            },
+            "power": 4.0,
+            "power2": 0.5,
+            "to01": false,
+            "falloff": false
+        }
+    ],
+    "HeightmapGeneratorEntities": [
+        4
     ],
     "EnvironmentComponents": [
         {
@@ -370,7 +400,7 @@
             },
             "_navmesh": {
                 "isNull": false,
-                "path": "Sandbox/Scenes/TerrainTest.scene_Navmesh_5.navmesh"
+                "path": "Sandbox/Scenes/TerrainTest2.scene_Navmesh_5.navmesh"
             }
         }
     ],
@@ -437,9 +467,9 @@
     ],
     "TerrainComponents": [
         {
-            "lodBias": 1.0,
-            "terrainWidth": 500.0,
-            "terrainLength": 500.0,
+            "lodBias": 0.10000000149011612,
+            "terrainWidth": 5000.0,
+            "terrainLength": 5000.0,
             "terrainHeight": 420.0,
             "texTilling": {
                 "v.x": 1.0,
@@ -447,7 +477,7 @@
             },
             "_heightmap": {
                 "isNull": false,
-                "path": "Sandbox/Datas/Terrain.heightmap"
+                "path": "Sandbox/Scenes/TerrainTest2.scene_TerrainData_4.heightmap"
             },
             "_splatmap": {
                 "isNull": false,
@@ -477,11 +507,5 @@
     ],
     "TerrainComponentEntities": [
         4
-    ],
-    "ScriptComponents": [
-        {}
-    ],
-    "ScriptComponentEntities": [
-        2
     ]
 }

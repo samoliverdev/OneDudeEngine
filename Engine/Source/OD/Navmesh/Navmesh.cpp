@@ -24,9 +24,9 @@
 namespace OD{
 
 void NavmeshModuleInit(){
-	SceneManager::Get().RegisterCoreComponent<NavmeshSkipTag>("NavmeshSkipTag");
-	SceneManager::Get().RegisterCoreComponent<NavmeshComponent>("NavmeshComponent");
-	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent");
+	SceneManager::Get().RegisterCoreComponent<NavmeshSkipTag>("NavmeshSkipTag", "AI");
+	SceneManager::Get().RegisterCoreComponent<NavmeshComponent>("NavmeshComponent", "AI");
+	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent", "AI");
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
 
 	AssetTypesDB::Get().RegisterAssetType<Navmesh>(".navmesh", [](const std::string& path){ return AssetManager::Get().LoadAsset<Navmesh>(path); });
@@ -52,7 +52,7 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 				navmeshComponent.buildSettings,
 				navmeshComponent.mask
 			);
-			if(scene.Path() != "Memory"){
+			if(scene.Path() != "Memory" && scene.Running() == false){
 				std::string savePath = scene.Path() + "_Navmesh_" + std::to_string((size_t)e) + ".navmesh";
 				navmeshComponent.navmesh->SaveAs(savePath);
 			}

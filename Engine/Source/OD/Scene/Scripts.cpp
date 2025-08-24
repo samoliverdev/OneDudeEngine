@@ -7,7 +7,7 @@
 namespace OD{
 
 void ScriptModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent");
+    SceneManager::Get().RegisterCoreComponent<ScriptComponent>("ScriptComponent", "Script");
     SceneManager::Get().RegisterSystem<ScriptSystem>("ScriptSystem");
 }
 

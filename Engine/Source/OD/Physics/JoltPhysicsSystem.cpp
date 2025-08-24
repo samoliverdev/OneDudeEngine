@@ -55,11 +55,11 @@
 namespace OD{
 
 void PhysicsModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
-	SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent");
-    SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent");
-    SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
-    SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent");
+    SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent", "Physics");
+	SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent", "Physics");
+    SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent", "Physics");
+    SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent", "Physics");
+    SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent", "Physics");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
 

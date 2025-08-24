@@ -13,7 +13,7 @@
 #include <OD/Core/Input.h>
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
-#include "Ultis/FastNoiseLiteCpp.h"
+#include "Standard/Ultis/FastNoiseLiteCpp.h"
 #include "Physics.h"
 #include <assert.h>
 

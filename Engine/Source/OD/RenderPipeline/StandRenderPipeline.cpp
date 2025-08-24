@@ -31,21 +31,21 @@ ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
 };
 
 void StandRenderPipelineModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent");
-    SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent");
-    SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent");
-    SceneManager::Get().RegisterCoreComponent<StaticRendererComponent>("StaticRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent");
-    SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent");
+    SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<StaticRendererComponent>("StaticRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<UITextComponent>("UIImageComponent", "UI");
-    SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent");
+    SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent", "Renderer");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
 
     LuaBindsDB::Get().RegisterLuaBind<CameraComponent>();
@@ -711,7 +711,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(renderingPath == RenderingPath::Forward){
         context->BeginForwardPass();
         
-        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         
         //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, false);
         //context->DrawZPreePassRenderersBuffer(opaqueDrawTarget, false, true);
@@ -720,7 +720,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Graphics::SetColorMask(0,0,0,0);
         context->DrawRenderersBuffer(opaqueDrawTarget, true);
         
-        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         context->DrawRenderersBuffer(blendDrawTarget, true);
         context->RenderSkyboxLater();

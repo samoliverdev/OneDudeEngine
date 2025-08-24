@@ -9,7 +9,7 @@
 namespace OD{
 
 void LuaScriptModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<LuaScriptComponent>("LuaScriptComponent");
+    SceneManager::Get().RegisterCoreComponent<LuaScriptComponent>("LuaScriptComponent", "Script");
     SceneManager::Get().RegisterSystem<LuaScriptSystem>("LuaScriptSystem");
     Application::AddModule(new LuaModule());
 }

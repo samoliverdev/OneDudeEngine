@@ -9,7 +9,7 @@
 namespace OD{
 
 void TerrainModuleInit(){
-    SceneManager::Get().RegisterCoreComponent<TerrainComponent>("TerrainComponent");
+    SceneManager::Get().RegisterCoreComponent<TerrainComponent>("TerrainComponent", "Terrain");
     SceneManager::Get().RegisterSystem<TerrainSystem>("TerrainSystem");
     
     AssetTypesDB::Get().RegisterAssetType<Heightmap>(".heightmap", [](const std::string& path){ return AssetManager::Get().LoadAsset<Heightmap>(path); });
@@ -26,6 +26,32 @@ int ManhattanDistance(IVector3 a, IVector3 b){
 void TerrainComponent::OnGui(Entity e, Scene& scene){
     TerrainComponent& terrain = scene.GetComponent<TerrainComponent>(e);
 
+    if(terrain.heightmap == nullptr){
+        if(ImGui::DrawAsset<Heightmap>("Heightmap", terrain.heightmap)){
+            if(terrain.heightmap != nullptr){
+                terrain.heightMapIsDirt = true;
+            }
+        }
+
+        if(scene.Path() == "Memory") return;
+
+        ImGui::Spacing();
+
+        static int width = 1025;
+        static int height = 1025; 
+
+        ImGui::DragInt("Width", &width);
+        ImGui::DragInt("Width", &height);
+
+        if(ImGui::Button("Create Data")){
+            std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
+            terrain.heightmap = CreateRef<Heightmap>(width, height);
+            terrain.heightmap->SaveAs(savePath);
+        }
+
+        return;
+    }
+
     ImGui::DragFloat("lodBias", &terrain.lodBias);
     ImGui::DragFloat("terrainWidth", &terrain.terrainWidth);
     ImGui::DragFloat("terrainLength", &terrain.terrainLength);
@@ -36,6 +62,17 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
     if(ImGui::DrawAsset<Heightmap>("Heightmap", terrain.heightmap)){
         if(terrain.heightmap != nullptr){
             terrain.heightMapIsDirt = true;
+        }
+    }   
+
+    if(terrain.heightmap->Path() != "Memory"){
+        if(ImGui::Button("Save Data")){
+            terrain.heightmap->SaveAs(terrain.heightmap->Path());
+        }
+    } else if(scene.Path() != "Memory"){
+        if(ImGui::Button("Save Data")){
+            std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
+            terrain.heightmap->SaveAs(savePath);
         }
     }
 
@@ -809,9 +846,51 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     }  
     }
 
+    // Step 2: Propagate LOD to enforce max difference of 1, NOTE: look works, maybe update this later
+    {
+        OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::PropagateLOD");
+        bool changed = true;
+        while (changed) {
+            changed = false;
+            for (auto& i : terrain.loadedChunks) {
+                int& currentLOD = i.second.lodInfo.lod;
+                IVector2 currentCoord = i.first;
+
+                // Check neighboring chunks
+                std::vector<IVector2> neighbors = {
+                    currentCoord + IVector2(-1, 0), // Left
+                    currentCoord + IVector2(1, 0),  // Right
+                    currentCoord + IVector2(0, 1),  // Top
+                    currentCoord + IVector2(0, -1)  // Bottom
+                };
+
+                for (const auto& neighborCoord : neighbors) {
+                    if (terrain.loadedChunks.count(neighborCoord)) {
+                        int neighborLOD = terrain.loadedChunks[neighborCoord].lodInfo.lod;
+                        if (abs(currentLOD - neighborLOD) > 1) {
+                            // Adjust LOD to ensure max difference of 1
+                            if (currentLOD > neighborLOD) {
+                                currentLOD = neighborLOD + 1;
+                                changed = true;
+                            } else if (currentLOD < neighborLOD) {
+                                currentLOD = neighborLOD - 1;
+                                changed = true;
+                            }
+                            currentLOD = math::clamp<int>(currentLOD, 0, terrain.lods.size() - 1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     {
     OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::2");
     for(auto& i: terrain.loadedChunks){
+        GetScene()->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
+            terrain.lodsMesh[i.second.lodInfo.lod].scale
+        );//Need this because the Step 2
+
         MeshBorders& borders = i.second.lodInfo.borders;
         int& lod = i.second.lodInfo.lod;
 
