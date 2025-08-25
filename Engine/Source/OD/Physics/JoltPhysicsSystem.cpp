@@ -288,8 +288,9 @@ public:
             if(math::distance(cam.Position(), FromJolt(from)) > 50) return;
         }*/
 
-		//static int counter = 0;
+		static int counter = 0;
 		//if (++counter % 8 != 0) return; // desenha só 25%
+		if (++counter % 128 != 0) return; // desenha só 25%
 
 		if(useLineCommand){
 			Graphics::AddDrawLineCommand(
@@ -522,7 +523,7 @@ public:
 	}
 
 	bool ShouldDraw(const JPH::Body& inBody) const override {
-		//return true;
+		return true;
 		return selectedBodies.count(inBody.GetID());
 	}
 };
@@ -1208,7 +1209,7 @@ void* PhysicsSystem::GetInternlWorld(){
 PhysicsSystem::~PhysicsSystem(){
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
-	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().connect<&OnRemoveHeightmap>();
+	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
 
