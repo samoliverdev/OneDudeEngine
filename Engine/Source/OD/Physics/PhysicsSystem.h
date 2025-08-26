@@ -440,6 +440,16 @@ struct OD_API HeightmapColliderComponent{
     void serialize(Archive & ar){}
 
     //TODO: Add DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED here
+    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(HeightmapColliderComponent, {
+        COPY_OR_MOVE(heights);
+        COPY_OR_MOVE(width);
+        COPY_OR_MOVE(length);
+        COPY_OR_MOVE(scale);
+        COPY_OR_MOVE(minHeight);
+        COPY_OR_MOVE(maxHeight);
+        COPY_OR_MOVE(syncFromTheHips);
+        COPY_OR_MOVE(offset);
+    });
     
 private:
 
