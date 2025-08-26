@@ -523,7 +523,7 @@ public:
 	}
 
 	bool ShouldDraw(const JPH::Body& inBody) const override {
-		//return true;
+		return true;
 		return selectedBodies.count(inBody.GetID());
 	}
 };

@@ -654,7 +654,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         (size_t)(terrain.heightmap->data.size() * sizeof(float)),
         terrain.heightmap->width, terrain.heightmap->height,
         TextureDataType::Float,
-        Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}
+        Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED32F}
     );
     }
 
@@ -713,12 +713,12 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         )
     );
     #else 
+    //INFO: This math just work, i dont know why!!!
     colliderTrans.LocalPosition(
         Vector3(
-            1, //0,
+            (terrain.terrainWidth / float(terrain.heightmap->width*2)), //1, //0,
             0,
-            -(terrain.terrainWidth-1) 
-            //-terrainMeshWidth
+            -(terrain.terrainLength-(terrain.terrainLength / float(terrain.heightmap->height*2)))
         )
     );
     #endif
