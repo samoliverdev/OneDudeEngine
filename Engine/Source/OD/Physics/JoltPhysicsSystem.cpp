@@ -1322,7 +1322,7 @@ constexpr bool EnableInterpolation = false;
 void PhysicsSystem::PhysicsUpdate(){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
 	
-	if(GetScene()->Running() == false) return;
+	//if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

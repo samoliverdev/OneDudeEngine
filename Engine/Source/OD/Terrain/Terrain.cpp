@@ -595,6 +595,7 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
 
 void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
     if(GetScene()->IsValid(terrain.meshsRoot)){
+        scene->DestroyEntity(terrain.collider);
         scene->DestroyEntity(terrain.meshsRoot);
         terrain.meshsRoot = EntityNull;
         terrain.collider = EntityNull;
@@ -697,9 +698,9 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
     colliderTrans.LocalScale(Vector3(
-        terrain.terrainWidth / (float)(terrain.heightmap->width-1), //terrainMeshWidth / (float)terrain.heightmap->width,
+        terrain.terrainWidth / (float)(terrain.heightmap->width-0), //terrainMeshWidth / (float)terrain.heightmap->width,
         terrain.terrainHeight, 
-        terrain.terrainLength / (float)(terrain.heightmap->height-1) //terrainMeshWidth / (float)terrain.heightmap->height
+        terrain.terrainLength / (float)(terrain.heightmap->height-0) //terrainMeshWidth / (float)terrain.heightmap->height
     ));
     #ifdef UseBulletPhysics
     colliderTrans.LocalPosition(
@@ -712,9 +713,9 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     #else 
     colliderTrans.LocalPosition(
         Vector3(
+            1, //0,
             0,
-            0,
-            -terrain.terrainWidth 
+            -(terrain.terrainWidth-1) 
             //-terrainMeshWidth
         )
     );
