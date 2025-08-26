@@ -959,13 +959,147 @@ bool Navmesh::RemoveTile(Scene* scene, AABB bounds, const Vector3 pos){
 }
 
 void Navmesh::GetTilePos(const float* pos, int& tx, int& ty){
-	//if(!m_geom) return;
+	/*if(!m_geom) return;
 	
-	/*const float* bmin = m_geom->getNavMeshBoundsMin();
+	const float* bmin = m_geom->getNavMeshBoundsMin();
 	
 	const float ts = m_tileSize*m_cellSize;
 	tx = (int)((pos[0] - bmin[0]) / ts);
 	ty = (int)((pos[2] - bmin[2]) / ts);*/
+}
+
+bool Navmesh::InitBake(Scene* scene, AABB bounds, BuildSettings inbuildSettings, LayerMask layerMask){
+	if(hasInitTile == false){
+		buildSettings = inbuildSettings;
+		mask = layerMask;
+		Cleanup(bakeData);
+		_TileInit0(bakeData);
+		TileInit(scene, bounds); 
+	}
+	return true;
+}
+
+void Navmesh::UpdateTilesNear(Scene* scene, AABB bounds, Vector3 viewPos, int radiusInTiles){
+	Assert(buildSettings.useTile == true);
+	Assert(hasInitTile == true);
+	
+    float ts = buildSettings.tileSize * buildSettings.cellSize;
+    Vector3 _min = bounds.GetMin();
+    float* bmin = &_min.x;
+
+    int cx = (int)((viewPos[0] - bmin[0]) / ts);
+    int cy = (int)((viewPos[2] - bmin[2]) / ts);
+
+    for(int dy = -radiusInTiles; dy <= radiusInTiles; ++dy){
+        for(int dx = -radiusInTiles; dx <= radiusInTiles; ++dx){
+            int tx = cx + dx;
+            int ty = cy + dy;
+
+            // check if already baked in navmesh
+            dtTileRef ref = m_navMesh->getTileRefAt(tx, ty, 0);
+            if(ref != 0){
+                const dtMeshTile* tile = nullptr;
+                m_navMesh->getTileAndPolyByRefUnsafe(ref, &tile, nullptr);
+                if(tile && tile->data){
+                    continue; // already baked → skip queuing
+                }
+            }
+
+            m_pendingBake.push({tx, ty});
+        }
+    }
+}
+
+void Navmesh::BakeNextTile(Scene* scene, AABB bounds){
+    if(m_pendingBake.empty()) return;
+
+	Assert(buildSettings.useTile == true);
+	Assert(hasInitTile == true);
+
+	if(!m_navMesh) return;
+
+    auto [tx, ty] = m_pendingBake.front();
+    m_pendingBake.pop();
+
+    float ts = buildSettings.tileSize * buildSettings.cellSize;
+    Vector3 _min = bounds.GetMin();
+    Vector3 _max = bounds.GetMax();
+    float* bmin = &_min.x; 
+    float* bmax = &_max.x;
+
+    m_lastBuiltTileBmin[0] = bmin[0] + tx*ts;
+    m_lastBuiltTileBmin[1] = bmin[1];
+    m_lastBuiltTileBmin[2] = bmin[2] + ty*ts;
+
+    m_lastBuiltTileBmax[0] = bmin[0] + (tx+1)*ts;
+    m_lastBuiltTileBmax[1] = bmax[1];
+    m_lastBuiltTileBmax[2] = bmin[2] + (ty+1)*ts;
+
+    int dataSize = 0;
+    unsigned char* data = BuildTileMesh(
+        bakeData, scene, tx, ty,
+        m_lastBuiltTileBmin, m_lastBuiltTileBmax, dataSize
+    );
+
+    if(data){
+        // remove existing tile if any (rare, since we skip already baked)
+        m_navMesh->removeTile(m_navMesh->getTileRefAt(tx,ty,0),0,0);
+
+        dtStatus status = m_navMesh->addTile(data, dataSize, DT_TILE_FREE_DATA, 0, 0);
+        if(dtStatusFailed(status)){
+            LogError("Error on add tile");
+            dtFree(data);
+        }
+    }
+}
+
+bool Navmesh::HasTile(int tx, int ty) const {
+	/*if(hasInitTile == false) return false;
+	if (!m_navMesh) return false;
+    dtTileRef ref = m_navMesh->getTileRefAt(tx, ty, 0);
+    if (ref == 0) return false;
+    const dtMeshTile* tile = nullptr;
+    // getTileAndPolyByRefUnsafe returns tile pointer (we don't need poly)
+    m_navMesh->getTileAndPolyByRefUnsafe(ref, &tile, nullptr);
+    return tile && tile->data;*/
+
+	if (!hasInitTile) return false;
+    if (!m_navMesh) return false;
+
+    const dtMeshTile* tile = m_navMesh->getTileAt(tx, ty, 0);
+    if (!tile || !tile->header) 
+        return false;
+
+    return true;
+}
+
+IVector2 Navmesh::WorldPosToTile(const Vector3& pos, AABB& bounds, const BuildSettings& settings) const{
+	const float tileWorldSize = settings.tileSize * settings.cellSize;
+    Vector3 mn = bounds.GetMin();
+    // use floor to handle negative world coords robustly
+    int tx = (int)std::floor((pos.x - mn.x) / tileWorldSize);
+    int ty = (int)std::floor((pos.z - mn.z) / tileWorldSize);
+    return {tx, ty};
+}
+
+void Navmesh::GetTileWorldBounds(int tx, int ty, AABB& bounds, const BuildSettings& settings, float outMin[3], float outMax[3]) const{
+	const float tileWorldSize = settings.tileSize * settings.cellSize;
+    Vector3 mn = bounds.GetMin();
+    Vector3 mx = bounds.GetMax();
+
+    outMin[0] = mn.x + tx * tileWorldSize;
+    outMin[1] = mn.y;                     // keep full vertical range of global bounds
+    outMin[2] = mn.z + ty * tileWorldSize;
+
+    outMax[0] = mn.x + (tx + 1) * tileWorldSize;
+    outMax[1] = mx.y;
+    outMax[2] = mn.z + (ty + 1) * tileWorldSize;
+}
+
+Vector3 Navmesh::TileCenterWorld(int tx, int ty, AABB& bounds, const BuildSettings& settings) const{
+	float bmin[3], bmax[3];
+    GetTileWorldBounds(tx, ty, bounds, settings, bmin, bmax);
+    return Vector3( (bmin[0] + bmax[0]) * 0.5f, (bmin[1] + bmax[1]) * 0.5f, (bmin[2] + bmax[2]) * 0.5f );
 }
 
 unsigned char* Navmesh::BuildTileMesh(BakeData& data, Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize){

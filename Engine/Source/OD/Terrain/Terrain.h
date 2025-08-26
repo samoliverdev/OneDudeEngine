@@ -75,6 +75,8 @@ struct OD_API TerrainComponent{
     int mapChunkSize = (128*1) + 1;
     int chunkWidthCount = 4*2;
     int meshToNavmeshLod = 8;
+    int meshToNavmeshChunkXCount = 1;
+    int meshToNavmeshChunkYCount = 1;
     
     inline Ref<Heightmap> GetHeightmap(){ return heightmap; }
     void SetHeightmap(Ref<Heightmap> heightmap);

@@ -176,6 +176,19 @@ public:
     bool SaveAs(const std::string& _path) override;
     std::vector<std::string> GetFileAssociations() override;
 
+	bool InitBake(Scene* scene, AABB bounds, BuildSettings buildSettings, LayerMask layerMask = {});
+	void UpdateTilesNear(Scene* scene, AABB bounds, Vector3 viewPos, int radiusInTiles);
+	void BakeNextTile(Scene* scene, AABB bounds);
+
+	// Returns true if a tile exists at tile coords (tx,ty) and contains data.
+	bool HasTile(int tx, int ty) const;
+    // Convert world position -> tile coords using explicit bounds and build settings.
+    IVector2 WorldPosToTile(const Vector3& pos, AABB& bounds, const BuildSettings& settings) const;
+    // Given tile coords, compute tile-world AABB (outMin/outMax are float[3])
+    void GetTileWorldBounds(int tx, int ty, AABB& bounds, const BuildSettings& settings, float outMin[3], float outMax[3]) const;
+    // Convenience: center point of the tile in world space.
+    Vector3 TileCenterWorld(int tx, int ty, AABB& bounds, const BuildSettings& settings) const;
+
 	/*template<class Archive> 
 	void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, buildSettings);
@@ -334,6 +347,9 @@ private:
 
 	float m_lastBuiltTileBmin[3];
 	float m_lastBuiltTileBmax[3];
+
+	struct TilePos { int x, y; };
+	std::queue<TilePos> m_pendingBake;
 
 	void RasterizeScene(BakeData& data, Scene& scene, AABB& bounds);
 	bool RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mesh);

@@ -537,7 +537,9 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
 
     float terrainMeshWidth = (float)(chunkSize * chunkWidthCount);
 
-    auto chunks = GenerateTerrainChunksFromHeightmap2(heightmap, meshToNavmeshLod, 1, 1);
+    //auto chunks = GenerateTerrainChunksFromHeightmap2(heightmap, meshToNavmeshLod, 1, 1);
+    auto chunks = GenerateTerrainChunksFromHeightmap2(heightmap, meshToNavmeshLod, meshToNavmeshChunkXCount, meshToNavmeshChunkYCount);
+
     for(auto& i: chunks){
         Entity e = scene.AddEntity("meshToNavmesh (" + std::to_string(i.second.x) +", " + std::to_string(i.second.z));
         scene.SetParent(meshsRoot, e);
