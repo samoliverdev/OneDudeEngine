@@ -692,13 +692,14 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     //Create Collider
     terrain.collider = GetScene()->AddEntity("Collider");
     GetScene()->AddTagComponent<DontSave>(terrain.collider);
-    GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
+    //GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
+    GetScene()->SetParent(e, terrain.collider);
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
     colliderTrans.LocalScale(Vector3(
-        terrainMeshWidth / (float)terrain.heightmap->width,
+        terrain.terrainWidth / (float)(terrain.heightmap->width-1), //terrainMeshWidth / (float)terrain.heightmap->width,
         terrain.terrainHeight, 
-        terrainMeshWidth / (float)terrain.heightmap->height
+        terrain.terrainLength / (float)(terrain.heightmap->height-1) //terrainMeshWidth / (float)terrain.heightmap->height
     ));
     #ifdef UseBulletPhysics
     colliderTrans.LocalPosition(
@@ -713,10 +714,11 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         Vector3(
             0,
             0,
-            -terrainMeshWidth
+            -terrain.terrainWidth 
+            //-terrainMeshWidth
         )
     );
-    #endif 
+    #endif
     HeightmapColliderComponent& heightmapCollider = GetScene()->AddComponent<HeightmapColliderComponent>(terrain.collider);
     heightmapCollider.width = terrain.heightmap->width;
     heightmapCollider.length = terrain.heightmap->height;
@@ -834,11 +836,15 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         auto p1 = camTrans.Position() / Vector3(terrain.chunkSize);
         auto p2 = pos / Vector3(terrain.chunkSize);
 
+        p1.y = 0;
+        p2.y = 0;
+
         i.second.lodInfo.lod = math::clamp<int>(
             math::distance(p1, p2) * terrain.lodBias, 
             0, 
             terrain.lods.size()-1
         );
+        //i.second.lodInfo.lod = 0;
 
         GetScene()->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
             terrain.lodsMesh[i.second.lodInfo.lod].scale
@@ -935,7 +941,8 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::3");
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
     TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
-    colliderTrans.LocalScale(Vector3(
+    //NOTE: temp disable this while fix collider bug
+    /*colliderTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)terrain.heightmap->width,
         terrain.terrainHeight, 
         terrainMeshWidth / (float)terrain.heightmap->height
@@ -956,7 +963,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
             -terrainMeshWidth
         )
     );
-    #endif 
+    #endif*/ 
     }
 }
 

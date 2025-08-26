@@ -288,9 +288,9 @@ public:
             if(math::distance(cam.Position(), FromJolt(from)) > 50) return;
         }*/
 
-		static int counter = 0;
+		//static int counter = 0;
 		//if (++counter % 8 != 0) return; // desenha só 25%
-		if (++counter % 128 != 0) return; // desenha só 25%
+		//if (++counter % 256 != 0) return; // desenha só 25%
 
 		if(useLineCommand){
 			Graphics::AddDrawLineCommand(
@@ -1722,7 +1722,7 @@ void PhysicsSystem::PhysicsUpdate(){
 		auto& transform = heightView.get<TransformComponent>(e);
 		auto& info = heightView.get<InfoComponent>(e);
 
-		if (rb.data == nullptr){
+		if(rb.data == nullptr){
 			rb.data = new PhysicObject();
 			// Create heightfield shape
 			uint32 sampleCount = rb.width; // width == length, pois é quadrado

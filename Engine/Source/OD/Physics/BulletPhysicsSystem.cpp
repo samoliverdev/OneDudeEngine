@@ -26,6 +26,7 @@ namespace OD{
 
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent");
+    SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent");
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent");
@@ -92,7 +93,7 @@ public:
     }
 };
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
+Ref<MeshShapeData> CreateMeshShapeData(Model& model){
 	std::vector<Vector3> vertices;
 	std::vector<unsigned int> indices;
 
@@ -106,31 +107,33 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(const Ref<Model>& model){
         }
     };
 
-	for(auto i: model->renderTargets){
-		auto targetMesh = model->meshs[i.meshIndex].get();
-		auto targetMatrix = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+	for(auto i: model.renderTargets){
+		auto targetMesh = model.meshs[i.meshIndex].get();
+		auto targetMatrix = model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 		AppedFrom(*targetMesh, targetMatrix);
 	}
 
 	return CreateMeshShapeData(vertices, indices);
 }
 
-Ref<MeshShapeData> CreateMeshShapeData(const Ref<Mesh>& mesh){
+Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
+    return CreateMeshShapeData(mesh.vertices, mesh.indices); // Usa a função abaixo
+    
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
 
     out->triangleMesh = new btTriangleMesh();
-    for(size_t i = 0; i < mesh->indices.size(); i += 3){
+    for(size_t i = 0; i < mesh.indices.size(); i += 3){
         out->triangleMesh->addTriangle(
-            ToBullet(mesh->vertices[mesh->indices[i]]), 
-            ToBullet(mesh->vertices[mesh->indices[i+1]]), 
-            ToBullet(mesh->vertices[mesh->indices[i+2]])
+            ToBullet(mesh.vertices[mesh.indices[i]]), 
+            ToBullet(mesh.vertices[mesh.indices[i+1]]), 
+            ToBullet(mesh.vertices[mesh.indices[i+2]])
         );
     }
     out->triangleMeshShape = new btBvhTriangleMeshShape(out->triangleMesh, true);
     return out;
 }
 
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
+Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
     
     out->triangleMesh = new btTriangleMesh();
@@ -216,6 +219,19 @@ private:
 
 Debuger debuger;
 #pragma endregion
+
+Vector3 RagdollComponent::Position(int boneIndex){ return Vector3Zero; }
+void RagdollComponent::Position(int boneIndex, Vector3 position){}
+Quaternion RagdollComponent::Rotation(int boneIndex){ return QuaternionIdentity; }
+void RagdollComponent::Rotation(int boneIndex, Quaternion rotation){}
+Vector3 RagdollComponent::Velocity(int boneIndex){ return Vector3Zero; }
+void RagdollComponent::Velocity(int boneIndex, Vector3 v){}
+Vector3 RagdollComponent::AngularVelocity(int boneIndex){ return Vector3Zero; }
+void RagdollComponent::AngularVelocity(int boneIndex, Vector3 v){}
+void RagdollComponent::ApplyForce(int boneIndex, Vector3 v){}
+void RagdollComponent::ApplyTorque(int boneIndex, Vector3 v){}
+void RagdollComponent::ApplyImpulse(int boneIndex, Vector3 v){}
+void RagdollComponent::OnGui(Entity& e, Scene& scene){}
 
 void CollisionBodyComponent::OnGui(Entity& e, Scene& scene){
     CollisionBodyComponent& rb = scene.GetComponent<CollisionBodyComponent>(e);
@@ -731,7 +747,7 @@ void PhysicsSystem::PhysicsUpdate(){
         ModelRendererComponent& mesh = viewMesh.get<ModelRendererComponent>(e);
 
 		if(rb.shape.type == CollisionShape::Type::Mesh && rb.shape.mesh == nullptr){
-			rb.shape.mesh = CreateMeshShapeData(mesh.GetModel());
+			rb.shape.mesh = CreateMeshShapeData(*mesh.GetModel());
 		}
 	}
 
@@ -1147,7 +1163,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& c, Transform
     c.data->updating = true;
     c.data->world = physicsWorld->world;
     c.data->layer = info.layer;
-    c.data->mask = c.mask;
+    //c.data->mask = c.mask;
     c.data->entity = entity;
 
     Vector3 pos = t.Position();
