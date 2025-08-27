@@ -89,7 +89,43 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 	AABB(const Vector3& inCenter, float iI, float iJ, float iK): 
 		BoundingVolume{}, center{ inCenter }, extents{ iI, iJ, iK }{}
 
-	inline Vector3 GetMin(){
+	// Expand to include another AABB
+    inline void Encapsulate(const AABB& other) {
+        Vector3 min = GetMin();
+        Vector3 max = GetMax();
+        Vector3 otherMin = other.GetMin();
+        Vector3 otherMax = other.GetMax();
+
+        min.x = std::min(min.x, otherMin.x);
+        min.y = std::min(min.y, otherMin.y);
+        min.z = std::min(min.z, otherMin.z);
+
+        max.x = std::max(max.x, otherMax.x);
+        max.y = std::max(max.y, otherMax.y);
+        max.z = std::max(max.z, otherMax.z);
+
+        center = (max + min) * 0.5f;
+        extents = max - center;
+    }
+
+    // Expand to include a single point
+    inline void Encapsulate(const Vector3& point) {
+        Vector3 min = GetMin();
+        Vector3 max = GetMax();
+
+        min.x = std::min(min.x, point.x);
+        min.y = std::min(min.y, point.y);
+        min.z = std::min(min.z, point.z);
+
+        max.x = std::max(max.x, point.x);
+        max.y = std::max(max.y, point.y);
+        max.z = std::max(max.z, point.z);
+
+        center = (max + min) * 0.5f;
+        extents = max - center;
+    }
+
+	inline Vector3 GetMin() const {
 		return center - extents;
 
 		/*Vector3 p1 = center + extents;
@@ -101,7 +137,7 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 		);*/
 	}
 
-	inline Vector3 GetMax(){
+	inline Vector3 GetMax() const {
 		return center + extents;
 
 		/*Vector3 p1 = center + extents;

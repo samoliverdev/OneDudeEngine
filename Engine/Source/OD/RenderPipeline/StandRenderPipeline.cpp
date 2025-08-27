@@ -9,6 +9,7 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
+#include "OD/RenderPipeline/StaticRendererClusterComponent.h"
 #include "OD/Animation/Animator.h"
 #include "TextRendererComponent.h"
 #include "MeshRendererComponent.h"
@@ -41,6 +42,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<StaticRendererClusterComponent>("StaticRendererClusterComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent", "UI");
@@ -1143,6 +1145,51 @@ int StandRenderPipeline::ReadEntityId(int x, int y){
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
 }
 
+void StandRenderPipeline::Update(){
+    auto viewStaticRendererCluster = scene->GetRegistry().view<TransformComponent, StaticRendererClusterComponent>();
+    for(auto [entity, trans, staticRendererCluster]: viewStaticRendererCluster.each()){
+        if(staticRendererCluster.autoCollectChildRenderers && staticRendererCluster.started == false){
+            staticRendererCluster.started = true;
+
+            auto viewModelRenderer = scene->GetRegistry().view<TransformComponent, ModelRendererComponent>(
+                entt::exclude</*StaticRendererComponent,*/ HideInEditor, SelfDisable, SkipDraw>
+            );
+            for(auto [entity2, t, c]: viewModelRenderer.each()){
+                Ref<Model> model = c.GetModel();
+                if(model == nullptr) continue;
+
+                Vector3 targetPos = trans.InverseTransformPoint(t.Position());
+
+                if(staticRendererCluster.IsValidPos(targetPos) == false) continue;
+
+                int _i = 0;
+                for(auto i: model->renderTargets){
+                    if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+
+                    auto targetMaterial = model->materials[i.materialIndex];
+                    auto targetMesh = model->meshs[i.meshIndex];
+                    auto targetMatrix = t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+                    auto aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrixReadSafe());
+                    if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
+                        targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
+                    }
+
+                    staticRendererCluster.AddModel(
+                        targetMesh, 
+                        targetMaterial, 
+                        targetPos, 
+                        targetMatrix, 
+                        aabb
+                    );
+                }
+
+                c.draw = false;
+                scene->AddTagComponent<SkipDraw>(entity2);
+            }
+        }
+    }
+}
+
 void StandRenderPipeline::Render(){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
@@ -1464,6 +1511,38 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
             g.color, 
             1
         );
+    }
+
+    if(scene->HasComponent<StaticRendererClusterComponent>(e)){
+        auto& staticRenderer = scene->GetComponent<StaticRendererClusterComponent>(e);
+        auto& t = scene->GetComponent<TransformComponent>(e);
+
+        auto* subChunk = staticRenderer.GetSubChunkAtPos(staticRenderer.posTest);
+        if(subChunk != nullptr){
+            Graphics::DrawWireCube(
+                Transform(t.TransformPoint(subChunk->bounds.center), t.Rotation(), subChunk->bounds.extents*2.0f).GetLocalModelMatrix(), 
+                {1, 0, 0}, 
+                1
+            );
+        }
+
+        for(auto& i: staticRenderer.chunks){
+            Graphics::DrawWireCube(
+                Transform(t.TransformPoint(i.bounds.center), t.Rotation(), i.bounds.extents*2.0f).GetLocalModelMatrix(), 
+                {0, 0, 1}, 
+                1
+            );
+
+            for(auto& j: i.subchunks){
+                Vector3 scale = j.bounds.extents*2.0f;
+                scale.y = 0.05f;
+                Graphics::DrawWireCube(
+                    Transform(t.TransformPoint(j.bounds.center), t.Rotation(), scale).GetLocalModelMatrix(), 
+                    {0, 1, 0}, 
+                    1
+                );
+            }
+        }
     }
 }
 

@@ -14,6 +14,7 @@ void SceneManagerModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Scene>();
     
     SceneManager::Get().RegisterTagComponent<SelfDisable>("SelfDisable");
+    SceneManager::Get().RegisterTagComponent<SkipDraw>("SkipDraw");
     SceneManager::Get().RegisterTagComponent<DontSave>("DontSave");
     SceneManager::Get().RegisterTagComponent<HideInEditor>("HideInEditor");
 

@@ -85,6 +85,10 @@ struct OD_API SelfDisable{
     template <class Archive> void serialize(Archive & ar){}
 };
 
+struct OD_API SkipDraw{
+    template <class Archive> void serialize(Archive & ar){}
+};
+
 struct OD_API DontSave{
     template <class Archive> void serialize(Archive & ar){}
 };

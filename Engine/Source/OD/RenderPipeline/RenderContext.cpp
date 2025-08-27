@@ -3,6 +3,7 @@
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
 #include "SpriteRendererComponent.h"
+#include "StaticRendererClusterComponent.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Asset.h"
@@ -790,10 +791,44 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //////////////////////////////////////////////////////////
 
+    auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
+        entt::exclude<HideInEditor, SelfDisable, SkipDraw>
+    );
+    for(auto [entity, c, t, i]: staticRendererClusterView.each()){
+        for(auto& chunk: c.chunks){
+            if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+
+            for(auto& subchunk: chunk.subchunks){
+                if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+
+                for(auto& renderTarget: subchunk.targets){
+                    RenderData data;
+                    data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+                    data.targetMaterial = renderTarget.targetMaterial.get();
+                    data.customShadowPass = nullptr;
+                    data.targetMesh = renderTarget.targetMesh.get();
+                    data.targetMatrix = renderTarget.targetMatrix;
+                    data.posePalette = nullptr;
+                    data.aabb = renderTarget.aabb;
+
+                    data.perDrawData.int_0.resize(1);
+                    data.perDrawData.int_0[0] = 0;
+
+                    #if EnableExperimentalPerDrawCustomData
+                    data.useCustomData = c.useCustomData;
+                    data.customData = c.customData;
+                    #endif
+
+                    onReciveRenderData(data);
+                }
+            }
+        }
+    }
+
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
-        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshView){
         const auto& info = meshView.get<InfoComponent>(e);
@@ -829,7 +864,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
     auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
-        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshRenderView){
         const auto& info = meshRenderView.get<InfoComponent>(e);
@@ -837,6 +872,8 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         const auto& t = meshRenderView.get<TransformComponent>(e);
+
+        if(c.draw == false) continue;
 
         Ref<Model> model = c.GetModel();
         if(model == nullptr) continue;
@@ -872,7 +909,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
-    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         const auto& info = skinnedMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -908,7 +945,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         const auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -992,8 +1029,45 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
     {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-1");
+    auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
+        entt::exclude<HideInEditor, SelfDisable, SkipDraw>
+    );
+    for(auto [entity, c, t, i]: staticRendererClusterView.each()){
+        for(auto& chunk: c.chunks){
+            if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+
+            for(auto& subchunk: chunk.subchunks){
+                if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+
+                for(auto& renderTarget: subchunk.targets){
+                    RenderData data;
+                    data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+                    data.targetMaterial = renderTarget.targetMaterial.get();
+                    data.customShadowPass = nullptr;
+                    data.targetMesh = renderTarget.targetMesh.get();
+                    data.targetMatrix = renderTarget.targetMatrix;
+                    data.posePalette = nullptr;
+                    data.aabb = renderTarget.aabb;
+
+                    data.perDrawData.int_0.resize(1);
+                    data.perDrawData.int_0[0] = 0;
+
+                    #if EnableExperimentalPerDrawCustomData
+                    data.useCustomData = c.useCustomData;
+                    data.customData = c.customData;
+                    #endif
+
+                    onReciveRenderData(data);
+                }
+            }
+        }
+    }
+    }
+
+    {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::0");
-    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: staticMeshView){
         auto& info = staticMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1035,12 +1109,14 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::1");
-    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: meshStaticRenderView){
         auto& info = meshStaticRenderView.get<InfoComponent>(e);
         if(info.enable == false) continue;
 
         auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
+        if(c.draw == false) continue;
+
         auto& t = meshStaticRenderView.get<TransformComponent>(e);
         auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
     
@@ -1087,7 +1163,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
-        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshView){
         auto& info = meshView.get<InfoComponent>(e);
@@ -1123,13 +1199,15 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
     auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
-        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable>
+        entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshRenderView){
         auto& info = meshRenderView.get<InfoComponent>(e);
         if(info.enable == false) continue;
 
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
+        if(c.draw == false) continue;
+
         auto& t = meshRenderView.get<TransformComponent>(e);
 
         Ref<Model> model = c.GetModel();
@@ -1166,7 +1244,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
-    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         auto& info = skinnedMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1202,7 +1280,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto [e, c, t, info]: skinnedView.each()){
         //auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1252,7 +1330,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::6");
-    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable>);
+    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto entity: spriteView){
         auto& info = spriteView.get<InfoComponent>(entity);
         if(info.enable == false) continue;
