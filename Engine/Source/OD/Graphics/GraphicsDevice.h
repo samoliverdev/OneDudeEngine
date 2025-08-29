@@ -60,6 +60,7 @@ public:
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) = 0;
+    virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4x3* animMatrixs, int count){}
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, InstancingBuffer& buffer, int count){}
     virtual void DrawModel(Model& model, Matrix4 modelMatrix) = 0;
 
@@ -100,6 +101,7 @@ public:
     ) = 0;
     virtual void MeshSubmitInstancingModelMatrixs(Mesh& mesh) = 0;
     virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
+    virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4x3* modelMatrixs, int count){}
     virtual void MeshDestroy(Mesh& mesh) = 0;
     virtual bool MeshIsValid(Mesh& mesh) = 0;
 

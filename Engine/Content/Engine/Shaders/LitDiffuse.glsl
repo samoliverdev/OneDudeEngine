@@ -16,7 +16,7 @@
 #pragma BeginPassDef
     Name MainPass
     SupportInstancing true
-    MultiCompile _ SKINNED INSTANCING
+    MultiCompile _ SKINNED INSTANCING INSTANCINGMATRIX43
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 

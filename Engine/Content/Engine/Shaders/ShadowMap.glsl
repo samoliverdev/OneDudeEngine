@@ -1,6 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
-    MultiCompile _ SKINNED INSTANCING
+    MultiCompile _ SKINNED INSTANCING INSTANCINGMATRIX43
     CullFace BACK
     DepthTest LESS
     Blend Off

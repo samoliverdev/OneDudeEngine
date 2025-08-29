@@ -64,7 +64,15 @@ void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
 
     c.material = comand.material;
     c.meshs = comand.meshs;
+    #ifdef USE_INSTANCING_MATRIX43
+    c.trans.push_back({
+        math::row(comand.trans, 0),
+        math::row(comand.trans, 1),
+        math::row(comand.trans, 2)
+    });
+    #else
     c.trans.push_back(std::move(comand.trans));
+    #endif
 } 
 
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
@@ -185,6 +193,7 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
+            _mat->DisableKeyword("INSTANCINGMATRIX43");
             _mat->DisableKeyword("SKINNED");
         }
 
@@ -206,6 +215,7 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
+            _mat->DisableKeyword("INSTANCINGMATRIX43");
             _mat->DisableKeyword("SKINNED");
         }
 
@@ -227,7 +237,11 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("SKINNED");
+            #ifdef USE_INSTANCING_MATRIX43
+            _mat->EnableKeyword("INSTANCINGMATRIX43");
+            #else
             _mat->EnableKeyword("INSTANCING");
+            #endif
         }
         
         lastMat = _mat;

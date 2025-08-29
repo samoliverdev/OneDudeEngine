@@ -41,10 +41,18 @@ struct OD_API alignas(16) SkinnedDrawCommand{
     bool operator<(const SkinnedDrawCommand& a) const;
 };
 
+//In my quick test i dont have any performace gain
+#define USE_INSTANCING_MATRIX43
+
 struct OD_API DrawInstancingCommand{
     //AlignedVector<Matrix4> trans;
     //ReusableVector<Matrix4> trans;
+
+    #ifdef USE_INSTANCING_MATRIX43
+    ReusableVector<Matrix4x3> trans;
+    #else
     ReusableVector<Matrix4> trans;
+    #endif
 
     Material* material;
     Mesh* meshs;

@@ -34,6 +34,7 @@ public:
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) override;
+    virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4x3* animMatrixs, int count) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, InstancingBuffer& buffer, int count) override;
     virtual void DrawModel(Model& model, Matrix4 modelMatrix) override;
 
@@ -65,6 +66,7 @@ public:
     ) override;
     virtual void MeshSubmitInstancingModelMatrixs(Mesh& mesh) override;
     virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
+    virtual void MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4x3* modelMatrixs, int count) override;
     virtual void MeshDestroy(Mesh& mesh) override;
     virtual bool MeshIsValid(Mesh& mesh) override;
 

@@ -64,6 +64,7 @@ public:
     static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
     static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count);
+    static void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4x3* animMatrixs, int count);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count);
     static void DrawModel(Model& model, Matrix4 modelMatrix);
 
