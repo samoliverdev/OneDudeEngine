@@ -52,8 +52,8 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;// = 0.5;
 EndUniform()
 
-//#define USE_PERDRAW
-uniform vec4 customData;
+#define USE_PERDRAW
+uniform vec4 perDrawVector4_0;
 
 Texture2D(0, 6, heightMap, heightMapSampler)
 Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
@@ -114,7 +114,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
     void main(){
         #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
         #else
         vec2 _heightmapOffset = heightmapOffset;
         #endif
@@ -311,7 +311,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
     void main(){
         #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
         #else
         vec2 _heightmapOffset = heightmapOffset;
         #endif

@@ -992,7 +992,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     MeshRendererComponent& terrainMeshRenderer = GetScene()->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
 
-    #if EnableExperimentalPerDrawCustomData
+    #if 1 //EnableExperimentalPerDrawCustomData
     if(terrain.mat == nullptr){
         terrain.mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
         terrain.mat->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"));

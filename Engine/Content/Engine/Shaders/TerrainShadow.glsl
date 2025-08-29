@@ -16,8 +16,8 @@ BeginUniform(0, 0, Main)
 EndUniform()
 Texture2D(0, 1, heightMap, heightMapSampler)
 
-//#define USE_PERDRAW
-uniform vec4 customData;
+#define USE_PERDRAW
+uniform vec4 perDrawVector4_0;
 
 #if defined(VERTEX) && defined(MainPass)
     #include Engine/ShaderLibrary/Vertex.glsl
@@ -30,7 +30,7 @@ uniform vec4 customData;
 
     void main(){
         #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(customData.x, customData.y);
+        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
         #else
         vec2 _heightmapOffset = heightmapOffset;
         #endif
