@@ -70,7 +70,7 @@ struct CommandBucket1{
     }
 
     inline void Each(std::function<void(Value& value)> func){
-        for(auto i: commands){
+        for(auto& i: commands){
             func(i.second);
         }
     }
@@ -101,7 +101,7 @@ struct CommandBucket2{
 
     inline void Each(std::function<void(Value& value)> func){
         int index = 0;
-        for(auto i: commands){
+        for(auto& i: commands){
             if(index >= count) break;
             func(i.second);
             index += 1;
@@ -128,8 +128,8 @@ struct CommandBucket3{
     }
 
     inline void Each(std::function<void(Value& value)> func){
-        for(auto i: commands){
-            for(auto j: i.second){
+        for(auto& i: commands){
+            for(auto& j: i.second){
                 func(j);
             }
         }
@@ -157,8 +157,8 @@ struct CommandBucket4{
     }
 
     inline void Each(std::function<void(Value& value)> func){
-        for(auto i: commands){
-            for(auto j: i.second){
+        for(auto& i: commands){
+            for(auto& j: i.second){
                 func(j.second);
             }
         }
@@ -202,8 +202,8 @@ struct CommandBucket5 {
 
     // Iterate over all values
     inline void Each(const std::function<void(Value& value)>& func) {
-        for (auto& inner : commands) {
-            for (auto& val : inner) {
+        for(auto& inner : commands){
+            for(auto& val : inner){
                 func(val);
             }
         }

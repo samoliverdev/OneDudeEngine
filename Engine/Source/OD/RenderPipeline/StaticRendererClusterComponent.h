@@ -5,6 +5,7 @@
 #include "OD/Graphics/Model.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
+#include "OD/RenderPipeline/RendererList.h"
 
 namespace OD{
 
@@ -21,6 +22,7 @@ struct OD_API StaticRendererClusterComponent{
 
     struct SubChunk{
         std::vector<RenderTarget> targets;
+        CommandBucket4<Material*, Mesh*, DrawInstancingCommand2> drawIntancingCommands;
 
         AABB bounds;       // full subchunk region (static, from grid definition)
         AABB renderBounds; // tight bounds from contained models
@@ -64,6 +66,7 @@ struct OD_API StaticRendererClusterComponent{
     };
 
     bool autoCollectChildRenderers = true;
+    bool genInstancingCommands = true;
 
     StaticRendererClusterComponent();
 
@@ -82,6 +85,8 @@ struct OD_API StaticRendererClusterComponent{
     }
 
     SubChunk* GetSubChunkAtPos(const glm::vec3& pos);
+
+    void CreateIntancingCommands();
 
     static void OnGui(Entity& e, Scene& scene);
 

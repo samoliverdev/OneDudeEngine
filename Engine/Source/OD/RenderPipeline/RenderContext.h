@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/InstancingBuffer.h"
 #include "RendererList.h"
 #include "LightComponent.h"
 #include "PostFX.h"
@@ -53,6 +54,7 @@ struct OD_API alignas(16) RenderData{
     AlignedVector<Matrix4>* posePalette = nullptr;
     Material* targetMaterial;
     Material* customShadowPass = nullptr;
+    InstancingBuffer* instancingBuffer = nullptr;
     Mesh* targetMesh;
     float distance;
     bool awalsDraw = false;

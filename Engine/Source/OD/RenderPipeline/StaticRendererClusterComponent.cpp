@@ -15,6 +15,9 @@ void StaticRendererClusterComponent::OnGui(Entity& e, Scene& scene){
     if(ImGui::DragFloat("gridSize", &c.gridSize)){
         c.Create(c.chunkCounts, c.subchunkCounts, c.gridSize);
     }
+
+    ImGui::Checkbox("autoCollectChildRenderers", &c.autoCollectChildRenderers);
+    ImGui::Checkbox("genInstancingCommands", &c.genInstancingCommands);
 }
 
 StaticRendererClusterComponent::StaticRendererClusterComponent(){
@@ -109,6 +112,38 @@ bool StaticRendererClusterComponent::AddModel(const Ref<Mesh>& mesh, const Ref<M
     chunk.renderBounds.Encapsulate(modelBounds);
 
     return true;
+}
+
+void StaticRendererClusterComponent::CreateIntancingCommands(){
+    if(genInstancingCommands == false) return;
+
+    for(auto& chunk: chunks){
+        for(auto& subchunk: chunk.subchunks){
+            for(auto& rendererTarget: subchunk.targets){
+                auto& cm = subchunk.drawIntancingCommands.Get(rendererTarget.targetMaterial.get(), rendererTarget.targetMesh.get());
+                cm.material = rendererTarget.targetMaterial.get();
+                cm.meshs = rendererTarget.targetMesh.get();
+
+                #ifdef USE_INSTANCING_MATRIX43
+                cm.trans.push_back({
+                    math::row(rendererTarget.targetMatrix, 0),
+                    math::row(rendererTarget.targetMatrix, 1),
+                    math::row(rendererTarget.targetMatrix, 2)
+                });
+                #else
+                cm.trans.push_back(rendererTarget.targetMatrix);
+                #endif
+            }
+
+            subchunk.drawIntancingCommands.Each([](DrawInstancingCommand2& cmd){
+                cmd.buffer = InstancingBuffer::Create();
+                cmd.buffer->SetData(&cmd.trans[0], cmd.trans.size());
+            });
+            if(subchunk.drawIntancingCommands.Size() > 0){
+                subchunk.targets.clear();
+            }
+        }
+    }
 }
 
 StaticRendererClusterComponent::SubChunk* StaticRendererClusterComponent::GetSubChunkAtPos(const glm::vec3& pos){

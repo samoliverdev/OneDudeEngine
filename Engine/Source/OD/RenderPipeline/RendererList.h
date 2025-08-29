@@ -3,6 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
+#include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Core/Math.h"
 #include "RenderPipelineUtils.h"
 //#include <EASTL/vector.h>
@@ -42,7 +43,7 @@ struct OD_API alignas(16) SkinnedDrawCommand{
 };
 
 //In my quick test i dont have any performace gain
-#define USE_INSTANCING_MATRIX43
+//#define USE_INSTANCING_MATRIX43
 
 struct OD_API DrawInstancingCommand{
     //AlignedVector<Matrix4> trans;
@@ -54,6 +55,29 @@ struct OD_API DrawInstancingCommand{
     ReusableVector<Matrix4> trans;
     #endif
 
+    Material* material;
+    Mesh* meshs;
+    
+    bool operator<(const DrawCommand& a) const;
+};
+
+struct OD_API DrawInstancingCommand2{
+    Ref<InstancingBuffer> buffer;
+
+    #ifdef USE_INSTANCING_MATRIX43
+    ReusableVector<Matrix4x3> trans;
+    #else
+    ReusableVector<Matrix4> trans;
+    #endif
+
+    Material* material;
+    Mesh* meshs;
+    
+    bool operator<(const DrawCommand& a) const;
+};
+
+struct OD_API DrawInstancingCommand3{
+    InstancingBuffer* buffer;
     Material* material;
     Mesh* meshs;
     
@@ -80,6 +104,7 @@ struct OD_API RendererList{
 
     void AddDrawCommand(DrawCommand&& comand, float distance = 0);  
     void AddDrawInstancingCommand(DrawCommand&& comand);
+    void AddDrawInstancingCommand(DrawInstancingCommand3&& comand);
     void AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance = 0); 
     
     void Clean();
@@ -97,6 +122,8 @@ private:
     #else
     CommandBucket4<Material*, Mesh*, DrawInstancingCommand> drawIntancingCommands;
     #endif
+
+    CommandBucket0<DrawInstancingCommand3> drawIntancingCommands2;
 
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
     CommandBucket3<Material*, SkinnedDrawCommand> skinnedDrawCommandsNorSort;

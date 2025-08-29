@@ -1186,6 +1186,8 @@ void StandRenderPipeline::Update(){
                 c.draw = false;
                 scene->AddTagComponent<SkipDraw>(entity2);
             }
+            
+            staticRendererCluster.CreateIntancingCommands();
         }
     }
 }

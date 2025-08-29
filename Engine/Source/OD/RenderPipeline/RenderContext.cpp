@@ -813,6 +813,21 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
                     onReciveRenderData(data);
                 }
+
+                subchunk.drawIntancingCommands.Each([&](DrawInstancingCommand2& cmd){
+                    RenderData data;
+                    data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+                    data.targetMaterial = cmd.material;
+                    data.customShadowPass = nullptr;
+                    data.targetMesh = cmd.meshs;
+                    data.targetMatrix = Matrix4Identity;
+                    data.posePalette = nullptr;
+                    data.aabb = subchunk.renderBounds;
+                    data.perDrawData.int_0.clear();
+                    data.instancingBuffer = cmd.buffer.get();
+                    
+                    onReciveRenderData(data);
+                });
             }
         }
     }
@@ -1052,6 +1067,21 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
                     onReciveRenderData(data);
                 }
+
+                subchunk.drawIntancingCommands.Each([&](DrawInstancingCommand2& cmd){
+                    RenderData data;
+                    data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
+                    data.targetMaterial = cmd.material;
+                    data.customShadowPass = nullptr;
+                    data.targetMesh = cmd.meshs;
+                    data.targetMatrix = Matrix4Identity;
+                    data.posePalette = nullptr;
+                    data.aabb = subchunk.renderBounds;
+                    data.perDrawData.int_0.clear();
+                    data.instancingBuffer = cmd.buffer.get();
+                    
+                    onReciveRenderData(data);
+                });
             }
         }
     }
@@ -1390,11 +1420,17 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     }
 
     if(isInstancing){
-        target.AddDrawInstancingCommand({
-            data.targetMatrix,
-            data.targetMaterial,
-            data.targetMesh,
-        });
+        if(data.instancingBuffer != nullptr){
+            target.AddDrawInstancingCommand({
+                data.instancingBuffer, data.targetMaterial, data.targetMesh
+            });
+        } else{
+            target.AddDrawInstancingCommand({
+                data.targetMatrix,
+                data.targetMaterial,
+                data.targetMesh,
+            });
+        }
     } else {
         target.AddDrawCommand({
             data.targetMatrix,
@@ -1663,12 +1699,18 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     }
 
     if(isInstancing){
-        commandBuffer.AddDrawInstancingCommand({
-            data.targetMatrix,
-            data.customShadowPass, 
-            //data.targetMaterial,
-            data.targetMesh
-        });
+        if(data.instancingBuffer != nullptr){
+            commandBuffer.AddDrawInstancingCommand({
+                data.instancingBuffer, data.targetMaterial, data.targetMesh
+            });
+        } else{
+            commandBuffer.AddDrawInstancingCommand({
+                data.targetMatrix,
+                data.customShadowPass, 
+                //data.targetMaterial,
+                data.targetMesh
+            });
+        }
 
     } else {
         commandBuffer.AddDrawCommand({

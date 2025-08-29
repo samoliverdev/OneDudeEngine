@@ -20,6 +20,14 @@ bool DrawInstancingCommand::operator<(const DrawCommand& a) const{
     return material->MaterialId() < a.material->MaterialId();
 }
 
+bool DrawInstancingCommand2::operator<(const DrawCommand& a) const{
+    return material->MaterialId() < a.material->MaterialId();
+}
+
+bool DrawInstancingCommand3::operator<(const DrawCommand& a) const{
+    return material->MaterialId() < a.material->MaterialId();
+}
+
 bool MaterialBind2::operator<(const MaterialBind2& a) const{
     return materialId < a.materialId;
 }
@@ -75,6 +83,10 @@ void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
     #endif
 } 
 
+void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
+    drawIntancingCommands2.Add(std::move(comand));
+}
+
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
@@ -99,6 +111,7 @@ void RendererList::Clean(){
     drawCommands.Clear();
     drawCommandsNorSort.Clear();
     //drawIntancingCommands.Clear();
+    drawIntancingCommands2.Clear();
     skinnedDrawCommands.Clear();
     skinnedDrawCommandsNorSort.Clear();
 
@@ -246,6 +259,22 @@ void RendererList::Submit(bool skipEntityId){
         
         lastMat = _mat;
         Graphics::DrawMeshInstancing(*cm.meshs, *_mat, &cm.trans[0], cm.trans.size());
+    });
+    drawIntancingCommands2.Each([&](auto& cm){
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+
+        if(_mat != lastMat){
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
+            //_mat->DisableKeyword("SKINNED");
+            if(cm.buffer->IsMatrix4x3()){
+                _mat->EnableKeyword("INSTANCINGMATRIX43");
+            } else {
+                _mat->EnableKeyword("INSTANCING");
+            }
+        }
+        lastMat = _mat;
+        Graphics::DrawMeshInstancing(*cm.meshs, *_mat, *cm.buffer, cm.buffer->Count());
     });
     }
     lastMat = nullptr;

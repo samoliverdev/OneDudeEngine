@@ -21,7 +21,11 @@ public:
     void SetData(const Matrix4* data, unsigned int count);
     void SetData(const Matrix4x3* data, unsigned int count);
 
+    inline bool IsMatrix4x3() const { return isMatrix4x3; }
+    inline int Count() const { return count; }
+
 private:
+    int count = 0;
     bool isMatrix4x3 = false;
     InstancingBufferDataGL;
 };

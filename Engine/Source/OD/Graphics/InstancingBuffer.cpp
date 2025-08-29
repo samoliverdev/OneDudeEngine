@@ -52,12 +52,14 @@ bool InstancingBuffer::IsValid(){
     glCheckError();*/ 
 //}
 
-void InstancingBuffer::SetData(const Matrix4* data, unsigned int count){
-    graphicsDevice->InstancingBufferSetData(*this, data, count);
+void InstancingBuffer::SetData(const Matrix4* data, unsigned int incount){
+    graphicsDevice->InstancingBufferSetData(*this, data, incount);
+    count = incount;
 }
 
-void InstancingBuffer::SetData(const Matrix4x3* data, unsigned int count){
+void InstancingBuffer::SetData(const Matrix4x3* data, unsigned int incount){
     graphicsDevice->InstancingBufferSetData(*this, data, count);
+    count = incount;
 }
 
 }
