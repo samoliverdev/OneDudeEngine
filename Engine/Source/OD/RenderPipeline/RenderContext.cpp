@@ -1042,10 +1042,10 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
         for(auto& chunk: c.chunks){
-            if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+            //if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
 
             for(auto& subchunk: chunk.subchunks){
-                if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+                //if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
 
                 for(auto& renderTarget: subchunk.targets){
                     RenderData data;
@@ -1701,7 +1701,9 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     if(isInstancing){
         if(data.instancingBuffer != nullptr){
             commandBuffer.AddDrawInstancingCommand({
-                data.instancingBuffer, data.targetMaterial, data.targetMesh
+                data.instancingBuffer, 
+                data.customShadowPass, //data.targetMaterial, 
+                data.targetMesh
             });
         } else{
             commandBuffer.AddDrawInstancingCommand({
@@ -1713,12 +1715,24 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         }
 
     } else {
-        commandBuffer.AddDrawCommand({
+        /*commandBuffer.AddDrawCommand({
             data.targetMatrix,
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
             data.distance
+        }, data.distance);*/
+
+        commandBuffer.AddDrawCommand({
+            data.targetMatrix,
+            data.customShadowPass,
+            data.targetMesh,
+            data.distance,
+            data.perDrawData
+            /*#if EnableExperimentalPerDrawCustomData
+            data.useCustomData,
+            data.customData,
+            #endif*/
         }, data.distance);
     } 
 }

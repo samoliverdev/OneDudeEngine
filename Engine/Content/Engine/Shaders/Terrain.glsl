@@ -24,6 +24,7 @@
     SupportInstancing false
     MultiCompile _ SKINNED
     MultiCompile Opaque Blend
+    MultiCompile Forward Deferred
     CullFace BACK
     DepthTest LESS
     Blend Off
@@ -196,7 +197,17 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     uniform float smoothness = 0.5;
     uniform float cutoff  = 0.5;*/
 
-    out vec4 fragColor;
+    #ifdef Deferred
+        Out(9) vec4 gAlbedoSpec;
+
+        Out(1) vec3 gPosition;
+        Out(2) vec3 gNormal;
+        //Out(3) vec4 gAlbedoSpec;
+        Out(3) vec3 gEmission;
+        Out(4) vec3 gOther;
+    #else
+        Out(0) vec4 fragColor;
+    #endif
 
     vec3 NormalStrength(vec3 In, float Strength){
         return vec3(In.rg * Strength, mix(1, In.b, clamp(Strength, 0, 1)));
@@ -363,7 +374,20 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         surface.occlusion = GetOcclusion(fsIn.texCoord);
         surface.metallic = GetMetallic(fsIn.texCoord);
         surface.smoothness = GetSmoothness(fsIn.texCoord);
+
+        #ifdef Deferred
         
+        gPosition = surface.position;
+        gNormal = surface.normal;
+        gAlbedoSpec.rgb = surface.color.rgb;
+        //gAlbedoSpec.a = surface.smoothness;
+        gEmission.rgb = GetEmission(baseUV);
+        gOther.r = surface.smoothness;
+        gOther.g = surface.metallic;
+        gOther.b = surface.occlusion;
+        
+        #else
+
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);
         vec3 color = GetLighting(surface, brdf, gi);
@@ -371,5 +395,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         fragColor = vec4(color, surface.alpha);
 
         if(base.a < cutoff) discard;
+
+        #endif
     }
 #endif
