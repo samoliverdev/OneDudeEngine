@@ -45,6 +45,12 @@ layout(location = 6) in vec4 weights;
     #endif
 #endif
 
+#ifdef INSTANCINGMATRIX43
+    layout(location = 10) in vec4 a_ModelMatrix_0;
+    layout(location = 11) in vec4 a_ModelMatrix_1;
+    layout(location = 12) in vec4 a_ModelMatrix_2;
+#endif
+
 #ifdef SKINNED
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
@@ -70,10 +76,18 @@ EndUniform()
 mat4 GetModelMatrix(){
 #ifdef INSTANCING
     #ifdef OpenGL_API
-    return modelInstancing;
+        return modelInstancing;
     #else
     return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
     #endif
+#elif defined(INSTANCINGMATRIX43)
+    return transpose(mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, vec4(0,0,0,1)));
+    /*return mat4(
+        vec4(a_ModelMatrix_0.x, a_ModelMatrix_1.x, a_ModelMatrix_2.x, 0.0), // col 0
+        vec4(a_ModelMatrix_0.y, a_ModelMatrix_1.y, a_ModelMatrix_2.y, 0.0), // col 1
+        vec4(a_ModelMatrix_0.z, a_ModelMatrix_1.z, a_ModelMatrix_2.z, 0.0), // col 2
+        vec4(a_ModelMatrix_0.w, a_ModelMatrix_1.w, a_ModelMatrix_2.w, 1.0)  // col 3 (translation / w)
+    );*/
 #else
     return model;
 #endif

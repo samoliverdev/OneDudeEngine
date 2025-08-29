@@ -8,6 +8,7 @@
 #include "Framebuffer.h"
 #include "Texture.h"
 #include "SubShader.h"
+#include "InstancingBuffer.h"
 
 namespace OD{
 
@@ -60,6 +61,7 @@ public:
     virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
+    virtual void DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count){}
 
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
@@ -153,6 +155,12 @@ public:
     virtual void UniformBufferDestroy(UniformBuffer& buffer){}
     virtual bool UniformBufferIsValid(UniformBuffer& buffer){ return false; }
     virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
+
+    virtual bool InstancingBufferCreate(InstancingBuffer& buffer){ return false; }
+    virtual void InstancingBufferDestroy(InstancingBuffer& buffer){}
+    virtual bool InstancingBufferIsValid(InstancingBuffer& buffer){ return false; }
+    virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4* data, unsigned int count){}
+    virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4x3* data, unsigned int count){}
 
     virtual void Initialize() = 0;
     virtual void Shutdown() = 0;

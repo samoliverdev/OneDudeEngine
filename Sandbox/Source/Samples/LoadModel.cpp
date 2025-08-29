@@ -16,6 +16,9 @@ void LoadModelSample::OnInit(){
     camTransform.LocalEulerAngles(Vector3(0, 0, 0));
     camMove.transform = &camTransform;
 
+    buffer = InstancingBuffer::Create();
+    buffer2 = InstancingBuffer::Create();
+
     model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.gltf");
     model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
     auto dd = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
@@ -30,7 +33,17 @@ void LoadModelSample::OnInit(){
         t.LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
         t.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
         transforms.push_back(t.GetLocalModelMatrix());
+
+        transforms2.push_back({
+            math::row(transforms[transforms.size()-1], 0),
+            math::row(transforms[transforms.size()-1], 1),
+            math::row(transforms[transforms.size()-1], 2)
+        });
     }
+
+    buffer->SetData(&transforms[0], transforms.size());
+    
+    buffer2->SetData(&transforms2[0], transforms2.size());
 
     useInstancing = true;
 }
@@ -54,8 +67,23 @@ void LoadModelSample::OnRender(float deltaTime){
     if(useInstancing){  
         //model->materials[0]->SetEnableInstancing(true);
         model->materials[0]->DisableKeyword("SKINNED");
-        model->materials[0]->EnableKeyword("INSTANCING");
-        Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], &transforms[0], transforms.size());
+        if(useMatrix4x3 && useInstancingBuffer){
+            model->materials[0]->EnableKeyword("INSTANCINGMATRIX43");
+        } else {
+            model->materials[0]->EnableKeyword("INSTANCING");
+        }
+
+        if(useInstancingBuffer == false){
+            Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], &transforms[0], transforms.size());
+        } else {
+            Graphics::BindMaterial(*model->materials[0]);
+            if(useMatrix4x3){
+                Graphics::DrawMeshInstancing(*model->meshs[0], *buffer2, transforms.size());
+            } else {
+                Graphics::DrawMeshInstancing(*model->meshs[0], *buffer, transforms.size());
+            }
+        }
+
     } else {
         model->materials[0]->DisableKeyword("SKINNED");
         model->materials[0]->DisableKeyword("INSTANCING");
@@ -77,6 +105,8 @@ void LoadModelSample::OnGUI(){
     ImGui::Begin("Load Model Test");
 
     ImGui::Checkbox("Use Instancing", &useInstancing);
+    ImGui::Checkbox("Use Instancing Buffer", &useInstancingBuffer);
+    ImGui::Checkbox("Use Matrix4x3", &useMatrix4x3);
     ImGui::Spacing();
     
     ImGui::Text("DrawCalls: %d", Graphics::GetStats().drawCalls);

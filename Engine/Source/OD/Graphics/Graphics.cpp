@@ -257,6 +257,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
     graphicsDevice->DrawMeshInstancing(mesh, modelMatrixs, count); 
 }
 
+void Graphics::DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count){
+    graphicsDevice->DrawMeshInstancing(mesh, buffer, count); 
+}
+
 void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
     graphicsDevice->DrawMesh(mesh, mat, modelMatrix, perDrawData); 
 }

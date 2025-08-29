@@ -101,6 +101,10 @@ struct GLUniformBufferData{
     unsigned int id = 0;
 };
 
+struct GLInstancingBufferData{
+    unsigned int id = 0;
+};
+
 struct UniformBufferDef{
     struct Member{
         size_t pos = 0;
@@ -127,6 +131,7 @@ struct GLMaterialData{
 #define ShaderDataGL GLShaderData glData;
 #define MaterialDataGL GLMaterialData glData{};
 #define UniformBufferDataGL GLUniformBufferData glData{};
+#define InstancingBufferDataGL GLInstancingBufferData glData{};
 
 int glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 

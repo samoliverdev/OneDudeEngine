@@ -15,6 +15,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp> 
 #include <glm/gtx/projection.hpp>
@@ -96,6 +97,12 @@ using Matrix4 = glm::mat4;
 using IVector2 = glm::ivec2;
 using IVector3 = glm::ivec3;
 using IVector4 = glm::ivec4;
+
+struct Matrix4x3{
+    Vector4 v0;
+    Vector4 v1;
+    Vector4 v2;
+};
 
 namespace math = glm;
 

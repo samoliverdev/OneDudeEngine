@@ -1221,6 +1221,115 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs,
     //glCheckError();
 }
 
+bool OpenGLGraphicsDevice::InstancingBufferCreate(InstancingBuffer& buffer){
+    glGenBuffers(1, &buffer.glData.id);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
+    glCheckError();
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glCheckError();
+    return true;
+}
+
+void OpenGLGraphicsDevice::InstancingBufferDestroy(InstancingBuffer& buffer){
+    if(buffer.glData.id != 0) glDeleteBuffers(1, &buffer.glData.id);
+    buffer.glData.id = 0;
+    glCheckError();
+}
+
+bool OpenGLGraphicsDevice::InstancingBufferIsValid(InstancingBuffer& buffer){
+    return buffer.glData.id != 0;
+}
+
+void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4* data, unsigned int count){
+    buffer.isMatrix4x3 = false;
+    Assert(InstancingBufferIsValid(buffer) == true);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
+    glCheckError();
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, data, GL_STATIC_DRAW); //GL_STREAM_DRAW
+    glCheckError();
+}
+
+void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4x3* data, unsigned int count){
+    buffer.isMatrix4x3 = true;
+    Assert(InstancingBufferIsValid(buffer) == true);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
+    glCheckError();
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4x3) * count, data, GL_STATIC_DRAW); //GL_STREAM_DRAW
+    glCheckError();
+}
+
+void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count){
+    Assert(MeshIsValid(mesh) && "Mesh is not valid!");
+    Assert(count > 0);
+
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount * count;
+    stats.tris += mesh.indiceCount * count;
+
+    // Bind mesh geometry
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.glData.vao);
+    #else
+    mesh.Bind();
+    #endif
+
+    // Bind instancing buffer
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
+    glCheckError();
+
+    if(buffer.isMatrix4x3){
+        // Set up instance attributes (mat4 = 4 vec4s)
+        std::size_t vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(0));
+        glEnableVertexAttribArray(11);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(1 * vec4Size));
+        glEnableVertexAttribArray(12);
+        glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(2 * vec4Size));
+        glCheckError();
+
+        glVertexAttribDivisor(10, 1);
+        glVertexAttribDivisor(11, 1);
+        glVertexAttribDivisor(12, 1);
+        glCheckError();
+    } else {
+        // Set up instance attributes (mat4 = 4 vec4s)
+        std::size_t vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(0));
+        glEnableVertexAttribArray(11);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(1 * vec4Size));
+        glEnableVertexAttribArray(12);
+        glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(2 * vec4Size));
+        glEnableVertexAttribArray(13);
+        glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(3 * vec4Size));
+        glCheckError();
+
+        glVertexAttribDivisor(10, 1);
+        glVertexAttribDivisor(11, 1);
+        glVertexAttribDivisor(12, 1);
+        glVertexAttribDivisor(13, 1);
+        glCheckError();
+    }
+
+    // Draw instanced
+    if(mesh.glData.ebo != 0){
+        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode],
+                                mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
+        glCheckError();
+    } else {
+        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode],
+                              0, mesh.vertexCount, count);
+        glCheckError();
+    }
+
+    #ifdef USE_VAO
+    glBindVertexArray(0);
+    glCheckError();
+    #endif
+}
+
 void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
     BindMaterial(mat);
     DrawMesh(mesh, modelMatrix, perDrawData);

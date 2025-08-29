@@ -6,6 +6,7 @@
 namespace OD{
     class Model;
     class SubShader;
+    class InstancingBuffer;
 }
 
 using namespace OD;
@@ -13,12 +14,17 @@ using namespace OD;
 struct LoadModelSample: OD::Module {
     Ref<Model> model;
     Ref<SubShader> shader;
+    Ref<InstancingBuffer> buffer;
+    Ref<InstancingBuffer> buffer2;
     Transform camTransform;
     Camera cam;
     CameraMovement camMove;
     std::vector<Matrix4> transforms;
+    std::vector<Matrix4x3> transforms2;
 
     bool useInstancing = false;
+    bool useInstancingBuffer = true;
+    bool useMatrix4x3 = true;
 
     void OnInit() override;
     void OnUpdate(float deltaTime) override; 

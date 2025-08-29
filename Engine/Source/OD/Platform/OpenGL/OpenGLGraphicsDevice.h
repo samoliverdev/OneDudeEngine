@@ -35,6 +35,7 @@ public:
     virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
+    virtual void DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count) override;
 
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
@@ -128,6 +129,12 @@ public:
     virtual void UniformBufferDestroy(UniformBuffer& buffer) override;
     virtual bool UniformBufferIsValid(UniformBuffer& buffer) override;
     virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset) override;
+
+    virtual bool InstancingBufferCreate(InstancingBuffer& buffer) override;
+    virtual void InstancingBufferDestroy(InstancingBuffer& buffer) override;
+    virtual bool InstancingBufferIsValid(InstancingBuffer& buffer) override;
+    virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4* data, unsigned int count) override;
+    virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4x3* data, unsigned int count) override;
 
     virtual void Initialize() override;
     virtual void Shutdown() override;
