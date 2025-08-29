@@ -25,11 +25,6 @@ public:
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) override;
 
-    virtual void BindMaterial(Material& mat) override;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
-    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
-    virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) override;
-
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) override;

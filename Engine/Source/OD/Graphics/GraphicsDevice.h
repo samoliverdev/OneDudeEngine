@@ -57,15 +57,10 @@ public:
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) = 0;
 
-    virtual void BindMaterial(Material& mat) = 0;
-    virtual void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
-    virtual void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
-    virtual void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count) = 0;
-    virtual void DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count){}
-
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) = 0;
+    virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, InstancingBuffer& buffer, int count){}
     virtual void DrawModel(Model& model, Matrix4 modelMatrix) = 0;
 
     virtual void AddDrawLineCommand(Vector3 start, Vector3 end) = 0;

@@ -66,7 +66,6 @@ struct OD_API RendererList{
 
     std::string name = "CommandBuffer";
     std::function<void(Material& material)> onUpdateMaterial = nullptr;
-    std::function<void(Material& material)> postUpdateMaterial = nullptr;
     SortType sortType;
 
     void SetOverrideMaterial(Ref<Material> shader);

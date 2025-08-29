@@ -1125,101 +1125,6 @@ void OpenGLGraphicsDevice::SendPerDrawData(PerDrawData& perDrawData){
     }
 }
 
-void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
-    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
-
-    if(MeshIsValid(mesh) == false){
-        #ifdef GRAPHIC_LOG_ERROR
-        LogError("DrawMesh::InvalidMesh");
-        #endif
-        return;
-    }
-
-    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
-
-    SubShaderSetMatrix4(*lastShader, "model", modelMatrix);
-    
-    stats.drawCalls += 1;
-    stats.vertices += mesh.vertexCount;
-    stats.tris += mesh.indiceCount;
-    
-    #ifdef USE_VAO
-    glBindVertexArray(mesh.glData.vao);
-    glCheckError();
-    #else
-    mesh.Bind();
-    #endif
-
-    if(mesh.glData.ebo != 0){
-        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
-        glCheckError();
-    } else {
-        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
-        glCheckError();
-    }
-}
-
-void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
-    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
-
-    if(MeshIsValid(mesh) == false){
-        #ifdef GRAPHIC_LOG_ERROR
-        LogError("DrawMesh::InvalidMesh");
-        #endif
-        return;
-    }
-
-    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
-    
-    SubShaderSetMatrix4(*lastShader, "animated", animMatrixs, count);
-    SubShaderSetMatrix4(*lastShader, "model", modelMatrix);
-    
-    stats.drawCalls += 1;
-    stats.vertices += mesh.vertexCount;
-    stats.tris += mesh.indiceCount;
-    
-    #ifdef USE_VAO
-    glBindVertexArray(mesh.glData.vao);
-    glCheckError();
-    #else
-    mesh.Bind();
-    #endif
-
-    if(mesh.glData.ebo != 0){
-        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
-        glCheckError();
-    } else {
-        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
-        glCheckError();
-    }
-}
-
-void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){
-    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
-
-    mesh.SubmitInstancingCustomModelMatrixs(modelMatrixs, count);
-
-    stats.drawCalls += 1;
-    stats.vertices += mesh.vertexCount * count;
-    stats.tris += mesh.indiceCount * count;
-
-    #ifdef USE_VAO
-    glBindVertexArray(mesh.glData.vao);
-    #else
-    mesh.Bind();
-    #endif
-
-    if(mesh.glData.ebo != 0){
-        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
-        glCheckError();
-    } else {
-        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
-        glCheckError();
-    }
-
-    //glBindVertexArray(0);
-    //glCheckError();
-}
 
 bool OpenGLGraphicsDevice::InstancingBufferCreate(InstancingBuffer& buffer){
     glGenBuffers(1, &buffer.glData.id);
@@ -1259,7 +1164,111 @@ void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, con
     glCheckError();
 }
 
-void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count){
+void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
+    BindMaterial(mat);
+    
+    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
+
+    if(MeshIsValid(mesh) == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
+    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
+
+    SubShaderSetMatrix4(*lastShader, "model", modelMatrix);
+    
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount;
+    stats.tris += mesh.indiceCount;
+    
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.glData.vao);
+    glCheckError();
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.glData.ebo != 0){
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
+        glCheckError();
+    }
+}
+
+void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
+    BindMaterial(mat);
+    
+    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
+
+    if(MeshIsValid(mesh) == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
+    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
+    
+    SubShaderSetMatrix4(*lastShader, "animated", animMatrixs, count);
+    SubShaderSetMatrix4(*lastShader, "model", modelMatrix);
+    
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount;
+    stats.tris += mesh.indiceCount;
+    
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.glData.vao);
+    glCheckError();
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.glData.ebo != 0){
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
+        glCheckError();
+    }
+}
+
+void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
+    BindMaterial(mat);
+    
+    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
+
+    mesh.SubmitInstancingCustomModelMatrixs(modelMatrixs, count);
+
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount * count;
+    stats.tris += mesh.indiceCount * count;
+
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.glData.vao);
+    #else
+    mesh.Bind();
+    #endif
+
+    if(mesh.glData.ebo != 0){
+        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
+        glCheckError();
+    } else {
+        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
+        glCheckError();
+    }
+
+    //glBindVertexArray(0);
+    //glCheckError();
+}
+
+void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
+    BindMaterial(mat);
+
     Assert(MeshIsValid(mesh) && "Mesh is not valid!");
     Assert(count > 0);
 
@@ -1330,29 +1339,13 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buff
     #endif
 }
 
-void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
-    BindMaterial(mat);
-    DrawMesh(mesh, modelMatrix, perDrawData);
-}
-
-void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
-    BindMaterial(mat);
-    DrawMeshSkinned(mesh, modelMatrix, animMatrixs, count, perDrawData);
-}
-
-void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
-    BindMaterial(mat);
-    DrawMeshInstancing(mesh, modelMatrixs, count);
-}
-
 void OpenGLGraphicsDevice::DrawModel(Model& model, Matrix4 modelMatrix){
     int index = 0;
     for(auto i: model.renderTargets){
         Ref<Material> targetMaterial = model.materials[i.materialIndex];
         Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
         Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-        BindMaterial(*targetMaterial);
-        DrawMesh(*targetMesh, targetMatrix);
+        DrawMesh(*targetMesh, *targetMaterial, targetMatrix);
     }
 }
 
@@ -2926,13 +2919,11 @@ Ref<Texture2D> OpenGLGraphicsDevice::Texture2DCreateBrdfLUTTexture2D(){
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
     glCheckError();
 
-    BindMaterial(*brdfMat);
-
     glViewport(0, 0, 512, 512);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glCheckError();
 
-    DrawMesh(*fullScreenQuad, Matrix4Identity);
+    DrawMesh(*fullScreenQuad, *brdfMat, Matrix4Identity);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
@@ -3163,8 +3154,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateFromFileHDR(const char* hdri){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCheckError();
 
-        BindMaterial(*equirectangularToCubemapMat);
-        DrawMesh(*_cubeMesh, Matrix4Identity);
+        DrawMesh(*_cubeMesh, *equirectangularToCubemapMat, Matrix4Identity);
         //renderCube(cubeVAO, cubeVBO);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -3210,8 +3200,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateFromFileHDR(const char* hdri){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCheckError();
 
-        BindMaterial(*irradianceMat);
-        DrawMesh(*_cubeMesh, Matrix4Identity);
+        DrawMesh(*_cubeMesh, *irradianceMat, Matrix4Identity);
         //renderCube(cubeVAO, cubeVBO);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -3287,8 +3276,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateIrradianceMapFromCubeMap(const R
         glCheckError();
 
         //renderCube(cubeVAO, cubeVBO);
-        BindMaterial(*irradianceMat);
-        DrawMesh(*_cubeMesh, Matrix4Identity);
+        DrawMesh(*_cubeMesh, *irradianceMat, Matrix4Identity);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
@@ -3361,11 +3349,10 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreatePrefilterMapFromCubeMap(const Re
         prefilterMat->SetFloat("roughness", roughness);
         for(unsigned int i = 0; i < 6; ++i){
             prefilterMat->SetMatrix4("view2", captureViews2[i]);
-            BindMaterial(*prefilterMat);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            DrawMesh(*_cubeMesh, Matrix4Identity);
+            DrawMesh(*_cubeMesh, *prefilterMat, Matrix4Identity);
         }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -76,11 +76,10 @@ void LoadModelSample::OnRender(float deltaTime){
         if(useInstancingBuffer == false){
             Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], &transforms[0], transforms.size());
         } else {
-            Graphics::BindMaterial(*model->materials[0]);
             if(useMatrix4x3){
-                Graphics::DrawMeshInstancing(*model->meshs[0], *buffer2, transforms.size());
+                Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], *buffer2, transforms.size());
             } else {
-                Graphics::DrawMeshInstancing(*model->meshs[0], *buffer, transforms.size());
+                Graphics::DrawMeshInstancing(*model->meshs[0], *model->materials[0], *buffer, transforms.size());
             }
         }
 

@@ -18,11 +18,6 @@ void HeadlessGraphicsDevice::Clean(float r, float g, float b, float a){}
 void HeadlessGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){}
 void HeadlessGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){}
 
-void HeadlessGraphicsDevice::BindMaterial(Material& mat){}
-void HeadlessGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData){}
-void HeadlessGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){}
-void HeadlessGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count){}
-
 void HeadlessGraphicsDevice::DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData){}
 void HeadlessGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){}
 void HeadlessGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count){}

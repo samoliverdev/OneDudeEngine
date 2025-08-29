@@ -180,39 +180,17 @@ void RendererList::Submit(bool skipEntityId){
         OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
         Material* _mat = cm.material;
 
-        //{
-        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::1");
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("SKINNED");
-            Graphics::BindMaterial(*_mat);
-            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
-        //}
 
-        //{
-        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::2");
         lastMat = _mat;
-        //Assert(lastMat != nullptr);
-        //Shader::Bind(*_mat->GetShader());
-        //_mat->GetShader()->SetMatrix4("model", cm.trans);
-        //Graphics::DrawMeshRaw(*cm.meshs);
-        #if EnableExperimentalPerDrawCustomData
-        if(cm.useCustomData){
-            Assert(false && "ToFix");
-            Graphics::BindMaterial(*_mat);
-            //Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
-        } else {
-            Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
-        }
-        #else
         if(skipEntityId) cm.perDrawData.int_0.clear();
         Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
-        #endif
-        //}
     });
     }
     lastMat = nullptr;
@@ -223,40 +201,17 @@ void RendererList::Submit(bool skipEntityId){
         OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
         Material* _mat = cm.material;
 
-        //{
-        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::1");
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             _mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("SKINNED");
-            Graphics::BindMaterial(*_mat);
-            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
-        //}
 
-        //{
-        //OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::2");
         lastMat = _mat;
-        //Assert(lastMat != nullptr);
-        //Shader::Bind(*_mat->GetShader());
-        //_mat->GetShader()->SetMatrix4("model", cm.trans);
-        //Graphics::DrawMeshRaw(*cm.meshs);
-
-        #if EnableExperimentalPerDrawCustomData
-        if(cm.useCustomData){
-            Assert(false && "ToFix");
-            Graphics::BindMaterial(*_mat);
-            //Graphics::DrawMesh(*cm.meshs, cm.trans, cm.customData);
-        } else {
-            Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
-        }
-        #else
         if(skipEntityId) cm.perDrawData.int_0.clear();
         Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
-        #endif
-        //}
     });
     }
     lastMat = nullptr;
@@ -273,19 +228,9 @@ void RendererList::Submit(bool skipEntityId){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("SKINNED");
             _mat->EnableKeyword("INSTANCING");
-            //Material::SubmitGraphicDatas(*_mat);
-            Graphics::BindMaterial(*_mat);
-            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
         
-        /*cm.meshs->instancingModelMatrixs.clear();
-        for(auto j: cm.trans){
-            cm.meshs->instancingModelMatrixs.push_back(j);
-        }
-        cm.meshs->SubmitInstancingModelMatrixs();*/
         lastMat = _mat;
-        //cm.meshs->SubmitInstancingCustomModelMatrixs(&cm.trans[0], cm.trans.size());
-        //Graphics::DrawMeshInstancingRaw(*cm.meshs, cm.trans.size());
         Graphics::DrawMeshInstancing(*cm.meshs, *_mat, &cm.trans[0], cm.trans.size());
     });
     }
@@ -317,22 +262,11 @@ void RendererList::Submit(bool skipEntityId){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("INSTANCING");
             _mat->EnableKeyword("SKINNED");
-            //Material::SubmitGraphicDatas(*_mat);
-            Graphics::BindMaterial(*_mat);
-            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 
         lastMat = _mat;
-        //Shader::Bind(*_mat->GetShader());
-        //_mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
-        //_mat->GetShader()->SetMatrix4("model", cm.trans);
-        //Graphics::DrawMeshRaw(*cm.meshs);
-
         if(skipEntityId) cm.perDrawData.int_0.clear();
         Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
-        
-        //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
-        //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
     });
     }
     lastMat = nullptr;
@@ -346,22 +280,12 @@ void RendererList::Submit(bool skipEntityId){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("INSTANCING");
             _mat->EnableKeyword("SKINNED");
-            //Material::SubmitGraphicDatas(*_mat);
-            Graphics::BindMaterial(*_mat);
-            if(postUpdateMaterial != nullptr) postUpdateMaterial(*_mat);
         }
 
         lastMat = _mat;
-        //Shader::Bind(*_mat->GetShader());
-        //_mat->GetShader()->SetMatrix4("animated", *cm.posePalette);
-        //_mat->GetShader()->SetMatrix4("model", cm.trans);
-        //Graphics::DrawMeshRaw(*cm.meshs);
 
         if(skipEntityId) cm.perDrawData.int_0.clear();
         Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
-        
-        //_mat->SetMatrix4("animated", &(*cm.posePalette)[0], cm.posePalette->size());
-        //Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans);
     });
     }
     lastMat = nullptr;

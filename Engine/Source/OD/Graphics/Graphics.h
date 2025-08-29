@@ -61,15 +61,10 @@ public:
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
-    static void BindMaterial(Material& mat);
-    static void DrawMesh(Mesh& mesh, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
-    static void DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
-    static void DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs, int count);
-    static void DrawMeshInstancing(Mesh& mesh, InstancingBuffer& buffer, int count);
-
     static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
     static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count);
+    static void DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count);
     static void DrawModel(Model& model, Matrix4 modelMatrix);
 
     static void AddDrawLineCommand(Vector3 start, Vector3 end);

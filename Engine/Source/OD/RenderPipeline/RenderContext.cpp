@@ -211,7 +211,6 @@ void RenderContext::DrawDeferredLight(int index){
         deferredLightDirSinglePass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 4);
-        Graphics::BindMaterial(*deferredLightDirSinglePass);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     } else {
         deferredLightDirSinglePass->EnableKeyword("DIRECTIONAL");
@@ -221,7 +220,6 @@ void RenderContext::DrawDeferredLight(int index){
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 4);
         deferredLightDirSinglePass->SetInt("lightIndex", index);
-        Graphics::BindMaterial(*deferredLightDirSinglePass);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     }
 }
@@ -245,7 +243,6 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(size));
     Matrix4 worldMatrix = translation * rotation * scale;
 
-    Graphics::BindMaterial(*deferredLightDirSingleOtherPass);
     Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
 }
 
@@ -261,12 +258,7 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     deferredLightPass->SetTexture("gAlbedoSpec", deferredOutColor, 2);
     deferredLightPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightPass->SetTexture("gOther", deferredOutColor, 4);
-    Graphics::BindMaterial(*deferredLightPass);
 
-    //Graphics::BlitQuadPostProcessingRaw(forwardOutColor);
-
-    //Graphics::DrawQuadPostProcessing(forwardOutColor, *deferredLightPass);
-    //Graphics::DrawFullScreenQuad(*deferredLightPass, Matrix4Identity);
     Graphics::DrawMesh(*fullScreenQuad, *deferredLightPass, Matrix4Identity);
     
     Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
@@ -1472,17 +1464,7 @@ void RenderContext::DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bo
     OD_PROFILE_SCOPE("RenderContext::DrawZPreePassRenderersBuffer");
 
     if(sort) commandBuffer.Sort();
-    commandBuffer.postUpdateMaterial = [&](Material& material){ 
-        /*if(post){
-            Graphics::SetColorMask(1, 1, 1, 1);
-            Graphics::SetDepthTest(DepthTest::EQUAL);
-        } else {
-            Graphics::SetColorMask(0, 0, 0, 0);
-            Graphics::SetDepthTest(DepthTest::LESS);
-        }*/
-    };
     commandBuffer.Submit();
-    commandBuffer.postUpdateMaterial = nullptr;
 }
 
 void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
@@ -1496,14 +1478,6 @@ void RenderContext::DrawGizmos(){
 
     //Renderer::SetCamera(cam);
     
-    /*Graphics::SetDepthMask(false);
-    Graphics::SetDepthTest(DepthTest::LESS);
-    Graphics::SetCullFace(CullFace::BACK);
-    Graphics::SetBlend(false);*/
-
-    //Graphics::SetBlendFunc(BlendMode::ONE, BlendMode::ONE_MINUS_SRC_ALPHA);
-    //Graphics::SetBlendFunc(BlendMode::SRC_ALPHA, BlendMode::ONE_MINUS_SRC_ALPHA);
-     
     Camera cm = cam;
     
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
