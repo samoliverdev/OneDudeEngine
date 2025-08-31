@@ -1003,7 +1003,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
                 material.currentBufferSlot += 1;
             }
             if(map.type == MaterialMap::Type::Texture){
-                if(i.second.texture == nullptr) continue;
+                if(i.second.texture == nullptr) continue;//TODO: Add a default texure by type if is null
                 Assert(i.second.texture != nullptr);
                 SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
                 material.currentTextureSlot += 1;

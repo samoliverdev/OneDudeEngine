@@ -67,6 +67,7 @@ struct OD_API TerrainComponent{
 
     Ref<Texture2D> splatmap = nullptr;
     Ref<Texture2D> layer0 = nullptr;
+    Ref<Texture2D> layer0Normal = nullptr;
     Ref<Texture2D> layer1 = nullptr;
     Ref<Texture2D> layer2 = nullptr;
     Ref<Texture2D> layer3 = nullptr;
@@ -101,6 +102,8 @@ struct OD_API TerrainComponent{
 
         AssetRefSerialize<Texture2D> _layer0(layer0);
         ArchiveDump(ar, CEREAL_NVP(_layer0));
+        AssetRefSerialize<Texture2D> _layer0Normal(layer0Normal);
+        ArchiveDump(ar, CEREAL_NVP(_layer0Normal));
         AssetRefSerialize<Texture2D> _layer1(layer1);
         ArchiveDump(ar, CEREAL_NVP(_layer1));
         AssetRefSerialize<Texture2D> _layer2(layer2);

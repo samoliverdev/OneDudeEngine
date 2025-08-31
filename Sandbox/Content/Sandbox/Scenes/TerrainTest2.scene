@@ -6,7 +6,7 @@
         3,
         4,
         5,
-        73
+        6
     ],
     "InfoComponents": [
         {
@@ -73,7 +73,7 @@
         3,
         4,
         5,
-        73
+        6
     ],
     "TransformComponents": [
         {
@@ -238,7 +238,7 @@
         3,
         4,
         5,
-        73
+        6
     ],
     "FreeCameras": [
         {
@@ -264,7 +264,37 @@
             "power": 4.0,
             "power2": 0.5,
             "to01": false,
-            "falloff": false
+            "falloff": false,
+            "curve": {
+                "keyframes": [
+                    {
+                        "time": 0.30000001192092898,
+                        "value": 0.0,
+                        "in_tangent": {
+                            "x": -10.0,
+                            "y": 0.0
+                        },
+                        "out_tangent": {
+                            "x": 5.0,
+                            "y": -34.5
+                        },
+                        "curve_type": 2
+                    },
+                    {
+                        "time": 0.6300003528594971,
+                        "value": 1.0,
+                        "in_tangent": {
+                            "x": -10.0,
+                            "y": 0.0
+                        },
+                        "out_tangent": {
+                            "x": 10.0,
+                            "y": 0.0
+                        },
+                        "curve_type": 2
+                    }
+                ]
+            }
         }
     ],
     "HeightmapGeneratorEntities": [
@@ -25846,7 +25876,7 @@
         }
     ],
     "StaticRendererClusterComponentEntities": [
-        73
+        6
     ],
     "TerrainComponents": [
         {
@@ -25869,6 +25899,10 @@
             "_layer0": {
                 "isNull": false,
                 "path": "Sandbox/Textures/block.png"
+            },
+            "_layer0Normal": {
+                "isNull": true,
+                "path": ""
             },
             "_layer1": {
                 "isNull": false,

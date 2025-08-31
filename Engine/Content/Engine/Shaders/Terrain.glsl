@@ -231,8 +231,17 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         return normalize(vec3(left - right, 2.0, up - down));
     }
 
+    vec3 GetTangentNormal(vec2 uv){
+        vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
+        tangentNormal.xy *= 1.0; //normalStrength;
+        tangentNormal = normalize(tangentNormal);
+        return tangentNormal;
+    }
+
     vec3 getNormalFromMap(vec2 uv, vec3 WorldPos0, mat4 targetModelMatrix){
         vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
+        tangentNormal.xy *= 0.2; //normalStrength;
+        tangentNormal = normalize(tangentNormal);
 
         vec3 Q1 = dFdx(WorldPos0);
         vec3 Q2 = dFdy(WorldPos0);
@@ -254,8 +263,9 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     }
 
     //
-    vec3 getNormalFromMap2(vec2 uv, vec3 WorldPos0, mat4 targetModelMatrix){
-        vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
+    vec3 getNormalFromMap2(vec2 uv, vec2 baseUv, vec3 WorldPos0, mat4 targetModelMatrix){
+        //vec3 tangentNormal = texture(normalMap, uv).xyz * 2.0 - 1.0;
+        vec3 tangentNormal = GetTangentNormal(baseUv);
 
         vec3 Normal0 = filterNormalLod(uv);
         //Source: https://www.reddit.com/r/opengl/comments/184zjg8/can_i_calculate_tangent_space_based_on_the_height/
@@ -320,19 +330,8 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     //uniform vec2 heightmapTilling = vec2(1, 1);
     //uniform vec2 heightmapOffset = vec2(0, 0);
 
-    void main(){
-        #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
-        #else
-        vec2 _heightmapOffset = heightmapOffset;
-        #endif
-
-        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
-
-        vec2 baseUV = fsIn.texCoord * texTilling;
-
-        //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
-        vec4 base = texture(mainTex, baseUV);
+    vec4 GetBaseColor(vec2 baseUV, vec4 splatmap){
+        /*vec4 base = texture(mainTex, baseUV);
         base = base * color;
         //base = color;
 
@@ -356,6 +355,47 @@ Texture2D(0, 19, maskMap, maskMapSampler)
             texture(tex4, baseUV),
             splatmap.a
         );
+        return base;*/
+
+        vec4 base = ToLinear(SampleTexture2D(mainTex, mainTexSampler, baseUV)); //texture(mainTex, baseUV);
+        base = base * color;
+
+        base = mix(
+            ToLinear(SampleTexture2D(tex0, tex0Sampler, baseUV)), //texture(tex0, baseUV),
+            ToLinear(SampleTexture2D(tex1, tex1Sampler, baseUV)), //texture(tex1, baseUV),
+            splatmap.r
+        );
+        base = mix(
+            base,
+            ToLinear(SampleTexture2D(tex2, tex2Sampler, baseUV)), //texture(tex2, baseUV),
+            splatmap.g
+        );
+        base = mix(
+            base,
+            ToLinear(SampleTexture2D(tex3, tex3Sampler, baseUV)), //texture(tex3, baseUV),
+            splatmap.b
+        );
+        base = mix(
+            base,
+            ToLinear(SampleTexture2D(tex4, tex4Sampler, baseUV)), //texture(tex4, baseUV),
+            splatmap.a
+        );
+        return base;
+    }
+
+    void main(){
+        #ifdef USE_PERDRAW
+        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
+        #else
+        vec2 _heightmapOffset = heightmapOffset;
+        #endif
+
+        vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
+
+        vec2 baseUV = fsIn.texCoord * texTilling;
+
+        //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
+        vec4 base = GetBaseColor(baseUV, splatmap);
 
         //float height = texture(heightMap, fsIn.texCoord + fsIn.uvOffset_).r * 1;
         //base = vec4(height, height, height, 1);
@@ -366,7 +406,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         surface.normal = normalize(fsIn.worldNormal);
         //surface.normal = NormalStrength(filterNormalLod(fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
         //surface.normal = NormalStrength(GetNormal(fsIn.TBN, fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
-        surface.normal = getNormalFromMap2(fsIn.texCoord * heightmapTilling + _heightmapOffset, fsIn.pos, fsIn.targetModelMatrix);
+        surface.normal = getNormalFromMap2(fsIn.texCoord * heightmapTilling + _heightmapOffset, baseUV, fsIn.pos, fsIn.targetModelMatrix);
         surface.viewDirection = normalize(viewPos - fsIn.worldPos);
         surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
         surface.color = base.rgb;

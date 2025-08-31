@@ -2,6 +2,7 @@
 #include "OD/Core/Math.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Terrain/Heightmap.h"
+#include "Standard/Ultis/AnimationCurve.h"
 
 using namespace OD;
 
@@ -20,9 +21,17 @@ struct HeightmapGenerator{
     bool to01 = true;
     bool falloff = false;
 
+    AnimationCurve curve = {
+        {
+            Keyframe(0.0f, 0.0f, CurveType::Linear),
+            Keyframe(1.0f, 1.0f, CurveType::Linear)
+        }
+    };
+
     static void OnGui(Entity& e, Scene& scene);
 
     Ref<Heightmap> GenerateHeightmap(int seed);
+    Ref<Heightmap> GenerateHeightmapFast(int seed);
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -37,6 +46,7 @@ struct HeightmapGenerator{
         ArchiveDumpNVP(ar, power2);
         ArchiveDumpNVP(ar, to01);
         ArchiveDumpNVP(ar, falloff);
+        ArchiveDumpNVP(ar, curve);
     }
 };
 

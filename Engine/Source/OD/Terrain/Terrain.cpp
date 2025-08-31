@@ -925,6 +925,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
 
         meshComponent.material->SetTexture("splatmap", terrain.splatmap);
         meshComponent.material->SetTexture("tex0", terrain.layer0);
+        if(terrain.layer0Normal != nullptr) meshComponent.material->SetTexture("normalMap", terrain.layer0Normal);//TODO: Finish this design
         meshComponent.material->SetTexture("tex1", terrain.layer1);
         meshComponent.material->SetTexture("tex2", terrain.layer2);
         meshComponent.material->SetTexture("tex3", terrain.layer3);
@@ -995,9 +996,10 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     #if 1 //EnableExperimentalPerDrawCustomData
     if(terrain.mat == nullptr){
         terrain.mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
-        terrain.mat->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png"));
+        terrain.mat->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
         terrain.mat->SetTexture("splatmap", terrain.splatmap);
         terrain.mat->SetTexture("tex0", terrain.layer0);
+        if(terrain.layer0Normal != nullptr) terrain.mat->SetTexture("normalMap", terrain.layer0Normal);
         terrain.mat->SetTexture("tex1", terrain.layer1);
         terrain.mat->SetTexture("tex2", terrain.layer2);
         terrain.mat->SetTexture("tex3", terrain.layer3);
@@ -1025,6 +1027,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
     terrainMeshRenderer.material->SetTexture("splatmap", terrain.splatmap);
     terrainMeshRenderer.material->SetTexture("tex0", terrain.layer0);
+    terrainMeshRenderer.material->SetTexture("normalMap", terrain.layer0Normal);
     terrainMeshRenderer.material->SetTexture("tex1", terrain.layer1);
     terrainMeshRenderer.material->SetTexture("tex2", terrain.layer2);
     terrainMeshRenderer.material->SetTexture("tex3", terrain.layer3);

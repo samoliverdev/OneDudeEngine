@@ -69,12 +69,13 @@ Texture2D(0, 10, gOther, gOtherSampler)
     #include Engine/ShaderLibrary/BRDF.glsl
     #include Engine/ShaderLibrary/GI.glsl
     #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/Fog.glsl
 
     void main(){
         // retrieve data from G-buffer
         vec3 FragPos = texture(gPosition, texCoord).rgb;
         vec3 Normal = texture(gNormal, texCoord).rgb;
-        vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;
+        vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;//this is linar
         vec3 Emission = texture(gEmission, texCoord).rgb;
         float Specular = texture(gOther, texCoord).r;
         float Metallic = texture(gOther, texCoord).g;
@@ -99,5 +100,8 @@ Texture2D(0, 10, gOther, gOtherSampler)
         vec3 color = GetLighting(surface, brdf, gi);
         color += Emission; //GetEmission(uv);
         FragColor = vec4(color, surface.alpha);
+
+        FragColor = ApplyFog(FragColor, length(FragPos - viewPos));
+
     }
 #endif
