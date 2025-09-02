@@ -99,7 +99,7 @@ void HeightmapGenerator::OnGui(Entity& e, Scene& scene){
 
     // Curve editor window
     if (show_curve_editor) {
-        ImGui::Begin("Curve Editor", &show_curve_editor, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Begin("Curve Editor", &show_curve_editor, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
         DrawAnimationCurveEditor(heightmapGenerator.curve, ImVec2(400, 200));
         ImGui::End();
     }

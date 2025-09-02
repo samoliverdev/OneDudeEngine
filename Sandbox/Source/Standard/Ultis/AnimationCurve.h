@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "OD/Core/ImGui.h"
+#include "OD/Serialization/CerealImGui.h"
 #include "OD/Serialization/Serialization.h"
 
 using namespace OD;
@@ -70,6 +71,8 @@ public:
         ArchiveDumpNVP(ar, keyframes);
         //archive(cereal::make_nvp("keyframes", keyframes));
     }
+
+    void OnGui(cereal::ImGuiArchive& ar);
 };
 
 void DrawCurvePreview(AnimationCurve& curve, ImVec2 size = ImVec2(100, 50), bool* open_editor = nullptr);

@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <magic_enum/magic_enum.hpp>
+#include <utility>
 #include <type_traits>
 
 namespace cereal {
@@ -20,6 +21,19 @@ public:
 
     std::string nextPolymorhphicTypeName{};
 };*/
+
+class ImGuiArchive;
+
+template <typename, typename = void>
+struct has_ongui : std::false_type {};
+
+template <typename T>
+struct has_ongui<T, std::void_t<
+    decltype(std::declval<T&>().OnGui(std::declval<ImGuiArchive&>()))
+>> : std::true_type {};
+
+template <typename T>
+constexpr bool has_ongui_v = has_ongui<T>::value;
 
 class ImGuiArchive: public InputArchive<ImGuiArchive>{
 public:
@@ -112,9 +126,10 @@ public:
     }
 private:
 
-    template<class T, std::enable_if_t<!std::is_enum<T>{}> * = nullptr>
+    //template<class T, std::enable_if_t<!std::is_enum<T>{}> * = nullptr>
+    template<class T, typename = std::enable_if_t<!std::is_enum_v<T>>>
     void DrawUI(const char* name, T& value, Options opt = Options()){
-        elementCount += 1;
+        /*elementCount += 1;
 
         ImGui::PushID(elementCount);
 
@@ -122,6 +137,25 @@ private:
             //ar(value);
             (*this)(value);
             ImGui::TreePop();
+        }
+
+        ImGui::PopID();*/
+
+        elementCount += 1;
+        ImGui::PushID(elementCount);
+
+        if constexpr (has_ongui_v<T>) {
+            // If the struct has its own OnGui()
+            if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen)) {
+                value.OnGui(*this);   // ✅ Calls the custom OnGui
+                ImGui::TreePop();
+            }
+        } else {
+            // Default serialization fallback
+            if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen)) {
+                (*this)(value);       // ✅ Calls cereal serialization
+                ImGui::TreePop();
+            }
         }
 
         ImGui::PopID();

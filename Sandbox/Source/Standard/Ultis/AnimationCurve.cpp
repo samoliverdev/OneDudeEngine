@@ -113,6 +113,18 @@ void AnimationCurve::SortKeyframes() {
         [](const Keyframe& a, const Keyframe& b) { return a.time < b.time; });
 }
 
+void AnimationCurve::OnGui(cereal::ImGuiArchive& ar){
+    static bool show_curve_editor;
+    DrawCurvePreview(*this, ImVec2(100, 50), &show_curve_editor);
+
+    // Curve editor window
+    if(show_curve_editor){
+        ImGui::Begin("Curve Editor", &show_curve_editor, ImGuiWindowFlags_AlwaysAutoResize);
+        DrawAnimationCurveEditor(*this, ImVec2(400, 200));
+        ImGui::End();
+    }
+}
+
 // Function to draw a small curve preview (only the curve, no dots)
 void DrawCurvePreview(AnimationCurve& curve, ImVec2 size, bool* open_editor) {
     ImGuiIO& io = ImGui::GetIO();
