@@ -61,7 +61,7 @@ void StaticRendererClusterComponent::Create(glm::ivec3 inchunkCounts, glm::ivec3
                             glm::vec3 sHalfExtents = subchunkSize * 0.5f;
                             s.bounds = AABB(sCenter - sHalfExtents, sCenter + sHalfExtents);
 
-                            s.renderBounds = {};
+                            s.renderBounds = AABB();
                         }
                     }
                 }

@@ -33,7 +33,7 @@ struct OD_API StaticRendererClusterComponent{
         SubChunk() : bounds({}), renderBounds({}), coord(0) {}
 
         void RecalculateRenderBounds() {
-            renderBounds = {};
+            renderBounds = AABB();
             /*for(size_t i = 0; i < models.size(); i++) {
                 if (!models[i]) continue;
                 AABB modelBounds = models[i]->GetAABB().Transform(modelMatrices[i]);

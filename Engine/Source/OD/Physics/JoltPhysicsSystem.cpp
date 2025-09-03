@@ -1507,7 +1507,7 @@ void PhysicsSystem::PhysicsUpdate(){
 				if(EnableInterpolation) PreInterpolate();
 
 				if(scaledFixedTimeStep > 0.0f){
-					const int cCollisionSteps = 1;
+					const int cCollisionSteps = 4; //1;
 					physicsWorld->physicsSystem.Update(
 						scaledFixedTimeStep, //fixedTimeStep,
 						cCollisionSteps,

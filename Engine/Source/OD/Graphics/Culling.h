@@ -81,7 +81,7 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 	Vector3 center = Vector3(0);
 	Vector3 extents = Vector3(0);
 
-	AABB(){}
+	AABB(): center(0.0f), extents(0.0f) {}
 
 	AABB(const Vector3& min, const Vector3& max): 
 		BoundingVolume{}, center{ (max + min) * 0.5f }, extents{ max.x - center.x, max.y - center.y, max.z - center.z }{}
@@ -91,6 +91,12 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 
 	// Expand to include another AABB
     inline void Encapsulate(const AABB& other) {
+		if (extents == Vector3(0)) { // treat as empty box
+			center = other.center;
+			extents = other.extents;
+			return;
+		}
+		
         Vector3 min = GetMin();
         Vector3 max = GetMax();
         Vector3 otherMin = other.GetMin();
@@ -110,6 +116,11 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 
     // Expand to include a single point
     inline void Encapsulate(const Vector3& point) {
+		if (extents == Vector3(0)) {
+			center = point;
+			return; // first point initializes box
+		}
+		
         Vector3 min = GetMin();
         Vector3 max = GetMax();
 

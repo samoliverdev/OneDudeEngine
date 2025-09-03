@@ -1168,8 +1168,8 @@ void StandRenderPipeline::Update(){
 
                     auto targetMaterial = model->materials[i.materialIndex];
                     auto targetMesh = model->meshs[i.meshIndex];
-                    auto targetMatrix = t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-                    auto aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrixReadSafe());
+                    auto targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+                    auto aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
                     if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                         targetMaterial = c.GetMaterialsOverride()[i.materialIndex];
                     }
