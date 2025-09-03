@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Math.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Serialization/Serialization.h"
 
@@ -41,20 +42,18 @@ struct Keyframe {
         ArchiveDumpNVP(ar, in_tangent);
         ArchiveDumpNVP(ar, out_tangent);
         ArchiveDumpNVP(ar, curve_type);
-        /*ar(
-            cereal::make_nvp("time", time),
-            cereal::make_nvp("value", value),
-            cereal::make_nvp("in_tangent", in_tangent),
-            cereal::make_nvp("out_tangent", out_tangent),
-            cereal::make_nvp("curve_type", reinterpret_cast<int&>(curve_type))
-        );*/
     }
 };
 
 // Animation curve class
 class AnimationCurve {
+    friend void DrawCurvePreview(AnimationCurve& curve, ImVec2 size, bool* open_editor);
+    friend void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size);
 public:
     std::vector<Keyframe> keyframes;
+
+    AnimationCurve() = default;
+    AnimationCurve(std::vector<Keyframe>&& inkeyframes):keyframes(std::move(inkeyframes)){}
 
     // Add a keyframe
     void AddKeyframe(float time, float value, CurveType type = CurveType::Linear);
@@ -69,10 +68,16 @@ public:
     template<class Archive>
     void serialize(Archive& ar) {
         ArchiveDumpNVP(ar, keyframes);
+        ArchiveDumpNVP(ar, minMaxValue);
+        ArchiveDumpNVP(ar, minMaxTime);
         //archive(cereal::make_nvp("keyframes", keyframes));
     }
 
     void OnGui(cereal::ImGuiArchive& ar);
+private:
+    bool show_curve_editor = false;
+    Vector2 minMaxValue = {-1.0f, 1.0f};
+    Vector2 minMaxTime = {-0.0f, 1.0f};
 };
 
 void DrawCurvePreview(AnimationCurve& curve, ImVec2 size = ImVec2(100, 50), bool* open_editor = nullptr);

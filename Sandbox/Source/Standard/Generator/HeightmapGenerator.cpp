@@ -2,6 +2,7 @@
 #include "Standard/Ultis/FastNoiseLiteCpp.h"
 #include "Standard/Ultis/Ultis.h"
 #include "OD/Terrain/Terrain.h"
+#include "OD/Graphics/Texture.h"
 #include "OD/Core/ImGui.h"
 #include <taskflow/taskflow.hpp>
 
@@ -222,7 +223,7 @@ Ref<Heightmap> HeightmapGenerator::GenerateHeightmapFast(int seed){
 
                     float noise = noise2.GetNoise((x+offset.x)*scale, (y+offset.y)*scale);
                     if(to01) noise = noise * 0.5f + 0.5f;
-                    noise = curve.Evaluate(noise);
+                    if(useCurver) noise = curve.Evaluate(noise);
                     noise = math::pow(noise, power);
                     noise = math::pow(noise, power2);
 
@@ -231,6 +232,151 @@ Ref<Heightmap> HeightmapGenerator::GenerateHeightmapFast(int seed){
                     }
 
                     noiseMap->Set(x, y, noise);
+                }
+            }
+        });
+    }
+
+    executor.run(taskflow).wait();
+
+    return noiseMap;
+}
+
+Ref<Heightmap> HeightmapGeneratorAdvanced::GenerateHeightmap(int seed, int genOnlyLayer){
+    Ref<Heightmap> noiseMap = CreateRef<Heightmap>(width, height);
+
+    FastNoiseLite layer0;
+    layer0.SetSeed(seed);
+    layer0.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    layer0.SetFractalType(FastNoiseLite::FractalType_FBm);
+    layer0.SetFractalOctaves(erosion.octaves);
+    layer0.SetFractalLacunarity(erosion.lacunarity);
+    layer0.SetFractalGain(erosion.persistance);
+    if(erosion.scale <= 0) erosion.scale = 0.0001f;
+
+    FastNoiseLite layer1;
+    layer1.SetSeed(seed+1);
+    layer1.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    layer1.SetFractalType(FastNoiseLite::FractalType_FBm);
+    layer1.SetFractalOctaves(continentalness.octaves);
+    layer1.SetFractalLacunarity(continentalness.lacunarity);
+    layer1.SetFractalGain(continentalness.persistance);
+    if(continentalness.scale <= 0) continentalness.scale = 0.0001f;
+
+    FastNoiseLite layer2;
+    layer2.SetSeed(seed+2);
+    layer2.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    layer2.SetFractalType(FastNoiseLite::FractalType_FBm);
+    layer2.SetFractalOctaves(peaksValleys.octaves);
+    layer2.SetFractalLacunarity(peaksValleys.lacunarity);
+    layer2.SetFractalGain(peaksValleys.persistance);
+    if(peaksValleys.scale <= 0) peaksValleys.scale = 0.0001f;
+
+    float halfWidth  = width  / 2.0f;
+    float halfHeight = height / 2.0f;
+
+    // --- Taskflow setup ---
+    tf::Taskflow taskflow;
+    tf::Executor executor;
+
+    unsigned num_threads = std::thread::hardware_concurrency();
+    if(num_threads == 0) num_threads = 4; // fallback
+
+    // Divide rows into chunks
+    int rows_per_task = (height + num_threads - 1) / num_threads;
+
+    for(unsigned t = 0; t < num_threads; t++) {
+        int y_start = t * rows_per_task;
+        int y_end   = std::min<int>(y_start + rows_per_task, height);
+
+        if(y_start >= y_end) continue;
+
+        taskflow.emplace([=, &layer0, &layer1, &layer2, &noiseMap]() {
+            for(int y = y_start; y < y_end; y++) {
+                for(int x = 0; x < width; x++) {
+                    float _x = x / (float)width * 2 - 1;
+                    float _y = y / (float)height * 2 - 1;
+                    float _falloff = math::max(math::abs(_x), math::abs(_y));
+                    float a = 3;
+                    float b = 2.2f;
+                    _falloff = 1 - math::pow(_falloff, a) / 
+                               (math::pow(_falloff, a) + math::pow(b - b * _falloff, a));
+
+                    float noise0 = layer0.GetNoise((x+erosion.offset.x)*erosion.scale, (y+erosion.offset.y)*erosion.scale);
+                    if(erosion.to01) noise0 = noise0 * 0.5f + 0.5f;
+                    if(erosion.useCurver) noise0 = erosion.curve.Evaluate(noise0);
+                    noise0 = math::pow(noise0, erosion.power);
+                    noise0 = math::pow(noise0, erosion.power2);
+
+                    float noise1 = layer1.GetNoise((x+continentalness.offset.x)*continentalness.scale, (y+continentalness.offset.y)*continentalness.scale);
+                    if(continentalness.to01) noise1 = noise1 * 0.5f + 0.5f;
+                    if(continentalness.useCurver) noise1 = continentalness.curve.Evaluate(noise1);
+                    noise1 = math::pow(noise1, continentalness.power);
+                    noise1 = math::pow(noise1, continentalness.power2);
+
+                    float noise2 = layer2.GetNoise((x+peaksValleys.offset.x)*peaksValleys.scale, (y+peaksValleys.offset.y)*peaksValleys.scale);
+                    if(peaksValleys.to01) noise2 = noise2 * 0.5f + 0.5f;
+                    if(peaksValleys.useCurver) noise2 = peaksValleys.curve.Evaluate(noise2);
+                    noise2 = math::pow(noise2, peaksValleys.power);
+                    noise2 = math::pow(noise2, peaksValleys.power2);
+                    
+                    float finalNoise = noise1;
+
+                    // Remap from one range to another
+                    auto Remap = [](float v, float minIn, float maxIn, float minOut, float maxOut){
+                        return minOut + (v - minIn) * (maxOut - minOut) / (maxIn - minIn);
+                    };
+
+                    // Smooth step curve
+                    auto SmoothStep = [](float edge0, float edge1, float x) {
+                        float t = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+                        return t * t * (3.0f - 2.0f * t);
+                    };
+
+                    /*float cont = Remap(noise1, 0, 1, -1, 1);   // continentalness
+                    float ero  = Remap(noise0, 0, 1, 0, 1);     // erosion
+                    float pv   = Remap(noise2, 0, 1, -1, 1);     // peaks & valleys
+
+                    // --- Step 1: Base terrain from continentalness ---
+                    float oceanLevel      = 0.2f; //0.25f;  // sea level (0–1 space)
+                    float continentHeight = 0.5f; //0.55f;  // average land height
+                    float baseHeight = math::mix(oceanLevel, continentHeight, cont * 0.5f + 0.5f);
+
+                    // --- Step 2: Peaks & valleys modulation ---
+                    float mountainFactor = SmoothStep(0.0f, 0.4f, cont);  //SmoothStep(0.2f, 0.8f, cont); // mountains appear inland
+                    float maxMountainHeight = 1.0f; //0.35f; // how tall mountains can be (in [0–1])
+                    float mountainHeight = pv * mountainFactor * maxMountainHeight;
+
+                    // --- Step 3: Apply erosion ---
+                    float ruggedness = mountainHeight * (1.0f - ero);
+
+                    // --- Step 4: Combine ---
+                    float height = baseHeight + ruggedness;
+                    height = math::mix<float>(height, baseHeight * 0.9f, ero);
+
+                    // --- Step 5: Clamp/normalize ---
+                    finalNoise = std::clamp(height, 0.0f, 1.0f);*/
+
+                    //finalNoise = math::mix(noise1, noise0, noise2 * noise0);
+                    
+                    float cont = Remap(noise1, 0, 1, -1, 1);   // continentalness
+                    float ero  = Remap(noise0, 0, 1, 0, 1);     // erosion
+                    float pv   = Remap(noise2, 0, 1, -1, 1);     // peaks & valleys
+
+                    finalNoise = cont * (1 - ero);
+                    //finalNoise = finalNoise + math::min<float>(pv * 1.0f, 0);
+                    finalNoise = finalNoise + ((pv * 0.35f) * (1 - ero));
+                    finalNoise = Remap(finalNoise, -1, 1, 0, 1);
+
+                    if(genOnlyLayer == 0) finalNoise = noise0;
+                    if(genOnlyLayer == 1) finalNoise = noise1;
+                    if(genOnlyLayer == 2) finalNoise = noise2;
+
+                    if(falloff) {
+                        finalNoise = finalNoise * _falloff;
+                    }
+
+                    noiseMap->Set(x, y, finalNoise);
                 }
             }
         });
