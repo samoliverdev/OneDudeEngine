@@ -43,7 +43,7 @@ struct OD_API alignas(16) SkinnedDrawCommand{
 };
 
 //In my quick test i dont have any performace gain
-//#define USE_INSTANCING_MATRIX43
+#define USE_INSTANCING_MATRIX43 //TODO Fix this, is not work with the StaticRendererClusterComponent genInstancingCommands
 
 struct OD_API DrawInstancingCommand{
     //AlignedVector<Matrix4> trans;

@@ -9,6 +9,7 @@
 
 namespace OD{
 
+//TODO: Check if this is make dont have any individual culling check
 struct OD_API StaticRendererClusterComponent{
     friend class StandRenderPipeline;
     friend class RenderContext;

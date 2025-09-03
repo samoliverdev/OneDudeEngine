@@ -294,13 +294,20 @@ Ref<Heightmap> HeightmapGeneratorAdvanced::GenerateHeightmap(int seed, int genOn
         taskflow.emplace([=, &layer0, &layer1, &layer2, &noiseMap]() {
             for(int y = y_start; y < y_end; y++) {
                 for(int x = 0; x < width; x++) {
-                    float _x = x / (float)width * 2 - 1;
+                    /*float _x = x / (float)width * 2 - 1;
                     float _y = y / (float)height * 2 - 1;
                     float _falloff = math::max(math::abs(_x), math::abs(_y));
                     float a = 3;
                     float b = 2.2f;
-                    _falloff = 1 - math::pow(_falloff, a) / 
-                               (math::pow(_falloff, a) + math::pow(b - b * _falloff, a));
+                    _falloff = 1 - math::pow(_falloff, a) / (math::pow(_falloff, a) + math::pow(b - b * _falloff, a));*/
+
+                    float nx = (x / (float)width ) * 2 - 1;   // [-1,1]
+                    float ny = (y / (float)height) * 2 - 1;   // [-1,1]
+                    float dist = sqrt(nx * nx + ny * ny);     // radial distance
+                    dist = math::clamp(dist, 0.0f, 1.0f);     // keep inside [0,1]
+                    float a = 3.0f;
+                    float b = 2.2f;
+                    float _falloff = 1.0f - pow(dist, a) / (pow(dist, a) + pow(b - b * dist, a));
 
                     float noise0 = layer0.GetNoise((x+erosion.offset.x)*erosion.scale, (y+erosion.offset.y)*erosion.scale);
                     if(erosion.to01) noise0 = noise0 * 0.5f + 0.5f;
@@ -359,14 +366,22 @@ Ref<Heightmap> HeightmapGeneratorAdvanced::GenerateHeightmap(int seed, int genOn
 
                     //finalNoise = math::mix(noise1, noise0, noise2 * noise0);
                     
-                    float cont = Remap(noise1, 0, 1, -1, 1);   // continentalness
+                    /*float cont = Remap(noise1, 0, 1, -1, 1);   // continentalness
                     float ero  = Remap(noise0, 0, 1, 0, 1);     // erosion
                     float pv   = Remap(noise2, 0, 1, -1, 1);     // peaks & valleys
 
                     finalNoise = cont * (1 - ero);
                     //finalNoise = finalNoise + math::min<float>(pv * 1.0f, 0);
                     finalNoise = finalNoise + ((pv * 0.35f) * (1 - ero));
-                    finalNoise = Remap(finalNoise, -1, 1, 0, 1);
+                    finalNoise = Remap(finalNoise, -1, 1, 0, 1);*/
+
+                    //finalNoise = noise1;
+
+                    float cont = Remap(noise1, 0, 1, 0, 1);   // continentalness
+                    float ero  = Remap(noise0, 0, 1, 0, 1);     // erosion
+                    float pv   = Remap(noise2, 0, 1, 0, 1);     // peaks & valleys
+                    finalNoise = (cont * 0.6f) + ((ero * 0.4f));
+                    //finalNoise = Remap(finalNoise, -1, 1, 0, 1);
 
                     if(genOnlyLayer == 0) finalNoise = noise0;
                     if(genOnlyLayer == 1) finalNoise = noise1;
