@@ -377,15 +377,36 @@ Ref<Heightmap> HeightmapGeneratorAdvanced::GenerateHeightmap(int seed, int genOn
 
                     //finalNoise = noise1;
 
-                    float cont = Remap(noise1, 0, 1, 0, 1);   // continentalness
+                    /*float cont = Remap(noise1, 0, 1, 0, 1);   // continentalness
                     float ero  = Remap(noise0, 0, 1, 0, 1);     // erosion
                     float pv   = Remap(noise2, 0, 1, 0, 1);     // peaks & valleys
-                    finalNoise = (cont * 0.6f) + ((ero * 0.4f));
+                    finalNoise = (cont * 0.6f) + ((ero * 0.4f));*/
                     //finalNoise = Remap(finalNoise, -1, 1, 0, 1);
+
+                    auto peaksAndValleys = [](float weirdness){
+                        return weirdness;
+                        return -(math::abs(math::abs(weirdness) - 0.6666667f) - 0.33333334f) * 3.0f;
+                    };
+                    auto peaksAndValleys2 = [&](float weirdness){
+                        weirdness = Remap(weirdness, 0, 1, -1, 1);
+                        float value =  1.0f - math::abs((3.0f * math::abs(weirdness)) - 2.0f);
+                        return Remap(value, -1, 1, 0, 1);
+                    };
+
+                    float continentalness = Remap(noise1, 0, 1, -1, 1); 
+                    float erosion = Remap(noise0, 0, 1, 0, 1);
+                    float weirdness = Remap(noise2, 0, 1, 0, 1);  
+
+                    float base = continentalness * 0.4f;
+                    float ridges = peaksAndValleys2(weirdness);
+
+                    float mountains = base + ridges * (1.0f - erosion);
+                    float height = math::mix(mountains, base, erosion);
+                    finalNoise = math::clamp<float>(Remap(height, -1, 1, 0, 1), 0, 1);
 
                     if(genOnlyLayer == 0) finalNoise = noise0;
                     if(genOnlyLayer == 1) finalNoise = noise1;
-                    if(genOnlyLayer == 2) finalNoise = noise2;
+                    if(genOnlyLayer == 2) finalNoise = ridges;
 
                     if(falloff) {
                         finalNoise = finalNoise * _falloff;
