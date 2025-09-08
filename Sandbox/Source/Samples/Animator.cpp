@@ -553,6 +553,7 @@ void AnimatorSample::OnInit(){
 
     LogInfo("AnimationCount: %zd", charModel->animationClips.size());
 
+    //TODO: Add this patter to the Animator system to impruve cache acess
     auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
 	auto& entities = *view.handle();
     size_t total_entities = entities.size(); // Should be 100

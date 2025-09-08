@@ -92,6 +92,81 @@ void AnimatorSystem::Update(){
     }
 }
 
+#include <thread>   // for std::thread::hardware_concurrency
+
+template<typename... Components, typename Func>
+void ParallelForEach(Scene* scene, Func&& func){
+    auto view = scene->GetRegistry().view<Components...>();
+    auto& entities = *view.handle();
+
+    size_t total_entities = entities.size();
+    if (total_entities == 0)
+        return;
+
+    unsigned int numTasks = std::thread::hardware_concurrency();
+    if (numTasks == 0) numTasks = 1;
+
+    size_t entities_per_task = total_entities / numTasks;
+    size_t remaining_entities = total_entities % numTasks;
+
+    size_t start_idx = 0;
+    for (unsigned int task = 0; task < numTasks; ++task) {
+        size_t count = entities_per_task + (task < remaining_entities ? 1 : 0);
+        size_t task_start = start_idx; // capture by value
+
+        scene->GetTaskflow().emplace([task_start, task, count, &entities, &view, &func, scene, numTasks, remaining_entities, total_entities, entities_per_task]() {
+            for (size_t i = task_start; i < task_start + count && i < entities.size(); ++i) {
+                auto entity = entities[i];
+                func(entity, view.get<Components>(entity)...);
+            }
+        });
+
+        start_idx += count;
+    }
+
+    scene->GetExecutor().run(scene->GetTaskflow()).wait();
+    scene->GetTaskflow().clear();
+}
+
+template<typename... Components, typename Func>
+void ParallelForEach2(Scene* scene, Func&& func) {
+    auto view = scene->GetRegistry().view<Components...>();
+    auto& entities = *view.handle(); // keep reference, cheap and safe
+
+    size_t total_entities = entities.size();
+    if (total_entities == 0)
+        return;
+
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 1;
+
+    size_t blockSize = total_entities / numThreads;
+    size_t remaining = total_entities % numThreads;
+
+    size_t start_idx = 0;
+
+    scene->GetTaskflow().emplace([&entities, total_entities, blockSize, remaining, numThreads, &func, &view](tf::Subflow& subflow) {
+        size_t idx = 0;
+        for (unsigned int t = 0; t < numThreads; ++t) {
+            size_t count = blockSize + (t < remaining ? 1 : 0);
+            size_t blockStart = idx;
+
+            // create a task per block
+            subflow.emplace([blockStart, count, &entities, &view, &func]() {
+                for (size_t i = blockStart; i < blockStart + count && i < entities.size(); ++i) {
+                    auto entity = entities[i];
+                    func(entity, view.get<Components>(entity)...);
+                }
+            });
+
+            idx += count;
+        }
+    });
+
+    scene->GetExecutor().run(scene->GetTaskflow()).wait();
+    scene->GetTaskflow().clear();
+}
+
 void AnimatorSystem::AnimationUpdate(){
     #ifdef __EMSCRIPTEN__
     return;
@@ -164,15 +239,22 @@ void AnimatorSystem::AnimationUpdate(){
         }
     };
 
-    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
-    auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
-
     #if InternalSystemsMulthread
+        auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+        auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
         scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
             for(auto [entity, anim, skinned]: view.each()){
                 subflow.emplace([&](){ HandlerAnimatorByModel(skinned, anim); });
             }
         });
+
+        /* //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
+        ParallelForEach2<AnimatorComponent, SkinnedModelRendererComponent>(
+            scene, 
+            [&](auto entity, AnimatorComponent& anim, SkinnedModelRendererComponent& skinned){
+                HandlerAnimatorByModel(skinned, anim); 
+            }
+        );*/
 
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
@@ -180,6 +262,8 @@ void AnimatorSystem::AnimationUpdate(){
             scene->GetTaskflow().emplace([&](){ HandlerAnimatorByMesh(skinned, anim); });
         }
     #else 
+        auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+        auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
         for(auto [entity, anim, skinned]: view.each()){
             HandlerAnimatorByModel(skinned, anim);
         }
