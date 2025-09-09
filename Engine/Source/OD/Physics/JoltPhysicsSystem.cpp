@@ -1258,8 +1258,13 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition()/* + ragdoll.parts[p].shape.center*/));
 		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.LocalRotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
-		auto twist_axis = ToJolt(trans.TransformDirection(ragdoll.parts[p].twistAxis));
-		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ())));
+
+		auto twist_axis = ToJolt(trans.TransformDirection(math::normalizeSafe(ragdoll.parts[p].twistAxis)));
+		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ()))); 
+
+		//auto twist_axis = ToJolt(trans.TransformDirection(boneTrans.TransformDirection(ragdoll.parts[p].twistAxis)));
+		//auto planeAxisWorld = ToJolt(trans.TransformDirection(boneTrans.TransformDirection({0, 0, 1})));
+		
 		//auto twist_angle = ragdoll.parts[p].twistAngle;
 		auto normal_angle = ragdoll.parts[p].normalAngle;
 		auto plane_angle = ragdoll.parts[p].planeAngle;

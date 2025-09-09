@@ -163,6 +163,7 @@ void ParallelForEach2(Scene* scene, Func&& func) {
         }
     });
 
+    //NOTE: i need call this becose the view is destrued on the end of this functions, so maybe in the function use system and sub system to sync the jobs
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
     scene->GetTaskflow().clear();
 }
@@ -242,19 +243,19 @@ void AnimatorSystem::AnimationUpdate(){
     #if InternalSystemsMulthread
         auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
         auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
-        scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
+        /*scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
             for(auto [entity, anim, skinned]: view.each()){
                 subflow.emplace([&](){ HandlerAnimatorByModel(skinned, anim); });
             }
-        });
+        });*/
 
-        /* //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
+         //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
         ParallelForEach2<AnimatorComponent, SkinnedModelRendererComponent>(
             scene, 
             [&](auto entity, AnimatorComponent& anim, SkinnedModelRendererComponent& skinned){
                 HandlerAnimatorByModel(skinned, anim); 
             }
-        );*/
+        );
 
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);

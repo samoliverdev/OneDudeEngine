@@ -723,7 +723,7 @@ void Scene::Update(){
     OD_PROFILE_SCOPE("Scene::Update");
     
     //INFO: Experimental Try Catch
-    try{
+    //try{
 
     for(auto e: toDestroy){
         _DestroyEntity(e, true);
@@ -784,9 +784,9 @@ void Scene::Update(){
     
     //TransformComponent::UpdateAllTransformMatrix(*this);
 
-    }catch(...){
+    /*}catch(...){
         Assert(false && "Scene::Update Catch Error"); //TODO: Make the scene stop and the Editor handle this too.
-    }
+    }*/
 }
 
 void Scene::Draw(){

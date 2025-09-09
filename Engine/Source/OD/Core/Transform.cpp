@@ -32,6 +32,9 @@ Vector3 Transform::InverseTransformDirection(Vector3 dir){
 }
 
 Vector3 Transform::TransformDirection(Vector3 dir){
+    /*auto rotation = math::mat3(GetLocalModelMatrix()); // upper-left 3x3
+    return rotation * dir;*/
+
     Matrix4 matrix4 = GetLocalModelMatrix();
     return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
 }

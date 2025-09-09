@@ -1179,6 +1179,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = ((int)e) + 1;
 
+            if(c.useCustomData){
+                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.vector4_0[0] = c.customData;
+            }
+
+            #if EnableExperimentalPerDrawCustomData
+            data.useCustomData = c.useCustomData;
+            data.customData = c.customData;
+            #endif
+
             onReciveRenderData(data);
             _i += 1;
         }
@@ -1268,6 +1278,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = ((int)e) + 1;
 
+            if(c.useCustomData){
+                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.vector4_0[0] = c.customData;
+            }
+
+            #if EnableExperimentalPerDrawCustomData
+            data.useCustomData = c.useCustomData;
+            data.customData = c.customData;
+            #endif
+
             onReciveRenderData(data);
             _i += 1;
         }
@@ -1305,6 +1325,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         data.perDrawData.int_0.resize(1);
         data.perDrawData.int_0[0] = (int)e;
+
+        if(c.useCustomData){
+            data.perDrawData.vector4_0.resize(1);
+            data.perDrawData.vector4_0[0] = c.customData;
+        }
+
+        #if EnableExperimentalPerDrawCustomData
+        data.useCustomData = c.useCustomData;
+        data.customData = c.customData;
+        #endif
 
         onReciveRenderData(data);
     }
@@ -1352,6 +1382,17 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = (int)e;
+
+            if(c.useCustomData){
+                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.vector4_0[0] = c.customData;
+            }
+
+            #if EnableExperimentalPerDrawCustomData
+            data.useCustomData = c.useCustomData;
+            data.customData = c.customData;
+            #endif
+
             if(c.updateWhenOffscreen) data.awalsDraw = true;
             
             onReciveRenderData(data);

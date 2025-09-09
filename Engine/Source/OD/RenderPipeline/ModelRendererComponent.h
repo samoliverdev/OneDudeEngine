@@ -28,6 +28,9 @@ struct OD_API ModelRendererComponent{
     bool draw = true;
     Transform localTransform;
 
+    bool useCustomData = false;
+    Vector4 customData;
+
     struct alignas(16) RenderData{
         Matrix4 model;
         AABB aabb;
