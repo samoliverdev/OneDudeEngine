@@ -1383,6 +1383,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.int_0.resize(1);
             data.perDrawData.int_0[0] = (int)e;
 
+            data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
+
             if(c.useCustomData){
                 data.perDrawData.vector4_0.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
@@ -1526,6 +1528,8 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
         //SetStandUniforms(cam, *material.GetShader()); 
 
         //Graphics::SetDepthTest(DepthTest::EQUAL);
+
+        if(material.MainPass() != -1) material.SetPass(material.MainPass());
 
         if(deferred){
             material.EnableKeyword("Deferred");
@@ -1734,7 +1738,8 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
-            data.posePalette
+            data.posePalette,
+            data.perDrawData
         }, data.distance);
         return;
     }
@@ -1787,6 +1792,10 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
  
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //Shader::SetMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
+        if(material.DepthPass() != -1){
+            material.SetPass(material.DepthPass());
+            //LogInfo("Set Shadow Pass of: %s", material.GetShader()->Path().c_str());
+        }
     };
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;

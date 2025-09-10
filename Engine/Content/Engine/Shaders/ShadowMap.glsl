@@ -13,14 +13,14 @@ BeginUniform(0, 0, Main)
     Uniform mat4 lightSpaceMatrix;
 EndUniform()
 
-#if defined(VERTEX) && defined(MainPass)
+#if defined(VERTEX)
     //uniform mat4 lightSpaceMatrix;
     void main(){
         gl_Position = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
     }
 #endif
 
-#if defined(FRAGMENT) && defined(MainPass)
+#if defined(FRAGMENT)
     void main(){            
         // gl_FragDepth = gl_FragCoord.z;
     } 

@@ -1041,17 +1041,6 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
-        /*SetColorMask(mat.currentShader->pipeline.colorMask);
-        SetCullFace(mat.currentShader->GetCullFace());
-        SetDepthTest(mat.currentShader->GetDepthTest());
-        SetDepthMask(mat.currentShader->IsDepthMask());
-        if(mat.currentShader->IsBlend()){
-            SetBlend(true);
-            SetBlendFunc(mat.currentShader->GetSrcBlend(), mat.currentShader->GetDstBlend());
-        } else {
-            SetBlend(false);
-        }*/
-
         SubShaderBind(*material.currentShader);
         ApplyUniformTo(material, *material.currentShader, material.maps);
         ApplyUniformTo(material, *material.currentShader, Material::globalMaps);

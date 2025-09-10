@@ -48,6 +48,15 @@ void Material::SetShader(Ref<Shader> s){
     UpdateCurrentShader();
     UpdateMaps(); 
 
+    for(int i = 0; i < shader->passes.size(); i++){
+        if(shader->passes[i].name == "MainPass"){
+            mainPass = i;
+        }
+        if(shader->passes[i].name == "DepthPass"){
+            depthPass = i;
+        }
+    }
+
     graphicsDevice->MaterialOnSetShader(*this);
 }
 
@@ -334,6 +343,19 @@ std::set<std::string> Material::GetEnabledKeywords(){
         }
     }
     return out;
+}
+
+void Material::SetPass(int i){
+    currentPass = i;
+}
+
+int Material::GetPass(){
+    return currentPass;
+}
+
+int Material::PassCount(){
+    if(shader == nullptr) return 0;
+    return shader->passes.size();
 }
 
 std::string Material::GetKey(const std::set<std::string>& keyworlds){

@@ -136,6 +136,12 @@ public:
 
     void DisableKeyword(const std::string& keyword);
     void EnableKeyword(const std::string& keyword);
+    void SetPass(int i);
+    int GetPass();
+    int PassCount();
+
+    inline int MainPass(){ return mainPass; }
+    inline int DepthPass(){ return depthPass; }
 
     void CleanData();
     //void UpdateDatas();
@@ -163,11 +169,14 @@ public:
     }
 
 private:
+    int mainPass = -1;
+    int depthPass = -1;
+
     bool enableInstancing = false;
     int currentTextureSlot = 0;
     int currentBufferSlot = 0;
 
-    std::set<std::string> enabledKeywords{};
+    std::set<std::string> enabledKeywords{}; //TODO: Make this per pass
 
     Ref<Shader> shader = nullptr;
     std::vector<std::string> properties{};
