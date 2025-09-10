@@ -286,8 +286,11 @@ public:
     void SetOverrideCamera(Camera* cam, Transform trans) override;
     Framebuffer* FinalColor() override;
 
-    int Type() override { return SystemType::Renderer | SystemType::Stand; }
+    inline bool ExecuteAlways() override { return true; }
+
+    int Type() override { return SystemType::Renderer | SystemType::Stand | SystemType::Late; }
     void Update() override;
+    void LateUpdate() override;
     void Render() override;
 
     void OnDrawGizmos(Camera& cam) override;

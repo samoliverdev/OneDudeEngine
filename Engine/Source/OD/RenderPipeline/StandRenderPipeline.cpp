@@ -5,6 +5,7 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Geometry.h"
 #include "OD/Graphics/Font.h"
+#include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
@@ -38,6 +39,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<StaticRendererComponent>("StaticRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<MeshRendererComponent>("MeshRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SkinnedMeshRendererComponent>("SkinnedMeshRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<SkinnedBoneSocket>("SkinnedBoneSocket", "Renderer");
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent", "Renderer");
@@ -1146,6 +1148,8 @@ int StandRenderPipeline::ReadEntityId(int x, int y){
 }
 
 void StandRenderPipeline::Update(){
+    if(scene->Running() == false) return;
+
     auto viewStaticRendererCluster = scene->GetRegistry().view<TransformComponent, StaticRendererClusterComponent>();
     for(auto [entity, trans, staticRendererCluster]: viewStaticRendererCluster.each()){
         if(staticRendererCluster.autoCollectChildRenderers && staticRendererCluster.started == false){
@@ -1189,6 +1193,34 @@ void StandRenderPipeline::Update(){
             
             staticRendererCluster.CreateIntancingCommands();
         }
+    }
+}
+
+void StandRenderPipeline::LateUpdate(){
+    auto viewSkinnedModelSocket = scene->GetRegistry().view<TransformComponent, SkinnedBoneSocket>();
+    for(auto [entity, trans, socket]: viewSkinnedModelSocket.each()){
+        if(socket.boneIndex < 0) continue;
+        if(trans.HasParent() == false) continue;
+        if(scene->HasComponent<SkinnedModelRendererComponent>(trans.Parent()) == false) continue;
+
+        SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(trans.Parent());
+
+        if(socket.boneIndex >= skinned.finalPose.Size()) continue;
+
+        //trans.SetLocalModelMatrix(skinned.finalPose.GetGlobalMatrix(socket.boneIndex));
+
+        auto t = skinned.finalPose.GetGlobalTransform(socket.boneIndex);
+        trans.LocalPosition(t.LocalPosition() + socket.offset);
+        trans.LocalRotation(t.LocalRotation() * Quaternion(math::radians(socket.OffsetEuler)));
+
+        /*auto& pose = skinned.finalPose;
+        int parent = pose.GetParent(socket.boneIndex);
+        
+        if(parent < 0){
+            trans.SetLocalModelMatrix(skinned.localTransform.GetLocalModelMatrix() * skinned.skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(socket.boneIndex));
+        } else {
+            trans.SetLocalModelMatrix(pose.GetLocalMatrix(socket.boneIndex));
+        } */
     }
 }
 
