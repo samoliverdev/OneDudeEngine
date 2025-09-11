@@ -14,6 +14,9 @@
 #include <assert.h>
 #include <vector>
 #include <cstddef>
+#include <algorithm>
+#include <execution>
+#include <taskflow/algorithm/for_each.hpp>
 
 /*template<typename T>
 class ArenaAllocator{
@@ -403,6 +406,67 @@ public: // private:
     size_t curChunk = 0; // Current chunk index
 };
 
+template<typename Iter, typename Func>
+void tf_for_each(tf::Taskflow& taskflow, Iter begin, Iter end, Func func) {
+    size_t total = std::distance(begin, end);
+    if (total == 0) return;
+
+    const int num_threads = std::thread::hardware_concurrency();
+    size_t chunk = (total + num_threads - 1) / num_threads;
+
+    for (int t = 0; t < num_threads; ++t) {
+        auto chunk_begin = std::next(begin, t * chunk);
+        auto chunk_end   = (t + 1 < num_threads) 
+                         ? std::next(begin, (t + 1) * chunk)
+                         : end;
+
+        if (chunk_begin == end) break; // stop if overshooting
+
+        taskflow.emplace([=] {
+            for (auto it = chunk_begin; it != chunk_end; ++it) {
+                func(*it);
+            }
+        });
+    }
+}
+
+template<typename Iter, typename Func>
+void tf_for_each2(tf::Taskflow& taskflow, Iter begin, Iter end, Func func) {
+    size_t total = std::distance(begin, end);
+    if (total == 0) return;
+
+    const int num_threads = std::thread::hardware_concurrency();
+    size_t chunk = (total + num_threads - 1) / num_threads;
+
+    // Local helper lambda to move iterators
+    auto advance_iter = [](Iter it, size_t offset) {
+        if constexpr (std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iter>::iterator_category
+        >) {
+            LogInfo("Use Random Acess");
+            return it + offset;  // fast for random-access
+        } else {
+            return std::next(it, offset); // safe for forward iterators
+        }
+    };
+
+    for (int t = 0; t < num_threads; ++t) {
+        auto chunk_begin = advance_iter(begin, t * chunk);
+        auto chunk_end   = (t + 1 < num_threads)
+                         ? advance_iter(begin, (t + 1) * chunk)
+                         : end;
+
+        if (chunk_begin == end) break;
+
+        taskflow.emplace([=] {
+            for (auto it = chunk_begin; it != chunk_end; ++it) {
+                func(*it);
+            }
+        });
+    }
+}
+
 void AnimatorSample::OnInit(){
     //ArenaAllocator<int> allocator;
     //allocator.Init(sizeof(int) * 1); // Initialize with 1KB chunks
@@ -554,8 +618,11 @@ void AnimatorSample::OnInit(){
     LogInfo("AnimationCount: %zd", charModel->animationClips.size());
 
     //TODO: Add this patter to the Animator system to impruve cache acess
-    auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
-	auto& entities = *view.handle();
+    /*auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();
+    int aaa = std::distance(view.begin(), view.end());
+    LogInfo("---Count: %d", aaa);  
+
+	auto& entities = view.handle();
     size_t total_entities = entities.size(); // Should be 100
     size_t entities_per_task = total_entities / 4; // 25 entities per task
     size_t remaining_entities = total_entities % 4; // Handle any remainder
@@ -574,6 +641,32 @@ void AnimatorSample::OnInit(){
         });
     }
 
+    scene->GetExecutor().run(scene->GetTaskflow()).wait();
+    scene->GetTaskflow().clear();*/
+
+    /*auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
+    std::for_each(std::execution::par_unseq, view.begin(), view.end(), [&view](auto entity){
+        InfoComponent& info = view.get<InfoComponent>(entity);
+        AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
+        LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
+    });*/
+
+    /*auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
+    auto task = scene->GetTaskflow().for_each(view.begin(), view.end(), [&view](auto entity){
+        InfoComponent& info = view.get<InfoComponent>(entity);
+        AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
+        LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
+    }, tf::GuidedPartitioner( 0));
+    scene->GetExecutor().run(scene->GetTaskflow()).wait();
+    scene->GetTaskflow().clear();*/
+
+    auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
+    tf_for_each2(scene->GetTaskflow(), view.begin(), view.end(), [&view](auto entity){
+        InfoComponent& info = view.get<InfoComponent>(entity);
+        AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
+        LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
+    });
+    LogInfo("Task Count: %zd", scene->GetTaskflow().num_tasks());
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
     scene->GetTaskflow().clear();
 }
