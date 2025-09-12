@@ -1044,8 +1044,26 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         for(auto& chunk: c.chunks){
             //if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
 
+            /*
+            for(auto* r : receivers){
+                uint32_t wants = r->Wants(...);
+                if(wants){ 
+                    interested.push_back(r);
+                }
+            }
+            */
+
             for(auto& subchunk: chunk.subchunks){
                 //if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+
+                /*
+                for(auto* r : interested){
+                    uint32_t wants = r->Wants(...);
+                    if(wants == false){ 
+                        interested.remove(r);
+                    }
+                }
+                */
 
                 for(auto& renderTarget: subchunk.targets){
                     RenderData data;
@@ -1057,7 +1075,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                     data.posePalette = nullptr;
                     data.aabb = renderTarget.aabb;
 
-                    data.perDrawData.int_0.resize(1);
+                    /*
+                    for(auto* r : interested){
+                        uint32_t wants = r->Wants(...);
+                        if(wants == false){ 
+                            interested.remove(r);
+                        }
+                    }
+                    */
+
+                    data.perDrawData.int_0.resize(1);//TODO: Optimaze this, this can be make heap allocation
                     data.perDrawData.int_0[0] = 0;
 
                     #if EnableExperimentalPerDrawCustomData

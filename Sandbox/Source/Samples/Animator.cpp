@@ -660,12 +660,13 @@ void AnimatorSample::OnInit(){
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
     scene->GetTaskflow().clear();*/
 
-    auto view = scene->GetRegistry().view<InfoComponent, AnimatorComponent>();
+    auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();
     tf_for_each2(scene->GetTaskflow(), view.begin(), view.end(), [&view](auto entity){
         InfoComponent& info = view.get<InfoComponent>(entity);
         AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
         LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
     });
+
     LogInfo("Task Count: %zd", scene->GetTaskflow().num_tasks());
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
     scene->GetTaskflow().clear();

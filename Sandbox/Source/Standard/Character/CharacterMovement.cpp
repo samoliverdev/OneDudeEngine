@@ -36,10 +36,24 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
         groundNormal = Vector3Up;
     }
 
-    TransformComponent& cam = scene.GetComponent<TransformComponent>(scene.GetMainCamera());
-    moveDir = cam.Right() * GetAxisHorizontal() + cam.Back() * GetAxisVertical();
-    moveDir.y = 0.0f;
-    moveDir = math::normalizeSafe(moveDir);
+    if(handleInputs){
+        TransformComponent& cam = scene.GetComponent<TransformComponent>(scene.GetMainCamera());
+        moveDir = cam.Right() * GetAxisHorizontal() + cam.Back() * GetAxisVertical();
+        moveDir.y = 0.0f;
+        moveDir = math::normalizeSafe(moveDir);
+
+        if(moveType == MoveType::Free){
+            lookDir = moveDir;
+            lookDir.y = 0;
+            lookDir = math::normalizeSafe(lookDir);
+        }
+
+        if(moveType == MoveType::Strafe){
+            lookDir = cam.Back();
+            lookDir.y = 0;
+            lookDir = math::normalizeSafe(lookDir);
+        }
+    }
 
     Vector3 velocity;
 
@@ -72,10 +86,20 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
 
     rb.Velocity(velocity);
 
-    if (math::length(moveDir) > 0.001f) {
-        rb.Rotation(
-            math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), turnSpeed * Application::DeltaTime())
-        );
+    if(moveType == MoveType::Free){
+        if (math::length(moveDir) > 0.001f) {
+            rb.Rotation(
+                math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Application::DeltaTime())
+            );
+        }
+    }
+
+    if(moveType == MoveType::Strafe){
+        if (math::length(lookDir) > 0.001f) {
+            rb.Rotation(
+                math::slerp(rb.Rotation(), math::quatLookAt(-lookDir, Vector3Up), strafeTurnSpeed * Application::DeltaTime())
+            );
+        }
     }
 }
 

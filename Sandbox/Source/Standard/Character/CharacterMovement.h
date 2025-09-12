@@ -13,16 +13,24 @@ namespace Standard{
 
 class CharacterMovement{
 public:
-    bool enable = true;
+    enum class MoveType{
+        Free, Strafe
+    };
 
+    bool enable = true;
+    bool handleInputs = false;
+
+    MoveType moveType; 
     float moveSpeed = 6;
-    float turnSpeed = 20;
+    float freeTurnSpeed = 20;
+    float strafeTurnSpeed = 20;
 
     bool hasStarted = false;
     
     bool onGround = true;
     Vector3 groundNormal = Vector3Zero; 
     Vector3 moveDir = Vector3Zero;
+    Vector3 lookDir = Vector3Zero;
     bool lastStickToTheFloor = true;
 
     void OnStart(RigidbodyComponent& rb);
@@ -34,9 +42,12 @@ public:
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
+        ArchiveDumpNVP(ar, handleInputs);
 
+        ArchiveDumpNVP(ar, moveType);
         ArchiveDumpNVP(ar, moveSpeed);
-        ArchiveDumpNVP(ar, turnSpeed);
+        ArchiveDumpNVP(ar, freeTurnSpeed);
+        ArchiveDumpNVP(ar, strafeTurnSpeed);
 
         ArchiveDumpNVP(ar, onGround);
     }

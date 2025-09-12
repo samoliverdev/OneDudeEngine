@@ -4,7 +4,7 @@
 
 namespace OD{
 
-class FABRIKSolver{
+class OD_API FABRIKSolver{
 public:
     FABRIKSolver();
 
@@ -21,7 +21,7 @@ public:
     void SetLocalTransform(unsigned int index, const Transform& t);
     Transform GetGlobalTransform(unsigned int index);
 
-    bool Solver(const Transform& target);
+    bool Solve(const Transform& target);
 
 protected:
     std::vector<Transform> ikChain;
@@ -32,7 +32,7 @@ protected:
 
     void IKChainToWorld();
     void IterateForward(const Vector3& goal);
-    void InterateBackward(const Vector3& base);
+    void IterateBackward(const Vector3& base);
     void WorldToIKChain();
 };
 

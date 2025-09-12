@@ -4,7 +4,7 @@
 
 namespace OD{
 
-class CCDSolver{
+class OD_API CCDSolver{
 public:
     CCDSolver();
     
