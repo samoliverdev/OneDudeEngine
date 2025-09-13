@@ -8,8 +8,10 @@ namespace Standard{
 class ThirdPersonCamera{
 public:
     bool autoHiddenCursor = true;
+    bool handleInputs = true;
 
     float upOffset = 1.4f;
+    float rightOffset = 0.0f;
     float distance = 10.0f;
     float sensivity = 5;
 
@@ -31,18 +33,22 @@ public:
     bool hasStarted = false;
     
     void OnStart();
-    void OnUpdate(Scene& scene, OD::TransformComponent& transform);
+    void OnUpdate(Scene& scene, OD::TransformComponent& transform, bool updateInput = true);
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, lookAtTarget);
 
         ArchiveDumpNVP(ar, autoHiddenCursor);
+        ArchiveDumpNVP(ar, handleInputs);
         ArchiveDumpNVP(ar, upOffset);
+        ArchiveDumpNVP(ar, rightOffset);
         ArchiveDumpNVP(ar, distance);
         ArchiveDumpNVP(ar, sensivity);
         ArchiveDumpNVP(ar, yMin);
         ArchiveDumpNVP(ar, yMax);
+
+        ArchiveDumpNVP(ar, smoothingFactor);
     }
 };
 

@@ -47,11 +47,11 @@ void StandardAssetSystem::Update(){
         camera.OnUpdate(trans);
     }
 
-    /*auto tpsCameraView = scene->GetRegistry().view<ThirdPersonCamera, TransformComponent>();
+    auto tpsCameraView = scene->GetRegistry().view<ThirdPersonCamera, TransformComponent>();
     for(auto [entity, camera, trans]: tpsCameraView.each()){
         if(camera.hasStarted == false) camera.OnStart();
         camera.OnUpdate(*scene, trans);
-    }*/
+    }
 
     auto charMovemetView = scene->GetRegistry().view<CharacterMovement, TransformComponent, RigidbodyComponent>();
     for(auto [entity, movement, trans, rb]: charMovemetView.each()){
@@ -72,7 +72,7 @@ void StandardAssetSystem::LateUpdate(){
     auto tpsCameraView = scene->GetRegistry().view<ThirdPersonCamera, TransformComponent>();
     for(auto [entity, camera, trans]: tpsCameraView.each()){
         if(camera.hasStarted == false) camera.OnStart();
-        camera.OnUpdate(*scene, trans);
+        camera.OnUpdate(*scene, trans, false);
     }
 }
 

@@ -1041,7 +1041,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
-        SubShaderBind(*material.currentShader);
+        SubShaderBind(*material.currentShader); //TODO: Optmize thi by bind and ApplyUniformTo global of lastShader, and add material.currentTextureSlot by subshader instead of material 
         ApplyUniformTo(material, *material.currentShader, material.maps);
         ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
         Assert(material.currentTextureSlot < 32);

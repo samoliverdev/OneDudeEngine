@@ -9,6 +9,7 @@
 #include <OD/RenderPipeline/CameraComponent.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/Core/Application.h>
+#include <OD/Core/Instrumentor.h>
 #include <OD/Editor/Editor.h>
 #include <fstream>
 
@@ -43,7 +44,9 @@ struct BoidSystem: public OD::System{
     //System* Clone(Scene* inScene) const override{ return new BoidSystem(inScene); }
 
     void Update() override{
-        auto boidsView = scene->GetRegistry().view<TransformComponent, BoidComponent>();
+        OD_PROFILE_SCOPE("BoidSystem::Update");
+
+        auto boidsView = scene->GetRegistry().group<TransformComponent, BoidComponent>();
         for(auto e: boidsView){
             TransformComponent& trans = boidsView.get<TransformComponent>(e);
             BoidComponent& boid = boidsView.get<BoidComponent>(e);
