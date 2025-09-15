@@ -138,6 +138,7 @@ void SceneManager::RegisterCoreComponent(const std::string& name, const std::str
     SerializeFuncs funcs;
 
     funcs.groupName = groupName;
+    funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
@@ -226,6 +227,7 @@ void SceneManager::RegisterTagComponent(const std::string& name, const std::stri
     SerializeFuncs funcs;
 
     funcs.groupName = groupName;
+    funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.GetRegistry().emplace<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
@@ -269,6 +271,7 @@ void SceneManager::RegisterComponent(const std::string& name, const std::string&
     SerializeFuncs funcs;
 
     funcs.groupName = groupName;
+    funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };

@@ -43,13 +43,29 @@ struct BoidSystem: public OD::System{
     BoidSystem(Scene* inScene):System(inScene){}
     //System* Clone(Scene* inScene) const override{ return new BoidSystem(inScene); }
 
+    template<typename T>
+    size_t get_index(T* base, T* ptr) {
+        return static_cast<size_t>(ptr - base);
+    }
+
     void Update() override{
         OD_PROFILE_SCOPE("BoidSystem::Update");
 
+        //entt::view<entt::get_t<TransformComponent, BoidComponent>> boidsView = scene->GetRegistry().view<TransformComponent, BoidComponent>();
+        //auto test = std::make_shared<entt::view<entt::get_t<TransformComponent, BoidComponent>>>(boidsView);
+
         auto boidsView = scene->GetRegistry().group<TransformComponent, BoidComponent>();
+        
+        auto firstTrans = &std::get<1>(*boidsView.each().begin());
+        auto firstBoid  = &std::get<2>(*boidsView.each().begin());
+
         for(auto e: boidsView){
             TransformComponent& trans = boidsView.get<TransformComponent>(e);
             BoidComponent& boid = boidsView.get<BoidComponent>(e);
+
+            size_t transIndex = get_index(firstTrans, &trans);
+            size_t boidIndex  = get_index(firstBoid, &boid);
+            LogInfo("Entity index: %zd, Boid index: %zd", transIndex, boidIndex);
 
             Vector3 separationSum = Vector3Zero;
             Vector3 coheshionSum = Vector3Zero;
@@ -164,6 +180,9 @@ void BoidsSample::OnInit(){
         TransformComponent& trans = scene->GetComponent<TransformComponent>(boid);
         trans.LocalPosition(Vector3(random(-posRange, posRange), random(-posRange, posRange), random(-posRange, posRange)));
         trans.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+
+        //if(i % 2 == 0) continue;
+        if(i % 2 == 0) scene->AddComponent<SkinnedModelRendererComponent>(boid);
 
         BoidComponent& boidComponet = scene->AddComponent<BoidComponent>(boid);
         boidComponet.velocity = trans.Forward();

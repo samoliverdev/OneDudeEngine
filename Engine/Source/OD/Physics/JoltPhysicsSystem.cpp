@@ -1260,7 +1260,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
 
 		auto twist_axis = ToJolt(trans.TransformDirection(math::normalizeSafe(ragdoll.parts[p].twistAxis)));
-		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ()))); 
+		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ()))); //TODO: Make this editable in the ragdoll part
 
 		//auto twist_axis = ToJolt(trans.TransformDirection(boneTrans.TransformDirection(ragdoll.parts[p].twistAxis)));
 		//auto planeAxisWorld = ToJolt(trans.TransformDirection(boneTrans.TransformDirection({0, 0, 1})));

@@ -12,13 +12,13 @@
 namespace Standard{
 
 void ModuleInit(){
-    SceneManager::Get().RegisterComponent<FreeCamera>("FreeCamera", "Standard/Camera");
-    SceneManager::Get().RegisterComponent<ThirdPersonCamera>("ThirdPersonCamera", "Standard");
-    SceneManager::Get().RegisterComponent<CharacterMovement>("CharacterMovement", "Standard");
-    SceneManager::Get().RegisterComponent<CharacterAnimation>("CharacterAnimation", "Standard");
-    SceneManager::Get().RegisterComponent<Greyboxing>("Greyboxing", "Standard");
-    SceneManager::Get().RegisterComponent<HeightmapGenerator>("HeightmapGenerator", "Standard");
-    SceneManager::Get().RegisterSystem<StandardAssetSystem>("StandardAssetSystem");
+    SceneManager::Get().RegisterComponent<FreeCamera>("Standard/FreeCamera", "Standard/Camera");
+    SceneManager::Get().RegisterComponent<ThirdPersonCamera>("Standard/ThirdPersonCamera", "Standard");
+    SceneManager::Get().RegisterComponent<CharacterMovement>("Standard/CharacterMovement", "Standard");
+    SceneManager::Get().RegisterComponent<CharacterAnimation>("Standard/CharacterAnimation", "Standard");
+    SceneManager::Get().RegisterComponent<Greyboxing>("Standard/Greyboxing", "Standard");
+    SceneManager::Get().RegisterComponent<HeightmapGenerator>("Standard/HeightmapGenerator", "Standard");
+    SceneManager::Get().RegisterSystem<StandardAssetSystem>("Standard/StandardAssetSystem");
 }
 
 StandardAssetSystem::StandardAssetSystem(Scene* inscene):System(inscene){

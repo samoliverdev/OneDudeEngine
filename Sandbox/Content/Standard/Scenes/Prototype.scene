@@ -420,7 +420,7 @@
         9,
         10
     ],
-    "ThirdPersonCameras": [
+    "Standard/ThirdPersonCameras": [
         {
             "lookAtTarget": 6,
             "autoHiddenCursor": true,
@@ -431,10 +431,10 @@
             "yMax": 50.0
         }
     ],
-    "ThirdPersonCameraEntities": [
+    "Standard/ThirdPersonCameraEntities": [
         0
     ],
-    "Greyboxings": [
+    "Standard/Greyboxings": [
         {
             "shape": 0,
             "pivot": 0,
@@ -496,22 +496,22 @@
             "height": 2.0
         }
     ],
-    "GreyboxingEntities": [
+    "Standard/GreyboxingEntities": [
         2,
         3,
         10
     ],
-    "CharacterMovements": [
+    "Standard/CharacterMovements": [
         {
             "moveSpeed": 6.0,
             "turnSpeed": 10.0,
             "onGround": true
         }
     ],
-    "CharacterMovementEntities": [
+    "Standard/CharacterMovementEntities": [
         6
     ],
-    "CharacterAnimations": [
+    "Standard/CharacterAnimations": [
         {
             "baseModelRef": {
                 "isNull": false,
@@ -519,7 +519,7 @@
             }
         }
     ],
-    "CharacterAnimationEntities": [
+    "Standard/CharacterAnimationEntities": [
         6
     ],
     "EnvironmentComponents": [

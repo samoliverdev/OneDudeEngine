@@ -45,6 +45,7 @@ private:
 
     struct SerializeFuncs{
         std::string groupName;
+        std::string displayName;
 
         std::function<bool(Entity&,Scene&)> hasComponent;
         std::function<void(Entity&,Scene&)> addComponent;

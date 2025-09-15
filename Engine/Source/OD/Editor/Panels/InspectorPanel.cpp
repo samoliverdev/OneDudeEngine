@@ -380,7 +380,7 @@ void InspectorPanel::DrawComponents(Entity entity){
         //LogInfo("%s", i.first.c_str());
         //DrawComponentFromCoreComponents(entity, i.first, i.second);
 
-        std::string displayName = i.first.substr(i.first.find_last_of('/') + 1);
+        std::string displayName = i.second.displayName; //i.first.substr(i.first.find_last_of('/') + 1);
         DrawComponentFromCoreComponents(entity, displayName, i.second);
     }
 
@@ -391,7 +391,7 @@ void InspectorPanel::DrawComponents(Entity entity){
     for(auto& i: SceneManager::Get().componentsSerializer){
         //DrawComponentFromSerializeFuncs(entity, i.first, i.second);
         
-        std::string displayName = i.first.substr(i.first.find_last_of('/') + 1);
+        std::string displayName = i.second.displayName; //i.first.substr(i.first.find_last_of('/') + 1);
         DrawComponentFromSerializeFuncs(entity, displayName, i.second);
     }
 
@@ -504,7 +504,8 @@ void InspectorPanel::ShowAddComponent(Entity entity){
         auto extractFilteredComponents = [&](const auto& componentMap){
             std::vector<std::pair<std::vector<std::string>, ComponentEntry>> filtered;
             for(auto& [name, entry] : componentMap){
-                std::string fullName = entry.groupName.empty() ? name: entry.groupName + "/" + name;
+                std::string _name = entry.displayName;
+                std::string fullName = entry.groupName.empty() ? _name: entry.groupName + "/" + _name;
                 std::string fullNameLower = fullName;
                 std::transform(fullNameLower.begin(), fullNameLower.end(), fullNameLower.begin(), ::tolower);
 
