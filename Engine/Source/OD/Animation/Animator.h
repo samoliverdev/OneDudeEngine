@@ -22,8 +22,8 @@ struct OD_API AnimatorComponent{
     };
 
     friend struct AnimatorSystem;
-    void Play(Clip* clip, int layer = 0);
-    void FadeTo(Clip* target, float fadeTime, int layer = 0);
+    void Play(ClipT* clip, int layer = 0);
+    void FadeTo(ClipT* target, float fadeTime, int layer = 0);
 
     template <class Archive>
     void serialize(Archive & ar){

@@ -7,8 +7,9 @@
 //#define GLM_FORCE_PURE
 //#define GLM_FORCE_AVX2
 #define GLM_FORCE_SSE2
+//#define GLM_FORCE_INTRINSICS
 #define GLM_FORCE_ALIGNED
-//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
 #define GLM_FORCE_QUAT_DATA_XYZW
 #define GLM_ENABLE_EXPERIMENTAL
@@ -111,8 +112,6 @@ struct AlignedAllocator {
     template<typename U>
     bool operator!=(const AlignedAllocator<U, Alignment>&) const noexcept { return false; }
 };
-
-
 
 #include <vector>
 

@@ -225,7 +225,7 @@ std::vector<std::string> LoadJointNames(cgltf_data* data){
 	return result;
 }
 
-std::vector<Clip> LoadAnimationClips(cgltf_data* data){
+std::vector<ClipT> LoadAnimationClips(cgltf_data* data){
 	unsigned int numClips = (unsigned int)data->animations_count;
 	unsigned int numNodes = (unsigned int)data->nodes_count;
 
@@ -254,7 +254,12 @@ std::vector<Clip> LoadAnimationClips(cgltf_data* data){
 		result[i].RecalculateDuration();
 	} 
 
-	return result;
+	std::vector<ClipT> result2;
+	for(int i = 0; i < numClips; i++){
+		result2.push_back(OptimizeClipT(result[i]));
+	}
+
+	return result2;
 }
 
 Pose LoadBindPose(cgltf_data* data){

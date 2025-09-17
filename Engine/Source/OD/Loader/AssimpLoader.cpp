@@ -675,7 +675,9 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
     for(int i = 0; i < scene->mNumAnimations; i++){
         Ref<Clip> out = CreateRef<Clip>();
         LoadAnimation(loadData, scene->mAnimations[i], *out);
-        loadData.model->animationClips.push_back(out);
+
+        Ref<ClipT> out2 = CreateRef<ClipT>(OptimizeClipT(*out));
+        loadData.model->animationClips.push_back(out2);
     }
 
     LoadRenderTargets(loadData, scene, scene->mRootNode);

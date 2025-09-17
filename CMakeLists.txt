@@ -35,7 +35,8 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
     #add_compile_options(/O2)
-    add_compile_options(/arch:SSE2)
+    #add_compile_options(/arch:SSE2)
+    add_compile_options(/arch:AVX2)
     #add_compile_options(/Qvec-report:2)
 
     if(USE_SANITIZE_ADDRESS)

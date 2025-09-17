@@ -393,7 +393,7 @@ bool GltfLoadModel(
     }
 
     model.skeleton = LoadSkeleton(gltfModel);
-    model.animationClips = LoadAnimationClips(gltfModel);
+    //model.animationClips = LoadAnimationClips(gltfModel);
 
     // Set shader and path
     if(loadSettings.customShader) model.SetShader(loadSettings.customShader);

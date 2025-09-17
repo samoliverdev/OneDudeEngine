@@ -23,13 +23,13 @@ void CrossFadeController::SetSkeleton(Skeleton& inSkeleton){
 }
 
 float CrossFadeController::GetCurrentNormalizedTime(){
-    Clip* cur = GetCurrentClip();
+    ClipT* cur = GetCurrentClip();
     if(cur == nullptr) return time;
 
     return math::clamp<float>(time / cur->GetDuration(), 0.0f, 1.0f);
 }
 
-void CrossFadeController::Play(Clip* target){
+void CrossFadeController::Play(ClipT* target){
     if(target == nullptr){
         targets.clear();
         clip = nullptr;
@@ -43,7 +43,7 @@ void CrossFadeController::Play(Clip* target){
     time = target->GetStartTime();
 }
 
-void CrossFadeController::FadeTo(Clip* target, float fadeTime){
+void CrossFadeController::FadeTo(ClipT* target, float fadeTime){
     if(clip == 0){
         Play(target);
         return;
@@ -59,7 +59,7 @@ void CrossFadeController::FadeTo(Clip* target, float fadeTime){
 }
 
 // Expereimenta, To Avoid Flicking
-void CrossFadeController::FadeTo2(Clip* target, float fadeTime) {
+void CrossFadeController::FadeTo2(ClipT* target, float fadeTime) {
     if(!wasSkeletonSet || target == nullptr) return;
 
     float currentTime = internalTime; // Use your engine’s time
@@ -145,7 +145,7 @@ Pose& CrossFadeController::GetCurrentPose(){
     return pose;
 }
 
-Clip* CrossFadeController::GetCurrentClip(){
+ClipT* CrossFadeController::GetCurrentClip(){
     return clip;
 }
 

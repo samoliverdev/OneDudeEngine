@@ -117,7 +117,7 @@ void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out){
 
 #else
     // More Otmized
-    int size = (int)Size();
+    /*int size = (int)Size();
     if((int)out.size() != size){ out.resize(size); }
 
     int i = 0;
@@ -133,6 +133,22 @@ void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out){
     }
     for(; i < size; ++i){
         out[i] = GetGlobalMatrix(i);
+    }*/
+
+    int size = (int)Size();
+    if ((int)out.size() != size) {
+        out.resize(size);
+    }
+
+    for (int i = 0; i < size; ++i) {
+        Matrix4 local = joints[i].GetLocalModelMatrix();
+        int parent = parents[i];
+
+        if (parent >= 0) {
+            out[i] = out[parent] * local;
+        } else {
+            out[i] = local;
+        }
     }
 #endif
 }

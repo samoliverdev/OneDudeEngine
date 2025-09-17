@@ -45,6 +45,12 @@ typedef TClip<FastTransformTrack> FastClip;
 
 FastClip OD_API OptimizeClip(Clip& input);
 
+#define OptimizeClipT(arg) OptimizeClip(arg)
+using ClipT = FastClip;
+
+//#define OptimizeClipT(arg) arg
+//using ClipT = Clip;
+
 }
 
 #include "Clip.inl"

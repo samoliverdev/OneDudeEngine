@@ -15,7 +15,7 @@ void OD_API FreeGLTFFile(cgltf_data* handle);
 
 Pose OD_API LoadRestPose(cgltf_data* data);
 std::vector<std::string> OD_API LoadJointNames(cgltf_data* data);
-std::vector<Clip> OD_API LoadAnimationClips(cgltf_data* data);
+std::vector<ClipT> OD_API LoadAnimationClips(cgltf_data* data);
 
 Pose OD_API LoadBindPose(cgltf_data* data);
 Skeleton OD_API LoadSkeleton(cgltf_data* data);

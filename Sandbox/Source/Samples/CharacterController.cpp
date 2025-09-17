@@ -90,8 +90,8 @@ struct PlayerController: public Script{
     float moveSpeed = 600;
     float turnSpeed = 20;
 
-    Clip* idleAnimation;
-    Clip* runningAnimation;
+    ClipT* idleAnimation;
+    ClipT* runningAnimation;
 
     Ref<AudioClip> shootClip;
 

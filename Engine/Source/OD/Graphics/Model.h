@@ -63,11 +63,11 @@ public:
     std::vector<Ref<Texture2D>> textures;
     std::vector<Matrix4> matrixs;
     Skeleton skeleton;
-    std::vector<Ref<Clip>> animationClips;
+    std::vector<Ref<ClipT>> animationClips;
 
     Ref<class MeshShapeData> modelShapeData = nullptr;
 
-    Ref<Clip> FindClipByName(const std::string& name);
+    Ref<ClipT> FindClipByName(const std::string& name);
 
     void OnGui() override;
 

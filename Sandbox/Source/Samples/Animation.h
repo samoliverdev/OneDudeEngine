@@ -38,7 +38,7 @@ struct AnimationSample: public OD::Module{
     std::vector<Ref<Mesh>> char1Meshs;
     Skeleton char1Skeleton;
     //std::vector<FastClip> clips;
-    std::vector<Clip> char1Clips;
+    std::vector<ClipT> char1Clips;
     AnimationInstance char1Anim;
 
     CrossFadeController char1Controller;

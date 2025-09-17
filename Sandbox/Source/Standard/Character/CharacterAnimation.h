@@ -20,8 +20,8 @@ public:
 
     Ref<Model> baseModel = nullptr;
 
-    Clip* idleAnimation;
-    Clip* runningAnimation;
+    ClipT* idleAnimation;
+    ClipT* runningAnimation;
 
     bool hasStarted = false;
     

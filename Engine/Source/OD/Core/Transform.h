@@ -170,11 +170,11 @@ public:
     }
 
 protected:
-    Matrix4 localModelMatrix = Matrix4Identity;
+    Matrix4 localModelMatrix = Matrix4Identity;//TODO: Remove this for Animation
     Quaternion localRotation = QuaternionIdentity;
     Vector3 localPosition = Vector3Zero; //float _pad0;
     Vector3 localScale = Vector3One; //float _pad1;
-    Vector3 localEulerAngles = Vector3Zero; //float _pad2;
+    Vector3 localEulerAngles = Vector3Zero; //float _pad2;; //TODO: Remove this for Animation
     bool isDirt = true;
     //char _pad3[15];
 };

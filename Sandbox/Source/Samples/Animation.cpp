@@ -52,7 +52,7 @@ void AnimationSample::OnInit(){
         }
     }
 
-    Clip& _clip = char1Clips[char1Anim.mClip];
+    ClipT& _clip = char1Clips[char1Anim.mClip];
     for(int i = 0; i < _clip.Size(); i++){
         LogInfo("Clip Pos Frames: %d", _clip[i].GetPositionTrack().Size());
         LogInfo("Clip Rot Frames: %d", _clip[i].GetRotationTrack().Size());

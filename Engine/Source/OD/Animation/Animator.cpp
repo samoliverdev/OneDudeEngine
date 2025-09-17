@@ -8,6 +8,8 @@
 #include "OD/Scene/SceneManager.h"
 #include <taskflow/taskflow.hpp> 
 #include <taskflow/algorithm/for_each.hpp>
+#include <algorithm>
+#include <execution>
 
 namespace OD{
 
@@ -31,7 +33,7 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
     ImGui::InputInt("ToPlay", &anim.toPlay);
 }
 
-void AnimatorComponent::Play(Clip* clip, int layer){
+void AnimatorComponent::Play(ClipT* clip, int layer){
     if(layer < 0 && layer >= layers.size()){
         LogWarning("Try Play Invalid Layer: %d", layer);
         return;
@@ -42,7 +44,7 @@ void AnimatorComponent::Play(Clip* clip, int layer){
     //controller.Play(clip);
 }
 
-void AnimatorComponent::FadeTo(Clip* target, float fadeTime, int layer){
+void AnimatorComponent::FadeTo(ClipT* target, float fadeTime, int layer){
     if(layer < 0 && layer >= layers.size()){
         LogWarning("Try FadeTo Invalid Layer: %d", layer);
         return;
@@ -130,8 +132,8 @@ void ParallelForEach(Scene* scene, Func&& func){
 
 template<typename... Components, typename Func>
 void ParallelForEach2(Scene* scene, Func&& func) {
-    auto view = scene->GetRegistry().view<Components...>();
-    auto& entities = *view.handle(); // keep reference, cheap and safe
+    auto view = scene->GetRegistry().group<Components...>();
+    auto& entities = view.handle(); // keep reference, cheap and safe
 
     size_t total_entities = entities.size();
     if (total_entities == 0)
@@ -241,7 +243,7 @@ void AnimatorSystem::AnimationUpdate(){
     };
 
     #if InternalSystemsMulthread
-        auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+        auto view = GetScene()->GetRegistry().group<AnimatorComponent, SkinnedModelRendererComponent>();
         auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
         /*scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
             for(auto [entity, anim, skinned]: view.each()){
@@ -249,13 +251,19 @@ void AnimatorSystem::AnimationUpdate(){
             }
         });*/
 
+        std::for_each(std::execution::par_unseq, view.begin(), view.end(), [&](auto e){
+            AnimatorComponent& anim = view.get<AnimatorComponent>(e);
+            SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
+            HandlerAnimatorByModel(skinned, anim); 
+        });
+
          //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
-        ParallelForEach2<AnimatorComponent, SkinnedModelRendererComponent>(
+        /*ParallelForEach2<AnimatorComponent, SkinnedModelRendererComponent>(
             scene, 
             [&](auto entity, AnimatorComponent& anim, SkinnedModelRendererComponent& skinned){
                 HandlerAnimatorByModel(skinned, anim); 
             }
-        );
+        );*/
 
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
