@@ -15,8 +15,8 @@ void AnimationSample::OnInit(){
 
     //Application::Vsync(false);
 
-    camTransform.LocalPosition(Vector3(0, 2, 4));
-    camTransform.LocalEulerAngles(Vector3(-25, 0, 0));
+    camTransform.Position(Vector3(0, 2, 4));
+    camTransform.EulerAngles(Vector3(-25, 0, 0));
     camMove.transform = & camTransform;
     camMove.OnStart();
 
@@ -43,7 +43,7 @@ void AnimationSample::OnInit(){
 
     char1Anim.mAnimatedPose = char1Skeleton.GetRestPose();
     char1Anim.mPosePalette.resize(char1Skeleton.GetRestPose().Size());
-    char1Anim.mModel.LocalPosition(Vector3(0, 0, 0));
+    char1Anim.mModel.Position(Vector3(0, 0, 0));
     //anim.mModel.localEulerAngles(Vector3(0, -90, 0));
 
     for(unsigned int i = 0; i < char1Clips.size(); ++i){
@@ -88,9 +88,9 @@ void AnimationSample::OnInit(){
     
     char2Anim.mAnimatedPose = char2Model->skeleton.GetRestPose();
     char2Anim.mPosePalette.resize(char2Model->skeleton.GetRestPose().Size());
-    char2Anim.mModel.LocalPosition(Vector3(3, 0, 0));
+    char2Anim.mModel.Position(Vector3(3, 0, 0));
     //char2Anim.mModel.localScale(Vector3(0.02f, 0.02f, 0.02f));
-    char2Anim.mModel.LocalScale(Vector3(200.0f, 200.0f, 200.0f));
+    char2Anim.mModel.Scale(Vector3(200.0f, 200.0f, 200.0f));
     //char2Anim.mModel.localEulerAngles(Vector3(0, 180, 0));
 
     char2Controller.SetSkeleton(char2Model->skeleton);
@@ -150,7 +150,7 @@ void AnimationSample::OnUpdate(float deltaTime){
 
 void AnimationSample::OnRender(float deltaTime){
     cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
-    cam.view = math::inverse(camTransform.GetLocalModelMatrix());
+    cam.view = math::inverse(camTransform.GetModelMatrix());
 
     Graphics::Begin();
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
@@ -171,13 +171,13 @@ void AnimationSample::OnRender(float deltaTime){
         Graphics::SetModelMatrix(*shader, char1Anim.mModel.GetLocalModelMatrix());
         Graphics::DrawMeshRaw(*i);*/
         mat->EnableKeyword("SKINNED");
-        Graphics::DrawMeshSkinned(*i, *mat, char1Anim.mModel.GetLocalModelMatrix(), &char1Anim.mPosePalette[0], char1Anim.mPosePalette.size());
+        Graphics::DrawMeshSkinned(*i, *mat, char1Anim.mModel.GetModelMatrix(), &char1Anim.mPosePalette[0], char1Anim.mPosePalette.size());
     }
 
     for(int i = 0; i < char1Anim.mAnimatedPose.Size(); i++){
         if(char1Anim.mAnimatedPose.GetParent(i) < 0) continue;
-        Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
-        Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).LocalPosition();
+        Vector3 p0 = char1Anim.mAnimatedPose.GetGlobalTransform(i).Position();
+        Vector3 p1 = char1Anim.mAnimatedPose.GetGlobalTransform(char1Anim.mAnimatedPose.GetParent(i)).Position();
         Graphics::DrawLine(p0, p1, Vector3(0, 1, 0), 1);
     }
 
@@ -198,7 +198,7 @@ void AnimationSample::OnRender(float deltaTime){
 
     for(auto i: char2Model->renderTargets){
         Matrix4 m = 
-            char2Anim.mModel.GetLocalModelMatrix() * 
+            char2Anim.mModel.GetModelMatrix() * 
             char2Model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 
         //m = char2Anim.mModel.GetLocalModelMatrix();
@@ -223,8 +223,8 @@ void AnimationSample::OnRender(float deltaTime){
 
     for(int i = 0; i < char2Anim.mAnimatedPose.Size(); i++){
         if(char2Anim.mAnimatedPose.GetParent(i) < 0) continue;
-        Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).LocalPosition();
-        Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).LocalPosition();
+        Vector3 p0 = char2Anim.mAnimatedPose.GetGlobalTransform(i).Position();
+        Vector3 p1 = char2Anim.mAnimatedPose.GetGlobalTransform(char2Anim.mAnimatedPose.GetParent(i)).Position();
         Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
     }
 

@@ -221,8 +221,8 @@ void CharacterControllerSample::OnInit(){
     TransformComponent& charTrans = scene->GetComponent<TransformComponent>(playerEntity);
     //charTrans.LocalScale(Vector3(0.01f));
     SkinnedModelRendererComponent& charRenderer = scene->AddComponent<SkinnedModelRendererComponent>(playerEntity);
-    charRenderer.localTransform.LocalScale(Vector3(200));
-    charRenderer.skeletonTransform.LocalScale(Vector3(0.01f));
+    charRenderer.localTransform.Scale(Vector3(200));
+    charRenderer.skeletonTransform.Scale(Vector3(0.01f));
     charRenderer.SetModel(charIdleModel);
     charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
     charRenderer.UpdatePosePalette();

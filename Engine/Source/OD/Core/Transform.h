@@ -11,67 +11,99 @@ class Scene;
 //TODO: This is bug my Bone Aim
 //#define ExperimentalTransformOptimzation
 
+#define TransformLessDataOptimzation
+
 class OD_API alignas(16) Transform{
     friend class TransformComponent;
     //friend class Scene;
 public:
     Transform(){}
-    Transform(Vector3 pos, Quaternion rot = QuaternionIdentity, Vector3 scale = Vector3(1, 1, 1)):
-        localPosition(pos), localRotation(rot), localScale(scale), isDirt(true){}
     Transform(const Matrix4& m);
     
-    Matrix4 GetLocalModelMatrix();
+    #ifdef TransformLessDataOptimzation
+    Transform(Vector3 inpos, Quaternion inrot = QuaternionIdentity, Vector3 inscale = Vector3(1, 1, 1)):
+        position(inpos), rotation(inrot), scale(inscale){}
+    #else
+    Transform(Vector3 pos, Quaternion rot = QuaternionIdentity, Vector3 inscale = Vector3(1, 1, 1)):
+        position(pos), rotation(rot), scale(inscale), isDirt(true){}
+    #endif
+    
+    Matrix4 GetModelMatrix();
 
-    inline Vector3 Forward() const { return localRotation * Vector3Forward; }
-    inline Vector3 Back() const { return localRotation * Vector3Back; }
-    inline Vector3 Left() const { return localRotation * Vector3Left; }
-    inline Vector3 Right() const { return localRotation * Vector3Right; }
-    inline Vector3 Up() const { return localRotation * Vector3Up; }
-    inline Vector3 Down() const { return localRotation * Vector3Down; }
+    inline Vector3 Forward() const { return rotation * Vector3Forward; }
+    inline Vector3 Back() const { return rotation * Vector3Back; }
+    inline Vector3 Left() const { return rotation * Vector3Left; }
+    inline Vector3 Right() const { return rotation * Vector3Right; }
+    inline Vector3 Up() const { return rotation * Vector3Up; }
+    inline Vector3 Down() const { return rotation * Vector3Down; }
 
-    inline Vector3 LocalPosition() const { return localPosition; }
-    inline void LocalPosition(Vector3 pos){ localPosition = pos; isDirt = true; }
-
-    inline Vector3 LocalEulerAngles() const { 
-        return localEulerAngles; 
-    }
-
-    inline void LocalEulerAngles(Vector3 euler){ 
-        localEulerAngles = euler;
-        localRotation = Quaternion(Mathf::Deg2Rad(localEulerAngles));
-        isDirt = true;
-    }
-
-    inline Quaternion LocalRotation() const { return localRotation; }
-    inline void LocalRotation(Quaternion rot){ 
-        localRotation = rot; 
+    inline Vector3 Position() const { return position; }
+    
+    inline void Position(Vector3 pos){ 
+        position = pos; 
+        #ifndef TransformLessDataOptimzation
         isDirt = true; 
-        localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(localRotation));
+        #endif
     }
 
-    inline Vector3 LocalScale() const { return localScale; }
-    inline void LocalScale(Vector3 scale){ localScale = scale; isDirt = true; }
+    inline Vector3 EulerAngles() const { 
+        #ifdef TransformLessDataOptimzation
+        return Mathf::Rad2Deg(math::eulerAngles(rotation));
+        #else
+        return eulerAngles; 
+        #endif
+    }
 
-    inline void Rotate(Vector3 eulerAngles, bool relativeToLocal = true) {
-        Quaternion rotation = Quaternion(Mathf::Deg2Rad(eulerAngles));
-        if (relativeToLocal) {
-            localRotation = localRotation * rotation;
-        } else {
-            localRotation = rotation * localRotation;
-        }
-        localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(localRotation));
+    inline void EulerAngles(Vector3 euler){ 
+        #ifdef TransformLessDataOptimzation
+        rotation = Quaternion(Mathf::Deg2Rad(euler));
+        #else
+        eulerAngles = euler;
+        rotation = Quaternion(Mathf::Deg2Rad(eulerAngles));
         isDirt = true;
+        #endif
+    }
+
+    inline Quaternion Rotation() const { return rotation; }
+    inline void Rotation(Quaternion rot){ 
+        rotation = rot; 
+        #ifndef TransformLessDataOptimzation
+        isDirt = true; 
+        eulerAngles = Mathf::Rad2Deg(math::eulerAngles(rotation));
+        #endif
+    }
+
+    inline Vector3 Scale() const { return scale; }
+    
+    inline void Scale(Vector3 inscale){ 
+        scale = inscale; 
+        #ifndef TransformLessDataOptimzation
+        isDirt = true; 
+        #endif
+    }
+
+    inline void Rotate(Vector3 ineulerAngles, bool relativeToLocal = true) {
+        Quaternion _rotation = Quaternion(Mathf::Deg2Rad(ineulerAngles));
+        if (relativeToLocal) {
+            rotation = rotation * _rotation;
+        } else {
+            rotation = _rotation * rotation;
+        }
+        #ifndef TransformLessDataOptimzation
+        eulerAngles = Mathf::Rad2Deg(math::eulerAngles(rotation));
+        isDirt = true;
+        #endif
     }
 
     inline void LookAt(Vector3 target, Vector3 worldUp = Vector3Up) {
-        Vector3 direction = math::normalize(target - localPosition);// Calculate the forward direction
+        Vector3 direction = math::normalize(target - position);// Calculate the forward direction
     
         if(math::abs(math::dot(direction, worldUp)) > 0.9999f){// Avoid degenerate case when direction is parallel to up vector
             worldUp = Vector3Right;// If direction is almost exactly up or down, use a different up vector
         }
 
         Quaternion newRotation = math::quatLookAt(direction, worldUp);
-        LocalRotation(newRotation);// Apply the rotation
+        Rotation(newRotation);// Apply the rotation
     }
 
     inline void LookAtDirection(Vector3 direction, Vector3 worldUp = Vector3Up){
@@ -82,7 +114,7 @@ public:
         }
 
         Quaternion newRotation = math::quatLookAt(direction, worldUp);
-        LocalRotation(newRotation);
+        Rotation(newRotation);
     }
 
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
@@ -99,9 +131,9 @@ public:
 
     inline bool operator==(const Transform& b){
         return 
-            this->localPosition == b.localPosition &&
-            this->localRotation == b.localRotation &&
-            this->localScale == b.localScale;
+            this->position == b.position &&
+            this->rotation == b.rotation &&
+            this->scale == b.scale;
     }
 
     inline bool operator!=(const Transform& b){
@@ -109,16 +141,16 @@ public:
     }
 
     inline static Transform Mix(const Transform& a, const Transform& b, float t) {
-        Quaternion bRot = b.localRotation;
+        Quaternion bRot = b.rotation;
         /*if(math::dot(a._localRotation, bRot) < 0.0f) {
             bRot = -bRot;
         }*/
         return Transform(
-            math::mix(a.localPosition, b.localPosition, t),
-            math::slerp(a.localRotation, bRot, t),
+            math::mix(a.position, b.position, t),
+            math::slerp(a.rotation, bRot, t),
             //math::normalize( math::slerp(math::normalize(a.localRotation), math::normalize(bRot), t) ),
             //math::normalize( math::lerp(math::normalize(a.localRotation), math::normalize(bRot), t) ),
-            math::mix(a.localScale, b.localScale, t)
+            math::mix(a.scale, b.scale, t)
         );
     }
 
@@ -126,17 +158,17 @@ public:
         #ifdef ExperimentalTransformOptimzation
         
         Transform inv;
-        inv.LocalRotation(math::inverse(t.LocalRotation()));
-        inv.localScale.x = fabs(t.localScale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.x;
-        inv.localScale.y = fabs(t.localScale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.y;
-        inv.localScale.z = fabs(t.localScale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.z;
-        Vector3 invTranslation = -t.LocalPosition();// * -1.0f;
-        inv.LocalPosition( inv.LocalRotation() * (inv.LocalScale() * invTranslation) );
+        inv.LocalRotation(math::inverse(t.Rotation()));
+        inv.localScale.x = fabs(t.scale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.x;
+        inv.localScale.y = fabs(t.scale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.y;
+        inv.localScale.z = fabs(t.scale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.z;
+        Vector3 invTranslation = -t.Position();// * -1.0f;
+        inv.Position( inv.LRotation() * (inv.Scale() * invTranslation) );
         return inv;
         
         #else
 
-        return Transform(math::inverse(t.GetLocalModelMatrix()));
+        return Transform(math::inverse(t.GetModelMatrix()));
 
         #endif
     }
@@ -145,15 +177,15 @@ public:
         #ifdef ExperimentalTransformOptimzation
 
         Transform out;
-        out.LocalScale(a.LocalScale() * b.LocalScale());
-        out.LocalRotation(b.LocalRotation() * a.LocalRotation());
-        out.LocalPosition(a.LocalRotation() * (a.LocalScale() * b.LocalPosition()));
-        out.LocalPosition(a.LocalPosition() + out.LocalPosition());
+        out.Scale(a.Scale() * b.Scale());
+        out.Rotation(b.Rotation() * a.Rotation());
+        out.Position(a.Rotation() * (a.Scale() * b.Position()));
+        out.Position(a.Position() + out.Position());
         return out;
 
         #else
 
-        return Transform(a.GetLocalModelMatrix() * b.GetLocalModelMatrix());
+        return Transform(a.GetModelMatrix() * b.GetModelMatrix());
 
         #endif
     }
@@ -162,21 +194,32 @@ public:
 
     template <class Archive>
     void serialize(Archive& ar){
-        ArchiveDump(ar, CEREAL_NVP(localPosition)); 
-        ArchiveDump(ar, CEREAL_NVP(localRotation));
-        ArchiveDump(ar, CEREAL_NVP(localEulerAngles)); 
-        ArchiveDump(ar, CEREAL_NVP(localScale)); 
+        #ifdef TransformLessDataOptimzation
+        ArchiveDump(ar, CEREAL_NVP(position)); 
+        ArchiveDump(ar, CEREAL_NVP(rotation));
+        ArchiveDump(ar, CEREAL_NVP(scale)); 
+        #else
+        ArchiveDump(ar, CEREAL_NVP(position)); 
+        ArchiveDump(ar, CEREAL_NVP(rotation));
+        ArchiveDump(ar, CEREAL_NVP(eulerAngles)); 
+        ArchiveDump(ar, CEREAL_NVP(scale)); 
         //ArchiveDump(ar, CEREAL_NVP(isDirt));
+        #endif
     }
 
 protected:
-    Matrix4 localModelMatrix = Matrix4Identity;//TODO: Remove this for Animation
-    Quaternion localRotation = QuaternionIdentity;
-    Vector3 localPosition = Vector3Zero; //float _pad0;
-    Vector3 localScale = Vector3One; //float _pad1;
-    Vector3 localEulerAngles = Vector3Zero; //float _pad2;; //TODO: Remove this for Animation
+    #ifdef TransformLessDataOptimzation
+    Quaternion rotation = QuaternionIdentity;
+    Vector3 position = Vector3Zero;
+    Vector3 scale = Vector3One;
+    #else
+    Matrix4 modelMatrix = Matrix4Identity;
+    Quaternion rotation = QuaternionIdentity;
+    Vector3 position = Vector3Zero;
+    Vector3 scale = Vector3One;
+    Vector3 eulerAngles = Vector3Zero;
     bool isDirt = true;
-    //char _pad3[15];
+    #endif
 };
 
 }

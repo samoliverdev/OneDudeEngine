@@ -262,7 +262,7 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
 
         for(auto i: c.GetModel()->renderTargets){
             auto targetMesh = c.GetModel()->meshs[i.meshIndex];
-            auto targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            auto targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
 
 			AABB aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), targetMatrix);
 			//aabb.Expand(Vector3(1.1f));
@@ -2099,9 +2099,9 @@ void NavmeshSystem::OnDrawGizmos(Camera& cam){
 		TransformComponent& trans = navmeshView.get<TransformComponent>(e);
 
 		Transform t;
-		t.LocalPosition(trans.Position());
-		t.LocalScale(navmeshComponent.size);
-		Graphics::DrawWireCube(t.GetLocalModelMatrix(), {1,1,1}, 1);
+		t.Position(trans.Position());
+		t.Scale(navmeshComponent.size);
+		Graphics::DrawWireCube(t.GetModelMatrix(), {1,1,1}, 1);
 		
 		continue;
 
@@ -2135,9 +2135,9 @@ void NavmeshSystem::OnDrawGizmos(Camera& cam){
 					AABB a = AABB({min0, min1, min2}, {max0, max1, max2});
 
 					Transform t;
-					t.LocalPosition(a.center);
-					t.LocalScale(a.extents * 2.0f);
-					Graphics::DrawWireCube(t.GetLocalModelMatrix(), {1,1,1}, 1);
+					t.Position(a.center);
+					t.Scale(a.extents * 2.0f);
+					Graphics::DrawWireCube(t.GetModelMatrix(), {1,1,1}, 1);
 				}
 			}
 		}

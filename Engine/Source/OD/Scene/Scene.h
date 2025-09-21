@@ -116,7 +116,8 @@ public:
 
     const Matrix4& GlobalModelMatrixReadSafe() const;
     const Matrix4 GlobalModelMatrix();
-    inline Matrix4 GetLocalModelMatrix(){ return transform.GetLocalModelMatrix(); }
+
+    Matrix4 GetLocalModelMatrix();
 
     //Transforms a direction from world space to local space. The opposite of Transform.TransformDirection.
     Vector3 InverseTransformDirection(Vector3 dir); 
@@ -140,72 +141,19 @@ public:
 
     Vector3 Scale();
 
-    inline Vector3 LocalPosition(){ 
-        #ifdef ExperimentalTransformOptimzation
-        if(isCollection) return Vector3Zero;
-        #endif
-        return transform.LocalPosition(); 
-    }
+    Vector3 LocalPosition();
+    void LocalPosition(Vector3 pos);
+
+    Vector3 LocalEulerAngles();
+    void LocalEulerAngles(Vector3 euler);
     
-    inline void LocalPosition(Vector3 pos){ 
-        transform.LocalPosition(pos); 
-        #ifdef ExperimentalTransformOptimzation
-        //SetGlobalAsDirty();
-        UpdateGlobalTransformCacheIfNeeded();
-        #endif
-    }
+    Quaternion LocalRotation();
+    void LocalRotation(Quaternion rot);
     
-    inline Vector3 LocalEulerAngles(){ 
-        #ifdef ExperimentalTransformOptimzation
-        if(isCollection) return Vector3Zero;
-        #endif
-        return transform.LocalEulerAngles(); 
-    }
+    Vector3 LocalScale();
+    void LocalScale(Vector3 scale);
     
-    inline void LocalEulerAngles(Vector3 euler){ 
-        transform.LocalEulerAngles(euler); 
-        #ifdef ExperimentalTransformOptimzation
-        //SetGlobalAsDirty();
-        UpdateGlobalTransformCacheIfNeeded();
-        #endif
-    }
-    
-    inline Quaternion LocalRotation(){ 
-        #ifdef ExperimentalTransformOptimzation
-        if(isCollection) return QuaternionIdentity;
-        #endif
-        return transform.LocalRotation(); 
-    }
-    
-    inline void LocalRotation(Quaternion rot){ 
-        transform.LocalRotation(rot); 
-        #ifdef ExperimentalTransformOptimzation
-        //SetGlobalAsDirty();
-        UpdateGlobalTransformCacheIfNeeded();
-        #endif
-    }
-    
-    inline Vector3 LocalScale(){ 
-        #ifdef ExperimentalTransformOptimzation
-        if(isCollection) return Vector3One;
-        #endif
-        return transform.LocalScale(); 
-    }
-    
-    inline void LocalScale(Vector3 scale){
-        transform.LocalScale(scale); 
-        #ifdef ExperimentalTransformOptimzation
-        //SetGlobalAsDirty();
-        UpdateGlobalTransformCacheIfNeeded();
-        #endif
-    }
-    
-    inline void SetLocalModelMatrix(Matrix4 matrix){ 
-        #ifdef ExperimentalTransformOptimzation
-        Assert(false);
-        #endif
-        transform = Transform(matrix); 
-    }
+    void SetLocalModelMatrix(Matrix4 matrix);
 
     inline Entity Parent(){ return parent; }
     inline bool HasParent(){ /*return parent != entt::null;*/ return hasParent; }
@@ -216,21 +164,8 @@ public:
     template <class Archive>
     void serialize(Archive & ar);
 
-    inline operator Transform() {
-        /*#ifdef ExperimentalTransformOptimzation
-        return Transform(Position(), Rotation(), Scale()); 
-        #else*/
-        return Transform(GlobalModelMatrix());
-        //#endif
-    }
-
-    inline Transform ToTransform(){ 
-        /*#ifdef ExperimentalTransformOptimzation
-        return Transform(Position(), Rotation(), LocalScale()); 
-        #else*/
-        return Transform(GlobalModelMatrix()); 
-        //#endif
-    }
+    operator Transform();
+    Transform ToTransform();
 
     static void CreateLuaBind(sol::state& lua);
     
@@ -248,10 +183,22 @@ public:
     #endif
 
 private:
-    Transform transform;
+    Transform localTransform;
     #ifdef ExperimentalTransformOptimzation
-    Transform globalTransform;
-    bool globalIsDirty = true;
+        #ifdef TransformLessDataOptimzation
+        Transform globalTransform;
+        Matrix4 localModelMatrix = Matrix4Identity;
+        Matrix4 globalModelMatrix = Matrix4Identity;
+        bool globalIsDirty = true;
+        #else
+        Transform globalTransform;
+        bool globalIsDirty = true;
+        #endif
+    #endif
+
+    #ifdef TransformLessDataOptimzation
+    Vector3 localEulerAngles = Vector3Zero;
+    bool localEulerAnglesIsDirt = true;
     #endif
 
     std::vector<Entity> children;

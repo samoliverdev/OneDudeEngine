@@ -49,9 +49,9 @@ void Add(Pose& output, Pose& inPose, Pose& addPose, Pose& basePose, int blendroo
 
 		// outPose = inPose + (addPose - basePose)
 		Transform result(
-			input.LocalPosition() + (additive.LocalPosition() - additiveBase.LocalPosition()),
-			math::normalize(input.LocalRotation() * (math::inverse(additiveBase.LocalRotation()) * additive.LocalRotation())),
-			input.LocalScale() + (additive.LocalScale() - additiveBase.LocalScale())
+			input.Position() + (additive.Position() - additiveBase.Position()),
+			math::normalize(input.Rotation() * (math::inverse(additiveBase.Rotation()) * additive.Rotation())),
+			input.Scale() + (additive.Scale() - additiveBase.Scale())
 		);
 		output.SetLocalTransform(i, result);
 	}

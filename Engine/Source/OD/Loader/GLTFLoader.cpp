@@ -15,15 +15,15 @@ namespace GLTFHelpers {
 		}
 
 		if(node.has_translation){
-			result.LocalPosition(Vector3(node.translation[0], node.translation[1], node.translation[2]));
+			result.Position(Vector3(node.translation[0], node.translation[1], node.translation[2]));
 		}
 
 		if(node.has_rotation){
-			result.LocalRotation(Quaternion(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]));
+			result.Rotation(Quaternion(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]));
 		}
 
 		if(node.has_scale){
-			result.LocalScale(Vector3(node.scale[0], node.scale[1], node.scale[2]));
+			result.Scale(Vector3(node.scale[0], node.scale[1], node.scale[2]));
 		}
 
 		return result;

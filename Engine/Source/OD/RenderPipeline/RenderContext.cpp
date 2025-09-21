@@ -1292,7 +1292,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
             data.targetMesh = model->meshs[i.meshIndex].get();
-            data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
@@ -1390,7 +1390,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
             data.targetMesh = model->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
@@ -1444,7 +1444,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
         AABB aabb(Vector3(0), c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1);
         Transform scale;
-        scale.LocalScale(Vector3(c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1));
+        scale.Scale(Vector3(c.sprite->Width() / c.pixelUnitSize, c.sprite->Height() / c.pixelUnitSize, 1));
 
         c.material->SetVector4("color", c.color);
         c.material->SetTexture("mainTex", c.sprite);
@@ -1453,7 +1453,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.distance = math::distance2(cam.viewPos, t.Position());
         data.targetMaterial = c.material.get();
         data.targetMesh = spriteMesh.get();
-        data.targetMatrix =  t.GlobalModelMatrix() * scale.GetLocalModelMatrix();
+        data.targetMatrix =  t.GlobalModelMatrix() * scale.GetModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(aabb, data.targetMatrix);
@@ -1975,7 +1975,7 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
 
 void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
     auto lightProjection = glm::perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1.0f, 0.1f, light.radius);
-    auto lightView = glm::lookAt(transform.LocalPosition(), transform.LocalPosition() - (-transform.Forward()), Vector3Up);
+    auto lightView = glm::lookAt(transform.Position(), transform.Position() - (-transform.Forward()), Vector3Up);
 
     splitData->projViewMatrix = lightProjection * lightView;
     splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
@@ -1983,7 +1983,7 @@ void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightCom
 
 void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
     glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius); 
-    Vector3 lightPos = transform.LocalPosition();
+    Vector3 lightPos = transform.Position();
 
     std::vector<glm::mat4> shadowMats;
     shadowMats.push_back(

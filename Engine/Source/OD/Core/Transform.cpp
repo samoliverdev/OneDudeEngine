@@ -11,23 +11,30 @@ Transform::Transform(const Matrix4& m){
     Vector4 p;
     math::decompose(m, s, r, t, sk, p);
 
-    localPosition = t;
-    localRotation = r;
-    localScale = s;
+    position = t;
+    rotation = r;
+    scale = s;
+
+    #ifndef TransformLessDataOptimzation
     isDirt = true;
+    #endif
 }
 
-Matrix4 Transform::GetLocalModelMatrix(){
-    if(isDirt == false) return localModelMatrix;
-    localModelMatrix = Mathf::TRS(localPosition, localRotation, localScale);
+Matrix4 Transform::GetModelMatrix(){
+    #ifdef TransformLessDataOptimzation
+    return Mathf::TRS(position, rotation, scale);
+    #else
+    if(isDirt == false) return modelMatrix;
+    modelMatrix = Mathf::TRS(position, rotation, scale);
     isDirt = false;
-    return localModelMatrix;
+    return modelMatrix;
+    #endif
 
     //return Mathf::TRS(localPosition, localRotation, localScale);
 }
 
 Vector3 Transform::InverseTransformDirection(Vector3 dir){
-    Matrix4 matrix4 = GetLocalModelMatrix();
+    Matrix4 matrix4 = GetModelMatrix();
     return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
@@ -35,36 +42,36 @@ Vector3 Transform::TransformDirection(Vector3 dir){
     /*auto rotation = math::mat3(GetLocalModelMatrix()); // upper-left 3x3
     return rotation * dir;*/
 
-    Matrix4 matrix4 = GetLocalModelMatrix();
+    Matrix4 matrix4 = GetModelMatrix();
     return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
 }
 
 Vector3 Transform::InverseTransformPoint(Vector3 point){
-    Matrix4 matrix4 = GetLocalModelMatrix();
+    Matrix4 matrix4 = GetModelMatrix();
     return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
 }
 
 Vector3 Transform::TransformPoint(Vector3 point){
-    Matrix4 matrix4 = GetLocalModelMatrix();
+    Matrix4 matrix4 = GetModelMatrix();
     return matrix4 * Vector4(point.x, point.y, point.z, 1);
 }
 
 void Transform::OnGui(Transform& transform){
     //ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.4f);
 
-    float p[] = {transform.LocalPosition().x, transform.LocalPosition().y, transform.LocalPosition().z};
+    float p[] = {transform.Position().x, transform.Position().y, transform.Position().z};
     if(ImGui::DragFloat3("Position", p, 0.5f)){
-        transform.LocalPosition(Vector3(p[0], p[1], p[2]));
+        transform.Position(Vector3(p[0], p[1], p[2]));
     }
 
-    float r[] = {transform.LocalEulerAngles().x, transform.LocalEulerAngles().y, transform.LocalEulerAngles().z};
+    float r[] = {transform.EulerAngles().x, transform.EulerAngles().y, transform.EulerAngles().z};
     if(ImGui::DragFloat3("Rotation", r, 0.5f)){
-        transform.LocalEulerAngles(Vector3(r[0], r[1], r[2]));
+        transform.EulerAngles(Vector3(r[0], r[1], r[2]));
     }  
 
-    float s[] = {transform.LocalScale().x, transform.LocalScale().y, transform.LocalScale().z};
+    float s[] = {transform.Scale().x, transform.Scale().y, transform.Scale().z};
     if(ImGui::DragFloat3("Scale", s, 0.5f)){
-        transform.LocalScale(Vector3(s[0], s[1], s[2]));
+        transform.Scale(Vector3(s[0], s[1], s[2]));
     } 
 
     //ImGui::PopItemWidth();

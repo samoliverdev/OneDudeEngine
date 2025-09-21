@@ -75,13 +75,13 @@ public:
         Transform result = ref; // Assign default values
         
         if(position.Size() > 1){ // Only assign if animated
-            result.LocalPosition(position.Sample(time, looping));
+            result.Position(position.Sample(time, looping));
         }
         if(rotation.Size() > 1){ // Only assign if animated
-            result.LocalRotation(rotation.Sample(time, looping));
+            result.Rotation(rotation.Sample(time, looping));
         }
         if(scale.Size() > 1){ // Only assign if animated
-            result.LocalScale(scale.Sample(time, looping));
+            result.Scale(scale.Sample(time, looping));
         }
         return result;
     }

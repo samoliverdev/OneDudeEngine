@@ -12,8 +12,8 @@ void LoadModelSample::OnInit(){
 
     Application::Vsync(false);
 
-    camTransform.LocalPosition(Vector3(0, 10, 70));
-    camTransform.LocalEulerAngles(Vector3(0, 0, 0));
+    camTransform.Position(Vector3(0, 10, 70));
+    camTransform.EulerAngles(Vector3(0, 0, 0));
     camMove.transform = &camTransform;
 
     buffer = InstancingBuffer::Create();
@@ -30,9 +30,9 @@ void LoadModelSample::OnInit(){
         Transform t;
 
         float angle = 20.0f * i; 
-        t.LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
-        t.LocalEulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
-        transforms.push_back(t.GetLocalModelMatrix());
+        t.Position(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));
+        t.EulerAngles(Vector3(random(-180, 180), random(-180, 180), random(-180, 180)));
+        transforms.push_back(t.GetModelMatrix());
 
         transforms2.push_back({
             math::row(transforms[transforms.size()-1], 0),
@@ -57,7 +57,7 @@ void LoadModelSample::OnRender(float deltaTime){
     OD_PROFILE_SCOPE("LoadModel_2::OnRender");
 
     cam.SetPerspective(60, 0.1f, 1000.0f, Application::ScreenWidth(), Application::ScreenHeight());
-    cam.view = math::inverse(camTransform.GetLocalModelMatrix());
+    cam.view = math::inverse(camTransform.GetModelMatrix());
 
     Graphics::Begin();
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);

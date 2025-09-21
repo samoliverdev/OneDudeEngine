@@ -50,21 +50,21 @@ bool CCDSolver::Solver(const Transform& target){
 
     unsigned int last = size - 1;
     float thresholdSq = threshold * threshold;
-    Vector3 goal = target.LocalPosition();
+    Vector3 goal = target.Position();
 
     for(unsigned int i = 0; i < numSteps; ++i){
-        Vector3 effector = GetGlobalTransform(last).LocalPosition();
+        Vector3 effector = GetGlobalTransform(last).Position();
 
         if(math::length2(goal - effector) < thresholdSq) return true;
 
         for(int j = (int)size - 2; j >= 0; --j){
             // Iteration logic
             // -> APPLY CONSTRAINTS HERE!
-            effector = GetGlobalTransform(last).LocalPosition();
+            effector = GetGlobalTransform(last).Position();
 
             Transform world = GetGlobalTransform(j);
-            Vector3 position = world.LocalPosition();
-            Quaternion rotation = world.LocalRotation();
+            Vector3 position = world.Position();
+            Quaternion rotation = world.Rotation();
 
             Vector3 toEffector = effector - position;
             Vector3 toGoal = goal - position;
@@ -77,9 +77,9 @@ bool CCDSolver::Solver(const Transform& target){
             Quaternion worldRotated = rotation * effectorToGoal;
             Quaternion localRotate = worldRotated * math::inverse(rotation);
 
-            ikChain[j].LocalRotation(localRotate * ikChain[j].LocalRotation());
+            ikChain[j].Rotation(localRotate * ikChain[j].Rotation());
 
-            effector = GetGlobalTransform(last).LocalPosition();
+            effector = GetGlobalTransform(last).Position();
             if(math::length2(goal - effector) < thresholdSq) return true;
         }
     }

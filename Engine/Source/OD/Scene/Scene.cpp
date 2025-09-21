@@ -98,15 +98,31 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(bool updateChild){
         if(hasParent && isCollection == false){
             TransformComponent& p = registry->get<TransformComponent>(parent);
             //p.UpdateGlobalTransformCacheIfNeeded();
-            globalTransform.localModelMatrix = /*p.GlobalModelMatrix() **/ p.globalTransform.GetLocalModelMatrix() * transform.GetLocalModelMatrix();
-            globalTransform.localPosition = p.TransformPoint(LocalPosition());
-            globalTransform.localRotation = p.Rotation() * LocalRotation();
-            globalTransform.localScale = p.Scale() * LocalScale(); // Aqui está a escala acumulada
+            #ifdef TransformLessDataOptimzation
+            localModelMatrix = localTransform.GetModelMatrix();
+            globalModelMatrix = /*p.GlobalModelMatrix() **/ p.globalModelMatrix * localModelMatrix;
+            globalTransform.position = p.TransformPoint(LocalPosition());
+            globalTransform.rotation = p.Rotation() * LocalRotation();
+            globalTransform.scale = p.Scale() * LocalScale(); // Aqui está a escala acumulada
+            #else
+            globalTransform.modelMatrix = /*p.GlobalModelMatrix() **/ p.globalTransform.GetModelMatrix() * localTransform.GetModelMatrix();
+            globalTransform.position = p.TransformPoint(LocalPosition());
+            globalTransform.rotation = p.Rotation() * LocalRotation();
+            globalTransform.scale = p.Scale() * LocalScale(); // Aqui está a escala acumulada
+            #endif
         } else {
-            globalTransform.localModelMatrix = isCollection ? Matrix4Identity : transform.GetLocalModelMatrix();
-            globalTransform.localPosition = isCollection ? Vector3Zero : LocalPosition();
-            globalTransform.localRotation = isCollection ? QuaternionIdentity : LocalRotation();
-            globalTransform.localScale = isCollection ? Vector3One : LocalScale(); // sem pai, usa local diretamente
+            #ifdef TransformLessDataOptimzation
+            localModelMatrix = isCollection ? Matrix4Identity : localTransform.GetModelMatrix();
+            globalModelMatrix = isCollection ? Matrix4Identity : localModelMatrix;
+            globalTransform.position = isCollection ? Vector3Zero : LocalPosition();
+            globalTransform.rotation = isCollection ? QuaternionIdentity : LocalRotation();
+            globalTransform.scale = isCollection ? Vector3One : LocalScale(); // sem pai, usa local diretamente
+            #else
+            globalTransform.modelMatrix = isCollection ? Matrix4Identity : localTransform.GetModelMatrix();
+            globalTransform.position = isCollection ? Vector3Zero : LocalPosition();
+            globalTransform.rotation = isCollection ? QuaternionIdentity : LocalRotation();
+            globalTransform.scale = isCollection ? Vector3One : LocalScale(); // sem pai, usa local diretamente
+            #endif
         }
 
         if(updateChild == false) return;
@@ -120,7 +136,11 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(bool updateChild){
 
 const Matrix4& TransformComponent::GlobalModelMatrixReadSafe() const{
     #ifdef ExperimentalTransformOptimzation
-    return globalTransform.localModelMatrix;
+        #ifdef TransformLessDataOptimzation
+        return globalModelMatrix;
+        #else
+        return globalTransform.modelMatrix;
+        #endif
     #else
     Assert(false);
     return Matrix4Identity;
@@ -151,15 +171,28 @@ const Matrix4 TransformComponent::GlobalModelMatrix(){
     }*/
     //UpdateGlobalTransformCacheIfNeeded();
     if(isCollection) return Matrix4Identity;
-    return globalTransform.localModelMatrix;
+    
+        #ifdef TransformLessDataOptimzation
+        return globalModelMatrix;
+        #else
+        return globalTransform.modelMatrix;
+        #endif
 
     #else
 
     if(hasParent){
         TransformComponent& p = registry->get<TransformComponent>(parent);
-        return p.GlobalModelMatrix() * transform.GetLocalModelMatrix();
+        return p.GlobalModelMatrix() * localTransform.GetModelMatrix();
     }
-    return transform.GetLocalModelMatrix();
+    return localTransform.GetModelMatrix();
+    #endif
+}
+
+Matrix4 TransformComponent::GetLocalModelMatrix(){ 
+    #ifdef TransformLessDataOptimzation
+    return localModelMatrix;
+    #else
+    return localTransform.GetModelMatrix(); 
     #endif
 }
 
@@ -189,7 +222,7 @@ Vector3 TransformComponent::TransformPoint(Vector3 point){
 
 const Vector3& TransformComponent::PositionReadSafe() const{
     #ifdef ExperimentalTransformOptimzation
-    return globalTransform.localPosition;
+    return globalTransform.position;
     #else 
     Assert(false);
     return Vector3Zero;
@@ -209,7 +242,7 @@ Vector3 TransformComponent::Position(){
         }
     }*/
     //UpdateGlobalTransformCacheIfNeeded();
-    return globalTransform.localPosition;
+    return globalTransform.position;
 
     #else 
     if(hasParent){
@@ -246,7 +279,7 @@ Quaternion TransformComponent::Rotation(){
         }
     }*/
     //UpdateGlobalTransformCacheIfNeeded();
-    return globalTransform.localRotation;
+    return globalTransform.rotation;
 
     #else 
 
@@ -279,13 +312,103 @@ Vector3 TransformComponent::Scale(){
     if(isCollection) return Vector3One;
     
     //UpdateGlobalTransformCacheIfNeeded();
-    return globalTransform.localScale;
+    return globalTransform.scale;
     
     #else
 
     Transform t(GlobalModelMatrix());
-    return t.LocalScale();
+    return t.Scale();
     #endif
+}
+
+Vector3 TransformComponent::LocalPosition(){ 
+    #ifdef ExperimentalTransformOptimzation
+    if(isCollection) return Vector3Zero;
+    #endif
+    return localTransform.Position(); 
+}
+
+void TransformComponent::LocalPosition(Vector3 pos){ 
+    localTransform.Position(pos); 
+    #ifdef ExperimentalTransformOptimzation
+    //SetGlobalAsDirty();
+    UpdateGlobalTransformCacheIfNeeded();
+    #endif
+}
+
+Vector3 TransformComponent::LocalEulerAngles(){ 
+    #ifdef ExperimentalTransformOptimzation
+    if(isCollection) return Vector3Zero;
+    #endif
+
+    #ifdef TransformLessDataOptimzation
+    if(localEulerAnglesIsDirt){
+        localEulerAnglesIsDirt = false;
+        localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(localTransform.rotation));
+    }
+    return localEulerAngles;
+    #else
+    return localTransform.EulerAngles(); 
+    #endif
+}
+
+void TransformComponent::LocalEulerAngles(Vector3 euler){ 
+    #ifdef TransformLessDataOptimzation
+    localEulerAngles = euler;
+    localTransform.rotation = Quaternion(Mathf::Deg2Rad(localEulerAngles));
+    localEulerAnglesIsDirt = false;
+    #else
+    localTransform.EulerAngles(euler); 
+    #endif
+
+    #ifdef ExperimentalTransformOptimzation
+    //SetGlobalAsDirty();
+    UpdateGlobalTransformCacheIfNeeded();
+    #endif
+}
+
+Quaternion TransformComponent::LocalRotation(){ 
+    #ifdef ExperimentalTransformOptimzation
+    if(isCollection) return QuaternionIdentity;
+    #endif
+
+    return localTransform.Rotation(); 
+}
+
+void TransformComponent::LocalRotation(Quaternion rot){ 
+    #ifdef TransformLessDataOptimzation
+    localEulerAngles = Mathf::Rad2Deg(math::eulerAngles(rot));
+    localEulerAnglesIsDirt = false;
+    #endif
+
+    localTransform.Rotation(rot); 
+
+    #ifdef ExperimentalTransformOptimzation
+    //SetGlobalAsDirty();
+    UpdateGlobalTransformCacheIfNeeded();
+    #endif
+}
+
+Vector3 TransformComponent::LocalScale(){ 
+    #ifdef ExperimentalTransformOptimzation
+    if(isCollection) return Vector3One;
+    #endif
+    return localTransform.Scale(); 
+}
+
+void TransformComponent::LocalScale(Vector3 scale){
+    localTransform.Scale(scale); 
+    #ifdef ExperimentalTransformOptimzation
+    //SetGlobalAsDirty();
+    UpdateGlobalTransformCacheIfNeeded();
+    #endif
+}
+
+void TransformComponent::SetLocalModelMatrix(Matrix4 matrix){ 
+    #ifdef ExperimentalTransformOptimzation
+    Assert(false && "Outdate");
+    #endif
+    localTransform = Transform(matrix); 
 }
 
 bool TransformComponent::FindEntityInChildren(const std::string& name, Entity& out){
@@ -305,6 +428,22 @@ bool TransformComponent::FindEntityInChildren(const std::string& name, Entity& o
     }
 
     return false;
+}
+
+TransformComponent::operator Transform() {
+    /*#ifdef ExperimentalTransformOptimzation
+    return Transform(Position(), Rotation(), Scale()); 
+    #else*/
+    return Transform(GlobalModelMatrix());
+    //#endif
+}
+
+Transform TransformComponent::ToTransform(){ 
+    /*#ifdef ExperimentalTransformOptimzation
+    return Transform(Position(), Rotation(), LocalScale()); 
+    #else*/
+    return Transform(GlobalModelMatrix()); 
+    //#endif
 }
 
 void TransformComponent::CreateLuaBind(sol::state& lua){
@@ -677,9 +816,9 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
         meshRenderer.mesh = model->meshs[i.meshIndex];
         auto targetMatrix = Transform(model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
 
-        transform.LocalPosition(targetMatrix.LocalPosition());
-        transform.LocalRotation(targetMatrix.LocalRotation());
-        transform.LocalScale(targetMatrix.LocalScale());
+        transform.LocalPosition(targetMatrix.Position());
+        transform.LocalRotation(targetMatrix.Rotation());
+        transform.LocalScale(targetMatrix.Scale());
         meshRenderer.UpdateAABB();
 
         SetParent(root, mesh);

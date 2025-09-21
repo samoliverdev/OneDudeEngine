@@ -3,12 +3,12 @@
 #include <OD/Core/Application.h>
 
 void CameraMovement::OnStart(){
-    pitch = transform->LocalEulerAngles().x;
-    yaw = transform->LocalEulerAngles().y;
+    pitch = transform->EulerAngles().x;
+    yaw = transform->EulerAngles().y;
 }
 
 void CameraMovement::OnUpdate(){
-    Vector3 pos = transform->LocalPosition();
+    Vector3 pos = transform->Position();
 
     if(Input::IsKey(KeyCode::W)) pos += transform->Back() * moveSpeed * Application::DeltaTime();
     if(Input::IsKey(KeyCode::S)) pos += transform->Forward() * moveSpeed * Application::DeltaTime();
@@ -35,10 +35,10 @@ void CameraMovement::OnUpdate(){
         float newRotationY = pitch;
 
         //LogInfo("%f", newRotationX);
-        transform->LocalEulerAngles(Vector3(newRotationY, newRotationX, 0));
+        transform->EulerAngles(Vector3(newRotationY, newRotationX, 0));
     }
     
-    transform->LocalPosition(pos);
+    transform->Position(pos);
 }
 
 void CameraMovementScript::OnStart(){

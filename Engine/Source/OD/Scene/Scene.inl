@@ -52,10 +52,9 @@ void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func)
 
 template <class Archive>
 void TransformComponent::serialize(Archive & ar){
-    ArchiveDump(ar, CEREAL_NVP(transform.localPosition)); 
-    ArchiveDump(ar, CEREAL_NVP(transform.localRotation));
-    //ArchiveDump(ar, CEREAL_NVP(transform.localEulerAngles)); 
-    ArchiveDump(ar, CEREAL_NVP(transform.localScale));
+    ArchiveDump(ar, cereal::make_nvp("localPosition", localTransform.position)); 
+    ArchiveDump(ar, cereal::make_nvp("localRotation", localTransform.rotation));
+    ArchiveDump(ar, cereal::make_nvp("localScale", localTransform.scale));
     
     if constexpr (Archive::is_saving::value){
         std::vector<Entity> _children;

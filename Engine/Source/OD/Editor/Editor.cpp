@@ -130,7 +130,7 @@ inline void AlignToViewAABB(Transform& cameraTransform, const AABB& aabb, float 
     Vector3 cameraPos = center - viewDirection * distance;
 
     // 8. Aplicar nova posição e rotação para olhar para o centro do AABB
-    cameraTransform.LocalPosition(cameraPos);
+    cameraTransform.Position(cameraPos);
     cameraTransform.LookAt(center, upDirection);
 }
 
@@ -163,7 +163,7 @@ inline void AlignCameraToAABB_Isometric(Transform& cameraTransform, const AABB& 
     Vector3 cameraPos = center - viewDir * viewDistance;
 
     // Define a posição e rotação da câmera
-    cameraTransform.LocalPosition(cameraPos);
+    cameraTransform.Position(cameraPos);
     cameraTransform.LookAt(center);
 }
 
@@ -213,7 +213,7 @@ void Editor::OnInit(){
     renderP->SetOverrideFrameBuffer(assetPreviewFramebuffer);
     assetPreviewFramebuffer->Resize(400, 400);
 
-    assetPrevieweCam.transform.LocalPosition({0, 1, 5});
+    assetPrevieweCam.transform.Position({0, 1, 5});
 
     assetPreviewEntity = assetPreviewScene->AddEntity("ModelPreview");
     ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(assetPreviewEntity);
@@ -346,8 +346,8 @@ void Editor::OnUpdate(float deltaTime){
         editorCam.OnUpdate();
         editorCam.cam.isDebug = true;
         editorCam.cam.SetPerspective(45, 0.1f, 20000.0f, width, height);
-        editorCam.cam.viewPos = editorCam.transform.LocalPosition();
-        editorCam.cam.view = math::inverse(editorCam.transform.GetLocalModelMatrix());
+        editorCam.cam.viewPos = editorCam.transform.Position();
+        editorCam.cam.view = math::inverse(editorCam.transform.GetModelMatrix());
         //editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
         editorCam.cam.frustum = CreateFrustumFromMatrix2(math::transpose( editorCam.cam.projection * editorCam.cam.view ));
         renderPipeline->SetOverrideCamera(&editorCam.cam, editorCam.transform);
@@ -381,8 +381,8 @@ void Editor::OnUpdate(float deltaTime){
     assetPrevieweCam.OnUpdate();
     assetPrevieweCam.cam.isDebug = true;
     assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
-    assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.LocalPosition();
-    assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetLocalModelMatrix());
+    assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.Position();
+    assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetModelMatrix());
     assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix2(
         math::transpose(assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view)
     );

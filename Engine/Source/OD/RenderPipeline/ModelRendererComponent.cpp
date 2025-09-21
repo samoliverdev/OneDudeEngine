@@ -110,7 +110,7 @@ AABB ModelRendererComponent::GetGlobalAABB(TransformComponent& transform){
 
 AABB ModelRendererComponent::GetGlobalAABB(Transform& transform){
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.GetLocalModelMatrix() * Vector4(boundingVolume.center, 1) };
+    const Vector3 globalCenter{ transform.GetModelMatrix() * Vector4(boundingVolume.center, 1) };
 
     // Scaled orientation
     const Vector3 right = transform.Right() * boundingVolume.extents.x;
@@ -130,7 +130,7 @@ AABB ModelRendererComponent::GetGlobalAABB(Transform& transform){
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB result = AABB(globalCenter, newIi, newIj, newIk);
-    result.Expand(transform.LocalScale());
+    result.Expand(transform.Scale());
     return result;
 }
 
@@ -167,7 +167,7 @@ void SkinnedModelRendererComponent::CreateSkeletonEntites(Entity& selfEntity, Sc
 
         if(parent < 0){
             scene.SetParent(selfEntity, skeletonEntities[i]);
-            trans.SetLocalModelMatrix(localTransform.GetLocalModelMatrix() * skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(i));
+            trans.SetLocalModelMatrix(localTransform.GetModelMatrix() * skeletonTransform.GetModelMatrix() * pose.GetLocalMatrix(i));
         } else {
             scene.SetParent(skeletonEntities[parent], skeletonEntities[i]);
             trans.SetLocalModelMatrix(pose.GetLocalMatrix(i));
@@ -182,7 +182,7 @@ void SkinnedModelRendererComponent::UpdateSkeletonEntites(Pose& pose, Scene& sce
         int parent = pose.GetParent(i);
         
         if(parent < 0){
-            trans.SetLocalModelMatrix(localTransform.GetLocalModelMatrix() * skeletonTransform.GetLocalModelMatrix() * pose.GetLocalMatrix(i));
+            trans.SetLocalModelMatrix(localTransform.GetModelMatrix() * skeletonTransform.GetModelMatrix() * pose.GetLocalMatrix(i));
         } else {
             trans.SetLocalModelMatrix(pose.GetLocalMatrix(i));
         }  

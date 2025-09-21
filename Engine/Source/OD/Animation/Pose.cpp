@@ -61,8 +61,8 @@ void Pose::SetGlobalTransform(unsigned int index, Transform& globalTransform){
     
     // Calculate local transform: local = parentGlobal^-1 * globalTransform
     // First get the inverse of parent's global transform
-    Matrix4 parentMat = parentGlobal.GetLocalModelMatrix();
-    Matrix4 globalMat = globalTransform.GetLocalModelMatrix();
+    Matrix4 parentMat = parentGlobal.GetModelMatrix();
+    Matrix4 globalMat = globalTransform.GetModelMatrix();
     
     Matrix4 localMat = math::inverse(parentMat) * globalMat;// Calculate local matrix
     joints[index] = Transform(localMat);// Convert back to Transform
@@ -79,15 +79,15 @@ Transform Pose::GetGlobalTransform(unsigned int i){
 }
 
 Matrix4 Pose::GetGlobalMatrix(unsigned int i){
-    Matrix4 result = joints[i].GetLocalModelMatrix();
+    Matrix4 result = joints[i].GetModelMatrix();
     for(int p = parents[i]; p >= 0; p = parents[p]){
-        result = joints[p].GetLocalModelMatrix() * result;
+        result = joints[p].GetModelMatrix() * result;
     }
     return result;
 }
 
 Matrix4 Pose::GetLocalMatrix(unsigned int index){
-    return joints[index].GetLocalModelMatrix();
+    return joints[index].GetModelMatrix();
 }
 
 Transform Pose::operator[](unsigned int index){
@@ -141,7 +141,7 @@ void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out){
     }
 
     for (int i = 0; i < size; ++i) {
-        Matrix4 local = joints[i].GetLocalModelMatrix();
+        Matrix4 local = joints[i].GetModelMatrix();
         int parent = parents[i];
 
         if (parent >= 0) {

@@ -110,9 +110,9 @@ void BaseMeshSample::OnRender(float deltaTime){
     cam = {OD::Matrix4Identity, OD::math::ortho(0.0f, (float)OD::Application::ScreenWidth(), 0.0f, (float)OD::Application::ScreenHeight(), -10.0f, 10.0f)};
     OD::Graphics::SetCamera(cam);
     OD::Transform tt;
-    tt.LocalPosition(OD::Vector3(25*2, 25*2, 0));
-    tt.LocalScale(OD::Vector3(25*2));
-    OD::Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetLocalModelMatrix(), false, {});
+    tt.Position(OD::Vector3(25*2, 25*2, 0));
+    tt.Scale(OD::Vector3(25*2));
+    OD::Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetModelMatrix(), false, {});
     
     OD::Graphics::EndRenderToScreen();
 

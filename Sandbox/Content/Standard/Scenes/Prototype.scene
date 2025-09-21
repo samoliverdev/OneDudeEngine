@@ -117,23 +117,23 @@
     ],
     "TransformComponents": [
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 3.6177310943603517,
                 "v.z": 10.512909889221192
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -143,23 +143,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -169,23 +169,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -195,23 +195,23 @@
             "hasParent": true
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": -5.5,
                 "v.y": 0.8330175280570984,
                 "v.z": 5.5
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": -0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -221,23 +221,23 @@
             "hasParent": true
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.2885695695877075,
                 "q.y": -0.16848421096801759,
                 "q.z": -0.07247436046600342,
                 "q.w": 0.9397276639938355
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 36.119712829589847,
                 "v.y": -15.951927185058594,
                 "v.z": -14.05190372467041
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -247,23 +247,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -277,23 +277,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": -0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -303,23 +303,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 3.179563522338867,
                 "v.y": 0.8638708591461182,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -329,23 +329,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": -2.137310266494751,
                 "v.y": 1.2274888753890992,
                 "v.z": 0.0050098104402422909
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -355,23 +355,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.9845501780509949,
                 "v.y": 0.0,
                 "v.z": 2.528311014175415
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": -0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -381,23 +381,23 @@
             "hasParent": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": -5.5,
                 "v.y": 0.8330175280570984,
                 "v.z": 9.5
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localEulerAngles": {
+            "localEulerAngles": {
                 "v.x": 0.0,
                 "v.y": -0.0,
                 "v.z": 0.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0

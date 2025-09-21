@@ -1255,8 +1255,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	for(int p = 0; p < skeleton->GetJointCount(); ++p){
 		auto shapes = GetShape(ragdoll.parts[p].shape);
 		Transform boneTrans = setupPose.GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
-		auto positions = ToJolt(trans.TransformPoint(boneTrans.LocalPosition()/* + ragdoll.parts[p].shape.center*/));
-		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.LocalRotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
+		auto positions = ToJolt(trans.TransformPoint(boneTrans.Position()/* + ragdoll.parts[p].shape.center*/));
+		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.Rotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
 		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
 
 		auto twist_axis = ToJolt(trans.TransformDirection(math::normalizeSafe(ragdoll.parts[p].twistAxis)));
@@ -1413,7 +1413,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 						// 3. Rebuild the target bone transform in world space using local anim pose in current hip space
 						Transform boneTargetWorld = Transform::Combine(hipPhysTransform, boneAnimGlobal);
-						Quat targetRot = ToJolt(boneTargetWorld.LocalRotation());
+						Quat targetRot = ToJolt(boneTargetWorld.Rotation());
 
 						// 4. Get current bone rotation from physics
 						Quat currentRot;
@@ -1441,7 +1441,7 @@ void PhysicsSystem::PhysicsUpdate(){
 						if(boneIndex < 0) continue;
 
 						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-						Quat targetRot = ToJolt(targetTransform.LocalRotation());
+						Quat targetRot = ToJolt(targetTransform.Rotation());
 						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
 						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
 
@@ -1630,8 +1630,8 @@ void PhysicsSystem::PhysicsUpdate(){
 				ragdoll.parts[i].initedRot = FromJolt(bi.GetRotation(bodyID));
 
 				if(skinned.finalPose.Size() > 0){
-					auto positions = ToJolt(trans.TransformPoint(skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).LocalPosition()));
-					auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).LocalRotation()); 
+					auto positions = ToJolt(trans.TransformPoint(skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).Position()));
+					auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).Rotation()); 
 					bi.SetPositionAndRotation(bodyID, positions, rotations, JPH::EActivation::Activate);
 				}
 
@@ -1664,9 +1664,9 @@ void PhysicsSystem::PhysicsUpdate(){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 				Assert(boneIndex != 0);
-				Transform tt = Transform(trans.GlobalModelMatrix() * skinned.finalPose[boneIndex].GetLocalModelMatrix());
-				bodyInterface.SetPosition(bodyID, ToJolt(tt.LocalPosition()), EActivation::Activate);
-				bodyInterface.SetRotation(bodyID, ToJolt(tt.LocalRotation()), EActivation::Activate);
+				Transform tt = Transform(trans.GlobalModelMatrix() * skinned.finalPose[boneIndex].GetModelMatrix());
+				bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
+				bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
 			}
 		}
 

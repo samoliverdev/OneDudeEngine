@@ -1210,8 +1210,8 @@ void StandRenderPipeline::LateUpdate(){
         //trans.SetLocalModelMatrix(skinned.finalPose.GetGlobalMatrix(socket.boneIndex));
 
         auto t = skinned.finalPose.GetGlobalTransform(socket.boneIndex);
-        trans.LocalPosition(t.LocalPosition() + socket.offset);
-        trans.LocalRotation(t.LocalRotation() * Quaternion(math::radians(socket.OffsetEuler)));
+        trans.LocalPosition(t.Position() + socket.offset);
+        trans.LocalRotation(t.Rotation() * Quaternion(math::radians(socket.OffsetEuler)));
 
         /*auto& pose = skinned.finalPose;
         int parent = pose.GetParent(socket.boneIndex);
@@ -1450,7 +1450,7 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
         auto& g = drawGizmosView.get<GizmosDrawComponent>(e);
         auto& t = drawGizmosView.get<TransformComponent>(e);
         Graphics::DrawWireCube(
-            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetLocalModelMatrix(), 
+            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetModelMatrix(), 
             g.color, 
             1
         );
@@ -1480,11 +1480,11 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         auto& t = scene->GetComponent<TransformComponent>(e);
         if(c.GetModel() != nullptr){
 
-            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetModelMatrix());
 
             AABB aabb = c.GetAABB();
             AABB globalAABB = c.GetGlobalAABB(globalTransform);
-            globalAABB = transform_aabb_optimized_abs_center_extents(aabb, globalTransform.GetLocalModelMatrix());
+            globalAABB = transform_aabb_optimized_abs_center_extents(aabb, globalTransform.GetModelMatrix());
 
             Vector3 color = Vector3(0,0,1);
             if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
@@ -1497,7 +1497,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         auto& c = scene->GetComponent<SkinnedModelRendererComponent>(e);
         auto& t = scene->GetComponent<TransformComponent>(e);
         if(c.GetModel() != nullptr){
-            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix());
+            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetModelMatrix());
 
             AABB aabb = c.GetAABB();
             AABB globalAABB = c.GetGlobalAABB(globalTransform);
@@ -1515,7 +1515,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         auto& t = scene->GetComponent<TransformComponent>(e);
         if(s.GetModel() != nullptr){
             Transform globalTransform = Transform(
-                t.GlobalModelMatrix() * s.localTransform.GetLocalModelMatrix() * s.skeletonTransform.GetLocalModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
+                t.GlobalModelMatrix() * s.localTransform.GetModelMatrix() * s.skeletonTransform.GetModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
             );
 
             Pose pose;
@@ -1527,12 +1527,12 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
 
             for(int i = 0; i < pose.Size(); i++){
                 if(pose.GetParent(i) < 0) continue;
-                Vector3 p0 = globalTransform.TransformPoint( pose.GetGlobalTransform(i).LocalPosition() );
-                Vector3 p1 = globalTransform.TransformPoint( pose.GetGlobalTransform(pose.GetParent(i)).LocalPosition() );
+                Vector3 p0 = globalTransform.TransformPoint( pose.GetGlobalTransform(i).Position() );
+                Vector3 p1 = globalTransform.TransformPoint( pose.GetGlobalTransform(pose.GetParent(i)).Position() );
                 Graphics::DrawLine(p0, p1, Vector3(0, 0, 1), 1);
 
-                Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetLocalModelMatrix(), Vector3(0, 0, 1), 1);
-                Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetLocalModelMatrix(), Vector3(1, 0, 0), 1);
+                Graphics::DrawWireCube(Transform(p0, QuaternionIdentity, Vector3(0.05f)).GetModelMatrix(), Vector3(0, 0, 1), 1);
+                Graphics::DrawWireCube(Transform(p1, QuaternionIdentity, Vector3(0.025f)).GetModelMatrix(), Vector3(1, 0, 0), 1);
             }
         }
     }
@@ -1541,7 +1541,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         auto& g = scene->GetComponent<GizmosDrawComponent>(e);
         auto& t = scene->GetComponent<TransformComponent>(e);
         Graphics::DrawWireCube(
-            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetLocalModelMatrix(), 
+            Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetModelMatrix(), 
             g.color, 
             1
         );
@@ -1554,7 +1554,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         auto* subChunk = staticRenderer.GetSubChunkAtPos(staticRenderer.posTest);
         if(subChunk != nullptr){
             Graphics::DrawWireCube(
-                Transform(t.TransformPoint(subChunk->bounds.center), t.Rotation(), subChunk->bounds.extents*2.0f).GetLocalModelMatrix(), 
+                Transform(t.TransformPoint(subChunk->bounds.center), t.Rotation(), subChunk->bounds.extents*2.0f).GetModelMatrix(), 
                 {1, 0, 0}, 
                 1
             );
@@ -1562,7 +1562,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
 
         for(auto& i: staticRenderer.chunks){
             Graphics::DrawWireCube(
-                Transform(t.TransformPoint(i.bounds.center), t.Rotation(), i.bounds.extents*2.0f).GetLocalModelMatrix(), 
+                Transform(t.TransformPoint(i.bounds.center), t.Rotation(), i.bounds.extents*2.0f).GetModelMatrix(), 
                 {0, 0, 1}, 
                 1
             );
@@ -1571,7 +1571,7 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
                 Vector3 scale = j.bounds.extents*2.0f;
                 scale.y = 0.05f;
                 Graphics::DrawWireCube(
-                    Transform(t.TransformPoint(j.bounds.center), t.Rotation(), scale).GetLocalModelMatrix(), 
+                    Transform(t.TransformPoint(j.bounds.center), t.Rotation(), scale).GetModelMatrix(), 
                     {0, 1, 0}, 
                     1
                 );

@@ -77,18 +77,18 @@
     ],
     "TransformComponents": [
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -99,18 +99,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": -2.0,
                 "v.y": 4.0,
                 "v.z": -1.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": -0.7067119479179382,
                 "q.y": -0.5822538137435913,
                 "q.z": 0.25923410058021548,
                 "q.w": -0.30715012550354006
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -121,18 +121,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 1117.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -143,18 +143,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 256.0,
                 "v.y": 0.0,
                 "v.z": -256.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 50.0,
                 "v.y": 200.0,
                 "v.z": 50.0
@@ -165,18 +165,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": 0.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -187,18 +187,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 250.0,
                 "v.y": 250.0,
                 "v.z": -250.0
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0
@@ -209,18 +209,18 @@
             "isCollection": false
         },
         {
-            "transform.localPosition": {
+            "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
                 "v.z": -532.5258178710938
             },
-            "transform.localRotation": {
+            "localRotation": {
                 "q.x": 0.0,
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "transform.localScale": {
+            "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
                 "v.z": 1.0

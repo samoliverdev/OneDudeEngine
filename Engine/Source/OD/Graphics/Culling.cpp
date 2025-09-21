@@ -161,10 +161,10 @@ bool Sphere::isOnOrForwardPlane(Plane& plane) const{
 
 bool Sphere::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
-    Vector3 globalScale = transform.LocalScale();
+    Vector3 globalScale = transform.Scale();
 
     //Get our global center with process it with the global model matrix of our transform
-    Vector3 globalCenter{ transform.GetLocalModelMatrix() * glm::vec4(center, 1.f) };
+    Vector3 globalCenter{ transform.GetModelMatrix() * glm::vec4(center, 1.f) };
 
     //To wrap correctly our shape, we need the maximum scale scalar.
     const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
@@ -189,7 +189,7 @@ bool SquareAABB::isOnOrForwardPlane(Plane& plane) const{
 
 bool SquareAABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.GetLocalModelMatrix() * glm::vec4(center, 1.f) };
+    const Vector3 globalCenter{ transform.GetModelMatrix() * glm::vec4(center, 1.f) };
 
     // Scaled orientation
     const Vector3 right = transform.Right() * extent;
@@ -286,7 +286,7 @@ bool AABB::isOnOrForwardPlane(Plane& plane) const{
 
 bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
-    const Vector3 globalCenter{ transform.GetLocalModelMatrix() * Vector4(center, 1.f) };
+    const Vector3 globalCenter{ transform.GetModelMatrix() * Vector4(center, 1.f) };
 
     // Scaled orientation
     const Vector3 right = transform.Right() * extents.x;
@@ -306,7 +306,7 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         math::abs(math::dot(Vector3{ 0.f, 0.f, 1.f }, forward));
 
     AABB globalAABB(globalCenter, newIi, newIj, newIk);
-    globalAABB.Expand(transform.LocalScale());
+    globalAABB.Expand(transform.Scale());
 
     return (globalAABB.isOnOrForwardPlane(camFrustum.leftFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.rightFace) &&

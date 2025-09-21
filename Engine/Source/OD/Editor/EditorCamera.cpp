@@ -5,15 +5,15 @@
 namespace OD{
 
 void EditorCamera::OnStart(){
-    transform.LocalPosition(Vector3(0, 15, 15));
-    transform.LocalEulerAngles(Vector3(-25, 0, 0));
+    transform.Position(Vector3(0, 15, 15));
+    transform.EulerAngles(Vector3(-25, 0, 0));
 
-    pitch = transform.LocalEulerAngles().x;
-    yaw = transform.LocalEulerAngles().y;
+    pitch = transform.EulerAngles().x;
+    yaw = transform.EulerAngles().y;
 }
 
 void EditorCamera::OnUpdate(){
-    Vector3 pos = transform.LocalPosition();
+    Vector3 pos = transform.Position();
 
     if(Input::IsMouseButton(MouseButton::Right)){
         float targetSpeed = moveSpeed;
@@ -47,10 +47,10 @@ void EditorCamera::OnUpdate(){
         float newRotationY = pitch;
 
         //LogInfo("%f", newRotationX);
-        transform.LocalEulerAngles(Vector3(newRotationY, newRotationX, 0));
+        transform.EulerAngles(Vector3(newRotationY, newRotationX, 0));
     }
     
-    transform.LocalPosition(pos);
+    transform.Position(pos);
 }
 
 void AssetPreviewCamera::OnStart() {
@@ -64,7 +64,7 @@ void AssetPreviewCamera::OnStart() {
     lastX = 400; 
     lastY = 300;
 
-    Vector3 pos = transform.LocalPosition();
+    Vector3 pos = transform.Position();
     Vector3 dir = glm::normalize(pos - target);
 
     distance = glm::length(pos - target);
@@ -104,7 +104,7 @@ void AssetPreviewCamera::OnUpdate() {
 
     Vector3 cameraPos = target + offset;
 
-    transform.LocalPosition(cameraPos);
+    transform.Position(cameraPos);
     transform.LookAt(target);
 }
 

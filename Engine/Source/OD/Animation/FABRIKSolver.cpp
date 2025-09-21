@@ -200,11 +200,11 @@ void FABRIKSolver::IKChainToWorld() {
 	unsigned int size = Size();
 	for (unsigned int i = 0; i < size; ++i) {
 		Transform world = GetGlobalTransform(i);
-		worldChain[i] = world.LocalPosition();
+		worldChain[i] = world.Position();
 
 		if (i >= 1) {
 			auto prev = worldChain[i - 1];
-			lengths[i] = math::length(world.LocalPosition() - prev);
+			lengths[i] = math::length(world.Position() - prev);
 		}
 	}
 	if (size > 0) {
@@ -219,17 +219,17 @@ void FABRIKSolver::WorldToIKChain() {
 	for (unsigned int i = 0; i < size - 1; ++i) {
 		Transform world = GetGlobalTransform(i);
 		Transform next = GetGlobalTransform(i + 1);
-		auto position = world.LocalPosition();
-		auto rotation = world.LocalRotation();
+		auto position = world.Position();
+		auto rotation = world.Rotation();
 
-		auto toNext = next.LocalPosition() - position;
+		auto toNext = next.Position() - position;
 		toNext = math::inverse(rotation) * toNext;
 
 		auto toDesired = worldChain[i + 1] - position;
 		toDesired = inverse(rotation) * toDesired;
 
 		auto delta = math::fromTo(toNext, toDesired);
-		ikChain[i].LocalRotation( delta * ikChain[i].LocalRotation() );
+		ikChain[i].Rotation( delta * ikChain[i].Rotation() );
 	}
 }
 
@@ -266,7 +266,7 @@ bool FABRIKSolver::Solve(const Transform& target) {
 	float thresholdSq = threshold * threshold;
 
 	IKChainToWorld();
-	auto goal = target.LocalPosition();
+	auto goal = target.Position();
 	auto base = worldChain[0];
 
 	for (unsigned int i = 0; i < numSteps; ++i) {
@@ -281,7 +281,7 @@ bool FABRIKSolver::Solve(const Transform& target) {
 	}
 
 	WorldToIKChain();
-	auto effector = GetGlobalTransform(last).LocalPosition();
+	auto effector = GetGlobalTransform(last).Position();
 	if (math::length2(goal - effector) < thresholdSq) {
 		return true;
 	}
