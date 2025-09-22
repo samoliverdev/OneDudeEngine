@@ -330,6 +330,8 @@ bool Navmesh::RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mes
 
 bool Navmesh::Bake(Scene* scene, AABB bounds, BuildSettings inbuildSettings, LayerMask layerMask){
 	OD_LOG_PROFILE("Navmesh::Bake");
+
+	buildSettings = inbuildSettings;
 	bounds.Expand(Vector3(0.5f));
 
 	if(buildSettings.useTile) return BakeAllTiles(scene, bounds, buildSettings, layerMask);
@@ -1745,6 +1747,12 @@ void NavmeshAgentComponent::SetDestination(Vector3 d){
 	destination = d;
 	isDirty = true;
 	hasInit = true;
+}
+
+void NavmeshAgentComponent::Reset(){
+	isDirty = true;
+	hasInit = true;
+	//destination = Vector3Zero;
 }
 
 NavmeshSystem::NavmeshSystem(Scene* inScene):System(inScene){

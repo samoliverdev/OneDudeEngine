@@ -248,7 +248,7 @@ float Track<T,N>::AdjustTimeToFitTrack(float time, bool looping){
 
 template<typename T, int N>
 int FastTrack<T,N>::FrameIndex(float time, bool looping){
-    std::vector<Frame<N>>& frames = this->frames;
+    /*std::vector<Frame<N>>& frames = this->frames;
 
     unsigned int size = (unsigned int)frames.size();
     if(size <= 1){ return -1; }
@@ -276,7 +276,40 @@ int FastTrack<T,N>::FrameIndex(float time, bool looping){
     if(index >= sampledFrames.size()){
         return -1;
     }
-    return (int)sampledFrames[index];
+    return (int)sampledFrames[index];*/
+
+    std::vector<Frame<N>>& _frames = this->frames;
+
+	unsigned int size = (unsigned int)_frames.size();
+	if (size <= 1) { return -1; }
+
+	if (looping) {
+		float startTime = _frames[0].time;
+		float endTime = _frames[size - 1].time;
+		float duration = endTime - startTime;
+		time = fmodf(time - startTime, endTime - startTime);
+		if (time < 0.0f) {
+			time += endTime - startTime;
+		}
+		time = time + startTime;
+	}
+	else {
+		if (time <= _frames[0].time) {
+			return 0;
+		}
+		if (time >= _frames[size - 2].time) {
+			return (int)size - 2;
+		}
+	}
+	float duration = this->GetEndTime() - this->GetStartTime();
+	unsigned int numSamples = 60 + (unsigned int)(duration * 60.0f);
+	float t = time / duration;
+
+	unsigned int index = (unsigned int)(t * (float)numSamples);
+	if (index >= sampledFrames.size()) {
+		return -1;
+	}
+	return (int)sampledFrames[index];
 }
 
 template<typename T, int N>

@@ -45,7 +45,7 @@ struct OD_API BuildSettings{
 	// Agent height in world units
 	float agentHeight = 2.0f;
 	// Agent radius in world units
-	float agentRadius = 0.6f;
+	float agentRadius = 0.3f;
 	// Agent max climb in world units
 	float agentMaxClimb = 0.9f;
 	// Agent max slope in degrees
@@ -402,12 +402,22 @@ struct OD_API NavmeshAgentComponent{
 	Vector3 GetDestination();
 	void SetDestination(Vector3 d);
 
+	void Reset(); 
+
 	template<class Archive>
     void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, speed);
 		ArchiveDumpNVP(ar, stopDistance);
-	}
 
+		if constexpr(std::is_same_v<Archive, cereal::ImGuiArchive>){
+            ArchiveDumpNVP(ar, destination);
+			ArchiveDumpNVP(ar, lastPos);
+			ArchiveDumpNVP(ar, isDirty);
+			ArchiveDumpNVP(ar, curPathIndex);
+			ArchiveDumpNVP(ar, reach);
+			ArchiveDumpNVP(ar, hasInit);
+		}
+	}
 private:
 	Vector3 destination = {0, 0, 0};
 	Vector3 lastPos = {0, 0, 0};

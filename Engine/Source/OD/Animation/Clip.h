@@ -45,11 +45,11 @@ typedef TClip<FastTransformTrack> FastClip;
 
 FastClip OD_API OptimizeClip(Clip& input);
 
-#define OptimizeClipT(arg) OptimizeClip(arg)
-using ClipT = FastClip;
+//#define OptimizeClipT(arg) OptimizeClip(arg)
+//using ClipT = FastClip; //TODO: This is bug, Check this later
 
-//#define OptimizeClipT(arg) arg
-//using ClipT = Clip;
+#define OptimizeClipT(arg) arg
+using ClipT = Clip;
 
 }
 
