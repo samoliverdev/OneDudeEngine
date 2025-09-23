@@ -134,9 +134,14 @@ struct OD_API RigidbodyComponent{
     Vector3 Velocity();
     void Velocity(Vector3 v);
 
+    Vector3 AngularVelocity();
+    void AngularVelocity(Vector3 v);
+
     void ApplyForce(Vector3 v);
     void ApplyTorque(Vector3 v);
     void ApplyImpulse(Vector3 v);
+
+    void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
 
     void SetAngularFactor(Vector3 v);
 
@@ -246,6 +251,7 @@ struct OD_API RagdollComponent{
         }
     };
 
+    float globalMass = 75;
     Layers layer = Layers::Layer0;
     LayerMask mask = {AllLayers};
 
@@ -283,10 +289,13 @@ struct OD_API RagdollComponent{
     void ApplyTorque(int boneIndex, Vector3 v);
     void ApplyImpulse(int boneIndex, Vector3 v);
 
+    void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
+
     static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, globalMass);
         ArchiveDumpNVP(ar, layer);
         ArchiveDumpNVP(ar, mask);
         //ArchiveDumpNVP(ar, isDirty);
@@ -496,6 +505,9 @@ struct OD_API PhysicsSystem: public System{
 
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask);
+
+    std::vector<RayResult> OverlapSphere(Vector3 center, float radius);
+
     bool IsSimulationEnable();
     void Simulate(float step);
     void SynchronizeMotionStates();

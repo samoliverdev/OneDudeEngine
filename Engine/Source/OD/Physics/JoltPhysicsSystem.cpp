@@ -548,6 +548,9 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Checkbox("SyncWithFinalPose", &ragdoll.syncWithFinalPose);
 	ImGui::Checkbox("SyncFromTheHips", &ragdoll.syncFromTheHips);
 	ImGui::Checkbox("UseTorqueControl", &ragdoll.useTorqueControl);
+
+	ImGui::DragFloat("GlobalMass", &ragdoll.globalMass);
+
 	//ImGui::DragFloat("Gain", &ragdoll.gain);
 	ImGui::DragFloat("Damping", &ragdoll.damping);
 	ImGui::DragFloat("Stiffness", &ragdoll.stiffness);
@@ -815,6 +818,56 @@ void RagdollComponent::ApplyImpulse(int boneIndex, Vector3 v){
 	bodyInterface.AddImpulse(bodyID, ToJolt(v));
 }
 
+void RagdollComponent::AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier){
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+
+	for(int i = 0; i < data->ragdoll->GetBodyIDs().size(); i++){
+		JPH::Vec3 explosionCenter = ToJolt(explosionPosition);
+
+		// Get the body's center of mass
+		JPH::Vec3 centerOfMass = bodyInterface.GetCenterOfMassPosition(data->ragdoll->GetBodyIDs()[i]);
+
+		// Calculate distance from explosion center to center of mass
+		JPH::Vec3 direction = centerOfMass - explosionCenter;
+		float distance = direction.Length();
+
+		// Skip bodies outside the radius
+		if(distance > radius) return;
+
+		// Handle case where body is at the explosion center
+		if(distance < 0.0001f){
+			direction = JPH::Vec3(0, 1, 0); // Default to up direction (assuming Y is up)
+			distance = 0.0f;
+		} else {
+			direction /= distance; // Normalize direction
+		}
+
+		// Apply upwards modifier
+		if (upwardsModifier != 0.0f) {
+			JPH::Vec3 up = JPH::Vec3(0, 1, 0); // Assuming Y is up
+			direction += up * upwardsModifier;
+			direction = direction.NormalizedOr(up); // Normalize or fallback to up if zero
+		}
+
+		// Calculate impulse magnitude with linear falloff
+		float distanceFactor = JPH::Clamp(1.0f - (distance / radius), 0.0f, 1.0f);
+		float impulseMagnitude = (force) * distanceFactor;
+
+		// Calculate impulse vector
+		JPH::Vec3 impulse = direction * impulseMagnitude;
+
+		// 🔎 Print the mass of this body
+		const BodyLockRead lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyIDs()[i]);
+		const Body &body = lock.GetBody();
+		float mass = body.GetMotionProperties()->GetInverseMass() > 0.0f ? 1.0f / body.GetMotionProperties()->GetInverseMass() : 0.0f;
+		LogInfo("Body %d mass = %f\n", i, mass);
+
+		// Apply impulse to the body's center of mass
+		bodyInterface.AddImpulse(data->ragdoll->GetBodyIDs()[i], impulse, centerOfMass);
+	}
+}
+
 #pragma region RigidbodyComponent
 
 /*RigidbodyComponent::RigidbodyComponent(const RigidbodyComponent& other){
@@ -1038,6 +1091,18 @@ void RigidbodyComponent::Velocity(Vector3 v){
 	//bodyInterface.SetLinearDamping(data->bodyID, 0.0f);
 }
 
+Vector3 RigidbodyComponent::AngularVelocity(){
+	if(data == nullptr) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetAngularVelocity(data->bodyID));
+}
+
+void RigidbodyComponent::AngularVelocity(Vector3 v){
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.SetAngularVelocity(data->bodyID, ToJolt(v));
+}
+
 void RigidbodyComponent::ApplyForce(Vector3 v){
     if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
@@ -1054,6 +1119,48 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
     if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddImpulse(data->bodyID, ToJolt(v));
+}
+
+void RigidbodyComponent::AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier){
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+
+	JPH::Vec3 explosionCenter = ToJolt(explosionPosition);
+
+	// Get the body's center of mass
+	JPH::Vec3 centerOfMass = bodyInterface.GetCenterOfMassPosition(data->bodyID);
+
+	// Calculate distance from explosion center to center of mass
+	JPH::Vec3 direction = centerOfMass - explosionCenter;
+	float distance = direction.Length();
+
+	// Skip bodies outside the radius
+	if(distance > radius) return;
+
+	// Handle case where body is at the explosion center
+	if(distance < 0.0001f){
+		direction = JPH::Vec3(0, 1, 0); // Default to up direction (assuming Y is up)
+		distance = 0.0f;
+	} else {
+		direction /= distance; // Normalize direction
+	}
+
+	// Apply upwards modifier
+	if (upwardsModifier != 0.0f) {
+		JPH::Vec3 up = JPH::Vec3(0, 1, 0); // Assuming Y is up
+		direction += up * upwardsModifier;
+		direction = direction.NormalizedOr(up); // Normalize or fallback to up if zero
+	}
+
+	// Calculate impulse magnitude with linear falloff
+	float distanceFactor = JPH::Clamp(1.0f - (distance / radius), 0.0f, 1.0f);
+	float impulseMagnitude = force * distanceFactor;
+
+	// Calculate impulse vector
+	JPH::Vec3 impulse = direction * impulseMagnitude;
+
+	// Apply impulse to the body's center of mass
+	bodyInterface.AddImpulse(data->bodyID, impulse, centerOfMass);
 }
 
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
@@ -1223,9 +1330,40 @@ PhysicsSystem::~PhysicsSystem(){
 
 RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter, Pose* customSetupPose = nullptr){
 	auto GetShape = [](CollisionShape shape) -> Shape* {
-		if(shape.type == CollisionShape::Type::Box) return new BoxShape(ToJolt(shape.size * 0.5f));
-		if(shape.type == CollisionShape::Type::Sphere) return new SphereShape(shape.radius);
-		if(shape.type == CollisionShape::Type::Capsule) return new CapsuleShape(shape.height * 0.5f, shape.radius);
+		if(shape.type == CollisionShape::Type::Box){
+			auto* r = new BoxShape(ToJolt(shape.size * 0.5f));
+			return r;
+		}
+		if(shape.type == CollisionShape::Type::Sphere){
+			auto* r = new SphereShape(shape.radius);
+			return r;
+		}
+		if(shape.type == CollisionShape::Type::Capsule){
+			auto* r = new CapsuleShape(shape.height * 0.5f, shape.radius);
+			return r;
+		}
+		
+		Assert(false);
+		return nullptr;
+	};
+
+	auto GetShape2 = [](CollisionShape shape, float mass) -> JPH::Ref<JPH::Shape> {
+		if(shape.type == CollisionShape::Type::Box){
+			BoxShapeSettings s(ToJolt(shape.size * 0.5f));
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		if(shape.type == CollisionShape::Type::Sphere){
+			SphereShapeSettings s(shape.radius);
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		if(shape.type == CollisionShape::Type::Capsule){
+			CapsuleShapeSettings s(shape.height * 0.5f, shape.radius);
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		
 		Assert(false);
 		return nullptr;
 	};
@@ -1252,7 +1390,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	RagdollSettings *settings = new RagdollSettings;
 	settings->mSkeleton = skeleton;
 	settings->mParts.resize(skeleton->GetJointCount());
-	for(int p = 0; p < skeleton->GetJointCount(); ++p){
+	for(int p = 0; p < skeleton->GetJointCount(); ++p){	
 		auto shapes = GetShape(ragdoll.parts[p].shape);
 		Transform boneTrans = setupPose.GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
 		auto positions = ToJolt(trans.TransformPoint(boneTrans.Position()/* + ragdoll.parts[p].shape.center*/));
@@ -1274,6 +1412,11 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 		RagdollSettings::Part &part = settings->mParts[p];
 		part.SetShape(finalShape /*shapes*/);
+		
+		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
+		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
+		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
+		part.mMotionQuality = EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
@@ -1320,6 +1463,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 1; //5;
+constexpr int cCollisionSteps = 1;
 
 constexpr bool EnableFixedRate = true;
 constexpr bool EnableInterpolation = false;
@@ -1512,7 +1656,6 @@ void PhysicsSystem::PhysicsUpdate(){
 				if(EnableInterpolation) PreInterpolate();
 
 				if(scaledFixedTimeStep > 0.0f){
-					const int cCollisionSteps = 4; //1;
 					physicsWorld->physicsSystem.Update(
 						scaledFixedTimeStep, //fixedTimeStep,
 						cCollisionSteps,
@@ -1527,7 +1670,6 @@ void PhysicsSystem::PhysicsUpdate(){
 		} else {
 			if(EnableInterpolation) PreInterpolate();
 
-			const int cCollisionSteps = 1;
 			physicsWorld->physicsSystem.Update(
 				Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
 			);
@@ -1619,7 +1761,7 @@ void PhysicsSystem::PhysicsUpdate(){
 			for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
 				BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
-				
+
 				// Setar manualmente o CollisionGroup correto
 				bi.SetCollisionGroup(bodyID, JPH::CollisionGroup(
 					physicsWorld->groupFilter,
@@ -1638,6 +1780,7 @@ void PhysicsSystem::PhysicsUpdate(){
 				if(ragdoll.overrideStartVelocity != Vector3Zero){
 					bi.SetLinearVelocity(bodyID, ToJolt(ragdoll.overrideStartVelocity));
 				}
+				
 			}
 
 			/*for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
@@ -1932,13 +2075,79 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 
 		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
 		hit.hitPoint = FromJolt(hitPoint);
-		hit.hitPoint = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
 		return true;
 	}
 
     return false;
 }
 
+std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius) {
+    Assert(physicsWorld != nullptr);
+
+    std::vector<RayResult> results;
+
+    // Convert input to Jolt types
+    JPH::Vec3 sphereCenter = ToJolt(center);
+    JPH::SphereShape sphereShape(radius);
+    JPH::CollideShapeSettings settings;
+    settings.mActiveEdgeMode = JPH::EActiveEdgeMode::CollideOnlyWithActive;
+    settings.mCollisionTolerance = 0.0f; // Exact collision
+    settings.mMaxSeparationDistance = 0.0f; // No penetration allowed
+
+    // Collector to gather unique hits
+    class SphereOverlapCollector : public JPH::CollideShapeCollector {
+    public:
+        std::vector<RayResult>& mResults;
+        JPH::Vec3 mCenter;
+        const JPH::PhysicsSystem& mPhysicsSystem;
+        std::set<JPH::BodyID> mHitBodyIDs; // Track unique BodyIDs using std::set
+
+        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem)
+            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem) {}
+
+        void AddHit(const JPH::CollideShapeResult& inResult) override {
+            // Only process the first hit for each body
+            if (mHitBodyIDs.find(inResult.mBodyID2) != mHitBodyIDs.end()) {
+                return; // Skip if this body was already processed
+            }
+            mHitBodyIDs.insert(inResult.mBodyID2);
+
+            RayResult hit;
+
+            // Lock the body to get its data
+            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
+            if (!lock.Succeeded()) return;
+
+            const JPH::Body& body = lock.GetBody();
+            hit.entity = static_cast<Entity>(body.GetUserData());
+
+            // Use the closest point on the hit shape as the hit point
+            hit.hitPoint = FromJolt(inResult.mContactPointOn2);
+
+            // Calculate the normal at the contact point
+            hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(inResult.mSubShapeID2, inResult.mContactPointOn2));
+
+            mResults.push_back(hit);
+        }
+    };
+
+    // Perform the sphere overlap query
+    JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem);
+
+    // Use CollideShape to test the sphere against all bodies
+    physicsWorld->physicsSystem.GetNarrowPhaseQuery().CollideShape(
+        &sphereShape,           // The sphere shape
+        JPH::Vec3::sReplicate(1.0f), // Scale of the shape (no scaling)
+        JPH::Mat44::sTranslation(sphereCenter), // Transform of the sphere
+        settings,               // Collision settings
+        sphereCenter,          // Base offset
+        collector              // Collector for results
+    );
+
+    return results;
+}
 void PhysicsSystem::Simulate(float step){
     
 }
@@ -2084,6 +2293,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         info.layer,
         rb.mask.mask // stored in subgroup ID
     );
+	/*
+	settings.mMotionQuality = EMotionQuality::LinearCast;
+	settings.mNumVelocityStepsOverride = 20;
+	settings.mNumPositionStepsOverride = 20;
+	*/
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
 	// Verify body creation
     if (!bodyInterface.IsAdded(rb.data->bodyID)) {
