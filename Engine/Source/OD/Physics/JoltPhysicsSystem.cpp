@@ -1416,7 +1416,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
-		part.mMotionQuality = EMotionQuality::LinearCast;
+		//part.mMotionQuality = EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
@@ -1471,7 +1471,7 @@ constexpr bool EnableInterpolation = false;
 void PhysicsSystem::PhysicsUpdate(){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
 	
-	if(GetScene()->Running() == false) return;
+	//if(GetScene()->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
@@ -1493,7 +1493,7 @@ void PhysicsSystem::PhysicsUpdate(){
 		}
 
 		for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
-			if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
+			if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic /*&& ragdoll.syncWithFinalPose*/){
 				if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate && EnableInterpolation){
 					for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 						if(ragdoll.parts[p].previousPosition == Vector3Zero) continue;
@@ -1535,8 +1535,41 @@ void PhysicsSystem::PhysicsUpdate(){
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					if(ragdoll.parts[p].disableSync) continue;
+
+					if(ragdoll.parts[p].parent >= 0){
+						float motorFrequency = ragdoll.gain;    // or convert/gain mapping as you prefer
+						float motorDamping   = ragdoll.damping; // damping term
+						float maxMotorTorque = ragdoll.stiffness * 10.0f; // scale as needed
+
+						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
+						c->GetSwingMotorSettings() = MotorSettings(motorFrequency, motorDamping);
+						c->GetTwistMotorSettings() = MotorSettings(motorFrequency, motorDamping);
+						c->SetMaxFrictionTorque(maxMotorTorque);
+						c->SetSwingMotorState(EMotorState::Position);
+						c->SetTwistMotorState(EMotorState::Position);
+
+						/*int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
+						Quat boneTargetWorld = ToJolt(animGlobal.Rotation());
+
+						Quat parentRot;
+						RVec3 parentPos;
+						bodyInterface.GetPositionAndRotation(ragdoll.data->ragdoll->GetBodyIDs()[ragdoll.parts[p].parent], parentPos, parentRot);
+
+						Quat targetRel = parentRot.Conjugated() * boneTargetWorld;
+						c->SetTargetOrientationCS(targetRel);*/
+
+						int parentIndex = ragdoll.parts[ragdoll.parts[p].parent].skinnedSkeletonIndex;
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						Transform animParentGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(parentIndex));
+						Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
+						
+						auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
+						c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
+					}
 					
-					if(ragdoll.syncFromTheHips && hipIndex != -1 /*&& ragdoll.parts[p].isHips == false*/){
+					/*
+					if(ragdoll.syncFromTheHips && hipIndex != -1){ //&& ragdoll.parts[p].isHips == false
 						Assert(hipIndex == 0);
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -1610,13 +1643,12 @@ void PhysicsSystem::PhysicsUpdate(){
 
 						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
 
-						///*
 						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
 							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
-						//*/
 					}
+					*/
 				}
 			}
 			
