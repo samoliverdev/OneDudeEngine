@@ -264,24 +264,21 @@ enum SystemType{//FIXME: Maybe Rename
 
 class OD_API System{
 public:
-    System(Scene* inScene):scene(inScene){}
     virtual ~System(){}
 
+    virtual void OnInit(Scene& scene){}
+    virtual void OnEnd(Scene& scene){}
+
     virtual int Type(){ return SystemType::Stand; } //FIXME: Maybe Rename
-    virtual void Update(){}
-    virtual void AnimationUpdate(){}
-    virtual void PhysicsUpdate(){}
-    virtual void LateUpdate(){}
-    virtual void Render(){}
-    virtual void OnDrawGizmos(Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
-    virtual void OnDrawGizmosSelected(Camera& cam, Entity entity){} //FIXME: Maybe Add a SystemType::OnDrawGizmosSelected
+    virtual void Update(Scene& scene){}
+    virtual void AnimationUpdate(Scene& scene){}
+    virtual void PhysicsUpdate(Scene& scene){}
+    virtual void LateUpdate(Scene& scene){}
+    virtual void Render(Scene& scene){}
+    virtual void OnDrawGizmos(Scene& scene, Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
+    virtual void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity){} //FIXME: Maybe Add a SystemType::OnDrawGizmosSelected
 
     virtual bool ExecuteAlways(){ return false; }
-    
-    Scene* GetScene(){ return scene; }
-
-protected:
-    Scene* scene;
 };
 
 class OD_API Scene: public Asset {

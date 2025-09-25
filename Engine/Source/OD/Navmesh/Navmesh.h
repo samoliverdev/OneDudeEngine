@@ -433,17 +433,19 @@ private:
 
 class OD_API NavmeshSystem: public System{
 public:
-	NavmeshSystem(Scene* scene);
-    ~NavmeshSystem() override;
+	void OnInit(Scene& scene) override;
+    void OnEnd(Scene& scene) override;
     
 	//NavmeshSystem* Clone(Scene* inScene) const override{ return new NavmeshSystem(inScene); }
     virtual int Type() override { return SystemType::Late; }
 
-    virtual void LateUpdate() override;
-	virtual void OnDrawGizmos(Camera& cam) override;
-	virtual void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+    virtual void LateUpdate(Scene& scene) override;
+	virtual void OnDrawGizmos(Scene& scene, Camera& cam) override;
+	virtual void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity) override;
 private:
 	static void OnRemoveAgent(entt::registry& r, entt::entity e);
+
+	//Scene* scene;
 };
 
 void NavmeshModuleInit();

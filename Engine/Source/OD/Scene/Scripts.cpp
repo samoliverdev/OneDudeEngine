@@ -100,27 +100,27 @@ void ScriptComponent::_ParallelUpdate(Entity e, Scene& scene, bool isLate){
 
 //////////////////////////////////////
 
-ScriptSystem::ScriptSystem(Scene* inScene):System(inScene){
-    this->scene->GetRegistry().on_destroy<ScriptComponent>().connect<&OnDestroyScript>();
+void ScriptSystem::OnInit(Scene& scene){
+    scene.GetRegistry().on_destroy<ScriptComponent>().connect<&OnDestroyScript>();
 }
 
-ScriptSystem::~ScriptSystem(){
-    this->scene->GetRegistry().on_destroy<ScriptComponent>().disconnect<&OnDestroyScript>();
+void ScriptSystem::OnEnd(Scene& scene){
+    scene.GetRegistry().on_destroy<ScriptComponent>().disconnect<&OnDestroyScript>();
 }
 
-void ScriptSystem::Update(){
+void ScriptSystem::Update(Scene& scene){
     {
     OD_PROFILE_SCOPE("ScriptSystem::Update::Sync");
-    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
-    GetScene()->GetTaskflow().clear();
+    scene.GetExecutor().run(scene.GetTaskflow()).wait(); 
+    scene.GetTaskflow().clear();
     }
 
     OD_PROFILE_SCOPE("ScriptSystem::Update");
 
-    auto view = GetScene()->GetRegistry().view<ScriptComponent>();
+    auto view = scene.GetRegistry().view<ScriptComponent>();
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
-        c._Update(entity, *GetScene(), false);
+        c._Update(entity, scene, false);
     }
 
     //INFO: Experimental
@@ -134,18 +134,18 @@ void ScriptSystem::Update(){
     });*/
 }
 
-void ScriptSystem::LateUpdate(){
+void ScriptSystem::LateUpdate(Scene& scene){
     {
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate::Sync");
-    GetScene()->GetExecutor().run(GetScene()->GetTaskflow()).wait(); 
-    GetScene()->GetTaskflow().clear();
+    scene.GetExecutor().run(scene.GetTaskflow()).wait(); 
+    scene.GetTaskflow().clear();
     }
 
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate");
-    auto view = GetScene()->GetRegistry().view<ScriptComponent>();
+    auto view = scene.GetRegistry().view<ScriptComponent>();
     for(auto entity: view){
         auto& c = view.get<ScriptComponent>(entity);
-        c._Update(entity, *GetScene(), true);
+        c._Update(entity, scene, true);
     }
 }
 

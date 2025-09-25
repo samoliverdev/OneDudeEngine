@@ -486,8 +486,8 @@ using OnCollisionCallback = void(*)(Scene&, Entity, Entity);
 struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
 
-    PhysicsSystem(Scene* scene);
-    ~PhysicsSystem() override;
+    void OnInit(Scene& scene) override;
+    void OnEnd(Scene& scene) override;
 
     /*System* Clone(Scene* inScene) const override{ 
         PhysicsSystem* system = new PhysicsSystem(inScene);
@@ -499,8 +499,8 @@ struct OD_API PhysicsSystem: public System{
     }*/
     
     virtual int Type() override { return SystemType::Physics; }
-    virtual void PhysicsUpdate() override;
-    virtual void OnDrawGizmos(Camera& cam) override;
+    virtual void PhysicsUpdate(Scene& scene) override;
+    virtual void OnDrawGizmos(Scene& scene, Camera& cam) override;
 
     void ShowDebugGizmos();
 
@@ -555,6 +555,8 @@ private:
     std::vector<OnCollisionCallback> onTriggerExitCallbacks;
 
     float physicsAccumulator = 0.0f;
+
+    Scene* scene;
 };
 
 void PhysicsModuleInit();

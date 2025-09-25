@@ -353,4 +353,54 @@ void SceneManager::RegisterSystem(const std::string& name){
     });
 }
 
+template <typename T>
+void SceneManager::AddGlobalSystem(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+    Assert(globalSystems.find(GetType<T>()) == globalSystems.end() && "System Already has been added");
+
+    auto newSystem = new T();
+
+    globalSystems[GetType<T>()] = newSystem;
+    if(newSystem->Type() & SystemType::Physics) globalPhysicsSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::Stand) globalStandSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::Animation) globalAnimationSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::Late) globalLateSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::Renderer) globalRendererSystems.push_back(newSystem);
+}
+
+template<typename T> 
+void SceneManager::RemoveGlobalSystem(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+    Assert(globalSystems.find(GetType<T>()) != globalSystems.end() && "System Already has not been added");
+
+    System* s = globalSystems[GetType<T>()];
+
+    globalSystems.erase(GetType<T>());
+    globalPhysicsSystems.erase(std::remove(globalPhysicsSystems.begin(), globalPhysicsSystems.end(), s), globalPhysicsSystems.end());
+    globalStandSystems.erase(std::remove(globalStandSystems.begin(), globalStandSystems.end(), s), globalStandSystems.end());
+    globalAnimationSystems.erase(std::remove(globalAnimationSystems.begin(), globalAnimationSystems.end(), s), globalAnimationSystems.end());
+    globalLateSystems.erase(std::remove(globalLateSystems.begin(), globalLateSystems.end(), s), globalLateSystems.end());
+    globalRendererSystems.erase(std::remove(globalRendererSystems.begin(), globalRendererSystems.end(), s), globalRendererSystems.end());
+    
+    delete s;
+}
+
+template<typename T>
+T* SceneManager::GetGlobalSystem(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+
+    if(globalSystems.find(GetType<T>()) == globalSystems.end()) return nullptr;
+    return static_cast<T*>(globalSystems[GetType<T>()]);
+}
+
+template<typename T>
+T* SceneManager::GetGlobalSystemDynamic(){
+    static_assert(std::is_base_of<OD::System, T>::value);
+
+    for(auto c: globalSystems){
+        if(dynamic_cast<T*>(c.second)) return (T*)c.second;
+    }
+    return nullptr;
+}
+
 }

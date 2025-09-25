@@ -39,8 +39,6 @@ struct BoidSystem: public OD::System{
     float separationWeight = 25;
     float coheshionWeight = 5;
     float alignmentWeight = 10;
-
-    BoidSystem(Scene* inScene):System(inScene){}
     //System* Clone(Scene* inScene) const override{ return new BoidSystem(inScene); }
 
     template<typename T>
@@ -48,13 +46,13 @@ struct BoidSystem: public OD::System{
         return static_cast<size_t>(ptr - base);
     }
 
-    void Update() override{
+    void Update(Scene& scene) override{
         OD_PROFILE_SCOPE("BoidSystem::Update");
 
         //entt::view<entt::get_t<TransformComponent, BoidComponent>> boidsView = scene->GetRegistry().view<TransformComponent, BoidComponent>();
         //auto test = std::make_shared<entt::view<entt::get_t<TransformComponent, BoidComponent>>>(boidsView);
 
-        auto boidsView = scene->GetRegistry().group<TransformComponent, BoidComponent>();
+        auto boidsView = scene.GetRegistry().group<TransformComponent, BoidComponent>();
         
         auto firstTrans = &std::get<1>(*boidsView.each().begin());
         auto firstBoid  = &std::get<2>(*boidsView.each().begin());
@@ -107,7 +105,7 @@ struct BoidSystem: public OD::System{
         }
     }
 
-    void OnDrawGizmos(Camera& cam) override{
+    void OnDrawGizmos(Scene& scene, Camera& cam) override{
         Transform trans;
         trans.Scale(Vector3(boundsSize));
         Graphics::DrawWireCube(trans.GetModelMatrix(), Vector3(0, 1, 0), 1);

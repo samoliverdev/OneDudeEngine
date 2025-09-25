@@ -7,7 +7,7 @@ namespace OD{
 
 class BaseRenderPipeline: public System{
 public:
-    BaseRenderPipeline(Scene* inScene):System(inScene){}
+    //BaseRenderPipeline(Scene* inScene):System(inScene){}
 
     virtual void SetOverrideFrameBuffer(Framebuffer* out) = 0;
     virtual void SetOverrideCamera(Camera* cam, Transform trans) = 0;

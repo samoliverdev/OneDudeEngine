@@ -317,8 +317,8 @@ void Scene::AddSystem(){
     static_assert(std::is_base_of<OD::System, T>::value);
     Assert(systems.find(GetType<T>()) == systems.end() && "System Already has been added");
 
-    auto newSystem = new T(this);
-    //newSystem->Init(this);
+    auto newSystem = new T();
+    newSystem->OnInit(*this);
 
     systems[GetType<T>()] = newSystem;
     //systemsAdd[GetType<T>()] = [](Scene& s){ s.AddSystem<T>(); };
@@ -352,6 +352,7 @@ void Scene::RemoveSystem(){
     lateSystems.erase(std::remove(lateSystems.begin(), lateSystems.end(), s), lateSystems.end());
     rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
     
+    s->OnEnd(*this);
     delete s;
 }
 

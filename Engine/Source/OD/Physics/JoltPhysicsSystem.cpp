@@ -1226,9 +1226,10 @@ void RigidbodyComponent::SetAngularFactor(Vector3 v){
 
 int ACCURACY = 10;
 
-bool PhysicsSystem::IsSimulationEnable(){ return GetScene()->Running(); }
+bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Running();*/ }
 
-PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
+void PhysicsSystem::OnInit(Scene& inScene){
+	scene = &inScene;
    // Register allocation hook. In this example we'll just let Jolt use malloc / free but you can override these if you want (see Memory.h).
 	// This needs to be done before any other Jolt function is called.
 	RegisterDefaultAllocator();
@@ -1329,14 +1330,10 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 }
 
-void* PhysicsSystem::GetInternlWorld(){
-    return nullptr;
-}
-
-PhysicsSystem::~PhysicsSystem(){
-    this->scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
-	this->scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
-	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
+void PhysicsSystem::OnEnd(Scene& inScene){
+    scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
+	scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
+	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
 
@@ -1346,6 +1343,10 @@ PhysicsSystem::~PhysicsSystem(){
 	Factory::sInstance = nullptr;
 
     delete physicsWorld;
+}
+
+void* PhysicsSystem::GetInternlWorld(){
+    return nullptr;
 }
 
 RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter, Pose* customSetupPose = nullptr){
@@ -1490,7 +1491,7 @@ constexpr int cCollisionSteps = 2;
 constexpr bool EnableFixedRate = true;
 constexpr bool EnableInterpolation = false;
 
-void PhysicsSystem::PhysicsUpdate(){
+void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
 	
 	//if(GetScene()->Running() == false) return;
@@ -1499,8 +1500,8 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock(); //physicsWorld->physicsSystem.GetBodyInterface();
 
-	auto view = GetScene()->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
-	auto _view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
+	auto view = scene->GetRegistry().view<RigidbodyComponent, TransformComponent, InfoComponent>();
+	auto _view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 
 	auto PreInterpolate = [&](){
 		for(auto [entity, rb, trans, info]: view.each()){
@@ -1515,7 +1516,7 @@ void PhysicsSystem::PhysicsUpdate(){
 		}
 
 		for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
-			if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic /*&& ragdoll.syncWithFinalPose*/){
+			if(ragdoll.data != nullptr && scene->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic /*&& ragdoll.syncWithFinalPose*/){
 				if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate){
 					for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 						//if(ragdoll.parts[p].previousPosition == Vector3Zero) continue;
@@ -1535,7 +1536,7 @@ void PhysicsSystem::PhysicsUpdate(){
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PreUpdate");
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
-		GetScene()->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
+		scene->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
 
 		if(ragdoll.data != nullptr && scene->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
 			float gain = ragdoll.gain;
@@ -1687,7 +1688,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::Update");
-	if(GetScene()->Running() == true){
+	if(scene->Running() == true){
 		if(EnableFixedRate){
 			float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
 			physicsAccumulator += deltaTime;
@@ -1727,7 +1728,7 @@ void PhysicsSystem::PhysicsUpdate(){
 
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PostUpdate");	
-	auto viewMesh = GetScene()->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
+	auto viewMesh = scene->GetRegistry().view<RigidbodyComponent, ModelRendererComponent, TransformComponent>();
     for(auto e: viewMesh){
 		RigidbodyComponent& rb = viewMesh.get<RigidbodyComponent>(e);
         TransformComponent& transform = viewMesh.get<TransformComponent>(e);
@@ -1738,7 +1739,7 @@ void PhysicsSystem::PhysicsUpdate(){
 		}
 	}
 
-	auto viewMesh2 = GetScene()->GetRegistry().view<RigidbodyComponent, MeshRendererComponent, TransformComponent>();
+	auto viewMesh2 = scene->GetRegistry().view<RigidbodyComponent, MeshRendererComponent, TransformComponent>();
     for(auto e: viewMesh2){
 		RigidbodyComponent& rb = viewMesh2.get<RigidbodyComponent>(e);
         TransformComponent& transform = viewMesh2.get<TransformComponent>(e);
@@ -1789,7 +1790,7 @@ void PhysicsSystem::PhysicsUpdate(){
         }
     }
 
-	auto view2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
+	auto view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
 		if(ragdoll.isDirty && skinned.GetModel() != nullptr){
 			ragdoll.isDirty = false;
@@ -1861,7 +1862,7 @@ void PhysicsSystem::PhysicsUpdate(){
 			}
 		}
 
-		if(ragdoll.data != nullptr && GetScene()->Running() == true){
+		if(ragdoll.data != nullptr && scene->Running() == true){
 			if(ragdoll.type == RagdollComponent::Type::Dynamic){
 				scene->GetTaskflow().emplace([&skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
 
@@ -1912,7 +1913,7 @@ void PhysicsSystem::PhysicsUpdate(){
 	}
 
 	//TODO: Update This, make handle dirty and organaze the code
-	auto heightView = GetScene()->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();
+	auto heightView = scene->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();
 	for(auto e : heightView){
 		auto& rb = heightView.get<HeightmapColliderComponent>(e);
 		auto& transform = heightView.get<TransformComponent>(e);
@@ -1972,7 +1973,7 @@ void PhysicsSystem::PhysicsUpdate(){
 	}
 }
 
-void PhysicsSystem::OnDrawGizmos(Camera& cam){
+void PhysicsSystem::OnDrawGizmos(Scene& inScene, Camera& cam){
 	ShowDebugGizmos();
 }
 
@@ -2211,6 +2212,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 
     return results;
 }
+
 void PhysicsSystem::Simulate(float step){
     
 }

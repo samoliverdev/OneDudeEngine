@@ -48,12 +48,12 @@ private:
 };
 
 struct OD_API AnimatorSystem: public System{
-    AnimatorSystem(Scene* scene);
+    AnimatorSystem();
     //inline System* Clone(Scene* inScene) const override{ return new AnimatorSystem(inScene); }
 
     virtual int Type() override;
-    virtual void Update() override;
-    virtual void AnimationUpdate() override;
+    virtual void Update(Scene& scene) override;
+    virtual void AnimationUpdate(Scene& scene) override;
 };
 
 void AnimatorModuleInit();

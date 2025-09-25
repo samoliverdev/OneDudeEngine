@@ -156,11 +156,10 @@ private:
 
 class OD_API TerrainSystem: public System{
 public:
-    TerrainSystem(Scene* scene);
-    ~TerrainSystem() override;
+    void OnInit(Scene& scene);
 
     virtual int Type() override { return SystemType::Physics; }
-    virtual void PhysicsUpdate() override;
+    virtual void PhysicsUpdate(Scene& scene) override;
 
 private:
     void DestroyTerrain(TerrainComponent& terrain);
@@ -169,6 +168,8 @@ private:
     void UpdateTerrain(TerrainComponent& terrain);
     void LoadCood(TerrainComponent& terrain, IVector2 coor);
     TerrainComponent::TerrainLod GetTerrainLod(int chunkSize, int lod);
+
+    Scene* scene;
 };
 
 void TerrainModuleInit();

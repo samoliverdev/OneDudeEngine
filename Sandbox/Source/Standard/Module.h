@@ -13,12 +13,12 @@ void ModuleInit();
 
 class StandardAssetSystem: public System{
 public:
-    StandardAssetSystem(Scene* scene);
+    StandardAssetSystem();
     ~StandardAssetSystem() override;
     virtual int Type() override { return SystemType::Stand | SystemType::Late; }
     virtual bool ExecuteAlways() override { return true; }
-    virtual void Update() override;
-    virtual void LateUpdate() override;
+    virtual void Update(Scene& scene) override;
+    virtual void LateUpdate(Scene& scene) override;
 private:
     Ref<Material> defaultMaterial = nullptr;
 };

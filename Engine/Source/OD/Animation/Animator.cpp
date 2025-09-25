@@ -78,14 +78,14 @@ int AnimatorComponent::LayerCount(){
     return layers.size();
 }
 
-AnimatorSystem::AnimatorSystem(Scene* inScene):System(inScene){}
+AnimatorSystem::AnimatorSystem(){}
 
 int AnimatorSystem::Type(){ 
     return SystemType::Stand | SystemType::Animation; 
 }
 
-void AnimatorSystem::Update(){
-    auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
+void AnimatorSystem::Update(Scene& scene){
+    auto view = scene.GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();
     for(auto [entity, anim, skinned]: view.each()){
         if(anim.toPlay >= 0 && skinned.GetModel() != nullptr){
             anim.Play(skinned.GetModel()->animationClips[anim.toPlay].get());
@@ -170,7 +170,7 @@ void ParallelForEach2(Scene* scene, Func&& func) {
     scene->GetTaskflow().clear();
 }
 
-void AnimatorSystem::AnimationUpdate(){
+void AnimatorSystem::AnimationUpdate(Scene& scene){
     #ifdef __EMSCRIPTEN__
     return;
     #endif
@@ -243,8 +243,8 @@ void AnimatorSystem::AnimationUpdate(){
     };
 
     #if InternalSystemsMulthread
-        auto view = GetScene()->GetRegistry().group<AnimatorComponent, SkinnedModelRendererComponent>();
-        auto view2 = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
+        auto view = scene.GetRegistry().group<AnimatorComponent, SkinnedModelRendererComponent>();
+        auto view2 = scene.GetRegistry().view<AnimatorComponent, SkinnedMeshRendererComponent>();
         /*scene->GetTaskflow().emplace([=](tf::Subflow& subflow){
             for(auto [entity, anim, skinned]: view.each()){
                 subflow.emplace([&](){ HandlerAnimatorByModel(skinned, anim); });
@@ -268,7 +268,7 @@ void AnimatorSystem::AnimationUpdate(){
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
             SkinnedMeshRendererComponent& skinned = view2.get<SkinnedMeshRendererComponent>(e);
-            scene->GetTaskflow().emplace([&](){ HandlerAnimatorByMesh(skinned, anim); });
+            scene.GetTaskflow().emplace([&](){ HandlerAnimatorByMesh(skinned, anim); });
         }
     #else 
         auto view = GetScene()->GetRegistry().view<AnimatorComponent, SkinnedModelRendererComponent>();

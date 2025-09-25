@@ -47,11 +47,11 @@ private:
 
 class OD_API AudioSystem: public System{
 public:
-    AudioSystem(Scene* scene);
+    AudioSystem();
     ~AudioSystem() override;
 
     virtual int Type() override { return SystemType::Stand; }
-    virtual void Update() override;
+    virtual void Update(Scene& scene) override;
 };
 
 void AudioModuleInit();

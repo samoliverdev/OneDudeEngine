@@ -533,12 +533,18 @@ Scene::Scene(bool withoutDefaultSystems){
         //i.second(*this);
         i(*this);
     }
+    for(auto& i: SceneManager::Get().globalSystems){
+        i.second->OnInit(*this);
+    }
 }
 
 Scene::Scene(Scene& other){
     for(auto& i: other.systemsAdd){
         //i.second(*this);
         i(*this);
+    }
+    for(auto& i: SceneManager::Get().globalSystems){
+        i.second->OnInit(*this);
     }
 
     auto view = other.registry.view<entt::entity>();
@@ -562,14 +568,15 @@ Scene::Scene(Scene& other){
 }
 
 Scene::~Scene(){
-    //registry.clear();
-    /*for(System* i: standSystems) delete i;
-    for(System* i: rendererSystems) delete i;
-    for(System* i: physicsSystems) delete i;*/
-
-    for(auto& i: systems) delete i.second;
-
     registry.clear();//INFO: Maybe this order fix same crashs
+
+    for(auto& i: SceneManager::Get().globalSystems){
+        i.second->OnEnd(*this);
+    }
+    for(auto& i: systems){
+        i.second->OnEnd(*this);
+        delete i.second;
+    }
     
     systems.clear();
     standSystems.clear();
@@ -886,7 +893,11 @@ void Scene::Update(){
     //if(running == false) return;
     for(auto s: standSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
-        s->Update();
+        s->Update(*this);
+    }
+    for(auto& s: SceneManager::Get().globalStandSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->Update(*this);
     }
     {
         OD_PROFILE_SCOPE("Scene::Update::Sync");
@@ -896,7 +907,11 @@ void Scene::Update(){
 
     for(auto s: animationSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
-        s->AnimationUpdate();
+        s->AnimationUpdate(*this);
+    }
+    for(auto& s: SceneManager::Get().globalAnimationSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->AnimationUpdate(*this);
     }
     {
         OD_PROFILE_SCOPE("Scene::AnimationUpdate::Sync");
@@ -904,16 +919,22 @@ void Scene::Update(){
         taskflow.clear();
     }
 
-    for(auto s: physicsSystems) s->PhysicsUpdate();
+    for(auto s: physicsSystems) s->PhysicsUpdate(*this);
+    for(auto s: SceneManager::Get().globalPhysicsSystems) s->PhysicsUpdate(*this);
     {
         OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
         taskflow.clear();
     }
+    
 
     for(auto s: lateSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
-        s->LateUpdate();
+        s->LateUpdate(*this);
+    }
+    for(auto& s: SceneManager::Get().globalLateSystems){
+        if(running == false && s->ExecuteAlways() == false) continue;
+        s->LateUpdate(*this);
     }
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
@@ -932,7 +953,8 @@ void Scene::Draw(){
     OD_PROFILE_SCOPE("Scene::Draw");
 
     Graphics::Begin();
-    for(auto& s: rendererSystems) s->Render();        
+    for(auto& s: rendererSystems) s->Render(*this);   
+    for(auto& s: SceneManager::Get().globalRendererSystems) s->Render(*this);     
     Graphics::End();
 }
 

@@ -29,6 +29,11 @@ public:
     template<typename T> void RegisterComponent(const std::string& name, const std::string& groupName = "");
     template<typename T> void RegisterScript(const std::string& name);
     template<typename T> void RegisterSystem(const std::string& name);    
+
+    template<typename T> void AddGlobalSystem();
+    template<typename T> void RemoveGlobalSystem();
+    template<typename T> T* GetGlobalSystem();
+    template<typename T> T* GetGlobalSystemDynamic();
     
     // Module Parent Overloaded
     void OnInit() override;
@@ -66,6 +71,13 @@ private:
         std::function<void(ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name)> snapshotOut;
         std::function<void(ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name)> snapshotIn;
     };*/
+
+    std::vector<System*> globalStandSystems;
+    std::vector<System*> globalAnimationSystems;
+    std::vector<System*> globalPhysicsSystems;
+    std::vector<System*> globalLateSystems;
+    std::vector<System*> globalRendererSystems;
+    std::unordered_map<Type, System*> globalSystems;
 
     SceneState sceneState;
     bool inEditor;

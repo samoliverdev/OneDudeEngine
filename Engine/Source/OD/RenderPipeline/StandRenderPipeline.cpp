@@ -1118,11 +1118,11 @@ void CameraRenderer::RenderEntityIds(Camera cam, RenderContext* renderContext){
 #pragma endregion
 
 #pragma region StandRenderPipeline
-StandRenderPipeline::StandRenderPipeline(Scene* inScene):BaseRenderPipeline(inScene){
-    renderContext = new RenderContext(scene);
+void StandRenderPipeline::OnInit(Scene& scene){
+    renderContext = new RenderContext(&scene);
 }
 
-StandRenderPipeline::~StandRenderPipeline(){
+void StandRenderPipeline::OnEnd(Scene& scene){
     delete renderContext;
 }
 
@@ -1147,15 +1147,15 @@ int StandRenderPipeline::ReadEntityId(int x, int y){
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
 }
 
-void StandRenderPipeline::Update(){
-    if(scene->Running() == false) return;
+void StandRenderPipeline::Update(Scene& scene){
+    if(scene.Running() == false) return;
 
-    auto viewStaticRendererCluster = scene->GetRegistry().view<TransformComponent, StaticRendererClusterComponent>();
+    auto viewStaticRendererCluster = scene.GetRegistry().view<TransformComponent, StaticRendererClusterComponent>();
     for(auto [entity, trans, staticRendererCluster]: viewStaticRendererCluster.each()){
         if(staticRendererCluster.autoCollectChildRenderers && staticRendererCluster.started == false){
             staticRendererCluster.started = true;
 
-            auto viewModelRenderer = scene->GetRegistry().view<TransformComponent, ModelRendererComponent>(
+            auto viewModelRenderer = scene.GetRegistry().view<TransformComponent, ModelRendererComponent>(
                 entt::exclude</*StaticRendererComponent,*/ HideInEditor, SelfDisable, SkipDraw>
             );
             for(auto [entity2, t, c]: viewModelRenderer.each()){
@@ -1188,7 +1188,7 @@ void StandRenderPipeline::Update(){
                 }
 
                 c.draw = false;
-                scene->AddTagComponent<SkipDraw>(entity2);
+                scene.AddTagComponent<SkipDraw>(entity2);
             }
             
             staticRendererCluster.CreateIntancingCommands();
@@ -1196,14 +1196,14 @@ void StandRenderPipeline::Update(){
     }
 }
 
-void StandRenderPipeline::LateUpdate(){
-    auto viewSkinnedModelSocket = scene->GetRegistry().view<TransformComponent, SkinnedBoneSocket>();
+void StandRenderPipeline::LateUpdate(Scene& scene){
+    auto viewSkinnedModelSocket = scene.GetRegistry().view<TransformComponent, SkinnedBoneSocket>();
     for(auto [entity, trans, socket]: viewSkinnedModelSocket.each()){
         if(socket.boneIndex < 0) continue;
         if(trans.HasParent() == false) continue;
-        if(scene->HasComponent<SkinnedModelRendererComponent>(trans.Parent()) == false) continue;
+        if(scene.HasComponent<SkinnedModelRendererComponent>(trans.Parent()) == false) continue;
 
-        SkinnedModelRendererComponent& skinned = scene->GetComponent<SkinnedModelRendererComponent>(trans.Parent());
+        SkinnedModelRendererComponent& skinned = scene.GetComponent<SkinnedModelRendererComponent>(trans.Parent());
 
         if(socket.boneIndex >= skinned.finalPose.Size()) continue;
 
@@ -1224,7 +1224,7 @@ void StandRenderPipeline::LateUpdate(){
     }
 }
 
-void StandRenderPipeline::Render(){
+void StandRenderPipeline::Render(Scene& scene){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
     //----------Setup Envroment Settings-------------
@@ -1232,7 +1232,7 @@ void StandRenderPipeline::Render(){
     //environmentSettings = defaultEnvironmentSettings;
     EnvironmentSettings* environmentSettings = &defaultEnvironmentSettings;
 
-    auto enviView = GetScene()->GetRegistry().view<EnvironmentComponent>();
+    auto enviView = scene.GetRegistry().view<EnvironmentComponent>();
     for(auto entity: enviView){
         EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);
         environmentSettings = &environmentComponent.settings;
@@ -1301,10 +1301,10 @@ void StandRenderPipeline::Render(){
     cameraRenderer.renderStagePasses = &renderStagePasses;
 
     if(overrideCamera != nullptr){
-        Entity mainCamera = GetScene()->GetMainCamera();
+        Entity mainCamera = scene.GetMainCamera();
         auto targetRenderPath = CameraRenderer::RenderingPath::Forward;
-        if(GetScene()->IsValid(mainCamera)){
-            auto& cam = GetScene()->GetComponent<CameraComponent>(mainCamera);
+        if(scene.IsValid(mainCamera)){
+            auto& cam = scene.GetComponent<CameraComponent>(mainCamera);
             targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? CameraRenderer::RenderingPath::Deferred : CameraRenderer::RenderingPath::Forward;
         }
 
@@ -1315,7 +1315,7 @@ void StandRenderPipeline::Render(){
             targetRenderPath
         );
     } else {
-        auto camView = GetScene()->GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>();
+        auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>();
         for(auto entity: camView){
             CameraComponent& cam = camView.get<CameraComponent>(entity);
             TransformComponent& trans = camView.get<TransformComponent>(entity);
@@ -1361,7 +1361,7 @@ void StandRenderPipeline::Render(){
     renderContext->End();
 }
 
-void StandRenderPipeline::OnDrawGizmos(Camera& cm){
+void StandRenderPipeline::OnDrawGizmos(Scene& scene, Camera& cm){
     //return;
 
     /*
@@ -1445,7 +1445,7 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
     }
     */
 
-    auto drawGizmosView = scene->GetRegistry().view<GizmosDrawComponent, TransformComponent>();
+    auto drawGizmosView = scene.GetRegistry().view<GizmosDrawComponent, TransformComponent>();
     for(auto e: drawGizmosView){
         auto& g = drawGizmosView.get<GizmosDrawComponent>(e);
         auto& t = drawGizmosView.get<TransformComponent>(e);
@@ -1457,12 +1457,12 @@ void StandRenderPipeline::OnDrawGizmos(Camera& cm){
     }
 }
 
-void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
+void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity e){
     //return;
     
-    if(scene->HasComponent<MeshRendererComponent>(e)){
-        auto& c = scene->GetComponent<MeshRendererComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<MeshRendererComponent>(e)){
+        auto& c = scene.GetComponent<MeshRendererComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
         if(c.mesh != nullptr){
             AABB aabb = c.boundingVolume;
             AABB globalAABB = c.GetGlobalAABB(t);
@@ -1475,9 +1475,9 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         }
     }
 
-    if(scene->HasComponent<ModelRendererComponent>(e)){
-        auto& c = scene->GetComponent<ModelRendererComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<ModelRendererComponent>(e)){
+        auto& c = scene.GetComponent<ModelRendererComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
         if(c.GetModel() != nullptr){
 
             Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetModelMatrix());
@@ -1493,9 +1493,9 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         }
     }
 
-    if(scene->HasComponent<SkinnedModelRendererComponent>(e)){
-        auto& c = scene->GetComponent<SkinnedModelRendererComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<SkinnedModelRendererComponent>(e)){
+        auto& c = scene.GetComponent<SkinnedModelRendererComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
         if(c.GetModel() != nullptr){
             Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetModelMatrix());
 
@@ -1509,17 +1509,17 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         }
     }
 
-    if(scene->HasComponent<SkinnedModelRendererComponent>(e) && scene->HasComponent<AnimatorComponent>(e)){
-        auto& s = scene->GetComponent<SkinnedModelRendererComponent>(e);
-        auto& c = scene->GetComponent<AnimatorComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<SkinnedModelRendererComponent>(e) && scene.HasComponent<AnimatorComponent>(e)){
+        auto& s = scene.GetComponent<SkinnedModelRendererComponent>(e);
+        auto& c = scene.GetComponent<AnimatorComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
         if(s.GetModel() != nullptr){
             Transform globalTransform = Transform(
                 t.GlobalModelMatrix() * s.localTransform.GetModelMatrix() * s.skeletonTransform.GetModelMatrix() * s.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(0)
             );
 
             Pose pose;
-            if(scene->Running()){ 
+            if(scene.Running()){ 
                 pose = c.GetLayer(0).controller.GetCurrentPose();
             } else {
                 pose = s.GetModel()->skeleton.GetBindPose(); 
@@ -1537,9 +1537,9 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         }
     }
 
-    if(scene->HasComponent<GizmosDrawComponent>(e)){
-        auto& g = scene->GetComponent<GizmosDrawComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<GizmosDrawComponent>(e)){
+        auto& g = scene.GetComponent<GizmosDrawComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
         Graphics::DrawWireCube(
             Transform(t.TransformPoint(g.center), t.Rotation(), g.size).GetModelMatrix(), 
             g.color, 
@@ -1547,9 +1547,9 @@ void StandRenderPipeline::OnDrawGizmosSelected(Camera& cm, Entity e){
         );
     }
 
-    if(scene->HasComponent<StaticRendererClusterComponent>(e)){
-        auto& staticRenderer = scene->GetComponent<StaticRendererClusterComponent>(e);
-        auto& t = scene->GetComponent<TransformComponent>(e);
+    if(scene.HasComponent<StaticRendererClusterComponent>(e)){
+        auto& staticRenderer = scene.GetComponent<StaticRendererClusterComponent>(e);
+        auto& t = scene.GetComponent<TransformComponent>(e);
 
         auto* subChunk = staticRenderer.GetSubChunkAtPos(staticRenderer.posTest);
         if(subChunk != nullptr){

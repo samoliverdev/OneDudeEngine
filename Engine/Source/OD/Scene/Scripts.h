@@ -97,13 +97,13 @@ private:
 };
 
 struct OD_API ScriptSystem: public System{
-    ScriptSystem(Scene* scene);
-    ~ScriptSystem();
+    void OnInit(Scene& scene);
+    void OnEnd(Scene& scene);
     //System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }
 
     virtual inline int Type() override { return SystemType::Stand | SystemType::Late; }
-    virtual void Update() override;
-    virtual void LateUpdate() override;
+    virtual void Update(Scene& scene) override;
+    virtual void LateUpdate(Scene& scene) override;
 private:
     static void OnDestroyScript(entt::registry & r, entt::entity e);
 };

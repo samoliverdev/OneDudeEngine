@@ -105,7 +105,7 @@ void AudioSourceComponent::OnGui(Entity& e, Scene& scene){
     }
 }
 
-AudioSystem::AudioSystem(Scene* inScene):System(inScene){
+AudioSystem::AudioSystem(){
     //soloud.init(); 
     //Erro: call init twice on playing mode
 }
@@ -118,7 +118,7 @@ AudioSystem::~AudioSystem(){
     }
 }
 
-void AudioSystem::Update(){
+void AudioSystem::Update(Scene& scene){
     OD_PROFILE_SCOPE("ScriptSystem::Update");
 
     /*if(hasInited == false){
@@ -141,9 +141,9 @@ void AudioSystem::Update(){
         hasInited = true;
     }
 
-    auto cam = scene->GetMainCamera();
+    auto cam = scene.GetMainCamera();
     Assert(cam != EntityNull);
-    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(cam);
+    TransformComponent& camTrans = scene.GetComponent<TransformComponent>(cam);
     Vector3 pos = camTrans.Position();
     Vector3 forward = camTrans.Back();
     Vector3 up = camTrans.Up();
@@ -153,7 +153,7 @@ void AudioSystem::Update(){
     soloud.set3dListenerUp(up.x, up.y, up.z);
     soloud.set3dListenerVelocity(0, 0, 0);  // Optional for Doppler
 
-    auto audioView = scene->GetRegistry().view<AudioSourceComponent, TransformComponent>();
+    auto audioView = scene.GetRegistry().view<AudioSourceComponent, TransformComponent>();
     for(auto e : audioView){
         AudioSourceComponent& audio = audioView.get<AudioSourceComponent>(e);
         if(audio.soloud == nullptr) audio.soloud = &soloud;

@@ -181,24 +181,25 @@ void LuaScriptComponent::OnGui(Entity& e, Scene& scene){
     renderLuaObjectProperties(script.data);
 }
 
-LuaScriptSystem::LuaScriptSystem(Scene* inScene):System(inScene){
+void LuaScriptSystem::OnInit(Scene& scene){
     lua = CreateRef<sol::state>();
     lua->open_libraries(sol::lib::base, sol::lib::math, sol::lib::os, sol::lib::table, sol::lib::io, sol::lib::string);
     for(auto i: LuaBindsDB::Get().bindFuncs){
         i(*lua);
     } 
 
-    this->scene->GetRegistry().on_destroy<LuaScriptComponent>().connect<&OnDestroyScript>();
+    scene.GetRegistry().on_destroy<LuaScriptComponent>().connect<&OnDestroyScript>();
 }
 
-LuaScriptSystem::~LuaScriptSystem(){
-    this->scene->GetRegistry().on_destroy<LuaScriptComponent>().disconnect<&OnDestroyScript>();
+
+void LuaScriptSystem::OnEnd(Scene& scene){
+    scene.GetRegistry().on_destroy<LuaScriptComponent>().disconnect<&OnDestroyScript>();
 }
 
-void LuaScriptSystem::Update(){
+void LuaScriptSystem::Update(Scene& scene){
     OD_PROFILE_SCOPE("LuaScriptSystem::OnUpdate");
 
-    auto scriptView = GetScene()->GetRegistry().view<LuaScriptComponent>();
+    auto scriptView = scene.GetRegistry().view<LuaScriptComponent>();
     for(auto e: scriptView){
         LuaScriptComponent& luaScript = scriptView.get<LuaScriptComponent>(e);
 
@@ -226,14 +227,14 @@ void LuaScriptSystem::Update(){
             //luaScript.saveData = convertSolObject(luaScript.data);
         }
 
-        if(GetScene()->Running() == false) continue;
+        if(scene.Running() == false) continue;
 
         if(luaScript.hasInited == true){
             if(luaScript.hasStarted == false){
                 luaScript.hasStarted = true;
 
                 (*lua)["entity"] = e; //Entity(e, GetScene());
-                (*lua)["scene"] = scene;
+                (*lua)["scene"] = &scene;
                 //luaScript.data["entity"] = e;
                 //luaScript.data["scene"] = scene;
                 auto error2 = luaScript.OnStart(luaScript.data);
@@ -245,7 +246,7 @@ void LuaScriptSystem::Update(){
             }
 
             (*lua)["entity"] = e; //Entity(e, GetScene());   
-            (*lua)["scene"] = scene; 
+            (*lua)["scene"] = &scene; 
             //luaScript.data["entity"] = e;
             //luaScript.data["scene"] = scene;
             auto error = luaScript.OnUpdate(luaScript.data);

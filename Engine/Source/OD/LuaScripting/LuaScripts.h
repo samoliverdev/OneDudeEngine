@@ -80,10 +80,10 @@ private:
 };
 
 struct OD_API LuaScriptSystem: public System{
-    LuaScriptSystem(Scene* scene);
-    ~LuaScriptSystem();
+    virtual void OnInit(Scene& scene) override;
+    virtual void OnEnd(Scene& scene) override;
 
-    virtual void Update() override;
+    virtual void Update(Scene& scene) override;
     inline bool ExecuteAlways() override { return true; }
 
 private:

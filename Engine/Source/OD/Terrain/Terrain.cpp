@@ -126,30 +126,26 @@ void TerrainComponent::SetHeightmap(Ref<Heightmap> inHeightmap){
     }
 }*/
 
-TerrainSystem::TerrainSystem(Scene* inScene):System(inScene){
-
+void TerrainSystem::OnInit(Scene& inscene){
+    scene = &inscene;
 }
 
-TerrainSystem::~TerrainSystem(){
-
-}
-
-void TerrainSystem::PhysicsUpdate(){
+void TerrainSystem::PhysicsUpdate(Scene& inscene){
     OD_PROFILE_SCOPE("TerrainSystem::Update");
     //OD_LOG_PROFILE("TerrainSystem::Update");
 
-    auto terrainView = GetScene()->GetRegistry().view<TransformComponent, TerrainComponent>();
+    auto terrainView = scene->GetRegistry().view<TransformComponent, TerrainComponent>();
     for(auto e: terrainView){
         TransformComponent& trans = terrainView.get<TransformComponent>(e);
         TerrainComponent& terrain = terrainView.get<TerrainComponent>(e);
-        Assert(GetScene()->IsValid(EntityNull) == false);
+        Assert(scene->IsValid(EntityNull) == false);
 
         if(terrain.heightmap == nullptr){
             DestroyTerrain(terrain);
             return;
         }
 
-        if(GetScene()->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
+        if(scene->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
             CreateTerrain(terrain, e);
         } else {
             if(terrain.heightMapIsDirt){
@@ -596,7 +592,7 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
 }
 
 void TerrainSystem::DestroyTerrain(TerrainComponent& terrain){
-    if(GetScene()->IsValid(terrain.meshsRoot)){
+    if(scene->IsValid(terrain.meshsRoot)){
         scene->DestroyEntity(terrain.collider);
         scene->DestroyEntity(terrain.meshsRoot);
         terrain.meshsRoot = EntityNull;
@@ -618,11 +614,11 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
 
     DestroyTerrain(terrain);
 
-    terrain.meshsRoot = GetScene()->AddEntity("Root");
-    GetScene()->GetComponent<InfoComponent>(terrain.meshsRoot).hidden = false;//true;
-    GetScene()->SetParent(e, terrain.meshsRoot);
+    terrain.meshsRoot = scene->AddEntity("Root");
+    scene->GetComponent<InfoComponent>(terrain.meshsRoot).hidden = false;//true;
+    scene->SetParent(e, terrain.meshsRoot);
 
-    GetScene()->AddTagComponent<DontSave>(terrain.meshsRoot);
+    scene->AddTagComponent<DontSave>(terrain.meshsRoot);
     
     terrain.chunkSize = terrain.mapChunkSize - 1;
     terrain.lods = std::vector<int>{
@@ -693,12 +689,12 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     delete normal;*/
 
     //Create Collider
-    terrain.collider = GetScene()->AddEntity("Collider");
-    GetScene()->AddTagComponent<DontSave>(terrain.collider);
+    terrain.collider = scene->AddEntity("Collider");
+    scene->AddTagComponent<DontSave>(terrain.collider);
     //GetScene()->SetParent(terrain.meshsRoot, terrain.collider);
-    GetScene()->SetParent(e, terrain.collider);
+    scene->SetParent(e, terrain.collider);
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
-    TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
+    TransformComponent& colliderTrans = scene->GetComponent<TransformComponent>(terrain.collider);
     colliderTrans.LocalScale(Vector3(
         terrain.terrainWidth / (float)(terrain.heightmap->width-0), //terrainMeshWidth / (float)terrain.heightmap->width,
         terrain.terrainHeight, 
@@ -722,7 +718,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
         )
     );
     #endif
-    HeightmapColliderComponent& heightmapCollider = GetScene()->AddComponent<HeightmapColliderComponent>(terrain.collider);
+    HeightmapColliderComponent& heightmapCollider = scene->AddComponent<HeightmapColliderComponent>(terrain.collider);
     heightmapCollider.width = terrain.heightmap->width;
     heightmapCollider.length = terrain.heightmap->height;
     heightmapCollider.scale = heightmapSize;
@@ -733,7 +729,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     terrain.heightmap->TransposeTo(heightmapCollider.heights);
     }
 
-    terrain.CreateMeshToNavmesh(*GetScene());
+    terrain.CreateMeshToNavmesh(*scene);
 
     //Create Mesh To Navmesh
     /*terrain.meshToNavmesh = GetScene()->AddEntity("meshToNavmesh");
@@ -791,7 +787,7 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
 
     {
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::TransposeTo");  
-    HeightmapColliderComponent& heightmapCollider = GetScene()->GetComponent<HeightmapColliderComponent>(terrain.collider);
+    HeightmapColliderComponent& heightmapCollider = scene->GetComponent<HeightmapColliderComponent>(terrain.collider);
     heightmapCollider.width = terrain.heightmap->width;
     heightmapCollider.length = terrain.heightmap->height;
     heightmapCollider.scale = heightmapSize;
@@ -808,7 +804,7 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
     meshToNavmesh.UpdateAABB();
     }*/
 
-    terrain.CreateMeshToNavmesh(*GetScene());
+    terrain.CreateMeshToNavmesh(*scene);
 }
 
 void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
@@ -819,7 +815,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     //terrain.collider.scene = scene;
     //terrain.meshToNavmesh.scene = scene;
 
-    TransformComponent& camTrans = GetScene()->GetComponent<TransformComponent>(GetScene()->GetMainCamera());
+    TransformComponent& camTrans = scene->GetComponent<TransformComponent>(scene->GetMainCamera());
 
     Vector3 viewPos = Vector3(camTrans.Position().x, camTrans.Position().y, -camTrans.Position().z);
     auto currentCoord = IVector3(
@@ -831,7 +827,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     {
     OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::1");
     for(auto& i: terrain.loadedChunks){
-        TransformComponent& trans = GetScene()->GetComponent<TransformComponent>(i.second.entity);
+        TransformComponent& trans = scene->GetComponent<TransformComponent>(i.second.entity);
 
         Vector3 pos = trans.Position();
         i.second.lodInfo.lod = terrain.lods.size()-1;
@@ -849,7 +845,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         );
         //i.second.lodInfo.lod = 0;
 
-        GetScene()->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
+        scene->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
             terrain.lodsMesh[i.second.lodInfo.lod].scale
         );
     }  
@@ -896,7 +892,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     {
     OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::2");
     for(auto& i: terrain.loadedChunks){
-        GetScene()->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
+        scene->GetComponent<TransformComponent>(terrain.loadedChunks[i.first].entity).LocalScale(
             terrain.lodsMesh[i.second.lodInfo.lod].scale
         );//Need this because the Step 2
 
@@ -910,7 +906,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         if(terrain.loadedChunks.count(i.first + IVector2(0, 1))) borders.top = lod < terrain.loadedChunks[i.first + IVector2(0, 1)].lodInfo.lod;
         if(terrain.loadedChunks.count(i.first + IVector2(0, -1))) borders.bottom = lod < terrain.loadedChunks[i.first + IVector2(0, -1)].lodInfo.lod;
 
-        MeshRendererComponent& meshComponent = GetScene()->GetComponent<MeshRendererComponent>(terrain.loadedChunks[i.first].entity);
+        MeshRendererComponent& meshComponent = scene->GetComponent<MeshRendererComponent>(terrain.loadedChunks[i.first].entity);
         meshComponent.mesh = terrain.lodsMesh[lod].meshs[borders];
         meshComponent.boundingVolume = AABB(
             Vector3(0, terrain.terrainHeight/2, 0), 
@@ -932,7 +928,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         meshComponent.material->SetTexture("tex4", terrain.layer4);
     }
 
-    GetScene()->GetComponent<TransformComponent>(terrain.meshsRoot).LocalScale(
+    scene->GetComponent<TransformComponent>(terrain.meshsRoot).LocalScale(
         Vector3(
             terrain.terrainWidth / (float)(terrain.chunkSize * terrain.chunkWidthCount),
             1, 
@@ -944,7 +940,7 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
     {
     OD_PROFILE_SCOPE("TerrainSystem::UpdateTerrain::3");
     float terrainMeshWidth = (float)(terrain.chunkSize * terrain.chunkWidthCount);
-    TransformComponent& colliderTrans = GetScene()->GetComponent<TransformComponent>(terrain.collider);
+    TransformComponent& colliderTrans = scene->GetComponent<TransformComponent>(terrain.collider);
     //NOTE: temp disable this while fix collider bug
     /*colliderTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)terrain.heightmap->width,
@@ -975,22 +971,22 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     TerrainComponent::ChunkData chunkData;
     chunkData.lodInfo = TerrainComponent::LodInfo();
 
-    chunkData.entity = GetScene()->AddEntity("Chunk");
-    GetScene()->SetParent(terrain.meshsRoot, chunkData.entity);
+    chunkData.entity = scene->AddEntity("Chunk");
+    scene->SetParent(terrain.meshsRoot, chunkData.entity);
 
     Vector3 pos(coord.x * (float)terrain.chunkSize, 0, -(coord.y * (float)terrain.chunkSize));
     pos += Vector3((float)terrain.chunkSize/2.0f, 0, -(terrain.chunkSize/2.0f));
-    GetScene()->GetComponent<TransformComponent>(chunkData.entity).LocalPosition(pos);
+    scene->GetComponent<TransformComponent>(chunkData.entity).LocalPosition(pos);
 
-    InfoComponent& info = GetScene()->GetComponent<InfoComponent>(chunkData.entity);
+    InfoComponent& info = scene->GetComponent<InfoComponent>(chunkData.entity);
     info.hidden = false;// true;
 
-    GetScene()->AddTagComponent<DontSave>(chunkData.entity);
-    GetScene()->AddComponent<NavmeshSkipTag>(chunkData.entity);
+    scene->AddTagComponent<DontSave>(chunkData.entity);
+    scene->AddComponent<NavmeshSkipTag>(chunkData.entity);
 
     float offset = 1.0f / (float)terrain.chunkWidthCount;
 
-    MeshRendererComponent& terrainMeshRenderer = GetScene()->AddComponent<MeshRendererComponent>(chunkData.entity);
+    MeshRendererComponent& terrainMeshRenderer = scene->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
 
     #if 1 //EnableExperimentalPerDrawCustomData

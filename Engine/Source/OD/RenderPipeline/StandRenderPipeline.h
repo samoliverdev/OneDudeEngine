@@ -278,8 +278,9 @@ private:
 
 class StandRenderPipeline: public BaseRenderPipeline{
 public:
-    StandRenderPipeline(Scene* _scene);
-    ~StandRenderPipeline();
+    void OnInit(Scene& scene);
+    void OnEnd(Scene& scene);
+    //~StandRenderPipeline(){}
     //System* Clone(Scene* inScene) const override;
 
     void SetOverrideFrameBuffer(Framebuffer* out) override;
@@ -289,12 +290,12 @@ public:
     inline bool ExecuteAlways() override { return true; }
 
     int Type() override { return SystemType::Renderer | SystemType::Stand | SystemType::Late; }
-    void Update() override;
-    void LateUpdate() override;
-    void Render() override;
+    void Update(Scene& scene) override;
+    void LateUpdate(Scene& scene) override;
+    void Render(Scene& scene) override;
 
-    void OnDrawGizmos(Camera& cam) override;
-    void OnDrawGizmosSelected(Camera& cam, Entity entity) override;
+    void OnDrawGizmos(Scene& scene, Camera& cam) override;
+    void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity) override;
 
     int ReadEntityId(int x, int y) override;
 
