@@ -63,6 +63,16 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 }
 
+uint64_t EncodeUserData(uint32_t u, int32_t i) {
+    return (static_cast<uint64_t>(static_cast<uint32_t>(i)) << 32) |
+           static_cast<uint64_t>(u);
+}
+
+void DecodeUserData(uint64_t packed, uint32_t &u, int32_t &i) {
+    u = static_cast<uint32_t>(packed & 0xFFFFFFFFull);
+    i = static_cast<int32_t>((packed >> 32) & 0xFFFFFFFFull);
+}
+
 #pragma region Core
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
 JPH_SUPPRESS_WARNINGS
@@ -218,6 +228,7 @@ public:
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
+		return;
 		//cout << "A contact was added" << endl;
 		InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
 		InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
@@ -1448,7 +1459,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mAngularDamping = 0;
 		//part.mLinearDamping = 0;
 		//TODO: Fix this, add the root object id
-		part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
+		//part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
 		if(p > 0){
@@ -1820,11 +1831,11 @@ void PhysicsSystem::PhysicsUpdate(){
 				
 			}
 
-			/*for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+			for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-				bodyInterface.SetUserData(bodyID, static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex));
-				LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
-			}*/
+				bodyInterface.SetUserData(bodyID, EncodeUserData(static_cast<uint32_t>(entity), p));
+				//LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
+			}
 			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 
 			/*if(skinned.finalPose.Size() > 0 && skinned.skeletonEntities.size() > 0){
@@ -2063,8 +2074,13 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 		const JPH::Body &body = lock.GetBody();
 		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
 
-		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
-		hit.hitPoint = FromJolt(hitPoint);
+		//hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		uint32_t _entity;
+		int32_t _index;
+		DecodeUserData(body.GetUserData(), _entity, _index);
+		hit.entity = static_cast<Entity>(_entity);
+		hit.subBodyIndex = _index;
+		hit.hitPoint = FromJolt(hitPoint);	
 		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
 		return true;
 	}
@@ -2110,7 +2126,12 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 		const JPH::Body &body = lock.GetBody();
 		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
 
-		hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		//hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		uint32_t _entity;
+		int32_t _index;
+		DecodeUserData(body.GetUserData(), _entity, _index);
+		hit.entity = static_cast<Entity>(_entity);
+		hit.subBodyIndex = _index;
 		hit.hitPoint = FromJolt(hitPoint);
 		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
 		return true;
@@ -2157,7 +2178,12 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
             if (!lock.Succeeded()) return;
 
             const JPH::Body& body = lock.GetBody();
-            hit.entity = static_cast<Entity>(body.GetUserData());
+            //hit.entity = static_cast<Entity>(body.GetUserData());
+			uint32_t _entity;
+			int32_t _index;
+			DecodeUserData(body.GetUserData(), _entity, _index);
+			hit.entity = static_cast<Entity>(_entity);
+			hit.subBodyIndex = _index;
 
             // Use the closest point on the hit shape as the hit point
             hit.hitPoint = FromJolt(inResult.mContactPointOn2);
@@ -2324,7 +2350,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
     );
-	settings.mUserData = static_cast<uint64>(entity); // safe cast
+	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
 	settings.mCollisionGroup = JPH::CollisionGroup(
 		physicsWorld->groupFilter,
         info.layer,

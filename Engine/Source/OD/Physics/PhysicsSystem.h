@@ -475,6 +475,7 @@ private:
 
 struct OD_API RayResult{
     Entity entity;
+    int subBodyIndex = -1;
     Vector3 hitPoint;
     Vector3 hitNormal;
 };
