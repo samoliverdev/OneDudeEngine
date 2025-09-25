@@ -207,24 +207,29 @@ public:
 // An example contact listener
 class MyContactListener : public ContactListener{
 public:
+	Scene* scene = nullptr;
+
 	// See: ContactListener
 	virtual ValidateResult	OnContactValidate(const Body &inBody1, const Body &inBody2, RVec3Arg inBaseOffset, const CollideShapeResult &inCollisionResult) override{
-		cout << "Contact validate callback" << endl;
+		//cout << "Contact validate callback" << endl;
 
 		// Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
 		return ValidateResult::AcceptAllContactsForThisBodyPair;
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		cout << "A contact was added" << endl;
+		//cout << "A contact was added" << endl;
+		InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
+		InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
+		LogInfo("OnContactAdded e1: %s, e2: %s", e1.name.c_str(), e2.name.c_str());
 	}
 
 	virtual void OnContactPersisted(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		cout << "A contact was persisted" << endl;
+		//cout << "A contact was persisted" << endl;
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
-		cout << "A contact was removed" << endl;
+		//cout << "A contact was removed" << endl;
 	}
 };
 
@@ -467,6 +472,7 @@ struct PhysicsWorld{
     JPH::PhysicsSystem physicsSystem;
 	//MyGroupFilter groupFilter;
 	JPH::Ref<MyGroupFilter> groupFilter;
+	MyContactListener contactListener;
 
     TempAllocatorImpl* tempAllocator;
     JobSystemThreadPool jobSystem;
@@ -551,7 +557,7 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 
 	ImGui::DragFloat("GlobalMass", &ragdoll.globalMass);
 
-	//ImGui::DragFloat("Gain", &ragdoll.gain);
+	ImGui::DragFloat("Gain", &ragdoll.gain);
 	ImGui::DragFloat("Damping", &ragdoll.damping);
 	ImGui::DragFloat("Stiffness", &ragdoll.stiffness);
 	ImGui::Spacing();
@@ -1284,6 +1290,9 @@ PhysicsSystem::PhysicsSystem(Scene* inScene):System(inScene){
         physicsWorld->broadPhaseLayerInterface, physicsWorld->objectVsBroadPhaseLayerFilter, physicsWorld->objectVsObjectLayerFilter
     );
 
+	physicsWorld->contactListener.scene = scene;
+	physicsWorld->physicsSystem.SetContactListener(&physicsWorld->contactListener);
+
     physicsWorld->tempAllocator = new TempAllocatorImpl(10 * 1024 * 1024);
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 	physicsWorld->renderer = new MyDebugRenderer();
@@ -1416,7 +1425,9 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
-		//part.mMotionQuality = EMotionQuality::LinearCast;
+		//part.mNumVelocityStepsOverride = 20; //16;
+		//part.mNumPositionStepsOverride = 10; //8;
+		part.mMotionQuality = EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
@@ -1462,8 +1473,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 }
 
 constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
-constexpr int maxSubSteps = 1; //5;
-constexpr int cCollisionSteps = 1;
+constexpr int maxSubSteps = 5;
+constexpr int cCollisionSteps = 2;
 
 constexpr bool EnableFixedRate = true;
 constexpr bool EnableInterpolation = false;
@@ -1494,9 +1505,9 @@ void PhysicsSystem::PhysicsUpdate(){
 
 		for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
 			if(ragdoll.data != nullptr && GetScene()->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic /*&& ragdoll.syncWithFinalPose*/){
-				if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate && EnableInterpolation){
+				if(ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.interpolate){
 					for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-						if(ragdoll.parts[p].previousPosition == Vector3Zero) continue;
+						//if(ragdoll.parts[p].previousPosition == Vector3Zero) continue;
 
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						Quat rot;
@@ -1537,27 +1548,30 @@ void PhysicsSystem::PhysicsUpdate(){
 					if(ragdoll.parts[p].disableSync) continue;
 
 					if(ragdoll.parts[p].parent >= 0){
-						float motorFrequency = ragdoll.gain;    // or convert/gain mapping as you prefer
-						float motorDamping   = ragdoll.damping; // damping term
-						float maxMotorTorque = ragdoll.stiffness * 10.0f; // scale as needed
+						//float breakVelocityThreshold = stiffness;
+						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
+						//float speed = vel.Length();
+						float scale = 1.0f;
+						//if(speed > breakVelocityThreshold) scale = math::clamp<float>(breakVelocityThreshold / speed, 0, 1); // smoothly reduce
+
+						float motorFrequency = gain * scale;    // or convert/gain mapping as you prefer
+						float motorDamping   = damping * scale; // damping term
+						float maxMotorTorque = stiffness * 10; // scale as needed
 
 						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
+
+						//c->SetMaxFrictionTorque(200); // in N·m
+						//c->SetNumPositionStepsOverride(8);
+						//c->SetNumVelocityStepsOverride(8);
 						c->GetSwingMotorSettings() = MotorSettings(motorFrequency, motorDamping);
 						c->GetTwistMotorSettings() = MotorSettings(motorFrequency, motorDamping);
+						c->SetSwingMotorState(ragdoll.syncWithFinalPose == false ? EMotorState::Off : EMotorState::Position);
+						c->SetTwistMotorState(ragdoll.syncWithFinalPose == false ? EMotorState::Off : EMotorState::Position);
 						c->SetMaxFrictionTorque(maxMotorTorque);
-						c->SetSwingMotorState(EMotorState::Position);
-						c->SetTwistMotorState(EMotorState::Position);
-
-						/*int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
-						Quat boneTargetWorld = ToJolt(animGlobal.Rotation());
-
-						Quat parentRot;
-						RVec3 parentPos;
-						bodyInterface.GetPositionAndRotation(ragdoll.data->ragdoll->GetBodyIDs()[ragdoll.parts[p].parent], parentPos, parentRot);
-
-						Quat targetRel = parentRot.Conjugated() * boneTargetWorld;
-						c->SetTargetOrientationCS(targetRel);*/
+						//c->SetTwistMaxAngle(math::radians(90.0f));
+						//c->SetTwistMinAngle(math::radians(-90.0f));
+						//c->SetSwingLimits(math::radians(30.0f), math::radians(30.0f)); // Adjust as needed
+    					//c->SetTwistLimits(math::radians(-45.0f), math::radians(45.0f)); // Adjust as needed
 
 						int parentIndex = ragdoll.parts[ragdoll.parts[p].parent].skinnedSkeletonIndex;
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -1663,29 +1677,20 @@ void PhysicsSystem::PhysicsUpdate(){
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::Update");
 	if(GetScene()->Running() == true){
-		/*const int cCollisionSteps = 1;
-		physicsWorld->physicsSystem.Update(
-			Application::DeltaTime(), cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
-		);*/
-
-		/*float delta_time = 1.0f / 60.0f;
-		const int cCollisionSteps = 1;
-		physicsWorld->physicsSystem.Update(
-			delta_time, cCollisionSteps, physicsWorld->tempAllocator, &physicsWorld->jobSystem
-		);*/
-
-		//constexpr float fixedTimeStep = 1.0f / 30.0f; // 60 Hz physics update
-
 		if(EnableFixedRate){
 			float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
 			physicsAccumulator += deltaTime;
+			
+			if(EnableInterpolation) PreInterpolate();
 
 			int steps = 0;
-			while(physicsAccumulator >= fixedTimeStep && steps < maxSubSteps){
+			while(physicsAccumulator >= fixedTimeStep/* && steps < maxSubSteps*/){
 				float scaledFixedTimeStep = fixedTimeStep * Time::TimeScale();
+				//if(scaledFixedTimeStep <= 0.0f) break;
+
 				//LogInfo("CurTimeScale: %f", Time::TimeScale());
 
-				if(EnableInterpolation) PreInterpolate();
+				//if(EnableInterpolation) PreInterpolate();
 
 				if(scaledFixedTimeStep > 0.0f){
 					physicsWorld->physicsSystem.Update(
@@ -1864,7 +1869,7 @@ void PhysicsSystem::PhysicsUpdate(){
 					Quat rot;
 					bodyInterface.GetPositionAndRotation(i, pos, rot);
 
-					if(ragdoll.interpolate){
+					if(ragdoll.interpolate && EnableInterpolation){
 						float alpha = physicsAccumulator / fixedTimeStep;
 						Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
 						Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);

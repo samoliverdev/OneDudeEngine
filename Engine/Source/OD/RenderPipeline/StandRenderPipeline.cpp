@@ -738,7 +738,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         //context->EndDeferredPass();
-        #if 1
+        #if 0
         context->EndDeferredPassAndCopyToForwardPass();
         #else
         context->EndDeferredPass();

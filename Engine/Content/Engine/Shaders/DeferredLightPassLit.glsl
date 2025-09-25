@@ -101,7 +101,7 @@ Texture2D(0, 10, gOther, gOtherSampler)
         color += Emission; //GetEmission(uv);
         FragColor = vec4(color, surface.alpha);
 
-        FragColor = ApplyFog(FragColor, length(FragPos - viewPos));
+        //FragColor = ApplyFog(FragColor, length(FragPos - viewPos));
 
     }
 #endif
