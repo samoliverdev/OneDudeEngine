@@ -8,7 +8,8 @@ namespace Standard{
 
 void CharacterMovement::OnStart(RigidbodyComponent& rb){
     hasStarted = true;
-    rb.SetAngularFactor(Vector3(0, 0, 0));
+    //rb.SetAngularFactor(Vector3(0, 0, 0));
+    rb.Constraints(RigidbodyConstraints::TranslationX | RigidbodyConstraints::TranslationY | RigidbodyConstraints::TranslationZ | RigidbodyConstraints::RotationY);
 }
 
 float CharacterMovement::GetAxisHorizontal(){

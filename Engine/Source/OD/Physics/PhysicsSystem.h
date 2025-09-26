@@ -21,6 +21,26 @@ Ref<MeshShapeData> OD_API CreateMeshShapeData(Model& model);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const Mesh& mesh);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
 
+enum class RigidbodyConstraints: uint8_t{
+    None				= 0b000000,									///< No degrees of freedom are allowed. Note that this is not valid and will crash. Use a static body instead.
+	All					= 0b111111,									///< All degrees of freedom are allowed
+	TranslationX		= 0b000001,									///< Body can move in world space X axis
+	TranslationY		= 0b000010,									///< Body can move in world space Y axis
+	TranslationZ		= 0b000100,									///< Body can move in world space Z axis
+	RotationX			= 0b001000,									///< Body can rotate around world space X axis
+	RotationY			= 0b010000,									///< Body can rotate around world space Y axis
+	RotationZ			= 0b100000,									///< Body can rotate around world space Z axis
+	Plane2D				= TranslationX | TranslationY | RotationZ,	///< Body can only move in X and Y axis and rotate around Z axis
+};
+/// Bitwise OR operator for EAllowedDOFs
+constexpr RigidbodyConstraints operator | (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) | uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator & (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) & uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator ^ (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) ^ uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator ~ (RigidbodyConstraints inAllowedDOFs){ return RigidbodyConstraints(~uint8_t(inAllowedDOFs)); }
+constexpr RigidbodyConstraints & operator |= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS | inRHS; return ioLHS; }
+constexpr RigidbodyConstraints & operator &= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS & inRHS; return ioLHS; }
+constexpr RigidbodyConstraints & operator ^= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS ^ inRHS; return ioLHS; }
+
 struct OD_API CollisionShape{
     enum class Type{Box, Sphere, Capsule, Mesh};
 
@@ -118,10 +138,13 @@ struct OD_API RigidbodyComponent{
     void NeverSleep(bool value);
 
     Vector3 Position();
+    Vector3 PositionInterpoled();
     void Position(Vector3 position);
 
     Quaternion Rotation();
     void Rotation(Quaternion rotation);
+
+    void SetTransform(const Vector3& pos, const Quaternion& rot);
 
     Vector3 Velocity();
     void Velocity(Vector3 v);
@@ -137,6 +160,14 @@ struct OD_API RigidbodyComponent{
 
     void SetAngularFactor(Vector3 v);
 
+    float LinearDamping();
+    void LinearDamping(float v);
+    float AngularDamping();
+    void AngularDamping(float v);
+
+    RigidbodyConstraints Constraints();
+    void Constraints(RigidbodyConstraints constraints);
+
     friend class cereal::access;
     template <class Archive>
     void serialize(Archive & ar){
@@ -144,6 +175,9 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(interpolate));
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(mass));
+        ArchiveDump(ar, CEREAL_NVP(linearDamping));
+        ArchiveDump(ar, CEREAL_NVP(angularDamping));
+        ArchiveDump(ar, CEREAL_NVP(constraints));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
         ArchiveDump(ar, CEREAL_NVP(mask));
     }
@@ -154,6 +188,9 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(angularFactor);
         COPY_OR_MOVE(mass);
+        COPY_OR_MOVE(linearDamping);
+        COPY_OR_MOVE(angularDamping);
+        COPY_OR_MOVE(constraints);
         COPY_OR_MOVE(neverSleep);
         COPY_OR_MOVE(mask);
     });
@@ -164,7 +201,10 @@ private:
     CollisionShape shape;
     Type type = Type::Dynamic;
     Vector3 angularFactor = {1, 1, 1};
+    RigidbodyConstraints constraints = RigidbodyConstraints::All;
     float mass = 1;
+    float linearDamping = 0;
+    float angularDamping = 0.05;
     bool neverSleep = false;
 
     Vector3 previousPosition = Vector3Zero;
@@ -173,22 +213,6 @@ private:
     class PhysicObject* data = nullptr;
 
     void UpdateSettings();
-
-    /*inline void Copy(const RigidbodyComponent& other){
-        shape = other.shape;
-        type = other.type;
-        angularFactor = other.angularFactor;
-        mass = other.mask;
-        neverSleep = other.neverSleep;
-    }
-
-    inline void Move(RigidbodyComponent&& other){
-        shape = std::move(other.shape);
-        type = std::move(other.type);
-        angularFactor = std::move(other.angularFactor);
-        mass = std::move(other.mask);
-        neverSleep = std::move(other.neverSleep);
-    }*/
 };
 
 struct OD_API RagdollComponent{
@@ -272,6 +296,7 @@ struct OD_API RagdollComponent{
     float Mass(int boneIndex);
 
     Vector3 Position(int boneIndex);
+    Vector3 PositionInterpoled(int boneIndex);
     void Position(int boneIndex, Vector3 position);
     Quaternion Rotation(int boneIndex);
     void Rotation(int boneIndex, Quaternion rotation);
@@ -325,47 +350,6 @@ struct OD_API RagdollComponent{
 
 private:
     struct RagdollObject* data = nullptr;
-};
-
-struct OD_API CollisionBodyComponent{
-    friend struct PhysicsSystem;
-
-    int mask = AllLayers;
-
-    static void OnGui(Entity& e, Scene& scene);
-
-    inline CollisionShape GetShape(){ return shape; }
-    void SetShape(CollisionShape shape);
-    
-    friend class cereal::access;
-    template <class Archive>
-    void serialize(Archive & ar){
-        ArchiveDump(ar, CEREAL_NVP(shape));
-        ArchiveDump(ar, CEREAL_NVP(neverSleep));
-    }
-
-    /*CollisionBodyComponent(const CollisionBodyComponent& other){
-        shape = other.shape;
-        neverSleep = other.neverSleep;
-    }
-
-    CollisionBodyComponent& operator=(const CollisionBodyComponent& other){
-        if(this == &other) return *this;
-
-        shape = other.shape;
-        neverSleep = other.neverSleep;
-        return *this;
-    }*/
-
-private:
-    CollisionShape shape;
-    bool neverSleep = false;
-
-    #if defined(UseBulletPhysics)
-    class PhysicObject* data = nullptr; 
-    #endif
-
-    void UpdateSettings();
 };
 
 struct OD_API JointComponent{
@@ -521,6 +505,8 @@ struct OD_API PhysicsSystem: public System{
 
     void* GetInternlWorld(); // Temp/Experimental 
 
+    inline float PhysicsAccumulator(){ return physicsAccumulator; }
+
 private:
     void CheckForCollisionEvents();
 
@@ -530,10 +516,6 @@ private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
     void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveRigidbody(Entity entity, RigidbodyComponent& c);
-
-    static void OnRemoveCollisionBody(entt::registry& r, entt::entity e);
-    void AddCollisionBody(Entity entity, CollisionBodyComponent& c, TransformComponent& t, InfoComponent& info);
-    void RemoveCollisionBody(Entity entity, CollisionBodyComponent& c);
 
     static void OnRemoveJoint(entt::registry& r, entt::entity e);
     void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);

@@ -57,7 +57,6 @@ namespace OD{
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent", "Physics");
 	SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent", "Physics");
-    SceneManager::Get().RegisterCoreComponent<CollisionBodyComponent>("CollisionBodyComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent", "Physics");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
@@ -489,6 +488,7 @@ struct PhysicsWorld{
     JobSystemThreadPool jobSystem;
 
 	MyDebugRenderer* renderer = nullptr;
+	PhysicsSystem* system = nullptr;
 
     ~PhysicsWorld(){
 		delete renderer;
@@ -545,19 +545,9 @@ public:
 	}
 };
 
+constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
+
 #pragma endregion
-
-void CollisionBodyComponent::OnGui(Entity& e, Scene& scene){
-    
-}
-
-void CollisionBodyComponent::SetShape(CollisionShape inShape){
-    
-}
-
-void CollisionBodyComponent::UpdateSettings(){
-    
-}
 
 void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	RagdollComponent& ragdoll = scene.GetComponent<RagdollComponent>(e);
@@ -762,6 +752,17 @@ Vector3 RagdollComponent::Position(int boneIndex){
 	return FromJolt(bodyInterface.GetPosition(bodyID));
 }
 
+Vector3 RagdollComponent::PositionInterpoled(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	
+	float alpha = data->world->system->PhysicsAccumulator() / fixedTimeStep;
+	Vector3 interpolatedPos = math::mix(parts[boneIndex].previousPosition, FromJolt(bodyInterface.GetPosition(bodyID)), alpha);
+	return interpolatedPos;
+}
+
 void RagdollComponent::Position(int boneIndex, Vector3 position){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
@@ -957,6 +958,15 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
         rb.Mass(mass);
     }
 
+	float linearDamping = rb.linearDamping;
+	if(ImGui::DragFloat("linearDamping", &linearDamping)){
+		rb.LinearDamping(linearDamping);
+	}
+	float angularDamping = rb.angularDamping;
+	if(ImGui::DragFloat("angularDamping", &angularDamping)){
+		rb.AngularDamping(angularDamping);
+	}
+
     bool neverSleep = rb.NeverSleep();
     if(ImGui::Checkbox("neverSleep", &neverSleep)){
         rb.NeverSleep(neverSleep);
@@ -1049,6 +1059,48 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
         if(update) rb.SetShape(shape);
     }
+
+	auto ExtractFreezeStates = 
+	[](JPH::EAllowedDOFs allowedDOFs, 
+        bool& freezePosX, bool& freezePosY, bool& freezePosZ,
+        bool& freezeRotX, bool& freezeRotY, bool& freezeRotZ)
+	{
+		// A DOF is frozen if it is NOT set in allowedDOFs
+		freezePosX = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationX) == 0);
+		freezePosY = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationY) == 0);
+		freezePosZ = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationZ) == 0);
+		freezeRotX = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationX) == 0);
+		freezeRotY = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationY) == 0);
+		freezeRotZ = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationZ) == 0);
+	};
+
+	if(ImGui::CollapsingHeader("Position Constraints")){
+		// Extract freeze states
+   		bool freezePosX, freezePosY, freezePosZ, freezeRotX, freezeRotY, freezeRotZ;
+    	ExtractFreezeStates(static_cast<JPH::EAllowedDOFs>(rb.constraints), freezePosX, freezePosY, freezePosZ, freezeRotX, freezeRotY, freezeRotZ);
+
+		bool changed = false;
+		if(ImGui::Checkbox("Freeze Position X", &freezePosX)) changed = true;
+		if(ImGui::Checkbox("Freeze Position Y", &freezePosY)) changed = true;
+		if(ImGui::Checkbox("Freeze Position Z", &freezePosZ)) changed = true;
+		if(ImGui::Checkbox("Freeze Rotation X", &freezeRotX)) changed = true;
+		if(ImGui::Checkbox("Freeze Rotation Y", &freezeRotY)) changed = true;
+		if(ImGui::Checkbox("Freeze Rotation Z", &freezeRotZ)) changed = true;
+
+		// Update DOFs if any checkbox changed
+		if(changed){
+			JPH::EAllowedDOFs newDOFs = JPH::EAllowedDOFs::None;
+			// Enable DOFs for non-frozen axes
+			if (!freezePosX) newDOFs |= JPH::EAllowedDOFs::TranslationX;
+			if (!freezePosY) newDOFs |= JPH::EAllowedDOFs::TranslationY;
+			if (!freezePosZ) newDOFs |= JPH::EAllowedDOFs::TranslationZ;
+			if (!freezeRotX) newDOFs |= JPH::EAllowedDOFs::RotationX;
+			if (!freezeRotY) newDOFs |= JPH::EAllowedDOFs::RotationY;
+			if (!freezeRotZ) newDOFs |= JPH::EAllowedDOFs::RotationZ;
+
+			rb.Constraints(static_cast<RigidbodyConstraints>(newDOFs));
+		}
+	}
 }
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
@@ -1081,6 +1133,16 @@ Vector3 RigidbodyComponent::Position(){
 	return FromJolt(bodyInterface.GetPosition(data->bodyID));
 }
 
+Vector3 RigidbodyComponent::PositionInterpoled(){
+	if(data == nullptr) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+
+	float alpha = data->world->system->PhysicsAccumulator() / fixedTimeStep;
+	Vector3 interpolatedPos = math::mix(previousPosition, FromJolt(bodyInterface.GetPosition(data->bodyID)), alpha);
+	
+	return interpolatedPos;
+}
+
 void RigidbodyComponent::Position(Vector3 position){
 	if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
@@ -1097,6 +1159,17 @@ void RigidbodyComponent::Rotation(Quaternion rotation){
 	if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetRotation(data->bodyID, ToJolt(rotation), EActivation::Activate);
+}
+
+void RigidbodyComponent::SetTransform(const Vector3& pos, const Quaternion& rot){
+    if (data == nullptr) return;
+    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    bodyInterface.SetPositionAndRotation(
+        data->bodyID,
+        ToJolt(pos),    // current position
+        ToJolt(rot),    // new rotation
+        EActivation::Activate
+    );
 }
 
 Vector3 RigidbodyComponent::Velocity(){
@@ -1197,6 +1270,7 @@ void RigidbodyComponent::SetAngularFactor(Vector3 v){
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
+	//motionProps->SetMassProperties(JPH::EAllowedDOFs::TranslationY, body.GetShape()->GetMassProperties());
     if (motionProps) {
         Vec3 inertia = motionProps->GetInverseInertiaDiagonal();
         inertia.SetX(v.x != 0.0f ? inertia.GetX() : 0.0f);
@@ -1227,6 +1301,60 @@ void RigidbodyComponent::SetAngularFactor(Vector3 v){
         bodyInterface.ActivateBody(data->bodyID);
     }*/
 }
+
+float RigidbodyComponent::LinearDamping(){
+	return linearDamping;
+}
+
+void RigidbodyComponent::LinearDamping(float v){
+	linearDamping = v;
+	if(data == nullptr) return;
+
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+	motionProps->SetLinearDamping(linearDamping);
+}
+
+float RigidbodyComponent::AngularDamping(){
+	return angularDamping;
+}
+
+void RigidbodyComponent::AngularDamping(float v){
+	angularDamping = v;
+	if(data == nullptr) return;
+
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+	motionProps->SetAngularDamping(angularDamping);
+}
+
+RigidbodyConstraints RigidbodyComponent::Constraints(){
+	return constraints;
+}
+
+void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
+	constraints = inconstraints;
+	
+	//UpdateSettings();
+
+	if(data == nullptr) return;
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+	motionProps->SetMassProperties(static_cast<JPH::EAllowedDOFs>(constraints), body.GetShape()->GetMassProperties());
+}
+
 #pragma endregion
 
 #pragma region PhysicsSystem
@@ -1316,6 +1444,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 	physicsWorld->renderer = new MyDebugRenderer();
 	physicsWorld->renderer->scene = scene;
+	physicsWorld->system = this;
 
 	JPH::Ref<MyGroupFilter> groupFilter = new MyGroupFilter();
 	physicsWorld->groupFilter = groupFilter;
@@ -1444,8 +1573,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
-		//part.mNumVelocityStepsOverride = 20; //16;
-		//part.mNumPositionStepsOverride = 10; //8;
+		part.mNumVelocityStepsOverride = 20; //16;
+		part.mNumPositionStepsOverride = 10; //8;
 		part.mMotionQuality = EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
@@ -1491,17 +1620,17 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 	return settings;
 }
 
-constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
+//constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 5;
 constexpr int cCollisionSteps = 2;
 
 constexpr bool EnableFixedRate = true;
-constexpr bool EnableInterpolation = false;
+constexpr bool EnableInterpolation = true;
 
 void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
 	
-	//if(GetScene()->Running() == false) return;
+	if(scene->Running() == false) return;
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
@@ -1542,6 +1671,19 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	
 	{
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate::PreUpdate");
+	auto view = scene->GetRegistry().view<RigidbodyComponent, TransformComponent>();
+    for(auto e: view){
+        RigidbodyComponent& rb = view.get<RigidbodyComponent>(e);
+		if(rb.data == nullptr) continue;
+
+        TransformComponent& transform = view.get<TransformComponent>(e);
+		
+        if(rb.GetType() != RigidbodyComponent::Type::Dynamic){
+            bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
+            bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+        }
+    }
+
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
 		scene->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
 
@@ -1700,7 +1842,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 			float deltaTime = Time::UnscaledDeltaTime(); //Application::DeltaTime();
 			physicsAccumulator += deltaTime;
 			
-			if(EnableInterpolation) PreInterpolate();
+			//if(EnableInterpolation) PreInterpolate();
 
 			int steps = 0;
 			while(physicsAccumulator >= fixedTimeStep/* && steps < maxSubSteps*/){
@@ -1709,7 +1851,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 
 				//LogInfo("CurTimeScale: %f", Time::TimeScale());
 
-				//if(EnableInterpolation) PreInterpolate();
+				if(EnableInterpolation) PreInterpolate();
 
 				if(scaledFixedTimeStep > 0.0f){
 					physicsWorld->physicsSystem.Update(
@@ -1792,8 +1934,8 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
             	transform.Rotation(FromJolt(rot));
 			}
         } else if(rb.GetType() == RigidbodyComponent::Type::Kinematic){
-            bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
-            bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+            //bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
+            //bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
         }
     }
 
@@ -2359,6 +2501,9 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
     );
+	settings.mLinearDamping = rb.linearDamping;
+	settings.mAngularDamping = rb.angularDamping;
+	settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
 	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
 	settings.mCollisionGroup = JPH::CollisionGroup(
 		physicsWorld->groupFilter,
@@ -2386,17 +2531,6 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
     bodyInterface.DestroyBody(rb.data->bodyID);
 }
 
-void PhysicsSystem::OnRemoveCollisionBody(entt::registry& r, entt::entity e){
-
-}
-
-void PhysicsSystem::AddCollisionBody(Entity entity, CollisionBodyComponent& c, TransformComponent& t, InfoComponent& info){
-    
-}
-
-void PhysicsSystem::RemoveCollisionBody(Entity entity, CollisionBodyComponent& rb){
-    
-}
 
 void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
     
