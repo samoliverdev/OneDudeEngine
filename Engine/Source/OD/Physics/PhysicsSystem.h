@@ -5,16 +5,8 @@
 #include "OD/Graphics/Mesh.h"
 #include "OD/Animation/Pose.h"
 
-//#define UseBulletPhysics
 #define UseJoltPhysics
 
-#if defined(UseBulletPhysics)
-class btRigidBody;
-class btTriangleMesh;
-class btBvhTriangleMeshShape;
-class btHeightfieldTerrainShape;
-class btCollisionObject;
-#endif
 
 namespace OD{
 
@@ -276,6 +268,8 @@ struct OD_API RagdollComponent{
         }
         return -1;
     }
+
+    float Mass(int boneIndex);
 
     Vector3 Position(int boneIndex);
     void Position(int boneIndex, Vector3 position);

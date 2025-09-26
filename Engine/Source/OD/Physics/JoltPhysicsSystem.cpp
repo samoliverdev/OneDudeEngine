@@ -747,6 +747,13 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Checkbox("IsDirty", &ragdoll.isDirty);
 }
 
+float RagdollComponent::Mass(int boneIndex){
+	const BodyLockRead lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyIDs()[boneIndex]);
+	const Body &body = lock.GetBody();
+	float mass = body.GetMotionProperties()->GetInverseMass() > 0.0f ? 1.0f / body.GetMotionProperties()->GetInverseMass() : 0.0f;
+	return mass;
+}
+
 Vector3 RagdollComponent::Position(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 

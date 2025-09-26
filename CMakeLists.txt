@@ -84,29 +84,6 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_BULLET3_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_OPENGL3_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_OPENGL2_DEMOS OFF CACHE BOOL "" FORCE)
-set(ENABLE_VHACD OFF CACHE BOOL "" FORCE)
-set(BUILD_PYBULLET OFF CACHE BOOL "" FORCE)
-set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
-set(INSTALL_LIBS OFF CACHE BOOL "" FORCE)
-set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
-set(INSTALL_CMAKE_FILES OFF CACHE BOOL "" FORCE)
-set(USE_GLUT OFF CACHE BOOL "" FORCE)
-set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
-if(USE_DYNAMIC_MSVC_RUNTIME_DLL)
-    set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)  
-else()
-    set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)  
-endif()  
-
-#set(USE_MSVC_INCREMENTAL_LINKING ON CACHE BOOL "" FORCE)
-#set(BULLET2_MULTITHREADING OFF CACHE BOOL "" FORCE)
-#set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
-
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
@@ -160,7 +137,6 @@ add_subdirectory(Engine/ThirdParty/sol2)
 if(USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
-add_subdirectory(Engine/ThirdParty/bullet3)
 
 add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
@@ -301,7 +277,6 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/ImGuizmo/
     Engine/ThirdParty/glfw/include/
     Engine/ThirdParty/assimp/include/
-    Engine/ThirdParty/bullet3/src
     Engine/ThirdParty/JoltPhysics-5.3.0/
     Engine/ThirdParty/entt/
     Engine/ThirdParty/soloud/include/
@@ -328,7 +303,6 @@ target_link_libraries(Engine PUBLIC
     soloud
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
-    Bullet3Common Bullet3Collision Bullet3Dynamics BulletDynamics BulletSoftBody BulletCollision LinearMath
     Jolt
     efsw
     msdf-atlas-gen
