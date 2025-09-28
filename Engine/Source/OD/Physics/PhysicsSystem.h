@@ -465,11 +465,12 @@ struct OD_API MotorTest{
     void serialize(Archive & ar){}
 };
 
-using OnCollisionCallback = void(*)(Scene&, Entity, Entity);
+using OnCollisionCallback = void(*)(Scene&, Entity, Entity, Vector3);
 //using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
 struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
+    friend class MyContactListener;
 
     void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;

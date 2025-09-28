@@ -216,36 +216,6 @@ public:
 	}
 };
 
-// An example contact listener
-class MyContactListener : public ContactListener{
-public:
-	Scene* scene = nullptr;
-
-	// See: ContactListener
-	virtual ValidateResult	OnContactValidate(const Body &inBody1, const Body &inBody2, RVec3Arg inBaseOffset, const CollideShapeResult &inCollisionResult) override{
-		//cout << "Contact validate callback" << endl;
-
-		// Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
-		return ValidateResult::AcceptAllContactsForThisBodyPair;
-	}
-
-	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		return;
-		//cout << "A contact was added" << endl;
-		InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
-		InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
-		LogInfo("OnContactAdded e1: %s, e2: %s", e1.name.c_str(), e2.name.c_str());
-	}
-
-	virtual void OnContactPersisted(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		//cout << "A contact was persisted" << endl;
-	}
-
-	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
-		//cout << "A contact was removed" << endl;
-	}
-};
-
 // An example activation listener
 class MyBodyActivationListener : public BodyActivationListener{
 public:
@@ -485,7 +455,7 @@ struct PhysicsWorld{
     JPH::PhysicsSystem physicsSystem;
 	//MyGroupFilter groupFilter;
 	JPH::Ref<MyGroupFilter> groupFilter;
-	MyContactListener contactListener;
+	MyContactListener* contactListener;
 
     TempAllocatorImpl* tempAllocator;
     JobSystemThreadPool jobSystem;
@@ -494,9 +464,59 @@ struct PhysicsWorld{
 	PhysicsSystem* system = nullptr;
 
     ~PhysicsWorld(){
+		delete contactListener;
 		delete renderer;
         delete tempAllocator;
     }
+};
+
+// An example contact listener
+class MyContactListener : public ContactListener{
+public:
+	Scene* scene = nullptr;
+	PhysicsSystem* physic = nullptr;
+
+	// See: ContactListener
+	virtual ValidateResult	OnContactValidate(const Body &inBody1, const Body &inBody2, RVec3Arg inBaseOffset, const CollideShapeResult &inCollisionResult) override{
+		//cout << "Contact validate callback" << endl;
+
+		// Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
+		return ValidateResult::AcceptAllContactsForThisBodyPair;
+	}
+
+	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
+		//return;
+		//cout << "A contact was added" << endl;
+		//InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
+		//InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
+		//LogInfo("OnContactAdded e1: %s, e2: %s", e1.name.c_str(), e2.name.c_str());
+
+		if(inBody1.IsSensor() || inBody2.IsSensor()){
+			for(auto& i: physic->onTriggerEnterCallbacks) 
+				i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+		} else {
+			for(auto& i: physic->onCollisionEnterCallbacks) 
+				i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+		}
+	}
+
+	virtual void OnContactPersisted(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
+		//cout << "A contact was persisted" << endl;
+	}
+
+	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
+    	/*const BodyLockRead lock1(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody1ID());
+		const Body& inBody1 = lock1.GetBody();
+
+		const BodyLockRead lock2(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody2ID());
+		const Body& inBody2 = lock2.GetBody();
+
+		if(inBody1.IsSensor() | inBody2.IsSensor()){
+			for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody1.GetUserData()));
+		} else {
+			for(auto& i: physic->onCollisionExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()));
+		}*/
+	}
 };
 
 class PhysicObject{
@@ -548,7 +568,7 @@ public:
 	}
 };
 
-constexpr float fixedTimeStep = 1.0f / 30.0f; // 60 Hz physics update
+constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 
 #pragma endregion
 
@@ -1176,14 +1196,14 @@ void RigidbodyComponent::SetTransform(const Vector3& pos, const Quaternion& rot)
 }
 
 Vector3 RigidbodyComponent::Velocity(){
-    if(data == nullptr) return Vector3Zero;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    if(data == nullptr || type != Type::Dynamic) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();
 	return FromJolt(bodyInterface.GetLinearVelocity(data->bodyID));
 }
 
 void RigidbodyComponent::Velocity(Vector3 v){
     if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();
 	bodyInterface.SetLinearVelocity(data->bodyID, ToJolt(v));
 	//bodyInterface.ActivateBody(data->bodyID);
 	
@@ -1438,8 +1458,10 @@ void PhysicsSystem::OnInit(Scene& inScene){
         physicsWorld->broadPhaseLayerInterface, physicsWorld->objectVsBroadPhaseLayerFilter, physicsWorld->objectVsObjectLayerFilter
     );
 
-	physicsWorld->contactListener.scene = scene;
-	physicsWorld->physicsSystem.SetContactListener(&physicsWorld->contactListener);
+	physicsWorld->contactListener = new MyContactListener();
+	physicsWorld->contactListener->scene = scene;
+	physicsWorld->contactListener->physic = this;
+	physicsWorld->physicsSystem.SetContactListener(physicsWorld->contactListener);
 
     physicsWorld->tempAllocator = new TempAllocatorImpl(10 * 1024 * 1024);
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
