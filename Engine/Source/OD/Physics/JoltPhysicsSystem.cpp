@@ -44,6 +44,7 @@
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Ragdoll/Ragdoll.h>
 #include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
+#include <Jolt/Physics/Constraints/HingeConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -60,6 +61,8 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent", "Physics");
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
+
+	SceneManager::Get().RegisterCoreComponent<MotorTest>("MotorTest", "Physics");
 }
 
 uint64_t EncodeUserData(uint32_t u, int32_t i) {
@@ -545,7 +548,7 @@ public:
 	}
 };
 
-constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
+constexpr float fixedTimeStep = 1.0f / 30.0f; // 60 Hz physics update
 
 #pragma endregion
 
@@ -1359,8 +1362,6 @@ void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
 
 #pragma region PhysicsSystem
 
-int ACCURACY = 10;
-
 bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Running();*/ }
 
 void PhysicsSystem::OnInit(Scene& inScene){
@@ -1569,23 +1570,31 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 		RagdollSettings::Part &part = settings->mParts[p];
 		part.SetShape(finalShape /*shapes*/);
+
+		JPH::MassProperties msp;
+		msp.ScaleToMass(ragdoll.globalMass / skeleton->GetJointCount()); //actual mass in kg
+		part.mMassPropertiesOverride = msp;
+		part.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
 		
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
-		part.mNumVelocityStepsOverride = 20; //16;
-		part.mNumPositionStepsOverride = 10; //8;
+		//part.mNumVelocityStepsOverride = 20; //16;
+		//part.mNumPositionStepsOverride = 10; //8;
 		part.mMotionQuality = EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
 		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
+		if(ragdoll.type == RagdollComponent::Type::Trigger) part.mMotionType = EMotionType::Kinematic; 
 		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
 		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
 		if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::None){
 			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
 			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
 			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
+		} else {
+			part.mIsSensor = ragdoll.type == RagdollComponent::Type::Trigger;
 		}
 		part.mObjectLayer = ragdoll.layer; //PhysicsLayers::MOVING;
 		part.mCollisionGroup = JPH::CollisionGroup(
@@ -1938,6 +1947,34 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
             //bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
         }
     }
+
+	auto view4 = scene->GetRegistry().view<RigidbodyComponent, MotorTest, TransformComponent>();
+	for(auto [entity, rb, motor, trans]: view4.each()){
+		if(rb.data == nullptr) continue;
+		if(motor.inited == true) continue;
+
+		motor.inited = true;
+
+		JPH::HingeConstraintSettings settings;
+		settings.mPoint1 = settings.mPoint2 = ToJolt(trans.Position());   // pivot point
+		settings.mHingeAxis1 = settings.mHingeAxis2 = Vec3::sAxisY(); // Y axis
+
+		//settings.mMotorSettings.mFrequency = 60.0f; // stiffness
+		//settings.mMotorSettings.mDamping = 1.0f;   // damping
+		settings.mMotorSettings.mMinTorqueLimit = -10000.0f;
+		settings.mMotorSettings.mMaxTorqueLimit =  10000.0f;
+		settings.mMotorSettings.mSpringSettings.mFrequency = 120 * 3; //60.0f;
+		settings.mMotorSettings.mSpringSettings.mDamping = 0.5f; //1.0f;
+
+		BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), rb.data->bodyID);
+		JPH::Body& body = lock.GetBody();
+
+		JPH::Ref<JPH::HingeConstraint> hinge = static_cast<JPH::HingeConstraint*>(settings.Create(body, JPH::Body::sFixedToWorld));
+
+		hinge->SetMotorState(EMotorState::Velocity);
+		hinge->SetTargetAngularVelocity(JPH::DegreesToRadians(90.0f * 5));
+		physicsWorld->physicsSystem.AddConstraint(hinge);
+	}
 
 	auto view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
@@ -2424,15 +2461,16 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     EMotionType type = EMotionType::Dynamic;
     if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
 	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
+	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
 
     JPH::Ref<Shape> shape = nullptr;
     if(rb.shape.type == CollisionShape::Type::Box){
 		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
-		shapeSettings.SetDensity(rb.mass);
+		//shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
 	} else if(rb.shape.type == CollisionShape::Type::Sphere){
 		SphereShapeSettings shapeSettings(rb.shape.radius);
-		shapeSettings.SetDensity(rb.mass);
+		//shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
 	} else if(rb.shape.type == CollisionShape::Type::Capsule){
 		float halfHeight = (rb.shape.height - 2.0f * rb.shape.radius) * 0.5f;
@@ -2441,7 +2479,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 			Assert(false);
 		}
 		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
-		shapeSettings.SetDensity(rb.mass);
+		//shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
 	} else if(rb.shape.type == CollisionShape::Type::Mesh){
 		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
@@ -2462,7 +2500,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		if(rb.type == RigidbodyComponent::Type::Dynamic){
 			// Use Convex Hull for dynamic
 			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.mesh->convexPoints);
-			shapeSettings.SetDensity(rb.mass);
+			//shapeSettings.SetDensity(rb.mass);
 
 			auto result = shapeSettings.Create();
 			if (!result.HasError()) {
@@ -2512,9 +2550,19 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     );
 	/*
 	settings.mMotionQuality = EMotionQuality::LinearCast;
-	settings.mNumVelocityStepsOverride = 20;
-	settings.mNumPositionStepsOverride = 20;
+	settings.mNumVelocityStepsOverride = 50;
+	settings.mNumPositionStepsOverride = 50;
 	*/
+
+	//settings.mFriction = 10;
+
+	JPH::MassProperties msp;
+	msp.ScaleToMass(rb.mass); //actual mass in kg
+	settings.mMassPropertiesOverride = msp;
+	settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+
+	settings.mIsSensor = rb.type == RigidbodyComponent::Type::Trigger;
+
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
 	// Verify body creation
     if (!bodyInterface.IsAdded(rb.data->bodyID)) {
@@ -2530,7 +2578,6 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
     bodyInterface.RemoveBody(rb.data->bodyID);
     bodyInterface.DestroyBody(rb.data->bodyID);
 }
-
 
 void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
     

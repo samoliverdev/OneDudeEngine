@@ -271,7 +271,7 @@ struct OD_API RagdollComponent{
     Layers layer = Layers::Layer0;
     LayerMask mask = {AllLayers};
 
-    enum class Type{Dynamic, Kinematic, Static};
+    enum class Type{Dynamic, Kinematic, Static, Trigger};
     Type type;
     bool interpolate = false;
     bool isDirty = true;
@@ -456,6 +456,13 @@ struct OD_API RayResult{
     int subBodyIndex = -1;
     Vector3 hitPoint;
     Vector3 hitNormal;
+};
+
+struct OD_API MotorTest{
+    bool inited = false;
+
+    template <class Archive>
+    void serialize(Archive & ar){}
 };
 
 using OnCollisionCallback = void(*)(Scene&, Entity, Entity);
