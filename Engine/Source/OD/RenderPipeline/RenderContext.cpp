@@ -21,6 +21,12 @@ namespace OD{
 
 RenderContextSettings settings;
 
+std::vector<std::function<void(RenderContext&)>> addRenderFeatures;
+
+std::vector<std::function<void(RenderContext&)>>& RenderContext::_AddRenderFeatures(){
+    return addRenderFeatures;
+}
+
 RenderContextSettings& RenderContext::GetSettings(){
     return settings;
 }
@@ -101,9 +107,18 @@ RenderContext::RenderContext(Scene* inScene){
 
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
+
+    for(auto& i: addRenderFeatures){
+        i(*this);
+    }
 }
 
 RenderContext::~RenderContext(){
+    for(auto& i: renderFeatures){
+        delete i;
+    }
+    renderFeatures.clear();
+
     delete entityIdOutColor;
     delete deferredOutColor;
     delete forwardOutColor;
@@ -343,7 +358,6 @@ void RenderContext::EndDrawToScreen(){
     //Framebuffer::Unbind(); 
     Graphics::EndFramebuffer();
 }
-
 
 Framebuffer* finalFramebuffer;
 
@@ -1034,6 +1048,18 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
+
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-2");
+    std::vector<RenderData> outRenderData;  
+    for(auto& i: renderFeatures){
+        i->scene = scene;
+        i->OnCollectRenderData(cam, outRenderData);
+    }
+    for(auto& i: outRenderData){
+        onReciveRenderData(i);
+    }
+    }
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-1");

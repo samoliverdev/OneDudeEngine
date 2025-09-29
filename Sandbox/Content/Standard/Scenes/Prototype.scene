@@ -10,7 +10,8 @@
         7,
         8,
         9,
-        10
+        10,
+        11
     ],
     "InfoComponents": [
         {
@@ -100,6 +101,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Particle",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -113,7 +122,8 @@
         7,
         8,
         9,
-        10
+        10,
+        11
     ],
     "TransformComponents": [
         {
@@ -128,11 +138,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -140,7 +145,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -154,11 +160,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -166,7 +167,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -179,11 +181,6 @@
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
-            },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
             },
             "localScale": {
                 "v.x": 1.0,
@@ -192,7 +189,8 @@
             },
             "children": [],
             "parent": 5,
-            "hasParent": true
+            "hasParent": true,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -206,11 +204,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": -0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -218,7 +211,8 @@
             },
             "children": [],
             "parent": 5,
-            "hasParent": true
+            "hasParent": true,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -232,11 +226,6 @@
                 "q.z": -0.07247436046600342,
                 "q.w": 0.9397276639938355
             },
-            "localEulerAngles": {
-                "v.x": 36.119712829589847,
-                "v.y": -15.951927185058594,
-                "v.z": -14.05190372467041
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -244,7 +233,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -257,11 +247,6 @@
                 "q.y": 0.0,
                 "q.z": 0.0,
                 "q.w": 1.0
-            },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
             },
             "localScale": {
                 "v.x": 1.0,
@@ -274,7 +259,8 @@
                 10
             ],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -288,11 +274,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": -0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -300,7 +281,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -314,11 +296,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -326,7 +303,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -340,11 +318,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": 0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -352,7 +325,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -366,11 +340,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": -0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -378,7 +347,8 @@
             },
             "children": [],
             "parent": 4294967295,
-            "hasParent": false
+            "hasParent": false,
+            "isCollection": false
         },
         {
             "localPosition": {
@@ -392,11 +362,6 @@
                 "q.z": 0.0,
                 "q.w": 1.0
             },
-            "localEulerAngles": {
-                "v.x": 0.0,
-                "v.y": -0.0,
-                "v.z": 0.0
-            },
             "localScale": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -404,7 +369,30 @@
             },
             "children": [],
             "parent": 5,
-            "hasParent": true
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 6.830867290496826,
+                "v.y": 3.0506556034088136,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -418,21 +406,51 @@
         7,
         8,
         9,
-        10
+        10,
+        11
     ],
     "Standard/ThirdPersonCameras": [
         {
             "lookAtTarget": 6,
             "autoHiddenCursor": true,
+            "handleInputs": true,
             "upOffset": 1.399999976158142,
+            "rightOffset": 0.0,
             "distance": 4.0,
             "sensivity": 8.0,
             "yMin": -50.0,
-            "yMax": 50.0
+            "yMax": 50.0,
+            "smoothingFactor": 25.0
         }
     ],
     "Standard/ThirdPersonCameraEntities": [
         0
+    ],
+    "Standard/CharacterMovements": [
+        {
+            "enable": true,
+            "handleInputs": false,
+            "moveType": 0,
+            "moveSpeed": 6.0,
+            "freeTurnSpeed": 20.0,
+            "strafeTurnSpeed": 20.0,
+            "onGround": true
+        }
+    ],
+    "Standard/CharacterMovementEntities": [
+        6
+    ],
+    "Standard/CharacterAnimations": [
+        {
+            "enable": true,
+            "baseModelRef": {
+                "isNull": false,
+                "path": "Standard/Models/YBot.glb"
+            }
+        }
+    ],
+    "Standard/CharacterAnimationEntities": [
+        6
     ],
     "Standard/Greyboxings": [
         {
@@ -501,26 +519,43 @@
         3,
         10
     ],
-    "Standard/CharacterMovements": [
+    "Standard/ParticleComponents": [
         {
-            "moveSpeed": 6.0,
-            "turnSpeed": 10.0,
-            "onGround": true
-        }
-    ],
-    "Standard/CharacterMovementEntities": [
-        6
-    ],
-    "Standard/CharacterAnimations": [
-        {
-            "baseModelRef": {
-                "isNull": false,
-                "path": "Standard/Models/YBot.glb"
+            "particleSystem": {
+                "maxParticles": 1000,
+                "delay": 0.0,
+                "startLifeTimeMinMax": {
+                    "v.x": 1.0,
+                    "v.y": 2.0
+                },
+                "startSpeedTimeMinMax": {
+                    "v.x": 4.0,
+                    "v.y": 5.0
+                },
+                "gravityModifier": 0.4000000059604645,
+                "emiter": {
+                    "singleBustEmiterCount": 1,
+                    "overTimeEmiterRate": 75.0
+                },
+                "shape": {
+                    "minMaxVelX": {
+                        "v.x": -2.0,
+                        "v.y": 2.0
+                    },
+                    "minMaxVelY": {
+                        "v.x": 5.0,
+                        "v.y": 15.0
+                    },
+                    "minMaxVelZ": {
+                        "v.x": -2.0,
+                        "v.y": 2.0
+                    }
+                }
             }
         }
     ],
-    "Standard/CharacterAnimationEntities": [
-        6
+    "Standard/ParticleComponentEntities": [
+        11
     ],
     "EnvironmentComponents": [
         {
@@ -633,183 +668,6 @@
     "CameraComponentEntities": [
         0
     ],
-    "SkinnedModelRendererComponents": [
-        {
-            "localTransform": {
-                "localPosition": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localRotation": {
-                    "q.x": 0.0,
-                    "q.y": 0.0,
-                    "q.z": 0.0,
-                    "q.w": 1.0
-                },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                }
-            },
-            "subMeshIndex": 1,
-            "boundingVolume": {
-                "center": {
-                    "v.x": -0.0000013709068298339844,
-                    "v.y": 0.9022648930549622,
-                    "v.z": 0.021623283624649049
-                },
-                "extents": {
-                    "v.x": 0.9734249114990234,
-                    "v.y": 0.9023671746253967,
-                    "v.z": 0.18213430047035218
-                }
-            },
-            "renderTargetVisibility": [
-                true,
-                true
-            ],
-            "updateWhenOffscreen": false,
-            "modelRef": {
-                "isNull": false,
-                "path": "Standard/Models/YBot.glb"
-            },
-            "materialVectorRef": {
-                "isNull": [
-                    false,
-                    false
-                ],
-                "path": [
-                    "Standard/Materials/YbotJoints.material",
-                    "Standard/Materials/YbotSurface.material"
-                ]
-            }
-        },
-        {
-            "localTransform": {
-                "localPosition": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localRotation": {
-                    "q.x": 0.0,
-                    "q.y": 0.0,
-                    "q.z": 0.0,
-                    "q.w": 1.0
-                },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                }
-            },
-            "subMeshIndex": -1,
-            "boundingVolume": {
-                "center": {
-                    "v.x": 0.0,
-                    "v.y": 1.0,
-                    "v.z": 0.0
-                },
-                "extents": {
-                    "v.x": 0.1510838270187378,
-                    "v.y": 1.0,
-                    "v.z": 0.1510838270187378
-                }
-            },
-            "renderTargetVisibility": [
-                true,
-                true,
-                true
-            ],
-            "updateWhenOffscreen": false,
-            "modelRef": {
-                "isNull": false,
-                "path": "Sandbox/Models/RagdollTest.glb"
-            },
-            "materialVectorRef": {
-                "isNull": [
-                    true
-                ],
-                "path": [
-                    ""
-                ]
-            }
-        },
-        {
-            "localTransform": {
-                "localPosition": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localRotation": {
-                    "q.x": 0.0,
-                    "q.y": 0.0,
-                    "q.z": 0.0,
-                    "q.w": 1.0
-                },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
-                }
-            },
-            "subMeshIndex": 1,
-            "boundingVolume": {
-                "center": {
-                    "v.x": -0.0000013709068298339844,
-                    "v.y": 0.9022648930549622,
-                    "v.z": 0.021623283624649049
-                },
-                "extents": {
-                    "v.x": 0.9734249114990234,
-                    "v.y": 0.9023671746253967,
-                    "v.z": 0.18213430047035218
-                }
-            },
-            "renderTargetVisibility": [
-                true,
-                true
-            ],
-            "updateWhenOffscreen": true,
-            "modelRef": {
-                "isNull": false,
-                "path": "Standard/Models/YBot.glb"
-            },
-            "materialVectorRef": {
-                "isNull": [
-                    false,
-                    false
-                ],
-                "path": [
-                    "Standard/Materials/YbotJoints.material",
-                    "Standard/Materials/YbotSurface.material"
-                ]
-            }
-        }
-    ],
-    "SkinnedModelRendererComponentEntities": [
-        6,
-        7,
-        9
-    ],
     "LightComponents": [
         {
             "type": 0,
@@ -862,6 +720,168 @@
         3,
         10
     ],
+    "SkinnedModelRendererComponents": [
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": 1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.0000013709068298339844,
+                    "v.y": 0.9022648930549622,
+                    "v.z": 0.021623283624649049
+                },
+                "extents": {
+                    "v.x": 0.9734249114990234,
+                    "v.y": 0.9023671746253967,
+                    "v.z": 0.18213430047035218
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true
+            ],
+            "updateWhenOffscreen": false,
+            "modelRef": {
+                "isNull": false,
+                "path": "Standard/Models/YBot.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/YbotJoints.material",
+                    "Standard/Materials/YbotSurface.material"
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 1.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.1510838270187378,
+                    "v.y": 1.0,
+                    "v.z": 0.1510838270187378
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true,
+                true
+            ],
+            "updateWhenOffscreen": false,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/Models/RagdollTest.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    true
+                ],
+                "path": [
+                    ""
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": 1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.0000013709068298339844,
+                    "v.y": 0.9022648930549622,
+                    "v.z": 0.021623283624649049
+                },
+                "extents": {
+                    "v.x": 0.9734249114990234,
+                    "v.y": 0.9023671746253967,
+                    "v.z": 0.18213430047035218
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true
+            ],
+            "updateWhenOffscreen": true,
+            "modelRef": {
+                "isNull": false,
+                "path": "Standard/Models/YBot.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/YbotJoints.material",
+                    "Standard/Materials/YbotSurface.material"
+                ]
+            }
+        }
+    ],
+    "SkinnedModelRendererComponentEntities": [
+        6,
+        7,
+        9
+    ],
     "AnimatorComponents": [
         {
             "enable": true,
@@ -878,11 +898,13 @@
     ],
     "RagdollComponents": [
         {
+            "globalMass": 75.0,
             "layer": 1,
             "mask": {
                 "mask": 1023
             },
             "type": 0,
+            "interpolate": false,
             "parts": [
                 {
                     "shape": {
@@ -1001,11 +1023,13 @@
             "stiffness": 1.0
         },
         {
+            "globalMass": 75.0,
             "layer": 1,
             "mask": {
                 "mask": 1023
             },
             "type": 0,
+            "interpolate": false,
             "parts": [
                 {
                     "shape": {
@@ -1419,6 +1443,7 @@
     "RigidbodyComponents": [
         {
             "type": 1,
+            "interpolate": false,
             "shape": {
                 "type": 3,
                 "center": {
@@ -1435,6 +1460,9 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "constraints": 63,
             "neverSleep": false,
             "mask": {
                 "mask": 1023
@@ -1442,6 +1470,7 @@
         },
         {
             "type": 1,
+            "interpolate": false,
             "shape": {
                 "type": 3,
                 "center": {
@@ -1458,6 +1487,9 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "constraints": 63,
             "neverSleep": false,
             "mask": {
                 "mask": 1023
@@ -1465,6 +1497,7 @@
         },
         {
             "type": 0,
+            "interpolate": false,
             "shape": {
                 "type": 2,
                 "center": {
@@ -1481,6 +1514,9 @@
                 "height": 2.0
             },
             "mass": 50.0,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "constraints": 63,
             "neverSleep": false,
             "mask": {
                 "mask": 1023
@@ -1488,6 +1524,7 @@
         },
         {
             "type": 1,
+            "interpolate": false,
             "shape": {
                 "type": 3,
                 "center": {
@@ -1504,6 +1541,9 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "constraints": 63,
             "neverSleep": false,
             "mask": {
                 "mask": 1023

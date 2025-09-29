@@ -6,7 +6,8 @@
         3,
         4,
         5,
-        6
+        6,
+        74
     ],
     "InfoComponents": [
         {
@@ -64,6 +65,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Particle",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -73,7 +82,8 @@
         3,
         4,
         5,
-        6
+        6,
+        74
     ],
     "TransformComponents": [
         {
@@ -229,6 +239,28 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -238,67 +270,25 @@
         3,
         4,
         5,
-        6
+        6,
+        74
     ],
-    "FreeCameras": [
+    "Standard/PaticleComponents": [
         {
-            "moveSpeed": 300.0,
+            "maxParticles": 100
+        }
+    ],
+    "Standard/PaticleComponentEntities": [
+        74
+    ],
+    "Standard/FreeCameras": [
+        {
+            "moveSpeed": 500.0,
             "rotSpeed": 50.0
         }
     ],
-    "FreeCameraEntities": [
+    "Standard/FreeCameraEntities": [
         2
-    ],
-    "HeightmapGenerators": [
-        {
-            "width": 2049,
-            "height": 2049,
-            "scale": 0.10000000149011612,
-            "octaves": 8,
-            "persistance": 0.25,
-            "lacunarity": 2.5,
-            "offset": {
-                "v.x": 0.0,
-                "v.y": 0.0
-            },
-            "power": 4.0,
-            "power2": 0.5,
-            "to01": false,
-            "falloff": false,
-            "curve": {
-                "keyframes": [
-                    {
-                        "time": 0.30000001192092898,
-                        "value": 0.0,
-                        "in_tangent": {
-                            "x": -10.0,
-                            "y": 0.0
-                        },
-                        "out_tangent": {
-                            "x": 5.0,
-                            "y": -34.5
-                        },
-                        "curve_type": 2
-                    },
-                    {
-                        "time": 0.6300003528594971,
-                        "value": 1.0,
-                        "in_tangent": {
-                            "x": -10.0,
-                            "y": 0.0
-                        },
-                        "out_tangent": {
-                            "x": 10.0,
-                            "y": 0.0
-                        },
-                        "curve_type": 2
-                    }
-                ]
-            }
-        }
-    ],
-    "HeightmapGeneratorEntities": [
-        4
     ],
     "EnvironmentComponents": [
         {
@@ -473,23 +463,18 @@
     "ModelRendererComponents": [
         {
             "localTransform": {
-                "localPosition": {
+                "position": {
                     "v.x": 0.0,
                     "v.y": 0.0,
                     "v.z": 0.0
                 },
-                "localRotation": {
+                "rotation": {
                     "q.x": 0.0,
                     "q.y": 0.0,
                     "q.z": 0.0,
                     "q.w": 1.0
                 },
-                "localEulerAngles": {
-                    "v.x": 0.0,
-                    "v.y": 0.0,
-                    "v.z": 0.0
-                },
-                "localScale": {
+                "scale": {
                     "v.x": 1.0,
                     "v.y": 1.0,
                     "v.z": 1.0

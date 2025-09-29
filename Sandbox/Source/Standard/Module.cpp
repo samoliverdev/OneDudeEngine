@@ -8,6 +8,7 @@
 #include "Character/CharacterAnimation.h"
 #include "Greyboxing/Greyboxing.h"
 #include "Generator/HeightmapGenerator.h"
+#include "ParticleSystem/ParticleSystem.h"
 
 namespace Standard{
 
@@ -19,6 +20,10 @@ void ModuleInit(){
     SceneManager::Get().RegisterComponent<Greyboxing>("Standard/Greyboxing", "Standard");
     SceneManager::Get().RegisterComponent<HeightmapGenerator>("Standard/HeightmapGenerator", "Standard");
     SceneManager::Get().RegisterSystem<StandardAssetSystem>("Standard/StandardAssetSystem");
+
+    RenderContext::RegisterRenderFeature<ParticleRendererFeature>();
+    SceneManager::Get().RegisterComponent<ParticleComponent>("Standard/ParticleComponent", "Standard");
+    SceneManager::Get().RegisterSystem<ParticleManageSystem>("Standard/ParticleManageSystem");
 }
 
 StandardAssetSystem::StandardAssetSystem(){

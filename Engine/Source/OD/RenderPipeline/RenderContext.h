@@ -5,6 +5,8 @@
 #include "RendererList.h"
 #include "LightComponent.h"
 #include "PostFX.h"
+#include <vector>
+#include <functional>
 
 namespace OD{
 
@@ -109,6 +111,13 @@ struct alignas(16) PipelineData{
     int _Pad2;
 };
 
+class OD_API RenderFeature{
+public:
+    Scene* scene = nullptr;
+    virtual void OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData){}
+    virtual void OnRenderUI(const Camera& cam){}
+};
+
 class OD_API RenderContext{
 public:
     RenderContext(Scene* scene);
@@ -186,7 +195,19 @@ public:
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
 
+    template<typename T>
+    static void RegisterRenderFeature(){
+        _AddRenderFeatures().push_back([&](RenderContext& r){
+            r.renderFeatures.push_back(new T());
+        });
+    }
+
+    inline const std::vector<RenderFeature*>& RenderFeatures(){ return renderFeatures; }
+
 private:
+    static std::vector<std::function<void(RenderContext&)>>& _AddRenderFeatures();
+    std::vector<RenderFeature*> renderFeatures;
+
     Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;
     Framebuffer* forwardOutColor;
