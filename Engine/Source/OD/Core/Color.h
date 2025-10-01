@@ -37,6 +37,14 @@ struct OD_API Color{
     inline operator Vector3(){ return Vector3(r, g, b); }
 
     inline Color Linear(){ return (Color)math::pow((Vector4)*this, Vector4(2.2f, 2.2f, 2.2f, 1)); }
+    inline static Color Lerp(const Color& a, const Color& b, float t){
+        return Color(
+            math::mix(a.r, b.r, t),
+            math::mix(a.g, b.g, t),
+            math::mix(a.b, b.b, t),
+            math::mix(a.a, b.a, t)
+        );
+    }
     
     static void CreateLuaBind(sol::state& lua);
 

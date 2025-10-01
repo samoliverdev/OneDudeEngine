@@ -23,14 +23,14 @@ void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func){
 
 void ColorEdit3(const char* name, OD::Color* color, ImGuiColorEditFlags flags){
     float _color[] = {color->r, color->g, color->b};
-    if(ImGui::ColorEdit3("color", _color, flags)){
+    if(ImGui::ColorEdit3(name, _color, flags)){
         *color = OD::Color{_color[0], _color[1], _color[2], 1};
     }
 }
 
 void ColorEdit4(const char* name, OD::Color* color, ImGuiColorEditFlags flags){
     float _color[] = {color->r, color->g, color->b, color->a};
-    if(ImGui::ColorEdit4("color", _color, flags)){
+    if(ImGui::ColorEdit4(name, _color, flags)){
         *color = OD::Color{_color[0], _color[1], _color[2], _color[3]};
     }
 }

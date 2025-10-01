@@ -11,6 +11,116 @@
 
 namespace Standard{
 
+void SpawnModule::OnGui(){
+    if(ImGui::CollapsingHeader("Spawn")){
+        ImGui::DragInt("singleBustEmiterCount", &singleBustEmiterCount);
+        ImGui::DragFloat("overTimeEmiterRate", &overTimeEmiterRate);
+    }
+}
+
+void SpawnModule::OnStartSpawnUpdate(ParticleSystem& system){
+    int singleNewParticles = singleBustEmiterCount;
+    for(int i = 0; i < singleNewParticles; i++){
+        system.SpawnNewParticle();
+    }
+}
+
+void SpawnModule::OnSpawnUpdate(ParticleSystem& system){
+    int newParticles = (int)(Time::DeltaTime() * overTimeEmiterRate);
+    for(int i = 0; i < newParticles; i++){
+        system.SpawnNewParticle();
+    }
+}
+
+void InitialLifeModule::OnGui(){
+    if(ImGui::CollapsingHeader("InitialLife")){
+        ImGui::DragFloat("minLife", &minLife);
+        ImGui::DragFloat("maxLife", &maxLife);
+    }
+}
+
+void InitialLifeModule::OnInitParticle(ParticleData& particle){
+    particle.life = Ultis::RandomRange(minLife, maxLife); 
+}
+
+void InitialVelocityModule::OnGui(){
+    if(ImGui::CollapsingHeader("InitialVelocity")){
+        ImGui::DragFloat3("minVelocity", &minVelocity.x);
+        ImGui::DragFloat3("maxVelocity", &maxVelocity.x);
+    }
+}
+
+void InitialVelocityModule::OnInitParticle(ParticleData& particle){
+    particle.vel = Vector3(
+        Ultis::RandomRange(minVelocity.x, maxVelocity.x), 
+        Ultis::RandomRange(minVelocity.y, maxVelocity.y), 
+        Ultis::RandomRange(minVelocity.z, maxVelocity.z) 
+    ); 
+}
+
+void InitialSizeModule::OnGui(){
+    if(ImGui::CollapsingHeader("InitialSize")){
+        ImGui::DragFloat3("minSize", &minSize.x);
+        ImGui::DragFloat3("maxSize", &maxSize.x);
+    }
+}
+
+void InitialSizeModule::OnInitParticle(ParticleData& particle){
+    particle.size = Vector3(
+        Ultis::RandomRange(minSize.x, maxSize.x), 
+        Ultis::RandomRange(minSize.y, maxSize.y), 
+        Ultis::RandomRange(minSize.z, maxSize.z) 
+    ); 
+}
+
+void InitialColorModule::OnGui(){
+    if(ImGui::CollapsingHeader("InitialColor")){
+        ImGui::ColorEdit4("minSize", &color.r);
+    }
+}
+
+void InitialColorModule::OnInitParticle(ParticleData& particle){
+    particle.color = color;
+}
+
+void UpdaterModule::OnGui(){
+    if(ImGui::CollapsingHeader("Updater")){
+        ImGui::DragFloat("gravityModifier", &gravityModifier);
+    }
+}
+
+void UpdaterModule::OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData){
+    particle.vel += Vector3(0.0f,-9.81f, 0.0f) * (runningData.delta * gravityModifier);
+    particle.pos += particle.vel * runningData.delta;
+}
+
+void SizeOverLifetimeModule::OnGui(){
+    if(ImGui::CollapsingHeader("SizeOverLifeTime")){
+        ImGui::Checkbox("enable", &enable);
+        ImGui::DragFloat("maxSize", &maxSize);
+    }
+}
+
+void SizeOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningData& runningData){
+    if(enable == false) return;
+    p.size = math::mix(p.startSize, Vector3(maxSize), runningData.lifetime);
+}
+
+void ColorOverLifetimeModule::OnGui(){
+    if(ImGui::CollapsingHeader("ColorOverLifetimeModule")){
+        ImGui::Checkbox("enable", &enable);
+        ImGui::ColorEdit4("colorA", &colorA, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit4("colorB", &colorB, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+    }
+}
+
+void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningData& runningData){
+    if(enable == false) return;
+    p.color = Color::Lerp(colorA, colorB, runningData.lifetime);
+}
+
+//////////////////////////////////////////////////////////
+
 void ParticleSystem::OnGui(){
     if(ImGui::DragInt("maxParticles", &maxParticles)){
         SetMaxParticle(maxParticles);
@@ -21,29 +131,35 @@ void ParticleSystem::OnGui(){
         //Reset();
     }
 
-    if(ImGui::DragFloatRange2("startLifeTimeMinMax", &startLifeTimeMinMax.x, &startLifeTimeMinMax.y)){
-        //Reset();
-    }
-    if(ImGui::DragFloatRange2("startSpeedTimeMinMax", &startSpeedTimeMinMax.x, &startSpeedTimeMinMax.y)){
-        //Reset();
-    }
-    if(ImGui::DragFloatRange2("startSizeTimeMinMax", &startSizeTimeMinMax.x, &startSizeTimeMinMax.y)){
-        //Reset();
-    }
+    if(ImGui::DrawEnumCombo<SimulationSpace>("simulationSpace", &simulationSpace)){}
 
-    if(ImGui::DragFloat("gravityModifier", &gravityModifier)){
-        //Reset();
-    }
+    spawnModule.OnGui();
 
-    if(ImGui::DragInt("singleBustEmiterCount", &emiter.singleBustEmiterCount)){}
-    if(ImGui::DragFloat("overTimeEmiterRate", &emiter.overTimeEmiterRate)){}
+    initialLifeModule.OnGui();
+    initialVelocityModule.OnGui();
+    initialSizeModule.OnGui();
+    initialColorModule.OnGui();
 
-    if(ImGui::DragFloatRange2("minMaxVelX", &shape.minMaxVelX.x, &shape.minMaxVelX.y)){}
-    if(ImGui::DragFloatRange2("minMaxVelY", &shape.minMaxVelY.x, &shape.minMaxVelY.y)){}
-    if(ImGui::DragFloatRange2("minMaxVelZ", &shape.minMaxVelZ.x, &shape.minMaxVelZ.y)){}
+    updaterModule.OnGui();
+    sizeOverLifetimeModule.OnGui();
+    colorOverLifetimeModule.OnGui();
+}
 
-    if(ImGui::Checkbox("minMaxVelZ", &sizeOverLifeTime.enable)){}
-    if(ImGui::DragFloat("maxSize", &sizeOverLifeTime.maxSize)){}
+void ParticleSystem::BindModules(){
+    spawnModules.clear();
+    initParticleModules.clear();
+    updateModules.clear();
+
+    spawnModules.push_back(&spawnModule);
+    
+    initParticleModules.push_back(&initialLifeModule);
+    initParticleModules.push_back(&initialVelocityModule);
+    initParticleModules.push_back(&initialSizeModule);
+    initParticleModules.push_back(&initialColorModule);
+
+    updateModules.push_back(&updaterModule);
+    updateModules.push_back(&sizeOverLifetimeModule);
+    updateModules.push_back(&colorOverLifetimeModule);
 }
 
 void ParticleSystem::Reset(){
@@ -87,7 +203,7 @@ int ParticleSystem::GetNewParticle(){
         return newParticle;
     }
 
-    particles[newParticle] = Particle();
+    particles[newParticle] = ParticleData();
 	return newParticle;
 }
 
@@ -95,7 +211,7 @@ void ParticleSystem::FreeParticle(int index){
     freeParticles.push_back(index);
 }
 
-void ParticleSystem::SpawnParticle(Particle &particle){
+/*void ParticleSystem::SpawnParticle(Particle &particle){
     particle.pos = Vector3Zero; //Vector3(Ultis::RandomRange(-2.0f, 2.0f), Ultis::RandomRange(0.0f, 2.0f), Ultis::RandomRange(-2.0f, 2.0f));
     particle.life = Ultis::RandomRange(startLifeTimeMinMax.x, startLifeTimeMinMax.y); //1.0f;
     particle.startLife = particle.life;
@@ -109,19 +225,27 @@ void ParticleSystem::SpawnParticle(Particle &particle){
     float targetSize = Ultis::RandomRange(startSizeTimeMinMax.x, startSizeTimeMinMax.y);
     particle.size = Vector3(targetSize);
     particle.startSize = particle.size;
+}*/
 
-    /*if(shape.type == ShapeType::Cone){
-        auto dir = RandomDirectionInCone({0, 1, 0}, shape.coneAngle);
-        particle.vel = math::normalizeSafe(dir) * Ultis::RandomRange(startSpeedTimeMinMax.x, startSpeedTimeMinMax.y); 
+void ParticleSystem::SpawnNewParticle(){
+    int newIndex = GetNewParticle();
+    if(newIndex == -1) return;
+
+    ParticleData& p = particles[newIndex];
+    for(auto* i: initParticleModules) i->OnInitParticle(p);
+    p.startSize = p.size;
+    p.startLife = p.life;
+    if(simulationSpace == SimulationSpace::WorldSpace){
+        p.pos += currentGlobalTrans.Position();
     }
-    if(shape.type == ShapeType::Sphere){
-
-    }*/
 }
 
-void ParticleSystem::Update(Vector3 camPos){
+void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
     if(state != State::Running) return;
 
+    currentGlobalTrans = trans.ToTransform();
+
+    if(spawnModules.size() == 0) BindModules();
     if(particles.size() != maxParticles) SetMaxParticle(maxParticles);
 
     float delta = Time::DeltaTime();
@@ -129,45 +253,25 @@ void ParticleSystem::Update(Vector3 camPos){
     curDelayTime -= delta;
     if(curDelayTime > 0) return;
 
-
     if(hasStarted = false){
         hasStarted = true;
-        int singleNewParticles = emiter.singleBustEmiterCount;
-        for(int i = 0; i < singleNewParticles; i++){
-            int newIndex = GetNewParticle();
-            if(newIndex == -1) continue;
-
-            SpawnParticle(particles[newIndex]);
-        }
+        for(auto* i: spawnModules) i->OnStartSpawnUpdate(*this);
     }
-
-    int newParticles = (int)(delta * emiter.overTimeEmiterRate);
-    LogInfo("newParticles: %d", newParticles);
-    for(int i = 0; i < newParticles; i++){
-        int newIndex = GetNewParticle();
-        if(newIndex == -1) continue;
-
-        SpawnParticle(particles[newIndex]);
-    }
+    for(auto* i: spawnModules) i->OnSpawnUpdate(*this);
 
     particlesCount = 0;
     for(int i = 0; i < particles.size(); i++){
-        Particle& p = particles[i]; // shortcut
-
-        float t = math::clamp<float>(1.0f - (p.life / p.startLife), 0, 1);
+        ParticleData& p = particles[i]; // shortcut
+        ParticleRunningData runningData;
+        runningData.delta = delta;
+        runningData.lifetime = math::clamp<float>(1.0f - (p.life / p.startLife), 0, 1);
 
         if(p.life > 0.0f){
             p.life -= delta;
 
             if(p.life > 0.0f){
-                p.vel += Vector3(0.0f,-9.81f, 0.0f) * (delta * gravityModifier);
-                p.pos += p.vel * delta;
+                for(auto* i: updateModules) i->OnParticleUpdate(p, runningData);
                 p.cameradistance = math::length2(p.pos - camPos);
-
-                if(sizeOverLifeTime.enable){
-                    p.size = math::mix(p.startSize, Vector3(sizeOverLifeTime.maxSize), t);
-                }
-
                 particlesCount++;
             }else{
                 p.cameradistance = -1.0f;
@@ -189,7 +293,14 @@ void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
         if(particles[_i].life <= 0) continue;
 
         Transform t(particles[_i].pos, QuaternionIdentity, particles[_i].size);
-        drawData[i] = root * t.GetModelMatrix();
+        
+        if(simulationSpace == SimulationSpace::Local){
+            auto m = root * t.GetModelMatrix();
+            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
+        } else {
+            auto m = t.GetModelMatrix();
+            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
+        }
 
         i += 1;
     }
@@ -197,8 +308,9 @@ void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
 }
 
 ParticleRendererFeature::ParticleRendererFeature(){
-    material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/LitParticle.glsl"));
     material->SetEnableInstancing(true);
+    material->SetFloat("smoothness", 0);
     mesh = CreateRef<Model>();
     Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
 }
@@ -217,6 +329,7 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
         renderData.targetMesh = mesh->meshs[0].get();
         renderData.targetMatrix = trans.GlobalModelMatrix();
         renderData.instancingBuffer = particle.drawData.get();
+        renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
         outRenderData.push_back(renderData);
     }
 }
@@ -244,7 +357,7 @@ void ParticleManageSystem::Update(Scene& scene){
         if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
             particle.particleSystem.Play();
         }
-        particle.particleSystem.Update(Vector3Zero);
+        particle.particleSystem.Update(trans, Vector3Zero);
     }
 }
 

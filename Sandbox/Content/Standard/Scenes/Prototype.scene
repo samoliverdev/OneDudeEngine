@@ -524,32 +524,53 @@
             "particleSystem": {
                 "maxParticles": 1000,
                 "delay": 0.0,
-                "startLifeTimeMinMax": {
-                    "v.x": 1.0,
-                    "v.y": 2.0
+                "simulationSpace": 0,
+                "spawnModule": {
+                    "singleBustEmiterCount": 0,
+                    "overTimeEmiterRate": 200.0
                 },
-                "startSpeedTimeMinMax": {
-                    "v.x": 4.0,
-                    "v.y": 5.0
+                "initialLifeModule": {
+                    "minLife": 1.0,
+                    "maxLife": 2.0
                 },
-                "gravityModifier": 0.4000000059604645,
-                "emiter": {
-                    "singleBustEmiterCount": 1,
-                    "overTimeEmiterRate": 75.0
-                },
-                "shape": {
-                    "minMaxVelX": {
-                        "v.x": -2.0,
-                        "v.y": 2.0
+                "initialVelocityModule": {
+                    "minVelocity": {
+                        "v.x": -1.0,
+                        "v.y": 2.0,
+                        "v.z": -1.0
                     },
-                    "minMaxVelY": {
-                        "v.x": 5.0,
-                        "v.y": 15.0
-                    },
-                    "minMaxVelZ": {
-                        "v.x": -2.0,
-                        "v.y": 2.0
+                    "maxVelocity": {
+                        "v.x": 1.0,
+                        "v.y": 5.0,
+                        "v.z": 1.0
                     }
+                },
+                "initialSizeModule": {
+                    "minSize": {
+                        "v.x": 0.20000000298023225,
+                        "v.y": 0.20000000298023225,
+                        "v.z": 0.20000000298023225
+                    },
+                    "maxSize": {
+                        "v.x": 0.5,
+                        "v.y": 0.5,
+                        "v.z": 0.5
+                    }
+                },
+                "initialColorModule": {
+                    "color": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0,
+                        "a": 1.0
+                    }
+                },
+                "updaterModule": {
+                    "gravityModifier": 0.30000001192092898
+                },
+                "sizeOverLifeTimeModule": {
+                    "enable": true,
+                    "maxSize": 0.0
                 }
             }
         }
