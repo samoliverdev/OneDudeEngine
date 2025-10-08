@@ -153,7 +153,7 @@ void OpenGLGraphicsDevice::Initialize(){
         glGenBuffers(1, vbo);
         glBindBuffer(GL_ARRAY_BUFFER, *vbo);
         //glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertexCount * 3, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertexCount * 3, NULL, GL_STATIC_DRAW);
         glCheckError();
     
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
@@ -216,7 +216,7 @@ void OpenGLGraphicsDevice::Initialize(){
     
         glGenBuffers(1, &textQuadVBO);
         glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 5, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 5, NULL, GL_STATIC_DRAW);
         glCheckError();
         
         glEnableVertexAttribArray(0);
@@ -1733,7 +1733,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         glCheckError();
     } else {
         glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.vertexVbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_DYNAMIC_DRAW); //GL_STATIC_DRAW
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_STATIC_DRAW); //GL_STATIC_DRAW
     }
     mesh.vertexCount = vertices->size();
 
@@ -1746,7 +1746,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_STATIC_DRAW);
         }
     }
     mesh.indiceCount = indices->size();
@@ -1762,7 +1762,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.uvVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1777,7 +1777,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.normalVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1792,7 +1792,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.colorVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1807,7 +1807,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.tangentVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1823,7 +1823,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.jointVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1839,7 +1839,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.weightsVbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_STATIC_DRAW);
             glCheckError();
         }
     }
@@ -1863,7 +1863,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
         if(mesh.glData.instancingModelMatrixsVbo == 0){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); 
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW GL_DYNAMIC_DRAW
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_STATIC_DRAW); //GL_STREAM_DRAW GL_DYNAMIC_DRAW
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -1885,7 +1885,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_DYNAMIC_DRAW); //GL_STREAM_DRAW
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_STATIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
         }
     }

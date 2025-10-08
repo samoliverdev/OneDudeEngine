@@ -17,6 +17,8 @@
 #include "OD/Editor/Editor.h"
 #include <taskflow/taskflow.hpp> 
 
+#include <glm/simd/matrix.h>
+
 namespace OD{
 
 RenderContextSettings settings;
@@ -104,6 +106,7 @@ RenderContext::RenderContext(Scene* inScene){
     Model::CreateFromFile(*coneMesh, "Engine/Models/Cone.obj", {nullptr, 1, false});
 
     pipelineDataBuffer = UniformBuffer::Create();
+    shadowDataBuffer = UniformBuffer::Create();
 
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
@@ -1416,7 +1419,20 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
             data.targetMesh = model->meshs[i.meshIndex].get();
-            data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+
+            auto m1 = t.GlobalModelMatrix();
+            auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.targetMatrix = m1 * m2;*/
+            /*glm_mat4_mul(
+			    &m1[0].data,
+			    &m2[0].data,
+			    &data.targetMatrix[0].data
+            );*/
+            //LogInfo("%f", _m3[0].a);
+
+            //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
+            //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
@@ -1433,11 +1449,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            data.perDrawData.int_0.resize(1);
-            data.perDrawData.int_0[0] = (int)e;
+            //TODO: Refactory perDrawData to avoid memory alocation
+            //data.perDrawData.int_0.resize(1);
+            //data.perDrawData.int_0[0] = (int)e;
 
             data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
 
+            //TODO: Refactory perDrawData to avoid memory alocation
             if(c.useCustomData){
                 data.perDrawData.vector4_0.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
@@ -1841,7 +1859,11 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
     //commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);
 
-    Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
+    //Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
+
+    shadowData.lightSpaceMatrix = splitData.projViewMatrix;
+    pipelineDataBuffer->SetData(&shadowData, sizeof(ShadowData), 0);
+    Material::SetGlobalUniformBuffer("ShadowData", pipelineDataBuffer, 0);
  
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //Shader::SetMatrix4("lightSpaceMatrix", splitData.projViewMatrix);

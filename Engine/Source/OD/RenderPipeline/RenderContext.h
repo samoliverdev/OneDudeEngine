@@ -111,6 +111,10 @@ struct alignas(16) PipelineData{
     int _Pad2;
 };
 
+struct alignas(16) ShadowData{
+    Matrix4 lightSpaceMatrix;
+};
+
 class OD_API RenderFeature{
 public:
     Scene* scene = nullptr;
@@ -191,6 +195,9 @@ public:
 
     PipelineData pipelineData;
     Ref<UniformBuffer> pipelineDataBuffer;
+
+    ShadowData shadowData;
+    Ref<UniformBuffer> shadowDataBuffer;
 
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }

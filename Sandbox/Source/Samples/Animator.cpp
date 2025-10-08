@@ -535,6 +535,7 @@ void AnimatorSample::OnInit(){
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
+    lightComponent.renderShadow = false;
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
@@ -664,7 +665,7 @@ void AnimatorSample::OnInit(){
     tf_for_each2(scene->GetTaskflow(), view.begin(), view.end(), [&view](auto entity){
         InfoComponent& info = view.get<InfoComponent>(entity);
         AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
-        LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
+        //LogInfo("---Name: %s %d", info.name.c_str(), anim.enable == true ? 1 : 0);  
     });
 
     LogInfo("Task Count: %zd", scene->GetTaskflow().num_tasks());

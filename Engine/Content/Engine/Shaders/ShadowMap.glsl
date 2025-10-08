@@ -9,7 +9,7 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
-BeginUniform(0, 0, Main)
+BeginUniform(3, 0, ShadowData)
     Uniform mat4 lightSpaceMatrix;
 EndUniform()
 

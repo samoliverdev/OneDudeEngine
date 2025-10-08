@@ -6,8 +6,10 @@
 
 //#define GLM_FORCE_PURE
 //#define GLM_FORCE_AVX2
-#define GLM_FORCE_SSE2
+//#define GLM_FORCE_SSE2
+#define GLM_FORCE_CXX11
 //#define GLM_FORCE_INTRINSICS
+#define GLM_FORCE_SSE2
 #define GLM_FORCE_ALIGNED
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
@@ -19,11 +21,13 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp> 
+#include <glm/gtc/type_aligned.hpp>
 #include <glm/gtx/projection.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/hash.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+
 
 #include <memory>
 
@@ -160,7 +164,7 @@ using Vector2 = glm::vec2;
 using Vector3 = glm::vec3;
 using Vector4 = glm::vec4;
 using Quaternion = glm::quat;
-using Matrix4 = glm::mat4;
+using Matrix4 = glm::aligned_mat4;// glm::mat4;
 using IVector2 = glm::ivec2;
 using IVector3 = glm::ivec3;
 using IVector4 = glm::ivec4;
@@ -209,7 +213,27 @@ namespace Mathf{
     inline float* Raw(Matrix4& m){ return &(m[0].x); }
 
     inline static Matrix4 TRS(Vector3 pos, Quaternion q, Vector3 s){
-        return math::translate(Matrix4Identity, pos) * math::mat4_cast(q) * math::scale(Matrix4Identity, s);
+        /*Matrix4 out(1.0f);
+        glm_mat4_mul(
+            &math::translate(Matrix4Identity, pos)[0].data,
+            &math::mat4_cast(q) [0].data,
+            &out[0].data
+        );
+        glm_mat4_mul(
+            &out[0].data,
+            &math::scale(Matrix4Identity, s)[0].data,
+            &out[0].data
+        );
+        return out;*/
+
+        glm::mat4 m = glm::mat4_cast(q);
+        m[0] *= s.x;
+        m[1] *= s.y;
+        m[2] *= s.z;
+        m[3] = glm::vec4(pos, 1.0f);
+        return m;
+
+        //return math::translate(Matrix4Identity, pos) * math::mat4_cast(q) * math::scale(Matrix4Identity, s);
     }
 
     inline static Quaternion mix(const Quaternion& from, const Quaternion& to, float t) {

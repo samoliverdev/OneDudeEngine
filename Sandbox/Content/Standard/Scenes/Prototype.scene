@@ -429,7 +429,7 @@
     "Standard/CharacterMovements": [
         {
             "enable": true,
-            "handleInputs": false,
+            "handleInputs": true,
             "moveType": 0,
             "moveSpeed": 6.0,
             "freeTurnSpeed": 20.0,
@@ -568,9 +568,24 @@
                 "updaterModule": {
                     "gravityModifier": 0.30000001192092898
                 },
-                "sizeOverLifeTimeModule": {
-                    "enable": true,
-                    "maxSize": 0.0
+                "sizeOverLifetimeModule": {
+                    "enable": false,
+                    "maxSize": 1.0
+                },
+                "colorOverLifetimeModule": {
+                    "enable": false,
+                    "colorA": {
+                        "r": 0.0,
+                        "g": 0.0,
+                        "b": 0.0,
+                        "a": 1.0
+                    },
+                    "colorB": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0,
+                        "a": 1.0
+                    }
                 }
             }
         }
