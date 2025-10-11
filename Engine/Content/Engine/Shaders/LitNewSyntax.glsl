@@ -16,7 +16,7 @@ EndProperties
 BeginPass
     #pragma Name MainPass
     #pragma SupportInstancing true
-    #pragma MultiCompile _ SKINNED INSTANCING
+    #pragma DrawType _ SKINNED INSTANCING
     #pragma MultiCompile Opaque Blend
     #pragma MultiCompile Forward Deferred
     #pragma CullFace BACK

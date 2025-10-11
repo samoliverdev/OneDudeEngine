@@ -40,24 +40,11 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
-    /*drawCommands.Add(
-        {distance, comand.material->MaterialId()}, 
-        comand
-    );*/
-
-    //m.lock();
     if(sortType == SortType::None){
         drawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
         drawCommands.Add(std::move(comand));
     }
-    //drawCommands.Add(comand.material, comand);
-    //m.unlock();
-    //drawCommandsMaterials.insert(comand.material);
-    
-    /*if(std::find(drawCommandsMaterials.begin(), drawCommandsMaterials.end(), comand.material) == drawCommandsMaterials.end()){
-        drawCommandsMaterials.push_back(comand.material);
-    }*/
 }   
 
 void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
@@ -102,8 +89,6 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
-    //m.lock();
-
     if(sortType == SortType::None){
         skinnedDrawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
@@ -112,8 +97,6 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
             std::move(comand)
         );
     }
-    //m.unlock();
-    //skinnedDrawCommandsMaterials.insert(comand.material);
 }
 
 void RendererList::Clean(){
@@ -144,9 +127,13 @@ void RendererList::Clean(){
 }
 
 void RendererList::Sort(){
+    //return;
+
     if(sortType == SortType::None){
         drawCommands.sortFunction = nullptr;
+        return;
     }
+
     if(sortType == SortType::CommonOpaque){
         /*drawCommands.sortFunction = [](auto& a, auto& b){
             if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
@@ -154,17 +141,24 @@ void RendererList::Sort(){
         };*/
 
         drawCommands.sortFunction = [](auto& a, auto& b){
-            //return a.material->MaterialId() < b.material->MaterialId();
-            if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId();
-            return a.distance < b.distance;
+            if(a.subShader != b.subShader) return a.subShader < b.subShader;  
+            if(a.material != b.material) return a.material < b.material; 
+            return a.meshs < b.meshs;   
+            
+            //if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId();
+            //return a.distance < b.distance;
         };
 
         skinnedDrawCommands.sortFunction = [](auto& a, auto& b){
-            //return a.first.materialId < b.first.materialId;
-            if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
-            return a.first.distance < b.first.distance;
+            if(a.second.subShader != b.second.subShader) return a.second.subShader < b.second.subShader;  
+            if(a.second.material != b.second.material) return a.second.material < b.second.material; 
+            return a.second.meshs < b.second.meshs;   
+
+            //if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
+            //return a.first.distance < b.first.distance;
         };
     }
+
     if(sortType == SortType::CommonTransparent){
         /*drawCommands.sortFunction = [](auto& a, auto& b){
             if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
@@ -191,21 +185,6 @@ void RendererList::Submit(bool skipEntityId){
     OD_PROFILE_SCOPE("RendererList::Submit");
     Material* lastMat = nullptr;
 
-    //NOTE: This not working why Materials can shared the same shader
-    /*
-    if(overrideMaterial != nullptr){
-        overrideMaterial->DisableKeyword("INSTANCING");
-        overrideMaterial->DisableKeyword("SKINNED");
-        Material::SubmitGraphicDatas(*overrideMaterial);
-        if(onUpdateMaterial != nullptr) onUpdateMaterial(*overrideMaterial);
-    } else {
-        for(Ref<Material> i: drawCommandsMaterials){
-            i->DisableKeyword("INSTANCING");
-            i->DisableKeyword("SKINNED");
-            Material::SubmitGraphicDatas(*i);
-            if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
-        }
-    }*/
     {
     OD_PROFILE_SCOPE("RendererList::Submit::drawCommands");
     drawCommands.Each([&](auto& cm){
@@ -216,9 +195,9 @@ void RendererList::Submit(bool skipEntityId){
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
-            _mat->DisableKeyword("INSTANCING");
+            /*_mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("INSTANCINGMATRIX43");
-            _mat->DisableKeyword("SKINNED");
+            _mat->DisableKeyword("SKINNED");*/
         }
 
         lastMat = _mat;
@@ -238,9 +217,9 @@ void RendererList::Submit(bool skipEntityId){
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
-            _mat->DisableKeyword("INSTANCING");
+            /*_mat->DisableKeyword("INSTANCING");
             _mat->DisableKeyword("INSTANCINGMATRIX43");
-            _mat->DisableKeyword("SKINNED");
+            _mat->DisableKeyword("SKINNED");*/
         }
 
         lastMat = _mat;
@@ -261,11 +240,11 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("SKINNED");
-            #ifdef USE_INSTANCING_MATRIX43
+            /*#ifdef USE_INSTANCING_MATRIX43
             _mat->EnableKeyword("INSTANCINGMATRIX43");
             #else
             _mat->EnableKeyword("INSTANCING");
-            #endif
+            #endif*/
         }
         
         lastMat = _mat;
@@ -304,12 +283,13 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("INSTANCING");
-            _mat->EnableKeyword("SKINNED");
+            
+            /*_mat->EnableKeyword("SKINNED");*/
         }
 
         lastMat = _mat;
         if(skipEntityId) cm.perDrawData.int_0.clear();
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
     });
     }
     lastMat = nullptr;
@@ -322,13 +302,13 @@ void RendererList::Submit(bool skipEntityId){
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
             //_mat->DisableKeyword("INSTANCING");
-            _mat->EnableKeyword("SKINNED");
+            /*_mat->EnableKeyword("SKINNED");*/
         }
 
         lastMat = _mat;
 
         if(skipEntityId) cm.perDrawData.int_0.clear();
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, &(*cm.posePalette)[0], cm.posePalette->size(), &cm.perDrawData);
+        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
     });
     }
     lastMat = nullptr;

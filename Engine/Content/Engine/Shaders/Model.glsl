@@ -6,7 +6,7 @@
 #pragma BeginPassDef
     Name MainPass
     SupportInstancing true
-    MultiCompile _ SKINNED INSTANCING INSTANCINGMATRIX43
+    DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

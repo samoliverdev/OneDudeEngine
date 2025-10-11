@@ -470,7 +470,7 @@ void tf_for_each2(tf::Taskflow& taskflow, Iter begin, Iter end, Func func) {
 void AnimatorSample::OnInit(){
     //ArenaAllocator<int> allocator;
     //allocator.Init(sizeof(int) * 1); // Initialize with 1KB chunks
-
+    /*
     _ArenaLinearAllocator<int> allocator;
     allocator.Init(1);
 
@@ -520,6 +520,7 @@ void AnimatorSample::OnInit(){
     std::cout << *floatPtr << std::endl;
 
     allocator2.Reset();
+    */
 
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");
 
@@ -568,7 +569,7 @@ void AnimatorSample::OnInit(){
         //"res/Game/Animations/SillyDancing.fbx"
         //"res/Game/Animations/UnarmedWalkForward.dae"
     );
-    charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/LitNewSyntax.glsl"));
+    charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
 
     
     /*OD::BoneMap bm = OD::RearrangeSkeleton(charModel->skeleton);
@@ -661,7 +662,7 @@ void AnimatorSample::OnInit(){
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
     scene->GetTaskflow().clear();*/
 
-    auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();
+    /*auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();
     tf_for_each2(scene->GetTaskflow(), view.begin(), view.end(), [&view](auto entity){
         InfoComponent& info = view.get<InfoComponent>(entity);
         AnimatorComponent& anim = view.get<AnimatorComponent>(entity);
@@ -670,7 +671,7 @@ void AnimatorSample::OnInit(){
 
     LogInfo("Task Count: %zd", scene->GetTaskflow().num_tasks());
     scene->GetExecutor().run(scene->GetTaskflow()).wait();
-    scene->GetTaskflow().clear();
+    scene->GetTaskflow().clear();*/
 }
 
 void AnimatorSample::OnUpdate(float deltaTime){

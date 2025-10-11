@@ -61,8 +61,8 @@ void Material::SetShader(Ref<Shader> s){
 }
 
 bool Material::IsBlend(){
-    if(currentShader == nullptr) return false;
-    return currentShader->IsBlend();
+    if(currentShader.drawTypes[0] == nullptr) return false;
+    return currentShader.drawTypes[0]->IsBlend();
 }
 
 bool Material::EnableInstancingValid(){ 
@@ -75,7 +75,7 @@ bool Material::EnableInstancing(){
 
 bool Material::SupportInstancing(){ 
     //return false;
-    return currentShader != nullptr && currentShader->pipeline.supportInstancing; 
+    return currentShader.drawTypes[0] != nullptr && currentShader.drawTypes[0]->pipeline.supportInstancing; 
 }
 
 void Material::SetInt(const char* name, int value){
@@ -556,7 +556,7 @@ void Material::OnGui(){
         }
     }
 
-    if(currentShader != nullptr && currentShader->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
+    if(currentShader.drawTypes[0] != nullptr && currentShader.drawTypes[0]->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
     }
 

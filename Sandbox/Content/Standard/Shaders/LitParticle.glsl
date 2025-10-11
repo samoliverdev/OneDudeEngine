@@ -16,6 +16,7 @@
 #pragma BeginPassDef
     Name MainPass
     SupportInstancing true
+    DrawType INSTANCING
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 
@@ -27,6 +28,7 @@
 #pragma BeginPassDef
     Name DepthPass
     SupportInstancing true
+    DrawType INSTANCING
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 

@@ -47,7 +47,7 @@ RenderContext::RenderContext(Scene* inScene){
     entityIdOutColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGBA32F}, 
+        {FramebufferTextureFormat::RGB11B10F}, 
         //{FramebufferTextureFormat::RGBA8}//, 
         //{FramebufferTextureFormat::RED_INTEGER}
     };
@@ -58,11 +58,11 @@ RenderContext::RenderContext(Scene* inScene){
     //forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGB32F}, // Pos
-        {FramebufferTextureFormat::RGB32F}, // Normal
-        {FramebufferTextureFormat::RGBA16F}, // Albedo
-        {FramebufferTextureFormat::RGB16F}, // Emission
-        {FramebufferTextureFormat::RGB16F}//, // Spec, Metalic, AO
+        {FramebufferTextureFormat::RGB16F}, // Pos
+        {FramebufferTextureFormat::RGB16F}, // Normal
+        {FramebufferTextureFormat::RGBA8}, // Albedo
+        {FramebufferTextureFormat::RGB}, // Emission
+        {FramebufferTextureFormat::RGB16F}//, // Spec, Metalic, AO 
         //{FramebufferTextureFormat::RED_INTEGER} // Object ID
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
@@ -74,7 +74,7 @@ RenderContext::RenderContext(Scene* inScene){
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGBA32F}
+        {FramebufferTextureFormat::RGB11B10F}
         //{FramebufferTextureFormat::RGBA8}
     };
     framebufferSpecification.sample = 1;
@@ -85,7 +85,7 @@ RenderContext::RenderContext(Scene* inScene){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
-    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.shader"));
+    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.glsl"));
 
     blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
@@ -167,7 +167,8 @@ void RenderContext::EndDrawEntityIds(){
 void RenderContext::DrawEntityIds(RendererList& commandBuffer){
     OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
 
-    //if(sort) commandBuffer.Sort();
+    //if(sort) 
+    commandBuffer.Sort();
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //if(material.GetShader() == nullptr) return;
         //SetStandUniforms(cam, *material.GetShader()); 
@@ -1525,6 +1526,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(data.posePalette != nullptr){
         target.AddSkinnedDrawCommand({
             data.targetMatrix,
+            data.targetMaterial->CurrentShader().drawTypes[1].get(),
             data.targetMaterial,
             data.targetMesh,
             data.posePalette,
@@ -1536,11 +1538,12 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(isInstancing){
         if(data.instancingBuffer != nullptr){
             target.AddDrawInstancingCommand({
-                data.instancingBuffer, data.targetMaterial, data.targetMesh
+                data.instancingBuffer, data.targetMaterial->CurrentShader().drawTypes[2].get(), data.targetMaterial, data.targetMesh
             });
         } else{
             target.AddDrawInstancingCommand({
                 data.targetMatrix,
+                data.targetMaterial->CurrentShader().drawTypes[2].get(),
                 data.targetMaterial,
                 data.targetMesh,
             });
@@ -1548,6 +1551,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     } else {
         target.AddDrawCommand({
             data.targetMatrix,
+            data.targetMaterial->CurrentShader().drawTypes[0].get(),
             data.targetMaterial,
             data.targetMesh,
             data.distance,
@@ -1593,7 +1597,8 @@ void RenderContext::RenderSkyboxLater(){
 void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred){
     OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
 
-    if(sort) commandBuffer.Sort();
+    //if(sort) 
+    commandBuffer.Sort();
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //if(material.GetShader() == nullptr) return;
         //SetStandUniforms(cam, *material.GetShader()); 
@@ -1615,7 +1620,8 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
 void RenderContext::DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort, bool post){
     OD_PROFILE_SCOPE("RenderContext::DrawZPreePassRenderersBuffer");
 
-    if(sort) commandBuffer.Sort();
+    //if(sort) 
+    commandBuffer.Sort();
     commandBuffer.Submit();
 }
 
@@ -1806,6 +1812,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
             data.targetMatrix,
+            data.customShadowPass->CurrentShader().drawTypes[1].get(),
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
@@ -1819,12 +1826,14 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         if(data.instancingBuffer != nullptr){
             commandBuffer.AddDrawInstancingCommand({
                 data.instancingBuffer, 
+                data.customShadowPass->CurrentShader().drawTypes[2].get(),
                 data.customShadowPass, //data.targetMaterial, 
                 data.targetMesh
             });
         } else{
             commandBuffer.AddDrawInstancingCommand({
                 data.targetMatrix,
+                data.customShadowPass->CurrentShader().drawTypes[2].get(),
                 data.customShadowPass, 
                 //data.targetMaterial,
                 data.targetMesh
@@ -1842,6 +1851,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
         commandBuffer.AddDrawCommand({
             data.targetMatrix,
+            data.customShadowPass->CurrentShader().drawTypes[0].get(),
             data.customShadowPass,
             data.targetMesh,
             data.distance,
@@ -1856,7 +1866,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
 void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
-    //commandBuffer.Sort();
+    commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);
 
     //Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);

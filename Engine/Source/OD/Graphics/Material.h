@@ -168,6 +168,8 @@ public:
         enableInstancing = enable;
     }
 
+    inline Shader::SubShaderTarget CurrentShader(){ return currentShader; }
+
 private:
     int mainPass = -1;
     int depthPass = -1;
@@ -184,7 +186,7 @@ private:
     static std::unordered_map<std::string, MaterialMap> globalMaps;
 
     int currentPass = 0;
-    Ref<SubShader> currentShader = nullptr;
+    Shader::SubShaderTarget currentShader = {}; //nullptr;
 
     uint32_t id = 0;
 

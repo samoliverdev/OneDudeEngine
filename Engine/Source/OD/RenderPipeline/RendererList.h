@@ -14,9 +14,11 @@ namespace OD{
 
 class Material;
 class Mesh;
+class SubShader;
 
 struct OD_API alignas(16) DrawCommand{
     Matrix4 trans;
+    SubShader* subShader;
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     float distance;
@@ -33,6 +35,7 @@ struct OD_API alignas(16) DrawCommand{
 
 struct OD_API alignas(16) SkinnedDrawCommand{
     Matrix4 trans;
+    SubShader* subShader;
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     AlignedVector<Matrix4>* posePalette;
@@ -57,6 +60,7 @@ struct OD_API DrawInstancingCommand{
 
     ReusableVector<InstancingBuffer*> buffers;
 
+    SubShader* subShader;
     Material* material;
     Mesh* meshs;
     
@@ -71,7 +75,8 @@ struct OD_API DrawInstancingCommand2{
     #else
     ReusableVector<Matrix4> trans;
     #endif
-
+    
+    SubShader* subShader;
     Material* material;
     Mesh* meshs;
     
@@ -80,6 +85,7 @@ struct OD_API DrawInstancingCommand2{
 
 struct OD_API DrawInstancingCommand3{
     InstancingBuffer* buffer;
+    SubShader* subShader;
     Material* material;
     Mesh* meshs;
     

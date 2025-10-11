@@ -538,7 +538,7 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawSettings.enableIntancing = true;
     opaqueDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
     opaqueDrawSettings.sortType = SortType::CommonOpaque;
-    opaqueDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
+    opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
     blendDrawSettings.enableIntancing = false;

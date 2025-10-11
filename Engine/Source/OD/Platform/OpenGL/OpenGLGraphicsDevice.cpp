@@ -23,7 +23,7 @@
 
 namespace OD{
 
-//#define OPENGL_DEBUG
+//#define OPENGL_DEBUG //need enable in PlatformGLFW3.cpp too
 
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
@@ -662,6 +662,10 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
 }
 
 void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4* value, int count){
+    GLint currentProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    Assert(shader.glData.id == currentProgram);
+
     Graphics::GetStats().uniformSet += 1;
     //if(curBindShaderRenderId != rendererId) Bind(*this);
     glUniformMatrix4fv(SubShaderGetLocation(shader, name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
@@ -892,7 +896,10 @@ bool OpenGLGraphicsDevice::SubShaderSetUniformBuffer(SubShader& shader, const ch
     }
 }
 */
-void OpenGLGraphicsDevice::BindMaterial(Material& mat){
+void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
+    Assert(drawType >= 0 && drawType <= 3);
+    Assert(mat.currentShader.drawTypes[drawType] != nullptr);
+
     auto ContainUniformName = [&](SubShader shader, const std::string& name){ 
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
     };
@@ -1041,16 +1048,16 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
-        SubShaderBind(*material.currentShader); //TODO: Optmize thi by bind and ApplyUniformTo global of lastShader, and add material.currentTextureSlot by subshader instead of material 
-        ApplyUniformTo(material, *material.currentShader, material.maps);
-        ApplyUniformTo(material, *material.currentShader, Material::globalMaps);
+        SubShaderBind(*material.currentShader.drawTypes[drawType]); //TODO: Optmize thi by bind and ApplyUniformTo global of lastShader, and add material.currentTextureSlot by subshader instead of material 
+        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
+        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
         Assert(material.currentTextureSlot < 32);
     };
 
-    Assert(mat.currentShader != nullptr && "Shader is not vali!");
+    Assert(mat.currentShader.drawTypes[drawType] != nullptr && "Shader is not vali!");
     Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
 
-    if(&mat != lastMat || mat.isDirty == true){
+    if(&mat != lastMat || mat.isDirty == true || mat.currentShader.drawTypes[drawType].get() != lastShader){
         SubmitGraphicDatas(mat);
         mat.isDirty = false;
         #if UseUniformBuffer
@@ -1060,12 +1067,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
             glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
             glCheckError();
         }
-        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
+        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader.drawTypes[drawType]->glData.id, "Main");  
         if(index2 != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader->glData.id, index2, mat.currentBufferSlot); // 1);
+            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         }  
@@ -1073,19 +1080,19 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
     }
     lastMat = &mat;
     
-    if(mat.currentShader.get() != lastShader){
+    if(mat.currentShader.drawTypes[drawType].get() != lastShader){
         #if UseUniformBuffer
-        unsigned int index = glGetUniformBlockIndex(mat.currentShader->glData.id, "CamDraw");   
+        unsigned int index = glGetUniformBlockIndex(mat.currentShader.drawTypes[drawType]->glData.id, "CamDraw");   
         if(index != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader->glData.id, index, mat.currentBufferSlot); // 0);
+            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index, mat.currentBufferSlot); // 0);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         } else {
-            SubShaderSetMatrix4(*mat.currentShader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
-            SubShaderSetMatrix4(*mat.currentShader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
+            SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
+            SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
         }
         /*unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
         if(index2 != GL_INVALID_INDEX){
@@ -1102,7 +1109,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat){
         SubShaderSetMatrix4(*mat.currentShader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
         #endif
     }
-    lastShader = mat.currentShader.get();
+    lastShader = mat.currentShader.drawTypes[drawType].get();
 }  
 
 void OpenGLGraphicsDevice::SendPerDrawData(PerDrawData& perDrawData){
@@ -1154,6 +1161,7 @@ void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, con
 }
 
 void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
+    if(mat.currentShader.drawTypes[0] == nullptr) return;
     BindMaterial(mat);
     
     if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
@@ -1190,7 +1198,8 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
 }
 
 void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
-    BindMaterial(mat);
+    if(mat.currentShader.drawTypes[1] == nullptr) return;
+    BindMaterial(mat, 1);
     
     if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
 
@@ -1227,7 +1236,8 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
-    BindMaterial(mat);
+    if(mat.currentShader.drawTypes[2] == nullptr) return;
+    BindMaterial(mat, 2);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
 
@@ -1256,7 +1266,8 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4x3* modelMatrixs, int count){
-    BindMaterial(mat);
+    if(mat.currentShader.drawTypes[3] == nullptr) return;
+    BindMaterial(mat, 3);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
 
@@ -1285,7 +1296,8 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
-    BindMaterial(mat);
+    if(mat.currentShader.drawTypes[buffer.IsMatrix4x3() ? 3 : 2] == nullptr) return;
+    BindMaterial(mat, buffer.IsMatrix4x3() ? 3 : 2);
 
     Assert(MeshIsValid(mesh) && "Mesh is not valid!");
     Assert(count > 0);
@@ -2182,11 +2194,11 @@ bool OpenGLGraphicsDevice::MeshIsValid(Mesh& mesh){
 }
 
 int InternalFormatLookup[] = {
-    GL_NONE, GL_RGB, GL_RGBA8, GL_RGB16F, GL_RGBA16F, GL_RGB32F, GL_RGBA32F, GL_R32I, GL_DEPTH24_STENCIL8, GL_DEPTH_COMPONENT
+    GL_NONE, GL_RGB, GL_RGBA8, GL_R11F_G11F_B10F, GL_RGB16F, GL_RGBA16F, GL_RGB32F, GL_RGBA32F, GL_R32I, GL_DEPTH24_STENCIL8, GL_DEPTH_COMPONENT
 };
 
 int FormatLookup[] = {
-    GL_NONE, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RED_INTEGER, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT
+    GL_NONE, GL_RGB, GL_RGBA, GL_RGB, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RED_INTEGER, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT
 };
 
 bool IsDepthTypeFormat(FramebufferTextureFormat format){
@@ -2275,7 +2287,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     
         GLenum internalFormat = InternalFormatLookup[(int)specification.colorAttachments[index].colorFormat];
         GLenum format = FormatLookup[(int)specification.colorAttachments[index].colorFormat];
-    
+        
         bool multisample = specification.sample > 1;
     
         unsigned int colorAttachment;
@@ -2287,7 +2299,10 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
         if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB32F) hdr = true;
         if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA16F) hdr = true;
         if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F) hdr = true;
-    
+
+        GLenum type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB11B10F) type = GL_UNSIGNED_INT_10F_11F_11F_REV;
+  
         if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
             #if defined(OpenGLEmscripten)
             Assert(false && "not supported");
@@ -2299,8 +2314,10 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             glCheckError();
             #endif
         } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
+            
+
             glBindTexture(GL_TEXTURE_2D, colorAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2312,7 +2329,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //Assert(false);
     
             glBindTexture(GL_TEXTURE_2D_ARRAY, colorAttachment);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, type, NULL);
             glCheckError();
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -2331,7 +2348,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             Assert(specification.width == specification.height);
             glBindTexture(GL_TEXTURE_CUBE_MAP, colorAttachment);
             for(unsigned int i = 0; i < 6; ++i){
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, specification.width, specification.height, 0, format, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
                 glCheckError();
             }
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -3782,9 +3799,9 @@ void OpenGLGraphicsDevice::MaterialDestroy(Material& shader){
 
 void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
     #if UseUniformBuffer
-    Assert(mat.currentShader != nullptr);
+    Assert(mat.currentShader.drawTypes[0] != nullptr);
 
-    if(getUniformInfo(mat.currentShader->glData.id, "Main", mat.glData.mainBufferDef)){
+    if(getUniformInfo(mat.currentShader.drawTypes[0]->glData.id, "Main", mat.glData.mainBufferDef)){
         mat.glData.mainUniformData = malloc(mat.glData.mainBufferDef.size);
         memset(mat.glData.mainUniformData, 0, mat.glData.mainBufferDef.size);
         glGenBuffers(1, &mat.glData.mainBuffer);

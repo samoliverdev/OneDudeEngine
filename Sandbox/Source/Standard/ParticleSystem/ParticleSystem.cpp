@@ -111,6 +111,43 @@ void ColorOverLifetimeModule::OnGui(){
         ImGui::Checkbox("enable", &enable);
         ImGui::ColorEdit4("colorA", &colorA, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
         ImGui::ColorEdit4("colorB", &colorB, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+
+        int32_t stateID = 10;
+	    static ImGradientHDRTemporaryState tempState;
+
+	    bool isMarkerShown = true;
+	    ImGradientHDR(stateID, gradient, tempState, isMarkerShown);
+
+        if (ImGui::IsItemHovered()){
+            ImGui::SetTooltip("Gradient");
+        }
+
+        if (tempState.selectedMarkerType == ImGradientHDRMarkerType::Color){
+            auto selectedColorMarker = gradient.GetColorMarker(tempState.selectedIndex);
+            if(selectedColorMarker != nullptr){
+                ImGui::ColorEdit3("Color", selectedColorMarker->Color.data(), ImGuiColorEditFlags_Float);
+                ImGui::DragFloat("Intensity", &selectedColorMarker->Intensity, 0.1f, 0.0f, 100.0f, "%f", 1.0f);
+            }
+        }
+
+        if(tempState.selectedMarkerType == ImGradientHDRMarkerType::Alpha){
+            auto selectedAlphaMarker = gradient.GetAlphaMarker(tempState.selectedIndex);
+            if(selectedAlphaMarker != nullptr){
+                ImGui::DragFloat("Alpha", &selectedAlphaMarker->Alpha, 0.1f, 0.0f, 1.0f, "%f", 1.0f);
+            }
+        }
+
+        if(tempState.selectedMarkerType != ImGradientHDRMarkerType::Unknown){
+            if(ImGui::Button("Delete")){
+                if(tempState.selectedMarkerType == ImGradientHDRMarkerType::Color){
+                    gradient.RemoveColorMarker(tempState.selectedIndex);
+                    tempState = ImGradientHDRTemporaryState{};
+                } else if(tempState.selectedMarkerType == ImGradientHDRMarkerType::Alpha){
+                    gradient.RemoveAlphaMarker(tempState.selectedIndex);
+                    tempState = ImGradientHDRTemporaryState{};
+                }
+            }
+        }
     }
 }
 

@@ -19,7 +19,8 @@ Properties{
 Pass {
     #pragma Name MainPass
     #pragma SupportInstancing false
-    #pragma MultiCompile _ SKINNED
+    #pragma DrawType _ SKINNED
+    MultiCompile Opaque Blend
 
     MaterialData           { 
         int a;

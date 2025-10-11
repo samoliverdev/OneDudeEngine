@@ -118,8 +118,12 @@ bool Shader::Create(std::string inPath){
 void Shader::Destroy(){
     for(auto& i: passes){
         for(auto& j: i.shaders){
-            if(j.second == nullptr) continue;
-            graphicsDevice->SubShaderDestroy(*j.second); //SubShader::Destroy(*j.second);
+            //if(j.second == nullptr) continue;
+            //graphicsDevice->SubShaderDestroy(*j.second); //SubShader::Destroy(*j.second);
+
+            if(j.second.drawTypes[0] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[0]);
+            if(j.second.drawTypes[1] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[1]);
+            if(j.second.drawTypes[2] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[2]);
         }
     }
     passes.clear();
@@ -127,7 +131,7 @@ void Shader::Destroy(){
     shaderSourceData = {};
     keyworldSpaces.clear();
     curPass = 0;
-    currentShader = nullptr;
+    currentShader = {}; //nullptr;
     sourcePath = "";
     isComplete = false;
     path = "Memory";
@@ -137,11 +141,13 @@ bool Shader::InitPass(int pass){
     //passes[pass].shaders[""] = baseShader;
     //currentShader = baseShader;
 
-    AddShaderVaring("", std::set<std::string>(), pass);
-    if(isComplete == false) return false;
+    //AddShaderVaring("", std::set<std::string>(), pass, {"DefaultDraw", "SkinnedDraw", "InstancingDraw"});
+    //if(isComplete == false) return false;
 
     std::vector<std::vector<std::string>> multCompile;
     std::vector<std::string> combinations;
+
+    std::set<DrawType> drawTypes = { Shader::DrawType::DefaultDraw};
 
     for(auto i: shaderSourceData.passes[pass].properties /*baseShader->Pragmas()*/){
         if(i.size() < 2) continue;
@@ -149,14 +155,22 @@ bool Shader::InitPass(int pass){
         //LogInfo("!!!=>>> %s", i[0].c_str()); 
         //continue;
         
-        if(i[0] != "MultiCompile") continue;
+        if(i[0] == "MultiCompile"){
+            multCompile.push_back(std::vector<std::string>());
+            keyworldSpaces.push_back(KeyworldSpace());
 
-        multCompile.push_back(std::vector<std::string>());
-        keyworldSpaces.push_back(KeyworldSpace());
+            for(int j = 1; j < i.size(); j++){
+                multCompile[multCompile.size()-1].push_back(i[j]);
+                keyworldSpaces[keyworldSpaces.size()-1].keyworlds.push_back(i[j]);
+            }
+        }
 
-        for(int j = 1; j < i.size(); j++){
-            multCompile[multCompile.size()-1].push_back(i[j]);
-            keyworldSpaces[keyworldSpaces.size()-1].keyworlds.push_back(i[j]);
+        if(i[0] == "DrawType"){
+            for(int j = 1; j < i.size(); j++){
+                if(i[j] == "SKINNED") drawTypes.insert(Shader::DrawType::SkinnedDraw);
+                if(i[j] == "INSTANCING") drawTypes.insert(Shader::DrawType::InstancingDraw);
+                if(i[j] == "INSTANCINGMATRIX43") drawTypes.insert(Shader::DrawType::InstancingDraw43);
+            }
         }
     }
     for(auto& i: multCompile){
@@ -166,6 +180,9 @@ bool Shader::InitPass(int pass){
         }
         if(c == false) i.push_back("_");
     }
+
+    AddShaderVaring("", std::set<std::string>(), pass, drawTypes);
+    if(isComplete == false) return false;
     
     if(multCompile.size() < 1) return true;
 
@@ -180,7 +197,7 @@ bool Shader::InitPass(int pass){
         }*/
         //LogInfo("Shader Varing Key: \"%s\" Original: \"%s\" KeywordsCount: %zd", key.c_str(), s.c_str(), keywords.size());
         if(passes[pass].shaders.count(key) == false) {
-            AddShaderVaring(key, keywords, pass);
+            AddShaderVaring(key, keywords, pass, drawTypes);
             if(isComplete == false) return false;
         }
 
@@ -264,7 +281,7 @@ Ref<SubShader> Shader::GetCurrentShader(){
     }
 }*/
 
-void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass){
+void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass, const std::set<DrawType>& drawTypes){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());
     _enabledKeywords.push_back(passes[pass].name);
     _enabledKeywords.push_back("Pass_" + std::to_string(pass));
@@ -279,7 +296,38 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     //LogWarning("%s", shaderSourceData.baseSource.c_str());
 
-    Ref<SubShader> shader = CreateRef<SubShader>();
+    SubShaderTarget _shader;
+
+    for(auto& drawType: drawTypes){
+        std::string skinnedKeyworld = "#define SKINNED\n";
+        std::string instancingKeyworld = "#define INSTANCING\n";
+        std::string instancing43Keyworld = "#define INSTANCINGMATRIX43\n";
+
+        if(drawType == Shader::DrawType::SkinnedDraw) shaderSourceData.baseSource.insert(0, skinnedKeyworld);
+        if(drawType == Shader::DrawType::InstancingDraw) shaderSourceData.baseSource.insert(0, instancingKeyworld);
+        if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.insert(0, instancing43Keyworld);
+
+        Ref<SubShader> shader = CreateRef<SubShader>();
+        graphicsDevice->SubShaderCreateFromBaseSource(
+            *shader,
+            shaderSourceData.baseSource, 
+            _enabledKeywords, 
+            shaderSourceData.passes[pass].pipeline,
+            errors
+        );
+        if(shader == nullptr){
+            isComplete = false;
+        }
+
+        if(drawType == Shader::DrawType::SkinnedDraw) shaderSourceData.baseSource.erase(0, skinnedKeyworld.size());
+        if(drawType == Shader::DrawType::InstancingDraw) shaderSourceData.baseSource.erase(0, instancingKeyworld.size());
+        if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.erase(0, instancing43Keyworld.size());
+
+        _shader.drawTypes[(int)drawType] = shader;
+    }
+    passes[pass].shaders[key] = _shader;
+
+    /*Ref<SubShader> shader = CreateRef<SubShader>();
     graphicsDevice->SubShaderCreateFromBaseSource(
         *shader,
         shaderSourceData.baseSource, 
@@ -290,7 +338,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
     if(shader == nullptr){
         isComplete = false;
     }
-    passes[pass].shaders[key] = shader;
+    passes[pass].shaders[key] = shader;*/
     //currentShader = shader;
 
     shaderSourceData.baseSource.erase(0, insirtSize);

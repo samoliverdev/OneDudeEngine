@@ -25,6 +25,17 @@ public:
     inline bool IsComplete(){ return isComplete; }
     inline std::vector<std::vector<std::string>>& Properties(){ return shaderSourceData.properties; }
 
+    enum class DrawType{
+        DefaultDraw = 0,
+        SkinnedDraw = 1,
+        InstancingDraw = 2,
+        InstancingDraw43 = 3
+    };
+
+    struct SubShaderTarget{
+        Ref<SubShader> drawTypes[4] = {nullptr, nullptr, nullptr, nullptr};
+    };
+
 private:
     struct KeyworldSpace{
         std::vector<std::string> keyworlds;
@@ -33,7 +44,7 @@ private:
     
     struct Pass{
         std::string name;
-        std::unordered_map<std::string, Ref<SubShader>> shaders;
+        std::unordered_map<std::string, SubShaderTarget> shaders;
     };
 
     ShaderSourceData shaderSourceData;
@@ -42,7 +53,8 @@ private:
     std::string sourcePath;
     std::vector<KeyworldSpace> keyworldSpaces;
     int curPass = 0;
-    Ref<SubShader> currentShader;
+    //Ref<SubShader> currentShader;
+    SubShaderTarget currentShader;
 
     bool isComplete = false;
     ShaderDataGL;
@@ -50,7 +62,7 @@ private:
     bool Create(std::string path);
     void Destroy();
     bool InitPass(int pass);
-    void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass);
+    void AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass, const std::set<DrawType>& drawTypes);
 };
 
 }

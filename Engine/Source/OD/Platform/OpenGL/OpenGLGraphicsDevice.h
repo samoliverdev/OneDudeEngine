@@ -142,7 +142,7 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
 
-    void BindMaterial(Material& mat);
+    void BindMaterial(Material& mat, int drawType = 0);
 
     void SetColorMask(Vector4 mask);
     void SetRenderMode(RenderMode mode);

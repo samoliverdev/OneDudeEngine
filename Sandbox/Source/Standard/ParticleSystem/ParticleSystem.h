@@ -4,6 +4,7 @@
 #include <OD/Graphics/InstancingBuffer.h>
 #include <OD/RenderPipeline/RenderContext.h>
 #include <OD/Serialization/ImGuiArchive.h>
+#include "Standard/Ultis/ImGradientHDR.h"
 
 namespace OD{
     class Material;
@@ -143,12 +144,16 @@ public:
     bool enable = false;
     Color colorA = {0, 0, 0, 1};
     Color colorB = {1, 1, 1, 1};
+    
+    ImGradientHDRState gradient;
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
         ArchiveDumpNVP(ar, colorA);
         ArchiveDumpNVP(ar, colorB);
+
+        ArchiveDumpNVP(ar, gradient);
     }
 
     void OnGui() override;

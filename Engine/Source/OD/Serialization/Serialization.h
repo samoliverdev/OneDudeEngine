@@ -3,6 +3,7 @@
 #include "OD/Core/Math.h"
 #include <magic_enum/magic_enum.hpp>
 #include <cereal/cereal.hpp>
+#include <cereal/types/array.hpp>
 /*#include <cereal/details/helpers.hpp>
 #include <cereal/access.hpp>
 
