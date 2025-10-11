@@ -26,8 +26,17 @@ void SpawnModule::OnStartSpawnUpdate(ParticleSystem& system){
 }
 
 void SpawnModule::OnSpawnUpdate(ParticleSystem& system){
-    int newParticles = (int)(Time::DeltaTime() * overTimeEmiterRate);
+    /*int newParticles = (int)(Time::DeltaTime() * overTimeEmiterRate);
     for(int i = 0; i < newParticles; i++){
+        system.SpawnNewParticle();
+    }*/
+
+    emissionAccumulator += Time::DeltaTime() * overTimeEmiterRate;
+
+    int newParticles = (int)emissionAccumulator;
+    emissionAccumulator -= newParticles; // keep the leftover fraction
+
+    for (int i = 0; i < newParticles; i++){
         system.SpawnNewParticle();
     }
 }
@@ -60,17 +69,28 @@ void InitialVelocityModule::OnInitParticle(ParticleData& particle){
 
 void InitialSizeModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialSize")){
-        ImGui::DragFloat3("minSize", &minSize.x);
-        ImGui::DragFloat3("maxSize", &maxSize.x);
+        ImGui::Checkbox("uniforSize", &uniforSize);
+
+        if(uniforSize){
+            ImGui::DragFloat("minSize", &minSize.x);
+            ImGui::DragFloat("maxSize", &maxSize.x);
+        } else {
+            ImGui::DragFloat3("minSize", &minSize.x);
+            ImGui::DragFloat3("maxSize", &maxSize.x);
+        }
     }
 }
 
 void InitialSizeModule::OnInitParticle(ParticleData& particle){
-    particle.size = Vector3(
-        Ultis::RandomRange(minSize.x, maxSize.x), 
-        Ultis::RandomRange(minSize.y, maxSize.y), 
-        Ultis::RandomRange(minSize.z, maxSize.z) 
-    ); 
+    if(uniforSize){
+        particle.size = Vector3(Ultis::RandomRange(minSize.x, maxSize.x));
+    } else {
+        particle.size = Vector3(
+            Ultis::RandomRange(minSize.x, maxSize.x), 
+            Ultis::RandomRange(minSize.y, maxSize.y), 
+            Ultis::RandomRange(minSize.z, maxSize.z) 
+        ); 
+    }
 }
 
 void InitialColorModule::OnGui(){
@@ -153,12 +173,25 @@ void ColorOverLifetimeModule::OnGui(){
 
 void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningData& runningData){
     if(enable == false) return;
-    p.color = Color::Lerp(colorA, colorB, runningData.lifetime);
+    //p.color = Color::Lerp(colorA, colorB, runningData.lifetime);
+
+    auto color = gradient.GetCombinedColor(runningData.lifetime);
+    p.color = Color(color[0], color[1], color[2], color[3]);
+}
+
+void RendererModule::OnGui(){
+    if(ImGui::CollapsingHeader("RendererModule")){
+        ImGui::DrawAsset<Material>("material", material);
+        ImGui::DrawAsset<Model>("model", model);
+    }
 }
 
 //////////////////////////////////////////////////////////
 
 void ParticleSystem::OnGui(){
+    ImGui::Checkbox("isLooping", &isLooping);
+    ImGui::DragFloat("duration", &duration);
+
     if(ImGui::DragInt("maxParticles", &maxParticles)){
         SetMaxParticle(maxParticles);
         //Reset();
@@ -180,6 +213,21 @@ void ParticleSystem::OnGui(){
     updaterModule.OnGui();
     sizeOverLifetimeModule.OnGui();
     colorOverLifetimeModule.OnGui();
+    
+    rendererModule.OnGui();
+
+    ImGui::Separator();
+
+    ImVec4 color = ImVec4(1.0f, 0.7f, 0.2f, 1.0f); // orange
+    ImGui::TextColored(color, "State %s", std::string(magic_enum::enum_name(state)).c_str());
+    ImGui::Text("RunTime: %f", runningTime);
+    ImGui::Text("ParticleCounts: %d", particlesCount);
+
+    if(state == State::Running && ImGui::Button("Stop")){
+        Stop();
+    } else if(state == State::Stop && ImGui::Button("Play")){
+        Play();
+    }
 }
 
 void ParticleSystem::BindModules(){
@@ -200,9 +248,12 @@ void ParticleSystem::BindModules(){
 }
 
 void ParticleSystem::Reset(){
+    runningTime = 0;
     curDelayTime = delay;
     hasStarted = false;
 
+    currentParticleIndex = 0;
+    particlesCount = 0;
     freeParticles.clear();
     for(int i = 0; i < particles.size(); i++){
         particles[i].life = 0;
@@ -286,15 +337,21 @@ void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
     if(particles.size() != maxParticles) SetMaxParticle(maxParticles);
 
     float delta = Time::DeltaTime();
-
     curDelayTime -= delta;
     if(curDelayTime > 0) return;
 
-    if(hasStarted = false){
-        hasStarted = true;
-        for(auto* i: spawnModules) i->OnStartSpawnUpdate(*this);
+    runningTime += delta;
+
+    bool runSpwan = true;
+    if(isLooping == false && runningTime > duration) runSpwan = false;
+
+    if(runSpwan){
+        if(hasStarted == false){
+            hasStarted = true;
+            for(auto* i: spawnModules) i->OnStartSpawnUpdate(*this);
+        }
+        for(auto* i: spawnModules) i->OnSpawnUpdate(*this);
     }
-    for(auto* i: spawnModules) i->OnSpawnUpdate(*this);
 
     particlesCount = 0;
     for(int i = 0; i < particles.size(); i++){
@@ -316,36 +373,85 @@ void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
             }
         }
     }
+
+    if(isLooping == false && particlesCount <= 0){
+        Stop();
+    }
 }
 
 void ParticleSystem::Sort(){
-    std::sort(particles.begin(), particles.end());
+    //std::sort(particles.begin(), particles.end(), [](ParticleData& a, ParticleData& b){
+    //    return a.cameradistance > b.cameradistance;
+    //});
     //std::sort(&particles[0], &particles[particles.size()]);
 }
 
-void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root){
+glm::mat4 MakeBillboard(const glm::vec3& objectPos, const glm::mat4& view, const glm::mat4& proj){
+    // Extract camera right, up and forward vectors from the view matrix
+    glm::vec3 camRight   = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    glm::vec3 camUp      = glm::vec3(view[0][1], view[1][1], view[2][1]);
+    glm::vec3 camForward = -glm::vec3(view[0][2], view[1][2], view[2][2]); // negate because view looks toward -Z
+
+    glm::mat4 model(1.0f);
+    model[0] = glm::vec4(camRight,   0.0f);
+    model[1] = glm::vec4(camUp,      0.0f);
+    model[2] = glm::vec4(camForward, 0.0f);
+    model[3] = glm::vec4(objectPos,  1.0f);
+
+    return model;
+}
+
+void SortDrawDataByParticleDistance(std::vector<Matrix4>& drawData,const std::vector<ParticleData>& particles){
+    size_t N = drawData.size();
+    if(N != particles.size()) return; // sanity check
+
+    // create an index array
+    std::vector<size_t> indices(N);
+    for(size_t i = 0; i < N; i++) indices[i] = i;
+
+    // sort indices based on particle cameradistance (descending)
+    std::sort(indices.begin(), indices.end(), [&particles](size_t a, size_t b){
+        return particles[a].cameradistance > particles[b].cameradistance;
+    });
+
+    // rearrange drawData according to sorted indices
+    std::vector<Matrix4> tmp = drawData;
+    for(size_t i = 0; i < N; i++) {
+        drawData[i] = tmp[indices[i]];
+    }
+}
+
+void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root, const Camera* cam){
     drawData.resize(particlesCount);
     int i = 0;
     for(int _i = 0; _i < particles.size(); _i++){
         if(particles[_i].life <= 0) continue;
 
         Transform t(particles[_i].pos, QuaternionIdentity, particles[_i].size);
+
+        auto targetModelMatrix = t.GetModelMatrix();
+        /*if(cam != nullptr){
+            targetModelMatrix = MakeBillboard(t.Position(), cam->view, cam->projection) * glm::scale(glm::mat4(1.0f), t.Scale());
+        }*/
         
         if(simulationSpace == SimulationSpace::Local){
-            auto m = root * t.GetModelMatrix();
+            auto m = root * targetModelMatrix;
             drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
         } else {
-            auto m = t.GetModelMatrix();
+            auto m = targetModelMatrix;
             drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
         }
 
         i += 1;
     }
+
+    SortDrawDataByParticleDistance(drawData, particles);
+
     buffer.SetData(drawData.data(), particlesCount);
 }
 
 ParticleRendererFeature::ParticleRendererFeature(){
-    material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/LitParticle.glsl"));
+    material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"));
     material->SetEnableInstancing(true);
     material->SetFloat("smoothness", 0);
     mesh = CreateRef<Model>();
@@ -356,16 +462,18 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
     auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
 
-        particle.particleSystem.SubmitDrawData(*particle.drawData, trans.GlobalModelMatrix());
+        //particle.particleSystem.Sort();
+        particle.particleSystem.SubmitDrawData(*particle.drawData, trans.GlobalModelMatrix(), &cam);
         if(particle.drawData->Count() == 0) continue;
 
         RenderData renderData;
         renderData.distance = math::distance(trans.Position(), cam.viewPos);
         renderData.aabb = AABB(trans.Position(), {10, 10, 10});
-        renderData.targetMaterial = material.get();
-        renderData.targetMesh = mesh->meshs[0].get();
+        renderData.targetMaterial = particle.particleSystem.rendererModule.material.get(); //material.get();
+        renderData.targetMesh = particle.particleSystem.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
         renderData.targetMatrix = trans.GlobalModelMatrix();
         renderData.instancingBuffer = particle.drawData.get();
+        renderData.renderShadow = material->IsBlend() == false;
         renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
         outRenderData.push_back(renderData);
     }
@@ -385,16 +493,21 @@ bool ParticleManageSystem::ExecuteAlways(){
 }
 
 void ParticleManageSystem::Update(Scene& scene){
+    Vector3 camPos = Vector3Zero; 
+    if(scene.GetMainCamera() != EntityNull){
+        camPos = scene.GetComponent<TransformComponent>(scene.GetMainCamera()).Position();
+    }
+
     auto view = scene.GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
         if(particle.drawData == nullptr){
             particle.drawData = CreateRef<InstancingBuffer>();
         }
 
-        if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
+        /*if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
             particle.particleSystem.Play();
-        }
-        particle.particleSystem.Update(trans, Vector3Zero);
+        }*/
+        particle.particleSystem.Update(trans, camPos);
     }
 }
 

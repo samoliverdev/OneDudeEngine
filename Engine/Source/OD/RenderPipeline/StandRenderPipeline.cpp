@@ -541,7 +541,7 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
-    blendDrawSettings.enableIntancing = false;
+    blendDrawSettings.enableIntancing = true; //false;
     blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
@@ -589,7 +589,7 @@ void CameraRenderer::RunRenderDataLoop(){
 
     context->RenderDataLoop([&](RenderData& data){
         AddRenderData(data); 
-        shadows.AddRenderData(data); 
+        if(data.renderShadow == true) shadows.AddRenderData(data); 
     });
     #endif
 }
@@ -726,8 +726,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
-        context->DrawRenderersBuffer(blendDrawTarget, true);
+        //context->DrawRenderersBuffer(blendDrawTarget, true);
         context->RenderSkyboxLater();
+        context->DrawRenderersBuffer(blendDrawTarget, true);
         context->DrawGizmos();  
         
         context->EndForwardPass();

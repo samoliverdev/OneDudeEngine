@@ -29,9 +29,10 @@ Material::Material(){
     id = materialIdPool.Pop();
 }
 
-Material::Material(Ref<Shader> s){
+Material::Material(Ref<Shader> s, bool inenableInstancing){
     SetShader(s);
     id = materialIdPool.Pop();
+    SetEnableInstancing(inenableInstancing);
 }
 
 Material::~Material(){
@@ -347,6 +348,7 @@ std::set<std::string> Material::GetEnabledKeywords(){
 
 void Material::SetPass(int i){
     currentPass = i;
+    UpdateCurrentShader();
 }
 
 int Material::GetPass(){

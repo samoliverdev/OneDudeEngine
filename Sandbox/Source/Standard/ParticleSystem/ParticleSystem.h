@@ -5,6 +5,7 @@
 #include <OD/RenderPipeline/RenderContext.h>
 #include <OD/Serialization/ImGuiArchive.h>
 #include "Standard/Ultis/ImGradientHDR.h"
+#include <OD/Graphics/Model.h>
 
 namespace OD{
     class Material;
@@ -51,6 +52,8 @@ public:
     void OnGui() override;
     void OnStartSpawnUpdate(ParticleSystem& system) override;
     void OnSpawnUpdate(ParticleSystem& system) override;
+private:
+    float emissionAccumulator = 0; 
 };
 
 class InitialLifeModule: public IInitParticleModule{
@@ -85,6 +88,7 @@ public:
 
 class InitialSizeModule: public IInitParticleModule{
 public:
+    bool uniforSize = true;
     Vector3 minSize = {1,1,1};
     Vector3 maxSize = {1,1,1};
 
@@ -92,6 +96,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, minSize);
         ArchiveDumpNVP(ar, maxSize);
+        ArchiveDumpNVP(ar, uniforSize);
     }
 
     void OnGui() override;
@@ -160,6 +165,22 @@ public:
     void OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData) override;
 };
 
+struct RendererModule{
+    Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
+    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        AssetRefSerialize<Material> matRef(material);
+        ArchiveDumpNVP(ar, matRef);
+
+        AssetRefSerialize<Model> modelRef(model);
+        ArchiveDumpNVP(ar, modelRef);
+    }
+
+    void OnGui();
+};
+
 struct ParticleData{
     Vector3 pos = Vector3Zero;
     Vector3 vel = Vector3Zero;
@@ -185,6 +206,7 @@ struct ParticleRunningData{
 class ParticleSystem{
 public:
     friend struct PaticleComponent;
+    friend class ParticleRendererFeature;
 
     enum class State{Stop, Running};
     enum class SimulationSpace{ WorldSpace, Local};
@@ -203,12 +225,15 @@ public:
 
     void Update(TransformComponent& trans, Vector3 camPos);
     void Sort();
-    void SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root = Matrix4Identity);
+    void SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root = Matrix4Identity, const Camera* cam = nullptr);
 
     void SpawnNewParticle();
 
     template <class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, isLooping);
+        ArchiveDumpNVP(ar, duration);
+
         ArchiveDumpNVP(ar, maxParticles);
         ArchiveDumpNVP(ar, delay);
         ArchiveDumpNVP(ar, simulationSpace);
@@ -222,10 +247,15 @@ public:
         ArchiveDumpNVP(ar, updaterModule);
         ArchiveDumpNVP(ar, sizeOverLifetimeModule);
         ArchiveDumpNVP(ar, colorOverLifetimeModule);
+
+        ArchiveDumpNVP(ar, rendererModule);
     }
     
     ParticleSystem() = default;
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(ParticleSystem, {
+        COPY_OR_MOVE(isLooping);
+        COPY_OR_MOVE(duration);
+
         COPY_OR_MOVE(maxParticles);
         COPY_OR_MOVE(delay);
         COPY_OR_MOVE(simulationSpace);
@@ -239,15 +269,20 @@ public:
         COPY_OR_MOVE(updaterModule);
         COPY_OR_MOVE(sizeOverLifetimeModule);
         COPY_OR_MOVE(colorOverLifetimeModule);
+
+        COPY_OR_MOVE(rendererModule);
     });
 
 private:    
+    bool isLooping = true;
+    float duration = 5;
     int maxParticles = 100;
     float delay = 0;
     SimulationSpace simulationSpace;
 
     State state = State::Stop;
     float curDelayTime = 0;
+    float runningTime = 0;
 
     Transform currentGlobalTrans;
 
@@ -263,10 +298,12 @@ private:
     InitialVelocityModule initialVelocityModule;
     InitialSizeModule initialSizeModule; 
     InitialColorModule initialColorModule;
-
+    
     UpdaterModule updaterModule;
     SizeOverLifetimeModule sizeOverLifetimeModule;
     ColorOverLifetimeModule colorOverLifetimeModule;
+
+    RendererModule rendererModule;
 
     std::vector<IParticleSpawnModule*> spawnModules;// = {&spawnModule};
     std::vector<IInitParticleModule*> initParticleModules;// = {&initialLifeModule, &initialVelocityModule};

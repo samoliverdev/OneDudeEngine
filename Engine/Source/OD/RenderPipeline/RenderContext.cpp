@@ -1517,7 +1517,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 
     if(settings.renderQueueRange == RenderQueueRange::Transparent){
         if(isBlend == false) return;
-        isInstancing = false;
+        //isInstancing = false;
     }
     if(settings.renderQueueRange == RenderQueueRange::Opaue){
         if(isBlend == true) return;

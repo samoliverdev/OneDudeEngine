@@ -17,7 +17,6 @@
     Name MainPass
     SupportInstancing true
     DrawType INSTANCING
-    MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 
     CullFace BACK
@@ -29,7 +28,6 @@
     Name DepthPass
     SupportInstancing true
     DrawType INSTANCING
-    MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 
     CullFace BACK
@@ -53,8 +51,13 @@ BeginUniform(0, 0, Main)
     Uniform float metallic;
     Uniform float smoothness;
     Uniform float cutoff;
+EndUniform()
+
+#ifdef DepthPass
+BeginUniform(3, 0, ShadowData)
     Uniform mat4 lightSpaceMatrix;
 EndUniform()
+#endif
 
 Texture2D(0, 6, mainTex, mainTexSampler)
 Texture2D(0, 7, normalMap, normalMapSampler)
@@ -75,6 +78,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     Out(8) vec4 outColor;
 
     void main(){
+        ///*
         #ifdef DepthPass
 
         OutPosition = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
@@ -105,6 +109,61 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         OutPosition = projection * view * targetModelMatrix * localPos;//GetLocalPos();
         outColor = GetColor();
         #endif
+        //*/
+
+        /*
+        #ifdef DepthPass
+
+        OutPosition = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
+
+        #else
+        vec4 localPos = GetLocalPos();
+        vec3 localNormal = GetLocalNormal();
+        vec3 localTangents = GetLocalTangent();
+
+        mat4 model = GetModelMatrix();
+
+        // --- Billboard section ---
+        vec3 scale;
+        scale.x = length(vec3(model[0]));
+        scale.y = length(vec3(model[1]));
+        scale.z = length(vec3(model[2]));
+
+        // Extract camera right & up from view matrix
+        vec3 camRight = normalize(vec3(view[0][0], view[1][0], view[2][0]));
+        vec3 camUp    = normalize(vec3(view[0][1], view[1][1], view[2][1]));
+        vec3 camForward = -normalize(vec3(view[0][2], view[1][2], view[2][2]));
+
+        camRight = -normalize(vec3(view[0][0], view[1][0], view[2][0]));
+
+        // Build billboard rotation (you can replace with camForward if you want full face)
+        mat4 billboardRot = mat4(1.0);
+        billboardRot[0] = vec4(camRight * scale.x, 0.0);
+        billboardRot[1] = vec4(camUp    * scale.y, 0.0);
+        billboardRot[2] = vec4(camForward * scale.z, 0.0);
+        billboardRot[3] = vec4(model[3].xyz, 1.0); // keep object position
+
+        mat4 targetModelMatrix = billboardRot;
+        // --- end billboard section ---
+
+        vec3 T = normalize(vec3(targetModelMatrix * vec4(localTangents, 0.0)));
+        vec3 B = normalize(vec3(targetModelMatrix * vec4(cross(localTangents, localNormal), 0.0)));
+        vec3 N = normalize(vec3(targetModelMatrix * vec4(localNormal, 0.0)));
+
+        outPos = localPos.xyz;
+        outNormal = localNormal;
+        outTexCoord = texCoord;
+        outT = T;
+        outB = B;
+        outN = N;
+
+        outWorldPos = vec3(targetModelMatrix * localPos);
+        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * localNormal;
+
+        OutPosition = projection * view * targetModelMatrix * localPos;
+        outColor = GetColor();
+        #endif
+        */
     }
 #endif
 

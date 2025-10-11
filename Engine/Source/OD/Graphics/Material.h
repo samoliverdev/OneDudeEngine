@@ -92,7 +92,7 @@ class OD_API Material: public Asset{
     friend class WebGPUGraphicsDevice;
 public:
     Material();
-    Material(Ref<Shader> s);
+    Material(Ref<Shader> s, bool enableInstancing = false);
     ~Material();
 
     Ref<Shader> GetShader();

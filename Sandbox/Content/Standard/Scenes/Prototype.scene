@@ -522,12 +522,14 @@
     "Standard/ParticleComponents": [
         {
             "particleSystem": {
+                "isLooping": true,
+                "duration": 5.0,
                 "maxParticles": 1000,
                 "delay": 0.0,
                 "simulationSpace": 0,
                 "spawnModule": {
-                    "singleBustEmiterCount": 0,
-                    "overTimeEmiterRate": 200.0
+                    "singleBustEmiterCount": 50,
+                    "overTimeEmiterRate": 50.0
                 },
                 "initialLifeModule": {
                     "minLife": 1.0,
@@ -555,7 +557,8 @@
                         "v.x": 0.5,
                         "v.y": 0.5,
                         "v.z": 0.5
-                    }
+                    },
+                    "uniforSize": true
                 },
                 "initialColorModule": {
                     "color": {
@@ -569,11 +572,11 @@
                     "gravityModifier": 0.30000001192092898
                 },
                 "sizeOverLifetimeModule": {
-                    "enable": false,
-                    "maxSize": 1.0
+                    "enable": true,
+                    "maxSize": 0.0
                 },
                 "colorOverLifetimeModule": {
-                    "enable": false,
+                    "enable": true,
                     "colorA": {
                         "r": 0.0,
                         "g": 0.0,
@@ -585,6 +588,128 @@
                         "g": 1.0,
                         "b": 1.0,
                         "a": 1.0
+                    },
+                    "gradient": {
+                        "ColorCount": 3,
+                        "AlphaCount": 2,
+                        "Colors": {
+                            "value0": {
+                                "Position": 0.1191011592745781,
+                                "Color": {
+                                    "value0": 1.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 1.0
+                            },
+                            "value1": {
+                                "Position": 0.5303371548652649,
+                                "Color": {
+                                    "value0": 0.9876288771629334,
+                                    "value1": 0.956508457660675,
+                                    "value2": 0.0997810810804367
+                                },
+                                "Intensity": 3.5
+                            },
+                            "value2": {
+                                "Position": 0.7528091669082642,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 1.0
+                            },
+                            "value3": {
+                                "Position": 0.0,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 0.0
+                            },
+                            "value4": {
+                                "Position": 0.0,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 0.0
+                            },
+                            "value5": {
+                                "Position": 0.0,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 0.0
+                            },
+                            "value6": {
+                                "Position": 0.0,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 0.0
+                            },
+                            "value7": {
+                                "Position": 0.0,
+                                "Color": {
+                                    "value0": 0.0,
+                                    "value1": 0.0,
+                                    "value2": 0.0
+                                },
+                                "Intensity": 0.0
+                            }
+                        },
+                        "Alphas": {
+                            "value0": {
+                                "Position": 0.5932575464248657,
+                                "Alpha": 1.0
+                            },
+                            "value1": {
+                                "Position": 0.9977527856826782,
+                                "Alpha": 0.0
+                            },
+                            "value2": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            },
+                            "value3": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            },
+                            "value4": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            },
+                            "value5": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            },
+                            "value6": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            },
+                            "value7": {
+                                "Position": 0.0,
+                                "Alpha": 0.0
+                            }
+                        }
+                    }
+                },
+                "rendererModule": {
+                    "matRef": {
+                        "isNull": false,
+                        "path": "Memory"
+                    },
+                    "modelRef": {
+                        "isNull": false,
+                        "path": "Engine/Models/Sphere.obj"
                     }
                 }
             }

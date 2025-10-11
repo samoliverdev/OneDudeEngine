@@ -60,6 +60,7 @@ struct OD_API alignas(16) RenderData{
     Mesh* targetMesh;
     float distance;
     bool awalsDraw = false;
+    bool renderShadow = true;
 
     /*#if EnableExperimentalPerDrawCustomData
     bool useCustomData = false;

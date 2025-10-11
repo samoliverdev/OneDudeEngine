@@ -113,6 +113,7 @@ private:
 template<class T>
 struct OD_API AssetRefSerialize{
     Ref<T>& asset;
+    bool dontTryLoadFromMemory = true;
 
     AssetRefSerialize(Ref<T>& inAsset):asset(inAsset){}
 
@@ -137,6 +138,9 @@ struct OD_API AssetRefSerialize{
 
         if(isNull){
             asset = nullptr;
+            return;
+        }
+        if(dontTryLoadFromMemory && path == "Memory"){
             return;
         }
         /*if(path == "Memory"){
