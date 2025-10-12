@@ -18,14 +18,14 @@ void SpawnModule::OnGui(){
     }
 }
 
-void SpawnModule::OnStartSpawnUpdate(ParticleSystem& system){
+void SpawnModule::OnStartSpawnUpdate(ParticleEmiter& system){
     int singleNewParticles = singleBustEmiterCount;
     for(int i = 0; i < singleNewParticles; i++){
         system.SpawnNewParticle();
     }
 }
 
-void SpawnModule::OnSpawnUpdate(ParticleSystem& system){
+void SpawnModule::OnSpawnUpdate(ParticleEmiter& system){
     /*int newParticles = (int)(Time::DeltaTime() * overTimeEmiterRate);
     for(int i = 0; i < newParticles; i++){
         system.SpawnNewParticle();
@@ -188,7 +188,7 @@ void RendererModule::OnGui(){
 
 //////////////////////////////////////////////////////////
 
-void ParticleSystem::OnGui(){
+void ParticleEmiter::OnGui(){
     ImGui::Checkbox("isLooping", &isLooping);
     ImGui::DragFloat("duration", &duration);
 
@@ -216,7 +216,7 @@ void ParticleSystem::OnGui(){
     
     rendererModule.OnGui();
 
-    ImGui::Separator();
+    /*ImGui::Separator();
 
     ImVec4 color = ImVec4(1.0f, 0.7f, 0.2f, 1.0f); // orange
     ImGui::TextColored(color, "State %s", std::string(magic_enum::enum_name(state)).c_str());
@@ -227,10 +227,10 @@ void ParticleSystem::OnGui(){
         Stop();
     } else if(state == State::Stop && ImGui::Button("Play")){
         Play();
-    }
+    }*/
 }
 
-void ParticleSystem::BindModules(){
+void ParticleEmiter::BindModules(){
     spawnModules.clear();
     initParticleModules.clear();
     updateModules.clear();
@@ -247,7 +247,7 @@ void ParticleSystem::BindModules(){
     updateModules.push_back(&colorOverLifetimeModule);
 }
 
-void ParticleSystem::Reset(){
+void ParticleEmiter::Reset(){
     runningTime = 0;
     curDelayTime = delay;
     hasStarted = false;
@@ -260,25 +260,25 @@ void ParticleSystem::Reset(){
     }
 }
 
-void ParticleSystem::Play(){
+void ParticleEmiter::Play(){
     state = State::Running;
     Reset();
 }
 
-void ParticleSystem::Stop(){
+void ParticleEmiter::Stop(){
     state = State::Stop;
 }
 
-ParticleSystem::State ParticleSystem::CurState(){
+ParticleEmiter::State ParticleEmiter::CurState(){
     return state;
 }
 
-void ParticleSystem::SetMaxParticle(int inmaxParticles){
+void ParticleEmiter::SetMaxParticle(int inmaxParticles){
     maxParticles = inmaxParticles;
     particles.resize(maxParticles);
 }
 
-int ParticleSystem::GetNewParticle(){
+int ParticleEmiter::GetNewParticle(){
     int newParticle = -1;
 
 	if(currentParticleIndex < particles.size()){
@@ -295,7 +295,7 @@ int ParticleSystem::GetNewParticle(){
 	return newParticle;
 }
 
-void ParticleSystem::FreeParticle(int index){
+void ParticleEmiter::FreeParticle(int index){
     freeParticles.push_back(index);
 }
 
@@ -315,7 +315,7 @@ void ParticleSystem::FreeParticle(int index){
     particle.startSize = particle.size;
 }*/
 
-void ParticleSystem::SpawnNewParticle(){
+void ParticleEmiter::SpawnNewParticle(){
     int newIndex = GetNewParticle();
     if(newIndex == -1) return;
 
@@ -328,7 +328,7 @@ void ParticleSystem::SpawnNewParticle(){
     }
 }
 
-void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
+void ParticleEmiter::Update(TransformComponent& trans, Vector3 camPos){
     if(state != State::Running) return;
 
     currentGlobalTrans = trans.ToTransform();
@@ -379,7 +379,7 @@ void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
     }
 }
 
-void ParticleSystem::Sort(){
+void ParticleEmiter::Sort(){
     //std::sort(particles.begin(), particles.end(), [](ParticleData& a, ParticleData& b){
     //    return a.cameradistance > b.cameradistance;
     //});
@@ -421,7 +421,7 @@ void SortDrawDataByParticleDistance(std::vector<Matrix4>& drawData,const std::ve
     }
 }
 
-void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root, const Camera* cam){
+void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root, const Camera* cam){
     drawData.resize(particlesCount);
     int i = 0;
     for(int _i = 0; _i < particles.size(); _i++){
@@ -450,6 +450,99 @@ void ParticleSystem::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
     buffer.SetData(drawData.data(), particlesCount);
 }
 
+void ParticleSystem::OnGui(){
+    for(int i = 0; i < emiters.size(); i++){
+        std::string name = "Emitter " + std::to_string(i);
+
+        // Hardcoded color lookup table (10 colors)
+        static const ImVec4 headerColors[10] = {
+            {0.9f, 0.4f, 0.3f, 0.4f}, // red-ish
+            {0.9f, 0.7f, 0.3f, 0.4f}, // orange
+            {0.9f, 0.9f, 0.3f, 0.4f}, // yellow
+            {0.5f, 0.9f, 0.3f, 0.4f}, // green
+            {0.3f, 0.9f, 0.6f, 0.4f}, // teal
+            {0.3f, 0.7f, 0.9f, 0.4f}, // blue
+            {0.5f, 0.4f, 0.9f, 0.4f}, // purple
+            {0.8f, 0.3f, 0.8f, 0.4f}, // magenta
+            {0.6f, 0.6f, 0.6f, 0.4f}, // gray
+            {1.0f, 1.0f, 1.0f, 0.3f}, // white (default)
+        };
+
+        // Clamp the index to max 9
+        int colorIndex = (i < 10) ? i : 9;
+        const ImVec4& baseColor = headerColors[colorIndex];
+
+        // Slight variations for hover/active
+        ImVec4 hoverColor = ImVec4(baseColor.x, baseColor.y, baseColor.z, baseColor.w + 0.1f);
+        ImVec4 activeColor = ImVec4(baseColor.x, baseColor.y, baseColor.z, baseColor.w + 0.2f);
+
+        // Push colors
+        ImGui::PushStyleColor(ImGuiCol_Header, baseColor);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, hoverColor);
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, activeColor);
+
+        bool show = ImGui::CollapsingHeader(name.c_str());
+
+         // Popup menu for right-click
+        if(ImGui::BeginPopupContextItem(name.c_str())){
+            if(ImGui::MenuItem("Move Up", nullptr, false, i > 0)) std::swap(emiters[i], emiters[i - 1]);
+            if(ImGui::MenuItem("Move Down", nullptr, false, i < emiters.size() - 1)) std::swap(emiters[i], emiters[i + 1]);
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleColor(3);
+
+        if(show) emiters[i].OnGui();
+    }
+
+    ImGui::Separator();
+
+    if(ImGui::Button("PushEmiter")){
+        Stop();
+        emiters.push_back(ParticleEmiter());
+    }
+
+    if(ImGui::Button("PopEmiter")){
+        Stop();
+        if(emiters.size() > 1) emiters.pop_back();
+    }
+
+    ImGui::Separator();
+
+    Assert(emiters.size() >= 1);
+    auto runningTime = emiters[0].runningTime;
+
+    auto state = ParticleEmiter::State::Stop;
+    int particlesCount = 0;
+    for(int i = 0; i < emiters.size(); i++){
+        particlesCount += emiters[i].particlesCount;
+        if(emiters[i].state == ParticleEmiter::State::Running) state = ParticleEmiter::State::Running;
+    }
+
+    ImVec4 color = ImVec4(1.0f, 0.7f, 0.2f, 1.0f); // orange
+    ImGui::TextColored(color, "State %s", std::string(magic_enum::enum_name(state)).c_str());
+    ImGui::Text("RunTime: %f", runningTime);
+    ImGui::Text("ParticleCounts: %d", particlesCount);
+
+    if(state == ParticleEmiter::State::Running && ImGui::Button("Stop")){
+        Stop();
+    } else if(state == ParticleEmiter::State::Stop && ImGui::Button("Play")){
+        Play();
+    }
+}
+
+void ParticleSystem::Play(){
+    for(auto& i: emiters) i.Play();
+}
+
+void ParticleSystem::Stop(){
+    for(auto& i: emiters) i.Stop();
+}
+
+void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
+    for(auto& i: emiters) i.Update(trans, camPos);
+}
+
 ParticleRendererFeature::ParticleRendererFeature(){
     material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"));
     material->SetEnableInstancing(true);
@@ -462,20 +555,25 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
     auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
 
-        //particle.particleSystem.Sort();
-        particle.particleSystem.SubmitDrawData(*particle.drawData, trans.GlobalModelMatrix(), &cam);
-        if(particle.drawData->Count() == 0) continue;
+        for(int i = 0; i < particle.particleSystem.emiters.size(); i++){
+            auto& emiter = particle.particleSystem.emiters[i];
+            //if(emiter.state != ParticleEmiter::State::Running) continue;
 
-        RenderData renderData;
-        renderData.distance = math::distance(trans.Position(), cam.viewPos);
-        renderData.aabb = AABB(trans.Position(), {10, 10, 10});
-        renderData.targetMaterial = particle.particleSystem.rendererModule.material.get(); //material.get();
-        renderData.targetMesh = particle.particleSystem.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
-        renderData.targetMatrix = trans.GlobalModelMatrix();
-        renderData.instancingBuffer = particle.drawData.get();
-        renderData.renderShadow = material->IsBlend() == false;
-        renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
-        outRenderData.push_back(renderData);
+            emiter.SubmitDrawData(*emiter.dataBuffer, trans.GlobalModelMatrix(), &cam);
+            if(emiter.dataBuffer->Count() == 0) continue;
+
+            RenderData renderData;
+            renderData.distance = math::distance(trans.Position(), cam.viewPos);
+            renderData.distance -= i * 0.01f; 
+            renderData.aabb = AABB(trans.Position(), {10, 10, 10});
+            renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
+            renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
+            renderData.targetMatrix = trans.GlobalModelMatrix();
+            renderData.instancingBuffer = emiter.dataBuffer.get();
+            renderData.renderShadow = material->IsBlend() == false;
+            renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
+            outRenderData.push_back(renderData);
+        }
     }
 }
 
@@ -500,9 +598,9 @@ void ParticleManageSystem::Update(Scene& scene){
 
     auto view = scene.GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
-        if(particle.drawData == nullptr){
+        /*if(particle.drawData == nullptr){
             particle.drawData = CreateRef<InstancingBuffer>();
-        }
+        }*/
 
         /*if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
             particle.particleSystem.Play();

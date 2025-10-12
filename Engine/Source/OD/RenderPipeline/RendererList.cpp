@@ -8,6 +8,10 @@
 
 namespace OD{
 
+bool DrawMultTypeCommand::operator<(const DrawMultTypeCommand& a) const {
+    return material->MaterialId() < a.material->MaterialId();
+}
+
 bool DrawCommand::operator<(const DrawCommand& a) const {
     return material->MaterialId() < a.material->MaterialId();
 }
@@ -43,7 +47,12 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
     if(sortType == SortType::None){
         drawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
-        drawCommands.Add(std::move(comand));
+        //drawCommands.Add(std::move(comand));
+
+        DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
+        cmd.standTrans = comand.trans;
+        cmd.type = DrawMultTypeCommand::Type::Stand;
+        sortDrawMultTypeCommands.Add(cmd);
     }
 }   
 
@@ -74,15 +83,22 @@ void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
-    #ifdef UseExperimentalCommandBucket5
-    DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
-    #else
-    DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
-    #endif
+    if(sortType == SortType::None){
+        #ifdef UseExperimentalCommandBucket5
+        DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
+        #else
+        DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
+        #endif
 
-    c.material = comand.material;
-    c.meshs = comand.meshs;
-    c.buffers.push_back(comand.buffer);
+        c.material = comand.material;
+        c.meshs = comand.meshs;
+        c.buffers.push_back(comand.buffer);
+    } else {
+        DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
+        cmd.instancingBuffer = comand.buffer;
+        cmd.type = DrawMultTypeCommand::Type::Instancing;
+        sortDrawMultTypeCommands.Add(cmd);
+    }
 }
 
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
@@ -92,10 +108,16 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
     if(sortType == SortType::None){
         skinnedDrawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
-        skinnedDrawCommands.Add(
+        /*skinnedDrawCommands.Add(
             {distance, comand.material->MaterialId()}, 
             std::move(comand)
-        );
+        );*/
+
+        DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
+        cmd.skinnedTrans = comand.trans;
+        cmd.skinnedPosePalette = comand.posePalette;
+        cmd.type = DrawMultTypeCommand::Type::Skinned;
+        sortDrawMultTypeCommands.Add(cmd);
     }
 }
 
@@ -107,6 +129,7 @@ void RendererList::Clean(){
     //drawIntancingCommands.Clear();
     skinnedDrawCommands.Clear();
     skinnedDrawCommandsNorSort.Clear();
+    sortDrawMultTypeCommands.Clear();
 
     for(auto& i: drawIntancingCommands.commands){
         #ifdef UseExperimentalCommandBucket5
@@ -157,6 +180,14 @@ void RendererList::Sort(){
             //if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
             //return a.first.distance < b.first.distance;
         };
+
+        sortDrawMultTypeCommands.sortFunction = [](auto& a, auto& b){
+            //LogInfo("Test");
+            if(a.subShader != b.subShader) return a.subShader < b.subShader;  
+            if(a.material != b.material) return a.material < b.material; 
+            return a.meshs < b.meshs;   
+            //return a.distance > b.distance;
+        };
     }
 
     if(sortType == SortType::CommonTransparent){
@@ -174,11 +205,18 @@ void RendererList::Sort(){
             if(a.first.materialId != b.first.materialId) return a.first.materialId < b.first.materialId;
             return a.first.distance > b.first.distance;
         };
+
+        sortDrawMultTypeCommands.sortFunction = [](auto& a, auto& b){
+            //if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId(); //This can bug the blending order
+            //LogInfo("A: %f, B: %f", a.distance, b.distance);
+            return a.distance > b.distance;
+        };
     }
 
     drawCommands.Sort();
     //drawIntancingCommands.Sort();
     skinnedDrawCommands.Sort();
+    sortDrawMultTypeCommands.Sort();
 }
 
 void RendererList::Submit(bool skipEntityId){
@@ -309,6 +347,34 @@ void RendererList::Submit(bool skipEntityId){
 
         if(skipEntityId) cm.perDrawData.int_0.clear();
         Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
+    });
+    }
+    lastMat = nullptr;
+
+    {
+    OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort");
+    sortDrawMultTypeCommands.Each([&](auto& cm){
+        auto _mat = cm.material;
+        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+
+        if(_mat != lastMat){
+            if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
+        }
+
+        lastMat = _mat;
+
+        if(cm.type == DrawMultTypeCommand::Type::Stand){
+            Graphics::DrawMesh(*cm.meshs, *_mat, cm.standTrans);
+        }
+        
+        if(cm.type == DrawMultTypeCommand::Type::Skinned){
+            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.skinnedTrans, cm.skinnedPosePalette->data(), cm.skinnedPosePalette->size());
+        }
+
+        if(cm.type == DrawMultTypeCommand::Type::Instancing){
+            Graphics::DrawMeshInstancing(*cm.meshs, *_mat, *cm.instancingBuffer, cm.instancingBuffer->Count());
+        }
+
     });
     }
     lastMat = nullptr;

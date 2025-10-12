@@ -522,196 +522,392 @@
     "Standard/ParticleComponents": [
         {
             "particleSystem": {
-                "isLooping": true,
-                "duration": 5.0,
-                "maxParticles": 1000,
-                "delay": 0.0,
-                "simulationSpace": 0,
-                "spawnModule": {
-                    "singleBustEmiterCount": 50,
-                    "overTimeEmiterRate": 50.0
-                },
-                "initialLifeModule": {
-                    "minLife": 1.0,
-                    "maxLife": 2.0
-                },
-                "initialVelocityModule": {
-                    "minVelocity": {
-                        "v.x": -1.0,
-                        "v.y": 2.0,
-                        "v.z": -1.0
-                    },
-                    "maxVelocity": {
-                        "v.x": 1.0,
-                        "v.y": 5.0,
-                        "v.z": 1.0
-                    }
-                },
-                "initialSizeModule": {
-                    "minSize": {
-                        "v.x": 0.20000000298023225,
-                        "v.y": 0.20000000298023225,
-                        "v.z": 0.20000000298023225
-                    },
-                    "maxSize": {
-                        "v.x": 0.5,
-                        "v.y": 0.5,
-                        "v.z": 0.5
-                    },
-                    "uniforSize": true
-                },
-                "initialColorModule": {
-                    "color": {
-                        "r": 1.0,
-                        "g": 1.0,
-                        "b": 1.0,
-                        "a": 1.0
-                    }
-                },
-                "updaterModule": {
-                    "gravityModifier": 0.30000001192092898
-                },
-                "sizeOverLifetimeModule": {
-                    "enable": true,
-                    "maxSize": 0.0
-                },
-                "colorOverLifetimeModule": {
-                    "enable": true,
-                    "colorA": {
-                        "r": 0.0,
-                        "g": 0.0,
-                        "b": 0.0,
-                        "a": 1.0
-                    },
-                    "colorB": {
-                        "r": 1.0,
-                        "g": 1.0,
-                        "b": 1.0,
-                        "a": 1.0
-                    },
-                    "gradient": {
-                        "ColorCount": 3,
-                        "AlphaCount": 2,
-                        "Colors": {
-                            "value0": {
-                                "Position": 0.1191011592745781,
-                                "Color": {
-                                    "value0": 1.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 1.0
+                "emiters": [
+                    {
+                        "isLooping": true,
+                        "duration": 5.0,
+                        "maxParticles": 100,
+                        "delay": 0.0,
+                        "simulationSpace": 0,
+                        "spawnModule": {
+                            "singleBustEmiterCount": 0,
+                            "overTimeEmiterRate": 25.0
+                        },
+                        "initialLifeModule": {
+                            "minLife": 1.0,
+                            "maxLife": 2.0
+                        },
+                        "initialVelocityModule": {
+                            "minVelocity": {
+                                "v.x": -1.0,
+                                "v.y": 1.0,
+                                "v.z": -1.0
                             },
-                            "value1": {
-                                "Position": 0.5303371548652649,
-                                "Color": {
-                                    "value0": 0.9876288771629334,
-                                    "value1": 0.956508457660675,
-                                    "value2": 0.0997810810804367
-                                },
-                                "Intensity": 3.5
-                            },
-                            "value2": {
-                                "Position": 0.7528091669082642,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 1.0
-                            },
-                            "value3": {
-                                "Position": 0.0,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 0.0
-                            },
-                            "value4": {
-                                "Position": 0.0,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 0.0
-                            },
-                            "value5": {
-                                "Position": 0.0,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 0.0
-                            },
-                            "value6": {
-                                "Position": 0.0,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 0.0
-                            },
-                            "value7": {
-                                "Position": 0.0,
-                                "Color": {
-                                    "value0": 0.0,
-                                    "value1": 0.0,
-                                    "value2": 0.0
-                                },
-                                "Intensity": 0.0
+                            "maxVelocity": {
+                                "v.x": 1.0,
+                                "v.y": 2.0,
+                                "v.z": 1.0
                             }
                         },
-                        "Alphas": {
-                            "value0": {
-                                "Position": 0.5932575464248657,
-                                "Alpha": 1.0
+                        "initialSizeModule": {
+                            "minSize": {
+                                "v.x": 0.10000000149011612,
+                                "v.y": 1.0,
+                                "v.z": 1.0
                             },
-                            "value1": {
-                                "Position": 0.9977527856826782,
-                                "Alpha": 0.0
+                            "maxSize": {
+                                "v.x": 0.10000000149011612,
+                                "v.y": 1.0,
+                                "v.z": 1.0
                             },
-                            "value2": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "uniforSize": true
+                        },
+                        "initialColorModule": {
+                            "color": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            }
+                        },
+                        "updaterModule": {
+                            "gravityModifier": 0.10000000149011612
+                        },
+                        "sizeOverLifetimeModule": {
+                            "enable": true,
+                            "maxSize": 0.0
+                        },
+                        "colorOverLifetimeModule": {
+                            "enable": true,
+                            "colorA": {
+                                "r": 0.0,
+                                "g": 0.0,
+                                "b": 0.0,
+                                "a": 1.0
                             },
-                            "value3": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "colorB": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
                             },
-                            "value4": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "gradient": {
+                                "ColorCount": 1,
+                                "AlphaCount": 2,
+                                "Colors": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 1.0,
+                                            "value1": 0.8907216191291809,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 6.300000190734863
+                                    },
+                                    "value1": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    }
+                                },
+                                "Alphas": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Alpha": 1.0
+                                    },
+                                    "value1": {
+                                        "Position": 1.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    }
+                                }
+                            }
+                        },
+                        "rendererModule": {
+                            "matRef": {
+                                "isNull": false,
+                                "path": "Memory"
                             },
-                            "value5": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "modelRef": {
+                                "isNull": false,
+                                "path": "Engine/Models/Cube.obj"
+                            }
+                        }
+                    },
+                    {
+                        "isLooping": true,
+                        "duration": 5.0,
+                        "maxParticles": 100,
+                        "delay": 0.0,
+                        "simulationSpace": 0,
+                        "spawnModule": {
+                            "singleBustEmiterCount": 0,
+                            "overTimeEmiterRate": 25.0
+                        },
+                        "initialLifeModule": {
+                            "minLife": 1.0,
+                            "maxLife": 2.0
+                        },
+                        "initialVelocityModule": {
+                            "minVelocity": {
+                                "v.x": -1.0,
+                                "v.y": 2.0,
+                                "v.z": -1.0
                             },
-                            "value6": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "maxVelocity": {
+                                "v.x": 1.0,
+                                "v.y": 5.0,
+                                "v.z": 1.0
+                            }
+                        },
+                        "initialSizeModule": {
+                            "minSize": {
+                                "v.x": 0.20000000298023225,
+                                "v.y": 1.0,
+                                "v.z": 1.0
                             },
-                            "value7": {
-                                "Position": 0.0,
-                                "Alpha": 0.0
+                            "maxSize": {
+                                "v.x": 0.5,
+                                "v.y": 1.0,
+                                "v.z": 1.0
+                            },
+                            "uniforSize": true
+                        },
+                        "initialColorModule": {
+                            "color": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            }
+                        },
+                        "updaterModule": {
+                            "gravityModifier": 0.30000001192092898
+                        },
+                        "sizeOverLifetimeModule": {
+                            "enable": true,
+                            "maxSize": 0.0
+                        },
+                        "colorOverLifetimeModule": {
+                            "enable": true,
+                            "colorA": {
+                                "r": 0.0,
+                                "g": 0.0,
+                                "b": 0.0,
+                                "a": 1.0
+                            },
+                            "colorB": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            },
+                            "gradient": {
+                                "ColorCount": 3,
+                                "AlphaCount": 3,
+                                "Colors": {
+                                    "value0": {
+                                        "Position": 0.13932575285434724,
+                                        "Color": {
+                                            "value0": 1.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 1.0
+                                    },
+                                    "value1": {
+                                        "Position": 0.48539331555366518,
+                                        "Color": {
+                                            "value0": 1.0,
+                                            "value1": 0.9649484753608704,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 2.9000000953674318
+                                    },
+                                    "value2": {
+                                        "Position": 0.6494379043579102,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 1.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    }
+                                },
+                                "Alphas": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Alpha": 1.0
+                                    },
+                                    "value1": {
+                                        "Position": 0.5932585597038269,
+                                        "Alpha": 0.6000000238418579
+                                    },
+                                    "value2": {
+                                        "Position": 0.9932584166526794,
+                                        "Alpha": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    }
+                                }
+                            }
+                        },
+                        "rendererModule": {
+                            "matRef": {
+                                "isNull": false,
+                                "path": "Memory"
+                            },
+                            "modelRef": {
+                                "isNull": false,
+                                "path": "Engine/Models/Sphere.obj"
                             }
                         }
                     }
-                },
-                "rendererModule": {
-                    "matRef": {
-                        "isNull": false,
-                        "path": "Memory"
-                    },
-                    "modelRef": {
-                        "isNull": false,
-                        "path": "Engine/Models/Sphere.obj"
-                    }
-                }
+                ]
             }
         }
     ],

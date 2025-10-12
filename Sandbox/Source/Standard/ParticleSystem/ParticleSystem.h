@@ -15,15 +15,15 @@ using namespace OD;
 
 namespace Standard{
 
-class ParticleSystem;
+class ParticleEmiter;
 struct ParticleData;
 struct ParticleRunningData;
 
 class IParticleSpawnModule{
 public:
     virtual void OnGui(){}
-    virtual void OnStartSpawnUpdate(ParticleSystem& system){};
-    virtual void OnSpawnUpdate(ParticleSystem& system){};
+    virtual void OnStartSpawnUpdate(ParticleEmiter& system){};
+    virtual void OnSpawnUpdate(ParticleEmiter& system){};
 };
 
 class IInitParticleModule{
@@ -41,7 +41,7 @@ public:
 class SpawnModule: public IParticleSpawnModule{
 public:
     int singleBustEmiterCount = 0;
-    float overTimeEmiterRate = 200;
+    float overTimeEmiterRate = 25;
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -50,16 +50,16 @@ public:
     }
 
     void OnGui() override;
-    void OnStartSpawnUpdate(ParticleSystem& system) override;
-    void OnSpawnUpdate(ParticleSystem& system) override;
+    void OnStartSpawnUpdate(ParticleEmiter& system) override;
+    void OnSpawnUpdate(ParticleEmiter& system) override;
 private:
     float emissionAccumulator = 0; 
 };
 
 class InitialLifeModule: public IInitParticleModule{
 public:
-    float minLife;
-    float maxLife;
+    float minLife = 1;
+    float maxLife = 2;
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -73,8 +73,8 @@ public:
 
 class InitialVelocityModule: public IInitParticleModule{
 public:
-    Vector3 minVelocity;
-    Vector3 maxVelocity;
+    Vector3 minVelocity = {-1, 1, -1};
+    Vector3 maxVelocity = {1, 2, 1};
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -203,9 +203,10 @@ struct ParticleRunningData{
     float lifetime;
 };
 
-class ParticleSystem{
+class ParticleEmiter{
 public:
     friend struct PaticleComponent;
+    friend class ParticleSystem;
     friend class ParticleRendererFeature;
 
     enum class State{Stop, Running};
@@ -251,8 +252,8 @@ public:
         ArchiveDumpNVP(ar, rendererModule);
     }
     
-    ParticleSystem() = default;
-    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(ParticleSystem, {
+    ParticleEmiter() = default;
+    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(ParticleEmiter, {
         COPY_OR_MOVE(isLooping);
         COPY_OR_MOVE(duration);
 
@@ -274,6 +275,8 @@ public:
     });
 
 private:    
+    Ref<InstancingBuffer> dataBuffer = CreateRef<InstancingBuffer>();
+
     bool isLooping = true;
     float duration = 5;
     int maxParticles = 100;
@@ -314,8 +317,27 @@ private:
     void BindModules();
 };
 
+class ParticleSystem{
+public:
+    friend struct PaticleComponent;
+    friend class ParticleRendererFeature;
+
+    void OnGui();
+    void Play();
+    void Stop();
+
+    void Update(TransformComponent& trans, Vector3 camPos);
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, emiters);
+    }
+
+private:
+    std::vector<ParticleEmiter> emiters = {ParticleEmiter()};
+};
+
 struct ParticleComponent{
-    Ref<InstancingBuffer> drawData = nullptr;
     ParticleSystem particleSystem;
     
     static void OnGui(Entity e, Scene& scene);

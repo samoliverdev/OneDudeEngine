@@ -1538,7 +1538,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(isInstancing){
         if(data.instancingBuffer != nullptr){
             target.AddDrawInstancingCommand({
-                data.instancingBuffer, data.targetMaterial->CurrentShader().drawTypes[2].get(), data.targetMaterial, data.targetMesh
+                data.instancingBuffer, data.targetMaterial->CurrentShader().drawTypes[2].get(), data.targetMaterial, data.targetMesh, data.distance
             });
         } else{
             target.AddDrawInstancingCommand({
@@ -1828,7 +1828,8 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
                 data.instancingBuffer, 
                 data.customShadowPass->CurrentShader().drawTypes[2].get(),
                 data.customShadowPass, //data.targetMaterial, 
-                data.targetMesh
+                data.targetMesh,
+                data.distance
             });
         } else{
             commandBuffer.AddDrawInstancingCommand({

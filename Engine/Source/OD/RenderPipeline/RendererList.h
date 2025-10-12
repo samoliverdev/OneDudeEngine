@@ -16,6 +16,34 @@ class Material;
 class Mesh;
 class SubShader;
 
+struct DrawMultTypeCommand{
+    enum class Type{Stand, Skinned, Instancing};
+
+    SubShader* subShader;
+    Material* material; //Ref<Material> material;
+    Mesh* meshs;// Ref<Mesh> meshs;
+    float distance;
+    
+    union{
+        struct {
+            Matrix4 standTrans;
+        };
+
+        struct {
+            Matrix4 skinnedTrans;
+            AlignedVector<Matrix4>* skinnedPosePalette;
+        };
+
+        struct {
+            InstancingBuffer* instancingBuffer;
+        };
+    };
+
+    Type type;
+
+    bool operator<(const DrawMultTypeCommand& a) const;
+};
+
 struct OD_API alignas(16) DrawCommand{
     Matrix4 trans;
     SubShader* subShader;
@@ -88,6 +116,7 @@ struct OD_API DrawInstancingCommand3{
     SubShader* subShader;
     Material* material;
     Mesh* meshs;
+    float distance;
     
     bool operator<(const DrawCommand& a) const;
 };
@@ -141,6 +170,8 @@ private:
     //std::vector<Ref<Material>> drawCommandsMaterials;
     std::set<Ref<Material>> drawIntancingCommandsMaterials;
     std::set<Ref<Material>> skinnedDrawCommandsMaterials;*/
+
+    CommandBucket0<DrawMultTypeCommand> sortDrawMultTypeCommands;
 
     Ref<Material> overrideMaterial = nullptr;
 };

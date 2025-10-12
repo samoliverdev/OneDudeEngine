@@ -1296,6 +1296,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
+    if(count <= 0) return;
     if(mat.currentShader.drawTypes[buffer.IsMatrix4x3() ? 3 : 2] == nullptr) return;
     BindMaterial(mat, buffer.IsMatrix4x3() ? 3 : 2);
 
