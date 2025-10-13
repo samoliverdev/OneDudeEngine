@@ -269,7 +269,7 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
 
         cache.valid = true;
         _dirCache[path] = std::move(cache);
-        LogInfo("Cached directory: {}", path.string().c_str());
+        //LogInfo("Cached directory: {}", path.string().c_str());
         return true;
     } catch (const std::exception& e) {
         LogError("Failed to cache directory {}: {}", path.string().c_str(), e.what());

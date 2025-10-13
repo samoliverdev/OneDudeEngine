@@ -4,7 +4,7 @@
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Core/ImGui.h>
-
+#include <OD/Graphics/Geometry.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/random.hpp> // glm::linearRand, glm::sphericalRand
 #include <random>
@@ -565,10 +565,10 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
             RenderData renderData;
             renderData.distance = math::distance(trans.Position(), cam.viewPos);
             renderData.distance -= i * 0.01f; 
-            renderData.aabb = AABB(trans.Position(), {10, 10, 10});
+            renderData.targetMatrix = trans.GlobalModelMatrix();
+            renderData.aabb = transform_aabb_optimized_abs_center_extents(AABB({0, 0, 0}, 10, 10, 10), renderData.targetMatrix);
             renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
             renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
-            renderData.targetMatrix = trans.GlobalModelMatrix();
             renderData.instancingBuffer = emiter.dataBuffer.get();
             renderData.renderShadow = material->IsBlend() == false;
             renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
