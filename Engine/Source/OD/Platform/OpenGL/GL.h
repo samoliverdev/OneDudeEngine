@@ -8,17 +8,23 @@
 //#define OpenGL33
 #endif
 
+#ifndef FINAL_BUILD
+    #define OPENGL_CHECK_ERRORS 1
+#else
+    #define OPENGL_CHECK_ERRORS 0
+#endif
+
 #if defined(OpenGL46)
     //#include <glad46core/glad.h>
     #include <glad.h>
     #define OpenGLVersion 4
-    #define OPENGL_CHECK_ERRORS 1
+    //#define OPENGL_CHECK_ERRORS 1
     #define OpenglHeader "#version 330 core"
 #endif
 #if defined(OpenGL33)
     #include <glad33Core/glad.h>
     #define OpenGLVersion 3
-    #define OPENGL_CHECK_ERRORS 1
+    //#define OPENGL_CHECK_ERRORS 1
     #define OpenglHeader "#version 330 core"
  #endif
 #if defined(OpenGLEmscripten)
@@ -29,8 +35,10 @@
     //#define GL_GLEXT_PROTOTYPES
     //#define EGL_EGLEXT_PROTOTYPES
     #define OpenGLVersion 3
-    #define OPENGL_CHECK_ERRORS 1
+    //#define OPENGL_CHECK_ERRORS 1
 #endif
+
+
 
 #define USE_VAO 1
 

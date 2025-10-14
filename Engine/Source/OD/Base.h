@@ -36,6 +36,8 @@
     #define DEBUG_BREAK() abort()
 #endif
 
+#ifndef FINAL_BUILD
+
 #define Assert(expr)                                                        \
     do {                                                                    \
         if (!(expr)) {                                                      \
@@ -44,6 +46,12 @@
             DEBUG_BREAK();                                                  \
         }                                                                   \
     } while (0)
+
+#else
+
+#define Assert(expr)   
+
+#endif
 
 //OD_API void* __cdecl operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
 //OD_API void* __cdecl operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
@@ -95,6 +103,7 @@ static const char* LogColors[] = {
 
 #endif
 
+#ifndef FINAL_BUILD
     #define LogInfo(...) _LOG("info", 0, __VA_ARGS__)
 	#define LogWarning(...) _LOG("warning", 1, __VA_ARGS__)
 	#define LogError(...) _LOG("error", 2, __VA_ARGS__)
@@ -104,6 +113,17 @@ static const char* LogColors[] = {
 	#define LogWarningExtra(...) _LOG_Extra("warning", 1, __VA_ARGS__)
 	#define LogErrorExtra(...) _LOG_Extra("error", 2, __VA_ARGS__)
     #define LogFatalExtra(...) _LOG_Extra("fatal", 3, __VA_ARGS__)
+#else
+    #define LogInfo(...)
+	#define LogWarning(...)
+	#define LogError(...)
+    #define LogFatal(...)
+
+    #define LogInfoExtra(...)
+	#define LogWarningExtra(...)
+	#define LogErrorExtra(...)
+    #define LogFatalExtra(...)
+#endif
 //#endif
 
 namespace OD {

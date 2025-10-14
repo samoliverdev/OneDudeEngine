@@ -1,25 +1,32 @@
 #pragma once
 
+//#define FINAL_BUILD
+
 #ifdef _WIN32
-#define EXPORT_FN __declspec(dllexport)
+    #define EXPORT_FN __declspec(dllexport)
 #else 
-#define EXPORT_FN
+    #define EXPORT_FN
 #endif
 
 #ifdef _WIN32
-#ifdef OD_BUILD_DLL
-#define OD_API __declspec(dllexport)
-#define OD_API_IMPORT
+    #ifdef OD_BUILD_DLL
+        #define OD_API __declspec(dllexport)
+        #define OD_API_IMPORT
+    #else
+        #define OD_API __declspec(dllimport)
+        #define OD_API_IMPORT __declspec(dllimport)
+    #endif
+#else 
+    #define OD_API
+    #define OD_API_IMPORT
+#endif
+
+#ifndef FINAL_BUILD
+    #define OD_PROFILE 1
 #else
-#define OD_API __declspec(dllimport)
-#define OD_API_IMPORT __declspec(dllimport)
-#endif
-#else 
-#define OD_API
-#define OD_API_IMPORT
+    #define OD_PROFILE 0
 #endif
 
-#define OD_PROFILE 1
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"
 #define GRAPHIC_LOG_ERROR
 

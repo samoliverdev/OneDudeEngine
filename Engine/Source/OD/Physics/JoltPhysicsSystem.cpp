@@ -906,10 +906,10 @@ void RagdollComponent::AddExplosionImpulse(float force, Vector3 explosionPositio
 		JPH::Vec3 impulse = direction * impulseMagnitude;
 
 		// 🔎 Print the mass of this body
-		const BodyLockRead lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyIDs()[i]);
+		/*const BodyLockRead lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyIDs()[i]);
 		const Body &body = lock.GetBody();
 		float mass = body.GetMotionProperties()->GetInverseMass() > 0.0f ? 1.0f / body.GetMotionProperties()->GetInverseMass() : 0.0f;
-		LogInfo("Body %d mass = %f\n", i, mass);
+		LogInfo("Body %d mass = %f\n", i, mass);*/
 
 		// Apply impulse to the body's center of mass
 		bodyInterface.AddImpulse(data->ragdoll->GetBodyIDs()[i], impulse, centerOfMass);
