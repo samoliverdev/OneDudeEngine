@@ -41,6 +41,11 @@ constexpr RigidbodyConstraints & operator |= (RigidbodyConstraints &ioLHS, Rigid
 constexpr RigidbodyConstraints & operator &= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS & inRHS; return ioLHS; }
 constexpr RigidbodyConstraints & operator ^= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS ^ inRHS; return ioLHS; }
 
+enum class PhysicMotionQuality{
+    Discrete,
+    LinearCast
+};
+
 struct OD_API CollisionShape{
     enum class Type{Box, Sphere, Capsule, Mesh};
 
@@ -165,6 +170,9 @@ struct OD_API RigidbodyComponent{
     float AngularDamping();
     void AngularDamping(float v);
 
+    PhysicMotionQuality MotionQuality();
+    void MotionQuality(PhysicMotionQuality v);
+
     RigidbodyConstraints Constraints();
     void Constraints(RigidbodyConstraints constraints);
 
@@ -177,6 +185,7 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(mass));
         ArchiveDump(ar, CEREAL_NVP(linearDamping));
         ArchiveDump(ar, CEREAL_NVP(angularDamping));
+        ArchiveDump(ar, CEREAL_NVP(motionQuality));
         ArchiveDump(ar, CEREAL_NVP(constraints));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
         ArchiveDump(ar, CEREAL_NVP(mask));
@@ -190,6 +199,7 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(mass);
         COPY_OR_MOVE(linearDamping);
         COPY_OR_MOVE(angularDamping);
+        COPY_OR_MOVE(motionQuality);
         COPY_OR_MOVE(constraints);
         COPY_OR_MOVE(neverSleep);
         COPY_OR_MOVE(mask);
@@ -205,6 +215,7 @@ private:
     float mass = 1;
     float linearDamping = 0;
     float angularDamping = 0.05;
+    PhysicMotionQuality motionQuality;
     bool neverSleep = false;
 
     Vector3 previousPosition = Vector3Zero;

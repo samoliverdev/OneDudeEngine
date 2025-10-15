@@ -1,6 +1,6 @@
 #pragma once
 
-//#define FINAL_BUILD
+#define FINAL_BUILD
 
 #ifdef _WIN32
     #define EXPORT_FN __declspec(dllexport)
@@ -24,7 +24,7 @@
 #ifndef FINAL_BUILD
     #define OD_PROFILE 1
 #else
-    #define OD_PROFILE 0
+    #define OD_PROFILE 1
 #endif
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"

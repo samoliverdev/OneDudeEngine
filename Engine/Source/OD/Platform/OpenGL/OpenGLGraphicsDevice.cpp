@@ -1179,7 +1179,7 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount;
-    stats.tris += mesh.indiceCount;
+    stats.tris += mesh.indiceCount / 3;
     
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1217,7 +1217,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount;
-    stats.tris += mesh.indiceCount;
+    stats.tris += mesh.indiceCount / 3;
     
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1245,7 +1245,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
-    stats.tris += mesh.indiceCount * count;
+    stats.tris += (mesh.indiceCount * count) / 3;
 
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1275,7 +1275,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
-    stats.tris += mesh.indiceCount * count;
+    stats.tris += (mesh.indiceCount * count) / 3;
 
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1305,7 +1305,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Instanc
 
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
-    stats.tris += mesh.indiceCount * count;
+    stats.tris += (mesh.indiceCount * count) / 3;
 
     // Bind mesh geometry
     #ifdef USE_VAO
@@ -1394,7 +1394,7 @@ void OpenGLGraphicsDevice::DrawLinesComamnd(Vector3 color, int lineWidth){
     if(lineWidth > 1) lineWidth = 1;
 
     //drawCalls += 1;
-    stats.vertices += lineCommandsData.size()/3;
+    stats.vertices += lineCommandsData.size() / 3;
     stats.tris += 0;
 
     BindMaterial(*gismoMaterial);

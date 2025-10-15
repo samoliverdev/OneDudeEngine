@@ -24,6 +24,7 @@
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/JobSystemSingleThreaded.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Geometry/Triangle.h>
@@ -459,6 +460,7 @@ struct PhysicsWorld{
 
     TempAllocatorImpl* tempAllocator;
     JobSystemThreadPool jobSystem;
+	//JobSystemSingleThreaded jobSystem = JobSystemSingleThreaded(cMaxPhysicsJobs);
 
 	MyDebugRenderer* renderer = nullptr;
 	PhysicsSystem* system = nullptr;
@@ -1083,6 +1085,11 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
         if(update) rb.SetShape(shape);
     }
 
+	PhysicMotionQuality motionQuality = rb.MotionQuality();
+    if(ImGui::DrawEnumCombo<PhysicMotionQuality>("motionQuality", &motionQuality)){
+        rb.MotionQuality(motionQuality);
+    }
+
 	auto ExtractFreezeStates = 
 	[](JPH::EAllowedDOFs allowedDOFs, 
         bool& freezePosX, bool& freezePosY, bool& freezePosZ,
@@ -1359,6 +1366,17 @@ void RigidbodyComponent::AngularDamping(float v){
 	motionProps->SetAngularDamping(angularDamping);
 }
 
+PhysicMotionQuality RigidbodyComponent::MotionQuality(){
+	return motionQuality;
+}
+
+void RigidbodyComponent::MotionQuality(PhysicMotionQuality v){
+	motionQuality = v;
+
+	if(data == nullptr) return;
+	data->isDirt = true;
+}
+
 RigidbodyConstraints RigidbodyComponent::Constraints(){
 	return constraints;
 }
@@ -1555,7 +1573,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		Assert(ragdoll.parts[i].skinnedSkeletonIndex >= 0);
 		//Assert(ragdoll.parts[i].parent > 0);
 
-		if(ragdoll.parts[i].parent >= 0){
+		if(ragdoll.parts[i].parent >= 0/* && ragdoll.type != RagdollComponent::Type::Trigger*/){
 			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex), ragdoll.parts[i].parent);
 		} else {
 			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex));
@@ -1630,7 +1648,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
-		if(p > 0){
+		if(p > 0 /*&& ragdoll.type != RagdollComponent::Type::Trigger*/){
 			SwingTwistConstraintSettings *constraint = new SwingTwistConstraintSettings;
 			constraint->mDrawConstraintSize = 0.1f;
 			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
@@ -1653,7 +1671,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 //constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 5;
-constexpr int cCollisionSteps = 2;
+constexpr int cCollisionSteps = 2; //2;
 
 constexpr bool EnableFixedRate = true;
 constexpr bool EnableInterpolation = true;
@@ -1715,6 +1733,36 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
         }
     }
 
+	auto ApplyBoneMotor = [&](BodyInterface& bodyInterface, BodyID bodyID, const Quat& targetRot, float stiffness, float damping, float dt){
+		Quat currentRot;
+		RVec3 pos;
+		bodyInterface.GetPositionAndRotation(bodyID, pos, currentRot);
+
+		// delta rotation
+		Quat delta = targetRot * currentRot.Conjugated();
+		delta = delta.Normalized();
+
+		Vec3 axis;
+		float angle;
+		delta.GetAxisAngle(axis, angle);
+
+		if(angle > JPH_PI)
+			angle -= 2.0f * JPH_PI;
+		angle = math::clamp<float>(angle, -JPH_PI / 4.0f, JPH::JPH_PI / 4.0f);
+
+		Vec3 angVel = bodyInterface.GetAngularVelocity(bodyID);
+
+		// PD controller
+		Vec3 torque = (stiffness * angle / dt) * axis - damping * angVel;
+
+		// Clamp
+		const float maxTorque = 100.0f;
+		if(torque.LengthSq() > maxTorque * maxTorque)
+			torque = torque.Normalized() * maxTorque;
+
+		bodyInterface.AddTorque(bodyID, torque);
+	};
+
 	for(auto [entity, skinned, ragdoll, trans, info]: _view2.each()){
 		scene->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
 
@@ -1723,7 +1771,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 			float damping = ragdoll.damping;     // Novo: adicionar na struct
 			float stiffness = ragdoll.stiffness;
 
-			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
+			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0 && ragdoll.isDirty == false){ //TODO: this "ragdoll.isDirty == false" look fix a ragdoll sometime strecht bug, check if other place needs this check
 				int hipIndex = -1;
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
@@ -1739,7 +1787,8 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					if(ragdoll.parts[p].disableSync) continue;
 
-					if(ragdoll.parts[p].parent >= 0){
+					//TODO: Fix the instability and Freeze pose
+					/*if(ragdoll.parts[p].parent >= 0){
 						//float breakVelocityThreshold = stiffness;
 						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
 						//float speed = vel.Length();
@@ -1772,7 +1821,13 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						
 						auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
 						c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
-					}
+
+						//const float maxVel = 50.0f;
+						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
+						//if(vel.LengthSq() > maxVel * maxVel){
+						//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
+						//}
+					}*/
 					
 					/*
 					if(ragdoll.syncFromTheHips && hipIndex != -1){ //&& ragdoll.parts[p].isHips == false
@@ -2570,9 +2625,10 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         info.layer,
         rb.mask.mask // stored in subgroup ID
     );
-	/*
+	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
 	settings.mMotionQuality = EMotionQuality::LinearCast;
-	settings.mNumVelocityStepsOverride = 50;
+	
+	/*settings.mNumVelocityStepsOverride = 50;
 	settings.mNumPositionStepsOverride = 50;
 	*/
 
