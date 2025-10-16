@@ -139,6 +139,9 @@ struct OD_API RigidbodyComponent{
     inline float Mass(){ return mass; }
     void Mass(float mass);
 
+    inline float Friction(){ return friction; }
+    void Friction(float mass);
+
     inline bool NeverSleep(){ return neverSleep; }
     void NeverSleep(bool value);
 
@@ -183,6 +186,7 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(interpolate));
         ArchiveDump(ar, CEREAL_NVP(shape));
         ArchiveDump(ar, CEREAL_NVP(mass));
+        ArchiveDump(ar, CEREAL_NVP(friction));
         ArchiveDump(ar, CEREAL_NVP(linearDamping));
         ArchiveDump(ar, CEREAL_NVP(angularDamping));
         ArchiveDump(ar, CEREAL_NVP(motionQuality));
@@ -197,6 +201,7 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(angularFactor);
         COPY_OR_MOVE(mass);
+        COPY_OR_MOVE(friction);
         COPY_OR_MOVE(linearDamping);
         COPY_OR_MOVE(angularDamping);
         COPY_OR_MOVE(motionQuality);
@@ -213,6 +218,7 @@ private:
     Vector3 angularFactor = {1, 1, 1};
     RigidbodyConstraints constraints = RigidbodyConstraints::All;
     float mass = 1;
+    float friction = 0.2f;
     float linearDamping = 0;
     float angularDamping = 0.05;
     PhysicMotionQuality motionQuality;

@@ -478,6 +478,8 @@ public:
 	Scene* scene = nullptr;
 	PhysicsSystem* physic = nullptr;
 
+	Mutex mutex;
+
 	// See: ContactListener
 	virtual ValidateResult	OnContactValidate(const Body &inBody1, const Body &inBody2, RVec3Arg inBaseOffset, const CollideShapeResult &inCollisionResult) override{
 		//cout << "Contact validate callback" << endl;
@@ -488,14 +490,22 @@ public:
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
 		//return;
+
 		//cout << "A contact was added" << endl;
 		//InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
 		//InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
 		//LogInfo("OnContactAdded e1: %s, e2: %s", e1.name.c_str(), e2.name.c_str());
 
+		lock_guard lock(mutex);
+
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
-			for(auto& i: physic->onTriggerEnterCallbacks) 
-				i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+			//for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+			if(inBody1.IsSensor()){
+				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+			}
+			if(inBody2.IsSensor()){
+				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody2.GetUserData()), static_cast<Entity>(inBody1.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+			}
 		} else {
 			for(auto& i: physic->onCollisionEnterCallbacks) 
 				i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
@@ -507,17 +517,29 @@ public:
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
-    	/*const BodyLockRead lock1(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody1ID());
-		const Body& inBody1 = lock1.GetBody();
+		//return;
+		lock_guard lock(mutex);
 
+    	const BodyLockRead lock1(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody1ID());
+		if(!lock1.Succeeded()) return;
+	
 		const BodyLockRead lock2(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody2ID());
+		if(!lock2.Succeeded()) return;
+
+		const Body& inBody1 = lock1.GetBody();
 		const Body& inBody2 = lock2.GetBody();
 
-		if(inBody1.IsSensor() | inBody2.IsSensor()){
-			for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody1.GetUserData()));
+		if(inBody1.IsSensor() || inBody2.IsSensor()){
+			//for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
+			if(inBody1.IsSensor()){
+				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
+			}
+			if(inBody2.IsSensor()){
+				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody2.GetUserData()), static_cast<Entity>(inBody1.GetUserData()), Vector3Zero);
+			}
 		} else {
-			for(auto& i: physic->onCollisionExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()));
-		}*/
+			for(auto& i: physic->onCollisionExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
+		}
 	}
 };
 
@@ -983,6 +1005,11 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
         rb.Mass(mass);
     }
 
+	float friction = rb.Friction();
+    if(ImGui::DragFloat("friction", &friction)){
+        rb.Friction(friction);
+    }
+
 	float linearDamping = rb.linearDamping;
 	if(ImGui::DragFloat("linearDamping", &linearDamping)){
 		rb.LinearDamping(linearDamping);
@@ -1148,6 +1175,11 @@ void RigidbodyComponent::Mass(float m){
 	UpdateSettings();
 }
 
+void RigidbodyComponent::Friction(float f){
+	friction = f;
+	UpdateSettings();
+}
+
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
     type = value;
 	UpdateSettings();
@@ -1220,7 +1252,7 @@ void RigidbodyComponent::Velocity(Vector3 v){
 
 Vector3 RigidbodyComponent::AngularVelocity(){
 	if(data == nullptr) return Vector3Zero;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();
 	return FromJolt(bodyInterface.GetAngularVelocity(data->bodyID));
 }
 
@@ -1232,7 +1264,7 @@ void RigidbodyComponent::AngularVelocity(Vector3 v){
 
 void RigidbodyComponent::ApplyForce(Vector3 v){
     if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddForce(data->bodyID, ToJolt(v));
 }
 
@@ -1785,10 +1817,16 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 				Assert(ragdoll.startPose.Size() == skinned.finalPose.Size());
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					if(ragdoll.parts[p].disableSync) continue;
-
 					//TODO: Fix the instability and Freeze pose
-					/*if(ragdoll.parts[p].parent >= 0){
+					if(ragdoll.parts[p].parent >= 0){
+						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
+						c->SetSwingMotorState(EMotorState::Off);
+						c->SetTwistMotorState(EMotorState::Off);
+
+						if(ragdoll.parts[p].disableSync) continue;
+						if(ragdoll.syncWithFinalPose == false) continue;
+						if(ragdoll.stiffness <= 1) continue;
+
 						//float breakVelocityThreshold = stiffness;
 						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
 						//float speed = vel.Length();
@@ -1799,15 +1837,13 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						float motorDamping   = damping * scale; // damping term
 						float maxMotorTorque = stiffness * 10; // scale as needed
 
-						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
-
 						//c->SetMaxFrictionTorque(200); // in N·m
 						//c->SetNumPositionStepsOverride(8);
 						//c->SetNumVelocityStepsOverride(8);
 						c->GetSwingMotorSettings() = MotorSettings(motorFrequency, motorDamping);
 						c->GetTwistMotorSettings() = MotorSettings(motorFrequency, motorDamping);
-						c->SetSwingMotorState(ragdoll.syncWithFinalPose == false ? EMotorState::Off : EMotorState::Position);
-						c->SetTwistMotorState(ragdoll.syncWithFinalPose == false ? EMotorState::Off : EMotorState::Position);
+						c->SetSwingMotorState(EMotorState::Position);
+						c->SetTwistMotorState(EMotorState::Position);
 						c->SetMaxFrictionTorque(maxMotorTorque);
 						//c->SetTwistMaxAngle(math::radians(90.0f));
 						//c->SetTwistMinAngle(math::radians(-90.0f));
@@ -1820,6 +1856,8 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
 						
 						auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
+
+						if(!isfinite(boneTargetLocal.x) || !isfinite(boneTargetLocal.y) || !isfinite(boneTargetLocal.z) || !isfinite(boneTargetLocal.w)) continue;
 						c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
 
 						//const float maxVel = 50.0f;
@@ -1827,7 +1865,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						//if(vel.LengthSq() > maxVel * maxVel){
 						//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
 						//}
-					}*/
+					}
 					
 					/*
 					if(ragdoll.syncFromTheHips && hipIndex != -1){ //&& ragdoll.parts[p].isHips == false
@@ -2626,13 +2664,13 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         rb.mask.mask // stored in subgroup ID
     );
 	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
-	settings.mMotionQuality = EMotionQuality::LinearCast;
+	//settings.mMotionQuality = EMotionQuality::LinearCast;
 	
 	/*settings.mNumVelocityStepsOverride = 50;
 	settings.mNumPositionStepsOverride = 50;
 	*/
 
-	//settings.mFriction = 10;
+	settings.mFriction = rb.friction;
 
 	JPH::MassProperties msp;
 	msp.ScaleToMass(rb.mass); //actual mass in kg

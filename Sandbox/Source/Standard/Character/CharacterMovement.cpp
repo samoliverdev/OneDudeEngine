@@ -85,23 +85,22 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
         velocity.z = moveDir.z * moveSpeed;
     }
 
-    auto ApplyVelocityLikeForce = [&](RigidbodyComponent& rb, const Vector3& desiredVel, float deltaTime){
-        Vector3 currentVel = rb.Velocity();
-        Vector3 deltaVel   = desiredVel - currentVel;
-
-        // Convert desired velocity change into a force (F = m * a)
-        Vector3 force = (deltaVel / deltaTime) * rb.Mass();
-
-        rb.ApplyForce(force); // continuous force over dt
-    };
-
-    //rb.Velocity(velocity);
-    
-    //ApplyVelocityLikeForce(rb, velocity, Application::DeltaTime());
-
-    Vector3 deltaVel = velocity - rb.Velocity();
+    /*Vector3 deltaVel = velocity - rb.Velocity();
     Vector3 impulse = deltaVel * rb.Mass();
-    rb.ApplyImpulse(impulse);
+    rb.ApplyImpulse(impulse);*/
+
+    float acceleration = 10;
+    Vector3 deltaVel = velocity - rb.Velocity();
+    Vector3 force = deltaVel * acceleration * rb.Mass();
+    rb.ApplyForce(force);
+
+    /*float maxSpeed = 1;
+    Vector3 horizontalVel(rb.Velocity().x, 0.0f, rb.Velocity().z);
+    float speed = math::length(horizontalVel);
+    if(speed > maxSpeed){
+        Vector3 excessVel = horizontalVel - math::normalizeSafe(horizontalVel) * maxSpeed;
+        rb.ApplyForce(-excessVel * 10.0f * rb.Mass());
+    }*/
 
     if(moveType == MoveType::Free){
         if (math::length(moveDir) > 0.001f) {
