@@ -145,6 +145,8 @@ struct OD_API RigidbodyComponent{
     inline bool NeverSleep(){ return neverSleep; }
     void NeverSleep(bool value);
 
+    Vector3 CenterOfMass();
+
     Vector3 Position();
     Vector3 PositionInterpoled();
     void Position(Vector3 position);
@@ -311,6 +313,8 @@ struct OD_API RagdollComponent{
     }
 
     float Mass(int boneIndex);
+
+    Vector3 CenterOfMass(int boneIndex);
 
     Vector3 Position(int boneIndex);
     Vector3 PositionInterpoled(int boneIndex);

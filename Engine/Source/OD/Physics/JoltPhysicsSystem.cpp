@@ -791,6 +791,14 @@ float RagdollComponent::Mass(int boneIndex){
 	return mass;
 }
 
+Vector3 RagdollComponent::CenterOfMass(int boneIndex){
+	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
+
+	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetCenterOfMassPosition(bodyID));
+}
+
 Vector3 RagdollComponent::Position(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
@@ -1187,6 +1195,12 @@ void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
 
 void RigidbodyComponent::NeverSleep(bool value){
 
+}
+
+Vector3 RigidbodyComponent::CenterOfMass(){
+	if(data == nullptr) return Vector3Zero;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	return FromJolt(bodyInterface.GetCenterOfMassPosition(data->bodyID));
 }
 
 Vector3 RigidbodyComponent::Position(){
@@ -2345,6 +2359,24 @@ private:
     float mHitFraction;
 };
 
+class SensorBodyFilter : public JPH::BodyFilter {
+public:
+
+	// Pass the physicsWorld or BodyInterface in the constructor if needed
+    SensorBodyFilter(PhysicsWorld* world) : physicsWorld(world) {}
+
+    bool ShouldCollide(const JPH::BodyID& inBodyID) const override {
+        // Get the body interface (you'll need to pass this in or access it globally)
+        const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), inBodyID);
+        if(!lock.Succeeded()) return false;
+
+        const JPH::Body& body = lock.GetBody();
+        return body.IsSensor() == false;
+    }
+private:
+    PhysicsWorld* physicsWorld;
+};
+
 bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 	Assert(physicsWorld != nullptr); 
 
@@ -2359,10 +2391,11 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
 	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 	ClosestHitRayCollector collector;
+	SensorBodyFilter bodyFilter(physicsWorld);
 
 	//JPH::RayCastResult result;
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, {}, bodyFilter);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
@@ -2404,6 +2437,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 
 	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 	ClosestHitRayCollector collector;
+	SensorBodyFilter bodyFilter(physicsWorld);
 
 	//JPH::RayCastResult result;
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
@@ -2414,7 +2448,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter, bodyFilter);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
