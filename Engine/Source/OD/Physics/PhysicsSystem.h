@@ -486,6 +486,76 @@ struct OD_API MotorTest{
     void serialize(Archive & ar){}
 };
 
+struct OD_API VehiclePhysic{
+    friend struct PhysicsSystem;
+    friend class SelectedBodyDrawFilter;
+
+    struct Wheel{
+        bool isFront;
+        Vector3 pos;
+        float radius;
+        float width = 0.1f;
+
+        float suspensionMinLength = 0.3f;
+		float suspensionMaxLength = 0.5f;
+		float suspensionFrequency = 1.5f;
+		float suspensionDamping = 0.5f;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, isFront);
+            ArchiveDumpNVP(ar, pos);
+            ArchiveDumpNVP(ar, radius);
+            ArchiveDumpNVP(ar, width);
+
+            ArchiveDumpNVP(ar, suspensionMinLength);
+            ArchiveDumpNVP(ar, suspensionMaxLength);
+            ArchiveDumpNVP(ar, suspensionFrequency);
+            ArchiveDumpNVP(ar, suspensionDamping);
+        }
+    };
+
+    std::vector<Wheel> wheels = {
+        {true, {0.9f, 0, 2}, 0.3f},
+        {true, {-0.9f, 0, 2}, 0.3f},
+        {false, {0.9f, 0, -2}, 0.3f},
+        {false, {-0.9f, 0, -2}, 0.3f},
+    };
+
+    float maxSteeringAngle = 30;
+    float maxEngineTorque = 500.0f;
+    float clutchStrength = 10.0f;
+
+    //Inputs
+    float forwardInput = 0;
+    float rightInput = 0;
+    float brakeInput = 0;
+    float handBrakeInput = 0;
+
+    float previousForward = 0;
+
+    VehiclePhysic() = default;
+
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive & ar){ 
+        ArchiveDump(ar, CEREAL_NVP(wheels));
+        ArchiveDump(ar, CEREAL_NVP(maxSteeringAngle));
+        ArchiveDump(ar, CEREAL_NVP(maxEngineTorque));
+        ArchiveDump(ar, CEREAL_NVP(clutchStrength));
+    }
+
+    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(VehiclePhysic, {
+        COPY_OR_MOVE(wheels);
+        COPY_OR_MOVE(maxSteeringAngle);
+        COPY_OR_MOVE(maxEngineTorque);
+        COPY_OR_MOVE(clutchStrength);
+    });
+
+private:
+    class VehiclePhysicData* data = nullptr;
+};
+
 using OnCollisionCallback = void(*)(Scene&, Entity, Entity, Vector3);
 //using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
@@ -545,6 +615,10 @@ private:
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);
     void AddRigidbody(Entity entity, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveRigidbody(Entity entity, RigidbodyComponent& c);
+
+    static void OnRemoveVehicle(entt::registry& r, entt::entity e);
+    void AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info);
+    void RemoveVehicle(Entity entity, VehiclePhysic& c);
 
     static void OnRemoveJoint(entt::registry& r, entt::entity e);
     void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);

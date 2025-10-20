@@ -4,6 +4,7 @@
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Time.h"
+#include "OD/Core/Input.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
@@ -44,11 +45,12 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Ragdoll/Ragdoll.h>
+#include <Jolt/Physics/Vehicle/VehicleConstraint.h>
+#include <Jolt/Physics/Vehicle/WheeledVehicleController.h>
 #include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
 #include <Jolt/Physics/Constraints/HingeConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
-
 
 #include <iostream>
 #include <cstdarg>
@@ -64,6 +66,8 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 
 	SceneManager::Get().RegisterCoreComponent<MotorTest>("MotorTest", "Physics");
+
+	SceneManager::Get().RegisterCoreComponent<VehiclePhysic>("VehiclePhysic", "Physics");
 }
 
 uint64_t EncodeUserData(uint32_t u, int32_t i) {
@@ -548,6 +552,11 @@ public:
     BodyID bodyID = BodyID();
 	PhysicsWorld* world = nullptr;
 	bool isDirt = false;
+};
+
+class VehiclePhysicData{
+public:
+	VehicleConstraint* vehicleConstraint = nullptr;
 };
 
 struct RagdollObject{
@@ -1556,6 +1565,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 void PhysicsSystem::OnEnd(Scene& inScene){
     scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 	scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
+	scene->GetRegistry().on_destroy<VehiclePhysic>().disconnect<&OnRemoveVehicle>();
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
@@ -2286,6 +2296,108 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 		}
 	}
 	}
+
+	auto vehicleView = scene->GetRegistry().view<VehiclePhysic, RigidbodyComponent, TransformComponent, InfoComponent>();
+	for(auto [entity, veh, rb, trans, info]: vehicleView.each()){
+		if(rb.data != nullptr && veh.data == nullptr){
+			AddVehicle(entity, veh, rb, trans, info);
+		}
+
+		static bool sLimitedSlipDifferentials = true;
+
+		if(rb.data != nullptr && veh.data != nullptr){
+			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), rb.data->bodyID);
+			if(!lock.Succeeded()) continue;
+
+			Body& mCarBody = lock.GetBody();
+
+			// On user input, assure that the car is active
+			if(veh.rightInput != 0.0f || veh.forwardInput != 0.0f || veh.brakeInput != 0.0f || veh.brakeInput != 0.0f)
+				bodyInterface.ActivateBody(mCarBody.GetID());
+
+			WheeledVehicleController *controller = static_cast<WheeledVehicleController *>(veh.data->vehicleConstraint->GetController());
+
+			// Update vehicle statistics
+			controller->GetEngine().mMaxTorque = veh.maxEngineTorque;// sMaxEngineTorque;
+			controller->GetTransmission().mClutchStrength = veh.clutchStrength;// sClutchStrength;
+
+			// Set slip ratios to the same for everything
+			float limited_slip_ratio = sLimitedSlipDifferentials? 1.4f : FLT_MAX;
+			controller->SetDifferentialLimitedSlipRatio(limited_slip_ratio);
+			for (VehicleDifferentialSettings &d : controller->GetDifferentials())
+				d.mLimitedSlipRatio = limited_slip_ratio;
+
+			// Pass the input on to the constraint
+			controller->SetDriverInput(veh.forwardInput, veh.rightInput, veh.brakeInput, veh.handBrakeInput);
+
+			// Set the collision tester
+			//mVehicleConstraint->SetVehicleCollisionTester(mTesters[sCollisionMode]);
+
+			/*if(sOverrideGravity){
+				// When overriding gravity is requested, we cast a sphere downwards (opposite to the previous up position) and use the contact normal as the new gravity direction
+				SphereShape sphere(0.5f);
+				sphere.SetEmbedded();
+				RShapeCast shape_cast(&sphere, Vec3::sOne(), RMat44::sTranslation(mCarBody->GetPosition()), -3.0f * mVehicleConstraint->GetWorldUp());
+				ShapeCastSettings settings;
+				ClosestHitCollisionCollector<CastShapeCollector> collector;
+				mPhysicsSystem->GetNarrowPhaseQuery().CastShape(shape_cast, settings, mCarBody->GetPosition(), collector, SpecifiedBroadPhaseLayerFilter(BroadPhaseLayers::NON_MOVING), SpecifiedObjectLayerFilter(Layers::NON_MOVING));
+				if (collector.HadHit())
+					mVehicleConstraint->OverrideGravity(9.81f * collector.mHit.mPenetrationAxis.Normalized());
+				else
+					mVehicleConstraint->ResetGravityOverride();
+			}*/
+
+			// Draw our wheels (this needs to be done in the pre update since we draw the bodies too in the state before the step)
+			/*for (uint w = 0; w < 4; ++w){
+				const WheelSettings *settings = mVehicleConstraint->GetWheels()[w]->GetSettings();
+				RMat44 wheel_transform = mVehicleConstraint->GetWheelWorldTransform(w, Vec3::sAxisY(), Vec3::sAxisX()); // The cylinder we draw is aligned with Y so we specify that as rotational axis
+				mDebugRenderer->DrawCylinder(wheel_transform, 0.5f * settings->mWidth, settings->mRadius, Color::sGreen);
+			}*/
+		}
+	
+		if(rb.data != nullptr && veh.data != nullptr){
+			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), rb.data->bodyID);
+			if(!lock.Succeeded()) continue;
+
+			Body& mCarBody = lock.GetBody();
+
+			// Determine acceleration and brake
+			veh.forwardInput = 0.0f;
+			if(Input::IsKey(KeyCode::W))
+				veh.forwardInput = 1.0f;
+			else if(Input::IsKey(KeyCode::S))
+				veh.forwardInput = -1.0f;
+
+			// Check if we're reversing direction
+			veh.brakeInput = 0.0f;
+			if(veh.previousForward * veh.forwardInput < 0.0f){
+				// Get vehicle velocity in local space to the body of the vehicle
+				float velocity = (mCarBody.GetRotation().Conjugated() * mCarBody.GetLinearVelocity()).GetZ();
+				if((veh.forwardInput > 0.0f && velocity < -0.1f) || (veh.forwardInput < 0.0f && velocity > 0.1f)){
+					// Brake while we've not stopped yet
+					veh.forwardInput = 0.0f;
+					veh.brakeInput = 1.0f;
+				} else {
+					// When we've come to a stop, accept the new direction
+					veh.previousForward = veh.forwardInput;
+				}
+			}
+
+			// Hand brake will cancel gas pedal
+			veh.handBrakeInput = 0.0f;
+			if(Input::IsKey(KeyCode::Space)){
+				veh.forwardInput = 0.0f;
+				veh.handBrakeInput = 1.0f;
+			}
+
+			// Steering
+			veh.rightInput = 0.0f;
+			if(Input::IsKey(KeyCode::A))
+				veh.rightInput = -1.0f;
+			else if(Input::IsKey(KeyCode::D))
+				veh.rightInput = 1.0f;
+		}
+	}
 }
 
 void PhysicsSystem::OnDrawGizmos(Scene& inScene, Camera& cam){
@@ -2395,7 +2507,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
 	//JPH::RayCastResult result;
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, {}, bodyFilter);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, {}/*, bodyFilter*/);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
@@ -2448,7 +2560,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter, bodyFilter);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter/*, bodyFilter*/);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
@@ -2727,6 +2839,221 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
 	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
     bodyInterface.RemoveBody(rb.data->bodyID);
     bodyInterface.DestroyBody(rb.data->bodyID);
+}
+
+void PhysicsSystem::OnRemoveVehicle(entt::registry& r, entt::entity e){
+	VehiclePhysic& rb = r.get<VehiclePhysic>(e);
+    if(rb.data == nullptr) return;
+
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    physicsSystem->RemoveVehicle(e, rb);
+    delete rb.data;
+}
+
+void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
+	BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), c.data->bodyID);
+	if(!lock.Succeeded()) return;
+
+	Body& mCarBody = lock.GetBody();
+
+	const float wheel_radius = 0.3f;
+	const float wheel_radius2 = 0.4f;
+	const float wheel_width = 0.1f;
+	const float half_vehicle_length = 2.0f;
+	const float half_vehicle_width = 0.9f;
+	const float half_vehicle_height = 0.2f;
+
+	const float			sInitialRollAngle = 0;
+	const float			sMaxRollAngle = DegreesToRadians(60.0f);
+	const float			sMaxSteeringAngle = DegreesToRadians(30.0f);
+	const int			sCollisionMode = 2;
+	const bool			sFourWheelDrive = false;
+	const bool			sAntiRollbar = true;
+	const bool			sLimitedSlipDifferentials = true;
+	const bool			sOverrideGravity = false;					///< If true, gravity is overridden to always oppose the ground normal
+	const float			sMaxEngineTorque = 500.0f;
+	const float			sClutchStrength = 10.0f;
+	const float			sFrontCasterAngle = 0.0f;
+	const float			sFrontKingPinAngle = 0.0f;
+	const float			sFrontCamber = 0.0f;
+	const float			sFrontToe = 0.0f;
+	const float			sFrontSuspensionForwardAngle = 0.0f;
+	const float			sFrontSuspensionSidewaysAngle = 0.0f;
+	const float			sFrontSuspensionMinLength = 0.3f;
+	const float			sFrontSuspensionMaxLength = 0.5f;
+	const float			sFrontSuspensionFrequency = 1.5f;
+	const float			sFrontSuspensionDamping = 0.5f;
+	const float			sRearSuspensionForwardAngle = 0.0f;
+	const float			sRearSuspensionSidewaysAngle = 0.0f;
+	const float			sRearCasterAngle = 0.0f;
+	const float			sRearKingPinAngle = 0.0f;
+	const float			sRearCamber = 0.0f;
+	const float			sRearToe = 0.0f;
+	const float			sRearSuspensionMinLength = 0.3f;
+	const float			sRearSuspensionMaxLength = 0.5f;
+	const float			sRearSuspensionFrequency = 1.5f;
+	const float			sRearSuspensionDamping = 0.5f;
+
+	//Body *						mCarBody;									///< The vehicle
+	//Ref<VehicleConstraint>		mVehicleConstraint;							///< The vehicle constraint
+	//Ref<VehicleCollisionTester>	mTesters[3];								///< Collision testers for the wheel
+	//RMat44						mCameraPivot = RMat44::sIdentity();			///< The camera pivot, recorded before the physics update to align with the drawn world
+
+	// Player input
+	float						mForward = 0.0f;
+	float						mPreviousForward = 1.0f;					///< Keeps track of last car direction so we know when to brake and when to accelerate
+	float						mRight = 0.0f;
+	float						mBrake = 0.0f;
+	float						mHandBrake = 0.0f;
+
+	veh.data = new VehiclePhysicData();
+
+	// Create vehicle constraint
+	VehicleConstraintSettings vehicle;
+	vehicle.mDrawConstraintSize = 0.1f;
+	vehicle.mMaxPitchRollAngle = sMaxRollAngle;
+
+	// Suspension direction
+	Vec3 front_suspension_dir = Vec3(Tan(sFrontSuspensionSidewaysAngle), -1, Tan(sFrontSuspensionForwardAngle)).Normalized();
+	Vec3 front_steering_axis = Vec3(-Tan(sFrontKingPinAngle), 1, -Tan(sFrontCasterAngle)).Normalized();
+	Vec3 front_wheel_up = Vec3(Sin(sFrontCamber), Cos(sFrontCamber), 0);
+	Vec3 front_wheel_forward = Vec3(-Sin(sFrontToe), 0, Cos(sFrontToe));
+	Vec3 rear_suspension_dir = Vec3(Tan(sRearSuspensionSidewaysAngle), -1, Tan(sRearSuspensionForwardAngle)).Normalized();
+	Vec3 rear_steering_axis = Vec3(-Tan(sRearKingPinAngle), 1, -Tan(sRearCasterAngle)).Normalized();
+	Vec3 rear_wheel_up = Vec3(Sin(sRearCamber), Cos(sRearCamber), 0);
+	Vec3 rear_wheel_forward = Vec3(-Sin(sRearToe), 0, Cos(sRearToe));
+	Vec3 flip_x(-1, 1, 1);
+
+	Assert(veh.wheels.size() == 4);
+
+	// Wheels, left front
+	WheelSettingsWV *w1 = new WheelSettingsWV;
+	//w1->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
+	w1->mPosition = ToJolt(veh.wheels[0].pos);
+
+	w1->mSuspensionDirection = front_suspension_dir;
+	w1->mSteeringAxis = front_steering_axis;
+	w1->mWheelUp = front_wheel_up;
+	w1->mWheelForward = front_wheel_forward;
+	w1->mSuspensionMinLength = veh.wheels[0].suspensionMinLength;// sFrontSuspensionMinLength;
+	w1->mSuspensionMaxLength = veh.wheels[0].suspensionMaxLength;// sFrontSuspensionMaxLength;
+	w1->mSuspensionSpring.mFrequency = veh.wheels[0].suspensionFrequency;// sFrontSuspensionFrequency;
+	w1->mSuspensionSpring.mDamping = veh.wheels[0].suspensionDamping;// sFrontSuspensionDamping;
+	w1->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
+	w1->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
+	w1->mRadius = veh.wheels[0].radius;
+	w1->mWidth = veh.wheels[0].width;
+
+	// Right front
+	WheelSettingsWV *w2 = new WheelSettingsWV;
+	//w2->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
+	w2->mPosition = ToJolt(veh.wheels[1].pos);
+
+	w2->mSuspensionDirection = flip_x * front_suspension_dir;
+	w2->mSteeringAxis = flip_x * front_steering_axis;
+	w2->mWheelUp = flip_x * front_wheel_up;
+	w2->mWheelForward = flip_x * front_wheel_forward;
+	w2->mSuspensionMinLength = veh.wheels[1].suspensionMinLength;// sFrontSuspensionMinLength;
+	w2->mSuspensionMaxLength = veh.wheels[1].suspensionMaxLength;// sFrontSuspensionMaxLength;
+	w2->mSuspensionSpring.mFrequency = veh.wheels[1].suspensionFrequency;// sFrontSuspensionFrequency;
+	w2->mSuspensionSpring.mDamping = veh.wheels[1].suspensionDamping;// sFrontSuspensionDamping;
+	w2->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
+	w2->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
+	w2->mRadius = veh.wheels[1].radius;
+	w2->mWidth = veh.wheels[1].width;
+
+	// Left rear
+	WheelSettingsWV *w3 = new WheelSettingsWV;
+	//w3->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
+	w3->mPosition = ToJolt(veh.wheels[2].pos);
+
+	w3->mSuspensionDirection = rear_suspension_dir;
+	w3->mSteeringAxis = rear_steering_axis;
+	w3->mWheelUp = rear_wheel_up;
+	w3->mWheelForward = rear_wheel_forward;
+	w3->mSuspensionMinLength = veh.wheels[2].suspensionMinLength;// sRearSuspensionMinLength;
+	w3->mSuspensionMaxLength = veh.wheels[2].suspensionMaxLength;// sRearSuspensionMaxLength;
+	w3->mSuspensionSpring.mFrequency = veh.wheels[2].suspensionFrequency;// sRearSuspensionFrequency;
+	w3->mSuspensionSpring.mDamping = veh.wheels[2].suspensionDamping;// sRearSuspensionDamping;
+	w3->mMaxSteerAngle = 0.0f;
+	w3->mRadius = veh.wheels[2].radius;
+	w3->mWidth = veh.wheels[2].width;
+
+	// Right rear
+	WheelSettingsWV *w4 = new WheelSettingsWV;
+	//w4->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
+	w4->mPosition = ToJolt(veh.wheels[3].pos);
+
+	w4->mSuspensionDirection = flip_x * rear_suspension_dir;
+	w4->mSteeringAxis = flip_x * rear_steering_axis;
+	w4->mWheelUp = flip_x * rear_wheel_up;
+	w4->mWheelForward = flip_x * rear_wheel_forward;
+	w4->mSuspensionMinLength = veh.wheels[3].suspensionMinLength;// sRearSuspensionMinLength;
+	w4->mSuspensionMaxLength = veh.wheels[3].suspensionMaxLength;// sRearSuspensionMaxLength;
+	w4->mSuspensionSpring.mFrequency = veh.wheels[3].suspensionFrequency;// sRearSuspensionFrequency;
+	w4->mSuspensionSpring.mDamping = veh.wheels[3].suspensionDamping;// sRearSuspensionDamping;
+	w4->mMaxSteerAngle = 0.0f;
+	w4->mRadius = veh.wheels[3].radius;
+	w4->mWidth = veh.wheels[3].width;
+
+	vehicle.mWheels = { w1, w2, w3, w4 };
+
+	/*for(WheelSettings *w : vehicle.mWheels){
+		w->mRadius = wheel_radius;
+		w->mWidth = wheel_width;
+	}*/
+
+	WheeledVehicleControllerSettings *controller = new WheeledVehicleControllerSettings;
+	vehicle.mController = controller;
+
+	// Differential
+	controller->mDifferentials.resize(sFourWheelDrive ? 2 : 1);
+	controller->mDifferentials[0].mLeftWheel = 0;
+	controller->mDifferentials[0].mRightWheel = 1;
+	if(sFourWheelDrive){
+		controller->mDifferentials[1].mLeftWheel = 2;
+		controller->mDifferentials[1].mRightWheel = 3;
+
+		//controller->mDifferentials[0].mDifferentialRatio = 1.93f * 40.0f / 16.0f; // Combining primary and final drive (back divided by front sprockets) from: https://www.blocklayer.com/rpm-gear-bikes
+
+		// Split engine torque
+		controller->mDifferentials[0].mEngineTorqueRatio = controller->mDifferentials[1].mEngineTorqueRatio = 0.5f;
+	}
+
+	// Anti rollbars
+	if(sAntiRollbar){
+		vehicle.mAntiRollBars.resize(2);
+		vehicle.mAntiRollBars[0].mLeftWheel = 0;
+		vehicle.mAntiRollBars[0].mRightWheel = 1;
+		vehicle.mAntiRollBars[1].mLeftWheel = 2;
+		vehicle.mAntiRollBars[1].mRightWheel = 3;
+
+		//vehicle.mAntiRollBars[0].mStiffness *= 6;
+		//vehicle.mAntiRollBars[1].mStiffness *= 6;
+	}
+
+	veh.data->vehicleConstraint = new VehicleConstraint(mCarBody, vehicle);
+
+	// The vehicle settings were tweaked with a buggy implementation of the longitudinal tire impulses, this meant that PhysicsSettings::mNumVelocitySteps times more impulse
+	// could be applied than intended. To keep the behavior of the vehicle the same we increase the max longitudinal impulse by the same factor. In a future version the vehicle
+	// will be retweaked.
+	static_cast<WheeledVehicleController *>(veh.data->vehicleConstraint->GetController())->SetTireMaxImpulseCallback(
+		[](uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float){
+			outLongitudinalImpulse = 10.0f * inLongitudinalFriction * inSuspensionImpulse;
+			outLateralImpulse = inLateralFriction * inSuspensionImpulse;
+		}
+	);
+
+	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(PhysicsLayers::MOVING);
+	veh.data->vehicleConstraint->SetVehicleCollisionTester(vehicle_tester);
+
+	physicsWorld->physicsSystem.AddConstraint(veh.data->vehicleConstraint);
+	physicsWorld->physicsSystem.AddStepListener(veh.data->vehicleConstraint);
+}
+
+void PhysicsSystem::RemoveVehicle(Entity entity, VehiclePhysic& c){
+	physicsWorld->physicsSystem.RemoveStepListener(c.data->vehicleConstraint);
+	physicsWorld->physicsSystem.RemoveConstraint(c.data->vehicleConstraint);
 }
 
 void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){

@@ -11,7 +11,8 @@
         8,
         9,
         10,
-        11
+        11,
+        12
     ],
     "InfoComponents": [
         {
@@ -109,6 +110,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Vehicle",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -123,7 +132,8 @@
         8,
         9,
         10,
-        11
+        11,
+        12
     ],
     "TransformComponents": [
         {
@@ -393,6 +403,28 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.5939934253692627,
+                "v.z": -8.086600303649903
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.7999999523162842,
+                "v.y": 0.4000000059604645,
+                "v.z": 4.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -407,7 +439,8 @@
         8,
         9,
         10,
-        11
+        11,
+        12
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -1077,6 +1110,59 @@
         3,
         10
     ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/greybox_teal_grid.material"
+                ]
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        12
+    ],
     "SkinnedModelRendererComponents": [
         {
             "localTransform": {
@@ -1252,6 +1338,14 @@
     "AnimatorComponentEntities": [
         6,
         9
+    ],
+    "VehiclePhysics": [
+        {
+            "test": 0
+        }
+    ],
+    "VehiclePhysicEntities": [
+        12
     ],
     "RagdollComponents": [
         {
@@ -1817,8 +1911,10 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "friction": 0.20000000298023225,
             "linearDamping": 0.0,
             "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
             "constraints": 63,
             "neverSleep": false,
             "mask": {
@@ -1844,8 +1940,10 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "friction": 0.20000000298023225,
             "linearDamping": 0.0,
             "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
             "constraints": 63,
             "neverSleep": false,
             "mask": {
@@ -1871,8 +1969,10 @@
                 "height": 2.0
             },
             "mass": 50.0,
+            "friction": 0.20000000298023225,
             "linearDamping": 0.0,
             "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
             "constraints": 63,
             "neverSleep": false,
             "mask": {
@@ -1898,8 +1998,39 @@
                 "height": 1.0
             },
             "mass": 1.0,
+            "friction": 0.20000000298023225,
             "linearDamping": 0.0,
             "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            }
+        },
+        {
+            "type": 0,
+            "interpolate": false,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.7999999523162842,
+                    "v.y": 0.4000000059604645,
+                    "v.z": 4.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 2000.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
             "constraints": 63,
             "neverSleep": false,
             "mask": {
@@ -1911,6 +2042,7 @@
         2,
         3,
         6,
-        10
+        10,
+        12
     ]
 }
