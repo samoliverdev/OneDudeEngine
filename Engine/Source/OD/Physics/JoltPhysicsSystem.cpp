@@ -1455,6 +1455,26 @@ void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
 
 #pragma region PhysicsSystem
 
+Transform VehiclePhysic::GetWheelWorldTransform(int wheelIndex, Vector3 up, Vector3 right){
+	if(data == nullptr) return Transform();
+
+	Mat44 wheelmat = data->vehicleConstraint->GetWheelWorldTransform(wheelIndex, ToJolt(right), ToJolt(up));
+	Transform out;
+	out.Position(FromJolt(wheelmat.GetTranslation()));
+	out.Rotation(FromJolt(wheelmat.GetQuaternion()));
+	return out;
+}
+
+Transform VehiclePhysic::GetWheelLocalTransform(int wheelIndex, Vector3 up, Vector3 right){
+	if(data == nullptr) return Transform();
+
+	Mat44 wheelmat = data->vehicleConstraint->GetWheelLocalTransform(wheelIndex, ToJolt(right), ToJolt(up));
+	Transform out;
+	out.Position(FromJolt(wheelmat.GetTranslation()));
+	out.Rotation(FromJolt(wheelmat.GetQuaternion()));
+	return out;
+}
+
 bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Running();*/ }
 
 void PhysicsSystem::OnInit(Scene& inScene){
@@ -2355,7 +2375,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 			}*/
 		}
 	
-		if(rb.data != nullptr && veh.data != nullptr){
+		if(rb.data != nullptr && veh.data != nullptr && veh.handleDebugInputs){
 			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), rb.data->bodyID);
 			if(!lock.Succeeded()) continue;
 
@@ -2911,7 +2931,7 @@ void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyCompo
 	// Create vehicle constraint
 	VehicleConstraintSettings vehicle;
 	vehicle.mDrawConstraintSize = 0.1f;
-	vehicle.mMaxPitchRollAngle = sMaxRollAngle;
+	vehicle.mMaxPitchRollAngle = math::radians(veh.maxRollAngle); sMaxRollAngle;
 
 	// Suspension direction
 	Vec3 front_suspension_dir = Vec3(Tan(sFrontSuspensionSidewaysAngle), -1, Tan(sFrontSuspensionForwardAngle)).Normalized();
@@ -3028,19 +3048,23 @@ void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyCompo
 		vehicle.mAntiRollBars[1].mLeftWheel = 2;
 		vehicle.mAntiRollBars[1].mRightWheel = 3;
 
-		//vehicle.mAntiRollBars[0].mStiffness *= 6;
-		//vehicle.mAntiRollBars[1].mStiffness *= 6;
+		vehicle.mAntiRollBars[0].mStiffness = veh.antiRollBarsStiffness;
+		vehicle.mAntiRollBars[1].mStiffness = veh.antiRollBarsStiffness;
 	}
 
 	veh.data->vehicleConstraint = new VehicleConstraint(mCarBody, vehicle);
+
+	float longMult = veh.longitudinalImpulseMultplier;
+	float latMult  = veh.lateralImpulseMultplier;
 
 	// The vehicle settings were tweaked with a buggy implementation of the longitudinal tire impulses, this meant that PhysicsSettings::mNumVelocitySteps times more impulse
 	// could be applied than intended. To keep the behavior of the vehicle the same we increase the max longitudinal impulse by the same factor. In a future version the vehicle
 	// will be retweaked.
 	static_cast<WheeledVehicleController *>(veh.data->vehicleConstraint->GetController())->SetTireMaxImpulseCallback(
-		[](uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float){
-			outLongitudinalImpulse = 10.0f * inLongitudinalFriction * inSuspensionImpulse;
-			outLateralImpulse = inLateralFriction * inSuspensionImpulse;
+		[longMult, latMult]
+		(uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float){
+			outLongitudinalImpulse = /*10.0f **/ longMult * inLongitudinalFriction * inSuspensionImpulse;
+			outLateralImpulse = /*2 **/ latMult * inLateralFriction * inSuspensionImpulse;
 		}
 	);
 

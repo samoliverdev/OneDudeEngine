@@ -523,8 +523,14 @@ struct OD_API VehiclePhysic{
     };
 
     float maxSteeringAngle = 30;
+    float maxRollAngle = 60;
+
     float maxEngineTorque = 500.0f;
     float clutchStrength = 10.0f;
+
+    float antiRollBarsStiffness = 1000.0f;
+    float longitudinalImpulseMultplier = 10;
+    float lateralImpulseMultplier = 1;
 
     //Inputs
     float forwardInput = 0;
@@ -532,7 +538,11 @@ struct OD_API VehiclePhysic{
     float brakeInput = 0;
     float handBrakeInput = 0;
 
+    bool handleDebugInputs = false;
     float previousForward = 0;
+
+    Transform GetWheelWorldTransform(int wheelIndex, Vector3 up, Vector3 right);
+    Transform GetWheelLocalTransform(int wheelIndex, Vector3 up, Vector3 right);
 
     VehiclePhysic() = default;
 
@@ -541,15 +551,29 @@ struct OD_API VehiclePhysic{
     void serialize(Archive & ar){ 
         ArchiveDump(ar, CEREAL_NVP(wheels));
         ArchiveDump(ar, CEREAL_NVP(maxSteeringAngle));
+        ArchiveDump(ar, CEREAL_NVP(maxRollAngle));
         ArchiveDump(ar, CEREAL_NVP(maxEngineTorque));
         ArchiveDump(ar, CEREAL_NVP(clutchStrength));
+
+        ArchiveDump(ar, CEREAL_NVP(antiRollBarsStiffness));
+        ArchiveDump(ar, CEREAL_NVP(longitudinalImpulseMultplier));
+        ArchiveDump(ar, CEREAL_NVP(lateralImpulseMultplier));
+
+        ArchiveDump(ar, CEREAL_NVP(handleDebugInputs));
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(VehiclePhysic, {
         COPY_OR_MOVE(wheels);
         COPY_OR_MOVE(maxSteeringAngle);
+        COPY_OR_MOVE(maxRollAngle);
         COPY_OR_MOVE(maxEngineTorque);
         COPY_OR_MOVE(clutchStrength);
+
+        COPY_OR_MOVE(antiRollBarsStiffness);
+        COPY_OR_MOVE(longitudinalImpulseMultplier);
+        COPY_OR_MOVE(lateralImpulseMultplier);
+
+        COPY_OR_MOVE(handleDebugInputs);
     });
 
 private:
