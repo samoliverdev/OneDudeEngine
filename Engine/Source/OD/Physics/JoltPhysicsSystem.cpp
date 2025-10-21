@@ -1579,6 +1579,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().connect<&OnRemoveRagdoll>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
 	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().connect<&OnRemoveHeightmap>();
+	this->scene->GetRegistry().on_destroy<VehiclePhysic>().connect<&OnRemoveVehicle>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
 }
 
@@ -2730,6 +2731,10 @@ void PhysicsSystem::OnRemoveHeightmap(entt::registry& r, entt::entity e){
 void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
     RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
     if(rb.data == nullptr) return;
+
+	if(r.any_of<VehiclePhysic>(e)){
+		OnRemoveVehicle(r, e);
+	}
 
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
     physicsSystem->RemoveRigidbody(e, rb);
