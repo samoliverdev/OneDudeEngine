@@ -83,7 +83,7 @@ public:
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
-    static void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor = Vector4(0, 0, 0, 1), int layer = 0, int mip = 0);
+    static void BeginFramebuffer(Framebuffer& frambuffer, bool clean = true, Vector4 clearColor = Vector4(0, 0, 0, 1), int layer = 0, int mip = 0);
     static void EndFramebuffer();
 
     static void CreateLuaBind(sol::state& lua);

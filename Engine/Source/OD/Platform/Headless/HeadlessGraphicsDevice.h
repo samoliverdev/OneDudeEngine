@@ -59,7 +59,7 @@ public:
     virtual void MeshDestroy(Mesh& mesh) override;
     virtual bool MeshIsValid(Mesh& mesh) override;
 
-    virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip) override;
+    virtual void BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip) override;
     virtual void EndFramebuffer() override;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) override;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) override;

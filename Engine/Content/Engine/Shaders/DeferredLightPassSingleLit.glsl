@@ -2,6 +2,7 @@
     Name MainPass
     Blend ONE ONE
     DepthMask False
+    DepthTest ALWAYS
     MultiCompile _ INDIRECT DIRECTIONAL OTHER
 #pragma EndPassDef
 

@@ -75,7 +75,7 @@ public:
 
     virtual void DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& params){}
 
-    virtual void BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip) = 0;
+    virtual void BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip) = 0;
     virtual void EndFramebuffer() = 0;
     virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;

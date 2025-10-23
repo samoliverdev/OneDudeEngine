@@ -19,6 +19,7 @@ struct OD_API DrawingSettings{
     bool enableIntancing = true;
     RenderQueueRange renderQueueRange;
     SortType sortType;
+    bool decalTarget = false;
 };
 
 struct OD_API ShadowDrawingSettings{
@@ -61,6 +62,7 @@ struct OD_API alignas(16) RenderData{
     float distance;
     bool awalsDraw = false;
     bool renderShadow = true;
+    bool isDecal = false;
 
     /*#if EnableExperimentalPerDrawCustomData
     bool useCustomData = false;
@@ -125,6 +127,8 @@ public:
 
 class OD_API RenderContext{
 public:
+    friend class CameraRenderer;
+
     RenderContext(Scene* scene);
     ~RenderContext();
 
@@ -174,7 +178,7 @@ public:
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
-    void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false);
+    void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
     void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
 
     void CleanShadow(Framebuffer* shadowMap, int layer = 0);
@@ -234,6 +238,8 @@ private:
     Ref<Mesh> skyboxMesh;
     Ref<Mesh> spriteMesh;
     Ref<Mesh> fullScreenQuad;
+
+    Ref<Model> decalMesh;
 
     Ref<Model> sphereMesh;
     Ref<Model> coneMesh;

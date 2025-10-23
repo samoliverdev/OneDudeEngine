@@ -304,8 +304,8 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
     graphicsDevice->BlitFramebuffer(src, dst, srcPass); 
 }
 
-void Graphics::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip){ 
-    graphicsDevice->BeginFramebuffer(frambuffer, clearColor, layer, mip); 
+void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){ 
+    graphicsDevice->BeginFramebuffer(frambuffer, clean, clearColor, layer, mip); 
 }
 
 void Graphics::EndFramebuffer(){ 

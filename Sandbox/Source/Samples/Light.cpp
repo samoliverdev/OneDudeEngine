@@ -54,7 +54,7 @@ void LightSample::OnRender(float deltaTime){
     //Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    Graphics::BeginFramebuffer(*framebuffer, Vector4(0.1f, 0.1f, 0.1f, 1));
+    Graphics::BeginFramebuffer(*framebuffer, true, Vector4(0.1f, 0.1f, 0.1f, 1));
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
         Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         for(unsigned int i = 0; i < 10; i++){

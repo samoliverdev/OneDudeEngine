@@ -250,8 +250,13 @@ private:
     RendererList blendDrawTarget;
     DrawingSettings blendDrawSettings;
 
+    RendererList decalDrawTarget;
+    DrawingSettings decalDrawSettings;
+
     RendererList entityIdDrawTarget;
     DrawingSettings entityIdDrawSettings;
+
+    Ref<Material> blitPass;
 
     //PostFXTest* postFXTest;
 

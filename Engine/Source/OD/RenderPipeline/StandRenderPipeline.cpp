@@ -11,6 +11,7 @@
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
 #include "OD/RenderPipeline/StaticRendererClusterComponent.h"
+#include "OD/RenderPipeline/DecalRendererComponent.h"
 #include "OD/Animation/Animator.h"
 #include "TextRendererComponent.h"
 #include "MeshRendererComponent.h"
@@ -42,6 +43,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<SkinnedBoneSocket>("SkinnedBoneSocket", "Renderer");
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<DecalRendererComponent>("DecalRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<StaticRendererClusterComponent>("StaticRendererClusterComponent", "Renderer");
@@ -492,6 +494,8 @@ CameraRenderer::CameraRenderer(){
        20,21,22,22,23,20        // -Z
     };
     cubeMesh->Submit();
+
+    blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
 }
 
 CameraRenderer::~CameraRenderer(){
@@ -527,6 +531,7 @@ void CameraRenderer::RunRenderDataLoop(){
 
     opaqueDrawTarget.Clean();
     blendDrawTarget.Clean();
+    decalDrawTarget.Clean();
     entityIdDrawTarget.Clean();
 
     entityIdDrawSettings.enableIntancing = true;
@@ -545,6 +550,12 @@ void CameraRenderer::RunRenderDataLoop(){
     blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
+
+    decalDrawSettings.enableIntancing = true;
+    decalDrawSettings.renderQueueRange = RenderQueueRange::All;
+    decalDrawSettings.sortType = SortType::None;
+    decalDrawSettings.decalTarget = true;
+    decalDrawTarget.sortType = RendererList::SortType::None;
 
     #ifdef UseExperimentalRunComputeRenderList
 
@@ -599,6 +610,7 @@ void CameraRenderer::AddRenderData(RenderData& data){
 
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
+    context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
     context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
 }
 
@@ -737,12 +749,59 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         context->DrawRenderersBuffer(opaqueDrawTarget, true, true);
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        
+
         //context->EndDeferredPass();
         #if 0
         context->EndDeferredPassAndCopyToForwardPass();
         #else
         context->EndDeferredPass();
+
+        Framebuffer* deferred = context->GetDeferredFramebuffer();
+        /*auto spec = context->GetForwardFramebuffer()->Specification();
+        auto normal = new Framebuffer(spec);
+        auto albedo = new Framebuffer(spec);
+        auto pos = new Framebuffer(spec);
+
+        Graphics::BeginFramebuffer(*pos);
+        Graphics::SetViewport(0, 0, spec.width, spec.height);
+        blitPass->SetTexture("mainTex", deferred, 0);
+        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+
+        Graphics::BeginFramebuffer(*normal);
+        Graphics::SetViewport(0, 0, spec.width, spec.height);
+        blitPass->SetTexture("mainTex", deferred, 1);
+        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+
+        Graphics::BeginFramebuffer(*albedo);
+        Graphics::SetViewport(0, 0, spec.width, spec.height);
+        blitPass->SetTexture("mainTex", deferred, 2);
+        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
+        Graphics::EndFramebuffer();*/
+
+        Graphics::BeginFramebuffer(*deferred, false);
+        
+        /*auto decalView = context->GetScene()->GetRegistry().view<TransformComponent, DecalRendererComponent>();
+        for(auto [entity, trans, decal]: decalView.each()){
+            Framebuffer* deferred = context->GetDeferredFramebuffer();
+            decal.material->SetFloat("decalBlend", 1.0f);
+            decal.material->SetMatrix4("decalWorldToLocal", math::inverse(trans.GlobalModelMatrix()));
+            decal.material->SetTexture("gPosition", deferred, 0);
+            decal.material->SetTexture("gNormal", deferred, 1);
+            decal.material->SetTexture("gAlbedoSpec", deferred, 2);
+            decal.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/decal.png"));
+            Graphics::DrawMesh(*context->decalMesh->meshs[0], *decal.material, trans.GlobalModelMatrix());
+        }*/
+
+        context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
+        
+        Graphics::EndFramebuffer();
+
+        /*delete normal;
+        delete albedo;
+        delete pos;*/
+        
         context->BeginForwardPass();
         Graphics::Clean(0, 0, 0, 1);
 

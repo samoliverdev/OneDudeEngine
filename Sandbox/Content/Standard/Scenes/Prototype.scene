@@ -12,7 +12,9 @@
         9,
         10,
         11,
-        12
+        12,
+        13,
+        14
     ],
     "InfoComponents": [
         {
@@ -118,6 +120,22 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -133,7 +151,9 @@
         9,
         10,
         11,
-        12
+        12,
+        13,
+        14
     ],
     "TransformComponents": [
         {
@@ -162,7 +182,7 @@
             "localPosition": {
                 "v.x": 0.0,
                 "v.y": 0.0,
-                "v.z": 0.0
+                "v.z": 0.15568679571151734
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -425,6 +445,50 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.039281297475099567,
+                "v.y": 0.09233208745718003,
+                "v.z": 0.17732831835746766
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": -0.13500680029392243
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -440,7 +504,9 @@
         9,
         10,
         11,
-        12
+        12,
+        13,
+        14
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -1052,7 +1118,7 @@
             "fieldOfView": 45.0,
             "nearClipPlane": 0.10000000149011612,
             "farClipPlane": 100.0,
-            "renderingPath": 0
+            "renderingPath": 1
         }
     ],
     "CameraComponentEntities": [
@@ -1158,10 +1224,59 @@
                     "Standard/Materials/greybox_teal_grid.material"
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/greybox_blue_grid.material"
+                ]
+            }
         }
     ],
     "ModelRendererComponentEntities": [
-        12
+        12,
+        14
     ],
     "SkinnedModelRendererComponents": [
         {
@@ -1325,6 +1440,22 @@
         7,
         9
     ],
+    "DecalRendererComponents": [
+        {
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Memory"
+            }
+        }
+    ],
+    "DecalRendererComponentEntities": [
+        13
+    ],
     "AnimatorComponents": [
         {
             "enable": true,
@@ -1341,7 +1472,72 @@
     ],
     "VehiclePhysics": [
         {
-            "test": 0
+            "wheels": [
+                {
+                    "isFront": true,
+                    "pos": {
+                        "v.x": 0.8999999761581421,
+                        "v.y": 0.0,
+                        "v.z": 2.0
+                    },
+                    "radius": 0.30000001192092898,
+                    "width": 0.10000000149011612,
+                    "suspensionMinLength": 0.30000001192092898,
+                    "suspensionMaxLength": 0.5,
+                    "suspensionFrequency": 1.5,
+                    "suspensionDamping": 0.5
+                },
+                {
+                    "isFront": true,
+                    "pos": {
+                        "v.x": -0.8999999761581421,
+                        "v.y": 0.0,
+                        "v.z": 2.0
+                    },
+                    "radius": 0.30000001192092898,
+                    "width": 0.10000000149011612,
+                    "suspensionMinLength": 0.30000001192092898,
+                    "suspensionMaxLength": 0.5,
+                    "suspensionFrequency": 1.5,
+                    "suspensionDamping": 0.5
+                },
+                {
+                    "isFront": false,
+                    "pos": {
+                        "v.x": 0.8999999761581421,
+                        "v.y": 0.0,
+                        "v.z": -2.0
+                    },
+                    "radius": 0.30000001192092898,
+                    "width": 0.10000000149011612,
+                    "suspensionMinLength": 0.30000001192092898,
+                    "suspensionMaxLength": 0.5,
+                    "suspensionFrequency": 1.5,
+                    "suspensionDamping": 0.5
+                },
+                {
+                    "isFront": false,
+                    "pos": {
+                        "v.x": -0.8999999761581421,
+                        "v.y": 0.0,
+                        "v.z": -2.0
+                    },
+                    "radius": 0.30000001192092898,
+                    "width": 0.10000000149011612,
+                    "suspensionMinLength": 0.30000001192092898,
+                    "suspensionMaxLength": 0.5,
+                    "suspensionFrequency": 1.5,
+                    "suspensionDamping": 0.5
+                }
+            ],
+            "maxSteeringAngle": 30.0,
+            "maxRollAngle": 60.0,
+            "maxEngineTorque": 500.0,
+            "clutchStrength": 10.0,
+            "antiRollBarsStiffness": 1000.0,
+            "longitudinalImpulseMultplier": 10.0,
+            "lateralImpulseMultplier": 1.0,
+            "handleDebugInputs": false
         }
     ],
     "VehiclePhysicEntities": [

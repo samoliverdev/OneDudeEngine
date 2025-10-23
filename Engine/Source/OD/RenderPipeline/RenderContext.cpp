@@ -4,6 +4,7 @@
 #include "ModelRendererComponent.h"
 #include "SpriteRendererComponent.h"
 #include "StaticRendererClusterComponent.h"
+#include "DecalRendererComponent.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Asset.h"
@@ -104,6 +105,9 @@ RenderContext::RenderContext(Scene* inScene){
 
     coneMesh = CreateRef<Model>();
     Model::CreateFromFile(*coneMesh, "Engine/Models/Cone.obj", {nullptr, 1, false});
+
+    decalMesh = CreateRef<Model>();
+    Model::CreateFromFile(*decalMesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
 
     pipelineDataBuffer = UniformBuffer::Create();
     shadowDataBuffer = UniformBuffer::Create();
@@ -1506,9 +1510,49 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         onReciveRenderData(data);
     }
     }
+
+    {
+    OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::Decal");
+    auto decalView = scene->GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
+        entt::exclude<HideInEditor, SelfDisable, SkipDraw>
+    );
+    for(auto [entity, decal, trans, info]: decalView.each()){
+        RenderData data;
+        data.distance = math::distance2(cam.viewPos, trans.Position());
+        data.targetMaterial = decal.material.get();
+        data.customShadowPass = nullptr;
+        data.targetMesh = decalMesh->meshs[0].get();
+        
+        if(decal.useCustomOffsetAndSize == false){
+            data.targetMatrix = trans.GlobalModelMatrix();
+            data.aabb = transform_aabb_optimized_abs_center_extents(
+                AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
+            );
+        } else {
+            Transform offsetTrans;
+            offsetTrans.Position(decal.offset);
+            offsetTrans.Scale(decal.size);
+            data.targetMatrix = trans.GlobalModelMatrix() * offsetTrans.GetModelMatrix();
+            /*data.aabb = transform_aabb_optimized_abs_center_extents(
+                AABB(offsetTrans.Position(), offsetTrans.Scale().x/2, offsetTrans.Scale().y/2, offsetTrans.Scale().z/2), trans.GlobalModelMatrix()
+            );*/
+            data.aabb = transform_aabb_optimized_abs_center_extents(
+                AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
+            );
+        }
+
+        data.isDecal = true;
+        data.renderShadow = false;
+
+        onReciveRenderData(data);
+    }
+    }
 }
 
 void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, RendererList& target){
+    if(data.isDecal && settings.decalTarget == false) return;
+    if(settings.decalTarget && data.isDecal == false) return;
+
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
@@ -1594,7 +1638,7 @@ void RenderContext::RenderSkyboxLater(){
     //Graphics::SetDepthMask(true);
 }
 
-void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred){
+void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred, bool isDecal){
     OD_PROFILE_SCOPE("RenderContext::DrawRenderersBuffer");
 
     //if(sort) 
@@ -1612,6 +1656,15 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
         } else {
             material.EnableKeyword("Forward");
         }
+
+        if(isDecal){
+            Framebuffer* deferred = deferredOutColor;
+            //decal.material->SetMatrix4("decalWorldToLocal", math::inverse(trans.GlobalModelMatrix()));
+            material.SetTexture("gPosition", deferred, 0);
+            material.SetTexture("gNormal", deferred, 1);
+            material.SetTexture("gAlbedoSpec", deferred, 2);
+        }
+
     };
     commandBuffer.Submit();
     //commandBuffer.onUpdateMaterial = nullptr;
@@ -1773,7 +1826,7 @@ void RenderContext::DrawGizmos(){
 void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, Vector4(0, 0, 0, 1), layer);
+    Graphics::BeginFramebuffer(*shadowMap, true, Vector4(0, 0, 0, 1), layer);
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
     //Framebuffer::Unbind();
@@ -1784,7 +1837,7 @@ void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
     Assert(shadowMap != nullptr);
 
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, Vector4(0, 0, 0, 1), layer);
+    Graphics::BeginFramebuffer(*shadowMap, true, Vector4(0, 0, 0, 1), layer);
     Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
     Graphics::Clean(1, 1, 1, 1);
 }

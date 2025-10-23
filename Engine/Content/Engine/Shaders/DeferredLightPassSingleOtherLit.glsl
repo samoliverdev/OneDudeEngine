@@ -2,6 +2,7 @@
     Name MainPass
     Blend ONE ONE
     DepthMask False
+    DepthTest ALWAYS
     CullFace FRONT
 #pragma EndPassDef
 

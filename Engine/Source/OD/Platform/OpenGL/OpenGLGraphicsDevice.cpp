@@ -2208,7 +2208,7 @@ bool IsDepthTypeFormat(FramebufferTextureFormat format){
     return false;
 }
 
-void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip){
+void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){
     Assert(frambuffer.glData.renderId > 0);
     glBindFramebuffer(GL_FRAMEBUFFER, frambuffer.glData.renderId);
     glCheckError();
@@ -2229,7 +2229,7 @@ void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 cle
     glCheckError();
     //glViewport(0, 0, frambuffer.specification.width, frambuffer.specification.height);
 
-    Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+    if(clean) Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 }
 
 void OpenGLGraphicsDevice::EndFramebuffer(){

@@ -52,7 +52,7 @@ void HeadlessGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, 
 void HeadlessGraphicsDevice::MeshDestroy(Mesh& mesh){}
 bool HeadlessGraphicsDevice::MeshIsValid(Mesh& mesh){ return false; }
 
-void HeadlessGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, Vector4 clearColor, int layer, int mip){}
+void HeadlessGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){}
 void HeadlessGraphicsDevice::EndFramebuffer(){}
 bool HeadlessGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){ return false; }
 void HeadlessGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){}

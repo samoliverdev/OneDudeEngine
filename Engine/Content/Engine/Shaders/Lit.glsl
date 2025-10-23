@@ -107,13 +107,18 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     In(7) vec3 outN;
     
     #ifdef Deferred
-        Out(9) vec4 gAlbedoSpec;
-
+        /*Out(9) vec4 gAlbedoSpec;
         Out(1) vec3 gPosition;
         Out(2) vec3 gNormal;
-        //Out(3) vec4 gAlbedoSpec;
         Out(3) vec3 gEmission;
-        Out(4) vec3 gOther;
+        Out(4) vec3 gOther;*/
+
+        layout(location = 0) out vec3 gPosition;
+        layout(location = 1) out vec3 gNormal;
+        layout(location = 2) out vec4 gAlbedoSpec;
+        layout(location = 3) out vec3 gEmission;
+        layout(location = 4) out vec3 gOther;
+
     #else
         Out(0) vec4 fragColor;
     #endif
