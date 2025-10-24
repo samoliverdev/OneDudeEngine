@@ -831,6 +831,9 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
         SetParent(root, mesh);
     }
 
+    TransformComponent& rootTrans = GetComponent<TransformComponent>(root);
+    rootTrans.UpdateGlobalTransformCacheIfNeeded();
+
     return root;
 }
 
@@ -1158,7 +1161,7 @@ void Scene::_Load(const char* path, entt::entity prefab){
 }
 
 Entity Scene::InstantiatePrefab(const char* path){
-    LogWarning("LoadingPrefab: %s", path);
+    //LogWarning("LoadingPrefab: %s", path);
     //Assert(false);
 
     std::ifstream is(path);
@@ -1201,6 +1204,7 @@ Entity Scene::InstantiatePrefab(const char* path){
     TransformComponent& rootTrans = GetComponent<TransformComponent>(root);
     rootTrans.parent = EntityNull;
     rootTrans.hasParent = false;
+    rootTrans.UpdateGlobalTransformCacheIfNeeded();
 
     return root;
 }

@@ -94,12 +94,18 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
 
     std::vector<Entity> skeletonEntities;
 
+    std::vector<Entity> skeletonEntities2;
+    std::vector<int> skeletonSockets;
+
     static void OnGui(Entity& e, Scene& scene);
     
     //INFO: Bug if is called in editor scene the skeletonEntities are linked with editor scene not the running scene
     void CreateSkeletonEntites(Entity& selfEntity, Scene& scene);
     void UpdateSkeletonEntites(Pose& animatedPose, Scene& scene);
     void UpdateSkeletonEntitesIn(Pose& animatedPose, Scene& scene);
+
+    void CreateSkeletonEntites2(Entity& selfEntity, Scene& scene);
+    void UpdateSkeletonEntites2(Pose& animatedPose, Scene& scene);
 
     inline void UpdatePosePalette(){
         finalPose = model->skeleton.GetRestPose();

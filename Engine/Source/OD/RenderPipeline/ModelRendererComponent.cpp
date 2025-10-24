@@ -202,6 +202,29 @@ void SkinnedModelRendererComponent::UpdateSkeletonEntitesIn(Pose& pose, Scene& s
     }
 }
 
+void SkinnedModelRendererComponent::CreateSkeletonEntites2(Entity& selfEntity, Scene& scene){
+    skeletonEntities2.clear();
+    UpdatePosePalette();
+    Pose& pose = model->skeleton.GetBindPose();
+    TransformComponent& selfTransform = scene.GetComponent<TransformComponent>(selfEntity);
+
+    for(int i = 0; i < skeletonSockets.size(); i++){
+        Entity e = scene.AddEntity(model->skeleton.GetJointName(skeletonSockets[i]));
+        scene.SetParent(selfEntity, e);
+        scene.AddComponent<GizmosDrawComponent>(e);
+        skeletonEntities2.push_back(e);
+    }
+}
+
+void SkinnedModelRendererComponent::UpdateSkeletonEntites2(Pose& animatedPose, Scene& scene){
+    for(int i = 0; i < skeletonEntities2.size(); i++){
+        TransformComponent& trans = scene.GetComponent<TransformComponent>(skeletonEntities2[i]);
+        Transform pose = animatedPose.GetGlobalTransform(skeletonSockets[i]);
+        trans.LocalPosition(pose.Position());
+        trans.LocalRotation(pose.Rotation());
+    }
+}
+
 void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     SkinnedModelRendererComponent& mesh = scene.GetComponent<SkinnedModelRendererComponent>(e);
 

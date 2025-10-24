@@ -1264,14 +1264,19 @@ void StandRenderPipeline::LateUpdate(Scene& scene){
         if(scene.HasComponent<SkinnedModelRendererComponent>(trans.Parent()) == false) continue;
 
         SkinnedModelRendererComponent& skinned = scene.GetComponent<SkinnedModelRendererComponent>(trans.Parent());
-
         if(socket.boneIndex >= skinned.finalPose.Size()) continue;
 
         //trans.SetLocalModelMatrix(skinned.finalPose.GetGlobalMatrix(socket.boneIndex));
 
-        auto t = skinned.finalPose.GetGlobalTransform(socket.boneIndex);
-        trans.LocalPosition(t.Position() + socket.offset);
-        trans.LocalRotation(t.Rotation() * Quaternion(math::radians(socket.OffsetEuler)));
+        if(socket.useRootLocalOffsets){
+            auto t = skinned.finalPose.GetGlobalTransform(socket.boneIndex);
+            trans.LocalPosition(t.TransformPoint(socket.rootLocalPos));
+            trans.LocalRotation(t.Rotation() * socket.rootLocalRot);
+        } else {
+            auto t = skinned.finalPose.GetGlobalTransform(socket.boneIndex);
+            trans.LocalPosition(t.Position() + socket.offset);
+            trans.LocalRotation(t.Rotation() * Quaternion(math::radians(socket.OffsetEuler)));
+        }
 
         /*auto& pose = skinned.finalPose;
         int parent = pose.GetParent(socket.boneIndex);
