@@ -750,6 +750,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawRenderersBuffer(opaqueDrawTarget, true, true);
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+        context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
+
         //context->EndDeferredPass();
         #if 0
         context->EndDeferredPassAndCopyToForwardPass();
@@ -757,46 +759,10 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndDeferredPass();
 
         Framebuffer* deferred = context->GetDeferredFramebuffer();
-        /*auto spec = context->GetForwardFramebuffer()->Specification();
-        auto normal = new Framebuffer(spec);
-        auto albedo = new Framebuffer(spec);
-        auto pos = new Framebuffer(spec);
-
-        Graphics::BeginFramebuffer(*pos);
-        Graphics::SetViewport(0, 0, spec.width, spec.height);
-        blitPass->SetTexture("mainTex", deferred, 0);
-        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
-        Graphics::EndFramebuffer();
-
-        Graphics::BeginFramebuffer(*normal);
-        Graphics::SetViewport(0, 0, spec.width, spec.height);
-        blitPass->SetTexture("mainTex", deferred, 1);
-        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
-        Graphics::EndFramebuffer();
-
-        Graphics::BeginFramebuffer(*albedo);
-        Graphics::SetViewport(0, 0, spec.width, spec.height);
-        blitPass->SetTexture("mainTex", deferred, 2);
-        Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
-        Graphics::EndFramebuffer();*/
-
-        Graphics::BeginFramebuffer(*deferred, false);
-        
-        /*auto decalView = context->GetScene()->GetRegistry().view<TransformComponent, DecalRendererComponent>();
-        for(auto [entity, trans, decal]: decalView.each()){
-            Framebuffer* deferred = context->GetDeferredFramebuffer();
-            decal.material->SetFloat("decalBlend", 1.0f);
-            decal.material->SetMatrix4("decalWorldToLocal", math::inverse(trans.GlobalModelMatrix()));
-            decal.material->SetTexture("gPosition", deferred, 0);
-            decal.material->SetTexture("gNormal", deferred, 1);
-            decal.material->SetTexture("gAlbedoSpec", deferred, 2);
-            decal.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/decal.png"));
-            Graphics::DrawMesh(*context->decalMesh->meshs[0], *decal.material, trans.GlobalModelMatrix());
-        }*/
-
+ 
+        /*Graphics::BeginFramebuffer(*deferred, false);
         context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
-        
-        Graphics::EndFramebuffer();
+        Graphics::EndFramebuffer();*/
 
         /*delete normal;
         delete albedo;
@@ -805,10 +771,14 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->BeginForwardPass();
         Graphics::Clean(0, 0, 0, 1);
 
-        context->DrawDeferredLight(-1);
-        for(int i = 0; i < lighting.curDirLightsCount; i++){
-            context->DrawDeferredLight(i);
+        if(lighting.curDirLightsCount <= 0){
+            context->DrawDeferredLight(-1);
+        } else {
+            for(int i = 0; i < lighting.curDirLightsCount; i++){
+                context->DrawDeferredLight(i, i == 0);
+            }
         }
+        
         for(int i = 0; i < lighting.curOtherLightsCount; i++){
             float radiusRecovered = glm::inversesqrt(glm::max(lighting.otherLightPositions[i].w, 1e-6f));
             context->DrawDeferredLightOther(

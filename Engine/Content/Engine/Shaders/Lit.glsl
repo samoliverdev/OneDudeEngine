@@ -113,11 +113,10 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         Out(3) vec3 gEmission;
         Out(4) vec3 gOther;*/
 
-        layout(location = 0) out vec3 gPosition;
-        layout(location = 1) out vec3 gNormal;
-        layout(location = 2) out vec4 gAlbedoSpec;
-        layout(location = 3) out vec3 gEmission;
-        layout(location = 4) out vec3 gOther;
+        //layout(location = 0) out vec3 gPosition;
+        layout(location = 0) out vec3 gNormal;
+        layout(location = 1) out vec4 gAlbedoSpec;
+        layout(location = 2) out vec3 gOther;
 
     #else
         Out(0) vec4 fragColor;
@@ -192,11 +191,11 @@ Texture2D(0, 9, maskMap, maskMapSampler)
 
         #ifdef Deferred
         
-        gPosition = surface.position;
-        gNormal = surface.normal;
-        gAlbedoSpec.rgb = surface.color.rgb;
+        //gPosition = surface.position;
+        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);// surface.normal;
+        gAlbedoSpec.rgb = surface.color.rgb + GetEmission(uv);
         //gAlbedoSpec.a = surface.smoothness;
-        gEmission.rgb = GetEmission(uv);
+        //gEmission.rgb = GetEmission(uv);
         gOther.r = surface.smoothness;
         gOther.g = surface.metallic;
         gOther.b = surface.occlusion;

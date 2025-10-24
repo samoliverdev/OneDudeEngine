@@ -21,8 +21,9 @@ EndUniform()
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 9, gEmission, gEmissionSampler)
+//Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
+Texture2D(0, 10, gDepth, gDepthSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     void main() {
@@ -46,11 +47,13 @@ Texture2D(0, 10, gOther, gOtherSampler)
     void main(){
         vec2 screenUV = gl_FragCoord.xy / vec2(screenWidth, screenHeight);
 
+        vec3 FragPos = reconstructWorldPos(screenUV, texture(gDepth, screenUV).r, invProjection, invView);
+
         // retrieve data from G-buffer
-        vec3 FragPos = texture(gPosition, screenUV).rgb;
-        vec3 Normal = texture(gNormal, screenUV).rgb;
+        //vec3 FragPos = texture(gPosition, screenUV).rgb;
+        vec3 Normal =  unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
         vec3 Albedo = texture(gAlbedoSpec, screenUV).rgb;
-        vec3 Emission = texture(gEmission, screenUV).rgb;
+        vec3 Emission = vec3(0, 0, 0);// texture(gEmission, screenUV).rgb;
         float Specular = texture(gOther, screenUV).r;
         float Metallic = texture(gOther, screenUV).g;
         float AO = texture(gOther, screenUV).b;

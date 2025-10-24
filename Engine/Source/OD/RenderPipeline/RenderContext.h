@@ -165,7 +165,7 @@ public:
     void EndDeferredPass();
 
     void DeferredCopyToForwardPass();
-    void DrawDeferredLight(int index = -1);
+    void DrawDeferredLight(int index = -1, bool combinedIndirect = false);
     void DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone);
 
     void EndDeferredPassAndCopyToForwardPass();

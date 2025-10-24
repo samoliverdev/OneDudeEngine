@@ -3,7 +3,7 @@
     Blend ONE ONE
     DepthMask False
     DepthTest ALWAYS
-    MultiCompile _ INDIRECT DIRECTIONAL OTHER
+    MultiCompile _ INDIRECTPLUSDIRECTIONAL  INDIRECT DIRECTIONAL OTHER
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -11,6 +11,8 @@
 BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;
     Uniform mat4 view;
+    Uniform mat4 invProjection;
+    Uniform mat4 invView;
 EndUniform()
 
 #include Engine/ShaderLibrary/UniformsDef.glsl
@@ -24,8 +26,9 @@ EndUniform()
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 9, gEmission, gEmissionSampler)
+//Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
+Texture2D(0, 10, gDepth, gDepthSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     In(0) vec3 vPos;
@@ -59,11 +62,23 @@ Texture2D(0, 10, gOther, gOtherSampler)
     #include Engine/ShaderLibrary/Lighting.glsl
 
     void main(){
+        float depth = texture(gDepth, texCoord).r;
+
+        // ⚡ Skip sky pixels — nothing rendered there
+        if(depth >= 1.0) discard;
+
+
+        vec3 FragPos = reconstructWorldPos(texCoord, depth, invProjection, invView);
+
+        //FragColor = vec4(FragPos.xyz, 1);
+        //FragColor = vec4(texture(gPosition, texCoord).rgb, 1);
+        //return; 
+
         // retrieve data from G-buffer
-        vec3 FragPos = texture(gPosition, texCoord).rgb;
-        vec3 Normal = texture(gNormal, texCoord).rgb;
+        //vec3 FragPos = texture(gPosition, texCoord).rgb;
+        vec3 Normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
         vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;
-        vec3 Emission = texture(gEmission, texCoord).rgb;
+        vec3 Emission = vec3(0, 0, 0);// texture(gEmission, texCoord).rgb;
         float Specular = texture(gOther, texCoord).r;
         float Metallic = texture(gOther, texCoord).g;
         float AO = texture(gOther, texCoord).b;
@@ -84,6 +99,16 @@ Texture2D(0, 10, gOther, gOtherSampler)
 
         FragColor = vec4(1,1,1, 1);
 
+        #ifdef INDIRECTPLUSDIRECTIONAL
+            vec3 color = IndirectBRDF(surface, brdf, gi.diffuse, gi.specular);
+
+            ShadowData shadowData = GetShadowData(surface);
+            Light light = GetDirectionalLight(lightIndex, surface, shadowData);
+		    color += GetLighting(surface, brdf, light);
+            
+            FragColor = vec4(color, surface.alpha);
+        #endif
+
         #if defined(INDIRECT)
 	        vec3 color = IndirectBRDF(surface, brdf, gi.diffuse, gi.specular);
             FragColor = vec4(color, surface.alpha);
@@ -99,7 +124,7 @@ Texture2D(0, 10, gOther, gOtherSampler)
         #if defined(OTHER)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetOtherLight(lightIndex, surface, shadowData);
-		    vec3 color = GetLighting(surface, brdf, light);
+		    vec3 color = Albedo;// GetLighting(surface, brdf, light);
             FragColor = vec4(color, surface.alpha);
         #endif
     }

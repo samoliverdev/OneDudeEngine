@@ -7,6 +7,8 @@
 BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;
     Uniform mat4 view;
+    Uniform mat4 invProjection;
+    Uniform mat4 invView;
 EndUniform()
 
 #include Engine/ShaderLibrary/UniformsDef.glsl
@@ -19,8 +21,9 @@ EndUniform()
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 9, gEmission, gEmissionSampler)
+//Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
+Texture2D(0, 10, gDepth, gDepthSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     /*layout(location = 0) in vec3 _pos;
@@ -69,11 +72,13 @@ Texture2D(0, 10, gOther, gOtherSampler)
     #include Engine/ShaderLibrary/PBR.glsl
 
     void main(){
+        vec3 FragPos = reconstructWorldPos(texCoord, texture(gDepth, texCoord).r, invProjection, invView);
+
         // retrieve data from G-buffer
-        vec3 FragPos = texture(gPosition, texCoord).rgb;
-        vec3 Normal = texture(gNormal, texCoord).rgb;
+        //vec3 FragPos = texture(gPosition, texCoord).rgb;
+        vec3 Normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
         vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;
-        vec3 Emission = texture(gEmission, texCoord).rgb;
+        vec3 Emission = vec3(0, 0, 0);// texture(gEmission, texCoord).rgb;
         float Specular = texture(gOther, texCoord).r;
         float Metallic = texture(gOther, texCoord).g;
         float AO = texture(gOther, texCoord).b;

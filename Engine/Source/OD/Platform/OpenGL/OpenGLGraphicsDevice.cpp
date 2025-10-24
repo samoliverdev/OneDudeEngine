@@ -440,8 +440,10 @@ void OpenGLGraphicsDevice::SetCamera(Camera& inCamera){
     struct CameraData{
         Matrix4 projection;
         Matrix4 view;
+        Matrix4 invProjection;
+        Matrix4 inView;
     };
-    CameraData data = {camera.projection, camera.view};
+    CameraData data = {camera.projection, camera.view, math::inverse(camera.projection), math::inverse(camera.view)};
 
     glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
     glCheckError();
@@ -1093,6 +1095,9 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
         } else {
             SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
             SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
+
+            //SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "invProjection", math::inverse(camera.projection)); //mat.currentShader->SetMatrix4("projection", camera.projection);
+            //SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "invView", math::inverse(camera.view)); //mat.currentShader->SetMatrix4("view", camera.view);
         }
         /*unsigned int index2 = glGetUniformBlockIndex(mat.currentShader->glData.id, "Main");  
         if(index2 != GL_INVALID_INDEX){

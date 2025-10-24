@@ -64,13 +64,16 @@ void SSAOPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     aoPass->SetFloat("intensity", intensity);
     aoPass->SetFloat("radius", radius);
     aoPass->SetFloat("bias", bias);
-    aoPass->SetVector2("noiseScale", {Application::ScreenWidth() / 4.0f, Application::ScreenHeight() / 4.0f});
+    aoPass->SetVector2("noiseScale", 
+        //{Application::ScreenWidth() / 4.0f, Application::ScreenHeight() / 4.0f}
+        {context->GetCamera().width / 2.0f, context->GetCamera().height / 2.0f}
+    );
 
-    aoPass->SetTexture("gPosition", deferred, 0);
-    aoPass->SetTexture("gNormal", deferred, 1);
-    aoPass->SetTexture("gAlbedoSpec", deferred, 2);
-    aoPass->SetTexture("gEmission", deferred, 3);
-    aoPass->SetTexture("gOther", deferred, 4);
+    //aoPass->SetTexture("gPosition", deferred, 0);
+    aoPass->SetTexture("gNormal", deferred, 0);
+    aoPass->SetTexture("gAlbedoSpec", deferred, 1);
+    //aoPass->SetTexture("gEmission", deferred, 3);
+    //aoPass->SetTexture("gOther", deferred, 4);
     aoPass->SetTexture("gDepth", deferred, -1);
 
     Graphics::BeginFramebuffer(*dst);

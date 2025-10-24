@@ -5,6 +5,21 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Common.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec3 viewPos;
+    Uniform int lightIndex;
+    Uniform float screenWidth; 
+    Uniform float screenHeight;
+EndUniform()
+
+BeginUniform(2, 0, CamDraw)
+    Uniform mat4 projection;
+    Uniform mat4 view;
+    Uniform mat4 invProjection;
+    Uniform mat4 invView;
+EndUniform()
 
 Texture2D(0, 4, texNoise, texNoiseSampler)
 Texture2D(0, 5, mainTex, mainTexSampler)
@@ -35,8 +50,11 @@ Texture2D(0, 12, gDepth, gDepthSampler)
     out vec4 fragColor;
 
     uniform vec4 samples[64]; // Sample kernel
-    uniform mat4 projection;
+
+    /*uniform mat4 projection;
     uniform mat4 view;
+    uniform mat4 invProjection;
+    uniform mat4 invView;*/
 
     uniform float intensity = 0.5;
     uniform float radius = 0.5;
@@ -50,11 +68,18 @@ Texture2D(0, 12, gDepth, gDepthSampler)
     }
 
     void main(){
-        vec3 fragPos = texture(gPosition, texCoord).rgb;
-        vec3 normal = texture(gNormal, texCoord).rgb;
         float depth = texture(gDepth, texCoord).r;
+        //if(depth >= 1.0) discard;
+
+        vec3 fragPos = reconstructWorldPos(texCoord, texture(gDepth, texCoord).r, invProjection, invView); //texture(gPosition, texCoord).rgb;
+        vec3 normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
+        
+        fragColor = vec4(normal, 1);
+        //return;
 
         vec3 randomVec = normalize(texture(texNoise, texCoord * noiseScale).xyz);
+        fragColor = vec4(randomVec, 1);
+        //return;
 
         /*vec2 noiseSeed = gl_FragCoord.xy / screenSize;
         randomVec = normalize(vec3(
@@ -86,7 +111,8 @@ Texture2D(0, 12, gDepth, gDepthSampler)
             offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
             
             // get sample depth
-            float sampleDepth = (view * vec4(texture(gPosition, offset.xy).xyz, 1)).z; //texture(gPosition, offset.xy).z; // get depth value of kernel sample
+            //float sampleDepth = (view * vec4(texture(gPosition, offset.xy).xyz, 1)).z; //texture(gPosition, offset.xy).z; // get depth value of kernel sample
+            float sampleDepth = (view * vec4(reconstructWorldPos(offset.xy, texture(gDepth, offset.xy).r, invProjection, invView), 1)).z;
             
             // range check & accumulate
             float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
