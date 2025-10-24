@@ -132,12 +132,14 @@ public:
 class SizeOverLifetimeModule: public IParticleUpdateModule{
 public:
     bool enable = false;
-    float maxSize = 1;
+    float minSizeScale = 0;
+    float maxSizeScale = 1;
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
-        ArchiveDumpNVP(ar, maxSize);
+        ArchiveDumpNVP(ar, minSizeScale);
+        ArchiveDumpNVP(ar, maxSizeScale);
     }
 
     void OnGui() override;

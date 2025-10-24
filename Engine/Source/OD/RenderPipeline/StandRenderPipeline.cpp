@@ -796,8 +796,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //context->BeginForwardPass();
 
         //context->RenderSkyboxLater();
-        context->DrawRenderersBuffer(blendDrawTarget, true);
         context->RenderSkyboxLater();
+        context->DrawRenderersBuffer(blendDrawTarget, true);
         context->DrawGizmos(); 
         context->EndForwardPass();
     }

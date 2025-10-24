@@ -117,13 +117,14 @@ void UpdaterModule::OnParticleUpdate(ParticleData& particle, ParticleRunningData
 void SizeOverLifetimeModule::OnGui(){
     if(ImGui::CollapsingHeader("SizeOverLifeTime")){
         ImGui::Checkbox("enable", &enable);
-        ImGui::DragFloat("maxSize", &maxSize);
+        ImGui::DragFloat("minSizeScale", &minSizeScale);
+        ImGui::DragFloat("maxSizeScale", &maxSizeScale);
     }
 }
 
 void SizeOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningData& runningData){
     if(enable == false) return;
-    p.size = math::mix(p.startSize, Vector3(maxSize), runningData.lifetime);
+    p.size = p.startSize * math::mix(minSizeScale, maxSizeScale, runningData.lifetime);
 }
 
 void ColorOverLifetimeModule::OnGui(){
@@ -324,7 +325,9 @@ void ParticleEmiter::SpawnNewParticle(){
     p.startSize = p.size;
     p.startLife = p.life;
     if(simulationSpace == SimulationSpace::WorldSpace){
-        p.pos += currentGlobalTrans.Position();
+        //p.pos += currentGlobalTrans.Position();
+        p.pos = currentGlobalTrans.TransformPoint(p.pos); 
+        p.vel = currentGlobalTrans.TransformDirection(p.vel); 
     }
 }
 
