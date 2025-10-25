@@ -13,10 +13,10 @@ void SceneManagerModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<EntityHandle>();
     LuaBindsDB::Get().RegisterLuaBind<Scene>();
     
-    SceneManager::Get().RegisterTagComponent<SelfDisable>("SelfDisable");
-    SceneManager::Get().RegisterTagComponent<SkipDraw>("SkipDraw");
-    SceneManager::Get().RegisterTagComponent<DontSave>("DontSave");
-    SceneManager::Get().RegisterTagComponent<HideInEditor>("HideInEditor");
+    SceneManager::Get().RegisterComponent<SelfDisable>("SelfDisable");
+    SceneManager::Get().RegisterComponent<SkipDraw>("SkipDraw");
+    SceneManager::Get().RegisterComponent<DontSave>("DontSave");
+    SceneManager::Get().RegisterComponent<HideInEditor>("HideInEditor");
 
     AssetTypesDB::Get().RegisterAssetType<Prefab>(".prefab", 
         [](const std::string& path){ return AssetManager::Get().LoadAsset<Prefab>(path); }

@@ -580,7 +580,19 @@ private:
     class VehiclePhysicData* data = nullptr;
 };
 
-using OnCollisionCallback = void(*)(Scene&, Entity, Entity, Vector3);
+struct OD_API Collision{
+    Entity e1;
+    Entity e2;
+
+    Vector3 relativeVelocity;
+    Vector3 normal;
+    float penetrationDepth;
+
+    Vector3 relativeContactPointOn1;
+    Vector3 relativeContactPointOn2;
+};
+
+using OnCollisionCallback = void(*)(Scene&, Collision&);
 //using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
 struct OD_API PhysicsSystem: public System{

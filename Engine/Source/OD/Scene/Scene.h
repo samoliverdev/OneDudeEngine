@@ -81,21 +81,14 @@ struct OD_API GlobalSceneData{
 
 OD_API GlobalSceneData& GetGlobalSceneData();
 
-struct OD_API SelfDisable{
-    template <class Archive> void serialize(Archive & ar){}
-};
+//Fix DLL Problem
+#define EmptyComponentBody char _dummy = 0; \
+    template <class Archive> void serialize(Archive & ar){} 
 
-struct OD_API SkipDraw{
-    template <class Archive> void serialize(Archive & ar){}
-};
-
-struct OD_API DontSave{
-    template <class Archive> void serialize(Archive & ar){}
-};
-
-struct OD_API HideInEditor{
-    template <class Archive> void serialize(Archive & ar){}
-};
+struct OD_API SelfDisable{ EmptyComponentBody };
+struct OD_API SkipDraw{ EmptyComponentBody };
+struct OD_API DontSave{ EmptyComponentBody };
+struct OD_API HideInEditor{ EmptyComponentBody };
 
 #define ExperimentalTransformOptimzation
 

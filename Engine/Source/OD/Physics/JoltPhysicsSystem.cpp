@@ -502,17 +502,31 @@ public:
 
 		lock_guard lock(mutex);
 
+		/*const Vec3 contactPoint = inManifold.GetWorldSpaceContactPointOn1(0); // or average of points if you prefer
+		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
+		Vec3 v2 = inBody2.GetLinearVelocity() + inBody2.GetAngularVelocity().Cross(contactPoint - inBody2.GetCenterOfMassPosition());*/
+
+		Collision collision;
+		collision.e1 = static_cast<Entity>(inBody1.GetUserData());
+		collision.e2 = static_cast<Entity>(inBody2.GetUserData());
+		collision.normal = FromJolt(inManifold.mWorldSpaceNormal);
+		collision.penetrationDepth = inManifold.mPenetrationDepth;
+		//collision.relativeVelocity = FromJolt(v2 - v1);
+		collision.relativeVelocity = FromJolt(inBody2.GetLinearVelocity() - inBody1.GetLinearVelocity());
+		collision.relativeContactPointOn1 = FromJolt(inManifold.GetWorldSpaceContactPointOn1(0));
+		collision.relativeContactPointOn2 = FromJolt(inManifold.GetWorldSpaceContactPointOn2(0)); 
+
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
 			//for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
 			if(inBody1.IsSensor()){
-				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, collision);
 			}
 			if(inBody2.IsSensor()){
-				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody2.GetUserData()), static_cast<Entity>(inBody1.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+				for(auto& i: physic->onTriggerEnterCallbacks)i(*scene, collision);
 			}
 		} else {
 			for(auto& i: physic->onCollisionEnterCallbacks) 
-				i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
+				i(*scene, collision);
 		}
 	}
 
@@ -533,16 +547,20 @@ public:
 		const Body& inBody1 = lock1.GetBody();
 		const Body& inBody2 = lock2.GetBody();
 
+		Collision collision;
+		collision.e1 = static_cast<Entity>(inBody1.GetUserData());
+		collision.e2 = static_cast<Entity>(inBody2.GetUserData());
+
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
 			//for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
 			if(inBody1.IsSensor()){
-				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
+				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, collision);
 			}
 			if(inBody2.IsSensor()){
-				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody2.GetUserData()), static_cast<Entity>(inBody1.GetUserData()), Vector3Zero);
+				for(auto& i: physic->onTriggerExitCallbacks) i(*scene, collision);
 			}
 		} else {
-			for(auto& i: physic->onCollisionExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
+			for(auto& i: physic->onCollisionExitCallbacks) i(*scene, collision);
 		}
 	}
 };

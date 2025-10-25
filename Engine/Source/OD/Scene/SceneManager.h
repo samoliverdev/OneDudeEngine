@@ -23,6 +23,7 @@ public:
     template<typename T> void RegisterCoreComponent(const std::string& name, const std::string& groupName = "");
     template<typename T> void UnRegisterCoreComponent(const std::string& name);
 
+    //Empty/Tag Components can cause crach on dll usage, for now recomend use "EmptyComponentBody" with normal RegisterComponent
     template<typename T> void RegisterTagComponent(const std::string& name, const std::string& groupName = "");
 
     //template<typename T> void RegisterCoreComponentSimple(const char* name);
