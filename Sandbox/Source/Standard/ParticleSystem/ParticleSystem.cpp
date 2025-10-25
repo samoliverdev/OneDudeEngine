@@ -5,6 +5,7 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Core/ImGui.h>
 #include <OD/Graphics/Geometry.h>
+#include <OD/Physics/PhysicsSystem.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/random.hpp> // glm::linearRand, glm::sphericalRand
 #include <random>
@@ -110,6 +111,7 @@ void UpdaterModule::OnGui(){
 }
 
 void UpdaterModule::OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData){
+    particle.lastPos = particle.pos;
     particle.vel += Vector3(0.0f,-9.81f, 0.0f) * (runningData.delta * gravityModifier);
     particle.pos += particle.vel * runningData.delta;
 }
@@ -180,6 +182,48 @@ void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningD
     p.color = Color(color[0], color[1], color[2], color[3]);
 }
 
+void CollisionPhysicModule::OnGui(){
+    if(ImGui::CollapsingHeader("CollisionPhysicModule")){
+        ImGui::Checkbox("enable", &enable);
+        ImGui::DragFloat("rayOffset", &rayOffset);
+        ImGui::DragInt("maxCollisionsCount", &maxCollisionsCount);
+    }
+}
+
+void CollisionPhysicModule::OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData){
+    if(enable == false) return;
+    if(scene->Running() == false) return;
+
+    if(maxCollisionsCount > 0){
+        if(particle.handleCollision == false && *curParticleCollisionCount < maxCollisionsCount){
+            particle.handleCollision = true;
+            *curParticleCollisionCount += 1;
+        }
+    } else {
+        if(particle.handleCollision == false){
+            particle.handleCollision = true;
+            *curParticleCollisionCount += 1;
+        }
+    }
+    if(particle.handleCollision == false) return;
+
+    Vector3 pos = particle.lastPos;
+    Vector3 dir = (particle.pos - particle.lastPos);
+    dir += math::normalize(dir) * rayOffset;
+
+    if(isGlobalSpace == false){
+        pos = globalTrans.TransformPoint(pos); //Vector3(worldModel * Vector4(pos, 1));
+        dir = globalTrans.TransformDirection(dir); //Vector3(worldModel * Vector4(dir, 0));
+    }
+
+    RayResult result;
+    if(physicsSystem->Raycast(pos, dir, result)){
+        particle.life = 0;
+        LogInfo("OnCollision");
+        onCollision.Invoke();
+    }
+}
+
 void RendererModule::OnGui(){
     if(ImGui::CollapsingHeader("RendererModule")){
         ImGui::DrawAsset<Material>("material", material);
@@ -214,6 +258,7 @@ void ParticleEmiter::OnGui(){
     updaterModule.OnGui();
     sizeOverLifetimeModule.OnGui();
     colorOverLifetimeModule.OnGui();
+    collisionPhysicModule.OnGui();
     
     rendererModule.OnGui();
 
@@ -246,6 +291,7 @@ void ParticleEmiter::BindModules(){
     updateModules.push_back(&updaterModule);
     updateModules.push_back(&sizeOverLifetimeModule);
     updateModules.push_back(&colorOverLifetimeModule);
+    updateModules.push_back(&collisionPhysicModule);
 }
 
 void ParticleEmiter::Reset(){
@@ -331,10 +377,16 @@ void ParticleEmiter::SpawnNewParticle(){
     }
 }
 
-void ParticleEmiter::Update(TransformComponent& trans, Vector3 camPos){
+void ParticleEmiter::Update(Scene& scene, TransformComponent& trans, Vector3 camPos){
     if(state != State::Running) return;
 
     currentGlobalTrans = trans.ToTransform();
+    collisionPhysicModule.curParticleCollisionCount = &curParticleCollisionCount;
+    collisionPhysicModule.isGlobalSpace = simulationSpace == SimulationSpace::WorldSpace;
+    collisionPhysicModule.globalTrans = currentGlobalTrans; 
+    collisionPhysicModule.worldModel = currentGlobalTrans.GetModelMatrix(); 
+    collisionPhysicModule.scene = &scene;
+    collisionPhysicModule.physicsSystem = scene.GetSystem<PhysicsSystem>();
 
     if(spawnModules.size() == 0) BindModules();
     if(particles.size() != maxParticles) SetMaxParticle(maxParticles);
@@ -364,13 +416,24 @@ void ParticleEmiter::Update(TransformComponent& trans, Vector3 camPos){
         runningData.lifetime = math::clamp<float>(1.0f - (p.life / p.startLife), 0, 1);
 
         if(p.life > 0.0f){
-            p.life -= delta;
+            /*p.life -= delta;
 
             if(p.life > 0.0f){
                 for(auto* i: updateModules) i->OnParticleUpdate(p, runningData);
                 p.cameradistance = math::length2(p.pos - camPos);
                 particlesCount++;
             }else{
+                p.cameradistance = -1.0f;
+                FreeParticle(i);
+            }*/
+
+            for(auto* i: updateModules) i->OnParticleUpdate(p, runningData);
+            p.life -= delta;
+            if(p.life > 0.0f){
+                p.cameradistance = math::length2(p.pos - camPos);
+                particlesCount++;
+            }else{
+                if(p.handleCollision) curParticleCollisionCount -= 1;
                 p.cameradistance = -1.0f;
                 FreeParticle(i);
             }
@@ -517,8 +580,10 @@ void ParticleSystem::OnGui(){
 
     auto state = ParticleEmiter::State::Stop;
     int particlesCount = 0;
+    int particlesCollisionCount = 0;
     for(int i = 0; i < emiters.size(); i++){
         particlesCount += emiters[i].particlesCount;
+        particlesCollisionCount += emiters[i].curParticleCollisionCount;
         if(emiters[i].state == ParticleEmiter::State::Running) state = ParticleEmiter::State::Running;
     }
 
@@ -526,6 +591,7 @@ void ParticleSystem::OnGui(){
     ImGui::TextColored(color, "State %s", std::string(magic_enum::enum_name(state)).c_str());
     ImGui::Text("RunTime: %f", runningTime);
     ImGui::Text("ParticleCounts: %d", particlesCount);
+    ImGui::Text("ParticleCollisionCounts: %d", particlesCollisionCount);
 
     if(state == ParticleEmiter::State::Running && ImGui::Button("Stop")){
         Stop();
@@ -542,8 +608,8 @@ void ParticleSystem::Stop(){
     for(auto& i: emiters) i.Stop();
 }
 
-void ParticleSystem::Update(TransformComponent& trans, Vector3 camPos){
-    for(auto& i: emiters) i.Update(trans, camPos);
+void ParticleSystem::Update(Scene& scene, TransformComponent& trans, Vector3 camPos){
+    for(auto& i: emiters) i.Update(scene, trans, camPos);
 }
 
 ParticleRendererFeature::ParticleRendererFeature(){
@@ -608,7 +674,7 @@ void ParticleManageSystem::Update(Scene& scene){
         /*if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
             particle.particleSystem.Play();
         }*/
-        particle.particleSystem.Update(trans, camPos);
+        particle.particleSystem.Update(scene, trans, camPos);
     }
 }
 

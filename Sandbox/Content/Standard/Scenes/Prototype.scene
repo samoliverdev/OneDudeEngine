@@ -14,7 +14,8 @@
         11,
         12,
         13,
-        14
+        14,
+        15
     ],
     "InfoComponents": [
         {
@@ -136,6 +137,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "ParticleCollision",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -153,7 +162,8 @@
         11,
         12,
         13,
-        14
+        14,
+        15
     ],
     "TransformComponents": [
         {
@@ -426,9 +436,9 @@
         },
         {
             "localPosition": {
-                "v.x": 0.0,
+                "v.x": 6.275395393371582,
                 "v.y": 0.5939934253692627,
-                "v.z": -8.086600303649903
+                "v.z": 0.15095625817775727
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -489,6 +499,28 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 5.360479831695557,
+                "v.y": 2.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -506,7 +538,8 @@
         11,
         12,
         13,
-        14
+        14,
+        15
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -674,7 +707,8 @@
                         },
                         "sizeOverLifetimeModule": {
                             "enable": true,
-                            "maxSize": 0.0
+                            "minSizeScale": 0.0,
+                            "maxSizeScale": 1.0
                         },
                         "colorOverLifetimeModule": {
                             "enable": true,
@@ -803,6 +837,10 @@
                                 }
                             }
                         },
+                        "collisionPhysicModule": {
+                            "enable": false,
+                            "rayOffset": 0.10000000149011612
+                        },
                         "rendererModule": {
                             "matRef": {
                                 "isNull": false,
@@ -866,7 +904,8 @@
                         },
                         "sizeOverLifetimeModule": {
                             "enable": true,
-                            "maxSize": 0.0
+                            "minSizeScale": 0.0,
+                            "maxSizeScale": 1.0
                         },
                         "colorOverLifetimeModule": {
                             "enable": true,
@@ -995,6 +1034,10 @@
                                 }
                             }
                         },
+                        "collisionPhysicModule": {
+                            "enable": false,
+                            "rayOffset": 0.10000000149011612
+                        },
                         "rendererModule": {
                             "matRef": {
                                 "isNull": false,
@@ -1008,10 +1051,214 @@
                     }
                 ]
             }
+        },
+        {
+            "particleSystem": {
+                "emiters": [
+                    {
+                        "isLooping": true,
+                        "duration": 5.0,
+                        "maxParticles": 500,
+                        "delay": 0.0,
+                        "simulationSpace": 0,
+                        "spawnModule": {
+                            "singleBustEmiterCount": 0,
+                            "overTimeEmiterRate": 2000.0
+                        },
+                        "initialLifeModule": {
+                            "minLife": 1.0,
+                            "maxLife": 2.0
+                        },
+                        "initialVelocityModule": {
+                            "minVelocity": {
+                                "v.x": -1.0,
+                                "v.y": 1.0,
+                                "v.z": -1.0
+                            },
+                            "maxVelocity": {
+                                "v.x": 1.0,
+                                "v.y": 2.0,
+                                "v.z": 1.0
+                            }
+                        },
+                        "initialSizeModule": {
+                            "minSize": {
+                                "v.x": 0.20000000298023225,
+                                "v.y": 1.0,
+                                "v.z": 1.0
+                            },
+                            "maxSize": {
+                                "v.x": 0.4000000059604645,
+                                "v.y": 1.0,
+                                "v.z": 1.0
+                            },
+                            "uniforSize": true
+                        },
+                        "initialColorModule": {
+                            "color": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            }
+                        },
+                        "updaterModule": {
+                            "gravityModifier": 1.0
+                        },
+                        "sizeOverLifetimeModule": {
+                            "enable": false,
+                            "minSizeScale": 0.0,
+                            "maxSizeScale": 1.0
+                        },
+                        "colorOverLifetimeModule": {
+                            "enable": false,
+                            "colorA": {
+                                "r": 0.0,
+                                "g": 0.0,
+                                "b": 0.0,
+                                "a": 1.0
+                            },
+                            "colorB": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            },
+                            "gradient": {
+                                "ColorCount": 0,
+                                "AlphaCount": 0,
+                                "Colors": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value1": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    }
+                                },
+                                "Alphas": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value1": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    }
+                                }
+                            }
+                        },
+                        "collisionPhysicModule": {
+                            "enable": true,
+                            "rayOffset": 0.10000000149011612
+                        },
+                        "rendererModule": {
+                            "matRef": {
+                                "isNull": false,
+                                "path": "Memory"
+                            },
+                            "modelRef": {
+                                "isNull": false,
+                                "path": "Engine/Models/Cube.obj"
+                            }
+                        }
+                    }
+                ]
+            }
         }
     ],
     "Standard/ParticleComponentEntities": [
-        11
+        11,
+        15
     ],
     "EnvironmentComponents": [
         {
@@ -1442,6 +1689,11 @@
     ],
     "DecalRendererComponents": [
         {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
             "size": {
                 "v.x": 1.0,
                 "v.y": 1.0,
@@ -1450,7 +1702,8 @@
             "materialRef": {
                 "isNull": false,
                 "path": "Memory"
-            }
+            },
+            "useCustomOffsetAndSize": false
         }
     ],
     "DecalRendererComponentEntities": [

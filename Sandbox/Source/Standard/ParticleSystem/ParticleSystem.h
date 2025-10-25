@@ -1,14 +1,16 @@
 #pragma once
 #include <OD/Scene/Scene.h>
 #include <OD/Core/Color.h>
+#include <OD/Core/Action.h>
 #include <OD/Graphics/InstancingBuffer.h>
 #include <OD/RenderPipeline/RenderContext.h>
 #include <OD/Serialization/ImGuiArchive.h>
-#include "Standard/Ultis/ImGradientHDR.h"
 #include <OD/Graphics/Model.h>
+#include "Standard/Ultis/ImGradientHDR.h"
 
 namespace OD{
     class Material;
+    class PhysicsSystem;
 }
 
 using namespace OD;
@@ -167,6 +169,30 @@ public:
     void OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData) override;
 };
 
+class CollisionPhysicModule: public IParticleUpdateModule{
+public:
+    bool enable = false;
+    float rayOffset = 0.1f;
+    int maxCollisionsCount = -1;
+
+    Action<void()> onCollision;
+    bool isGlobalSpace = false;
+    Matrix4 worldModel;
+    Transform globalTrans;
+    Scene* scene;
+    int* curParticleCollisionCount;
+    PhysicsSystem* physicsSystem;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, enable);
+        ArchiveDumpNVP(ar, rayOffset);
+    }
+
+    void OnGui() override;
+    void OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData) override;
+};
+
 struct RendererModule{
     Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
     Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
@@ -185,6 +211,7 @@ struct RendererModule{
 
 struct ParticleData{
     Vector3 pos = Vector3Zero;
+    Vector3 lastPos = Vector3Zero;
     Vector3 vel = Vector3Zero;
     Vector3 startSize = Vector3One;
     Vector3 size = Vector3One;
@@ -192,6 +219,7 @@ struct ParticleData{
     float startLife = 0;
     float life = 0;
     float cameradistance;
+    bool handleCollision = false;
 
     inline bool IsDead(){ return life <= 0; }
 
@@ -226,7 +254,7 @@ public:
     int GetNewParticle();
     void FreeParticle(int index);
 
-    void Update(TransformComponent& trans, Vector3 camPos);
+    void Update(Scene& scene, TransformComponent& trans, Vector3 camPos);
     void Sort();
     void SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root = Matrix4Identity, const Camera* cam = nullptr);
 
@@ -250,6 +278,7 @@ public:
         ArchiveDumpNVP(ar, updaterModule);
         ArchiveDumpNVP(ar, sizeOverLifetimeModule);
         ArchiveDumpNVP(ar, colorOverLifetimeModule);
+        ArchiveDumpNVP(ar, collisionPhysicModule);
 
         ArchiveDumpNVP(ar, rendererModule);
     }
@@ -272,6 +301,7 @@ public:
         COPY_OR_MOVE(updaterModule);
         COPY_OR_MOVE(sizeOverLifetimeModule);
         COPY_OR_MOVE(colorOverLifetimeModule);
+        COPY_OR_MOVE(collisionPhysicModule);
 
         COPY_OR_MOVE(rendererModule);
     });
@@ -296,6 +326,7 @@ private:
     std::vector<int> freeParticles;
     int currentParticleIndex = 0;
     int particlesCount = 0;
+    int curParticleCollisionCount = 0;
     bool hasStarted = false;
 
     SpawnModule spawnModule;
@@ -307,6 +338,7 @@ private:
     UpdaterModule updaterModule;
     SizeOverLifetimeModule sizeOverLifetimeModule;
     ColorOverLifetimeModule colorOverLifetimeModule;
+    CollisionPhysicModule collisionPhysicModule;
 
     RendererModule rendererModule;
 
@@ -328,7 +360,7 @@ public:
     void Play();
     void Stop();
 
-    void Update(TransformComponent& trans, Vector3 camPos);
+    void Update(Scene& scene, TransformComponent& trans, Vector3 camPos);
 
     template <class Archive>
     void serialize(Archive& ar){
