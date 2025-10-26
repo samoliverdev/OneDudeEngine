@@ -37,7 +37,10 @@
     uniform int lightsCount;
     uniform vec3 viewPos;
 
-    void main() {
+    void main(){
+        //FragColor = vec4(texture(gAlbedoSpec, texCoord).aaa, 1.0);
+        //return;
+
         // retrieve data from G-buffer
         vec3 FragPos = texture(gPosition, texCoord).rgb;
         vec3 Normal = texture(gNormal, texCoord).rgb;

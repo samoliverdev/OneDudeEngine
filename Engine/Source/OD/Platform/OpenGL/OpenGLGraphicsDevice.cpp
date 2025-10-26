@@ -1120,14 +1120,17 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
 }  
 
 void OpenGLGraphicsDevice::SendPerDrawData(PerDrawData& perDrawData){
-    if(perDrawData.int_0.size() > 0){
-        SubShaderSetInt(*lastShader, "perDrawInt_0", perDrawData.int_0[0]);
-    }
-    if(perDrawData.vector4_0.size() > 0){
-        SubShaderSetVector4(*lastShader, "perDrawVector4_0", perDrawData.vector4_0[0]);
-    }
-}
+    /*if(perDrawData.int_0_Count > 0) SubShaderSetInt(*lastShader, "perDrawInt_0", perDrawData.int_0[0]);
+    if(perDrawData.int_0_Count > 1) SubShaderSetInt(*lastShader, "perDrawInt_1", perDrawData.int_0[1]);
+    if(perDrawData.vector4_0_Count > 0) SubShaderSetVector4(*lastShader, "perDrawVector4_0", perDrawData.vector4_0[0]);
+    if(perDrawData.vector4_0_Count > 1) SubShaderSetVector4(*lastShader, "perDrawVector4_1", perDrawData.vector4_0[1]);*/
 
+    if(perDrawData.Int_0_HasMask(0)) SubShaderSetInt(*lastShader, "perDrawInt_0", perDrawData.int_0[0]);
+    if(perDrawData.Int_0_HasMask(1)) SubShaderSetInt(*lastShader, "perDrawInt_1", perDrawData.int_0[1]);
+
+    if(perDrawData.Vector4_0_HasMask(0)) SubShaderSetVector4(*lastShader, "perDrawVector4_0", perDrawData.vector4_0[0]);
+    if(perDrawData.Vector4_0_HasMask(1)) SubShaderSetVector4(*lastShader, "perDrawVector4_1", perDrawData.vector4_0[1]);
+}
 
 bool OpenGLGraphicsDevice::InstancingBufferCreate(InstancingBuffer& buffer){
     glGenBuffers(1, &buffer.glData.id);

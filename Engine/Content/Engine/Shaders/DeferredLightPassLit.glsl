@@ -75,6 +75,9 @@ Texture2D(0, 10, gDepth, gDepthSampler)
     #include Engine/ShaderLibrary/Fog.glsl
 
     void main(){
+        FragColor = vec4(texture(gAlbedoSpec, texCoord).aaa, 1.0);
+        return;
+
         vec3 FragPos = reconstructWorldPos(texCoord, texture(gDepth, texCoord).r, invProjection, invView);
 
         // retrieve data from G-buffer

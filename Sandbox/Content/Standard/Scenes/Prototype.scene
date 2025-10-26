@@ -69,7 +69,7 @@
         {
             "name": "Player",
             "tag": "",
-            "layer": 1,
+            "layer": 4,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -93,7 +93,7 @@
         {
             "name": "Ragdoll",
             "tag": "",
-            "layer": 1,
+            "layer": 64,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -480,8 +480,8 @@
         },
         {
             "localPosition": {
-                "v.x": 0.0,
-                "v.y": 0.0,
+                "v.x": -0.410220205783844,
+                "v.y": -0.44230401515960696,
                 "v.z": -0.13500680029392243
             },
             "localRotation": {
@@ -1703,6 +1703,7 @@
                 "isNull": false,
                 "path": "Memory"
             },
+            "customLayerIndex": 0,
             "useCustomOffsetAndSize": false
         }
     ],

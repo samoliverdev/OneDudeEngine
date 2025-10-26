@@ -835,8 +835,9 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
                     data.posePalette = nullptr;
                     data.aabb = renderTarget.aabb;
 
-                    data.perDrawData.int_0.resize(1);
+                    data.perDrawData.Int_0_SetMask(0, true);
                     data.perDrawData.int_0[0] = 0;
+                    //data.perDrawData.int_0[1] = 0;
 
                     #if EnableExperimentalPerDrawCustomData
                     data.useCustomData = c.useCustomData;
@@ -855,7 +856,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
                     data.targetMatrix = Matrix4Identity;
                     data.posePalette = nullptr;
                     data.aabb = subchunk.renderBounds;
-                    data.perDrawData.int_0.clear();
+                    //data.perDrawData.int_0_Count = 0;// .clear();
                     data.instancingBuffer = cmd.buffer.get();
                     
                     onReciveRenderData(data);
@@ -888,8 +889,10 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.int_0.resize(1);
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
+        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -937,8 +940,10 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            data.perDrawData.int_0.resize(1);
+            data.perDrawData.Int_0_SetMask(0, true);
+            data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
+            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
             onReciveRenderData(data);
             _i += 1;
@@ -975,8 +980,10 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.int_0.resize(1);
-        data.perDrawData.int_0[0] = (int)e;
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
         onReciveRenderData(data);
     }
@@ -1021,8 +1028,10 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            data.perDrawData.int_0.resize(1);
-            data.perDrawData.int_0[0] = (int)e;
+            data.perDrawData.Int_0_SetMask(0, true);
+            data.perDrawData.Int_0_SetMask(1, true);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
             if(c.updateWhenOffscreen) data.awalsDraw = true;
             
             onReciveRenderData(data);
@@ -1128,8 +1137,9 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                     }
                     */
 
-                    data.perDrawData.int_0.resize(1);//TODO: Optimaze this, this can be make heap allocation
-                    data.perDrawData.int_0[0] = 0;
+                    //data.perDrawData.int_0_Count = 0;//.resize(1);//TODO: Optimaze this, this can be make heap allocation
+                    //data.perDrawData.int_0[0] = 0;
+                    //data.perDrawData.int_0[1] = 0;//GetLayerIndex(info.layer);
 
                     #if EnableExperimentalPerDrawCustomData
                     data.useCustomData = c.useCustomData;
@@ -1148,7 +1158,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                     data.targetMatrix = Matrix4Identity;
                     data.posePalette = nullptr;
                     data.aabb = subchunk.renderBounds;
-                    data.perDrawData.int_0.clear();
+                    //data.perDrawData.int_0_Count = 0; //.clear();
                     data.instancingBuffer = cmd.buffer.get();
                     
                     onReciveRenderData(data);
@@ -1188,12 +1198,15 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = s.staticDatas[0].aabb;
         
-        data.perDrawData.int_0.resize(1);
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
+        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
         if(c.useCustomData){
-            data.perDrawData.vector4_0.resize(1);
+            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
+            
         }
 
         #if EnableExperimentalPerDrawCustomData
@@ -1247,11 +1260,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            data.perDrawData.int_0.resize(1);
+            data.perDrawData.Int_0_SetMask(0, true);
+            data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
+            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
             if(c.useCustomData){
-                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
@@ -1292,11 +1307,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.int_0.resize(1);
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
+        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
         if(c.useCustomData){
-            data.perDrawData.vector4_0.resize(1);
+            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
         }
 
@@ -1346,11 +1363,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            data.perDrawData.int_0.resize(1);
+            data.perDrawData.Int_0_SetMask(0, true);
+            data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
+            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
             if(c.useCustomData){
-                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
@@ -1394,11 +1413,13 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.int_0.resize(1);
-        data.perDrawData.int_0[0] = (int)e;
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
+        data.perDrawData.int_0[0] = ((int)e) + 1;
+        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
         if(c.useCustomData){
-            data.perDrawData.vector4_0.resize(1);
+            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
         }
 
@@ -1464,15 +1485,16 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
             }
 
-            //TODO: Refactory perDrawData to avoid memory alocation
-            //data.perDrawData.int_0.resize(1);
-            //data.perDrawData.int_0[0] = (int)e;
+            data.perDrawData.Int_0_SetMask(0, true);
+            data.perDrawData.Int_0_SetMask(1, true);
+            data.perDrawData.int_0[0] = ((int)e) + 1;
+            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
 
             data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
 
             //TODO: Refactory perDrawData to avoid memory alocation
             if(c.useCustomData){
-                data.perDrawData.vector4_0.resize(1);
+                data.perDrawData.Vector4_0_SetMask(0, true);
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
@@ -1532,6 +1554,11 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.targetMaterial = decal.material.get();
         data.customShadowPass = nullptr;
         data.targetMesh = decalMesh->meshs[0].get();
+
+        data.perDrawData.Int_0_SetMask(0, true);
+        data.perDrawData.Int_0_SetMask(1, true);
+        data.perDrawData.int_0[0] = ((int)entity) + 1;
+        data.perDrawData.int_0[1] = decal.customLayerIndex;
         
         if(decal.useCustomOffsetAndSize == false){
             data.targetMatrix = trans.GlobalModelMatrix();

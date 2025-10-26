@@ -48,6 +48,8 @@ Texture2D(0, 7, normalMap, normalMapSampler)
 Texture2D(0, 8, emissionMap, emissionMapSampler)
 Texture2D(0, 9, maskMap, maskMapSampler)
 
+uniform int perDrawInt_1;
+
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec3 outPos;
     Out(1) vec3 outNormal;
@@ -105,7 +107,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     In(5) vec3 outT;
     In(6) vec3 outB;
     In(7) vec3 outN;
-    
+
     #ifdef Deferred
         /*Out(9) vec4 gAlbedoSpec;
         Out(1) vec3 gPosition;
@@ -194,7 +196,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         //gPosition = surface.position;
         gNormal = vec3(pack_normal_octahedron(surface.normal), 0);// surface.normal;
         gAlbedoSpec.rgb = surface.color.rgb + GetEmission(uv);
-        //gAlbedoSpec.a = surface.smoothness;
+        gAlbedoSpec.a = perDrawInt_1; //surface.smoothness;
         //gEmission.rgb = GetEmission(uv);
         gOther.r = surface.smoothness;
         gOther.g = surface.metallic;

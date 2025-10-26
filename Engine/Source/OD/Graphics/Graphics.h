@@ -33,8 +33,39 @@ struct GraphicsStats{
 enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
 
 struct OD_API PerDrawData {
-    std::vector<int> int_0;
-    std::vector<Vector4> vector4_0;
+    //std::vector<int> int_0;
+    //std::vector<Vector4> vector4_0;
+
+    std::array<Vector4, 2> vector4_0;
+    //int int_0_Count = 0;
+
+    std::array<int, 2> int_0;
+    //int vector4_0_Count = 0;
+
+    unsigned char vector4_0_Mask = 0;
+    unsigned char int_0_Mask = 0;
+
+    inline bool Vector4_0_HasMask(int index){ return (vector4_0_Mask & (1 << index)) != 0; }
+    inline void Vector4_0_SetMask(int index, bool enable) noexcept {
+        /*if(enable)
+            vector4_0_Mask |= (1 << index);   // set bit
+        else
+            vector4_0_Mask &= ~(1 << index);  // clear bit*/
+
+        const unsigned char bit = 1 << index;
+        vector4_0_Mask = (vector4_0_Mask & ~bit) | (-static_cast<unsigned char>(enable) & bit);
+    }
+    
+    inline bool Int_0_HasMask(int index){ return (int_0_Mask & (1 << index)) != 0; }
+    inline void Int_0_SetMask(int index, bool enable) noexcept {
+        /*if(enable)
+            int_0_Mask |= (1 << index);   // set bit
+        else
+            int_0_Mask &= ~(1 << index);  // clear bit*/
+
+        const unsigned char bit = 1 << index;
+        int_0_Mask = (int_0_Mask & ~bit) | (-static_cast<unsigned char>(enable) & bit);
+    }
 };
 
 class OD_API Graphics {

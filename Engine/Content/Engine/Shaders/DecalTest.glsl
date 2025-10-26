@@ -31,6 +31,8 @@ Texture2D(0, 3, gNormal, gNormalSampler)
 Texture2D(0, 4, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
 
+uniform int perDrawInt_1;
+
 #if defined(VERTEX) && defined(MainPass)
     //flat out mat4 outDecalWorldToLocal;
 
@@ -86,11 +88,12 @@ Texture2D(0, 10, gDepth, gDepthSampler)
             vDecalInvRow3
         );
 
-
         vec2 screenUV = gl_FragCoord.xy / vec2(textureSize(gAlbedoSpec, 0));
         vec3 worldPos = reconstructWorldPos(screenUV, texture(gDepth, screenUV).r, invProjection, invView);// texture(gPosition, screenUV).rgb;
         vec3 normal   = unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
         vec4 albedo   = texture(gAlbedoSpec, screenUV);
+
+        if(perDrawInt_1 >= 0 && perDrawInt_1 != albedo.a) discard;
 
         // Transform world position into decal local space
         vec3 localPos = (outDecalWorldToLocal * vec4(worldPos, 1.0)).xyz;

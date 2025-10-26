@@ -62,8 +62,11 @@ Texture2D(0, 10, gDepth, gDepthSampler)
     #include Engine/ShaderLibrary/Lighting.glsl
 
     void main(){
-        float depth = texture(gDepth, texCoord).r;
+        //FragColor = vec4(texture(gAlbedoSpec, texCoord).aaa / 10, 1.0);
+        //return;
 
+        float depth = texture(gDepth, texCoord).r;
+        
         // ⚡ Skip sky pixels — nothing rendered there
         if(depth >= 1.0) discard;
 
