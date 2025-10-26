@@ -20,6 +20,7 @@ Transform::Transform(const Matrix4& m){
     #endif
 }
 
+/*
 Matrix4 Transform::GetModelMatrix(){
     #ifdef TransformLessDataOptimzation
     return Mathf::TRS(position, rotation, scale);
@@ -32,6 +33,7 @@ Matrix4 Transform::GetModelMatrix(){
 
     //return Mathf::TRS(localPosition, localRotation, localScale);
 }
+*/
 
 Vector3 Transform::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = GetModelMatrix();

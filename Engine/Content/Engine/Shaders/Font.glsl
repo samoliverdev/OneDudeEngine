@@ -52,13 +52,14 @@ Texture2D(0, 1, mainTex, mainSampler)
         fragColor = vec4(color.rgb, 1.0) * sampled;
         fragColor = vec4(1, 1, 1, 1) * sampled;*/
 
-        vec4 bgColor = vec4(1, 0, 0, 1);
-        vec4 fgColor = vec4(1, 0, 0, 1);
+        vec4 bgColor = vec4(0, 0, 0, 1);
+        vec4 fgColor = vec4(1, 1, 1, 1);
         vec3 msd = texture(mainTex, texCoord).rgb;
         float sd = median(msd.r, msd.g, msd.b);
         float screenPxDistance = screenPxRange()*(sd - 0.5);
         float alpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
         fragColor = vec4(fgColor.rgb * alpha, alpha);
+        //fragColor *= color;
     }
     #endif
 #endif

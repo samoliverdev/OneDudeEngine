@@ -61,6 +61,8 @@ public:
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
+    static void Scissor(unsigned int x, unsigned int y, int w, int h);
+
     static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
     static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count);

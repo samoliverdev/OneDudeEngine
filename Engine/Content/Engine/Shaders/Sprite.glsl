@@ -39,7 +39,9 @@ Texture2D(0, 1, mainTex, mainSampler)
     void main(){
         vec4 texColor = texture(mainTex, texCoord);
         //if(texColor.a < 0.1) discard;
-        fragColor = texColor * vec4(color.rgb, 1.0);
+        //fragColor = texColor * vec4(color.rgb, 1.0);
+        
+        fragColor = texColor * color.rgba;
     }
     #endif
 #endif

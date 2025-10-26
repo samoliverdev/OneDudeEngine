@@ -28,7 +28,20 @@ public:
         position(pos), rotation(rot), scale(inscale), isDirt(true){}
     #endif
     
-    Matrix4 GetModelMatrix();
+    //Matrix4 GetModelMatrix();
+
+    inline Matrix4 Transform::GetModelMatrix(){
+        #ifdef TransformLessDataOptimzation
+        return Mathf::TRS(position, rotation, scale);
+        #else
+        if(isDirt == false) return modelMatrix;
+        modelMatrix = Mathf::TRS(position, rotation, scale);
+        isDirt = false;
+        return modelMatrix;
+        #endif
+
+        //return Mathf::TRS(localPosition, localRotation, localScale);
+    }
 
     inline Vector3 Forward() const { return rotation * Vector3Forward; }
     inline Vector3 Back() const { return rotation * Vector3Back; }

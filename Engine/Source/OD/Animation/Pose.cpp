@@ -145,7 +145,7 @@ void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out){
         int parent = parents[i];
 
         if (parent >= 0) {
-            out[i] = out[parent] * local;
+            out[i] = math::simdMul(out[parent], local); //out[parent] * local; //
         } else {
             out[i] = local;
         }
@@ -167,7 +167,7 @@ void Pose::GetMatrixPalette(AlignedVector<Matrix4>& out, const AlignedVector<Mat
 #else 
     GetMatrixPalette(out);
     for(int i = 0; i < out.size(); ++i){
-        out[i] = out[i] * invBindPoses[i];
+        out[i] = math::simdMul(out[i], invBindPoses[i]); //out[i] * invBindPoses[i]; //
     }
 #endif
 }

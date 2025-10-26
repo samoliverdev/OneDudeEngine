@@ -10,7 +10,7 @@
 #define GLM_FORCE_CXX11
 //#define GLM_FORCE_INTRINSICS
 #define GLM_FORCE_SSE2
-#define GLM_FORCE_ALIGNED
+//#define GLM_FORCE_ALIGNED
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
 #define GLM_FORCE_QUAT_DATA_XYZW
@@ -27,6 +27,9 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/hash.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+
+#include <glm/simd/matrix.h>
+#include <glm/simd/common.h>
 
 
 #include <memory>
@@ -154,6 +157,18 @@ inline quat fromTo(const vec3& from, const vec3& to){
     vec3 half = normalize(f + t);
     vec3 axis = cross(f, half);
     return quat(axis.x, axis.y, axis.z, dot(f, half));
+}
+
+inline mat4 simdMul(const glm::mat4& a, const glm::mat4& b){
+    glm::mat4 r;
+    glm_mat4_mul(&a[0].data, &b[0].data, &r[0].data);
+    return r;
+}
+
+inline vec4 simdMul(const glm::mat4& m, const glm::vec4& v){
+    vec4 r;
+    r.data = glm_mat4_mul_vec4(&m[0].data, v.data);
+    return r;
 }
 
 }

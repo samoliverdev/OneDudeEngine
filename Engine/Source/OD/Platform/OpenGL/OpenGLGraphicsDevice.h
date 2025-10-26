@@ -31,6 +31,8 @@ public:
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) override;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) override;
 
+    virtual void Scissor(unsigned int x, unsigned int y, int w, int h) override;
+
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) override;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) override;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) override;

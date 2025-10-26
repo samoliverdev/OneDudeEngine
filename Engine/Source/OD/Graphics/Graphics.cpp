@@ -241,6 +241,10 @@ void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
     graphicsDevice->GetViewport(x, y, w, h); 
 }
 
+void Graphics::Scissor(unsigned int x, unsigned int y, int w, int h){
+    graphicsDevice->Scissor(x, y, w, h); 
+}
+
 void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
     graphicsDevice->DrawMesh(mesh, mat, modelMatrix, perDrawData); 
 }
