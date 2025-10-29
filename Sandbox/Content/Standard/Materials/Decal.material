@@ -1,8 +1,21 @@
 {
     "Material": {
-        "enableInstancing": false,
+        "enableInstancing": true,
         "shaderPath": "Engine/Shaders/DecalTest.glsl",
         "maps": [
+            {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
             {
                 "key": "gAlbedoSpec",
                 "value": {
@@ -26,19 +39,6 @@
                 }
             },
             {
-                "key": "color",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 1.0,
-                        "v.w": 1.0
-                    },
-                    "vec.vectorIsColor": true
-                }
-            },
-            {
                 "key": "sizeOffset",
                 "value": {
                     "type": 5,
@@ -52,6 +52,13 @@
                 }
             },
             {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine\\Textures\\decal.png"
+                }
+            },
+            {
                 "key": "emissionColor",
                 "value": {
                     "type": 5,
@@ -62,13 +69,6 @@
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
-                }
-            },
-            {
-                "key": "mainTex",
-                "value": {
-                    "type": 7,
-                    "texPath": "Engine\\Textures\\decal.png"
                 }
             },
             {

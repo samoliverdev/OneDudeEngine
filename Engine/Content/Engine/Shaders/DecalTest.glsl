@@ -15,8 +15,8 @@
 
     CullFace NONE
     DepthMask False
-    DepthTest ALWAYS
-    Blend ONE ZERO 
+    DepthTest LESS_EQUAL
+    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
 #pragma EndPassDef
 
 #define Deferred
@@ -53,6 +53,8 @@ uniform int perDrawInt_1;
     flat out vec4 vDecalInvRow2;
     flat out vec4 vDecalInvRow3;
 
+    out vec3 decalNormalWS;
+
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
         OutPosition = projection * view * targetModelMatrix * GetLocalPos();
@@ -72,6 +74,8 @@ uniform int perDrawInt_1;
         vDecalInvRow1 = invModel[1];
         vDecalInvRow2 = invModel[2];
         vDecalInvRow3 = invModel[3];
+
+        decalNormalWS = normalize((targetModelMatrix * vec4(0,0,1,0)).xyz);
     }
 #endif
 
@@ -85,6 +89,8 @@ uniform int perDrawInt_1;
     flat in vec4 vDecalInvRow1;
     flat in vec4 vDecalInvRow2;
     flat in vec4 vDecalInvRow3;
+
+    in vec3 decalNormalWS;
 
     //Out(2) vec4 gAlbedo;
     layout(location = 1) out vec4 gAlbedo;
@@ -102,17 +108,13 @@ uniform int perDrawInt_1;
 
         vec2 screenUV = gl_FragCoord.xy / vec2(textureSize(gAlbedoSpec, 0));
         vec3 worldPos = reconstructWorldPos(screenUV, texture(gDepth, screenUV).r, invProjection, invView);// texture(gPosition, screenUV).rgb;
-        vec3 normal   = unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
-        vec4 albedo = texture(gAlbedoSpec, screenUV);
-        vec4 other = texture(gOther, screenUV);
- 
-        if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
-
+        
         // Transform world position into decal local space
         vec3 localPos = (outDecalWorldToLocal * vec4(worldPos, 1.0)).xyz;
+        if(any(greaterThan(abs(localPos), vec3(0.5)))) discard;// Check if inside decal box
 
-        // Check if inside decal box
-        if(any(greaterThan(abs(localPos), vec3(0.5)))) discard;
+        vec4 other = texture(gOther, screenUV);
+        if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
 
         // Compute UV inside decal box
         vec2 uv = localPos.xy + 0.5;
@@ -120,8 +122,14 @@ uniform int perDrawInt_1;
         vec4 decalColor = ToLinear(SampleTexture2D(mainTex, mainSampler, uv));
         if(decalColor.a < cutoff) discard;
 
+        decalColor.rgb *= color.rgb;
+
+        vec3 normal = unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
+        vec4 albedo = texture(gAlbedoSpec, screenUV);
+
         // angle fade (optional)
-        vec3 decalNormalWS = normalize((inverse(outDecalWorldToLocal) * vec4(0,0,1,0)).xyz);
+        //vec3 decalNormalWS = normalize((inverse(outDecalWorldToLocal) * vec4(0,0,1,0)).xyz);
+        //vec3 decalNormalWS = normalize((outInvDecalWorldToLocal * vec4(0,0,1,0)).xyz);
         //float angleFade = clamp(dot(decalNormalWS, normal), 0, 1.0);
 
         float dotVal = clamp(dot(decalNormalWS, normal), normalFade, 1.0);
@@ -136,6 +144,6 @@ uniform int perDrawInt_1;
         vec3 finalAlbedo = mix(albedo.rgb, decalColor.rgb, decalBlend * decalColor.a * fade);
 
         gAlbedo.rgb = finalAlbedo;// * albedo.a;
-        //gAlbedo.a = 1;
+        gAlbedo.a = 1;
     }
 #endif

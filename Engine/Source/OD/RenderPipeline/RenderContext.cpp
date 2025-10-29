@@ -151,9 +151,9 @@ void RenderContext::BeginDrawToScreen(){
         height = overrideFramebuffer->Height();
     }
 
-    if(finalColor->Width() != width){
+    /*if(finalColor->Width() != width){
         LogError("Current: %d Next: %d", finalColor->Width(), width);
-    }
+    }*/
 
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);

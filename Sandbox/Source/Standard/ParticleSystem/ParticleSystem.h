@@ -175,6 +175,7 @@ public:
     bool enable = false;
     float rayOffset = 0.1f;
     int maxCollisionsCount = -1;
+    LayerMask mask; 
 
     Action<void(Entity source, RayResult& result)> onCollision;
     bool isGlobalSpace = false;
@@ -190,6 +191,7 @@ public:
         ArchiveDumpNVP(ar, enable);
         ArchiveDumpNVP(ar, rayOffset);
         ArchiveDumpNVP(ar, maxCollisionsCount);
+        ArchiveDumpNVP(ar, mask);
     }
 
     void OnGui() override;

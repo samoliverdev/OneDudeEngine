@@ -19,7 +19,133 @@
         16,
         17,
         18,
-        19
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145
     ],
     "InfoComponents": [
         {
@@ -137,7 +263,7 @@
         {
             "name": "Cube",
             "tag": "",
-            "layer": 1,
+            "layer": 2,
             "active": false,
             "entityType": 0,
             "prefabPath": ""
@@ -152,6 +278,1014 @@
         },
         {
             "name": "ParticleCollision",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decals",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
             "tag": "",
             "layer": 1,
             "active": false,
@@ -203,7 +1337,133 @@
         16,
         17,
         18,
-        19
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145
     ],
     "TransformComponents": [
         {
@@ -520,8 +1780,8 @@
         },
         {
             "localPosition": {
-                "v.x": -0.410220205783844,
-                "v.y": -0.44230401515960696,
+                "v.x": 5.04254150390625,
+                "v.y": 1.3797481060028077,
                 "v.z": -0.13500680029392243
             },
             "localRotation": {
@@ -532,7 +1792,7 @@
             },
             "localScale": {
                 "v.x": 1.0,
-                "v.y": 1.0,
+                "v.y": 0.5,
                 "v.z": 1.0
             },
             "children": [],
@@ -630,9 +1890,9 @@
         },
         {
             "localPosition": {
-                "v.x": -3.678732395172119,
-                "v.y": 0.09233537316322327,
-                "v.z": 4.664012432098389
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             },
             "localRotation": {
                 "q.x": -0.7071067690849304,
@@ -646,8 +1906,2907 @@
                 "v.z": 1.0
             },
             "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 1.3452777862548829,
+                "v.y": 0.0,
+                "v.z": -4.864216327667236
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                19,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38,
+                39,
+                40,
+                41,
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59,
+                60,
+                61,
+                62,
+                63,
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71,
+                72,
+                73,
+                74,
+                75,
+                76,
+                77,
+                78,
+                79,
+                80,
+                81,
+                82,
+                83,
+                84,
+                85,
+                86,
+                87,
+                88,
+                89,
+                90,
+                91,
+                92,
+                93,
+                94,
+                95,
+                96,
+                97,
+                98,
+                99,
+                100,
+                101,
+                102,
+                103,
+                104,
+                105,
+                106,
+                107,
+                108,
+                109,
+                110,
+                111,
+                112,
+                113,
+                114,
+                115,
+                116,
+                117,
+                118,
+                119,
+                120,
+                121,
+                122,
+                123,
+                124,
+                125,
+                126,
+                127,
+                128,
+                129,
+                130,
+                131,
+                132,
+                133,
+                134,
+                135,
+                136,
+                137,
+                138,
+                139,
+                140,
+                141,
+                142,
+                143,
+                144,
+                145
+            ],
             "parent": 4294967295,
             "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 20,
+            "hasParent": true,
             "isCollection": false
         }
     ],
@@ -671,7 +4830,133 @@
         16,
         17,
         18,
-        19
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -971,7 +5256,11 @@
                         },
                         "collisionPhysicModule": {
                             "enable": false,
-                            "rayOffset": 0.10000000149011612
+                            "rayOffset": 0.10000000149011612,
+                            "maxCollisionsCount": -1,
+                            "mask": {
+                                "mask": 1023
+                            }
                         },
                         "rendererModule": {
                             "matRef": {
@@ -1169,7 +5458,11 @@
                         },
                         "collisionPhysicModule": {
                             "enable": false,
-                            "rayOffset": 0.10000000149011612
+                            "rayOffset": 0.10000000149011612,
+                            "maxCollisionsCount": -1,
+                            "mask": {
+                                "mask": 1023
+                            }
                         },
                         "rendererModule": {
                             "matRef": {
@@ -1373,7 +5666,11 @@
                         },
                         "collisionPhysicModule": {
                             "enable": true,
-                            "rayOffset": 0.10000000149011612
+                            "rayOffset": 0.10000000149011612,
+                            "maxCollisionsCount": -1,
+                            "mask": {
+                                "mask": 1023
+                            }
                         },
                         "rendererModule": {
                             "matRef": {
@@ -1577,7 +5874,11 @@
                         },
                         "collisionPhysicModule": {
                             "enable": false,
-                            "rayOffset": 0.10000000149011612
+                            "rayOffset": 0.10000000149011612,
+                            "maxCollisionsCount": -1,
+                            "mask": {
+                                "mask": 1023
+                            }
                         },
                         "rendererModule": {
                             "matRef": {
@@ -2099,13 +6400,2388 @@
             },
             "customLayerIndex": 0,
             "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
         }
     ],
     "DecalRendererComponentEntities": [
         13,
         17,
         18,
-        19
+        19,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145
     ],
     "AnimatorComponents": [
         {
@@ -2883,6 +9559,35 @@
             "mask": {
                 "mask": 1023
             }
+        },
+        {
+            "type": 2,
+            "interpolate": false,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 0.5,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0
+            },
+            "mass": 1.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            }
         }
     ],
     "RigidbodyComponentEntities": [
@@ -2890,6 +9595,7 @@
         3,
         6,
         10,
-        12
+        12,
+        14
     ]
 }

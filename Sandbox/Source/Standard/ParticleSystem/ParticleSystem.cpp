@@ -186,6 +186,7 @@ void CollisionPhysicModule::OnGui(){
         ImGui::Checkbox("enable", &enable);
         ImGui::DragFloat("rayOffset", &rayOffset);
         ImGui::DragInt("maxCollisionsCount", &maxCollisionsCount);
+        ImGui::DrawLayerMask("mask", mask);
     }
 }
 
@@ -216,9 +217,9 @@ void CollisionPhysicModule::OnParticleUpdate(ParticleData& particle, ParticleRun
     }
 
     RayResult result;
-    if(physicsSystem->Raycast(pos, dir, result)){
+    if(physicsSystem->Raycast(pos, dir, result, mask)){
         particle.life = 0;
-        LogInfo("OnCollision");
+        //LogInfo("OnCollision");
         onCollision.Invoke(source, result);
     }
 }
