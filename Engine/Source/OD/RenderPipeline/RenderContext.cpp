@@ -151,6 +151,10 @@ void RenderContext::BeginDrawToScreen(){
         height = overrideFramebuffer->Height();
     }
 
+    if(finalColor->Width() != width){
+        LogError("Current: %d Next: %d", finalColor->Width(), width);
+    }
+
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
     forwardOutColor->Resize(width, height);
@@ -1700,6 +1704,7 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
             //material.SetTexture("gPosition", deferred, 0);
             material.SetTexture("gNormal", deferred, 0);
             material.SetTexture("gAlbedoSpec", deferred, 1);
+            material.SetTexture("gOther", deferred, 2);
             material.SetTexture("gDepth", deferred, -1);
         }
 

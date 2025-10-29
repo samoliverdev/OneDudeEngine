@@ -1,11 +1,10 @@
 #include "ParticleSystem.h"
 #include "Standard/Ultis/Ultis.h"
 #include <OD/Core/Time.h>
+#include <OD/Graphics/Geometry.h>
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Core/ImGui.h>
-#include <OD/Graphics/Geometry.h>
-#include <OD/Physics/PhysicsSystem.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/random.hpp> // glm::linearRand, glm::sphericalRand
 #include <random>
@@ -220,7 +219,7 @@ void CollisionPhysicModule::OnParticleUpdate(ParticleData& particle, ParticleRun
     if(physicsSystem->Raycast(pos, dir, result)){
         particle.life = 0;
         LogInfo("OnCollision");
-        onCollision.Invoke();
+        onCollision.Invoke(source, result);
     }
 }
 
@@ -228,6 +227,8 @@ void RendererModule::OnGui(){
     if(ImGui::CollapsingHeader("RendererModule")){
         ImGui::DrawAsset<Material>("material", material);
         ImGui::DrawAsset<Model>("model", model);
+
+        ImGui::DrawEnumCombo<RendererModule::Orientation>("Orientation", &orientation);
     }
 }
 
@@ -377,7 +378,7 @@ void ParticleEmiter::SpawnNewParticle(){
     }
 }
 
-void ParticleEmiter::Update(Scene& scene, TransformComponent& trans, Vector3 camPos){
+void ParticleEmiter::Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos){
     if(state != State::Running) return;
 
     currentGlobalTrans = trans.ToTransform();
@@ -386,6 +387,7 @@ void ParticleEmiter::Update(Scene& scene, TransformComponent& trans, Vector3 cam
     collisionPhysicModule.globalTrans = currentGlobalTrans; 
     collisionPhysicModule.worldModel = currentGlobalTrans.GetModelMatrix(); 
     collisionPhysicModule.scene = &scene;
+    collisionPhysicModule.source = e;
     collisionPhysicModule.physicsSystem = scene.GetSystem<PhysicsSystem>();
 
     if(spawnModules.size() == 0) BindModules();
@@ -467,6 +469,51 @@ glm::mat4 MakeBillboard(const glm::vec3& objectPos, const glm::mat4& view, const
     return model;
 }
 
+glm::mat4 MakeBillboardViewPlusVelocity(
+    const glm::vec3& objectPos,
+    const glm::vec3& velocity,
+    const glm::mat4& view)
+{
+    // Extract camera basis vectors from view matrix
+    glm::vec3 camRight   = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    glm::vec3 camUp      = glm::vec3(view[0][1], view[1][1], view[2][1]);
+    glm::vec3 camForward = -glm::vec3(view[0][2], view[1][2], view[2][2]);
+
+    // Convert velocity to camera space (important!)
+    glm::vec3 velCam = glm::vec3(view * glm::vec4(velocity, 0.0f));
+    if (glm::length2(velCam) < 1e-6f)
+        velCam = glm::vec3(0.0f, 1.0f, 0.0f); // fallback
+
+    // Local Y axis → particle velocity direction in camera space
+    glm::vec3 axisY = glm::normalize(velCam);
+
+    // Local Z axis → facing camera
+    glm::vec3 axisZ = glm::vec3(0, 0, 1); // billboard always faces camera
+
+    // Local X axis → cross(Y, Z)
+    glm::vec3 axisX = glm::normalize(glm::cross(axisY, axisZ));
+    axisY = glm::normalize(glm::cross(axisZ, axisX));
+
+    // Build rotation in camera space
+    glm::mat3 rot;
+    rot[0] = axisX;
+    rot[1] = axisY;
+    rot[2] = axisZ;
+
+    // Convert from camera space back to world space
+    glm::mat3 camRot = glm::mat3(camRight, camUp, camForward);
+    glm::mat3 worldRot = camRot * rot;
+
+    // Build final matrix
+    glm::mat4 model(1.0f);
+    model[0] = glm::vec4(worldRot[0], 0.0f);
+    model[1] = glm::vec4(worldRot[1], 0.0f);
+    model[2] = glm::vec4(worldRot[2], 0.0f);
+    model[3] = glm::vec4(objectPos, 1.0f);
+
+    return model;
+}
+
 void SortDrawDataByParticleDistance(std::vector<Matrix4>& drawData,const std::vector<ParticleData>& particles){
     size_t N = drawData.size();
     if(N != particles.size()) return; // sanity check
@@ -496,9 +543,28 @@ void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
         Transform t(particles[_i].pos, QuaternionIdentity, particles[_i].size);
 
         auto targetModelMatrix = t.GetModelMatrix();
-        /*if(cam != nullptr){
+
+        Assert(cam != nullptr);
+        if(rendererModule.orientation == RendererModule::Orientation::View){
             targetModelMatrix = MakeBillboard(t.Position(), cam->view, cam->projection) * glm::scale(glm::mat4(1.0f), t.Scale());
-        }*/
+        }
+
+        if(rendererModule.orientation == RendererModule::Orientation::Velocity){
+            glm::vec3 dir = math::normalize(particles[_i].vel);  
+            glm::quat q = glm::rotation(glm::vec3(0, 1, 0), dir);
+            targetModelMatrix = Mathf::TRS(t.Position(), q, t.Scale());
+        }
+
+        if(rendererModule.orientation == RendererModule::Orientation::ViewPlusVelocity){
+            glm::mat4 model = MakeBillboardViewPlusVelocity(t.Position(), particles[_i].vel, cam->view);
+            
+            // Apply stretch factor (based on speed)
+            float speed = glm::length(particles[_i].vel);
+            glm::vec3 scale = t.Scale();
+            //scale.y *= (1.0f + speed * stretchAmount); // e.g., stretchAmount = 0.05f
+
+            targetModelMatrix = model * glm::scale(glm::mat4(1.0f), scale);
+        }
         
         if(simulationSpace == SimulationSpace::Local){
             auto m = root * targetModelMatrix;
@@ -600,6 +666,13 @@ void ParticleSystem::OnGui(){
     }
 }
 
+bool ParticleSystem::IsPlaying(){
+    for(auto& i: emiters){
+        if(i.state == ParticleEmiter::State::Running) return true; 
+    }
+    return true;
+}
+
 void ParticleSystem::Play(){
     for(auto& i: emiters) i.Play();
 }
@@ -608,8 +681,8 @@ void ParticleSystem::Stop(){
     for(auto& i: emiters) i.Stop();
 }
 
-void ParticleSystem::Update(Scene& scene, TransformComponent& trans, Vector3 camPos){
-    for(auto& i: emiters) i.Update(scene, trans, camPos);
+void ParticleSystem::Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos){
+    for(auto& i: emiters) i.Update(scene, e, trans, camPos);
 }
 
 ParticleRendererFeature::ParticleRendererFeature(){
@@ -674,7 +747,7 @@ void ParticleManageSystem::Update(Scene& scene){
         /*if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
             particle.particleSystem.Play();
         }*/
-        particle.particleSystem.Update(scene, trans, camPos);
+        particle.particleSystem.Update(scene, entity, trans, camPos);
     }
 }
 

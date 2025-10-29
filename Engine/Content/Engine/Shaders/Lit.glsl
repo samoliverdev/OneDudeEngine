@@ -118,7 +118,7 @@ uniform int perDrawInt_1;
         //layout(location = 0) out vec3 gPosition;
         layout(location = 0) out vec3 gNormal;
         layout(location = 1) out vec4 gAlbedoSpec;
-        layout(location = 2) out vec3 gOther;
+        layout(location = 2) out vec4 gOther;
 
     #else
         Out(0) vec4 fragColor;
@@ -196,11 +196,17 @@ uniform int perDrawInt_1;
         //gPosition = surface.position;
         gNormal = vec3(pack_normal_octahedron(surface.normal), 0);// surface.normal;
         gAlbedoSpec.rgb = surface.color.rgb + GetEmission(uv);
-        gAlbedoSpec.a = perDrawInt_1; //surface.smoothness;
+        //gAlbedoSpec.a = perDrawInt_1; //surface.smoothness;
         //gEmission.rgb = GetEmission(uv);
-        gOther.r = surface.smoothness;
+        gOther = vec4(
+            surface.smoothness,
+            surface.metallic,
+            surface.occlusion,
+            perDrawInt_1
+        );
+        /*gOther.r = surface.smoothness;
         gOther.g = surface.metallic;
-        gOther.b = surface.occlusion;
+        gOther.b = surface.occlusion;*/
         
         #else
 

@@ -1,0 +1,180 @@
+{
+    "Material": {
+        "enableInstancing": false,
+        "shaderPath": "Engine/Shaders/DecalTest.glsl",
+        "maps": [
+            {
+                "key": "gAlbedoSpec",
+                "value": {
+                    "type": 10
+                }
+            },
+            {
+                "key": "metallic",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "emissionMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/Black.jpg"
+                }
+            },
+            {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "sizeOffset",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": false
+                }
+            },
+            {
+                "key": "emissionColor",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine\\Textures\\decal.png"
+                }
+            },
+            {
+                "key": "normalMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/Normal.jpg"
+                }
+            },
+            {
+                "key": "normalStrength",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 10.0
+                }
+            },
+            {
+                "key": "maskMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
+                }
+            },
+            {
+                "key": "occlusion",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "smoothness",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.5,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "cutoff",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.9829999804496765,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "decalBlend",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "normalFade",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "gNormal",
+                "value": {
+                    "type": 10
+                }
+            },
+            {
+                "key": "gOther",
+                "value": {
+                    "type": 10
+                }
+            },
+            {
+                "key": "gDepth",
+                "value": {
+                    "type": 10
+                }
+            },
+            {
+                "key": "startFade",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.46700000762939455,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "endFade",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.1589999943971634,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            }
+        ]
+    }
+}

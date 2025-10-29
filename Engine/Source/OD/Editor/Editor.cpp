@@ -835,14 +835,14 @@ void Editor::DrawGizmos(){
     Scene& scene = *SceneManager::Get().GetActiveScene();
 
     // Exit if no entities are selected
-    if (selectedEntities.empty()) return;
-    if (gizmoType == Editor::GizmosType::None) return;
+    if(selectedEntities.empty()) return;
+    if(gizmoType == Editor::GizmosType::None) return;
 
     Camera cam = editorCam.cam;
 
-    if (SceneManager::Get().GetActiveScene()->Running()) {
+    if(SceneManager::Get().GetActiveScene()->Running()){
         Entity camE = scene.GetMainCamera();
-        if (scene.IsValid(camE) == false) return;
+        if(scene.IsValid(camE) == false) return;
 
         CameraComponent& cameraComponent = scene.GetComponent<CameraComponent>(camE);
         cam = cameraComponent.GetCamera();

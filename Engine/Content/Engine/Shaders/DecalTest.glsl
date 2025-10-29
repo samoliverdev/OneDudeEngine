@@ -1,7 +1,11 @@
 #pragma BeginProperties
     Color4  color
     Texture2D mainTex White
+    Float cutoff 0.5 0 1
     Float decalBlend 1 0 1
+    Float normalFade 1 0 1
+    Float startFade 0.4 0 1
+    Float endFade 0.15 0 1
 #pragma EndProperties
 
 #pragma BeginPassDef
@@ -12,23 +16,31 @@
     CullFace NONE
     DepthMask False
     DepthTest ALWAYS
-    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+    Blend ONE ZERO 
 #pragma EndPassDef
 
 #define Deferred
+
+//SRC_ALPHA ONE_MINUS_SRC_ALPHA
+//ONE ZERO 
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec4 color;
     Uniform mat4 decalWorldToLocal;
+    Uniform vec4 color;
     Uniform float decalBlend;
+    Uniform float cutoff;
+    Uniform float normalFade;
+    Uniform float startFade;
+    Uniform float endFade;
 EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 //Texture2D(0, 2, gPosition, gPositionSampler)
 Texture2D(0, 3, gNormal, gNormalSampler)
 Texture2D(0, 4, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 4, gOther, gOtherSpecSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
 
 uniform int perDrawInt_1;
@@ -91,9 +103,10 @@ uniform int perDrawInt_1;
         vec2 screenUV = gl_FragCoord.xy / vec2(textureSize(gAlbedoSpec, 0));
         vec3 worldPos = reconstructWorldPos(screenUV, texture(gDepth, screenUV).r, invProjection, invView);// texture(gPosition, screenUV).rgb;
         vec3 normal   = unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
-        vec4 albedo   = texture(gAlbedoSpec, screenUV);
-
-        if(perDrawInt_1 >= 0 && perDrawInt_1 != albedo.a) discard;
+        vec4 albedo = texture(gAlbedoSpec, screenUV);
+        vec4 other = texture(gOther, screenUV);
+ 
+        if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
 
         // Transform world position into decal local space
         vec3 localPos = (outDecalWorldToLocal * vec4(worldPos, 1.0)).xyz;
@@ -105,17 +118,24 @@ uniform int perDrawInt_1;
         vec2 uv = localPos.xy + 0.5;
 
         vec4 decalColor = ToLinear(SampleTexture2D(mainTex, mainSampler, uv));
+        if(decalColor.a < cutoff) discard;
 
         // angle fade (optional)
         vec3 decalNormalWS = normalize((inverse(outDecalWorldToLocal) * vec4(0,0,1,0)).xyz);
-        float angleFade = clamp(dot(decalNormalWS, normal), 0.0, 1.0);
+        //float angleFade = clamp(dot(decalNormalWS, normal), 0, 1.0);
+
+        float dotVal = clamp(dot(decalNormalWS, normal), normalFade, 1.0);
+        //float startFade = 0.4; // where blending begins (surface ~ somewhat oblique)
+        //float endFade   = 0.15; // where blending is zero (very glancing)
+        // smoothstep expects (edge0, edge1, x) where edge0<x<edge1 yields smooth 0->1
+        float angleFade = smoothstep(endFade, startFade, dotVal); // 0..1
 
         // fade near top/bottom
-        float fade = 1;// * angleFade;
+        float fade = 1 * angleFade;
 
         vec3 finalAlbedo = mix(albedo.rgb, decalColor.rgb, decalBlend * decalColor.a * fade);
 
-        gAlbedo.rgb = finalAlbedo;
-        gAlbedo.a = 1;
+        gAlbedo.rgb = finalAlbedo;// * albedo.a;
+        //gAlbedo.a = 1;
     }
 #endif

@@ -15,7 +15,11 @@
         12,
         13,
         14,
-        15
+        15,
+        16,
+        17,
+        18,
+        19
     ],
     "InfoComponents": [
         {
@@ -145,6 +149,38 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "ParticleCollision",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Decal",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -163,7 +199,11 @@
         12,
         13,
         14,
-        15
+        15,
+        16,
+        17,
+        18,
+        19
     ],
     "TransformComponents": [
         {
@@ -458,9 +498,9 @@
         },
         {
             "localPosition": {
-                "v.x": 0.039281297475099567,
-                "v.y": 0.09233208745718003,
-                "v.z": 0.17732831835746766
+                "v.x": 1.1203874349594117,
+                "v.y": 0.09233341366052628,
+                "v.z": 0.38369113206863406
             },
             "localRotation": {
                 "q.x": -0.7071067690849304,
@@ -521,6 +561,94 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 8.352315902709961,
+                "v.y": 2.0004351139068605,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.7071067690849304,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.675052285194397,
+                "v.y": 0.09233320504426956,
+                "v.z": -0.0793568342924118
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": -0.13040317595005036,
+                "v.y": 0.09233485907316208,
+                "v.z": 0.1483936309814453
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": -3.678732395172119,
+                "v.y": 0.09233537316322327,
+                "v.z": 4.664012432098389
+            },
+            "localRotation": {
+                "q.x": -0.7071067690849304,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 0.7071067690849304
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -539,7 +667,11 @@
         12,
         13,
         14,
-        15
+        15,
+        16,
+        17,
+        18,
+        19
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -849,7 +981,8 @@
                             "modelRef": {
                                 "isNull": false,
                                 "path": "Engine/Models/Cube.obj"
-                            }
+                            },
+                            "orientation": 0
                         }
                     },
                     {
@@ -1046,7 +1179,8 @@
                             "modelRef": {
                                 "isNull": false,
                                 "path": "Engine/Models/Sphere.obj"
-                            }
+                            },
+                            "orientation": 0
                         }
                     }
                 ]
@@ -1249,7 +1383,212 @@
                             "modelRef": {
                                 "isNull": false,
                                 "path": "Engine/Models/Cube.obj"
+                            },
+                            "orientation": 0
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "particleSystem": {
+                "emiters": [
+                    {
+                        "isLooping": true,
+                        "duration": 5.0,
+                        "maxParticles": 100,
+                        "delay": 0.0,
+                        "simulationSpace": 0,
+                        "spawnModule": {
+                            "singleBustEmiterCount": 100,
+                            "overTimeEmiterRate": 100.0
+                        },
+                        "initialLifeModule": {
+                            "minLife": 1.0,
+                            "maxLife": 2.0
+                        },
+                        "initialVelocityModule": {
+                            "minVelocity": {
+                                "v.x": -1.0,
+                                "v.y": 1.0,
+                                "v.z": -1.0
+                            },
+                            "maxVelocity": {
+                                "v.x": 1.0,
+                                "v.y": 3.0,
+                                "v.z": 1.0
                             }
+                        },
+                        "initialSizeModule": {
+                            "minSize": {
+                                "v.x": 0.02500000037252903,
+                                "v.y": 0.10000000149011612,
+                                "v.z": 0.02500000037252903
+                            },
+                            "maxSize": {
+                                "v.x": 0.10000000149011612,
+                                "v.y": 0.20000000298023225,
+                                "v.z": 0.10000000149011612
+                            },
+                            "uniforSize": false
+                        },
+                        "initialColorModule": {
+                            "color": {
+                                "r": 0.5298969149589539,
+                                "g": 0.0,
+                                "b": 0.0,
+                                "a": 1.0
+                            }
+                        },
+                        "updaterModule": {
+                            "gravityModifier": 0.20000000298023225
+                        },
+                        "sizeOverLifetimeModule": {
+                            "enable": true,
+                            "minSizeScale": 1.0,
+                            "maxSizeScale": 0.20000000298023225
+                        },
+                        "colorOverLifetimeModule": {
+                            "enable": false,
+                            "colorA": {
+                                "r": 0.0,
+                                "g": 0.0,
+                                "b": 0.0,
+                                "a": 1.0
+                            },
+                            "colorB": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            },
+                            "gradient": {
+                                "ColorCount": 0,
+                                "AlphaCount": 2,
+                                "Colors": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value1": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Color": {
+                                            "value0": 0.0,
+                                            "value1": 0.0,
+                                            "value2": 0.0
+                                        },
+                                        "Intensity": 0.0
+                                    }
+                                },
+                                "Alphas": {
+                                    "value0": {
+                                        "Position": 0.0,
+                                        "Alpha": 1.0
+                                    },
+                                    "value1": {
+                                        "Position": 1.0,
+                                        "Alpha": 1.0
+                                    },
+                                    "value2": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value3": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value4": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value5": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value6": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    },
+                                    "value7": {
+                                        "Position": 0.0,
+                                        "Alpha": 0.0
+                                    }
+                                }
+                            }
+                        },
+                        "collisionPhysicModule": {
+                            "enable": false,
+                            "rayOffset": 0.10000000149011612
+                        },
+                        "rendererModule": {
+                            "matRef": {
+                                "isNull": false,
+                                "path": "Standard/Materials/Particle1.material"
+                            },
+                            "modelRef": {
+                                "isNull": false,
+                                "path": "Engine/Models/Quad.obj"
+                            },
+                            "orientation": 3
                         }
                     }
                 ]
@@ -1258,7 +1597,8 @@
     ],
     "Standard/ParticleComponentEntities": [
         11,
-        15
+        15,
+        16
     ],
     "EnvironmentComponents": [
         {
@@ -1701,14 +2041,71 @@
             },
             "materialRef": {
                 "isNull": false,
-                "path": "Memory"
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
+            },
+            "customLayerIndex": 0,
+            "useCustomOffsetAndSize": false
+        },
+        {
+            "offset": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "size": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "materialRef": {
+                "isNull": false,
+                "path": "Standard/Materials/Decal.material"
             },
             "customLayerIndex": 0,
             "useCustomOffsetAndSize": false
         }
     ],
     "DecalRendererComponentEntities": [
-        13
+        13,
+        17,
+        18,
+        19
     ],
     "AnimatorComponents": [
         {

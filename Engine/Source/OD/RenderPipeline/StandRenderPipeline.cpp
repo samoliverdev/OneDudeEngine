@@ -1356,7 +1356,14 @@ void StandRenderPipeline::Render(Scene& scene){
             TransformComponent& trans = camView.get<TransformComponent>(entity);
             InfoComponent& info = camView.get<InfoComponent>(entity);
 
-            cam.UpdateCameraData(trans, renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
+            int width = Application::ScreenWidth();
+            int height = Application::ScreenHeight();
+            if(renderContext->overrideFramebuffer != nullptr){
+                width = renderContext->overrideFramebuffer->Width();
+                height = renderContext->overrideFramebuffer->Height();
+            }
+
+            cam.UpdateCameraData(trans, width, height);
             //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
             cameraRenderer.Render(
                 cam.GetCamera(), 

@@ -2,10 +2,11 @@
 #include <OD/Scene/Scene.h>
 #include <OD/Core/Color.h>
 #include <OD/Core/Action.h>
+#include <OD/Graphics/Model.h>
 #include <OD/Graphics/InstancingBuffer.h>
 #include <OD/RenderPipeline/RenderContext.h>
 #include <OD/Serialization/ImGuiArchive.h>
-#include <OD/Graphics/Model.h>
+#include <OD/Physics/PhysicsSystem.h>
 #include "Standard/Ultis/ImGradientHDR.h"
 
 namespace OD{
@@ -175,11 +176,12 @@ public:
     float rayOffset = 0.1f;
     int maxCollisionsCount = -1;
 
-    Action<void()> onCollision;
+    Action<void(Entity source, RayResult& result)> onCollision;
     bool isGlobalSpace = false;
     Matrix4 worldModel;
     Transform globalTrans;
     Scene* scene;
+    Entity source;
     int* curParticleCollisionCount;
     PhysicsSystem* physicsSystem;
 
@@ -187,6 +189,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
         ArchiveDumpNVP(ar, rayOffset);
+        ArchiveDumpNVP(ar, maxCollisionsCount);
     }
 
     void OnGui() override;
@@ -197,6 +200,10 @@ struct RendererModule{
     Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
     Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
 
+    enum class Orientation{ World, Velocity, View, ViewPlusVelocity};
+
+    Orientation orientation;
+
     template <class Archive>
     void serialize(Archive& ar){
         AssetRefSerialize<Material> matRef(material);
@@ -204,6 +211,8 @@ struct RendererModule{
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
+
+        ArchiveDumpNVP(ar, orientation);
     }
 
     void OnGui();
@@ -254,11 +263,13 @@ public:
     int GetNewParticle();
     void FreeParticle(int index);
 
-    void Update(Scene& scene, TransformComponent& trans, Vector3 camPos);
+    void Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos);
     void Sort();
     void SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root = Matrix4Identity, const Camera* cam = nullptr);
 
     void SpawnNewParticle();
+
+    inline CollisionPhysicModule& GetCollisionPhysicModule(){ return collisionPhysicModule; }
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -357,10 +368,13 @@ public:
     friend class ParticleRendererFeature;
 
     void OnGui();
+    bool IsPlaying();
     void Play();
     void Stop();
 
-    void Update(Scene& scene, TransformComponent& trans, Vector3 camPos);
+    void Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos);
+
+    inline std::vector<ParticleEmiter>& Emiters(){ return emiters; }
 
     template <class Archive>
     void serialize(Archive& ar){
