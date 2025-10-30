@@ -517,13 +517,14 @@ public:
 		collision.relativeContactPointOn2 = FromJolt(inManifold.GetWorldSpaceContactPointOn2(0)); 
 
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
-			//for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), FromJolt(ioSettings.mRelativeLinearSurfaceVelocity));
-			if(inBody1.IsSensor()){
+			for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, collision);
+			
+			/*if(inBody1.IsSensor()){
 				for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, collision);
 			}
 			if(inBody2.IsSensor()){
 				for(auto& i: physic->onTriggerEnterCallbacks)i(*scene, collision);
-			}
+			}*/
 		} else {
 			for(auto& i: physic->onCollisionEnterCallbacks) 
 				i(*scene, collision);
@@ -631,6 +632,7 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Checkbox("UseTorqueControl", &ragdoll.useTorqueControl);
 
 	ImGui::DragFloat("GlobalMass", &ragdoll.globalMass);
+	ImGui::DragFloat("LinearDamping", &ragdoll.linearDamping);
 
 	ImGui::DragFloat("Gain", &ragdoll.gain);
 	ImGui::DragFloat("Damping", &ragdoll.damping);
@@ -742,6 +744,10 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
                 	ragdoll.isDirty = true;
 				if(ImGui::Checkbox("IsHips", &part.isHips))
                 	ragdoll.isDirty = true;
+			}
+
+			if(ImGui::DragFloat("overrideLinearDamping", &part.overrideLinearDamping)){
+				ragdoll.isDirty = true;
 			}
 
             /*if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
@@ -1146,6 +1152,31 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
         if(update) rb.SetShape(shape);
     }
+
+	if(rb.shape.type == CollisionShape::Type::Model){
+        bool update = false;
+
+		if(ImGui::DrawAsset<Model>("modelSource", shape.modelSource)){
+			update = true;
+		}
+
+		if(ImGui::DragInt("modelSourceMeshIndex", &shape.modelSourceMeshIndex)){
+			update = true;
+		}
+
+		float _center[] = {shape.center.x, shape.center.y, shape.center.z};
+        if(ImGui::DragFloat3("center", _center)){
+            shape.center = Vector3(_center[0], _center[1], _center[2]);
+            update = true;
+        }
+
+		if(update){
+			shape.mesh = nullptr;// CreateMeshShapeData(*shape.modelSource->meshs[shape.modelSourceMeshIndex]);
+			rb.SetShape(shape);
+		}
+	}
+
+	ImGui::Spacing();
 
 	PhysicMotionQuality motionQuality = rb.MotionQuality();
     if(ImGui::DrawEnumCombo<PhysicMotionQuality>("motionQuality", &motionQuality)){
@@ -1710,6 +1741,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		msp.ScaleToMass(ragdoll.globalMass / skeleton->GetJointCount()); //actual mass in kg
 		part.mMassPropertiesOverride = msp;
 		part.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+
+		part.mLinearDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
 		
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
@@ -1741,6 +1774,10 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mLinearDamping = 0;
 		//TODO: Fix this, add the root object id
 		//part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
+
+		/*if(ragdoll.parts[p].parent < 0){
+			part.mAllowedDOFs = EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
+		}*/
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
 		if(p > 0 /*&& ragdoll.type != RagdollComponent::Type::Trigger*/){
@@ -1928,7 +1965,44 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						//if(vel.LengthSq() > maxVel * maxVel){
 						//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
 						//}
-					}
+					}/* else {
+						// Work, but in world space
+						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						//if (boneIndex <= 0) continue;
+						if(boneIndex < 0) continue;
+
+						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+						Quat targetRot = ToJolt(targetTransform.Rotation());
+						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
+						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
+
+
+						Quat currentRot;
+						RVec3 currentPos;
+						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+						//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
+						//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
+
+						Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
+						Vec3 axis;
+						float angle;
+						deltaRot.GetAxisAngle(axis, angle);
+
+						// Atual: velocidade angular do corpo
+						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+
+						// PD controller: torque = P * erro - D * velocidade
+						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+
+						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
+
+						if(ragdoll.useTorqueControl)
+							bodyInterface.AddTorque(bodyID, torque);
+						else
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+					}*/
 					
 					/*
 					if(ragdoll.syncFromTheHips && hipIndex != -1){ //&& ragdoll.parts[p].isHips == false
@@ -2785,11 +2859,18 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
 		//shapeSettings.SetDensity(rb.mass);
 		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Mesh){
+	} else if(rb.shape.type == CollisionShape::Type::Mesh || rb.shape.type == CollisionShape::Type::Model){
 		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
 		//shapeSettings.SetDensity(rb.mass);
 		//shape = shapeSettings.Create().Get();
 		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
+
+		if(rb.shape.type == CollisionShape::Type::Model && rb.shape.mesh == nullptr){
+			Assert(rb.shape.modelSource != nullptr);
+			Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
+			Assert(rb.shape.modelSourceMeshIndex >= 0);
+			rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
+		}
 
 		if(rb.shape.mesh == nullptr) return;
 		if(rb.shape.mesh->joltVertices.size() <= 0) return;
@@ -2825,7 +2906,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 				return;
 			}
 		}
-	}
+	} 
 
 	Assert(shape != nullptr);
 	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));

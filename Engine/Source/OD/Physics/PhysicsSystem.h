@@ -3,10 +3,10 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Model.h"
 #include "OD/Animation/Pose.h"
 
 #define UseJoltPhysics
-
 
 namespace OD{
 
@@ -47,14 +47,17 @@ enum class PhysicMotionQuality{
 };
 
 struct OD_API CollisionShape{
-    enum class Type{Box, Sphere, Capsule, Mesh};
+    enum class Type{Box, Sphere, Capsule, Mesh, Model};
 
     Type type;
     Vector3 center = {0, 0, 0};
     Vector3 size = {1,1,1};
     float radius = 1;
     float height = 1;
-    Ref<MeshShapeData> mesh;
+    Ref<MeshShapeData> mesh = nullptr;
+
+    Ref<Model> modelSource;
+    int modelSourceMeshIndex = 0;
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -63,6 +66,10 @@ struct OD_API CollisionShape{
         ArchiveDump(ar, CEREAL_NVP(size));
         ArchiveDump(ar, CEREAL_NVP(radius));
         ArchiveDump(ar, CEREAL_NVP(height));
+
+        AssetRefSerialize<Model> modelSourceRef(modelSource);
+        ArchiveDumpNVP(ar, modelSourceRef);
+        ArchiveDumpNVP(ar, modelSourceMeshIndex);
     }
 
     inline static CollisionShape BoxShape(Vector3 size, Vector3 center = Vector3Zero){
@@ -108,6 +115,15 @@ struct OD_API CollisionShape{
         CollisionShape shape;
         shape.type = Type::Mesh;
         shape.mesh = nullptr;
+        return shape;
+    }
+
+    inline static CollisionShape ModelShape(Ref<Model> model, int meshIndex = 0){
+        CollisionShape shape;
+        shape.type = Type::Model;
+        shape.modelSource = model;
+        shape.modelSourceMeshIndex = meshIndex;
+        shape.mesh = CreateMeshShapeData(*model->meshs[meshIndex]);
         return shape;
     }
 };
@@ -258,6 +274,8 @@ struct OD_API RagdollComponent{
         bool disableSync = false;
         bool isHips = false;
 
+        float overrideLinearDamping = -1;
+
         Vector3 previousPosition = Vector3Zero;
         Quaternion previousRotation = QuaternionIdentity;
 
@@ -277,6 +295,7 @@ struct OD_API RagdollComponent{
             //ArchiveDumpNVP(ar, rot);
             ArchiveDumpNVP(ar, disableSync);
             ArchiveDumpNVP(ar, isHips);
+            ArchiveDumpNVP(ar, overrideLinearDamping);
             ArchiveDumpNVP(ar, constraintPos);
             ArchiveDumpNVP(ar, twistAxis);
             ArchiveDumpNVP(ar, twistAngleMin);
@@ -287,6 +306,7 @@ struct OD_API RagdollComponent{
     };
 
     float globalMass = 75;
+    float linearDamping = 0;
     Layers layer = Layers::Layer0;
     LayerMask mask = {AllLayers};
 
@@ -336,6 +356,7 @@ struct OD_API RagdollComponent{
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, globalMass);
+        ArchiveDumpNVP(ar, linearDamping);
         ArchiveDumpNVP(ar, layer);
         ArchiveDumpNVP(ar, mask);
         //ArchiveDumpNVP(ar, isDirty);
@@ -352,6 +373,8 @@ struct OD_API RagdollComponent{
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
+        COPY_OR_MOVE(globalMass);
+        COPY_OR_MOVE(linearDamping);
         COPY_OR_MOVE(layer);
         COPY_OR_MOVE(mask);
         //COPY_OR_MOVE(isDirty);
