@@ -95,7 +95,7 @@ void InitialSizeModule::OnInitParticle(ParticleData& particle){
 
 void InitialColorModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialColor")){
-        ImGui::ColorEdit4("minSize", &color.r);
+        ImGui::ColorEdit4("color", &color.r);
     }
 }
 
@@ -120,6 +120,17 @@ void SizeOverLifetimeModule::OnGui(){
         ImGui::Checkbox("enable", &enable);
         ImGui::DragFloat("minSizeScale", &minSizeScale);
         ImGui::DragFloat("maxSizeScale", &maxSizeScale);
+
+        DrawCurvePreview(curve, ImVec2(100, 25), &showCurve);
+
+        if(showCurve){
+            ImGui::OpenPopup("Curve Editor");
+        }
+
+        if(ImGui::BeginPopupModal("Curve Editor", &showCurve, ImGuiWindowFlags_AlwaysAutoResize)){
+            DrawAnimationCurveEditor(curve, ImVec2(400, 200));
+            ImGui::EndPopup();
+        }
     }
 }
 
@@ -178,7 +189,7 @@ void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningD
     //p.color = Color::Lerp(colorA, colorB, runningData.lifetime);
 
     auto color = gradient.GetCombinedColor(runningData.lifetime);
-    p.color = Color(color[0], color[1], color[2], color[3]);
+    p.color = Color(color[0] / 255.0f, color[1] / 255.0f, color[2] / 255.0f, color[3]);//TODO: Revise this "color[3] * 255.0f" quick fix
 }
 
 void CollisionPhysicModule::OnGui(){

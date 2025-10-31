@@ -123,7 +123,7 @@ void ViewportPanel::OnGui(){
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
-    if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false){
+    if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)){
         int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
     
         ImVec2 _mousePos = ImGui::GetMousePos();

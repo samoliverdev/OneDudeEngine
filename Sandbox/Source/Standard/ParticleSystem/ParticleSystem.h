@@ -8,6 +8,7 @@
 #include <OD/Serialization/ImGuiArchive.h>
 #include <OD/Physics/PhysicsSystem.h>
 #include "Standard/Ultis/ImGradientHDR.h"
+#include "Standard/Ultis/AnimationCurve.h"
 
 namespace OD{
     class Material;
@@ -138,11 +139,21 @@ public:
     float minSizeScale = 0;
     float maxSizeScale = 1;
 
+    AnimationCurve curve = {
+        {
+            Keyframe(0.0f, 0.0f, CurveType::Linear),
+            Keyframe(1.0f, 1.0f, CurveType::Linear)
+        }
+    };
+    bool showCurve = false;
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
         ArchiveDumpNVP(ar, minSizeScale);
         ArchiveDumpNVP(ar, maxSizeScale);
+
+        ArchiveDumpNVP(ar, curve);
     }
 
     void OnGui() override;

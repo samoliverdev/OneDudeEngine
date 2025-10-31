@@ -17,7 +17,6 @@ ImVec2 operator*(const ImVec2& a, float scalar) {
     return ImVec2(a.x * scalar, a.y * scalar);
 }
 
-
 // Add a keyframe
 void AnimationCurve::AddKeyframe(float time, float value, CurveType type) {
     keyframes.emplace_back(time, value, type);
@@ -630,10 +629,10 @@ void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
     float clamp_max_value = curve.minMaxValue.y;
 
     // Time and value ranges for drawing (with 0.1 border)
-    float draw_min_time = clamp_min_time - 0.1f/2;
-    float draw_max_time = clamp_max_time + 0.1f/2;
-    float draw_min_value = clamp_min_value - 0.35f/2;
-    float draw_max_value = clamp_max_value + 0.35f/2;
+    float draw_min_time = clamp_min_time - 0.1f/2; //0.1f/2;
+    float draw_max_time = clamp_max_time + 0.1f/2; // 0.1f/2;
+    float draw_min_value = clamp_min_value - 0.2f; //0.35f/2;
+    float draw_max_value = clamp_max_value + 0.2f; //0.35f/2;
 
     // Draw outline rectangle for clamp range
     ImVec2 clamp_range_min(
@@ -649,17 +648,17 @@ void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
     // Draw numerical values for min/max time and value
     char buffer[32];
     // Min time (at x=0, bottom left)
-    snprintf(buffer, sizeof(buffer), "%.2f", clamp_min_time);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_min_time);
     draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + canvas_size.y - 30.0f), IM_COL32(255, 255, 255, 255), buffer);
     // Max time (at x=max, bottom right)
-    snprintf(buffer, sizeof(buffer), "%.2f", clamp_max_time);
-    draw_list->AddText(ImVec2(canvas_pos.x + canvas_size.x - 40.0f, canvas_pos.y + canvas_size.y - 15.0f), IM_COL32(255, 255, 255, 255), buffer);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_max_time);
+    draw_list->AddText(ImVec2(canvas_pos.x + canvas_size.x - 20.0f, canvas_pos.y + canvas_size.y - 15.0f), IM_COL32(255, 255, 255, 255), buffer);
     // Min value (at y=max, bottom left)
-    snprintf(buffer, sizeof(buffer), "%.2f", clamp_min_value);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_min_value);
     draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + canvas_size.y - 15.0f), IM_COL32(255, 255, 255, 255), buffer);
     // Max value (at y=0, top left)
-    snprintf(buffer, sizeof(buffer), "%.2f", clamp_max_value);
-    draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + 5.0f), IM_COL32(255, 255, 255, 255), buffer);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_max_value);
+    draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + 0), IM_COL32(255, 255, 255, 255), buffer);
 
     // Draw border for entire canvas
     draw_list->AddRect(canvas_pos, canvas_pos + canvas_size, IM_COL32(100, 100, 100, 255));
@@ -717,7 +716,7 @@ void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
 
     // Handle mouse interactions for selection and dragging
     bool is_hovered = ImGui::IsMouseHoveringRect(canvas_pos, canvas_pos + canvas_size);
-    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
         ImVec2 mouse_pos = io.MousePos;
         bool hit_keyframe = false;
 

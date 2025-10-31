@@ -36,6 +36,11 @@ void SceneManager::OnExit(){
         activeScene = nullptr;
     }
 
+    for(auto& i : globalSystems){
+        delete i.second;
+    };
+    globalSystems.clear();
+
     coreComponentsSerializer.clear();
     componentsSerializer.clear();
     scriptsSerializer.clear();
