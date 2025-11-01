@@ -136,7 +136,8 @@ void SizeOverLifetimeModule::OnGui(){
 
 void SizeOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningData& runningData){
     if(enable == false) return;
-    p.size = p.startSize * math::mix(minSizeScale, maxSizeScale, runningData.lifetime);
+    //p.size = p.startSize * math::mix(minSizeScale, maxSizeScale, runningData.lifetime);
+    p.size = p.startSize * curve.Evaluate(runningData.lifetime);
 }
 
 void ColorOverLifetimeModule::OnGui(){

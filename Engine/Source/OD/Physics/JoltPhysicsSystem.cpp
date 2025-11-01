@@ -750,6 +750,48 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 				ragdoll.isDirty = true;
 			}
 
+			auto ExtractFreezeStates = 
+			[](JPH::EAllowedDOFs allowedDOFs, 
+				bool& freezePosX, bool& freezePosY, bool& freezePosZ,
+				bool& freezeRotX, bool& freezeRotY, bool& freezeRotZ)
+			{
+				// A DOF is frozen if it is NOT set in allowedDOFs
+				freezePosX = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationX) == 0);
+				freezePosY = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationY) == 0);
+				freezePosZ = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::TranslationZ) == 0);
+				freezeRotX = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationX) == 0);
+				freezeRotY = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationY) == 0);
+				freezeRotZ = (static_cast<uint8>(allowedDOFs & JPH::EAllowedDOFs::RotationZ) == 0);
+			};
+
+			if(ImGui::CollapsingHeader("Position Constraints")){
+				// Extract freeze states
+				bool freezePosX, freezePosY, freezePosZ, freezeRotX, freezeRotY, freezeRotZ;
+				ExtractFreezeStates(static_cast<JPH::EAllowedDOFs>(part.constraints), freezePosX, freezePosY, freezePosZ, freezeRotX, freezeRotY, freezeRotZ);
+
+				bool changed = false;
+				if(ImGui::Checkbox("Freeze Position X", &freezePosX)) changed = true;
+				if(ImGui::Checkbox("Freeze Position Y", &freezePosY)) changed = true;
+				if(ImGui::Checkbox("Freeze Position Z", &freezePosZ)) changed = true;
+				if(ImGui::Checkbox("Freeze Rotation X", &freezeRotX)) changed = true;
+				if(ImGui::Checkbox("Freeze Rotation Y", &freezeRotY)) changed = true;
+				if(ImGui::Checkbox("Freeze Rotation Z", &freezeRotZ)) changed = true;
+
+				// Update DOFs if any checkbox changed
+				if(changed){
+					JPH::EAllowedDOFs newDOFs = JPH::EAllowedDOFs::None;
+					// Enable DOFs for non-frozen axes
+					if (!freezePosX) newDOFs |= JPH::EAllowedDOFs::TranslationX;
+					if (!freezePosY) newDOFs |= JPH::EAllowedDOFs::TranslationY;
+					if (!freezePosZ) newDOFs |= JPH::EAllowedDOFs::TranslationZ;
+					if (!freezeRotX) newDOFs |= JPH::EAllowedDOFs::RotationX;
+					if (!freezeRotY) newDOFs |= JPH::EAllowedDOFs::RotationY;
+					if (!freezeRotZ) newDOFs |= JPH::EAllowedDOFs::RotationZ;
+
+					ragdoll.Constraints(index, static_cast<RigidbodyConstraints>(newDOFs));
+				}
+			}
+
             /*if(ImGui::DragFloat3("Position", &part.pos.x, 0.01f))
                 ragdoll.isDirty = true;
 
@@ -979,6 +1021,27 @@ void RagdollComponent::AddExplosionImpulse(float force, Vector3 explosionPositio
 		// Apply impulse to the body's center of mass
 		bodyInterface.AddImpulse(data->ragdoll->GetBodyIDs()[i], impulse, centerOfMass);
 	}
+}
+
+RigidbodyConstraints RagdollComponent::Constraints(int boneIndex){
+	return parts[boneIndex].constraints;
+}
+
+void RagdollComponent::Constraints(int boneIndex, RigidbodyConstraints constraints){
+	if(parts[boneIndex].constraints == constraints) return;
+
+	parts[boneIndex].constraints = constraints;
+	
+	//UpdateSettings();
+
+	if(data == nullptr) return;
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->ragdoll->GetBodyID(boneIndex));
+    if(!lock.Succeeded()) return;
+
+    Body& body = lock.GetBody();
+    MotionProperties* motionProps = body.GetMotionProperties();
+	motionProps->SetMassProperties(static_cast<JPH::EAllowedDOFs>(constraints), body.GetShape()->GetMassProperties());
 }
 
 #pragma region RigidbodyComponent
@@ -1486,6 +1549,8 @@ RigidbodyConstraints RigidbodyComponent::Constraints(){
 }
 
 void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
+	if(constraints == inconstraints) return;
+
 	constraints = inconstraints;
 	
 	//UpdateSettings();
@@ -1742,7 +1807,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		part.mMassPropertiesOverride = msp;
 		part.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
 
-		part.mLinearDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
+		//part.mLinearDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
+		part.mAngularDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
 		
 		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
 		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
@@ -1778,6 +1844,10 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		/*if(ragdoll.parts[p].parent < 0){
 			part.mAllowedDOFs = EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
 		}*/
+
+		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
+
+		//part.mAngularDamping = 10;
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
 		if(p > 0 /*&& ragdoll.type != RagdollComponent::Type::Trigger*/){
@@ -1920,8 +1990,8 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 					//TODO: Fix the instability and Freeze pose
 					if(ragdoll.parts[p].parent >= 0){
 						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
-						c->SetSwingMotorState(EMotorState::Off);
-						c->SetTwistMotorState(EMotorState::Off);
+						//c->SetSwingMotorState(EMotorState::Off); //INFO: Call this every frame bug
+						//c->SetTwistMotorState(EMotorState::Off);
 
 						if(ragdoll.parts[p].disableSync) continue;
 						if(ragdoll.syncWithFinalPose == false) continue;

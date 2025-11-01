@@ -9,13 +9,26 @@ ImVec2 operator+(const ImVec2& a, const ImVec2& b) {
     return ImVec2(a.x + b.x, a.y + b.y);
 }
 
+ImVec2 operator+(const ImVec2& a, float b) {
+    return ImVec2(a.x + b, a.y + b);
+}
+
 ImVec2 operator-(const ImVec2& a, const ImVec2& b) {
     return ImVec2(a.x - b.x, a.y - b.y);
+}
+
+ImVec2 operator-(const ImVec2& a, float b) {
+    return ImVec2(a.x - b, a.y - b);
 }
 
 ImVec2 operator*(const ImVec2& a, float scalar) {
     return ImVec2(a.x * scalar, a.y * scalar);
 }
+
+ImVec2 operator/(const ImVec2& a, float scalar) {
+    return ImVec2(a.x / scalar, a.y / scalar);
+}
+
 
 // Add a keyframe
 void AnimationCurve::AddKeyframe(float time, float value, CurveType type) {
@@ -110,6 +123,74 @@ float AnimationCurve::Evaluate(float time) const {
 void AnimationCurve::SortKeyframes() {
     std::sort(keyframes.begin(), keyframes.end(),
         [](const Keyframe& a, const Keyframe& b) { return a.time < b.time; });
+}
+
+void AnimationCurve::UpdateMinMax() {
+    /*if (keyframes.empty()) return;
+
+    float min_time = keyframes.front().time;
+    float max_time = keyframes.front().time;
+    float min_value = keyframes.front().value;
+    float max_value = keyframes.front().value;
+
+    for (const auto& kf : keyframes) {
+        if (kf.time < min_time) min_time = kf.time;
+        if (kf.time > max_time) max_time = kf.time;
+        if (kf.value < min_value) min_value = kf.value;
+        if (kf.value > max_value) max_value = kf.value;
+    }
+
+    // Add small padding
+    float time_padding = (max_time - min_time) * 0.05f;
+    float value_padding = (max_value - min_value) * 0.1f;
+
+    if (fabsf(max_time - min_time) < 1e-6f) max_time = min_time + 1e-3f;
+    if (fabsf(max_value - min_value) < 1e-6f) max_value = min_value + 1e-3f;
+
+    minMaxTime.x = min_time - time_padding;
+    minMaxTime.y = max_time + time_padding;
+    minMaxValue.x = min_value - value_padding;
+    minMaxValue.y = max_value + value_padding;*/
+
+    if (keyframes.empty()) {
+        minMaxTime = {0.0f, 1.0f};
+        minMaxValue = {0.0f, 1.0f};
+        return;
+    }
+
+    float min_time  = keyframes.front().time;
+    float max_time  = keyframes.front().time;
+    float min_value = keyframes.front().value;
+    float max_value = keyframes.front().value;
+
+    for (const auto& kf : keyframes) {
+        if (kf.time  < min_time)  min_time  = kf.time;
+        if (kf.time  > max_time)  max_time  = kf.time;
+        if (kf.value < min_value) min_value = kf.value;
+        if (kf.value > max_value) max_value = kf.value;
+    }
+
+    // Add small padding
+    float time_padding  = (max_time - min_time) * 0.05f;
+    float value_padding = (max_value - min_value) * 0.1f;
+
+    // Avoid zero range
+    if (fabsf(max_time - min_time) < 1e-6f)  max_time  = min_time + 1e-3f;
+    if (fabsf(max_value - min_value) < 1e-6f) max_value = min_value + 1e-3f;
+
+    min_time  -= time_padding;
+    max_time  += time_padding;
+    min_value -= value_padding;
+    max_value += value_padding;
+
+    // Clamp to minimal default range
+    if (min_time  > 0.0f) min_time  = 0.0f;
+    if (max_time  < 1.0f) max_time  = 1.0f;
+    if (min_value > 0.0f) min_value = 0.0f;
+    if (max_value < 1.0f) max_value = 1.0f;
+
+    minMaxTime  = { min_time,  max_time  };
+    minMaxValue = { min_value, max_value };
 }
 
 void AnimationCurve::OnGui(cereal::ImGuiArchive& ar){
@@ -611,6 +692,8 @@ void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
     ImGui::Text("Keyframes: %zu", curve.keyframes.size());
 }*/
 
+#if 0
+
 void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
     ImGuiIO& io = ImGui::GetIO();
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -862,5 +945,441 @@ void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
     // Debug: Display number of keyframes
     ImGui::Text("Keyframes: %zu", curve.keyframes.size());
 }
+
+#else
+
+void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size) {
+    ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+    ImVec2 canvas_size = size;
+    canvas_size.x = std::max(canvas_size.x, 50.0f);
+    canvas_size.y = std::max(canvas_size.y, 50.0f);
+
+    // Draw background
+    draw_list->AddRectFilled(canvas_pos, canvas_pos + canvas_size, IM_COL32(50, 50, 50, 255));
+
+    // --- Handle selected keyframe / tangent ---
+    static int selected_keyframe = -1;
+    static bool editing_in_tangent = false;
+    static bool editing_out_tangent = false;
+
+    bool is_dragging_keyframe = (selected_keyframe >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+
+    // --- Update min/max only if user is not dragging/editing ---
+    if (!is_dragging_keyframe) {
+        curve.UpdateMinMax();
+    }
+
+    float clamp_min_time  = curve.minMaxTime.x;
+    float clamp_max_time  = curve.minMaxTime.y;
+    float clamp_min_value = curve.minMaxValue.x;
+    float clamp_max_value = curve.minMaxValue.y;
+
+    // Add some padding for drawing
+    float draw_min_time  = clamp_min_time - 0.1f * 0.5f;
+    float draw_max_time  = clamp_max_time + 0.1f * 0.5f;
+    float draw_min_value = clamp_min_value - 0.2f;
+    float draw_max_value = clamp_max_value + 0.2f;
+
+    // Draw clamp rectangle
+    ImVec2 clamp_range_min(
+        canvas_pos.x + (clamp_min_time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+        canvas_pos.y + (draw_max_value - clamp_max_value) / (draw_max_value - draw_min_value) * canvas_size.y
+    );
+    ImVec2 clamp_range_max(
+        canvas_pos.x + (clamp_max_time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+        canvas_pos.y + (draw_max_value - clamp_min_value) / (draw_max_value - draw_min_value) * canvas_size.y
+    );
+    draw_list->AddRect(clamp_range_min, clamp_range_max, IM_COL32(150, 150, 150, 255));
+
+    // Draw min/max text
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_min_time);
+    draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + canvas_size.y - 30.0f), IM_COL32(255, 255, 255, 255), buffer);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_max_time);
+    draw_list->AddText(ImVec2(canvas_pos.x + canvas_size.x - 20.0f, canvas_pos.y + canvas_size.y - 15.0f), IM_COL32(255, 255, 255, 255), buffer);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_min_value);
+    draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y + canvas_size.y - 15.0f), IM_COL32(255, 255, 255, 255), buffer);
+    snprintf(buffer, sizeof(buffer), "%.1f", clamp_max_value);
+    draw_list->AddText(ImVec2(canvas_pos.x, canvas_pos.y), IM_COL32(255, 255, 255, 255), buffer);
+
+    // Draw border for entire canvas
+    draw_list->AddRect(canvas_pos, canvas_pos + canvas_size, IM_COL32(100, 100, 100, 255));
+
+    // Draw grid
+    for (float t = draw_min_time; t <= draw_max_time; t += 0.1f) {
+        float x = canvas_pos.x + (t - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x;
+        draw_list->AddLine(ImVec2(x, canvas_pos.y), ImVec2(x, canvas_pos.y + canvas_size.y), IM_COL32(100, 100, 100, 50));
+    }
+    for (float v = draw_min_value; v <= draw_max_value; v += 0.1f) {
+        float y = canvas_pos.y + (draw_max_value - v) / (draw_max_value - draw_min_value) * canvas_size.y;
+        draw_list->AddLine(ImVec2(canvas_pos.x, y), ImVec2(canvas_pos.x + canvas_size.x, y), IM_COL32(100, 100, 100, 50));
+    }
+
+    // Draw curve
+    const int curve_segments = 100;
+    for (int i = 0; i < curve_segments; ++i) {
+        float t0 = draw_min_time + (float)i / curve_segments * (draw_max_time - draw_min_time);
+        float t1 = draw_min_time + (float)(i + 1) / curve_segments * (draw_max_time - draw_min_time);
+        float v0 = curve.Evaluate(t0);
+        float v1 = curve.Evaluate(t1);
+
+        ImVec2 p0(canvas_pos.x + (t0 - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                  canvas_pos.y + (draw_max_value - v0) / (draw_max_value - draw_min_value) * canvas_size.y);
+        ImVec2 p1(canvas_pos.x + (t1 - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                  canvas_pos.y + (draw_max_value - v1) / (draw_max_value - draw_min_value) * canvas_size.y);
+        draw_list->AddLine(p0, p1, IM_COL32(255, 255, 0, 255), 2.0f);
+    }
+
+    // Draw keyframes and tangent handles
+    for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+        const Keyframe& kf = curve.keyframes[i];
+        ImVec2 kf_pos(canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                      canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y);
+
+        if (kf.curve_type == CurveType::Smooth || (i < curve.keyframes.size() - 1 && curve.keyframes[i + 1].curve_type == CurveType::Smooth)) {
+            ImVec2 in_tangent_pos  = kf_pos + kf.in_tangent;
+            ImVec2 out_tangent_pos = kf_pos + kf.out_tangent;
+            draw_list->AddLine(kf_pos, in_tangent_pos, IM_COL32(0, 255, 255, 255));
+            draw_list->AddLine(kf_pos, out_tangent_pos, IM_COL32(0, 255, 255, 255));
+            draw_list->AddCircleFilled(in_tangent_pos, 3.0f, IM_COL32(0, 255, 255, 255));
+            draw_list->AddCircleFilled(out_tangent_pos, 3.0f, IM_COL32(0, 255, 255, 255));
+        }
+
+        uint32_t keyframe_color = (selected_keyframe == (int)i) ? IM_COL32(255, 100, 100, 255) : IM_COL32(255, 0, 0, 255);
+        draw_list->AddCircleFilled(kf_pos, 5.0f, keyframe_color);
+    }
+
+    // --- Interaction ---
+    bool is_hovered = ImGui::IsMouseHoveringRect(canvas_pos, canvas_pos + canvas_size);
+
+    // Left click: select keyframe or tangent
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        ImVec2 mouse_pos = io.MousePos;
+        bool hit_keyframe = false;
+        for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+            const Keyframe& kf = curve.keyframes[i];
+            ImVec2 kf_pos(canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                          canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y);
+            if (std::hypot(mouse_pos.x - kf_pos.x, mouse_pos.y - kf_pos.y) < 5.0f) {
+                selected_keyframe = (int)i;
+                editing_in_tangent = false;
+                editing_out_tangent = false;
+                hit_keyframe = true;
+                break;
+            }
+            if (kf.curve_type == CurveType::Smooth) {
+                ImVec2 in_tangent_pos  = kf_pos + kf.in_tangent;
+                ImVec2 out_tangent_pos = kf_pos + kf.out_tangent;
+                if (std::hypot(mouse_pos.x - in_tangent_pos.x, mouse_pos.y - in_tangent_pos.y) < 5.0f) {
+                    selected_keyframe = (int)i;
+                    editing_in_tangent = true;
+                    editing_out_tangent = false;
+                    hit_keyframe = true;
+                    break;
+                }
+                if (std::hypot(mouse_pos.x - out_tangent_pos.x, mouse_pos.y - out_tangent_pos.y) < 5.0f) {
+                    selected_keyframe = (int)i;
+                    editing_in_tangent = false;
+                    editing_out_tangent = true;
+                    hit_keyframe = true;
+                    break;
+                }
+            }
+        }
+        if (!hit_keyframe) {
+            selected_keyframe = -1;
+            editing_in_tangent = false;
+            editing_out_tangent = false;
+        }
+    }
+
+    // Right click: add keyframe
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        ImVec2 mouse_pos = io.MousePos;
+        float time  = draw_min_time + (mouse_pos.x - canvas_pos.x) / canvas_size.x * (draw_max_time - draw_min_time);
+        float value = draw_max_value - (mouse_pos.y - canvas_pos.y) / canvas_size.y * (draw_max_value - draw_min_value);
+        time  = std::clamp(time, clamp_min_time, clamp_max_time);
+        value = std::clamp(value, clamp_min_value, clamp_max_value);
+        curve.AddKeyframe(time, value, CurveType::Linear);
+    }
+
+    // Middle click: delete keyframe
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+        ImVec2 mouse_pos = io.MousePos;
+        for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+            const Keyframe& kf = curve.keyframes[i];
+            ImVec2 kf_pos(canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                          canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y);
+            if (std::hypot(mouse_pos.x - kf_pos.x, mouse_pos.y - kf_pos.y) < 5.0f) {
+                curve.keyframes.erase(curve.keyframes.begin() + i);
+                if (selected_keyframe == (int)i) selected_keyframe = -1;
+                else if (selected_keyframe > (int)i) selected_keyframe--;
+                break;
+            }
+        }
+    }
+
+    // Drag selected keyframe/tangent
+    if (is_dragging_keyframe) {
+        ImVec2 mouse_pos = io.MousePos;
+        Keyframe& kf = curve.keyframes[selected_keyframe];
+        if (editing_in_tangent) {
+            ImVec2 kf_pos(canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                          canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y);
+            kf.in_tangent = mouse_pos - kf_pos;
+            kf.in_tangent.x = std::clamp(kf.in_tangent.x, -50.0f, -5.0f);
+        } else if (editing_out_tangent) {
+            ImVec2 kf_pos(canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                          canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y);
+            kf.out_tangent = mouse_pos - kf_pos;
+            kf.out_tangent.x = std::clamp(kf.out_tangent.x, 5.0f, 50.0f);
+        } else {
+            float time  = draw_min_time + (mouse_pos.x - canvas_pos.x) / canvas_size.x * (draw_max_time - draw_min_time);
+            float value = draw_max_value - (mouse_pos.y - canvas_pos.y) / canvas_size.y * (draw_max_value - draw_min_value);
+            kf.time  = std::clamp(time, clamp_min_time, clamp_max_time);
+            kf.value = std::clamp(value, clamp_min_value, clamp_max_value);
+            curve.SortKeyframes();
+        }
+    }
+
+    // Invisible button to capture input
+    ImGui::InvisibleButton("curve_canvas", canvas_size);
+
+    // Selected keyframe UI
+    if (selected_keyframe >= 0 && selected_keyframe < (int)curve.keyframes.size()) {
+        Keyframe& kf = curve.keyframes[selected_keyframe];
+        ImGui::Text("Selected Keyframe:");
+        ImGui::InputFloat("Time", &kf.time, 0.01f, 0.1f);
+        ImGui::InputFloat("Value", &kf.value, 0.01f, 0.1f);
+        kf.time  = std::clamp(kf.time, clamp_min_time, clamp_max_time);
+        kf.value = std::clamp(kf.value, clamp_min_value, clamp_max_value);
+        curve.SortKeyframes();
+
+        const char* curve_types[] = { "Linear", "Constant", "Smooth" };
+        int current_type = (int)kf.curve_type;
+        if (ImGui::Combo("Curve Type", &current_type, curve_types, IM_ARRAYSIZE(curve_types))) {
+            kf.curve_type = (CurveType)current_type;
+        }
+
+        if (kf.curve_type == CurveType::Smooth) {
+            ImGui::InputFloat2("In Tangent", &kf.in_tangent.x, "%.2f");
+            ImGui::InputFloat2("Out Tangent", &kf.out_tangent.x, "%.2f");
+            kf.in_tangent.x  = std::clamp(kf.in_tangent.x, -50.0f, -5.0f);
+            kf.out_tangent.x = std::clamp(kf.out_tangent.x, 5.0f, 50.0f);
+        }
+
+        if (ImGui::Button("Delete Keyframe")) {
+            curve.keyframes.erase(curve.keyframes.begin() + selected_keyframe);
+            selected_keyframe = -1;
+        }
+    }
+
+    // Manual MinMax editing
+    ImGui::InputFloat2("MinMaxTime", &curve.minMaxTime.x);
+    ImGui::InputFloat2("MinMaxValue", &curve.minMaxValue.x);
+
+    // Debug info
+    ImGui::Text("Keyframes: %zu", curve.keyframes.size());
+}
+
+#endif
+
+/*
+void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+    ImVec2 canvas_size = size;
+    canvas_size.x = std::max(canvas_size.x, 50.0f);
+    canvas_size.y = std::max(canvas_size.y, 50.0f);
+
+    // Background
+    draw_list->AddRectFilled(canvas_pos, canvas_pos + canvas_size, IM_COL32(50, 50, 50, 255));
+
+    // Clamp range (user-defined)
+    float clamp_min_time  = curve.minMaxTime.x;
+    float clamp_max_time  = curve.minMaxTime.y;
+    float clamp_min_value = curve.minMaxValue.x;
+    float clamp_max_value = curve.minMaxValue.y;
+
+    // Add visual padding (10% of range)
+    float time_padding  = (clamp_max_time  - clamp_min_time)  * 0.1f / 2;
+    float value_padding = (clamp_max_value - clamp_min_value) * 0.1f;
+
+    float draw_min_time  = clamp_min_time  - time_padding;
+    float draw_max_time  = clamp_max_time  + time_padding;
+    float draw_min_value = clamp_min_value - value_padding;
+    float draw_max_value = clamp_max_value + value_padding;
+
+    // Clamp rectangle in screen space
+    ImVec2 clamp_range_min(
+        canvas_pos.x + (clamp_min_time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+        canvas_pos.y + (draw_max_value - clamp_max_value) / (draw_max_value - draw_min_value) * canvas_size.y
+    );
+    ImVec2 clamp_range_max(
+        canvas_pos.x + (clamp_max_time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+        canvas_pos.y + (draw_max_value - clamp_min_value) / (draw_max_value - draw_min_value) * canvas_size.y
+    );
+
+    // Draw clamp region outline
+    draw_list->AddRect(clamp_range_min, clamp_range_max, IM_COL32(150, 150, 150, 255), 0.0f, 0, 1.5f);
+
+    // Grid lines
+    const float grid_step_t = (draw_max_time - draw_min_time) / 10.0f;
+    const float grid_step_v = (draw_max_value - draw_min_value) / 10.0f;
+
+    for (float t = draw_min_time; t <= draw_max_time; t += grid_step_t) {
+        float x = canvas_pos.x + (t - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x;
+        draw_list->AddLine(ImVec2(x, canvas_pos.y), ImVec2(x, canvas_pos.y + canvas_size.y), IM_COL32(100, 100, 100, 60));
+    }
+    for (float v = draw_min_value; v <= draw_max_value; v += grid_step_v) {
+        float y = canvas_pos.y + (draw_max_value - v) / (draw_max_value - draw_min_value) * canvas_size.y;
+        draw_list->AddLine(ImVec2(canvas_pos.x, y), ImVec2(canvas_pos.x + canvas_size.x, y), IM_COL32(100, 100, 100, 60));
+    }
+
+    // Outer border
+    draw_list->AddRect(canvas_pos, canvas_pos + canvas_size, IM_COL32(100, 100, 100, 255));
+
+    // Curve drawing
+    const int curve_segments = 120;
+    for (int i = 0; i < curve_segments; ++i) {
+        float t0 = draw_min_time + (float)i / curve_segments * (draw_max_time - draw_min_time);
+        float t1 = draw_min_time + (float)(i + 1) / curve_segments * (draw_max_time - draw_min_time);
+        float v0 = curve.Evaluate(t0);
+        float v1 = curve.Evaluate(t1);
+
+        ImVec2 p0(
+            canvas_pos.x + (t0 - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+            canvas_pos.y + (draw_max_value - v0) / (draw_max_value - draw_min_value) * canvas_size.y
+        );
+        ImVec2 p1(
+            canvas_pos.x + (t1 - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+            canvas_pos.y + (draw_max_value - v1) / (draw_max_value - draw_min_value) * canvas_size.y
+        );
+
+        draw_list->AddLine(p0, p1, IM_COL32(255, 255, 0, 255), 2.0f);
+    }
+
+    // --- Keyframe and Tangent Interaction ---
+    static int selected_keyframe = -1;
+    static bool editing_in_tangent = false;
+    static bool editing_out_tangent = false;
+
+    bool is_hovered = ImGui::IsMouseHoveringRect(canvas_pos, canvas_pos + canvas_size);
+    ImVec2 mouse_pos = io.MousePos;
+
+    // Draw keyframes
+    for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+        Keyframe& kf = curve.keyframes[i];
+        ImVec2 kf_pos(
+            canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+            canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y
+        );
+
+        // Tangents
+        if (kf.curve_type == CurveType::Smooth) {
+            ImVec2 in_tangent_pos = kf_pos + kf.in_tangent;
+            ImVec2 out_tangent_pos = kf_pos + kf.out_tangent;
+            draw_list->AddLine(kf_pos, in_tangent_pos, IM_COL32(0, 255, 255, 255));
+            draw_list->AddLine(kf_pos, out_tangent_pos, IM_COL32(0, 255, 255, 255));
+            draw_list->AddCircleFilled(in_tangent_pos, 3.0f, IM_COL32(0, 255, 255, 255));
+            draw_list->AddCircleFilled(out_tangent_pos, 3.0f, IM_COL32(0, 255, 255, 255));
+        }
+
+        // Keyframe marker
+        uint32_t col = (selected_keyframe == (int)i) ? IM_COL32(255, 100, 100, 255) : IM_COL32(255, 0, 0, 255);
+        draw_list->AddCircleFilled(kf_pos, 5.0f, col);
+    }
+
+    // --- Interactions ---
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        bool hit = false;
+        for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+            Keyframe& kf = curve.keyframes[i];
+            ImVec2 kf_pos(
+                canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y
+            );
+
+            if (ImLengthSqr(mouse_pos - kf_pos) < 25.0f) {
+                selected_keyframe = (int)i;
+                editing_in_tangent = editing_out_tangent = false;
+                hit = true;
+                break;
+            }
+        }
+        if (!hit) selected_keyframe = -1;
+    }
+
+    // Add new keyframe (RMB)
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        float time = draw_min_time + (mouse_pos.x - canvas_pos.x) / canvas_size.x * (draw_max_time - draw_min_time);
+        float value = draw_max_value - (mouse_pos.y - canvas_pos.y) / canvas_size.y * (draw_max_value - draw_min_value);
+        time = std::clamp(time, clamp_min_time, clamp_max_time);
+        value = std::clamp(value, clamp_min_value, clamp_max_value);
+        curve.AddKeyframe(time, value, CurveType::Linear);
+    }
+
+    // Move selected
+    if (selected_keyframe >= 0 && selected_keyframe < (int)curve.keyframes.size() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+        Keyframe& kf = curve.keyframes[selected_keyframe];
+        float time = draw_min_time + (mouse_pos.x - canvas_pos.x) / canvas_size.x * (draw_max_time - draw_min_time);
+        float value = draw_max_value - (mouse_pos.y - canvas_pos.y) / canvas_size.y * (draw_max_value - draw_min_value);
+        kf.time = std::clamp(time, clamp_min_time, clamp_max_time);
+        kf.value = std::clamp(value, clamp_min_value, clamp_max_value);
+        curve.SortKeyframes();
+    }
+
+    // Delete with MMB
+    if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+        for (size_t i = 0; i < curve.keyframes.size(); ++i) {
+            Keyframe& kf = curve.keyframes[i];
+            ImVec2 kf_pos(
+                canvas_pos.x + (kf.time - draw_min_time) / (draw_max_time - draw_min_time) * canvas_size.x,
+                canvas_pos.y + (draw_max_value - kf.value) / (draw_max_value - draw_min_value) * canvas_size.y
+            );
+            if (ImLengthSqr(mouse_pos - kf_pos) < 25.0f) {
+                curve.keyframes.erase(curve.keyframes.begin() + i);
+                selected_keyframe = -1;
+                break;
+            }
+        }
+    }
+
+    ImGui::InvisibleButton("curve_canvas", canvas_size);
+
+    // --- Selected keyframe UI ---
+    if (selected_keyframe >= 0 && selected_keyframe < (int)curve.keyframes.size()) {
+        Keyframe& kf = curve.keyframes[selected_keyframe];
+        ImGui::SeparatorText("Selected Keyframe");
+        ImGui::InputFloat("Time", &kf.time, 0.01f, 0.1f);
+        ImGui::InputFloat("Value", &kf.value, 0.01f, 0.1f);
+        kf.time  = std::clamp(kf.time,  clamp_min_time,  clamp_max_time);
+        kf.value = std::clamp(kf.value, clamp_min_value, clamp_max_value);
+        curve.SortKeyframes();
+
+        const char* curve_types[] = { "Linear", "Constant", "Smooth" };
+        int current_type = (int)kf.curve_type;
+        if (ImGui::Combo("Curve Type", &current_type, curve_types, IM_ARRAYSIZE(curve_types)))
+            kf.curve_type = (CurveType)current_type;
+
+        if (kf.curve_type == CurveType::Smooth) {
+            ImGui::InputFloat2("In Tangent", &kf.in_tangent.x, "%.2f");
+            ImGui::InputFloat2("Out Tangent", &kf.out_tangent.x, "%.2f");
+        }
+
+        if (ImGui::Button("Delete Keyframe"))
+            curve.keyframes.erase(curve.keyframes.begin() + selected_keyframe);
+    }
+
+    ImGui::SeparatorText("Curve Settings");
+    ImGui::InputFloat2("MinMaxTime", &curve.minMaxTime.x);
+    ImGui::InputFloat2("MinMaxValue", &curve.minMaxValue.x);
+    ImGui::Text("Keyframes: %zu", curve.keyframes.size());
+}
+*/
 
 }

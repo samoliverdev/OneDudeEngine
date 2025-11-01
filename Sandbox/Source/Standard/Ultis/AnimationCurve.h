@@ -64,6 +64,8 @@ public:
     // Sort keyframes by time
     void SortKeyframes();
 
+    void UpdateMinMax();
+
     // Cereal serialization
     template<class Archive>
     void serialize(Archive& ar) {

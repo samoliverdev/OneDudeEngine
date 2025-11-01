@@ -7,7 +7,7 @@
 #include "OD/Animation/Pose.h"
 
 #define UseJoltPhysics
-
+ 
 namespace OD{
 
 //struct PhysicObject;
@@ -276,6 +276,8 @@ struct OD_API RagdollComponent{
 
         float overrideLinearDamping = -1;
 
+        RigidbodyConstraints constraints = RigidbodyConstraints::All;
+
         Vector3 previousPosition = Vector3Zero;
         Quaternion previousRotation = QuaternionIdentity;
 
@@ -296,6 +298,7 @@ struct OD_API RagdollComponent{
             ArchiveDumpNVP(ar, disableSync);
             ArchiveDumpNVP(ar, isHips);
             ArchiveDumpNVP(ar, overrideLinearDamping);
+            ArchiveDumpNVP(ar, constraints);
             ArchiveDumpNVP(ar, constraintPos);
             ArchiveDumpNVP(ar, twistAxis);
             ArchiveDumpNVP(ar, twistAngleMin);
@@ -348,6 +351,9 @@ struct OD_API RagdollComponent{
     void ApplyForce(int boneIndex, Vector3 v);
     void ApplyTorque(int boneIndex, Vector3 v);
     void ApplyImpulse(int boneIndex, Vector3 v);
+
+    RigidbodyConstraints Constraints(int boneIndex);
+    void Constraints(int boneIndex, RigidbodyConstraints constraints);
 
     void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
 
