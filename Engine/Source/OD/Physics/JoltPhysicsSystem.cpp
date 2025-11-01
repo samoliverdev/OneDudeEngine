@@ -1123,6 +1123,11 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 		rb.AngularDamping(angularDamping);
 	}
 
+	ImGui::Checkbox("overrideCenterOfMass", &rb.overrideCenterOfMass);
+	if(rb.overrideCenterOfMass){
+		ImGui::DragFloat3("centerOfMassOffset", &rb.centerOfMass.x);
+	}
+
     bool neverSleep = rb.NeverSleep();
     if(ImGui::Checkbox("neverSleep", &neverSleep)){
         rb.NeverSleep(neverSleep);
@@ -2990,6 +2995,16 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         return;
     }
     RefConst<Shape> finalShape = offsetResult.Get();
+
+	// Apply local collider offset
+	if(rb.overrideCenterOfMass){
+		//Vec3 offset = finalShape->GetCenterOfMass() - ToJolt(rb.centerOfMass);
+		Vec3 offset = (Vec3(0, 0, 0) - finalShape->GetCenterOfMass()) + ToJolt(rb.centerOfMass);
+		finalShape = new OffsetCenterOfMassShape(finalShape, offset);
+
+		auto cm = finalShape->GetCenterOfMass();
+		LogInfo("CenterOfMass: (%f, %f, %f)", cm.GetX(), cm.GetY(), cm.GetZ());
+	}
 
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 

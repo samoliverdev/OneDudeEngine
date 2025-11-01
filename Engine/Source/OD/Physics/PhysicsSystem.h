@@ -211,6 +211,9 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(constraints));
         ArchiveDump(ar, CEREAL_NVP(neverSleep));
         ArchiveDump(ar, CEREAL_NVP(mask));
+
+        ArchiveDump(ar, CEREAL_NVP(overrideCenterOfMass));
+        ArchiveDump(ar, CEREAL_NVP(centerOfMass));
     }
 
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
@@ -226,6 +229,9 @@ struct OD_API RigidbodyComponent{
         COPY_OR_MOVE(constraints);
         COPY_OR_MOVE(neverSleep);
         COPY_OR_MOVE(mask);
+
+        COPY_OR_MOVE(overrideCenterOfMass);
+        COPY_OR_MOVE(centerOfMass);
     });
 
     inline const class PhysicObject* InternalData(){ return data; }
@@ -234,6 +240,8 @@ private:
     CollisionShape shape;
     Type type = Type::Dynamic;
     Vector3 angularFactor = {1, 1, 1};
+    bool overrideCenterOfMass = false;
+    Vector3 centerOfMass = {0, 0, 0};
     RigidbodyConstraints constraints = RigidbodyConstraints::All;
     float mass = 1;
     float friction = 0.2f;
