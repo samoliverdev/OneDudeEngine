@@ -2303,6 +2303,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 		physicsWorld->physicsSystem.AddConstraint(hinge);
 	}
 
+	/////////////////////////////////
 	auto view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
 		if(ragdoll.isDirty && skinned.GetModel() != nullptr){
@@ -2364,16 +2365,30 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 			}*/
 		}
 		///*
+		scene->GetTaskflow().emplace([&](){
 		if(ragdoll.type != RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
 			for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 				Assert(boneIndex != 0);
-				Transform tt = Transform(trans.GlobalModelMatrix() * skinned.finalPose[boneIndex].GetModelMatrix());
+
+				/*//Transform tt = Transform(trans.GlobalModelMatrix() * skinned.finalPose[boneIndex].GetModelMatrix());
+				Transform tt = Transform(math::simdMul(trans.GlobalModelMatrix(), skinned.finalPose[boneIndex].GetModelMatrix()));
 				bodyInterface.SetPosition(bodyID, ToJolt(tt.Position()), EActivation::Activate);
-				bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);
+				bodyInterface.SetRotation(bodyID, ToJolt(tt.Rotation()), EActivation::Activate);*/
+
+				Quaternion tRot;
+				Vector3 tPos;
+				math::extractPosRot(
+					math::simdMul(trans.GlobalModelMatrix(), skinned.finalPose[boneIndex].GetModelMatrix()),
+					tPos, 
+					tRot
+				);
+				bodyInterface.SetPosition(bodyID, ToJolt(tPos), EActivation::Activate);
+				bodyInterface.SetRotation(bodyID, ToJolt(tRot), EActivation::Activate);
 			}
 		}
+		});
 
 		if(ragdoll.data != nullptr && scene->Running() == true){
 			if(ragdoll.type == RagdollComponent::Type::Dynamic){
@@ -2424,6 +2439,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 		}
 		//*/
 	}
+	/////////////////////////////////
 
 	//TODO: Update This, make handle dirty and organaze the code
 	auto heightView = scene->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();

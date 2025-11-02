@@ -20,6 +20,47 @@ Transform::Transform(const Matrix4& m){
     #endif
 }
 
+Transform Transform::DecomposeTransform(const glm::mat4& m){
+    Transform result;
+
+    // Extract translation
+    result.position = glm::vec3(m[3]);
+
+    // Remove perspective if any (ignore last row)
+    glm::mat4 localMatrix = m;
+    localMatrix[3] = glm::vec4(0, 0, 0, 1);
+
+    // Extract scale factors from the basis vectors
+    glm::vec3 col0 = glm::vec3(localMatrix[0]);
+    glm::vec3 col1 = glm::vec3(localMatrix[1]);
+    glm::vec3 col2 = glm::vec3(localMatrix[2]);
+
+    result.scale.x = glm::length(col0);
+    result.scale.y = glm::length(col1);
+    result.scale.z = glm::length(col2);
+
+    // Prevent division by zero
+    if(result.scale.x != 0) col0 /= result.scale.x;
+    if(result.scale.y != 0) col1 /= result.scale.y;
+    if(result.scale.z != 0) col2 /= result.scale.z;
+
+    // Reconstruct pure rotation matrix
+    glm::mat3 rotationMatrix;
+    rotationMatrix[0] = col0;
+    rotationMatrix[1] = col1;
+    rotationMatrix[2] = col2;
+
+    result.rotation = glm::quat_cast(rotationMatrix);
+
+    return result;
+}
+
+Transform Transform::DecomposePosRot(const glm::mat4& m){
+    Transform t;
+    math::extractPosRot(m, t.position, t.rotation);
+    return t;
+}
+
 /*
 Matrix4 Transform::GetModelMatrix(){
     #ifdef TransformLessDataOptimzation
@@ -37,7 +78,8 @@ Matrix4 Transform::GetModelMatrix(){
 
 Vector3 Transform::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = GetModelMatrix();
-    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+    //return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+    return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 Transform::TransformDirection(Vector3 dir){
@@ -45,17 +87,20 @@ Vector3 Transform::TransformDirection(Vector3 dir){
     return rotation * dir;*/
 
     Matrix4 matrix4 = GetModelMatrix();
-    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    //return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 Transform::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = GetModelMatrix();
-    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+    //return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+    return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
 }
 
 Vector3 Transform::TransformPoint(Vector3 point){
     Matrix4 matrix4 = GetModelMatrix();
-    return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    //return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
 }
 
 void Transform::OnGui(Transform& transform){

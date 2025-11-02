@@ -1357,11 +1357,12 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.distance = math::distance2(cam.viewPos, t.Position());
             data.targetMaterial = model->materials[i.materialIndex].get();
             data.targetMesh = model->meshs[i.meshIndex].get();
-            data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
-            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
             //data.aabb.Expand2(Vector3(5.5f));
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
@@ -1405,7 +1406,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.distance = math::distance2(cam.viewPos, t.Position());
         data.targetMaterial = c.material.get();
         data.targetMesh = c.mesh.get();
-        data.targetMatrix =  t.GlobalModelMatrix();;
+        data.targetMatrix =  t.GlobalModelMatrix();
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
         //INFO: Try optimize
@@ -1472,7 +1473,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
             //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
             //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            //data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
@@ -1482,8 +1484,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.posePalette = &c.posePalette;
             
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
-            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
 
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
                 data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
@@ -2018,18 +2020,18 @@ void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color = Vector3(1,1,1)
 }
 
 std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Matrix4& view){
-    const auto inv = math::inverse(proj * view);
+    const auto inv = math::inverse(math::simdMul(proj, view));
     
     std::vector<Vector4> frustumCorners;
     for(unsigned int x = 0; x < 2; ++x){
         for(unsigned int y = 0; y < 2; ++y){
             for(unsigned int z = 0; z < 2; ++z){
-                const Vector4 pt = inv * Vector4(
+                const Vector4 pt = math::simdMul(inv, Vector4(
                     2.0f * x - 1.0f, 
                     2.0f * y - 1.0f, 
                     2.0f * z - 1.0f, 
                     1.0f
-                );
+                ));
                 frustumCorners.push_back(pt / pt.w);
             }
         }
@@ -2052,8 +2054,8 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
 
     if(outFrustom != nullptr){
         //*outFrustom = CreateFrustumFromMatrix(lightView,proj);
-        Matrix4 viewProj = lightView * proj;
-        *outFrustom = CreateFrustumFromMatrix2(math::transpose( proj * lightView ));
+        Matrix4 viewProj = math::simdMul(lightView, proj);
+        *outFrustom = CreateFrustumFromMatrix2(math::transpose( math::simdMul(proj, lightView) ));
     }
 
     float minX = std::numeric_limits<float>::max();
@@ -2086,7 +2088,7 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     }
 
     const glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
-    return lightProjection * lightView;
+    return math::simdMul(lightProjection, lightView);
 }
 
 void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels){

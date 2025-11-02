@@ -171,6 +171,25 @@ inline vec4 simdMul(const glm::mat4& m, const glm::vec4& v){
     return r;
 }
 
+inline void extractPosRot(const glm::mat4& m, glm::vec3& outPos, glm::quat& outRot){
+    // Extract translation directly
+    outPos = glm::vec3(m[3]);
+
+    // Extract rotation (ignore scale)
+    glm::mat3 rotMat = glm::mat3(
+        glm::vec3(m[0]),  // X axis
+        glm::vec3(m[1]),  // Y axis
+        glm::vec3(m[2])   // Z axis
+    );
+
+    // Normalize each axis in case there’s a small scale
+    rotMat[0] = glm::normalize(rotMat[0]);
+    rotMat[1] = glm::normalize(rotMat[1]);
+    rotMat[2] = glm::normalize(rotMat[2]);
+
+    outRot = glm::quat_cast(rotMat);
+}
+
 }
 
 namespace OD {

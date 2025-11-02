@@ -100,7 +100,8 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(bool updateChild){
             //p.UpdateGlobalTransformCacheIfNeeded();
             #ifdef TransformLessDataOptimzation
             localModelMatrix = localTransform.GetModelMatrix();
-            globalModelMatrix = /*p.GlobalModelMatrix() **/ p.globalModelMatrix * localModelMatrix;
+            //globalModelMatrix = /*p.GlobalModelMatrix() **/ p.globalModelMatrix * localModelMatrix;
+            globalModelMatrix = math::simdMul(p.globalModelMatrix, localModelMatrix);
             globalTransform.position = p.TransformPoint(LocalPosition());
             globalTransform.rotation = p.Rotation() * LocalRotation();
             globalTransform.scale = p.Scale() * LocalScale(); // Aqui está a escala acumulada

@@ -24,7 +24,7 @@
 #ifndef FINAL_BUILD
     #define OD_PROFILE 1
 #else
-    #define OD_PROFILE 1
+    #define OD_PROFILE 0
 #endif
 
 #define FILE_MOVE_PAYLOAD "FILE_MOVE_PAYLOAD"

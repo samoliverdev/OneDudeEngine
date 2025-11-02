@@ -153,6 +153,9 @@ public:
         return !(*this == b);
     }
 
+    static Transform DecomposeTransform(const Matrix4& m);
+    static Transform DecomposePosRot(const Matrix4& m);
+
     inline static Transform Mix(const Transform& a, const Transform& b, float t) {
         Quaternion bRot = b.rotation;
         /*if(math::dot(a._localRotation, bRot) < 0.0f) {
@@ -198,7 +201,10 @@ public:
 
         #else
 
-        return Transform(a.GetModelMatrix() * b.GetModelMatrix());
+        //return Transform(a.GetModelMatrix() * b.GetModelMatrix());
+        return Transform(
+            math::simdMul(a.GetModelMatrix(), b.GetModelMatrix())
+        );
 
         #endif
     }

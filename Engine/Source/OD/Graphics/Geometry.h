@@ -119,14 +119,20 @@ inline AABB transform_aabb_optimized_abs_center_extents(const AABB& box, const M
 
     return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);*/
 
-    Vector3 t_center = m * Vector4(box.center, 1.0f);
+    /*Vector3 t_center = m * Vector4(box.center, 1.0f);
     glm::mat3 abs_mat(
         glm::abs(glm::vec3(m[0][0], m[1][0], m[2][0])),
         glm::abs(glm::vec3(m[0][1], m[1][1], m[2][1])),
         glm::abs(glm::vec3(m[0][2], m[1][2], m[2][2]))
     );
     Vector3 t_extents = abs_mat * box.extents;
-    return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);
+    return AABB(t_center, t_extents.x, t_extents.y, t_extents.z);*/
+
+    glm::vec3 center = glm::vec3(m * glm::vec4(box.center, 1.0f));
+    glm::mat3 linear = glm::mat3(m);
+    glm::mat3 absLinear = glm::mat3(glm::abs(linear[0]), glm::abs(linear[1]), glm::abs(linear[2]));
+    glm::vec3 extents = absLinear * box.extents;
+    return AABB(center, extents.x, extents.y, extents.z);
 }
 
 }
