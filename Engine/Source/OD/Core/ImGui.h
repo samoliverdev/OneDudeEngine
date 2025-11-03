@@ -18,6 +18,15 @@ namespace ImGui{
     void OD_API ColorEdit3(const char* name, OD::Color* color, ImGuiColorEditFlags flags = 0);
     void OD_API ColorEdit4(const char* name, OD::Color* color, ImGuiColorEditFlags flags = 0);
 
+    inline void DrawString(const char* name, std::string& value){
+        std::vector<char> charData(value.begin(), value.end());
+        charData.resize(1000);
+        
+        if(ImGui::InputText(name, &charData[0], charData.size())){
+            value = std::string(charData.data() );
+        } 
+    }
+
     template <class E, std::enable_if_t<std::is_enum<E>{}> * = nullptr>
     bool DrawEnumCombo(const char* name, E* e, ImGuiComboFlags flags = 0){
         static std::unique_ptr<std::vector<std::string>> enumNames{};

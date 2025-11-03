@@ -95,7 +95,7 @@ void InitialSizeModule::OnInitParticle(ParticleData& particle){
 
 void InitialColorModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialColor")){
-        ImGui::ColorEdit4("color", &color.r);
+        ImGui::ColorEdit4("color", &color.r, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
     }
 }
 
@@ -190,7 +190,7 @@ void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningD
     //p.color = Color::Lerp(colorA, colorB, runningData.lifetime);
 
     auto color = gradient.GetCombinedColor(runningData.lifetime);
-    p.color = Color(color[0] / 255.0f, color[1] / 255.0f, color[2] / 255.0f, color[3]);//TODO: Revise this "color[3] * 255.0f" quick fix
+    p.color = Color(color[0], color[1], color[2], color[3]);//TODO: Revise this "color[3] * 255.0f" quick fix
 }
 
 void CollisionPhysicModule::OnGui(){

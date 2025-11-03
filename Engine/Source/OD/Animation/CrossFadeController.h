@@ -21,6 +21,8 @@ public:
     ClipT* GetCurrentClip();
 
     float GetCurrentNormalizedTime();
+
+    bool WillOrPlay(ClipT* target);
     
     inline bool WasSkeletonSet(){ return wasSkeletonSet; }
     inline Skeleton& GetSkeleton(){ return skeleton; }

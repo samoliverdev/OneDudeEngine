@@ -149,4 +149,14 @@ ClipT* CrossFadeController::GetCurrentClip(){
     return clip;
 }
 
+bool CrossFadeController::WillOrPlay(ClipT* target){
+    if(clip == target) return true;
+
+    for(auto& i: targets){
+        if(i.clip == target) return true;
+    }
+
+    return false;
+}
+
 }
