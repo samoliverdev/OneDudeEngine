@@ -49,6 +49,8 @@
 #include <Jolt/Physics/Vehicle/WheeledVehicleController.h>
 #include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
 #include <Jolt/Physics/Constraints/HingeConstraint.h>
+#include <Jolt/Physics/Constraints/FixedConstraint.h>
+#include <Jolt/Physics/Constraints/DistanceConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -573,6 +575,11 @@ public:
 	bool isDirt = false;
 };
 
+class JointObject{
+public:
+	Constraint* constraint = nullptr;
+};
+
 class VehiclePhysicData{
 public:
 	VehicleConstraint* vehicleConstraint = nullptr;
@@ -623,6 +630,8 @@ public:
 constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 
 #pragma endregion
+
+#pragma region RagdollComponent
 
 void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	RagdollComponent& ragdoll = scene.GetComponent<RagdollComponent>(e);
@@ -1043,6 +1052,8 @@ void RagdollComponent::Constraints(int boneIndex, RigidbodyConstraints constrain
     MotionProperties* motionProps = body.GetMotionProperties();
 	motionProps->SetMassProperties(static_cast<JPH::EAllowedDOFs>(constraints), body.GetShape()->GetMassProperties());
 }
+
+#pragma endregion
 
 #pragma region RigidbodyComponent
 
@@ -1570,6 +1581,532 @@ void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
 	motionProps->SetMassProperties(static_cast<JPH::EAllowedDOFs>(constraints), body.GetShape()->GetMassProperties());
 }
 
+void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
+    RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
+    if(rb.data == nullptr) return;
+
+	if(r.any_of<VehiclePhysic>(e)){
+		OnRemoveVehicle(r, e);
+	}
+
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    physicsSystem->RemoveRigidbody(e, rb);
+    delete rb.data;
+}
+
+void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
+    BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+
+    EMotionType type = EMotionType::Dynamic;
+    if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
+	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
+	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
+
+    JPH::Ref<Shape> shape = nullptr;
+    if(rb.shape.type == CollisionShape::Type::Box){
+		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
+		//shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	} else if(rb.shape.type == CollisionShape::Type::Sphere){
+		SphereShapeSettings shapeSettings(rb.shape.radius);
+		//shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	} else if(rb.shape.type == CollisionShape::Type::Capsule){
+		float halfHeight = (rb.shape.height - 2.0f * rb.shape.radius) * 0.5f;
+		if (halfHeight < 0.0f) {
+			std::cerr << "Invalid capsule dimensions: height must be at least 2 * radius\n";
+			Assert(false);
+		}
+		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
+		//shapeSettings.SetDensity(rb.mass);
+		shape = shapeSettings.Create().Get();
+	} else if(rb.shape.type == CollisionShape::Type::Mesh || rb.shape.type == CollisionShape::Type::Model){
+		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
+		//shapeSettings.SetDensity(rb.mass);
+		//shape = shapeSettings.Create().Get();
+		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
+
+		if(rb.shape.type == CollisionShape::Type::Model && rb.shape.mesh == nullptr){
+			Assert(rb.shape.modelSource != nullptr);
+			Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
+			Assert(rb.shape.modelSourceMeshIndex >= 0);
+			rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
+		}
+
+		if(rb.shape.mesh == nullptr) return;
+		if(rb.shape.mesh->joltVertices.size() <= 0) return;
+		if(rb.shape.mesh->joltTriangles.size() <= 0) return;
+		if(rb.shape.mesh->convexPoints.size() <= 0) return;
+
+		Assert(rb.shape.mesh != nullptr);
+		Assert(rb.shape.mesh->joltVertices.size() > 0);
+		Assert(rb.shape.mesh->joltTriangles.size() > 0);
+		Assert(rb.shape.mesh->convexPoints.size() > 0);
+
+		if(rb.type == RigidbodyComponent::Type::Dynamic){
+			// Use Convex Hull for dynamic
+			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.mesh->convexPoints);
+			//shapeSettings.SetDensity(rb.mass);
+
+			auto result = shapeSettings.Create();
+			if (!result.HasError()) {
+				shape = result.Get();
+			} else {
+				std::cerr << "ConvexHullShape creation error: " << result.GetError() << std::endl;
+				return;
+			}
+		} else {
+			// Use MeshShape for static or kinematic
+			JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
+			shapeSettings.SetEmbedded();
+			auto result = shapeSettings.Create();
+			if (!result.HasError()) {
+				shape = result.Get();
+			} else {
+				std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
+				return;
+			}
+		}
+	} 
+
+	Assert(shape != nullptr);
+	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
+
+	RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(rb.shape.center), Quat::sIdentity(), shape);
+	//RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
+
+	auto offsetResult = offsetShapeSettings.Create();
+	if (offsetResult.HasError()) {
+        LogError("OffsetShape creation error for entity %s: %s", info.name.c_str(), offsetResult.GetError().c_str());
+        return;
+    }
+    RefConst<Shape> finalShape = offsetResult.Get();
+
+	// Apply local collider offset
+	if(rb.overrideCenterOfMass){
+		//Vec3 offset = finalShape->GetCenterOfMass() - ToJolt(rb.centerOfMass);
+		Vec3 offset = (Vec3(0, 0, 0) - finalShape->GetCenterOfMass()) + ToJolt(rb.centerOfMass);
+		finalShape = new OffsetCenterOfMassShape(finalShape, offset);
+
+		auto cm = finalShape->GetCenterOfMass();
+		LogInfo("CenterOfMass: (%f, %f, %f)", cm.GetX(), cm.GetY(), cm.GetZ());
+	}
+
+	BodyCreationSettings settings(
+        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
+    );
+	settings.mLinearDamping = rb.linearDamping;
+	settings.mAngularDamping = rb.angularDamping;
+	settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
+	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
+	settings.mCollisionGroup = JPH::CollisionGroup(
+		physicsWorld->groupFilter,
+        info.layer,
+        rb.mask.mask // stored in subgroup ID
+    );
+	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
+	//settings.mMotionQuality = EMotionQuality::LinearCast;
+	
+	/*settings.mNumVelocityStepsOverride = 50;
+	settings.mNumPositionStepsOverride = 50;
+	*/
+
+	settings.mFriction = rb.friction;
+
+	JPH::MassProperties msp;
+	msp.ScaleToMass(rb.mass); //actual mass in kg
+	settings.mMassPropertiesOverride = msp;
+	settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+
+	settings.mIsSensor = rb.type == RigidbodyComponent::Type::Trigger;
+
+    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
+	// Verify body creation
+    if (!bodyInterface.IsAdded(rb.data->bodyID)) {
+        LogError("Failed to add body for entity %s", info.name.c_str());
+        return;
+    }
+
+	rb.SetAngularFactor(rb.angularFactor);
+}
+
+void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
+	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+    bodyInterface.RemoveBody(rb.data->bodyID);
+    bodyInterface.DestroyBody(rb.data->bodyID);
+}
+
+#pragma endregion
+
+#pragma region JointComponent
+
+void JointComponent::OnGui(Entity& e, Scene& scene){
+	JointComponent& c = scene.GetComponent<JointComponent>(e);
+
+	ImGui::DragScalar("bodyA", ImGuiDataType_U32, &c.bodyA);
+	ImGui::DragScalar("bodyASubIndex", ImGuiDataType_S32, &c.bodyASubIndex);
+
+	ImGui::DragScalar("bodyB", ImGuiDataType_U32, &c.bodyB);
+	ImGui::DragScalar("bodyBSubIndex", ImGuiDataType_S32, &c.bodyBSubIndex);
+
+	ImGui::DrawEnumCombo<JointSpace>("jointSpace", &c.jointSpace);
+
+	ImGui::DrawEnumCombo<JointComponent::Type>("type", &c.type);
+	
+	if(c.type == JointComponent::Type::Fixed){
+		if(ImGui::DragFloat3("point1", &c.fixedSettings.point1.x)) c.CreateFixed(c.fixedSettings);
+		if(ImGui::DragFloat3("point2", &c.fixedSettings.point2.x)) c.CreateFixed(c.fixedSettings);
+	}
+
+	if(c.type == JointComponent::Type::Distance){
+		if(ImGui::DragFloat3("point1", &c.distanceSettings.point1.x)) c.CreateDistance(c.distanceSettings);
+		if(ImGui::DragFloat3("point2", &c.distanceSettings.point2.x)) c.CreateDistance(c.distanceSettings);
+		if(ImGui::DragFloat("minDistance", &c.distanceSettings.minDistance)) c.SetDistance(c.distanceSettings.minDistance, c.distanceSettings.maxDistance);
+		if(ImGui::DragFloat("maxDistance", &c.distanceSettings.maxDistance)) c.SetDistance(c.distanceSettings.minDistance, c.distanceSettings.maxDistance);
+	}
+}
+
+void JointComponent::CreateFixed(FixedSettings& settings){
+	isDirty = true;
+	fixedSettings = settings;
+}
+
+void JointComponent::CreateDistance(DistanceSettings& settings){
+	isDirty = true;
+	distanceSettings = settings;
+}
+
+void JointComponent::SetDistance(float min, float max){
+	distanceSettings.minDistance = min;
+	distanceSettings.maxDistance = max;
+
+	if(type != JointComponent::Type::Distance) return;
+	if(data == nullptr) return;
+
+	DistanceConstraint* c = static_cast<DistanceConstraint*>(data->constraint);
+	c->SetDistance(min, max);
+}
+
+void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
+    
+}
+
+void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint, TransformComponent& trans, InfoComponent& info){
+	auto getBodyId = [&](Entity target, int subBodyIndex){
+		if(subBodyIndex >= 0 && scene->HasComponent<RagdollComponent>(target)){
+			return scene->GetComponent<RagdollComponent>(target).data->ragdoll->GetBodyID(subBodyIndex);
+		} else if(scene->HasComponent<RigidbodyComponent>(target)){
+			return scene->GetComponent<RigidbodyComponent>(target).data->bodyID;
+		}
+
+		return BodyID(BodyID::cInvalidBodyID);
+	};
+
+	BodyID idA = getBodyId(joint.bodyA, joint.bodyASubIndex);
+	BodyID idB = getBodyId(joint.bodyB, joint.bodyBSubIndex);
+
+	Assert(idA.IsInvalid() == false);
+	Assert(idB.IsInvalid() == false);
+
+	if(idA.IsInvalid() == true) return;
+	if(idB.IsInvalid() == true) return;
+
+	joint.data = new JointObject();
+
+	BodyLockWrite lockA(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), idA);
+	Assert(lockA.Succeeded());
+	JPH::Body& body1 = lockA.GetBody();
+
+	BodyLockWrite lockB(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), idB);
+	Assert(lockB.Succeeded());
+	JPH::Body& body2 = lockB.GetBody();
+
+	if(joint.type == JointComponent::Type::Fixed){
+		FixedConstraintSettings fixedSettings;
+
+		if(joint.jointSpace == JointSpace::WorldSpace){
+			fixedSettings.mPoint1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));
+			fixedSettings.mPoint2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
+			fixedSettings.mSpace = EConstraintSpace::WorldSpace;
+		} else {
+			fixedSettings.mPoint1 = ToJolt(joint.distanceSettings.point1);
+			fixedSettings.mPoint2 = ToJolt(joint.distanceSettings.point2);
+			fixedSettings.mSpace = EConstraintSpace::LocalToBodyCOM;
+		}
+
+		FixedConstraint* c = new FixedConstraint(body1, body2, fixedSettings);
+		joint.data->constraint = c;
+	}
+
+	if(joint.type == JointComponent::Type::Distance){
+		DistanceConstraintSettings distanceSettings;
+
+		if(joint.jointSpace == JointSpace::WorldSpace){
+			distanceSettings.mPoint1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));
+			distanceSettings.mPoint2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
+			distanceSettings.mSpace = EConstraintSpace::WorldSpace;
+		} else {
+			Vec3 worldP1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));// Get world-space points (the way user or editor defines them)
+			Vec3 worldP2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
+			Vec3 localP1 = body1.GetInverseCenterOfMassTransform() * worldP1;// Convert to local COM-space relative to each body
+			Vec3 localP2 = body2.GetInverseCenterOfMassTransform() * worldP2;
+
+			distanceSettings.mPoint1 = localP1;
+			distanceSettings.mPoint2 = localP2;
+			distanceSettings.mSpace = EConstraintSpace::LocalToBodyCOM;
+
+			distanceSettings.mLimitsSpringSettings.mFrequency = 5.0f;
+			distanceSettings.mLimitsSpringSettings.mDamping = 0.9f;
+
+			/*float dist = (worldP1 - worldP2).Length();
+			joint.distanceSettings.minDistance = dist;
+			joint.distanceSettings.maxDistance = dist;*/
+		}
+
+		distanceSettings.mMinDistance = joint.distanceSettings.minDistance;
+		distanceSettings.mMaxDistance = joint.distanceSettings.maxDistance;
+
+		/*Vec3 worldP1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));// Get world-space points (the way user or editor defines them)
+		Vec3 worldP2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
+		float dist = (worldP1 - worldP2).Length();
+		distanceSettings.mMinDistance = dist;
+		distanceSettings.mMaxDistance = dist;*/
+
+		DistanceConstraint* c = new DistanceConstraint(body1, body2, distanceSettings);
+		joint.data->constraint = c;
+	}
+
+	physicsWorld->physicsSystem.AddConstraint(joint.data->constraint);
+}
+
+void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& joint){
+	delete joint.data;
+}
+
+#pragma endregion
+
+#pragma region VehiclePhysic
+
+void PhysicsSystem::OnRemoveVehicle(entt::registry& r, entt::entity e){
+	VehiclePhysic& rb = r.get<VehiclePhysic>(e);
+    if(rb.data == nullptr) return;
+
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    physicsSystem->RemoveVehicle(e, rb);
+    delete rb.data;
+}
+
+void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
+	BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), c.data->bodyID);
+	if(!lock.Succeeded()) return;
+
+	Body& mCarBody = lock.GetBody();
+
+	const float wheel_radius = 0.3f;
+	const float wheel_radius2 = 0.4f;
+	const float wheel_width = 0.1f;
+	const float half_vehicle_length = 2.0f;
+	const float half_vehicle_width = 0.9f;
+	const float half_vehicle_height = 0.2f;
+
+	const float			sInitialRollAngle = 0;
+	const float			sMaxRollAngle = DegreesToRadians(60.0f);
+	const float			sMaxSteeringAngle = DegreesToRadians(30.0f);
+	const int			sCollisionMode = 2;
+	const bool			sFourWheelDrive = false;
+	const bool			sAntiRollbar = true;
+	const bool			sLimitedSlipDifferentials = true;
+	const bool			sOverrideGravity = false;					///< If true, gravity is overridden to always oppose the ground normal
+	const float			sMaxEngineTorque = 500.0f;
+	const float			sClutchStrength = 10.0f;
+	const float			sFrontCasterAngle = 0.0f;
+	const float			sFrontKingPinAngle = 0.0f;
+	const float			sFrontCamber = 0.0f;
+	const float			sFrontToe = 0.0f;
+	const float			sFrontSuspensionForwardAngle = 0.0f;
+	const float			sFrontSuspensionSidewaysAngle = 0.0f;
+	const float			sFrontSuspensionMinLength = 0.3f;
+	const float			sFrontSuspensionMaxLength = 0.5f;
+	const float			sFrontSuspensionFrequency = 1.5f;
+	const float			sFrontSuspensionDamping = 0.5f;
+	const float			sRearSuspensionForwardAngle = 0.0f;
+	const float			sRearSuspensionSidewaysAngle = 0.0f;
+	const float			sRearCasterAngle = 0.0f;
+	const float			sRearKingPinAngle = 0.0f;
+	const float			sRearCamber = 0.0f;
+	const float			sRearToe = 0.0f;
+	const float			sRearSuspensionMinLength = 0.3f;
+	const float			sRearSuspensionMaxLength = 0.5f;
+	const float			sRearSuspensionFrequency = 1.5f;
+	const float			sRearSuspensionDamping = 0.5f;
+
+	//Body *						mCarBody;									///< The vehicle
+	//Ref<VehicleConstraint>		mVehicleConstraint;							///< The vehicle constraint
+	//Ref<VehicleCollisionTester>	mTesters[3];								///< Collision testers for the wheel
+	//RMat44						mCameraPivot = RMat44::sIdentity();			///< The camera pivot, recorded before the physics update to align with the drawn world
+
+	// Player input
+	float						mForward = 0.0f;
+	float						mPreviousForward = 1.0f;					///< Keeps track of last car direction so we know when to brake and when to accelerate
+	float						mRight = 0.0f;
+	float						mBrake = 0.0f;
+	float						mHandBrake = 0.0f;
+
+	veh.data = new VehiclePhysicData();
+
+	// Create vehicle constraint
+	VehicleConstraintSettings vehicle;
+	vehicle.mDrawConstraintSize = 0.1f;
+	vehicle.mMaxPitchRollAngle = math::radians(veh.maxRollAngle); sMaxRollAngle;
+
+	// Suspension direction
+	Vec3 front_suspension_dir = Vec3(Tan(sFrontSuspensionSidewaysAngle), -1, Tan(sFrontSuspensionForwardAngle)).Normalized();
+	Vec3 front_steering_axis = Vec3(-Tan(sFrontKingPinAngle), 1, -Tan(sFrontCasterAngle)).Normalized();
+	Vec3 front_wheel_up = Vec3(Sin(sFrontCamber), Cos(sFrontCamber), 0);
+	Vec3 front_wheel_forward = Vec3(-Sin(sFrontToe), 0, Cos(sFrontToe));
+	Vec3 rear_suspension_dir = Vec3(Tan(sRearSuspensionSidewaysAngle), -1, Tan(sRearSuspensionForwardAngle)).Normalized();
+	Vec3 rear_steering_axis = Vec3(-Tan(sRearKingPinAngle), 1, -Tan(sRearCasterAngle)).Normalized();
+	Vec3 rear_wheel_up = Vec3(Sin(sRearCamber), Cos(sRearCamber), 0);
+	Vec3 rear_wheel_forward = Vec3(-Sin(sRearToe), 0, Cos(sRearToe));
+	Vec3 flip_x(-1, 1, 1);
+
+	Assert(veh.wheels.size() == 4);
+
+	// Wheels, left front
+	WheelSettingsWV *w1 = new WheelSettingsWV;
+	//w1->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
+	w1->mPosition = ToJolt(veh.wheels[0].pos);
+
+	w1->mSuspensionDirection = front_suspension_dir;
+	w1->mSteeringAxis = front_steering_axis;
+	w1->mWheelUp = front_wheel_up;
+	w1->mWheelForward = front_wheel_forward;
+	w1->mSuspensionMinLength = veh.wheels[0].suspensionMinLength;// sFrontSuspensionMinLength;
+	w1->mSuspensionMaxLength = veh.wheels[0].suspensionMaxLength;// sFrontSuspensionMaxLength;
+	w1->mSuspensionSpring.mFrequency = veh.wheels[0].suspensionFrequency;// sFrontSuspensionFrequency;
+	w1->mSuspensionSpring.mDamping = veh.wheels[0].suspensionDamping;// sFrontSuspensionDamping;
+	w1->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
+	w1->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
+	w1->mRadius = veh.wheels[0].radius;
+	w1->mWidth = veh.wheels[0].width;
+
+	// Right front
+	WheelSettingsWV *w2 = new WheelSettingsWV;
+	//w2->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
+	w2->mPosition = ToJolt(veh.wheels[1].pos);
+
+	w2->mSuspensionDirection = flip_x * front_suspension_dir;
+	w2->mSteeringAxis = flip_x * front_steering_axis;
+	w2->mWheelUp = flip_x * front_wheel_up;
+	w2->mWheelForward = flip_x * front_wheel_forward;
+	w2->mSuspensionMinLength = veh.wheels[1].suspensionMinLength;// sFrontSuspensionMinLength;
+	w2->mSuspensionMaxLength = veh.wheels[1].suspensionMaxLength;// sFrontSuspensionMaxLength;
+	w2->mSuspensionSpring.mFrequency = veh.wheels[1].suspensionFrequency;// sFrontSuspensionFrequency;
+	w2->mSuspensionSpring.mDamping = veh.wheels[1].suspensionDamping;// sFrontSuspensionDamping;
+	w2->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
+	w2->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
+	w2->mRadius = veh.wheels[1].radius;
+	w2->mWidth = veh.wheels[1].width;
+
+	// Left rear
+	WheelSettingsWV *w3 = new WheelSettingsWV;
+	//w3->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
+	w3->mPosition = ToJolt(veh.wheels[2].pos);
+
+	w3->mSuspensionDirection = rear_suspension_dir;
+	w3->mSteeringAxis = rear_steering_axis;
+	w3->mWheelUp = rear_wheel_up;
+	w3->mWheelForward = rear_wheel_forward;
+	w3->mSuspensionMinLength = veh.wheels[2].suspensionMinLength;// sRearSuspensionMinLength;
+	w3->mSuspensionMaxLength = veh.wheels[2].suspensionMaxLength;// sRearSuspensionMaxLength;
+	w3->mSuspensionSpring.mFrequency = veh.wheels[2].suspensionFrequency;// sRearSuspensionFrequency;
+	w3->mSuspensionSpring.mDamping = veh.wheels[2].suspensionDamping;// sRearSuspensionDamping;
+	w3->mMaxSteerAngle = 0.0f;
+	w3->mRadius = veh.wheels[2].radius;
+	w3->mWidth = veh.wheels[2].width;
+
+	// Right rear
+	WheelSettingsWV *w4 = new WheelSettingsWV;
+	//w4->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
+	w4->mPosition = ToJolt(veh.wheels[3].pos);
+
+	w4->mSuspensionDirection = flip_x * rear_suspension_dir;
+	w4->mSteeringAxis = flip_x * rear_steering_axis;
+	w4->mWheelUp = flip_x * rear_wheel_up;
+	w4->mWheelForward = flip_x * rear_wheel_forward;
+	w4->mSuspensionMinLength = veh.wheels[3].suspensionMinLength;// sRearSuspensionMinLength;
+	w4->mSuspensionMaxLength = veh.wheels[3].suspensionMaxLength;// sRearSuspensionMaxLength;
+	w4->mSuspensionSpring.mFrequency = veh.wheels[3].suspensionFrequency;// sRearSuspensionFrequency;
+	w4->mSuspensionSpring.mDamping = veh.wheels[3].suspensionDamping;// sRearSuspensionDamping;
+	w4->mMaxSteerAngle = 0.0f;
+	w4->mRadius = veh.wheels[3].radius;
+	w4->mWidth = veh.wheels[3].width;
+
+	vehicle.mWheels = { w1, w2, w3, w4 };
+
+	/*for(WheelSettings *w : vehicle.mWheels){
+		w->mRadius = wheel_radius;
+		w->mWidth = wheel_width;
+	}*/
+
+	WheeledVehicleControllerSettings *controller = new WheeledVehicleControllerSettings;
+	vehicle.mController = controller;
+
+	// Differential
+	controller->mDifferentials.resize(sFourWheelDrive ? 2 : 1);
+	controller->mDifferentials[0].mLeftWheel = 0;
+	controller->mDifferentials[0].mRightWheel = 1;
+	if(sFourWheelDrive){
+		controller->mDifferentials[1].mLeftWheel = 2;
+		controller->mDifferentials[1].mRightWheel = 3;
+
+		//controller->mDifferentials[0].mDifferentialRatio = 1.93f * 40.0f / 16.0f; // Combining primary and final drive (back divided by front sprockets) from: https://www.blocklayer.com/rpm-gear-bikes
+
+		// Split engine torque
+		controller->mDifferentials[0].mEngineTorqueRatio = controller->mDifferentials[1].mEngineTorqueRatio = 0.5f;
+	}
+
+	// Anti rollbars
+	if(sAntiRollbar){
+		vehicle.mAntiRollBars.resize(2);
+		vehicle.mAntiRollBars[0].mLeftWheel = 0;
+		vehicle.mAntiRollBars[0].mRightWheel = 1;
+		vehicle.mAntiRollBars[1].mLeftWheel = 2;
+		vehicle.mAntiRollBars[1].mRightWheel = 3;
+
+		vehicle.mAntiRollBars[0].mStiffness = veh.antiRollBarsStiffness;
+		vehicle.mAntiRollBars[1].mStiffness = veh.antiRollBarsStiffness;
+	}
+
+	veh.data->vehicleConstraint = new VehicleConstraint(mCarBody, vehicle);
+
+	float longMult = veh.longitudinalImpulseMultplier;
+	float latMult  = veh.lateralImpulseMultplier;
+
+	// The vehicle settings were tweaked with a buggy implementation of the longitudinal tire impulses, this meant that PhysicsSettings::mNumVelocitySteps times more impulse
+	// could be applied than intended. To keep the behavior of the vehicle the same we increase the max longitudinal impulse by the same factor. In a future version the vehicle
+	// will be retweaked.
+	static_cast<WheeledVehicleController *>(veh.data->vehicleConstraint->GetController())->SetTireMaxImpulseCallback(
+		[longMult, latMult]
+		(uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float){
+			outLongitudinalImpulse = /*10.0f **/ longMult * inLongitudinalFriction * inSuspensionImpulse;
+			outLateralImpulse = /*2 **/ latMult * inLateralFriction * inSuspensionImpulse;
+		}
+	);
+
+	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(PhysicsLayers::MOVING);
+	veh.data->vehicleConstraint->SetVehicleCollisionTester(vehicle_tester);
+
+	physicsWorld->physicsSystem.AddConstraint(veh.data->vehicleConstraint);
+	physicsWorld->physicsSystem.AddStepListener(veh.data->vehicleConstraint);
+}
+
+void PhysicsSystem::RemoveVehicle(Entity entity, VehiclePhysic& c){
+	physicsWorld->physicsSystem.RemoveStepListener(c.data->vehicleConstraint);
+	physicsWorld->physicsSystem.RemoveConstraint(c.data->vehicleConstraint);
+}
+
+
 #pragma endregion
 
 #pragma region PhysicsSystem
@@ -1697,6 +2234,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().connect<&OnRemoveRagdoll>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
+	this->scene->GetRegistry().on_destroy<JointComponent>().connect<&OnRemoveJoint>();
 	this->scene->GetRegistry().on_destroy<HeightmapColliderComponent>().connect<&OnRemoveHeightmap>();
 	this->scene->GetRegistry().on_destroy<VehiclePhysic>().connect<&OnRemoveVehicle>();
     this->scene->GetRegistry().ctx().emplace<PhysicsSystem*>(this);
@@ -1705,6 +2243,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 void PhysicsSystem::OnEnd(Scene& inScene){
     scene->GetRegistry().on_destroy<RigidbodyComponent>().disconnect<&OnRemoveRigidbody>();
 	scene->GetRegistry().on_destroy<RagdollComponent>().disconnect<&OnRemoveRagdoll>();
+	this->scene->GetRegistry().on_destroy<JointComponent>().disconnect<&OnRemoveJoint>();
 	scene->GetRegistry().on_destroy<VehiclePhysic>().disconnect<&OnRemoveVehicle>();
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
@@ -2501,6 +3040,15 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	}
 	}
 
+	auto jointView = scene->GetRegistry().view<JointComponent, TransformComponent, InfoComponent>();
+	for(auto [entity, joint, trans, info]: jointView.each()){
+		if(joint.isDirty){
+			joint.isDirty = false;
+			RemoveJoint(entity, joint);
+			AddJoint(scene, entity, joint, trans, info);
+		}
+	}
+
 	auto vehicleView = scene->GetRegistry().view<VehiclePhysic, RigidbodyComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, veh, rb, trans, info]: vehicleView.each()){
 		if(rb.data != nullptr && veh.data == nullptr){
@@ -2909,392 +3457,6 @@ void PhysicsSystem::OnRemoveHeightmap(entt::registry& r, entt::entity e){
     bodyInterface.RemoveBody(shape.data->bodyID);
     bodyInterface.DestroyBody(shape.data->bodyID);
 	delete shape.data;
-}
-
-void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
-    RigidbodyComponent& rb = r.get<RigidbodyComponent>(e);
-    if(rb.data == nullptr) return;
-
-	if(r.any_of<VehiclePhysic>(e)){
-		OnRemoveVehicle(r, e);
-	}
-
-    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
-    physicsSystem->RemoveRigidbody(e, rb);
-    delete rb.data;
-}
-
-void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
-    BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
-
-    EMotionType type = EMotionType::Dynamic;
-    if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
-	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
-	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
-
-    JPH::Ref<Shape> shape = nullptr;
-    if(rb.shape.type == CollisionShape::Type::Box){
-		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Sphere){
-		SphereShapeSettings shapeSettings(rb.shape.radius);
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Capsule){
-		float halfHeight = (rb.shape.height - 2.0f * rb.shape.radius) * 0.5f;
-		if (halfHeight < 0.0f) {
-			std::cerr << "Invalid capsule dimensions: height must be at least 2 * radius\n";
-			Assert(false);
-		}
-		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Mesh || rb.shape.type == CollisionShape::Type::Model){
-		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
-		//shapeSettings.SetDensity(rb.mass);
-		//shape = shapeSettings.Create().Get();
-		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
-
-		if(rb.shape.type == CollisionShape::Type::Model && rb.shape.mesh == nullptr){
-			Assert(rb.shape.modelSource != nullptr);
-			Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
-			Assert(rb.shape.modelSourceMeshIndex >= 0);
-			rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
-		}
-
-		if(rb.shape.mesh == nullptr) return;
-		if(rb.shape.mesh->joltVertices.size() <= 0) return;
-		if(rb.shape.mesh->joltTriangles.size() <= 0) return;
-		if(rb.shape.mesh->convexPoints.size() <= 0) return;
-
-		Assert(rb.shape.mesh != nullptr);
-		Assert(rb.shape.mesh->joltVertices.size() > 0);
-		Assert(rb.shape.mesh->joltTriangles.size() > 0);
-		Assert(rb.shape.mesh->convexPoints.size() > 0);
-
-		if(rb.type == RigidbodyComponent::Type::Dynamic){
-			// Use Convex Hull for dynamic
-			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.mesh->convexPoints);
-			//shapeSettings.SetDensity(rb.mass);
-
-			auto result = shapeSettings.Create();
-			if (!result.HasError()) {
-				shape = result.Get();
-			} else {
-				std::cerr << "ConvexHullShape creation error: " << result.GetError() << std::endl;
-				return;
-			}
-		} else {
-			// Use MeshShape for static or kinematic
-			JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
-			shapeSettings.SetEmbedded();
-			auto result = shapeSettings.Create();
-			if (!result.HasError()) {
-				shape = result.Get();
-			} else {
-				std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
-				return;
-			}
-		}
-	} 
-
-	Assert(shape != nullptr);
-	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
-
-	RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(rb.shape.center), Quat::sIdentity(), shape);
-	//RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
-
-	auto offsetResult = offsetShapeSettings.Create();
-	if (offsetResult.HasError()) {
-        LogError("OffsetShape creation error for entity %s: %s", info.name.c_str(), offsetResult.GetError().c_str());
-        return;
-    }
-    RefConst<Shape> finalShape = offsetResult.Get();
-
-	// Apply local collider offset
-	if(rb.overrideCenterOfMass){
-		//Vec3 offset = finalShape->GetCenterOfMass() - ToJolt(rb.centerOfMass);
-		Vec3 offset = (Vec3(0, 0, 0) - finalShape->GetCenterOfMass()) + ToJolt(rb.centerOfMass);
-		finalShape = new OffsetCenterOfMassShape(finalShape, offset);
-
-		auto cm = finalShape->GetCenterOfMass();
-		LogInfo("CenterOfMass: (%f, %f, %f)", cm.GetX(), cm.GetY(), cm.GetZ());
-	}
-
-	BodyCreationSettings settings(
-        finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
-    );
-	settings.mLinearDamping = rb.linearDamping;
-	settings.mAngularDamping = rb.angularDamping;
-	settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
-	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
-	settings.mCollisionGroup = JPH::CollisionGroup(
-		physicsWorld->groupFilter,
-        info.layer,
-        rb.mask.mask // stored in subgroup ID
-    );
-	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
-	//settings.mMotionQuality = EMotionQuality::LinearCast;
-	
-	/*settings.mNumVelocityStepsOverride = 50;
-	settings.mNumPositionStepsOverride = 50;
-	*/
-
-	settings.mFriction = rb.friction;
-
-	JPH::MassProperties msp;
-	msp.ScaleToMass(rb.mass); //actual mass in kg
-	settings.mMassPropertiesOverride = msp;
-	settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
-
-	settings.mIsSensor = rb.type == RigidbodyComponent::Type::Trigger;
-
-    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
-	// Verify body creation
-    if (!bodyInterface.IsAdded(rb.data->bodyID)) {
-        LogError("Failed to add body for entity %s", info.name.c_str());
-        return;
-    }
-
-	rb.SetAngularFactor(rb.angularFactor);
-}
-
-void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
-	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
-    bodyInterface.RemoveBody(rb.data->bodyID);
-    bodyInterface.DestroyBody(rb.data->bodyID);
-}
-
-void PhysicsSystem::OnRemoveVehicle(entt::registry& r, entt::entity e){
-	VehiclePhysic& rb = r.get<VehiclePhysic>(e);
-    if(rb.data == nullptr) return;
-
-    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
-    physicsSystem->RemoveVehicle(e, rb);
-    delete rb.data;
-}
-
-void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
-	BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), c.data->bodyID);
-	if(!lock.Succeeded()) return;
-
-	Body& mCarBody = lock.GetBody();
-
-	const float wheel_radius = 0.3f;
-	const float wheel_radius2 = 0.4f;
-	const float wheel_width = 0.1f;
-	const float half_vehicle_length = 2.0f;
-	const float half_vehicle_width = 0.9f;
-	const float half_vehicle_height = 0.2f;
-
-	const float			sInitialRollAngle = 0;
-	const float			sMaxRollAngle = DegreesToRadians(60.0f);
-	const float			sMaxSteeringAngle = DegreesToRadians(30.0f);
-	const int			sCollisionMode = 2;
-	const bool			sFourWheelDrive = false;
-	const bool			sAntiRollbar = true;
-	const bool			sLimitedSlipDifferentials = true;
-	const bool			sOverrideGravity = false;					///< If true, gravity is overridden to always oppose the ground normal
-	const float			sMaxEngineTorque = 500.0f;
-	const float			sClutchStrength = 10.0f;
-	const float			sFrontCasterAngle = 0.0f;
-	const float			sFrontKingPinAngle = 0.0f;
-	const float			sFrontCamber = 0.0f;
-	const float			sFrontToe = 0.0f;
-	const float			sFrontSuspensionForwardAngle = 0.0f;
-	const float			sFrontSuspensionSidewaysAngle = 0.0f;
-	const float			sFrontSuspensionMinLength = 0.3f;
-	const float			sFrontSuspensionMaxLength = 0.5f;
-	const float			sFrontSuspensionFrequency = 1.5f;
-	const float			sFrontSuspensionDamping = 0.5f;
-	const float			sRearSuspensionForwardAngle = 0.0f;
-	const float			sRearSuspensionSidewaysAngle = 0.0f;
-	const float			sRearCasterAngle = 0.0f;
-	const float			sRearKingPinAngle = 0.0f;
-	const float			sRearCamber = 0.0f;
-	const float			sRearToe = 0.0f;
-	const float			sRearSuspensionMinLength = 0.3f;
-	const float			sRearSuspensionMaxLength = 0.5f;
-	const float			sRearSuspensionFrequency = 1.5f;
-	const float			sRearSuspensionDamping = 0.5f;
-
-	//Body *						mCarBody;									///< The vehicle
-	//Ref<VehicleConstraint>		mVehicleConstraint;							///< The vehicle constraint
-	//Ref<VehicleCollisionTester>	mTesters[3];								///< Collision testers for the wheel
-	//RMat44						mCameraPivot = RMat44::sIdentity();			///< The camera pivot, recorded before the physics update to align with the drawn world
-
-	// Player input
-	float						mForward = 0.0f;
-	float						mPreviousForward = 1.0f;					///< Keeps track of last car direction so we know when to brake and when to accelerate
-	float						mRight = 0.0f;
-	float						mBrake = 0.0f;
-	float						mHandBrake = 0.0f;
-
-	veh.data = new VehiclePhysicData();
-
-	// Create vehicle constraint
-	VehicleConstraintSettings vehicle;
-	vehicle.mDrawConstraintSize = 0.1f;
-	vehicle.mMaxPitchRollAngle = math::radians(veh.maxRollAngle); sMaxRollAngle;
-
-	// Suspension direction
-	Vec3 front_suspension_dir = Vec3(Tan(sFrontSuspensionSidewaysAngle), -1, Tan(sFrontSuspensionForwardAngle)).Normalized();
-	Vec3 front_steering_axis = Vec3(-Tan(sFrontKingPinAngle), 1, -Tan(sFrontCasterAngle)).Normalized();
-	Vec3 front_wheel_up = Vec3(Sin(sFrontCamber), Cos(sFrontCamber), 0);
-	Vec3 front_wheel_forward = Vec3(-Sin(sFrontToe), 0, Cos(sFrontToe));
-	Vec3 rear_suspension_dir = Vec3(Tan(sRearSuspensionSidewaysAngle), -1, Tan(sRearSuspensionForwardAngle)).Normalized();
-	Vec3 rear_steering_axis = Vec3(-Tan(sRearKingPinAngle), 1, -Tan(sRearCasterAngle)).Normalized();
-	Vec3 rear_wheel_up = Vec3(Sin(sRearCamber), Cos(sRearCamber), 0);
-	Vec3 rear_wheel_forward = Vec3(-Sin(sRearToe), 0, Cos(sRearToe));
-	Vec3 flip_x(-1, 1, 1);
-
-	Assert(veh.wheels.size() == 4);
-
-	// Wheels, left front
-	WheelSettingsWV *w1 = new WheelSettingsWV;
-	//w1->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
-	w1->mPosition = ToJolt(veh.wheels[0].pos);
-
-	w1->mSuspensionDirection = front_suspension_dir;
-	w1->mSteeringAxis = front_steering_axis;
-	w1->mWheelUp = front_wheel_up;
-	w1->mWheelForward = front_wheel_forward;
-	w1->mSuspensionMinLength = veh.wheels[0].suspensionMinLength;// sFrontSuspensionMinLength;
-	w1->mSuspensionMaxLength = veh.wheels[0].suspensionMaxLength;// sFrontSuspensionMaxLength;
-	w1->mSuspensionSpring.mFrequency = veh.wheels[0].suspensionFrequency;// sFrontSuspensionFrequency;
-	w1->mSuspensionSpring.mDamping = veh.wheels[0].suspensionDamping;// sFrontSuspensionDamping;
-	w1->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
-	w1->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
-	w1->mRadius = veh.wheels[0].radius;
-	w1->mWidth = veh.wheels[0].width;
-
-	// Right front
-	WheelSettingsWV *w2 = new WheelSettingsWV;
-	//w2->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, half_vehicle_length - 2.0f * wheel_radius);
-	w2->mPosition = ToJolt(veh.wheels[1].pos);
-
-	w2->mSuspensionDirection = flip_x * front_suspension_dir;
-	w2->mSteeringAxis = flip_x * front_steering_axis;
-	w2->mWheelUp = flip_x * front_wheel_up;
-	w2->mWheelForward = flip_x * front_wheel_forward;
-	w2->mSuspensionMinLength = veh.wheels[1].suspensionMinLength;// sFrontSuspensionMinLength;
-	w2->mSuspensionMaxLength = veh.wheels[1].suspensionMaxLength;// sFrontSuspensionMaxLength;
-	w2->mSuspensionSpring.mFrequency = veh.wheels[1].suspensionFrequency;// sFrontSuspensionFrequency;
-	w2->mSuspensionSpring.mDamping = veh.wheels[1].suspensionDamping;// sFrontSuspensionDamping;
-	w2->mMaxSteerAngle = math::radians(veh.maxSteeringAngle); //sMaxSteeringAngle;
-	w2->mMaxHandBrakeTorque = 0.0f; // Front wheel doesn't have hand brake
-	w2->mRadius = veh.wheels[1].radius;
-	w2->mWidth = veh.wheels[1].width;
-
-	// Left rear
-	WheelSettingsWV *w3 = new WheelSettingsWV;
-	//w3->mPosition = Vec3(half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
-	w3->mPosition = ToJolt(veh.wheels[2].pos);
-
-	w3->mSuspensionDirection = rear_suspension_dir;
-	w3->mSteeringAxis = rear_steering_axis;
-	w3->mWheelUp = rear_wheel_up;
-	w3->mWheelForward = rear_wheel_forward;
-	w3->mSuspensionMinLength = veh.wheels[2].suspensionMinLength;// sRearSuspensionMinLength;
-	w3->mSuspensionMaxLength = veh.wheels[2].suspensionMaxLength;// sRearSuspensionMaxLength;
-	w3->mSuspensionSpring.mFrequency = veh.wheels[2].suspensionFrequency;// sRearSuspensionFrequency;
-	w3->mSuspensionSpring.mDamping = veh.wheels[2].suspensionDamping;// sRearSuspensionDamping;
-	w3->mMaxSteerAngle = 0.0f;
-	w3->mRadius = veh.wheels[2].radius;
-	w3->mWidth = veh.wheels[2].width;
-
-	// Right rear
-	WheelSettingsWV *w4 = new WheelSettingsWV;
-	//w4->mPosition = Vec3(-half_vehicle_width, -0.9f * half_vehicle_height, -half_vehicle_length + 2.0f * wheel_radius);
-	w4->mPosition = ToJolt(veh.wheels[3].pos);
-
-	w4->mSuspensionDirection = flip_x * rear_suspension_dir;
-	w4->mSteeringAxis = flip_x * rear_steering_axis;
-	w4->mWheelUp = flip_x * rear_wheel_up;
-	w4->mWheelForward = flip_x * rear_wheel_forward;
-	w4->mSuspensionMinLength = veh.wheels[3].suspensionMinLength;// sRearSuspensionMinLength;
-	w4->mSuspensionMaxLength = veh.wheels[3].suspensionMaxLength;// sRearSuspensionMaxLength;
-	w4->mSuspensionSpring.mFrequency = veh.wheels[3].suspensionFrequency;// sRearSuspensionFrequency;
-	w4->mSuspensionSpring.mDamping = veh.wheels[3].suspensionDamping;// sRearSuspensionDamping;
-	w4->mMaxSteerAngle = 0.0f;
-	w4->mRadius = veh.wheels[3].radius;
-	w4->mWidth = veh.wheels[3].width;
-
-	vehicle.mWheels = { w1, w2, w3, w4 };
-
-	/*for(WheelSettings *w : vehicle.mWheels){
-		w->mRadius = wheel_radius;
-		w->mWidth = wheel_width;
-	}*/
-
-	WheeledVehicleControllerSettings *controller = new WheeledVehicleControllerSettings;
-	vehicle.mController = controller;
-
-	// Differential
-	controller->mDifferentials.resize(sFourWheelDrive ? 2 : 1);
-	controller->mDifferentials[0].mLeftWheel = 0;
-	controller->mDifferentials[0].mRightWheel = 1;
-	if(sFourWheelDrive){
-		controller->mDifferentials[1].mLeftWheel = 2;
-		controller->mDifferentials[1].mRightWheel = 3;
-
-		//controller->mDifferentials[0].mDifferentialRatio = 1.93f * 40.0f / 16.0f; // Combining primary and final drive (back divided by front sprockets) from: https://www.blocklayer.com/rpm-gear-bikes
-
-		// Split engine torque
-		controller->mDifferentials[0].mEngineTorqueRatio = controller->mDifferentials[1].mEngineTorqueRatio = 0.5f;
-	}
-
-	// Anti rollbars
-	if(sAntiRollbar){
-		vehicle.mAntiRollBars.resize(2);
-		vehicle.mAntiRollBars[0].mLeftWheel = 0;
-		vehicle.mAntiRollBars[0].mRightWheel = 1;
-		vehicle.mAntiRollBars[1].mLeftWheel = 2;
-		vehicle.mAntiRollBars[1].mRightWheel = 3;
-
-		vehicle.mAntiRollBars[0].mStiffness = veh.antiRollBarsStiffness;
-		vehicle.mAntiRollBars[1].mStiffness = veh.antiRollBarsStiffness;
-	}
-
-	veh.data->vehicleConstraint = new VehicleConstraint(mCarBody, vehicle);
-
-	float longMult = veh.longitudinalImpulseMultplier;
-	float latMult  = veh.lateralImpulseMultplier;
-
-	// The vehicle settings were tweaked with a buggy implementation of the longitudinal tire impulses, this meant that PhysicsSettings::mNumVelocitySteps times more impulse
-	// could be applied than intended. To keep the behavior of the vehicle the same we increase the max longitudinal impulse by the same factor. In a future version the vehicle
-	// will be retweaked.
-	static_cast<WheeledVehicleController *>(veh.data->vehicleConstraint->GetController())->SetTireMaxImpulseCallback(
-		[longMult, latMult]
-		(uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float){
-			outLongitudinalImpulse = /*10.0f **/ longMult * inLongitudinalFriction * inSuspensionImpulse;
-			outLateralImpulse = /*2 **/ latMult * inLateralFriction * inSuspensionImpulse;
-		}
-	);
-
-	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(PhysicsLayers::MOVING);
-	veh.data->vehicleConstraint->SetVehicleCollisionTester(vehicle_tester);
-
-	physicsWorld->physicsSystem.AddConstraint(veh.data->vehicleConstraint);
-	physicsWorld->physicsSystem.AddStepListener(veh.data->vehicleConstraint);
-}
-
-void PhysicsSystem::RemoveVehicle(Entity entity, VehiclePhysic& c){
-	physicsWorld->physicsSystem.RemoveStepListener(c.data->vehicleConstraint);
-	physicsWorld->physicsSystem.RemoveConstraint(c.data->vehicleConstraint);
-}
-
-void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
-    
-}
-
-void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info){
-
-}
-
-void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& c){
-   
 }
 
 #pragma endregion

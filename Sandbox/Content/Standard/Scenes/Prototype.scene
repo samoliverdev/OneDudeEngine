@@ -145,7 +145,12 @@
         142,
         143,
         144,
-        145
+        145,
+        146,
+        147,
+        148,
+        149,
+        150
     ],
     "InfoComponents": [
         {
@@ -1315,6 +1320,46 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 2,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 2,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 2,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Ragdoll",
+            "tag": "",
+            "layer": 64,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Empty Entity",
+            "tag": "",
+            "layer": 1,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -1463,7 +1508,12 @@
         142,
         143,
         144,
-        145
+        145,
+        146,
+        147,
+        148,
+        149,
+        150
     ],
     "TransformComponents": [
         {
@@ -1671,7 +1721,7 @@
         {
             "localPosition": {
                 "v.x": 0.9845501780509949,
-                "v.y": 0.0,
+                "v.y": 1.1920928955078126e-7,
                 "v.z": 2.528311014175415
             },
             "localRotation": {
@@ -4808,6 +4858,118 @@
             "parent": 20,
             "hasParent": true,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 9.717503547668457,
+                "v.y": 4.0,
+                "v.z": -0.13500680029392243
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 9.717503547668457,
+                "v.y": 3.0,
+                "v.z": -0.13500678539276124
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 14.0,
+                "v.y": 4.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                150
+            ],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 14.0,
+                "v.y": 1.1920928955078126e-7,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": -2.299999952316284,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 148,
+            "hasParent": true,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -4956,7 +5118,12 @@
         142,
         143,
         144,
-        145
+        145,
+        146,
+        147,
+        148,
+        149,
+        150
     ],
     "Standard/ThirdPersonCameras": [
         {
@@ -5125,7 +5292,45 @@
                         "sizeOverLifetimeModule": {
                             "enable": true,
                             "minSizeScale": 0.0,
-                            "maxSizeScale": 1.0
+                            "maxSizeScale": 1.0,
+                            "curve": {
+                                "keyframes": [
+                                    {
+                                        "time": 0.0,
+                                        "value": 0.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    },
+                                    {
+                                        "time": 1.0,
+                                        "value": 1.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    }
+                                ],
+                                "minMaxValue": {
+                                    "v.x": -1.0,
+                                    "v.y": 1.0
+                                },
+                                "minMaxTime": {
+                                    "v.x": -0.0,
+                                    "v.y": 1.0
+                                }
+                            }
                         },
                         "colorOverLifetimeModule": {
                             "enable": true,
@@ -5327,7 +5532,45 @@
                         "sizeOverLifetimeModule": {
                             "enable": true,
                             "minSizeScale": 0.0,
-                            "maxSizeScale": 1.0
+                            "maxSizeScale": 1.0,
+                            "curve": {
+                                "keyframes": [
+                                    {
+                                        "time": 0.0,
+                                        "value": 0.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    },
+                                    {
+                                        "time": 1.0,
+                                        "value": 1.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    }
+                                ],
+                                "minMaxValue": {
+                                    "v.x": -1.0,
+                                    "v.y": 1.0
+                                },
+                                "minMaxTime": {
+                                    "v.x": -0.0,
+                                    "v.y": 1.0
+                                }
+                            }
                         },
                         "colorOverLifetimeModule": {
                             "enable": true,
@@ -5535,7 +5778,45 @@
                         "sizeOverLifetimeModule": {
                             "enable": false,
                             "minSizeScale": 0.0,
-                            "maxSizeScale": 1.0
+                            "maxSizeScale": 1.0,
+                            "curve": {
+                                "keyframes": [
+                                    {
+                                        "time": 0.0,
+                                        "value": 0.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    },
+                                    {
+                                        "time": 1.0,
+                                        "value": 1.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    }
+                                ],
+                                "minMaxValue": {
+                                    "v.x": -1.0,
+                                    "v.y": 1.0
+                                },
+                                "minMaxTime": {
+                                    "v.x": -0.0,
+                                    "v.y": 1.0
+                                }
+                            }
                         },
                         "colorOverLifetimeModule": {
                             "enable": false,
@@ -5743,7 +6024,45 @@
                         "sizeOverLifetimeModule": {
                             "enable": true,
                             "minSizeScale": 1.0,
-                            "maxSizeScale": 0.20000000298023225
+                            "maxSizeScale": 0.20000000298023225,
+                            "curve": {
+                                "keyframes": [
+                                    {
+                                        "time": 0.0,
+                                        "value": 0.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    },
+                                    {
+                                        "time": 1.0,
+                                        "value": 1.0,
+                                        "in_tangent": {
+                                            "x": -10.0,
+                                            "y": 0.0
+                                        },
+                                        "out_tangent": {
+                                            "x": 10.0,
+                                            "y": 0.0
+                                        },
+                                        "curve_type": 0
+                                    }
+                                ],
+                                "minMaxValue": {
+                                    "v.x": -1.0,
+                                    "v.y": 1.0
+                                },
+                                "minMaxTime": {
+                                    "v.x": -0.0,
+                                    "v.y": 1.0
+                                }
+                            }
                         },
                         "colorOverLifetimeModule": {
                             "enable": false,
@@ -6160,11 +6479,158 @@
                     "Standard/Materials/greybox_blue_grid.material"
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/greybox_blue_grid.material"
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/greybox_blue_grid.material"
+                ]
+            }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 0.5,
+                    "v.y": 0.5,
+                    "v.z": 0.5
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Cube.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/greybox_blue_grid.material"
+                ]
+            }
         }
     ],
     "ModelRendererComponentEntities": [
         12,
-        14
+        14,
+        146,
+        147,
+        148
     ],
     "SkinnedModelRendererComponents": [
         {
@@ -6321,12 +6787,65 @@
                     "Standard/Materials/YbotSurface.material"
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": 1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.0000013709068298339844,
+                    "v.y": 0.9022648930549622,
+                    "v.z": 0.021623283624649049
+                },
+                "extents": {
+                    "v.x": 0.9734249114990234,
+                    "v.y": 0.9023671746253967,
+                    "v.z": 0.18213430047035218
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true
+            ],
+            "updateWhenOffscreen": true,
+            "modelRef": {
+                "isNull": false,
+                "path": "Standard/Models/YBot.glb"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false,
+                    false
+                ],
+                "path": [
+                    "Standard/Materials/YbotJoints.material",
+                    "Standard/Materials/YbotSurface.material"
+                ]
+            }
         }
     ],
     "SkinnedModelRendererComponentEntities": [
         6,
         7,
-        9
+        9,
+        149
     ],
     "DecalRendererComponents": [
         {
@@ -8791,11 +9310,16 @@
         {
             "enable": true,
             "toPlay": 1
+        },
+        {
+            "enable": true,
+            "toPlay": 1
         }
     ],
     "AnimatorComponentEntities": [
         6,
-        9
+        9,
+        149
     ],
     "VehiclePhysics": [
         {
@@ -8873,6 +9397,7 @@
     "RagdollComponents": [
         {
             "globalMass": 75.0,
+            "linearDamping": 0.0,
             "layer": 1,
             "mask": {
                 "mask": 1023
@@ -8894,13 +9419,20 @@
                             "v.z": 0.3499999940395355
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": -1,
                     "skinnedSkeletonIndex": 4,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -8930,13 +9462,20 @@
                             "v.z": 0.3499999940395355
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
                     "skinnedSkeletonIndex": 5,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -8966,13 +9505,20 @@
                             "v.z": 0.3499999940395355
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
                     "skinnedSkeletonIndex": 6,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -8998,6 +9544,7 @@
         },
         {
             "globalMass": 75.0,
+            "linearDamping": 0.0,
             "layer": 1,
             "mask": {
                 "mask": 1023
@@ -9019,13 +9566,20 @@
                             "v.z": 0.25
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": -1,
                     "skinnedSkeletonIndex": 3,
                     "overrideType": 0,
                     "disableSync": true,
                     "isHips": true,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9055,13 +9609,20 @@
                             "v.z": 0.30000001192092898
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
                     "skinnedSkeletonIndex": 6,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": -0.1899999976158142,
@@ -9091,13 +9652,20 @@
                             "v.z": 0.20000000298023225
                         },
                         "radius": 1.0,
-                        "height": 1.0
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
                     "skinnedSkeletonIndex": 8,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": -0.05999999865889549,
@@ -9127,13 +9695,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.07000000029802323,
-                        "height": 0.23000000417232514
+                        "height": 0.23000000417232514,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
                     "skinnedSkeletonIndex": 58,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9163,13 +9738,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.07000000029802323,
-                        "height": 0.30000001192092898
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 3,
                     "skinnedSkeletonIndex": 59,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9199,13 +9781,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.07000000029802323,
-                        "height": 0.23000000417232514
+                        "height": 0.23000000417232514,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
                     "skinnedSkeletonIndex": 63,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9235,13 +9824,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.07000000029802323,
-                        "height": 0.30000001192092898
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 5,
                     "skinnedSkeletonIndex": 64,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9271,13 +9867,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.05000000074505806,
-                        "height": 0.20000000298023225
+                        "height": 0.20000000298023225,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
                     "skinnedSkeletonIndex": 11,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9307,13 +9910,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.05000000074505806,
-                        "height": 0.30000001192092898
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 7,
                     "skinnedSkeletonIndex": 12,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9343,13 +9953,20 @@
                             "v.z": 1.0
                         },
                         "radius": 0.05000000074505806,
-                        "height": 0.20000000298023225
+                        "height": 0.20000000298023225,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
                     "skinnedSkeletonIndex": 35,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9379,13 +9996,511 @@
                             "v.z": 1.0
                         },
                         "radius": 0.05000000074505806,
-                        "height": 0.30000001192092898
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
                     },
                     "parent": 9,
                     "skinnedSkeletonIndex": 36,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 1.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 90.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                }
+            ],
+            "syncWithFinalPose": true,
+            "syncFromTheHips": true,
+            "useTorqueControl": false,
+            "gain": 10.0,
+            "damping": 1.0,
+            "stiffness": 10.0
+        },
+        {
+            "globalMass": 75.0,
+            "linearDamping": 0.0,
+            "layer": 1,
+            "mask": {
+                "mask": 1023
+            },
+            "type": 0,
+            "interpolate": true,
+            "parts": [
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.0,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 0.30000001192092898,
+                            "v.y": 0.20000000298023225,
+                            "v.z": 0.25
+                        },
+                        "radius": 1.0,
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": -1,
+                    "skinnedSkeletonIndex": 3,
+                    "overrideType": 0,
+                    "disableSync": true,
+                    "isHips": true,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.0,
+                            "v.z": 0.03999999910593033
+                        },
+                        "size": {
+                            "v.x": 0.30000001192092898,
+                            "v.y": 0.3499999940395355,
+                            "v.z": 0.30000001192092898
+                        },
+                        "radius": 1.0,
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 6,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": -0.1899999976158142,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -25.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 25.0
+                },
+                {
+                    "shape": {
+                        "type": 0,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.07000000029802323,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 0.15000000596046449,
+                            "v.y": 0.25,
+                            "v.z": 0.20000000298023225
+                        },
+                        "radius": 1.0,
+                        "height": 1.0,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 8,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": -0.05999999865889549,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -45.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.23000000417232514,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 58,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -90.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 3,
+                    "skinnedSkeletonIndex": 59,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 135.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 0.23000000417232514,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.23000000417232514,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 0,
+                    "skinnedSkeletonIndex": 63,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": -90.0,
+                    "twistAngleMax": 45.0,
+                    "normalAngle": 45.0,
+                    "planeAngle": 45.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.07000000029802323,
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 5,
+                    "skinnedSkeletonIndex": 64,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 1.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 135.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.14000000059604646,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.20000000298023225,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 11,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 90.0,
+                    "planeAngle": 90.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 7,
+                    "skinnedSkeletonIndex": 12,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": -1.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 90.0,
+                    "normalAngle": 0.0,
+                    "planeAngle": 0.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.14000000059604646,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.20000000298023225,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 1,
+                    "skinnedSkeletonIndex": 35,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
+                    "constraintPos": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAxis": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0
+                    },
+                    "twistAngleMin": 0.0,
+                    "twistAngleMax": 0.0,
+                    "normalAngle": 90.0,
+                    "planeAngle": 90.0
+                },
+                {
+                    "shape": {
+                        "type": 2,
+                        "center": {
+                            "v.x": 0.0,
+                            "v.y": 0.2199999988079071,
+                            "v.z": 0.0
+                        },
+                        "size": {
+                            "v.x": 1.0,
+                            "v.y": 1.0,
+                            "v.z": 1.0
+                        },
+                        "radius": 0.05000000074505806,
+                        "height": 0.30000001192092898,
+                        "modelSourceRef": {
+                            "isNull": true,
+                            "path": ""
+                        },
+                        "modelSourceMeshIndex": 0
+                    },
+                    "parent": 9,
+                    "skinnedSkeletonIndex": 36,
+                    "overrideType": 0,
+                    "disableSync": false,
+                    "isHips": false,
+                    "overrideLinearDamping": -1.0,
+                    "constraints": 63,
                     "constraintPos": {
                         "v.x": 0.0,
                         "v.y": 0.0,
@@ -9412,7 +10527,8 @@
     ],
     "RagdollComponentEntities": [
         7,
-        9
+        9,
+        149
     ],
     "RigidbodyComponents": [
         {
@@ -9431,7 +10547,12 @@
                     "v.z": 1.0
                 },
                 "radius": 1.0,
-                "height": 1.0
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 1.0,
             "friction": 0.20000000298023225,
@@ -9442,6 +10563,12 @@
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         },
         {
@@ -9460,7 +10587,12 @@
                     "v.z": 1.0
                 },
                 "radius": 1.0,
-                "height": 1.0
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 1.0,
             "friction": 0.20000000298023225,
@@ -9471,11 +10603,17 @@
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         },
         {
             "type": 0,
-            "interpolate": false,
+            "interpolate": true,
             "shape": {
                 "type": 2,
                 "center": {
@@ -9489,17 +10627,28 @@
                     "v.z": 1.0
                 },
                 "radius": 0.4000000059604645,
-                "height": 2.0
+                "height": 2.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 50.0,
             "friction": 0.20000000298023225,
             "linearDamping": 0.0,
-            "angularDamping": 0.05000000074505806,
+            "angularDamping": 999.0,
             "motionQuality": 0,
             "constraints": 63,
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         },
         {
@@ -9518,7 +10667,12 @@
                     "v.z": 1.0
                 },
                 "radius": 1.0,
-                "height": 1.0
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 1.0,
             "friction": 0.20000000298023225,
@@ -9529,6 +10683,12 @@
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         },
         {
@@ -9547,7 +10707,12 @@
                     "v.z": 4.0
                 },
                 "radius": 1.0,
-                "height": 1.0
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 2000.0,
             "friction": 0.20000000298023225,
@@ -9558,6 +10723,12 @@
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         },
         {
@@ -9576,7 +10747,12 @@
                     "v.z": 1.0
                 },
                 "radius": 1.0,
-                "height": 1.0
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
             },
             "mass": 1.0,
             "friction": 0.20000000298023225,
@@ -9587,6 +10763,132 @@
             "neverSleep": false,
             "mask": {
                 "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            }
+        },
+        {
+            "type": 2,
+            "interpolate": true,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
+            },
+            "mass": 1.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            }
+        },
+        {
+            "type": 0,
+            "interpolate": true,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
+            },
+            "mass": 1.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            }
+        },
+        {
+            "type": 2,
+            "interpolate": true,
+            "shape": {
+                "type": 0,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
+            },
+            "mass": 1.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
             }
         }
     ],
@@ -9596,6 +10898,83 @@
         6,
         10,
         12,
-        14
+        14,
+        146,
+        147,
+        148
+    ],
+    "JointComponents": [
+        {
+            "bodyA": 146,
+            "bodyASubIndex": -1,
+            "bodyB": 147,
+            "bodyBSubIndex": -1,
+            "type": 1,
+            "jointSpace": 0,
+            "fixedSettings": {
+                "point1": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "point2": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                }
+            },
+            "distanceSettings": {
+                "point1": {
+                    "v.x": 0.0,
+                    "v.y": 1.0,
+                    "v.z": 0.0
+                },
+                "point2": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "minDistance": -1.0,
+                "maxDistance": 3.0
+            }
+        },
+        {
+            "bodyA": 148,
+            "bodyASubIndex": -1,
+            "bodyB": 149,
+            "bodyBSubIndex": 2,
+            "type": 1,
+            "jointSpace": 0,
+            "fixedSettings": {
+                "point1": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "point2": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                }
+            },
+            "distanceSettings": {
+                "point1": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "point2": {
+                    "v.x": 0.0,
+                    "v.y": -2.299999952316284,
+                    "v.z": 0.0
+                },
+                "minDistance": -1.0,
+                "maxDistance": -1.0
+            }
+        }
+    ],
+    "JointComponentEntities": [
+        147,
+        148
     ]
 }

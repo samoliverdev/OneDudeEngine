@@ -410,29 +410,82 @@ private:
     struct RagdollObject* data = nullptr;
 };
 
+enum class JointSpace{
+	Local,
+	WorldSpace
+};
+
 struct OD_API JointComponent{
     friend struct PhysicsSystem;
 
-    Vector3 pivot = Vector3Zero;
-    Vector3 axis = Vector3Zero;
-    Vector3 connectedPivot = Vector3Zero;
-    Vector3 connectedAxis = Vector3Zero;
-    Vector3 angularLowerLimit = Vector3Zero;
-    Vector3 angularUpperLimit = Vector3Zero;
-    Entity connectedBody = EntityNull;
-    bool autoConfigConnectedPivot = true;
-    bool disableSelfCollision = true;
+    enum class Type{
+        Fixed,		// fixed in place completely
+        //Point,		// fixed to a point but can rotate around it
+        Distance,	// point constraint within specified distance
+        //Hinge,		// rotation around a point on the UP axis of the contraint transform
+        //Cone,		// constrain to a cone shape specified by the cone angle (cone axis: UP)
+        //SixDOF,		// manual specification of axes movement and rotation limits
+        //SwingTwist,	// cone (UP axis) + rotational limits
+        //Slider,		// constrain on the RIGHT axis between limits
+    };
+
+    struct FixedSettings{
+        Vector3 point1 = Vector3Zero;
+        Vector3 point2 = Vector3Zero;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, point1);
+            ArchiveDumpNVP(ar, point2);
+        }
+	};
+
+    struct DistanceSettings{
+        Vector3 point1 = Vector3Zero;
+        Vector3 point2 = Vector3Zero;
+
+        float minDistance = -1;
+        float maxDistance = -1;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, point1);
+            ArchiveDumpNVP(ar, point2);
+
+            ArchiveDumpNVP(ar, minDistance);
+            ArchiveDumpNVP(ar, maxDistance);
+        }
+    };
+
+    static void OnGui(Entity& e, Scene& scene);
+
+    void CreateFixed(FixedSettings& settings);
+    void CreateDistance(DistanceSettings& settings);
+
+    void SetDistance(float min, float max);
 
     //static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive & ar){
-        ArchiveDumpNVP(ar, connectedBody);
-        ArchiveDumpNVP(ar, pivot);
+        ArchiveDumpNVP(ar, bodyA);
+        ArchiveDumpNVP(ar, bodyASubIndex);
+        ArchiveDumpNVP(ar, bodyB);
+        ArchiveDumpNVP(ar, bodyBSubIndex);
+
+        ArchiveDumpNVP(ar, type);
+        ArchiveDumpNVP(ar, jointSpace);
+
+        //ArchiveDumpNVP(ar, disableSelfCollision);
+
+        ArchiveDumpNVP(ar, fixedSettings);
+        ArchiveDumpNVP(ar, distanceSettings);
+
+        /*ArchiveDumpNVP(ar, pivot);
         ArchiveDumpNVP(ar, connectedPivot);
         ArchiveDumpNVP(ar, angularLowerLimit);
         ArchiveDumpNVP(ar, angularUpperLimit);
-        ArchiveDumpNVP(ar, disableSelfCollision);
+        ArchiveDumpNVP(ar, disableSelfCollision);*/
     }
 
     /*JointComponent(const JointComponent& other){
@@ -463,10 +516,23 @@ struct OD_API JointComponent{
     }*/
 
 private:
+    Entity bodyA = EntityNull;
+    int bodyASubIndex = -1;
 
-    #if defined(UseBulletPhysics)
+    Entity bodyB = EntityNull;
+    int bodyBSubIndex = -1;
+
+    Type type = Type::Fixed;
+    JointSpace jointSpace = JointSpace::Local;
+
+    FixedSettings fixedSettings;
+    DistanceSettings distanceSettings;
+    
+    //bool autoConfigConnectedPivot = true;
+    //bool disableSelfCollision = true;
+    bool isDirty = true;
+
     class JointObject* data = nullptr;
-    #endif
 };
 
 struct OD_API HeightmapColliderComponent{
