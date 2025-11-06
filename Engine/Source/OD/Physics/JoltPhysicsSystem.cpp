@@ -1595,6 +1595,8 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
+	SetJointsAsDirtyIfBodyIsDirty(entity);
+
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
     EMotionType type = EMotionType::Dynamic;
@@ -1731,6 +1733,8 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
+	SetJointsAsDirtyIfBodyIsDirty(entity);
+
 	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
     bodyInterface.RemoveBody(rb.data->bodyID);
     bodyInterface.DestroyBody(rb.data->bodyID);
@@ -1763,16 +1767,37 @@ void JointComponent::OnGui(Entity& e, Scene& scene){
 		if(ImGui::DragFloat3("point2", &c.distanceSettings.point2.x)) c.CreateDistance(c.distanceSettings);
 		if(ImGui::DragFloat("minDistance", &c.distanceSettings.minDistance)) c.SetDistance(c.distanceSettings.minDistance, c.distanceSettings.maxDistance);
 		if(ImGui::DragFloat("maxDistance", &c.distanceSettings.maxDistance)) c.SetDistance(c.distanceSettings.minDistance, c.distanceSettings.maxDistance);
+		if(ImGui::DragFloat("springFequency", &c.distanceSettings.springFequency)) c.CreateDistance(c.distanceSettings);
+		if(ImGui::DragFloat("springDamping", &c.distanceSettings.springDamping)) c.CreateDistance(c.distanceSettings);
 	}
+}
+
+void JointComponent::SetTargets(Entity inbodyA, int inbodyASubIndex, Entity inbodyB, int inbodyBSubIndex){
+	bodyA = inbodyA;
+	bodyASubIndex = inbodyASubIndex;
+	bodyB = inbodyB;
+	bodyBSubIndex = inbodyBSubIndex;
+	isDirty = true;
+}
+
+JointSpace JointComponent::GetJointSpace(){
+	return jointSpace;
+}
+
+void JointComponent::SetJointSpace(JointSpace injointSpace){
+	jointSpace = injointSpace;
+	isDirty = true;
 }
 
 void JointComponent::CreateFixed(FixedSettings& settings){
 	isDirty = true;
+	type = JointComponent::Type::Fixed;
 	fixedSettings = settings;
 }
 
 void JointComponent::CreateDistance(DistanceSettings& settings){
 	isDirty = true;
+	type = JointComponent::Type::Distance;
 	distanceSettings = settings;
 }
 
@@ -1788,7 +1813,11 @@ void JointComponent::SetDistance(float min, float max){
 }
 
 void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
-    
+    JointComponent& c = r.get<JointComponent>(e);
+    if(c.data == nullptr) return;
+
+    PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+    physicsSystem->RemoveJoint(e, c);
 }
 
 void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint, TransformComponent& trans, InfoComponent& info){
@@ -1845,6 +1874,10 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint,
 			distanceSettings.mPoint1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));
 			distanceSettings.mPoint2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
 			distanceSettings.mSpace = EConstraintSpace::WorldSpace;
+
+			distanceSettings.mLimitsSpringSettings.mFrequency = joint.distanceSettings.springFequency;// 5.0f;
+			distanceSettings.mLimitsSpringSettings.mDamping = joint.distanceSettings.springDamping;// 0.9f*2;
+
 		} else {
 			Vec3 worldP1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));// Get world-space points (the way user or editor defines them)
 			Vec3 worldP2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
@@ -1855,8 +1888,8 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint,
 			distanceSettings.mPoint2 = localP2;
 			distanceSettings.mSpace = EConstraintSpace::LocalToBodyCOM;
 
-			distanceSettings.mLimitsSpringSettings.mFrequency = 5.0f;
-			distanceSettings.mLimitsSpringSettings.mDamping = 0.9f;
+			distanceSettings.mLimitsSpringSettings.mFrequency = joint.distanceSettings.springFequency; //5.0f;
+			distanceSettings.mLimitsSpringSettings.mDamping = joint.distanceSettings.springDamping; //0.9f;
 
 			/*float dist = (worldP1 - worldP2).Length();
 			joint.distanceSettings.minDistance = dist;
@@ -1877,10 +1910,31 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint,
 	}
 
 	physicsWorld->physicsSystem.AddConstraint(joint.data->constraint);
+
+	if(body1.IsDynamic()) physicsWorld->physicsSystem.GetBodyInterfaceNoLock().ActivateBody(idA);
+	if(body2.IsDynamic()) physicsWorld->physicsSystem.GetBodyInterfaceNoLock().ActivateBody(idB);
 }
 
 void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& joint){
+	if(joint.data != nullptr && joint.data->constraint != nullptr){
+		physicsWorld->physicsSystem.RemoveConstraint(joint.data->constraint);
+	}
+
 	delete joint.data;
+}
+
+void PhysicsSystem::SetJointsAsDirtyIfBodyIsDirty(Entity e){
+	auto jointView = scene->GetRegistry().view<JointComponent>();
+	for(auto [entity, joint]: jointView.each()){
+		if(joint.bodyA == e){
+			joint.isDirty = true;
+			break;
+		}
+		if(joint.bodyB == e){
+			joint.isDirty = true;
+			break;
+		}
+	}
 }
 
 #pragma endregion
@@ -2846,6 +2900,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	auto view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
 		if(ragdoll.isDirty && skinned.GetModel() != nullptr){
+			SetJointsAsDirtyIfBodyIsDirty(entity);
 			ragdoll.isDirty = false;
 			if(ragdoll.data != nullptr){
 				ragdoll.data->ragdoll->RemoveFromPhysicsSystem();

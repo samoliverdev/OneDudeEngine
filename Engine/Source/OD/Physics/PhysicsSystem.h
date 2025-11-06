@@ -447,6 +447,9 @@ struct OD_API JointComponent{
         float minDistance = -1;
         float maxDistance = -1;
 
+        float springFequency = 0.0f;
+	    float springDamping = 0.0f;
+
         template <class Archive>
         void serialize(Archive& ar){
             ArchiveDumpNVP(ar, point1);
@@ -454,10 +457,18 @@ struct OD_API JointComponent{
 
             ArchiveDumpNVP(ar, minDistance);
             ArchiveDumpNVP(ar, maxDistance);
+
+            ArchiveDumpNVP(ar, springFequency);
+            ArchiveDumpNVP(ar, springDamping);
         }
     };
 
     static void OnGui(Entity& e, Scene& scene);
+
+    void SetTargets(Entity bodyA, int bodyASubIndex, Entity bodyB, int bodyBSubIndex);
+
+    JointSpace GetJointSpace();
+    void SetJointSpace(JointSpace injointSpace);
 
     void CreateFixed(FixedSettings& settings);
     void CreateDistance(DistanceSettings& settings);
@@ -762,6 +773,8 @@ private:
     static void OnRemoveJoint(entt::registry& r, entt::entity e);
     void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveJoint(Entity entity, JointComponent& c);
+    void SetJointsAsDirtyIfBodyIsDirty(Entity e);
+
 
     //#if defined(UseBulletPhysics)
     class PhysicsWorld* physicsWorld = nullptr;
