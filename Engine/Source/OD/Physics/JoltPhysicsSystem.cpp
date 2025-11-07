@@ -755,6 +755,10 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
                 	ragdoll.isDirty = true;
 			}
 
+			if(ImGui::DragFloat("stiffnessMult", &part.stiffnessMult)){
+				ragdoll.isDirty = true;
+			}
+
 			if(ImGui::DragFloat("overrideLinearDamping", &part.overrideLinearDamping)){
 				ragdoll.isDirty = true;
 			}
@@ -1812,6 +1816,32 @@ void JointComponent::SetDistance(float min, float max){
 	c->SetDistance(min, max);
 }
 
+Vector3 JointComponent::GetWorldSpacePoint1Pos(){
+	if(type != JointComponent::Type::Distance) return Vector3Zero;
+	if(data == nullptr) return Vector3Zero;
+
+	DistanceConstraint* constraint = static_cast<DistanceConstraint*>(data->constraint);
+	RMat44 transform = constraint->GetBody1()->GetCenterOfMassTransform();
+	Vec3 localAnchor = constraint->GetConstraintToBody1Matrix().GetTranslation();
+
+	//return FromJolt(transform.GetTranslation());
+	return FromJolt(transform * localAnchor);
+	//return FromJolt(localAnchor);
+}
+
+Vector3 JointComponent::GetWorldSpacePoint2Pos(){
+	if(type != JointComponent::Type::Distance) return Vector3Zero;
+	if(data == nullptr) return Vector3Zero;
+
+	DistanceConstraint* constraint = static_cast<DistanceConstraint*>(data->constraint);
+	RMat44 transform = constraint->GetBody2()->GetCenterOfMassTransform();
+	Vec3 localAnchor = constraint->GetConstraintToBody2Matrix().GetTranslation();
+
+	//return FromJolt(transform.GetTranslation());
+	return FromJolt(transform * localAnchor);
+	//return FromJolt(localAnchor);
+}
+
 void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
     JointComponent& c = r.get<JointComponent>(e);
     if(c.data == nullptr) return;
@@ -1871,8 +1901,10 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint,
 		DistanceConstraintSettings distanceSettings;
 
 		if(joint.jointSpace == JointSpace::WorldSpace){
-			distanceSettings.mPoint1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));
-			distanceSettings.mPoint2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));
+			/*distanceSettings.mPoint1 = ToJolt(trans.TransformPoint(joint.distanceSettings.point1));
+			distanceSettings.mPoint2 = ToJolt(trans.TransformPoint(joint.distanceSettings.point2));*/
+			distanceSettings.mPoint1 = ToJolt(joint.distanceSettings.point1);
+			distanceSettings.mPoint2 = ToJolt(joint.distanceSettings.point2);
 			distanceSettings.mSpace = EConstraintSpace::WorldSpace;
 
 			distanceSettings.mLimitsSpringSettings.mFrequency = joint.distanceSettings.springFequency;// 5.0f;
@@ -2586,6 +2618,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					//TODO: Fix the instability and Freeze pose
+					///*
 					if(ragdoll.parts[p].parent >= 0){
 						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
 						//c->SetSwingMotorState(EMotorState::Off); //INFO: Call this every frame bug
@@ -2633,7 +2666,8 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						//if(vel.LengthSq() > maxVel * maxVel){
 						//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
 						//}
-					}/* else {
+					} else {
+						if(ragdoll.parts[p].disableSync) continue;
 						// Work, but in world space
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -2662,18 +2696,20 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
 
 						// PD controller: torque = P * erro - D * velocidade
-						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
 
 						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
 
 						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
-					}*/
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+					}
+					//*/
 					
 					/*
-					if(ragdoll.syncFromTheHips && hipIndex != -1){ //&& ragdoll.parts[p].isHips == false
+					if(ragdoll.syncFromTheHips && hipIndex != -1 && ragdoll.parts[p].isHips == false){ //&& ragdoll.parts[p].isHips == false
+						if(ragdoll.parts[p].disableSync) continue;
 						Assert(hipIndex == 0);
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
@@ -2715,6 +2751,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						else
 							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
 					} else {
+						if(ragdoll.parts[p].disableSync) continue;
 						// Work, but in world space
 						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;

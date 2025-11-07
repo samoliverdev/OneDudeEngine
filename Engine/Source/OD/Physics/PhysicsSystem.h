@@ -281,6 +281,7 @@ struct OD_API RagdollComponent{
 
         bool disableSync = false;
         bool isHips = false;
+        float stiffnessMult = 1; 
 
         float overrideLinearDamping = -1;
 
@@ -305,6 +306,7 @@ struct OD_API RagdollComponent{
             //ArchiveDumpNVP(ar, rot);
             ArchiveDumpNVP(ar, disableSync);
             ArchiveDumpNVP(ar, isHips);
+            ArchiveDumpNVP(ar, stiffnessMult);
             ArchiveDumpNVP(ar, overrideLinearDamping);
             ArchiveDumpNVP(ar, constraints);
             ArchiveDumpNVP(ar, constraintPos);
@@ -474,6 +476,9 @@ struct OD_API JointComponent{
     void CreateDistance(DistanceSettings& settings);
 
     void SetDistance(float min, float max);
+
+    Vector3 GetWorldSpacePoint1Pos();
+    Vector3 GetWorldSpacePoint2Pos();
 
     //static void OnGui(Entity& e, Scene& scene);
 

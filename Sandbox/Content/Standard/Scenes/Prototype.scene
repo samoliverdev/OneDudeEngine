@@ -9309,7 +9309,7 @@
         },
         {
             "enable": true,
-            "toPlay": 1
+            "toPlay": 2
         },
         {
             "enable": true,
@@ -9431,6 +9431,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9474,6 +9475,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9517,6 +9519,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9576,8 +9579,9 @@
                     "parent": -1,
                     "skinnedSkeletonIndex": 3,
                     "overrideType": 0,
-                    "disableSync": true,
+                    "disableSync": false,
                     "isHips": true,
+                    "stiffnessMult": 25.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9621,6 +9625,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9664,6 +9669,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9707,6 +9713,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9750,6 +9757,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9793,6 +9801,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9836,6 +9845,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9879,6 +9889,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9922,6 +9933,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9965,6 +9977,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10008,6 +10021,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10029,9 +10043,9 @@
             "syncWithFinalPose": true,
             "syncFromTheHips": true,
             "useTorqueControl": false,
-            "gain": 10.0,
+            "gain": 15.0,
             "damping": 1.0,
-            "stiffness": 10.0
+            "stiffness": 15.0
         },
         {
             "globalMass": 75.0,
@@ -10069,6 +10083,7 @@
                     "overrideType": 0,
                     "disableSync": true,
                     "isHips": true,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10112,6 +10127,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10155,6 +10171,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10198,6 +10215,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10241,6 +10259,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10284,6 +10303,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10327,6 +10347,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10370,6 +10391,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10413,6 +10435,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10456,6 +10479,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10499,6 +10523,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
+                    "stiffnessMult": 1.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -10935,7 +10960,9 @@
                     "v.z": 0.0
                 },
                 "minDistance": -1.0,
-                "maxDistance": 3.0
+                "maxDistance": 3.0,
+                "springFequency": 0.0,
+                "springDamping": 0.0
             }
         },
         {
@@ -10969,7 +10996,9 @@
                     "v.z": 0.0
                 },
                 "minDistance": -1.0,
-                "maxDistance": -1.0
+                "maxDistance": -1.0,
+                "springFequency": 0.0,
+                "springDamping": 0.0
             }
         }
     ],
