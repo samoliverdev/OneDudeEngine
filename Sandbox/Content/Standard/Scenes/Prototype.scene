@@ -9547,7 +9547,7 @@
         },
         {
             "globalMass": 75.0,
-            "linearDamping": 0.0,
+            "linearDamping": 10.0,
             "layer": 1,
             "mask": {
                 "mask": 1023
@@ -9581,7 +9581,7 @@
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": true,
-                    "stiffnessMult": 25.0,
+                    "stiffnessMult": 100.0,
                     "overrideLinearDamping": -1.0,
                     "constraints": 63,
                     "constraintPos": {
@@ -9733,16 +9733,16 @@
                 },
                 {
                     "shape": {
-                        "type": 2,
+                        "type": 0,
                         "center": {
                             "v.x": 0.0,
-                            "v.y": 0.2199999988079071,
+                            "v.y": 0.25,
                             "v.z": 0.0
                         },
                         "size": {
-                            "v.x": 1.0,
-                            "v.y": 1.0,
-                            "v.z": 1.0
+                            "v.x": 0.15000000596046449,
+                            "v.y": 0.5,
+                            "v.z": 0.15000000596046449
                         },
                         "radius": 0.07000000029802323,
                         "height": 0.30000001192092898,
@@ -9821,16 +9821,16 @@
                 },
                 {
                     "shape": {
-                        "type": 2,
+                        "type": 0,
                         "center": {
                             "v.x": 0.0,
-                            "v.y": 0.2199999988079071,
+                            "v.y": 0.25,
                             "v.z": 0.0
                         },
                         "size": {
-                            "v.x": 1.0,
-                            "v.y": 1.0,
-                            "v.z": 1.0
+                            "v.x": 0.15000000596046449,
+                            "v.y": 0.5,
+                            "v.z": 0.15000000596046449
                         },
                         "radius": 0.07000000029802323,
                         "height": 0.30000001192092898,
@@ -10042,10 +10042,10 @@
             ],
             "syncWithFinalPose": true,
             "syncFromTheHips": true,
-            "useTorqueControl": false,
-            "gain": 15.0,
-            "damping": 1.0,
-            "stiffness": 15.0
+            "useTorqueControl": true,
+            "gain": 20.0,
+            "damping": 2.0,
+            "stiffness": 20.0
         },
         {
             "globalMass": 75.0,
@@ -10580,7 +10580,7 @@
                 "modelSourceMeshIndex": 0
             },
             "mass": 1.0,
-            "friction": 0.20000000298023225,
+            "friction": 1.0,
             "linearDamping": 0.0,
             "angularDamping": 0.05000000074505806,
             "motionQuality": 0,

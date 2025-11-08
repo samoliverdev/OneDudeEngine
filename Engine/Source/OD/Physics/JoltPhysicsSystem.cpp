@@ -2477,6 +2477,8 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
 
+		//part.mFriction = 0.5;
+
 		//part.mAngularDamping = 10;
 
 		// First part is the root, doesn't have a parent and doesn't have a constraint
@@ -2704,6 +2706,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 							bodyInterface.AddTorque(bodyID, torque);
 						else
 							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+
 					}
 					//*/
 					
@@ -2744,12 +2747,12 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						deltaRot.GetAxisAngle(axis, angle);
 
 						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
-						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
 
 						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
 					} else {
 						if(ragdoll.parts[p].disableSync) continue;
 						// Work, but in world space
@@ -2780,14 +2783,14 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
 
 						// PD controller: torque = P * erro - D * velocidade
-						Vec3 torque = stiffness * axis * angle - damping * currentAngularVelocity;
+						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
 
 						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
 
 						if(ragdoll.useTorqueControl)
 							bodyInterface.AddTorque(bodyID, torque);
 						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * stiffness);
+							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
 					}
 					*/
 				}
