@@ -10,9 +10,13 @@
  
 namespace OD{
 
+struct SkinnedModelRendererComponent;
+
 //struct PhysicObject;
 //struct JointObject;
 //struct PhysicsWorld;
+
+struct PhysicsSystem;
 
 //using MeshShapeData = btBvhTriangleMeshShape;
 class MeshShapeData;
@@ -33,13 +37,13 @@ enum class RigidbodyConstraints: uint8_t{
 	Plane2D				= TranslationX | TranslationY | RotationZ,	///< Body can only move in X and Y axis and rotate around Z axis
 };
 /// Bitwise OR operator for EAllowedDOFs
-constexpr RigidbodyConstraints operator | (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) | uint8_t(inRHS)); }
-constexpr RigidbodyConstraints operator & (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) & uint8_t(inRHS)); }
-constexpr RigidbodyConstraints operator ^ (RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) ^ uint8_t(inRHS)); }
-constexpr RigidbodyConstraints operator ~ (RigidbodyConstraints inAllowedDOFs){ return RigidbodyConstraints(~uint8_t(inAllowedDOFs)); }
-constexpr RigidbodyConstraints & operator |= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS | inRHS; return ioLHS; }
-constexpr RigidbodyConstraints & operator &= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS & inRHS; return ioLHS; }
-constexpr RigidbodyConstraints & operator ^= (RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS ^ inRHS; return ioLHS; }
+constexpr RigidbodyConstraints operator|(RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) | uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator&(RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) & uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator^(RigidbodyConstraints inLHS, RigidbodyConstraints inRHS){ return RigidbodyConstraints(uint8_t(inLHS) ^ uint8_t(inRHS)); }
+constexpr RigidbodyConstraints operator~(RigidbodyConstraints inAllowedDOFs){ return RigidbodyConstraints(~uint8_t(inAllowedDOFs)); }
+constexpr RigidbodyConstraints& operator|=(RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS | inRHS; return ioLHS; }
+constexpr RigidbodyConstraints& operator&=(RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS & inRHS; return ioLHS; }
+constexpr RigidbodyConstraints& operator^=(RigidbodyConstraints &ioLHS, RigidbodyConstraints inRHS){ ioLHS = ioLHS ^ inRHS; return ioLHS; }
 
 enum class PhysicMotionQuality{
     Discrete,
@@ -133,7 +137,7 @@ struct OD_API RigidbodyComponent{
     friend class SelectedBodyDrawFilter;
 
     //int mask = AllLayers;
-    LayerMask mask = {AllLayers};
+    LayerMask mask = {AllLayersMask};// {AllLayers};
     bool interpolate = false;
 
     RigidbodyComponent() = default;
@@ -254,8 +258,7 @@ private:
     Quaternion previousRotation = QuaternionIdentity;
 
     class PhysicObject* data = nullptr;
-
-    void UpdateSettings();
+    bool isDirt = true;
 };
 
 struct OD_API RagdollComponent{
@@ -321,7 +324,7 @@ struct OD_API RagdollComponent{
     float globalMass = 75;
     float linearDamping = 0;
     Layers layer = Layers::Layer0;
-    LayerMask mask = {AllLayers};
+    LayerMask mask = {AllLayersMask};
 
     enum class Type{Dynamic, Kinematic, Static, Trigger};
     Type type;
@@ -364,6 +367,11 @@ struct OD_API RagdollComponent{
 
     RigidbodyConstraints Constraints(int boneIndex);
     void Constraints(int boneIndex, RigidbodyConstraints constraints);
+
+    Type GetType();
+    void SetType(Type type);
+
+    void UpdateInternalData(TransformComponent& t, InfoComponent& info, SkinnedModelRendererComponent& skinned);
 
     void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
 
@@ -410,6 +418,9 @@ struct OD_API RagdollComponent{
 
 private:
     struct RagdollObject* data = nullptr;
+    PhysicsSystem* physicSystem = nullptr;
+    Scene* scene = nullptr;
+    Entity entity;
 };
 
 enum class JointSpace{
@@ -716,6 +727,7 @@ using OnCollisionCallback = void(*)(Scene&, Collision&);
 
 struct OD_API PhysicsSystem: public System{
     friend struct RigidbodyComponent;
+    friend struct RagdollComponent;
     friend class MyContactListener;
 
     void OnInit(Scene& scene) override;
@@ -765,6 +777,9 @@ private:
     void CheckForCollisionEvents();
 
     static void OnRemoveRagdoll(entt::registry& r, entt::entity e);
+    void AddRagdoll(Entity entity, RagdollComponent& c, TransformComponent& t, InfoComponent& info, SkinnedModelRendererComponent& skinned);
+    void RemoveRagdoll(Entity entity, RagdollComponent& c); 
+
     static void OnRemoveHeightmap(entt::registry& r, entt::entity e);
 
     static void OnRemoveRigidbody(entt::registry& r, entt::entity e);

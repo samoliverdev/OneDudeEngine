@@ -7,6 +7,7 @@
 #include "OD/Editor/Panels/ViewportPanel.h"
 #include "OD/Editor/Panels/ProfilePanel.h"
 #include "OD/Editor/Panels/RendererStatsPanel.h"
+#include "OD/Editor/Panels/GlobalSettingsPanel.h"
 #include "OD/Serialization/Serialization.h"
 #include "EditorCamera.h"
 #include "Workspace.h"
@@ -75,6 +76,7 @@ public:
         ArchiveDumpNVP(ar, viewportPanel.show);
         ArchiveDumpNVP(ar, profilePanel.show);
         ArchiveDumpNVP(ar, rendererStatsPanel.show);
+        ArchiveDumpNVP(ar, globalSettingsPanel.show);
     }
 
 private:
@@ -86,6 +88,7 @@ private:
     ViewportPanel viewportPanel;
     ProfilePanel profilePanel;
     RendererStatsPanel rendererStatsPanel;
+    GlobalSettingsPanel globalSettingsPanel; 
     MainWorkspace mainWorkspace;
 
     Entity selectionEntity = EntityNull;

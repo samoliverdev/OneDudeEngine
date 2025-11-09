@@ -13,6 +13,7 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/LuaScripting/LuaMetaUltis.h"
 #include "OD/Core/Application.h"
+#include "OD/Core/GlobalSettings.h"
 #include <fstream>
 
 #include "OD/Editor/Editor.h"
@@ -22,16 +23,26 @@ namespace OD{
 GlobalSceneData globalSceneData;
 
 int LayerMask::GetLayerByName(const std::string& name){
-    Assert(globalSceneData.layerNames.size() == LayerMax);
+    Assert(globalSceneData.layerNames.size() == Layers::LayerCount);
 
     for(int i = 0; i < globalSceneData.layerNames.size(); i++){
-        if(globalSceneData.layerNames[i] == name) return (1 << i);
+        if(globalSceneData.layerNames[i] == name) return i;
     }
     return LayerNone;
 }
 
 GlobalSceneData& GetGlobalSceneData(){
-    return globalSceneData;
+    return GlobalSettings::Get().Get<GlobalSceneData>();  //globalSceneData;
+}
+
+void GlobalSceneData::OnImGuiRender(){
+    /*cereal::ImGuiArchive ar;
+    ar(*this);*/
+
+    for(int i = 0; i < LayerCount; i++){
+        std::string id = "##Layer" + std::to_string(i);
+        ImGui::DrawString(id.c_str(), layerNames[i]);
+    }
 }
 
 #pragma region TransformComponent
@@ -815,7 +826,7 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
         auto& transform = GetComponent<TransformComponent>(mesh);
         if(staticRenderer) AddComponent<StaticRendererComponent>(mesh);
 
-        if(overrideLayer != LayerNone && overrideLayer != LayerMax){
+        if(overrideLayer != LayerNone && overrideLayer != Layers::LayerCount){
             auto& info = GetComponent<InfoComponent>(mesh);
             info.layer = (Layers)overrideLayer;
         }

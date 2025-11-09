@@ -1,21 +1,8 @@
 {
     "Material": {
-        "enableInstancing": false,
+        "enableInstancing": true,
         "shaderPath": "Engine/Shaders/Lit2.glsl",
         "maps": [
-            {
-                "key": "color",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 0.08041238784790039,
-                        "v.y": 0.08041238784790039,
-                        "v.z": 0.08041238784790039,
-                        "v.w": 1.0
-                    },
-                    "vec.vectorIsColor": true
-                }
-            },
             {
                 "key": "metallic",
                 "value": {
@@ -33,6 +20,19 @@
                 }
             },
             {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 0.08041238784790039,
+                        "v.y": 0.08041238784790039,
+                        "v.z": 0.08041238784790039,
+                        "v.w": 1.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
                 "key": "sizeOffset",
                 "value": {
                     "type": 5,
@@ -46,13 +46,6 @@
                 }
             },
             {
-                "key": "mainTex",
-                "value": {
-                    "type": 7,
-                    "texPath": "Engine/Textures/White.jpg"
-                }
-            },
-            {
                 "key": "emissionColor",
                 "value": {
                     "type": 5,
@@ -63,6 +56,13 @@
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
                 }
             },
             {

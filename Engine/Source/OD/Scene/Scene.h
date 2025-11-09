@@ -26,37 +26,45 @@ class System;
 class Scene;
 class Model;
 
-enum OD_API_IMPORT Layers{
-    //LayerNone = 0,
-    Layer0 = 1 << 0,  // 0001
-    Layer1 = 1 << 1,  // 0010
-    Layer2 = 1 << 2,  // 0100
-    Layer3 = 1 << 3,  // 1000
-    Layer4 = 1 << 4,
-    Layer5 = 1 << 5, 
-    Layer6 = 1 << 6, 
-    Layer7 = 1 << 7, 
-    Layer8 = 1 << 8,
-    Layer9 = 1 << 9,
-    //LayerMax = 10
+enum OD_API_IMPORT Layers: int{
+    Layer0 = 0,
+    Layer1,
+    Layer2,
+    Layer3, 
+    Layer4,
+    Layer5, 
+    Layer6, 
+    Layer7, 
+    Layer8,
+    Layer9,
+    LayerCount // always last
 };
 
-constexpr int LayerNone = 0;
-constexpr int LayerMax = 10;
-constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;
+constexpr int LayerNone = -1;
+/*constexpr int LayerMax = 10;
+constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;*/
 
-inline int GetLayerIndex(Layers layer){
-    assert(layer != LayerNone && layer < (1 << LayerMax)); // make sure it's a valid single-bit layer
-    return static_cast<int>(std::log2(static_cast<int>(layer)));
-}
+constexpr uint32_t AllLayersMask = (1u << LayerCount) - 1;
 
-inline Layers IndexToLayer(int index){
-    return static_cast<Layers>(1 << index);
+inline constexpr uint32_t LayerToMask(int layerIndex) {
+    return (1u << layerIndex);
 }
 
 struct OD_API LayerMask{
-    int mask = AllLayers;
+    //int mask = AllLayers;
+    
     static int GetLayerByName(const std::string& name);
+
+    uint32_t mask = AllLayersMask;
+
+    static inline LayerMask FromLayer(int layer) { return { LayerToMask(layer) }; }
+    static inline LayerMask FromLayers(std::initializer_list<int> layers) {
+        uint32_t m = 0;
+        for (int l : layers) m |= LayerToMask(l);
+        return { m };
+    }
+
+    bool Contains(int layer) const { return (mask & LayerToMask(layer)) != 0; }
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -65,8 +73,8 @@ struct OD_API LayerMask{
 };
 
 struct OD_API GlobalSceneData{
-    std::vector<std::string> layerNames = {
-        "Layer0",
+    std::array<std::string, LayerCount> layerNames = {
+        "Default", //"Layer0",
         "Layer1",
         "Layer2",
         "Layer3",
@@ -77,6 +85,13 @@ struct OD_API GlobalSceneData{
         "Layer8",
         "Layer9",
     };
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, layerNames);
+    }
+
+    void OnImGuiRender();
 };
 
 OD_API GlobalSceneData& GetGlobalSceneData();

@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "OD/Defines.h"
+#include "OD/Core/GlobalSettings.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
@@ -36,6 +37,8 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; 
 
 extern GraphicsDevice* graphicsDevice;
+
+bool hasLoadGlobalSetting = false;
 
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
     auto project = ProjectManager::LoadProject(projectPath);
@@ -113,6 +116,11 @@ void Application::DrawImGui(std::function<void()> func){
 }
 
 void Application::Loop(){
+    if(hasLoadGlobalSetting == false){
+        hasLoadGlobalSetting = true;
+        GlobalSettings::Get().Load("../GlobalSettings");
+    }
+
     #if OD_PROFILE
     Instrumentor::BeginLoop();
     #endif
@@ -247,6 +255,8 @@ bool Application::Run(){
 }
 
 void Application::OnExit(){
+    GlobalSettings::Get().Save("../GlobalSettings");
+
     //LogInfo("Application::OnExit");
 
     //OD::AssetManager::Get().StopHotReload();

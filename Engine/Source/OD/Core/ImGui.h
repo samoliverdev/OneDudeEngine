@@ -39,6 +39,7 @@ namespace ImGui{
         }
 
         std::string currentItem = std::string(magic_enum::enum_name(*e));
+        bool changed = false;
 
         //ImGui::Text("%s", name);
         if(ImGui::BeginCombo(/*"##enum_combo"*/ name, currentItem.c_str(), flags)){
@@ -49,6 +50,7 @@ namespace ImGui{
                     std::optional<E> getter = magic_enum::enum_cast<E>(currentItem);
                     if(getter.has_value()){
                         *e = getter.value();
+                        changed = true;
                     }
                 }
                 if(is_selected){
@@ -56,10 +58,9 @@ namespace ImGui{
                 }
             }
             ImGui::EndCombo();
-            return true;
         }
 
-        return false;
+        return changed;
     }
 
     template<typename T>
@@ -199,24 +200,124 @@ namespace ImGui{
         return changed;
     }
 
-    inline void DrawLayerMask(const char* label, OD::LayerMask& value){
-        auto& layerNames = OD::GetGlobalSceneData().layerNames; // Retrieve global layer names
+    // Draws a combo box to select a layer.
+    // Returns true if the layer was changed.
+    inline bool DrawLayer(const char* label, OD::Layers& currentLayer, const std::array<std::string, OD::LayerCount>& layerNames, bool skipDefaultNames = false){
+        bool changed = false;
+
+        // Get current name safely
+        std::string currentName = (int)currentLayer < (int)layerNames.size()
+            ? layerNames[(int)currentLayer]
+            : "Unknown";
+
+        if(ImGui::BeginCombo(label, currentName.c_str())){
+            for(int i = 0; i < (int)layerNames.size(); ++i){
+                // Optionally skip default-named layers
+                if(skipDefaultNames){
+                    std::string defaultName = "Layer" + std::to_string(i);
+                    if(layerNames[i] == defaultName) continue;
+                }
+
+                bool isSelected = ((int)currentLayer == i);
+                if(ImGui::Selectable(layerNames[i].c_str(), isSelected)){
+                    currentLayer = (OD::Layers)i;
+                    changed = true;
+                }
+
+                if(isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+
+            ImGui::EndCombo();
+        }
+
+        return changed;
+    }
+
+    inline void DrawLayerMask(const char* label, OD::LayerMask& value) {
+        auto& layerNames = OD::GetGlobalSceneData().layerNames;
         if (layerNames.empty()) return;
 
-        int totalLayers = layerNames.size();
+        const int totalLayers = static_cast<int>(layerNames.size());
         int selectedCount = 0;
         std::string selectedLayerName;
 
-        // Count selected layers & track the first one
+        // Count selected layers and remember last one
+        for (int i = 0; i < totalLayers; ++i) {
+            uint32_t bit = (1u << i);
+            if (value.mask & bit) {
+                ++selectedCount;
+                selectedLayerName = layerNames[i];
+            }
+        }
+
+        // Determine display text
+        std::string selectedLayersText;
+        if (selectedCount == 0)
+            selectedLayersText = "Nothing";
+        else if (selectedCount == totalLayers)
+            selectedLayersText = "Everything";
+        else if (selectedCount == 1)
+            selectedLayersText = selectedLayerName;
+        else
+            selectedLayersText = "Mixed";
+
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine();
+
+        if (ImGui::Button(selectedLayersText.c_str()))
+            ImGui::OpenPopup(label);
+
+        if (ImGui::BeginPopup(label)) {
+            bool allSelected = (selectedCount == totalLayers);
+            bool noneSelected = (selectedCount == 0);
+
+            // Shortcut toggles
+            if (ImGui::Checkbox("Everything", &allSelected)) {
+                value.mask = allSelected ? ((1u << totalLayers) - 1u) : 0u;
+            }
+            if (ImGui::Checkbox("Nothing", &noneSelected)) {
+                if (noneSelected)
+                    value.mask = 0u;
+            }
+
+            ImGui::Separator();
+
+            // Individual layer toggles
+            for (int i = 0; i < totalLayers; ++i) {
+                uint32_t bit = (1u << i);
+                bool selected = (value.mask & bit) != 0;
+                if (ImGui::Checkbox(layerNames[i].c_str(), &selected)) {
+                    if (selected)
+                        value.mask |= bit;
+                    else
+                        value.mask &= ~bit;
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    inline void DrawLayerMask2(const char* label, OD::LayerMask& value, bool hideDefaultNames = false)
+    {
+        auto& layerNames = OD::GetGlobalSceneData().layerNames; // Retrieve global layer names
+        if (layerNames.empty()) return;
+
+        int totalLayers = (int)layerNames.size();
+        int selectedCount = 0;
+        std::string selectedLayerName;
+
+        // Count selected layers & store last selected valid name
         for (int i = 0; i < totalLayers; i++) {
             int v = (1 << i);
             if (value.mask & v) {
                 selectedCount++;
-                selectedLayerName = layerNames[i]; // Store the last selected layer name
+                selectedLayerName = layerNames[i];
             }
         }
 
-        // Determine what to display on the button
+        // Determine button text
         std::string selectedLayersText;
         if (selectedCount == 0) {
             selectedLayersText = "Nothing";
@@ -243,24 +344,29 @@ namespace ImGui{
 
             // Shortcut checkboxes
             if (ImGui::Checkbox("Everything", &allSelected)) {
-                value.mask = allSelected ? ((1 << totalLayers) - 1) : 0; // Set all or none
-                //ImGui::CloseCurrentPopup();
+                value.mask = allSelected ? ((1 << totalLayers) - 1) : 0;
             }
             if (ImGui::Checkbox("Nothing", &noneSelected)) {
-                value.mask = 0; // Clear all
-                //ImGui::CloseCurrentPopup();
+                value.mask = 0;
             }
 
-            // Layer checkboxes (disabled if Everything/Nothing was selected)
-            bool disableOtherChecks = allSelected || noneSelected;
+            ImGui::Separator();
+
+            // Layer checkboxes
             for (int i = 0; i < totalLayers; i++) {
+                const std::string& name = layerNames[i];
+                // Skip default autogenerated names like "Layer0", "Layer1" if requested
+                if (hideDefaultNames && name.rfind("Layer", 0) == 0 && std::isdigit(name[5]))
+                    continue;
+
                 int v = (1 << i);
                 bool selected = (value.mask & v) != 0;
-                if (ImGui::Checkbox(layerNames[i].c_str(), &selected)){
+
+                if (ImGui::Checkbox(name.c_str(), &selected)) {
                     if (selected)
-                        value.mask |= v;  // Add layer
+                        value.mask |= v;
                     else
-                        value.mask &= ~v; // Remove layer
+                        value.mask &= ~v;
                 }
             }
 

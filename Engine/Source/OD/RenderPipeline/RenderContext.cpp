@@ -896,7 +896,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
         data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+        data.perDrawData.int_0[1] = info.layer;
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -947,7 +947,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
             data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+            data.perDrawData.int_0[1] = info.layer;
 
             onReciveRenderData(data);
             _i += 1;
@@ -987,7 +987,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
         data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+        data.perDrawData.int_0[1] = info.layer;
 
         onReciveRenderData(data);
     }
@@ -1035,7 +1035,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
             data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+            data.perDrawData.int_0[1] = info.layer;
             if(c.updateWhenOffscreen) data.awalsDraw = true;
             
             onReciveRenderData(data);
@@ -1205,7 +1205,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+        data.perDrawData.int_0[1] = info.layer;
 
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -1267,7 +1267,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+            data.perDrawData.int_0[1] = info.layer;
 
             if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -1314,7 +1314,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+        data.perDrawData.int_0[1] = info.layer;
 
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -1371,7 +1371,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+            data.perDrawData.int_0[1] = info.layer;
 
             if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -1421,7 +1421,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
         data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+        data.perDrawData.int_0[1] = info.layer;
 
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -1494,7 +1494,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = GetLayerIndex(info.layer);
+            data.perDrawData.int_0[1] = info.layer;
 
             data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
 

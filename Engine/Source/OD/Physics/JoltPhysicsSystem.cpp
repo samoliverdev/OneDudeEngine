@@ -6,21 +6,24 @@
 #include "OD/Core/Time.h"
 #include "OD/Core/Input.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/GlobalSettings.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/Editor/Editor.h"
-#include <unordered_set>
 
+#include <unordered_set>
 #include <set>
 #include <algorithm>
+#include <iostream>
+#include <cstdarg>
+#include <thread>
 
 //#define JPH_DEBUG_RENDERER
 
 #include <Jolt/Jolt.h>
-// Jolt includes
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/TempAllocator.h>
@@ -54,11 +57,278 @@
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
-#include <iostream>
-#include <cstdarg>
-#include <thread>
-
 namespace OD{
+
+#pragma region Core
+
+void DrawLayerCollisionMatrix(
+	std::array<std::array<bool, LayerCount>, LayerCount>& collisionMatrix,
+	std::vector<std::string>& layerNames
+){
+    const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+    ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingFixedFit
+        | ImGuiTableFlags_BordersInnerV
+        | ImGuiTableFlags_BordersOuter
+        | ImGuiTableFlags_ScrollY
+        | ImGuiTableFlags_ScrollX;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.TableAngledHeadersAngle = 0;
+    style.TableAngledHeadersTextAlign = ImVec2(0.5f, 0.5f);
+
+    // 🧩 Collect valid layers (skip default-named ones)
+    std::vector<int> visibleLayers;
+    for(int i = 0; i < LayerCount; ++i){
+        std::string defaultName = "Layer" + std::to_string(i);
+        if(strcmp(layerNames[i].c_str(), defaultName.c_str()) != 0 && layerNames[i][0] != '\0'){
+            visibleLayers.push_back(i);
+		}
+    }
+
+    if(visibleLayers.empty()) return; // Nothing to draw
+
+    int visibleCount = (int)visibleLayers.size();
+
+    if(ImGui::BeginTable("LayerCollisionMatrix", visibleCount + 1, tableFlags)){
+        ImGui::TableSetupColumn("Layer", ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoHide);
+
+        // 🔁 Reversed order (for angled headers)
+        for(int idx = visibleCount - 1; idx >= 0; --idx){
+            int layerIndex = visibleLayers[idx];
+            ImGui::TableSetupColumn(layerNames[layerIndex].c_str(),
+                ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed);
+        }
+
+        ImGui::TableAngledHeadersRow();
+
+        // Draw visible layer rows
+        for(int r = 0; r < visibleCount; ++r){
+            int row = visibleLayers[r];
+            ImGui::PushID(row);
+            ImGui::TableNextRow();
+
+            for(int c = 0; c < visibleCount + 1; ++c){
+                ImGui::TableSetColumnIndex(c);
+
+                if(c == 0){
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(layerNames[row].c_str());
+                } else {
+                    int realCol = visibleLayers[visibleCount - c];
+
+                    if(realCol < row) continue;
+
+                    ImGui::PushID(c);
+                    bool& val = collisionMatrix[row][realCol];
+                    ImGui::Checkbox("", &val);
+                    if(row != realCol)
+                        collisionMatrix[realCol][row] = val;
+                    ImGui::PopID();
+                }
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndTable();
+    }
+}
+
+bool DrawLayerCollisionMatrix2(
+    std::array<std::array<bool, LayerCount>, LayerCount>& collisionMatrix,
+    std::array<std::string, LayerCount>& layerNames,
+    bool skipDefaultNamedLayers = true,
+    bool reverseHeaders = true
+){
+    bool changed = false;
+
+	const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+
+	/*static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_HighlightHoveredColumn;
+	static ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed;
+	static int frozen_cols = 1;
+	static int frozen_rows = 2;
+	ImGui::CheckboxFlags("_ScrollX", &table_flags, ImGuiTableFlags_ScrollX);
+	ImGui::CheckboxFlags("_ScrollY", &table_flags, ImGuiTableFlags_ScrollY);
+	ImGui::CheckboxFlags("_Resizable", &table_flags, ImGuiTableFlags_Resizable);
+	ImGui::CheckboxFlags("_NoBordersInBody", &table_flags, ImGuiTableFlags_NoBordersInBody);
+	ImGui::CheckboxFlags("_HighlightHoveredColumn", &table_flags, ImGuiTableFlags_HighlightHoveredColumn);
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+	ImGui::SliderInt("Frozen columns", &frozen_cols, 0, 2);
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+	ImGui::SliderInt("Frozen rows", &frozen_rows, 0, 2);
+	ImGui::CheckboxFlags("Disable header contributing to column width", &column_flags, ImGuiTableColumnFlags_NoHeaderWidth);
+
+	if (ImGui::TreeNode("Style settings"))
+	{
+		ImGui::SameLine();
+		//HelpMarker("Giving access to some ImGuiStyle value in this demo for convenience.");
+		ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+		ImGui::SliderAngle("style.TableAngledHeadersAngle", &ImGui::GetStyle().TableAngledHeadersAngle, -50.0f, +50.0f);
+		ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+		ImGui::SliderFloat2("style.TableAngledHeadersTextAlign", (float*)&ImGui::GetStyle().TableAngledHeadersTextAlign, 0.0f, 1.0f, "%.2f");
+		ImGui::TreePop();
+	}*/
+
+    /*ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingFixedFit
+        | ImGuiTableFlags_BordersInnerV
+        | ImGuiTableFlags_BordersOuter
+        | ImGuiTableFlags_ScrollY
+        | ImGuiTableFlags_ScrollX;*/
+
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingFixedFit 
+		| ImGuiTableFlags_ScrollX 
+		| ImGuiTableFlags_ScrollY 
+		| ImGuiTableFlags_BordersOuter 
+		| ImGuiTableFlags_BordersInnerH 
+		| ImGuiTableFlags_Hideable 
+		| ImGuiTableFlags_Resizable 
+		| ImGuiTableFlags_Reorderable 
+		| ImGuiTableFlags_HighlightHoveredColumn;
+
+	/*ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter 
+		| ImGuiTableFlags_BordersInnerH 
+		| ImGuiTableFlags_SizingFixedFit 
+		| ImGuiTableFlags_ScrollX;*/
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.TableAngledHeadersAngle = 0; //50;
+    style.TableAngledHeadersTextAlign = ImVec2(0.5f, 0.5f);
+
+    // 🧩 Collect visible layers (skip default ones if requested)
+    std::vector<int> visibleLayers;
+    visibleLayers.reserve(LayerCount);
+
+    for(int i = 0; i < LayerCount; ++i){
+        const std::string& name = layerNames[i];
+        if(!skipDefaultNamedLayers){
+            visibleLayers.push_back(i);
+		} else {
+            std::string defaultName = "Layer" + std::to_string(i);
+            if(!name.empty() && name != defaultName)
+                visibleLayers.push_back(i);
+        }
+    }
+
+    if(visibleLayers.empty()) return false; // Nothing to draw
+
+    int visibleCount = (int)visibleLayers.size();
+
+    if(ImGui::BeginTable("LayerCollisionMatrix", visibleCount + 1, tableFlags/*, ImVec2(0.0f, TEXT_BASE_HEIGHT * 52)*/)){
+        ImGui::TableSetupColumn("Layer", ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoHide);
+
+        // 🔁 Setup headers (optionally reversed)
+        if(reverseHeaders){
+            for(int idx = visibleCount - 1; idx >= 0; --idx){
+                int layerIndex = visibleLayers[idx];
+                ImGui::TableSetupColumn(
+                    layerNames[layerIndex].c_str(),
+                    ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed
+                );
+            }
+        } else {
+            for(int idx = 0; idx < visibleCount; ++idx){
+                int layerIndex = visibleLayers[idx];
+                ImGui::TableSetupColumn(
+                    layerNames[layerIndex].c_str(),
+                    ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed
+                );
+            }
+        }
+
+		//ImGui::TableSetupScrollFreeze(frozen_cols, frozen_rows);
+        ImGui::TableAngledHeadersRow();
+		//ImGui::TableHeadersRow();       // Draw remaining headers and allow access to context-menu and other functions.
+
+        // 🧱 Draw matrix rows
+        for(int r = 0; r < visibleCount; ++r){
+            int row = visibleLayers[r];
+            ImGui::PushID(row);
+            ImGui::TableNextRow();
+
+            for(int c = 0; c < visibleCount + 1; ++c){
+                ImGui::TableSetColumnIndex(c);
+
+                if(c == 0){
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(layerNames[row].c_str());
+                } else {
+                    int realCol = reverseHeaders
+                        ? visibleLayers[visibleCount - c]
+                        : visibleLayers[c - 1];
+
+                    if(realCol < row) continue;
+
+                    ImGui::PushID(c);
+                    bool oldVal = collisionMatrix[row][realCol];
+                    bool val = oldVal;
+                    if(ImGui::Checkbox("", &val)){
+                        collisionMatrix[row][realCol] = val;
+                        if(row != realCol)
+                            collisionMatrix[realCol][row] = val;
+                        changed = true;
+                    }
+                    ImGui::PopID();
+                }
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndTable();
+    }
+
+    return changed;
+}
+
+struct PhysicsSettings {
+    Vector3 gravity = {0, -9.81f, 0};
+    int solverIterations = 8;
+
+	std::array<std::array<bool, LayerCount>, LayerCount> collisionMatrix{};
+	std::array<uint32_t, LayerCount> layerMasks{};
+
+	PhysicsSettings(){
+		for(int i = 0; i < LayerCount; i++){
+			layerMasks[i] = AllLayersMask;
+			for(int j = 0; j < LayerCount; j++){
+				collisionMatrix[i][j] = true; // Everything collides with everything initially
+			}
+		}
+	}
+
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ArchiveDumpNVP(ar, gravity);
+        ArchiveDumpNVP(ar, solverIterations);
+		ArchiveDumpNVP(ar, collisionMatrix);
+
+		UpdateLayerMasks();
+    }
+
+	void UpdateLayerMasks(){
+		for(int row = 0; row < LayerCount; row++){
+			uint32_t mask = 0;
+			for(int col = 0; col < LayerCount; col++){
+				if(collisionMatrix[row][col])
+					mask |= (1u << col);
+			}
+			layerMasks[row] = mask;
+		}
+	}
+
+    void OnImGuiRender() {
+		ImGui::PushID("PhysicsSettings");
+        ImGui::DragFloat3("Gravity", &gravity.x, 0.1f);
+        ImGui::DragInt("Solver Iterations", &solverIterations, 1, 1, 64);
+
+		if(DrawLayerCollisionMatrix2(collisionMatrix, GetGlobalSceneData().layerNames, true, true)){
+			UpdateLayerMasks();
+		}
+
+		ImGui::PopID();
+	}
+};
 
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent", "Physics");
@@ -68,8 +338,9 @@ void PhysicsModuleInit(){
     SceneManager::Get().RegisterSystem<PhysicsSystem>("PhysicsSystem");
 
 	SceneManager::Get().RegisterCoreComponent<MotorTest>("MotorTest", "Physics");
-
 	SceneManager::Get().RegisterCoreComponent<VehiclePhysic>("VehiclePhysic", "Physics");
+
+	OD::GlobalSettings::Get().Register<PhysicsSettings>("Physics");
 }
 
 uint64_t EncodeUserData(uint32_t u, int32_t i) {
@@ -77,23 +348,17 @@ uint64_t EncodeUserData(uint32_t u, int32_t i) {
            static_cast<uint64_t>(u);
 }
 
-void DecodeUserData(uint64_t packed, uint32_t &u, int32_t &i) {
+void DecodeUserData(uint64_t packed, uint32_t &u, int32_t &i){
     u = static_cast<uint32_t>(packed & 0xFFFFFFFFull);
     i = static_cast<int32_t>((packed >> 32) & 0xFFFFFFFFull);
 }
 
-#pragma region Core
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
 JPH_SUPPRESS_WARNINGS
 
-// All Jolt symbols are in the JPH namespace
-using namespace JPH;
-
-// If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
-using namespace JPH::literals;
-
-// We're also using STL classes in this example
-using namespace std;
+using namespace JPH;// All Jolt symbols are in the JPH namespace
+using namespace JPH::literals;// If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
+using namespace std;// We're also using STL classes in this example
 
 inline Vector3 FromJolt(JPH::Vec3 v){ return Vector3(v.GetX(), v.GetY(), v.GetZ()); }
 inline Quaternion FromJolt(JPH::Quat q){ return Quaternion(q.GetX(), q.GetY(), q.GetZ(), q.GetW()); }
@@ -131,19 +396,45 @@ static bool AssertFailedImpl(const char *inExpression, const char *inMessage, co
 // Typically you at least want to have 1 layer for moving bodies and 1 layer for static bodies, but you can have more
 // layers if you want. E.g. you could have a layer for high detail collision (which is not used by the physics simulation
 // but only if you do collision testing).
-namespace PhysicsLayers{
+/*namespace PhysicsLayers{
 	static constexpr ObjectLayer NON_MOVING = 0;
 	static constexpr ObjectLayer MOVING = 1;
 	static constexpr ObjectLayer NUM_LAYERS = 2;
-};
+};*/
+
+/*constexpr int layerCount = (int)Layers::LayerCount; //IM_ARRAYSIZE(layerNames);
+static bool collisionMatrix[layerCount][layerCount] = {};
+static uint32_t layerMasks[layerCount] = {};
+
+void UpdateLayerMasks(){
+    for (int row = 0; row < layerCount; row++){
+        uint32_t mask = 0;
+        for(int col = 0; col < layerCount; col++){
+            if(collisionMatrix[row][col])
+                mask |= (1u << col);
+        }
+        layerMasks[row] = mask;
+    }
+}
+
+void InitLayerMasks(){
+    for(int i = 0; i < layerCount; i++){
+        layerMasks[i] = AllLayersMask;
+        for(int j = 0; j < layerCount; j++)
+            collisionMatrix[i][j] = true; // Everything collides with everything initially
+    }
+}*/
+
+PhysicsSettings* currentSettings = nullptr;
 
 /// Class that determines if two object layers can collide
 class ObjectLayerPairFilterImpl : public ObjectLayerPairFilter{
 public:
 	virtual bool ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override{
-		return true;
+		return (currentSettings->layerMasks[inObject1] & (1u << inObject2)) != 0;
+		//return (layerMasks[inObject1] & (1u << inObject2)) != 0;
 
-		switch (inObject1)
+		/*switch (inObject1)
 		{
 		case PhysicsLayers::NON_MOVING:
 			return inObject2 == PhysicsLayers::MOVING; // Non moving only collides with moving
@@ -152,7 +443,7 @@ public:
 		default:
 			JPH_ASSERT(false);
 			return false;
-		}
+		}*/
 	}
 };
 
@@ -173,8 +464,8 @@ class BPLayerInterfaceImpl final : public BroadPhaseLayerInterface{
 public:
     BPLayerInterfaceImpl(){
 		// Create a mapping table from object to broad phase layer
-		mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
-		mObjectToBroadPhase[PhysicsLayers::MOVING] = BroadPhaseLayers::MOVING;
+		mObjectToBroadPhase[0] = BroadPhaseLayers::NON_MOVING;
+		mObjectToBroadPhase[1] = BroadPhaseLayers::MOVING;
 	}
 
 	virtual uint GetNumBroadPhaseLayers() const override{
@@ -201,7 +492,7 @@ public:
 #endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
 
 private:
-	BroadPhaseLayer mObjectToBroadPhase[PhysicsLayers::NUM_LAYERS];
+	BroadPhaseLayer mObjectToBroadPhase[BroadPhaseLayers::NUM_LAYERS];
 };
 
 /// Class that determines if an object layer can collide with a broadphase layer
@@ -210,7 +501,7 @@ public:
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override{
 		return true;
 
-		switch (inLayer1)
+		/*switch (inLayer1)
 		{
 		case PhysicsLayers::NON_MOVING:
 			return inLayer2 == BroadPhaseLayers::MOVING;
@@ -219,7 +510,7 @@ public:
 		default:
 			JPH_ASSERT(false);
 			return false;
-		}
+		}*/
 	}
 };
 
@@ -238,7 +529,7 @@ public:
 class MyGroupFilter : public JPH::GroupFilter {
 public:
     virtual bool CanCollide(const JPH::CollisionGroup &a, const JPH::CollisionGroup &b) const override {
-		//return true;
+		return true;
 
         /*int aMask = (int)a.GetSubGroupID();
         int bMask = (int)b.GetSubGroupID();
@@ -572,7 +863,6 @@ class PhysicObject{
 public:
     BodyID bodyID = BodyID();
 	PhysicsWorld* world = nullptr;
-	bool isDirt = false;
 };
 
 class JointObject{
@@ -648,9 +938,15 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::DragFloat("Stiffness", &ragdoll.stiffness);
 	ImGui::Spacing();
 
-    ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
+    //ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type);
+	
+	if(ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type)){
+		ragdoll.SetType(ragdoll.type);
+	}
+
 	ImGui::Checkbox("Interpolate", &ragdoll.interpolate);
-	ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
+	//ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
+	ImGui::DrawLayer("Layer", ragdoll.layer, GetGlobalSceneData().layerNames, true);
 	ImGui::DrawLayerMask("Mask", ragdoll.mask);
 	ImGui::Spacing();
 
@@ -1057,6 +1353,262 @@ void RagdollComponent::Constraints(int boneIndex, RigidbodyConstraints constrain
 	motionProps->SetMassProperties(static_cast<JPH::EAllowedDOFs>(constraints), body.GetShape()->GetMassProperties());
 }
 
+RagdollComponent::Type RagdollComponent::GetType(){
+	return type;
+}
+
+void RagdollComponent::SetType(Type intype){
+	type = intype;
+	isDirty = true;
+
+	/*if(data == nullptr) return;
+	physicSystem->RemoveRagdoll(entity, *this);
+	physicSystem->AddRagdoll(
+		entity, *this, 
+		scene->GetComponent<TransformComponent>(entity),
+		scene->GetComponent<InfoComponent>(entity),
+		scene->GetComponent<SkinnedModelRendererComponent>(entity)
+	);*/
+}
+
+void RagdollComponent::UpdateInternalData(TransformComponent& trans, InfoComponent& info, SkinnedModelRendererComponent& skinned){
+	if(physicSystem == nullptr) return;
+	physicSystem->RemoveRagdoll(entity, *this);
+	physicSystem->AddRagdoll(
+		entity, *this, 
+		trans, info, skinned
+	);
+}
+
+RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter, Pose* customSetupPose = nullptr){
+	auto GetShape = [](CollisionShape shape) -> Shape* {
+		if(shape.type == CollisionShape::Type::Box){
+			auto* r = new BoxShape(ToJolt(shape.size * 0.5f));
+			return r;
+		}
+		if(shape.type == CollisionShape::Type::Sphere){
+			auto* r = new SphereShape(shape.radius);
+			return r;
+		}
+		if(shape.type == CollisionShape::Type::Capsule){
+			auto* r = new CapsuleShape(shape.height * 0.5f, shape.radius);
+			return r;
+		}
+		
+		Assert(false);
+		return nullptr;
+	};
+
+	auto GetShape2 = [](CollisionShape shape, float mass) -> JPH::Ref<JPH::Shape> {
+		if(shape.type == CollisionShape::Type::Box){
+			BoxShapeSettings s(ToJolt(shape.size * 0.5f));
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		if(shape.type == CollisionShape::Type::Sphere){
+			SphereShapeSettings s(shape.radius);
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		if(shape.type == CollisionShape::Type::Capsule){
+			CapsuleShapeSettings s(shape.height * 0.5f, shape.radius);
+			s.SetDensity(mass);
+			return s.Create().Get();
+		}
+		
+		Assert(false);
+		return nullptr;
+	};
+
+	JPH::Ref<JPH::Skeleton> skeleton = new JPH::Skeleton;
+
+	for(int i = 0; i < ragdoll.parts.size(); i++){
+		if(ragdoll.parts[i].skinnedSkeletonIndex < 0) continue;
+		Assert(ragdoll.parts[i].skinnedSkeletonIndex >= 0);
+		//Assert(ragdoll.parts[i].parent > 0);
+
+		if(ragdoll.parts[i].parent >= 0/* && ragdoll.type != RagdollComponent::Type::Trigger*/){
+			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex), ragdoll.parts[i].parent);
+		} else {
+			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex));
+		}
+	}
+
+	Pose& setupPose = skinnedSkeleton.GetRestPose();
+	if(customSetupPose != nullptr) setupPose = *customSetupPose;
+	ragdoll.startPose = setupPose;
+
+	// Create ragdoll settings
+	RagdollSettings *settings = new RagdollSettings;
+	settings->mSkeleton = skeleton;
+	settings->mParts.resize(skeleton->GetJointCount());
+	for(int p = 0; p < skeleton->GetJointCount(); ++p){	
+		auto shapes = GetShape(ragdoll.parts[p].shape);
+		Transform boneTrans = setupPose.GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
+		auto positions = ToJolt(trans.TransformPoint(boneTrans.Position()/* + ragdoll.parts[p].shape.center*/));
+		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.Rotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
+		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
+
+		auto twist_axis = ToJolt(trans.TransformDirection(math::normalizeSafe(ragdoll.parts[p].twistAxis)));
+		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ()))); //TODO: Make this editable in the ragdoll part
+
+		//auto twist_axis = ToJolt(trans.TransformDirection(boneTrans.TransformDirection(ragdoll.parts[p].twistAxis)));
+		//auto planeAxisWorld = ToJolt(trans.TransformDirection(boneTrans.TransformDirection({0, 0, 1})));
+		
+		//auto twist_angle = ragdoll.parts[p].twistAngle;
+		auto normal_angle = ragdoll.parts[p].normalAngle;
+		auto plane_angle = ragdoll.parts[p].planeAngle;
+
+		RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(ragdoll.parts[p].shape.center), Quat::sIdentity(), shapes);
+		RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
+
+		RagdollSettings::Part &part = settings->mParts[p];
+		part.SetShape(finalShape /*shapes*/);
+
+		JPH::MassProperties msp;
+		msp.ScaleToMass(ragdoll.globalMass / skeleton->GetJointCount()); //actual mass in kg
+		part.mMassPropertiesOverride = msp;
+		part.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+
+		//part.mLinearDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
+		part.mAngularDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
+		
+		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
+		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
+		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
+		//part.mNumVelocityStepsOverride = 20; //16;
+		//part.mNumPositionStepsOverride = 10; //8;
+		part.mMotionQuality = EMotionQuality::LinearCast;
+		part.mPosition = positions;
+		part.mRotation = rotations;
+		part.mMotionType =  EMotionType::Dynamic;
+		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
+		if(ragdoll.type == RagdollComponent::Type::Trigger) part.mMotionType = EMotionType::Kinematic; 
+		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
+		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
+		if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::None){
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
+			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
+		} else {
+			part.mIsSensor = ragdoll.type == RagdollComponent::Type::Trigger;
+		}
+		part.mObjectLayer = ragdoll.layer; //PhysicsLayers::MOVING;
+		/*part.mCollisionGroup = JPH::CollisionGroup(
+			filter,
+			ragdoll.layer,
+			ragdoll.mask.mask // stored in subgroup ID
+		);*/
+		//part.mAngularDamping = 0;
+		//part.mLinearDamping = 0;
+		//TODO: Fix this, add the root object id
+		//part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
+
+		/*if(ragdoll.parts[p].parent < 0){
+			part.mAllowedDOFs = EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
+		}*/
+
+		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
+		
+		//part.mFriction = 0.5;
+
+		//part.mAngularDamping = 10;
+
+		// First part is the root, doesn't have a parent and doesn't have a constraint
+		if(p > 0 /*&& ragdoll.type != RagdollComponent::Type::Trigger*/){
+			SwingTwistConstraintSettings *constraint = new SwingTwistConstraintSettings;
+			constraint->mDrawConstraintSize = 0.1f;
+			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
+			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
+			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = planeAxisWorld;
+			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
+			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
+			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
+			constraint->mPlaneHalfConeAngle = DegreesToRadians(plane_angle);
+			part.mToParent = constraint;
+		}
+	}
+
+	settings->Stabilize();// Optional: Stabilize the inertia of the limbs
+	settings->DisableParentChildCollisions();// Disable parent child collisions so that we don't get collisions between constrained bodies
+	settings->CalculateBodyIndexToConstraintIndex();// Calculate the map needed for GetBodyIndexToConstraintIndex()
+
+	return settings;
+}
+
+void PhysicsSystem::OnRemoveRagdoll(entt::registry& r, entt::entity e){
+	RagdollComponent& ragdoll = r.get<RagdollComponent>(e);
+	PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
+	physicsSystem->RemoveRagdoll(e, ragdoll);
+    
+	/*if(ragdoll.data == nullptr) return;
+	ragdoll.isDirty = false;
+	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
+	delete ragdoll.data->ragdoll;
+	delete ragdoll.data;
+	ragdoll.data = nullptr;*/
+}
+
+void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, SkinnedModelRendererComponent& skinned){
+	ragdoll.isDirty = false;
+	ragdoll.physicSystem = this;
+	ragdoll.scene = scene;
+	ragdoll.entity = entity;
+	
+	SetJointsAsDirtyIfBodyIsDirty(entity);
+    BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+
+	ragdoll.data = new RagdollObject();
+	ragdoll.data->world = physicsWorld;
+	JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(
+		info, trans, ragdoll, 
+		skinned.GetModel()->skeleton, 
+		physicsWorld->groupFilter, 
+		nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
+	);
+	ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+	for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
+		BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
+		BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
+
+		// Setar manualmente o CollisionGroup correto
+		/*bi.SetCollisionGroup(bodyID, JPH::CollisionGroup(
+			physicsWorld->groupFilter,
+			ragdoll.layer,
+			ragdoll.mask.mask
+		));*/
+
+		ragdoll.parts[i].initedRot = FromJolt(bi.GetRotation(bodyID));
+
+		if(skinned.finalPose.Size() > 0){
+			auto positions = ToJolt(trans.TransformPoint(skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).Position()));
+			auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * skinned.finalPose.GetGlobalTransform(ragdoll.parts[i].skinnedSkeletonIndex).Rotation()); 
+			bi.SetPositionAndRotation(bodyID, positions, rotations, JPH::EActivation::Activate);
+		}
+
+		if(ragdoll.overrideStartVelocity != Vector3Zero){
+			bi.SetLinearVelocity(bodyID, ToJolt(ragdoll.overrideStartVelocity));
+		}
+	}
+
+	for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+		BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+		bodyInterface.SetUserData(bodyID, EncodeUserData(static_cast<uint32_t>(entity), p));
+		//LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
+	}
+	ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+}
+
+void PhysicsSystem::RemoveRagdoll(Entity entity, RagdollComponent& ragdoll){
+	if(ragdoll.data == nullptr) return;
+
+	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
+	//ragdoll.data->ragdoll = nullptr;
+	delete ragdoll.data;
+	ragdoll.data = nullptr;
+	ragdoll.isDirty = true;
+}
+
 #pragma endregion
 
 #pragma region RigidbodyComponent
@@ -1311,27 +1863,29 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
 void RigidbodyComponent::SetShape(CollisionShape inShape){
     shape = inShape;
-	UpdateSettings();
-}
-
-void RigidbodyComponent::UpdateSettings(){
-	if(data == nullptr) return;
-	data->isDirt = true;
+	isDirt = true;
 }
 
 void RigidbodyComponent::Mass(float m){
 	mass = m;
-	UpdateSettings();
+	isDirt = true;
 }
 
 void RigidbodyComponent::Friction(float f){
 	friction = f;
-	UpdateSettings();
+	isDirt = true;
 }
 
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
     type = value;
-	UpdateSettings();
+
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	EMotionType _type = EMotionType::Dynamic;
+    if(type == RigidbodyComponent::Type::Static) _type = EMotionType::Static;
+	if(type == RigidbodyComponent::Type::Kinematic) _type = EMotionType::Kinematic;
+	if(type == RigidbodyComponent::Type::Trigger) _type = EMotionType::Kinematic;
+	bodyInterface.SetMotionType(data->bodyID, _type, EActivation::Activate);
 }
 
 void RigidbodyComponent::NeverSleep(bool value){
@@ -1559,9 +2113,7 @@ PhysicMotionQuality RigidbodyComponent::MotionQuality(){
 
 void RigidbodyComponent::MotionQuality(PhysicMotionQuality v){
 	motionQuality = v;
-
-	if(data == nullptr) return;
-	data->isDirt = true;
+	isDirt = true;
 }
 
 RigidbodyConstraints RigidbodyComponent::Constraints(){
@@ -1599,6 +2151,10 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
+	rb.data = new PhysicObject();
+	rb.data->world = physicsWorld;
+	rb.isDirt = false;
+
 	SetJointsAsDirtyIfBodyIsDirty(entity);
 
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
@@ -1705,11 +2261,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	settings.mAngularDamping = rb.angularDamping;
 	settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
 	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
-	settings.mCollisionGroup = JPH::CollisionGroup(
+	/*settings.mCollisionGroup = JPH::CollisionGroup(//Deprecated
 		physicsWorld->groupFilter,
         info.layer,
         rb.mask.mask // stored in subgroup ID
-    );
+    );*/
 	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
 	//settings.mMotionQuality = EMotionQuality::LinearCast;
 	
@@ -1737,11 +2293,17 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
+	if(rb.data == nullptr) return;
+
 	SetJointsAsDirtyIfBodyIsDirty(entity);
 
 	BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
     bodyInterface.RemoveBody(rb.data->bodyID);
     bodyInterface.DestroyBody(rb.data->bodyID);
+
+	delete rb.data;
+	rb.data = nullptr;
+	rb.isDirt = true;
 }
 
 #pragma endregion
@@ -2180,7 +2742,7 @@ void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyCompo
 		}
 	);
 
-	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(PhysicsLayers::MOVING);
+	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(info.layer);
 	veh.data->vehicleConstraint->SetVehicleCollisionTester(vehicle_tester);
 
 	physicsWorld->physicsSystem.AddConstraint(veh.data->vehicleConstraint);
@@ -2191,7 +2753,6 @@ void PhysicsSystem::RemoveVehicle(Entity entity, VehiclePhysic& c){
 	physicsWorld->physicsSystem.RemoveStepListener(c.data->vehicleConstraint);
 	physicsWorld->physicsSystem.RemoveConstraint(c.data->vehicleConstraint);
 }
-
 
 #pragma endregion
 
@@ -2221,6 +2782,8 @@ bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Runn
 
 void PhysicsSystem::OnInit(Scene& inScene){
 	scene = &inScene;
+	currentSettings = &GlobalSettings::Get().Get<PhysicsSettings>();
+
    // Register allocation hook. In this example we'll just let Jolt use malloc / free but you can override these if you want (see Memory.h).
 	// This needs to be done before any other Jolt function is called.
 	RegisterDefaultAllocator();
@@ -2307,14 +2870,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	JPH::Ref<MyGroupFilter> groupFilter = new MyGroupFilter();
 	physicsWorld->groupFilter = groupFilter;
 
-	// Check that doesn't collide with self
-	CollisionGroup g1(physicsWorld->groupFilter, Layer1, Layer0);
-	//Assert(g1.CanCollide(g1) == false);
-
-	// Check that collides with other group
-	CollisionGroup g2(physicsWorld->groupFilter, Layer1, AllLayers);
-	//Assert(g1.CanCollide(g2) == false);
-	//Assert(g2.CanCollide(g1) == false);
+	physicsWorld->physicsSystem.SetGravity(ToJolt(currentSettings->gravity));
 
 	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
@@ -2347,162 +2903,6 @@ void* PhysicsSystem::GetInternlWorld(){
     return nullptr;
 }
 
-RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& trans, RagdollComponent& ragdoll, Skeleton& skinnedSkeleton, JPH::GroupFilter* filter, Pose* customSetupPose = nullptr){
-	auto GetShape = [](CollisionShape shape) -> Shape* {
-		if(shape.type == CollisionShape::Type::Box){
-			auto* r = new BoxShape(ToJolt(shape.size * 0.5f));
-			return r;
-		}
-		if(shape.type == CollisionShape::Type::Sphere){
-			auto* r = new SphereShape(shape.radius);
-			return r;
-		}
-		if(shape.type == CollisionShape::Type::Capsule){
-			auto* r = new CapsuleShape(shape.height * 0.5f, shape.radius);
-			return r;
-		}
-		
-		Assert(false);
-		return nullptr;
-	};
-
-	auto GetShape2 = [](CollisionShape shape, float mass) -> JPH::Ref<JPH::Shape> {
-		if(shape.type == CollisionShape::Type::Box){
-			BoxShapeSettings s(ToJolt(shape.size * 0.5f));
-			s.SetDensity(mass);
-			return s.Create().Get();
-		}
-		if(shape.type == CollisionShape::Type::Sphere){
-			SphereShapeSettings s(shape.radius);
-			s.SetDensity(mass);
-			return s.Create().Get();
-		}
-		if(shape.type == CollisionShape::Type::Capsule){
-			CapsuleShapeSettings s(shape.height * 0.5f, shape.radius);
-			s.SetDensity(mass);
-			return s.Create().Get();
-		}
-		
-		Assert(false);
-		return nullptr;
-	};
-
-	JPH::Ref<JPH::Skeleton> skeleton = new JPH::Skeleton;
-
-	for(int i = 0; i < ragdoll.parts.size(); i++){
-		if(ragdoll.parts[i].skinnedSkeletonIndex < 0) continue;
-		Assert(ragdoll.parts[i].skinnedSkeletonIndex >= 0);
-		//Assert(ragdoll.parts[i].parent > 0);
-
-		if(ragdoll.parts[i].parent >= 0/* && ragdoll.type != RagdollComponent::Type::Trigger*/){
-			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex), ragdoll.parts[i].parent);
-		} else {
-			skeleton->AddJoint(skinnedSkeleton.GetJointName(ragdoll.parts[i].skinnedSkeletonIndex));
-		}
-	}
-
-	Pose& setupPose = skinnedSkeleton.GetRestPose();
-	if(customSetupPose != nullptr) setupPose = *customSetupPose;
-	ragdoll.startPose = setupPose;
-
-	// Create ragdoll settings
-	RagdollSettings *settings = new RagdollSettings;
-	settings->mSkeleton = skeleton;
-	settings->mParts.resize(skeleton->GetJointCount());
-	for(int p = 0; p < skeleton->GetJointCount(); ++p){	
-		auto shapes = GetShape(ragdoll.parts[p].shape);
-		Transform boneTrans = setupPose.GetGlobalTransform(ragdoll.parts[p].skinnedSkeletonIndex);
-		auto positions = ToJolt(trans.TransformPoint(boneTrans.Position()/* + ragdoll.parts[p].shape.center*/));
-		auto rotations = ToJolt(math::quat_cast(trans.GetLocalModelMatrix()) * boneTrans.Rotation()); //ToJolt(trans.Rotation() * boneTrans.LocalRotation());
-		auto constraint_positions = ToJolt(trans.TransformPoint(boneTrans.TransformPoint(ragdoll.parts[p].constraintPos)));
-
-		auto twist_axis = ToJolt(trans.TransformDirection(math::normalizeSafe(ragdoll.parts[p].twistAxis)));
-		auto planeAxisWorld = ToJolt(trans.TransformDirection(FromJolt(Vec3::sAxisZ()))); //TODO: Make this editable in the ragdoll part
-
-		//auto twist_axis = ToJolt(trans.TransformDirection(boneTrans.TransformDirection(ragdoll.parts[p].twistAxis)));
-		//auto planeAxisWorld = ToJolt(trans.TransformDirection(boneTrans.TransformDirection({0, 0, 1})));
-		
-		//auto twist_angle = ragdoll.parts[p].twistAngle;
-		auto normal_angle = ragdoll.parts[p].normalAngle;
-		auto plane_angle = ragdoll.parts[p].planeAngle;
-
-		RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(ragdoll.parts[p].shape.center), Quat::sIdentity(), shapes);
-		RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
-
-		RagdollSettings::Part &part = settings->mParts[p];
-		part.SetShape(finalShape /*shapes*/);
-
-		JPH::MassProperties msp;
-		msp.ScaleToMass(ragdoll.globalMass / skeleton->GetJointCount()); //actual mass in kg
-		part.mMassPropertiesOverride = msp;
-		part.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
-
-		//part.mLinearDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
-		part.mAngularDamping = ragdoll.parts[p].overrideLinearDamping >= 0 ? ragdoll.parts[p].overrideLinearDamping : ragdoll.linearDamping;
-		
-		//part.mMassPropertiesOverride.mInertia = finalShape->GetMassProperties().mInertia;
-		//part.mMassPropertiesOverride.mMass = finalShape->GetMassProperties().mMass;
-		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
-		//part.mNumVelocityStepsOverride = 20; //16;
-		//part.mNumPositionStepsOverride = 10; //8;
-		part.mMotionQuality = EMotionQuality::LinearCast;
-		part.mPosition = positions;
-		part.mRotation = rotations;
-		part.mMotionType =  EMotionType::Dynamic;
-		if(ragdoll.type == RagdollComponent::Type::Kinematic) part.mMotionType = EMotionType::Kinematic;
-		if(ragdoll.type == RagdollComponent::Type::Trigger) part.mMotionType = EMotionType::Kinematic; 
-		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
-		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
-		if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::None){
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
-		} else {
-			part.mIsSensor = ragdoll.type == RagdollComponent::Type::Trigger;
-		}
-		part.mObjectLayer = ragdoll.layer; //PhysicsLayers::MOVING;
-		part.mCollisionGroup = JPH::CollisionGroup(
-			filter,
-			ragdoll.layer,
-			ragdoll.mask.mask // stored in subgroup ID
-		);
-		//part.mAngularDamping = 0;
-		//part.mLinearDamping = 0;
-		//TODO: Fix this, add the root object id
-		//part.mUserData = static_cast<uint64_t>(ragdoll.parts[p].skinnedSkeletonIndex); //static_cast<uint64>(ragdoll.parts[p].skinnedSkeletonIndex);
-
-		/*if(ragdoll.parts[p].parent < 0){
-			part.mAllowedDOFs = EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
-		}*/
-
-		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
-
-		//part.mFriction = 0.5;
-
-		//part.mAngularDamping = 10;
-
-		// First part is the root, doesn't have a parent and doesn't have a constraint
-		if(p > 0 /*&& ragdoll.type != RagdollComponent::Type::Trigger*/){
-			SwingTwistConstraintSettings *constraint = new SwingTwistConstraintSettings;
-			constraint->mDrawConstraintSize = 0.1f;
-			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
-			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
-			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = planeAxisWorld;
-			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
-			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
-			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
-			constraint->mPlaneHalfConeAngle = DegreesToRadians(plane_angle);
-			part.mToParent = constraint;
-		}
-	}
-
-	settings->Stabilize();// Optional: Stabilize the inertia of the limbs
-	settings->DisableParentChildCollisions();// Disable parent child collisions so that we don't get collisions between constrained bodies
-	settings->CalculateBodyIndexToConstraintIndex();// Calculate the map needed for GetBodyIndexToConstraintIndex()
-
-	return settings;
-}
-
 //constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 5;
 constexpr int cCollisionSteps = 2; //2;
@@ -2512,6 +2912,8 @@ constexpr bool EnableInterpolation = true;
 
 void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	OD_PROFILE_SCOPE("PhysicsSystem::PhysicsUpdate");
+
+	Assert(&GlobalSettings::Get().Get<PhysicsSettings>() == currentSettings);
 	
 	if(scene->Running() == false) return;
 
@@ -2874,17 +3276,11 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
         TransformComponent& transform = view.get<TransformComponent>(e);
         InfoComponent& info = view.get<InfoComponent>(e);
 
-        if(rb.data == nullptr){
-			rb.data = new PhysicObject();
-			rb.data->world = physicsWorld;
-			AddRigidbody(e, rb, transform, info);
-			rb.data->isDirt = false;
-		}
-		if(rb.data->isDirt){
-			rb.data->isDirt = false;
-			if(rb.data->bodyID.IsInvalid() == false) RemoveRigidbody(e, rb);
+		if(rb.isDirt){
+			RemoveRigidbody(e, rb);
 			AddRigidbody(e, rb, transform, info);
 		}
+
         Assert(rb.data != nullptr);
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
@@ -2940,7 +3336,10 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	auto view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, skinned, ragdoll, trans, info]: view2.each()){
 		if(ragdoll.isDirty && skinned.GetModel() != nullptr){
-			SetJointsAsDirtyIfBodyIsDirty(entity);
+			RemoveRagdoll(entity, ragdoll);
+			AddRagdoll(entity, ragdoll, trans, info, skinned);
+
+			/*SetJointsAsDirtyIfBodyIsDirty(entity);
 			ragdoll.isDirty = false;
 			if(ragdoll.data != nullptr){
 				ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
@@ -2954,17 +3353,10 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 				physicsWorld->groupFilter, 
 				nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
 			);
-			ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+			ragdoll.data->ragdoll = settings->CreateRagdoll(0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
 			for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
 				BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
-
-				// Setar manualmente o CollisionGroup correto
-				bi.SetCollisionGroup(bodyID, JPH::CollisionGroup(
-					physicsWorld->groupFilter,
-					ragdoll.layer,
-					ragdoll.mask.mask
-				));
 
 				ragdoll.parts[i].initedRot = FromJolt(bi.GetRotation(bodyID));
 
@@ -2977,15 +3369,14 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 				if(ragdoll.overrideStartVelocity != Vector3Zero){
 					bi.SetLinearVelocity(bodyID, ToJolt(ragdoll.overrideStartVelocity));
 				}
-				
 			}
 
-			for (size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+			for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 				BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 				bodyInterface.SetUserData(bodyID, EncodeUserData(static_cast<uint32_t>(entity), p));
 				//LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
 			}
-			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+			ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);*/
 
 			/*if(skinned.finalPose.Size() > 0 && skinned.skeletonEntities.size() > 0){
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
@@ -3516,31 +3907,29 @@ void PhysicsSystem::SynchronizeMotionStates(){
 }
 
 void PhysicsSystem::AddOnCollisionEnterCallback(OnCollisionCallback callback){ onCollisionEnterCallbacks.push_back(callback); }
+
 void PhysicsSystem::RemoveOnCollisionEnterCallback(OnCollisionCallback callback){ 
     onCollisionEnterCallbacks.erase(std::remove(onCollisionEnterCallbacks.begin(), onCollisionEnterCallbacks.end(), callback), onCollisionEnterCallbacks.end()); 
 }
 
 void PhysicsSystem::AddOnCollisionExitCallback(OnCollisionCallback callback){ onCollisionExitCallbacks.push_back(callback); }
+
 void PhysicsSystem::RemoveOnCollisionExitCallback(OnCollisionCallback callback){
     onCollisionExitCallbacks.erase(std::remove(onCollisionExitCallbacks.begin(), onCollisionExitCallbacks.end(), callback), onCollisionExitCallbacks.end());
 }
 
 void PhysicsSystem::AddOnTriggerEnterCallback(OnCollisionCallback callback){ onTriggerEnterCallbacks.push_back(callback); }
+
 void PhysicsSystem::RemoveOnTriggerEnterCallback(OnCollisionCallback callback){
     onTriggerEnterCallbacks.erase(std::remove(onTriggerEnterCallbacks.begin(), onTriggerEnterCallbacks.end(), callback), onTriggerEnterCallbacks.end());
 }
 
-void PhysicsSystem::AddOnTriggerExitCallback(OnCollisionCallback callback){ onTriggerExitCallbacks.push_back(callback); }
-void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
-    onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
+void PhysicsSystem::AddOnTriggerExitCallback(OnCollisionCallback callback){ 
+	onTriggerExitCallbacks.push_back(callback); 
 }
 
-void PhysicsSystem::OnRemoveRagdoll(entt::registry& r, entt::entity e){
-	RagdollComponent& ragdoll = r.get<RagdollComponent>(e);
-    if(ragdoll.data == nullptr) return;
-
-	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
-	delete ragdoll.data->ragdoll;
+void PhysicsSystem::RemoveOnTriggerExitCallback(OnCollisionCallback callback){
+    onTriggerExitCallbacks.erase(std::remove(onTriggerExitCallbacks.begin(), onTriggerExitCallbacks.end(), callback), onTriggerExitCallbacks.end());
 }
 
 void PhysicsSystem::OnRemoveHeightmap(entt::registry& r, entt::entity e){

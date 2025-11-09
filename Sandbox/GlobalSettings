@@ -1,0 +1,146 @@
+{
+    "Layers": {
+        "layerNames": {
+            "value0": "Default",
+            "value1": "Character",
+            "value2": "AI",
+            "value3": "Layer3",
+            "value4": "Layer4",
+            "value5": "Layer5",
+            "value6": "Layer6",
+            "value7": "Layer7",
+            "value8": "Layer8",
+            "value9": "Layer9"
+        }
+    },
+    "Physics": {
+        "gravity": {
+            "v.x": 0.0,
+            "v.y": -9.8100004196167,
+            "v.z": 0.0
+        },
+        "solverIterations": 8,
+        "collisionMatrix": {
+            "value0": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value1": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value2": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value3": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value4": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value5": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value6": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value7": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value8": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            },
+            "value9": {
+                "value0": true,
+                "value1": true,
+                "value2": true,
+                "value3": true,
+                "value4": true,
+                "value5": true,
+                "value6": true,
+                "value7": true,
+                "value8": true,
+                "value9": true
+            }
+        }
+    }
+}

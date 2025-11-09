@@ -200,6 +200,7 @@ void Editor::OnInit(){
     mainWorkspace.AddPanel(&viewportPanel);
     mainWorkspace.AddPanel(&profilePanel);
     mainWorkspace.AddPanel(&rendererStatsPanel);
+    mainWorkspace.AddPanel(&globalSettingsPanel);
 
     std::ifstream is("Editor.Save");
     if(is.fail() == false){
@@ -397,6 +398,8 @@ void Editor::OnRender(float deltaTime){
 void Editor::OnGUI(){
     OD_PROFILE_SCOPE("Editor::OnGUI");
 
+    //OD::ImGuiLayer::SetCleanAll(true);
+
     if(open == false) return;
 
     DrawMainPanel();
@@ -513,7 +516,7 @@ void Editor::HandleShotcuts(){
 void Editor::DrawMainPanel(){
     OD_PROFILE_SCOPE("Editor::DrawMainPanel");
 
-    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::DockSpaceOverViewport(ImGui::GetWindowDockID(), nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
     DrawMainMenuBar();
 

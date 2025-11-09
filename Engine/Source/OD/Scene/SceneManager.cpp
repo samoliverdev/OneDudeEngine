@@ -2,6 +2,7 @@
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/GlobalSettings.h"
 
 namespace OD{
 
@@ -21,6 +22,8 @@ void SceneManagerModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<Prefab>(".prefab", 
         [](const std::string& path){ return AssetManager::Get().LoadAsset<Prefab>(path); }
     );
+
+    GlobalSettings::Get().Register<GlobalSceneData>("Layers");
 }
 
 SceneManager& SceneManager::Get(){
