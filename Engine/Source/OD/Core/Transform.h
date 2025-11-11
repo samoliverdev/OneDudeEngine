@@ -171,42 +171,53 @@ public:
     }
 
     inline static Transform Inverse(Transform& t){
-        #ifdef ExperimentalTransformOptimzation
+        //#ifdef ExperimentalTransformOptimzation
+        #define VEC3_EPSILON 0.000001f
         
+        /*Transform inv;
+        inv.Rotation(math::inverse(t.Rotation()));
+        inv.scale.x = fabs(t.scale.x) < VEC3_EPSILON ? 0.0f : 1.0f / t.scale.x;
+        inv.scale.y = fabs(t.scale.y) < VEC3_EPSILON ? 0.0f : 1.0f / t.scale.y;
+        inv.scale.z = fabs(t.scale.z) < VEC3_EPSILON ? 0.0f : 1.0f / t.scale.z;
+        Vector3 invTranslation = t.Position() * -1.0f;
+        inv.Position(inv.Rotation() * (inv.Scale() * invTranslation) );
+        return inv;*/
+
         Transform inv;
-        inv.LocalRotation(math::inverse(t.Rotation()));
-        inv.localScale.x = fabs(t.scale.x) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.x;
-        inv.localScale.y = fabs(t.scale.y) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.y;
-        inv.localScale.z = fabs(t.scale.z) < math::epsilon<float>() ? 0.0f : 1.0f / t.localScale.z;
-        Vector3 invTranslation = -t.Position();// * -1.0f;
-        inv.Position( inv.LRotation() * (inv.Scale() * invTranslation) );
+        inv.Rotation(glm::inverse(t.Rotation()));// Invert rotation and scale
+        inv.Scale({
+            fabs(t.Scale().x) < VEC3_EPSILON ? 0.0f : 1.0f / t.Scale().x,
+            fabs(t.Scale().y) < VEC3_EPSILON ? 0.0f : 1.0f / t.Scale().y,
+            fabs(t.Scale().z) < VEC3_EPSILON ? 0.0f : 1.0f / t.Scale().z
+        });
+        glm::vec3 invTranslation = -t.Position();// Compute inverse position: -R⁻¹ * S⁻¹ * t.Position()
+        inv.Position(inv.Rotation() * (inv.Scale() * invTranslation));
         return inv;
-        
-        #else
 
+        /*#else
         return Transform(math::inverse(t.GetModelMatrix()));
-
-        #endif
+        #endif*/
     }
 
     inline static Transform Combine(Transform& a, Transform& b){
-        #ifdef ExperimentalTransformOptimzation
+        //#ifdef ExperimentalTransformOptimzation
 
-        Transform out;
+        /*Transform out;
         out.Scale(a.Scale() * b.Scale());
         out.Rotation(b.Rotation() * a.Rotation());
         out.Position(a.Rotation() * (a.Scale() * b.Position()));
         out.Position(a.Position() + out.Position());
+        return out;*/
+
+        Transform out;
+        out.Scale(a.Scale() * b.Scale());
+        out.Rotation(a.Rotation() * b.Rotation()); // ✅ Correct order
+        out.Position(a.Position() + (a.Rotation() * (a.Scale() * b.Position())));
         return out;
 
-        #else
-
-        //return Transform(a.GetModelMatrix() * b.GetModelMatrix());
-        return Transform(
-            math::simdMul(a.GetModelMatrix(), b.GetModelMatrix())
-        );
-
-        #endif
+        /*#else
+        return Transform(math::simdMul(a.GetModelMatrix(), b.GetModelMatrix()));
+        #endif*/
     }
 
     static void OnGui(Transform& e);

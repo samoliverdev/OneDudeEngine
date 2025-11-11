@@ -210,22 +210,22 @@ Matrix4 TransformComponent::GetLocalModelMatrix(){
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+    return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 TransformComponent::TransformDirection(Vector3 dir){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 TransformComponent::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+    return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
 }
 
 Vector3 TransformComponent::TransformPoint(Vector3 point){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
 }
 
 //Quaternion InverseTransformRot(Quaternion world, Quaternion rot){
@@ -454,6 +454,7 @@ Transform TransformComponent::ToTransform(){
     /*#ifdef ExperimentalTransformOptimzation
     return Transform(Position(), Rotation(), LocalScale()); 
     #else*/
+    //return Transform(Position(), Rotation(), Scale());
     return Transform(GlobalModelMatrix()); 
     //#endif
 }
@@ -1148,7 +1149,12 @@ void Scene::_Load(const char* path, entt::entity prefab){
         }
     } 
 
-    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    //_LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent", [](InfoComponent& c){
+        if(c.layer < 0 || c.layer >= LayerCount){
+            c.layer = Layers::Layer0;
+        }
+    });
     _LoadTransform(archive, loadLookup, registry, "TransformComponent", true);
 
     for(auto i: SceneManager::Get().componentsSerializer){
@@ -1190,7 +1196,12 @@ Entity Scene::InstantiatePrefab(const char* path){
         if(i == entities[0]) root = loadLookup[i]; //Entity(loadLookup[i], this);
     } 
 
-    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    //_LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent", [](InfoComponent& c){
+        if(c.layer < 0 || c.layer >= LayerCount){
+            c.layer = Layers::Layer0;
+        }
+    });
     _LoadTransform(archive, loadLookup, registry, "TransformComponent", true);
 
     for(auto i: SceneManager::Get().componentsSerializer){

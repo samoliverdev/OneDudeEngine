@@ -45,6 +45,7 @@ constexpr int LayerNone = -1;
 constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;*/
 
 constexpr uint32_t AllLayersMask = (1u << LayerCount) - 1;
+constexpr uint32_t NoneLayersMask = 0;
 
 inline constexpr uint32_t LayerToMask(int layerIndex) {
     return (1u << layerIndex);

@@ -231,7 +231,8 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
 	auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<NavmeshSkipTag>);
     for(auto e: meshView){
 		auto& info = meshView.get<InfoComponent>(e);
-		if(!(info.layer & mask.mask)) continue;  
+		//if(!(info.layer & mask.mask)) continue;
+		if(!(mask.mask & (1u << info.layer))) continue;  
 
         auto& c = meshView.get<MeshRendererComponent>(e);
         auto& t = meshView.get<TransformComponent>(e);
@@ -253,7 +254,8 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
     auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<NavmeshSkipTag>);
     for(auto e: meshRenderView){
 		auto& info = meshRenderView.get<InfoComponent>(e);
-		if(!(info.layer & mask.mask)) continue;  
+		//if(!(info.layer & mask.mask)) continue;
+		if(!(mask.mask & (1u << info.layer))) continue;  
 
         auto& c = meshRenderView.get<ModelRendererComponent>(e);
         auto& t = meshRenderView.get<TransformComponent>(e);

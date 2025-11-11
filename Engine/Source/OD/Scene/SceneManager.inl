@@ -97,6 +97,36 @@ void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,ent
         }
     }
 }
+
+template<typename T>
+void _LoadComponent(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, std::function<void(T&)> posProcessing){
+    std::vector<T> components;
+    std::vector<entt::entity> componentsEntities;
+
+    try{
+
+    archive(cereal::make_nvp(componentName + "s", components));
+    archive(cereal::make_nvp(componentName + "Entities", componentsEntities));
+
+    }catch(...){ 
+        //LogWarning("ErrorOnTrySerialize: %s", componentName.c_str()); 
+        components.clear();
+        componentsEntities.clear();
+    }
+
+    for(int i = 0; i < components.size(); i++){
+        //registry.get_or_emplace<T>(loadLookup[componentsEntities[i]], components[i]);
+        //continue;
+
+        if(registry.any_of<T>(loadLookup[componentsEntities[i]])){
+            T& t = registry.get<T>(loadLookup[componentsEntities[i]]);
+            t = components[i];
+        } else {
+            registry.emplace<T>(loadLookup[componentsEntities[i]], components[i]);
+        }
+    }
+}
+
 template<typename T>
 void _LoadComponentTag(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName){
     std::vector<T> components;

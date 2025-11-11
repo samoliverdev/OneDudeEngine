@@ -1878,6 +1878,8 @@ void RigidbodyComponent::Friction(float f){
 
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
     type = value;
+	isDirt = true;
+	return;
 
 	if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
@@ -3680,7 +3682,8 @@ struct MyObjectLayerFilter : public JPH::ObjectLayerFilter{
 		//return (inLayer & allowedMask.mask) != 0;;
 		//bool r = (inLayer & allowedMask.mask) != 0;
 		//return r;
-        return (allowedMask.mask & inLayer) != 0;
+        //return (allowedMask.mask & inLayer) != 0;
+		return (allowedMask.mask & (1u << inLayer)) != 0;
     }
 };
 
@@ -3852,7 +3855,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 
         void AddHit(const JPH::CollideShapeResult& inResult) override {
             // Only process the first hit for each body
-            if (mHitBodyIDs.find(inResult.mBodyID2) != mHitBodyIDs.end()) {
+            if(mHitBodyIDs.find(inResult.mBodyID2) != mHitBodyIDs.end()) {
                 return; // Skip if this body was already processed
             }
             mHitBodyIDs.insert(inResult.mBodyID2);
@@ -3861,7 +3864,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 
             // Lock the body to get its data
             JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
-            if (!lock.Succeeded()) return;
+            if(!lock.Succeeded()) return;
 
             const JPH::Body& body = lock.GetBody();
             //hit.entity = static_cast<Entity>(body.GetUserData());
