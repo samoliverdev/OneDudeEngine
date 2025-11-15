@@ -454,8 +454,8 @@ Transform TransformComponent::ToTransform(){
     /*#ifdef ExperimentalTransformOptimzation
     return Transform(Position(), Rotation(), LocalScale()); 
     #else*/
-    //return Transform(Position(), Rotation(), Scale());
-    return Transform(GlobalModelMatrix()); 
+    return Transform(Position(), Rotation(), Scale());
+    //return Transform(GlobalModelMatrix()); 
     //#endif
 }
 
@@ -588,15 +588,21 @@ Scene::~Scene(){
     }
     for(auto& i: systems){
         i.second->OnEnd(*this);
+    }
+
+    //Delete Later call all OnEnd
+    for(auto& i: systems){
         delete i.second;
     }
+
+    //registry.clear();//INFO: Maybe this order fix same crashs
     
     systems.clear();
     standSystems.clear();
     animationSystems.clear();
     rendererSystems.clear();
     physicsSystems.clear();
-    lateSystems.clear();
+    lateSystems.clear(); 
 }
 
 /*Entity Scene::AddEntity(std::string name){

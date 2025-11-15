@@ -327,7 +327,11 @@ struct OD_API RagdollComponent{
     LayerMask mask = {AllLayersMask};
 
     enum class Type{Dynamic, Kinematic, Static, Trigger};
+    enum class MotorType{None, Jolt, TargetRot};
+
     Type type;
+    MotorType motorType;
+
     bool interpolate = false;
     bool isDirty = true;
     std::vector<Part> parts;
@@ -385,6 +389,7 @@ struct OD_API RagdollComponent{
         ArchiveDumpNVP(ar, mask);
         //ArchiveDumpNVP(ar, isDirty);
         ArchiveDumpNVP(ar, type);
+        ArchiveDumpNVP(ar, motorType);
         ArchiveDumpNVP(ar, interpolate);
         ArchiveDumpNVP(ar, parts);
 
@@ -403,6 +408,7 @@ struct OD_API RagdollComponent{
         COPY_OR_MOVE(mask);
         //COPY_OR_MOVE(isDirty);
         COPY_OR_MOVE(type);
+        COPY_OR_MOVE(motorType);
         COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(parts);
 
@@ -732,6 +738,8 @@ struct OD_API PhysicsSystem: public System{
 
     void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;
+
+    virtual ~PhysicsSystem() override;
 
     /*System* Clone(Scene* inScene) const override{ 
         PhysicsSystem* system = new PhysicsSystem(inScene);

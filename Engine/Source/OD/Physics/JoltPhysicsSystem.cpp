@@ -787,13 +787,12 @@ public:
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
 		//return;
+		lock_guard lock(mutex);
 
 		//cout << "A contact was added" << endl;
 		//InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
 		//InfoComponent& e2 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody2.GetUserData()));
 		//LogInfo("OnContactAdded e1: %s, e2: %s", e1.name.c_str(), e2.name.c_str());
-
-		lock_guard lock(mutex);
 
 		/*const Vec3 contactPoint = inManifold.GetWorldSpaceContactPointOn1(0); // or average of points if you prefer
 		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
@@ -943,6 +942,8 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	if(ImGui::DrawEnumCombo<RagdollComponent::Type>("Type", &ragdoll.type)){
 		ragdoll.SetType(ragdoll.type);
 	}
+
+	ImGui::DrawEnumCombo<RagdollComponent::MotorType>("MotorType", &ragdoll.motorType);
 
 	ImGui::Checkbox("Interpolate", &ragdoll.interpolate);
 	//ImGui::DrawEnumCombo<Layers>("Layer", &ragdoll.layer);
@@ -1510,7 +1511,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 
 		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
 		
-		//part.mFriction = 0.5;
+		part.mFriction = 1;
 
 		//part.mAngularDamping = 10;
 
@@ -1563,7 +1564,7 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 	JPH::Ref<RagdollSettings> settings = CreateRagdollSettings(
 		info, trans, ragdoll, 
 		skinned.GetModel()->skeleton, 
-		physicsWorld->groupFilter, 
+		nullptr, //physicsWorld->groupFilter, 
 		nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
 	);
 	ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
@@ -2083,8 +2084,9 @@ void RigidbodyComponent::LinearDamping(float v){
 	linearDamping = v;
 	if(data == nullptr) return;
 
-	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();
     BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
+	Assert(lock.Succeeded() == true);
     if(!lock.Succeeded()) return;
 
     Body& body = lock.GetBody();
@@ -2892,13 +2894,18 @@ void PhysicsSystem::OnEnd(Scene& inScene){
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
-
 	JPH::DebugRenderer::sInstance = nullptr;
-
     delete Factory::sInstance;
 	Factory::sInstance = nullptr;
-
     delete physicsWorld;
+}
+
+PhysicsSystem::~PhysicsSystem(){
+	/*UnregisterTypes();
+	JPH::DebugRenderer::sInstance = nullptr;
+    delete Factory::sInstance;
+	Factory::sInstance = nullptr;
+    delete physicsWorld;*/
 }
 
 void* PhysicsSystem::GetInternlWorld(){
@@ -2907,7 +2914,7 @@ void* PhysicsSystem::GetInternlWorld(){
 
 //constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 5;
-constexpr int cCollisionSteps = 2; //2;
+constexpr int cCollisionSteps = 1; //2;
 
 constexpr bool EnableFixedRate = true;
 constexpr bool EnableInterpolation = true;
@@ -2927,6 +2934,7 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 	auto _view2 = scene->GetRegistry().view<SkinnedModelRendererComponent, RagdollComponent, TransformComponent, InfoComponent>();
 
 	auto PreInterpolate = [&](){
+		OD_PROFILE_SCOPE("PhysicsSystem::PreInterpolate");
 		for(auto [entity, rb, trans, info]: view.each()){
 			if(rb.type == RigidbodyComponent::Type::Dynamic && rb.interpolate && rb.data != nullptr){
 				BodyID bodyID = rb.data->bodyID;
@@ -3024,179 +3032,188 @@ void PhysicsSystem::PhysicsUpdate(Scene& inScene){
 
 				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
 					//TODO: Fix the instability and Freeze pose
-					///*
-					if(ragdoll.parts[p].parent >= 0){
-						SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
-						//c->SetSwingMotorState(EMotorState::Off); //INFO: Call this every frame bug
-						//c->SetTwistMotorState(EMotorState::Off);
 
-						if(ragdoll.parts[p].disableSync) continue;
-						if(ragdoll.syncWithFinalPose == false) continue;
-						if(ragdoll.stiffness <= 1) continue;
-
-						//float breakVelocityThreshold = stiffness;
-						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
-						//float speed = vel.Length();
-						float scale = 1.0f;
-						//if(speed > breakVelocityThreshold) scale = math::clamp<float>(breakVelocityThreshold / speed, 0, 1); // smoothly reduce
-
-						float motorFrequency = gain * scale;    // or convert/gain mapping as you prefer
-						float motorDamping   = damping * scale; // damping term
-						float maxMotorTorque = stiffness * 10; // scale as needed
-
-						//c->SetMaxFrictionTorque(200); // in N·m
-						//c->SetNumPositionStepsOverride(8);
-						//c->SetNumVelocityStepsOverride(8);
-						c->GetSwingMotorSettings() = MotorSettings(motorFrequency, motorDamping);
-						c->GetTwistMotorSettings() = MotorSettings(motorFrequency, motorDamping);
-						c->SetSwingMotorState(EMotorState::Position);
-						c->SetTwistMotorState(EMotorState::Position);
-						c->SetMaxFrictionTorque(maxMotorTorque);
-						//c->SetTwistMaxAngle(math::radians(90.0f));
-						//c->SetTwistMinAngle(math::radians(-90.0f));
-						//c->SetSwingLimits(math::radians(30.0f), math::radians(30.0f)); // Adjust as needed
-    					//c->SetTwistLimits(math::radians(-45.0f), math::radians(45.0f)); // Adjust as needed
-
-						int parentIndex = ragdoll.parts[ragdoll.parts[p].parent].skinnedSkeletonIndex;
-						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						Transform animParentGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(parentIndex));
-						Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
-						
-						auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
-
-						if(!isfinite(boneTargetLocal.x) || !isfinite(boneTargetLocal.y) || !isfinite(boneTargetLocal.z) || !isfinite(boneTargetLocal.w)) continue;
-						c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
-
-						//const float maxVel = 50.0f;
-						//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
-						//if(vel.LengthSq() > maxVel * maxVel){
-						//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
-						//}
-					} else {
-						if(ragdoll.parts[p].disableSync) continue;
-						// Work, but in world space
-						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						//if (boneIndex <= 0) continue;
-						if(boneIndex < 0) continue;
-
-						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-						Quat targetRot = ToJolt(targetTransform.Rotation());
-						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
-						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
-
-
-						Quat currentRot;
-						RVec3 currentPos;
-						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
-
-						//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
-						//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
-
-						Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
-						Vec3 axis;
-						float angle;
-						deltaRot.GetAxisAngle(axis, angle);
-
-						// Atual: velocidade angular do corpo
-						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
-
-						// PD controller: torque = P * erro - D * velocidade
-						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
-
-						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
-
-						if(ragdoll.useTorqueControl)
-							bodyInterface.AddTorque(bodyID, torque);
-						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
-
+					if(ragdoll.motorType != RagdollComponent::MotorType::Jolt){
+						if(ragdoll.parts[p].parent >= 0){
+							SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
+							c->SetSwingMotorState(EMotorState::Off);
+							c->SetTwistMotorState(EMotorState::Off);
+						}
 					}
-					//*/
 					
-					/*
-					if(ragdoll.syncFromTheHips && hipIndex != -1 && ragdoll.parts[p].isHips == false){ //&& ragdoll.parts[p].isHips == false
-						if(ragdoll.parts[p].disableSync) continue;
-						Assert(hipIndex == 0);
-						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						if (boneIndex <= 0) continue;
+					if(ragdoll.motorType == RagdollComponent::MotorType::Jolt){
+						if(ragdoll.parts[p].parent >= 0){
+							SwingTwistConstraint* c = static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(p-1));
+							//c->SetSwingMotorState(EMotorState::Off); //INFO: Call this every frame bug
+							//c->SetTwistMotorState(EMotorState::Off);
 
-						int hipPartIndex = hipIndex;
-						BodyID hipBodyID = ragdoll.data->ragdoll->GetBodyIDs()[hipPartIndex];
-						int hipBoneIndex = ragdoll.parts[hipPartIndex].skinnedSkeletonIndex;
+							if(ragdoll.parts[p].disableSync) continue;
+							if(ragdoll.syncWithFinalPose == false) continue;
+							if(ragdoll.stiffness <= 1) continue;
 
-						// 1. Get local rotation from animation (relative to animated hip)
-						Transform boneAnimGlobal = skinned.finalPose.GetGlobalTransform(boneIndex);
+							//float breakVelocityThreshold = (stiffness * ragdoll.parts[p].stiffnessMult);
+							//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
+							//float speed = vel.Length();
+							float scale = 1.0f;
+							//if(speed > breakVelocityThreshold) scale = math::clamp<float>(breakVelocityThreshold / speed, 0, 1); // smoothly reduce
 
-						// 2. Get current hip transform from physics
-						Quat hipRot;
-						RVec3 hipPos;
-						bodyInterface.GetPositionAndRotation(hipBodyID, hipPos, hipRot);
-						Transform hipPhysTransform = Transform(FromJolt(hipPos), FromJolt(hipRot), Vector3One);
+							float motorFrequency = gain * scale;    // or convert/gain mapping as you prefer
+							float motorDamping   = damping * scale; // damping term
+							float maxMotorTorque = (stiffness * ragdoll.parts[p].stiffnessMult) * 10; // scale as needed
 
-						// 3. Rebuild the target bone transform in world space using local anim pose in current hip space
-						Transform boneTargetWorld = Transform::Combine(hipPhysTransform, boneAnimGlobal);
-						Quat targetRot = ToJolt(boneTargetWorld.Rotation());
+							//c->SetMaxFrictionTorque(200); // in N·m
+							//c->SetNumPositionStepsOverride(8);
+							//c->SetNumVelocityStepsOverride(8);
+							c->GetSwingMotorSettings() = MotorSettings(motorFrequency, motorDamping);
+							c->GetTwistMotorSettings() = MotorSettings(motorFrequency, motorDamping);
+							c->SetSwingMotorState(EMotorState::Position);
+							c->SetTwistMotorState(EMotorState::Position);
+							c->SetMaxFrictionTorque(maxMotorTorque);
+							//c->SetTwistMaxAngle(math::radians(90.0f));
+							//c->SetTwistMinAngle(math::radians(-90.0f));
+							//c->SetSwingLimits(math::radians(30.0f), math::radians(30.0f)); // Adjust as needed
+							//c->SetTwistLimits(math::radians(-45.0f), math::radians(45.0f)); // Adjust as needed
 
-						// 4. Get current bone rotation from physics
-						Quat currentRot;
-						RVec3 currentPos;
-						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+							int parentIndex = ragdoll.parts[ragdoll.parts[p].parent].skinnedSkeletonIndex;
+							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+							Transform animParentGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(parentIndex));
+							Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
+							
+							auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
 
-						// 5. Compute delta rotation and torque
-						Quat deltaRot = targetRot * currentRot.Conjugated();
-						Vec3 axis;
-						float angle;
-						deltaRot.GetAxisAngle(axis, angle);
+							if(!isfinite(boneTargetLocal.x) || !isfinite(boneTargetLocal.y) || !isfinite(boneTargetLocal.z) || !isfinite(boneTargetLocal.w)) continue;
+							c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
 
-						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
-						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
+							//const float maxVel = 50.0f;
+							//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
+							//if(vel.LengthSq() > maxVel * maxVel){
+							//	bodyInterface.SetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p], vel.Normalized() * maxVel);
+							//}
+						} else {
+							if(ragdoll.parts[p].disableSync) continue;
+							// Work, but in world space
+							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+							//if (boneIndex <= 0) continue;
+							if(boneIndex < 0) continue;
 
-						if(ragdoll.useTorqueControl)
-							bodyInterface.AddTorque(bodyID, torque);
-						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
-					} else {
-						if(ragdoll.parts[p].disableSync) continue;
-						// Work, but in world space
-						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
-						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-						//if (boneIndex <= 0) continue;
-						if(boneIndex < 0) continue;
-
-						Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-						Quat targetRot = ToJolt(targetTransform.Rotation());
-						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
-						//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
+							Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+							Quat targetRot = ToJolt(targetTransform.Rotation());
+							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
+							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
 
 
-						Quat currentRot;
-						RVec3 currentPos;
-						bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+							Quat currentRot;
+							RVec3 currentPos;
+							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
 
-						//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
-						//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
+							//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
+							//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
 
-						Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
-						Vec3 axis;
-						float angle;
-						deltaRot.GetAxisAngle(axis, angle);
+							Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
+							Vec3 axis;
+							float angle;
+							deltaRot.GetAxisAngle(axis, angle);
 
-						// Atual: velocidade angular do corpo
-						Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+							// Atual: velocidade angular do corpo
+							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
 
-						// PD controller: torque = P * erro - D * velocidade
-						Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
+							// PD controller: torque = P * erro - D * velocidade
+							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
 
-						//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
+							//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
 
-						if(ragdoll.useTorqueControl)
-							bodyInterface.AddTorque(bodyID, torque);
-						else
-							bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+							if(ragdoll.useTorqueControl)
+								bodyInterface.AddTorque(bodyID, torque);
+							else
+								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+
+						}
 					}
-					*/
+					
+					if(ragdoll.motorType == RagdollComponent::MotorType::TargetRot){
+						if(ragdoll.syncFromTheHips && hipIndex != -1 && ragdoll.parts[p].isHips == false){ //&& ragdoll.parts[p].isHips == false
+							if(ragdoll.parts[p].disableSync) continue;
+							Assert(hipIndex == 0);
+							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+							if (boneIndex <= 0) continue;
+
+							int hipPartIndex = hipIndex;
+							BodyID hipBodyID = ragdoll.data->ragdoll->GetBodyIDs()[hipPartIndex];
+							int hipBoneIndex = ragdoll.parts[hipPartIndex].skinnedSkeletonIndex;
+
+							// 1. Get local rotation from animation (relative to animated hip)
+							Transform boneAnimGlobal = skinned.finalPose.GetGlobalTransform(boneIndex);
+
+							// 2. Get current hip transform from physics
+							Quat hipRot;
+							RVec3 hipPos;
+							bodyInterface.GetPositionAndRotation(hipBodyID, hipPos, hipRot);
+							Transform hipPhysTransform = Transform(FromJolt(hipPos), FromJolt(hipRot), Vector3One);
+
+							// 3. Rebuild the target bone transform in world space using local anim pose in current hip space
+							Transform boneTargetWorld = Transform::Combine(hipPhysTransform, boneAnimGlobal);
+							Quat targetRot = ToJolt(boneTargetWorld.Rotation());
+
+							// 4. Get current bone rotation from physics
+							Quat currentRot;
+							RVec3 currentPos;
+							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+							// 5. Compute delta rotation and torque
+							Quat deltaRot = targetRot * currentRot.Conjugated();
+							Vec3 axis;
+							float angle;
+							deltaRot.GetAxisAngle(axis, angle);
+
+							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
+
+							if(ragdoll.useTorqueControl)
+								bodyInterface.AddTorque(bodyID, torque);
+							else
+								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+						} else {
+							if(ragdoll.parts[p].disableSync) continue;
+							// Work, but in world space
+							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+							//if (boneIndex <= 0) continue;
+							if(boneIndex < 0) continue;
+
+							Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+							Quat targetRot = ToJolt(targetTransform.Rotation());
+							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
+							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
+
+
+							Quat currentRot;
+							RVec3 currentPos;
+							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+							//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
+							//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
+
+							Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
+							Vec3 axis;
+							float angle;
+							deltaRot.GetAxisAngle(axis, angle);
+
+							// Atual: velocidade angular do corpo
+							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+
+							// PD controller: torque = P * erro - D * velocidade
+							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
+
+							//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
+
+							if(ragdoll.useTorqueControl)
+								bodyInterface.AddTorque(bodyID, torque);
+							else
+								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+						}
+					}
 				}
 			}
 			

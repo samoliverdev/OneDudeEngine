@@ -73,7 +73,7 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
     bool stickToTheFloor = math::length(moveDir) > 0.01f || lastStickToTheFloor == true;
     lastStickToTheFloor = math::length(moveDir) > 0.01f;
 
-    if(onGround && stickToTheFloor){
+    if(onGround && stickToTheFloor && math::length2(moveDir) > (0.1f*0.1f)){
         //Vector3 alignedMoveDir = math::normalizeSafe(moveDir - groundNormal * math::dot(moveDir, groundNormal));
         Vector3 alignedMoveDir = moveDir; //(moveDir, groundNormal);
         velocity = alignedMoveDir * moveSpeed;
@@ -94,6 +94,12 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
     Vector3 force = deltaVel * acceleration * rb.Mass();
     rb.ApplyForce(force);
 
+    if(math::length2(moveDir) < (0.1f*0.1f)){
+        rb.LinearDamping(999);
+    } else {
+        rb.LinearDamping(0);
+    }
+
     /*float maxSpeed = 1;
     Vector3 horizontalVel(rb.Velocity().x, 0.0f, rb.Velocity().z);
     float speed = math::length(horizontalVel);
@@ -103,7 +109,7 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
     }*/
 
     if(moveType == MoveType::Free){
-        if (math::length(moveDir) > 0.001f) {
+        if(math::length(moveDir) > 0.001f){
             rb.Rotation(
                 math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Application::DeltaTime())
             );

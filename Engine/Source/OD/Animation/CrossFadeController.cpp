@@ -44,6 +44,7 @@ void CrossFadeController::Play(ClipT* target){
 }
 
 void CrossFadeController::FadeTo(ClipT* target, float fadeTime){
+    Assert(target != nullptr);
     if(clip == 0){
         Play(target);
         return;
