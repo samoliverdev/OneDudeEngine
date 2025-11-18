@@ -55,6 +55,7 @@ struct OD_API CollisionShape{
 
     Type type;
     Vector3 center = {0, 0, 0};
+    Vector3 rotation = {0, 0, 0};
     Vector3 size = {1,1,1};
     float radius = 1;
     float height = 1;
@@ -67,6 +68,7 @@ struct OD_API CollisionShape{
     void serialize(Archive & ar){
         ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(center));
+        ArchiveDump(ar, CEREAL_NVP(rotation));
         ArchiveDump(ar, CEREAL_NVP(size));
         ArchiveDump(ar, CEREAL_NVP(radius));
         ArchiveDump(ar, CEREAL_NVP(height));
@@ -327,7 +329,7 @@ struct OD_API RagdollComponent{
     LayerMask mask = {AllLayersMask};
 
     enum class Type{Dynamic, Kinematic, Static, Trigger};
-    enum class MotorType{None, Jolt, TargetRot};
+    enum class MotorType{None, Jolt, TargetRot, TargetRotLocal};
 
     Type type;
     MotorType motorType;
