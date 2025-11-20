@@ -7,6 +7,10 @@
 #include "OD/Animation/Pose.h"
 
 #define UseJoltPhysics
+
+namespace JPH{
+    class BodyInterface;
+}
  
 namespace OD{
 
@@ -59,10 +63,9 @@ struct OD_API CollisionShape{
     Vector3 size = {1,1,1};
     float radius = 1;
     float height = 1;
-    Ref<MeshShapeData> mesh = nullptr;
-
-    Ref<Model> modelSource;
-    int modelSourceMeshIndex = 0;
+    Ref<MeshShapeData> meshData = nullptr;
+    Ref<Model> modelSource = nullptr;
+    int modelSourceMeshIndex = -1;
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -106,21 +109,21 @@ struct OD_API CollisionShape{
     inline static CollisionShape MeshShape(Ref<Mesh> mesh){
         CollisionShape shape;
         shape.type = Type::Mesh;
-        shape.mesh = CreateMeshShapeData(*mesh);
+        shape.meshData = CreateMeshShapeData(*mesh);
         return shape;
     }
 
     inline static CollisionShape MeshShape(Ref<MeshShapeData> mesh){
         CollisionShape shape;
         shape.type = Type::Mesh;
-        shape.mesh = mesh;
+        shape.meshData = mesh;
         return shape;
     }
 
     inline static CollisionShape MeshShape(){
         CollisionShape shape;
         shape.type = Type::Mesh;
-        shape.mesh = nullptr;
+        shape.meshData = nullptr;
         return shape;
     }
 
@@ -129,7 +132,7 @@ struct OD_API CollisionShape{
         shape.type = Type::Model;
         shape.modelSource = model;
         shape.modelSourceMeshIndex = meshIndex;
-        shape.mesh = CreateMeshShapeData(*model->meshs[meshIndex]);
+        shape.meshData = CreateMeshShapeData(*model->meshs[meshIndex]);
         return shape;
     }
 };
@@ -752,9 +755,14 @@ struct OD_API PhysicsSystem: public System{
         return system; 
     }*/
     
-    virtual int Type() override { return SystemType::Physics; }
-    virtual void PhysicsUpdate(Scene& scene) override;
+    virtual int Type() override { return SystemType::PrePhysics | SystemType::FixedPhysics | SystemType::PostPhysics; }
+    virtual int ExecutionSortPriority(SystemType type) override;
+    virtual void PrePhysicsUpdate(Scene& scene) override;
+    virtual void FixedPhysicsUpdate(Scene& scene) override;
+    virtual void PostPhysicsUpdate(Scene& scene) override;
     virtual void OnDrawGizmos(Scene& scene, Camera& cam) override;
+
+    void _PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate);
 
     void ShowDebugGizmos();
 
@@ -781,7 +789,7 @@ struct OD_API PhysicsSystem: public System{
 
     void* GetInternlWorld(); // Temp/Experimental 
 
-    inline float PhysicsAccumulator(){ return physicsAccumulator; }
+    float InterpolationAlpha();
 
 private:
     void CheckForCollisionEvents();
@@ -815,9 +823,25 @@ private:
     std::vector<OnCollisionCallback> onTriggerEnterCallbacks;
     std::vector<OnCollisionCallback> onTriggerExitCallbacks;
 
-    float physicsAccumulator = 0.0f;
+    //float physicsAccumulator = 0.0f;
 
     Scene* scene;
+
+public:
+    static void _SyncRagdollToPose(Scene& scene, SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, JPH::BodyInterface& bodyInterface, bool canInterpolate);
+
+    //INFO: I think this can be a litter performace impruvment instead of using lambda
+    //friend struct _SyncRagdollToPose2;
+    struct _SyncRagdollToPose2{
+        Scene& scene; 
+        SkinnedModelRendererComponent& skinned; 
+        RagdollComponent& ragdoll; 
+        TransformComponent& trans; 
+        InfoComponent& info; 
+        JPH::BodyInterface& bodyInterface; 
+        bool canInterpolate;
+        void operator()();
+    };
 };
 
 void PhysicsModuleInit();

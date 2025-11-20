@@ -329,11 +329,35 @@ void Scene::AddSystem(){
     if(newSystem->Type() == SystemType::Late) lateSystems.push_back(newSystem);
     if(newSystem->Type() == SystemType::Renderer) rendererSystems.push_back(newSystem);*/
 
-    if(newSystem->Type() & SystemType::Physics) physicsSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Stand) standSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Animation) animationSystems.push_back(newSystem);
+
+    if(newSystem->Type() & SystemType::PrePhysics) prePhysicsSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::FixedPhysics) fixedPhysicsSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::PostPhysics) postPhysicsSystems.push_back(newSystem);
+    
     if(newSystem->Type() & SystemType::Late) lateSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Renderer) rendererSystems.push_back(newSystem);
+
+    auto SortStand = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Stand) < b->ExecutionSortPriority(SystemType::Stand); };
+    auto SortAnimation = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Animation) < b->ExecutionSortPriority(SystemType::Animation); };
+    
+    auto SortPrePhysics = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::PrePhysics) < b->ExecutionSortPriority(SystemType::PrePhysics); };
+    auto SortFixedPhysics = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::FixedPhysics) < b->ExecutionSortPriority(SystemType::FixedPhysics); };
+    auto SortPostPhysics = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::PostPhysics) < b->ExecutionSortPriority(SystemType::PostPhysics); };
+    
+    auto SortLate = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Late) < b->ExecutionSortPriority(SystemType::Late); };
+    auto SortRenderer = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Renderer) < b->ExecutionSortPriority(SystemType::Renderer); };
+
+    std::sort(standSystems.begin(), standSystems.end(), SortStand);
+    std::sort(animationSystems.begin(), animationSystems.end(), SortAnimation);
+    
+    std::sort(prePhysicsSystems.begin(), prePhysicsSystems.end(), SortPrePhysics);
+    std::sort(fixedPhysicsSystems.begin(), fixedPhysicsSystems.end(), SortFixedPhysics);
+    std::sort(postPhysicsSystems.begin(), postPhysicsSystems.end(), SortPostPhysics);
+    
+    std::sort(lateSystems.begin(), lateSystems.end(), SortLate);
+    std::sort(rendererSystems.begin(), rendererSystems.end(), SortRenderer);
 }
 
 template<typename T> 
@@ -346,9 +370,13 @@ void Scene::RemoveSystem(){
     systems.erase(GetType<T>());
     systemsAdd.erase(GetType<T>());
 
-    physicsSystems.erase(std::remove(physicsSystems.begin(), physicsSystems.end(), s), physicsSystems.end());
     standSystems.erase(std::remove(standSystems.begin(), standSystems.end(), s), standSystems.end());
     animationSystems.erase(std::remove(animationSystems.begin(), animationSystems.end(), s), animationSystems.end());
+
+    prePhysicsSystems.erase(std::remove(prePhysicsSystems.begin(), prePhysicsSystems.end(), s), prePhysicsSystems.end());
+    fixedPhysicsSystems.erase(std::remove(fixedPhysicsSystems.begin(), fixedPhysicsSystems.end(), s), fixedPhysicsSystems.end());
+    postPhysicsSystems.erase(std::remove(postPhysicsSystems.begin(), postPhysicsSystems.end(), s), postPhysicsSystems.end());
+    
     lateSystems.erase(std::remove(lateSystems.begin(), lateSystems.end(), s), lateSystems.end());
     rendererSystems.erase(std::remove(rendererSystems.begin(), rendererSystems.end(), s), rendererSystems.end());
     

@@ -130,7 +130,7 @@ void TerrainSystem::OnInit(Scene& inscene){
     scene = &inscene;
 }
 
-void TerrainSystem::PhysicsUpdate(Scene& inscene){
+void TerrainSystem::PostPhysicsUpdate(Scene& inscene){
     OD_PROFILE_SCOPE("TerrainSystem::Update");
     //OD_LOG_PROFILE("TerrainSystem::Update");
 

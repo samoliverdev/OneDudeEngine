@@ -265,10 +265,12 @@ void _RemoveComponent(Scene* scene, Entity entity);
 enum SystemType{//FIXME: Maybe Rename
     None = 0,
     Stand = 1 << 1, 
-    Animation = 1 << 2, 
-    Physics =  1 << 3, 
-    Late = 1 << 4,
-    Renderer = 1 << 5
+    Animation = 1 << 2,
+    PrePhysics = 1 << 3,
+    FixedPhysics = 1 << 4,
+    PostPhysics =  1 << 5, 
+    Late = 1 << 6,
+    Renderer = 1 << 7
 };
 
 class OD_API System{
@@ -281,12 +283,15 @@ public:
     virtual int Type(){ return SystemType::Stand; } //FIXME: Maybe Rename
     virtual void Update(Scene& scene){}
     virtual void AnimationUpdate(Scene& scene){}
-    virtual void PhysicsUpdate(Scene& scene){}
+    virtual void PrePhysicsUpdate(Scene& scene){}
+    virtual void FixedPhysicsUpdate(Scene& scene){}
+    virtual void PostPhysicsUpdate(Scene& scene){}
     virtual void LateUpdate(Scene& scene){}
     virtual void Render(Scene& scene){}
     virtual void OnDrawGizmos(Scene& scene, Camera& cam){} //FIXME: Maybe Add a SystemType::OnDrawGizmos
     virtual void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity){} //FIXME: Maybe Add a SystemType::OnDrawGizmosSelected
-
+    
+    virtual int ExecutionSortPriority(SystemType type){ return 1; }; 
     virtual bool ExecuteAlways(){ return false; }
 };
 
@@ -349,9 +354,13 @@ public:
     inline const auto& GetSystems(){ return systems; }
     inline const std::vector<System*>& GetStandSystems(){ return standSystems; }
     inline const std::vector<System*>& GetAnimationSystems(){ return animationSystems; }
-    inline const std::vector<System*>& GetPhysicsSystems(){ return physicsSystems; }
+    inline const std::vector<System*>& GetPrePhysicsSystems(){ return prePhysicsSystems; }
+    inline const std::vector<System*>& GetFixedPhysicsSystems(){ return fixedPhysicsSystems; }
+    inline const std::vector<System*>& GetPostPhysicsSystems(){ return postPhysicsSystems; }
     inline const std::vector<System*>& GetLateSystems(){ return lateSystems; }
     inline const std::vector<System*>& GetRendererSystems(){ return rendererSystems; }
+
+    inline float FixedUpdateAccumulator(){ return fixedUpdateAccumulator; }
 
     void Start();
     void Update();
@@ -379,7 +388,11 @@ private:
 
     std::vector<System*> standSystems;
     std::vector<System*> animationSystems;
-    std::vector<System*> physicsSystems;
+    
+    std::vector<System*> prePhysicsSystems;
+    std::vector<System*> fixedPhysicsSystems;
+    std::vector<System*> postPhysicsSystems;
+
     std::vector<System*> lateSystems;
     std::vector<System*> rendererSystems;
     std::unordered_map<Type, System*> systems;
@@ -393,6 +406,7 @@ private:
     tf::Taskflow taskflow;
 
     bool transIsDirty = true;
+    float fixedUpdateAccumulator = 0;
 };
 
 class Prefab: public Asset{

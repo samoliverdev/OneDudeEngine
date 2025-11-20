@@ -58,16 +58,18 @@ void StandardAssetSystem::Update(Scene& scene){
         camera.OnUpdate(scene, trans);
     }
 
-    auto charMovemetView = scene.GetRegistry().view<CharacterMovement, TransformComponent, RigidbodyComponent>();
-    for(auto [entity, movement, trans, rb]: charMovemetView.each()){
-        if(movement.hasStarted == false) movement.OnStart(rb);
-        movement.OnUpdate(scene, trans, rb);
-    }
-
     auto charAnimationView = scene.GetRegistry().view<CharacterAnimation, CharacterMovement, TransformComponent, AnimatorComponent>();
     for(auto [entity, charAnim, movement, trans, anim]: charAnimationView.each()){
         if(charAnim.hasStarted == false) charAnim.OnStart();
         charAnim.OnUpdate(trans, anim, movement);
+    }
+}
+
+void StandardAssetSystem::FixedPhysicsUpdate(Scene& scene){
+    auto charMovemetView = scene.GetRegistry().view<CharacterMovement, RigidbodyComponent>();
+    for(auto [entity, movement, rb]: charMovemetView.each()){
+        if(movement.hasStarted == false) movement.OnStart(rb);
+        movement.OnFixedUpdate(scene, rb);
     }
 }
 

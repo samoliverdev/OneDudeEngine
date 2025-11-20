@@ -34,7 +34,7 @@ public:
     bool lastStickToTheFloor = true;
 
     void OnStart(RigidbodyComponent& rb);
-    void OnUpdate(Scene& scene, TransformComponent& transform, RigidbodyComponent& rb);
+    void OnFixedUpdate(Scene& scene, RigidbodyComponent& rb);
 
     float GetAxisHorizontal();
     float GetAxisVertical();

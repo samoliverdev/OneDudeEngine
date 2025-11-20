@@ -1,6 +1,6 @@
 #include "CharacterMovement.h"
 #include "OD/Core/Input.h"
-#include "OD/Core/Application.h"
+#include "OD/Core/Time.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Physics/PhysicsSystem.h"
 
@@ -24,11 +24,11 @@ float CharacterMovement::GetAxisVertical(){
     return math::clamp(x - y, -1.0f, 1.0f);
 }
 
-void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, RigidbodyComponent& rb) {
+void CharacterMovement::OnFixedUpdate(Scene& scene, RigidbodyComponent& rb){
     if(enable == false) return; 
     
     RayResult hit;
-    if (scene.GetSystem<PhysicsSystem>()->Raycast(transform.Position() + Vector3Up * 0.1f, Vector3Down * 0.25f, hit)) {
+    if (scene.GetSystem<PhysicsSystem>()->Raycast(rb.Position() + Vector3Up * 0.1f, Vector3Down * 0.25f, hit)) {
         //LogInfo("Hitting: %s", scene.GetComponent<InfoComponent>(hit.entity).name.c_str());
         onGround = true;
         groundNormal = hit.hitNormal;
@@ -111,7 +111,7 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
     if(moveType == MoveType::Free){
         if(math::length(moveDir) > 0.001f){
             rb.Rotation(
-                math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Application::DeltaTime())
+                math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Time::FixedDelta())
             );
         }
     }
@@ -119,7 +119,7 @@ void CharacterMovement::OnUpdate(Scene& scene, TransformComponent& transform, Ri
     if(moveType == MoveType::Strafe){
         if (math::length(lookDir) > 0.001f) {
             rb.Rotation(
-                math::slerp(rb.Rotation(), math::quatLookAt(-lookDir, Vector3Up), strafeTurnSpeed * Application::DeltaTime())
+                math::slerp(rb.Rotation(), math::quatLookAt(-lookDir, Vector3Up), strafeTurnSpeed * Time::FixedDelta())
             );
         }
     }

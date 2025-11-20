@@ -158,8 +158,8 @@ class OD_API TerrainSystem: public System{
 public:
     void OnInit(Scene& scene);
 
-    virtual int Type() override { return SystemType::Physics; }
-    virtual void PhysicsUpdate(Scene& scene) override;
+    virtual int Type() override { return SystemType::PostPhysics; }
+    virtual void PostPhysicsUpdate(Scene& scene) override;
 
 private:
     void DestroyTerrain(TerrainComponent& terrain);

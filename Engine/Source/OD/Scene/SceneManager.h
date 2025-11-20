@@ -75,7 +75,11 @@ private:
 
     std::vector<System*> globalStandSystems;
     std::vector<System*> globalAnimationSystems;
-    std::vector<System*> globalPhysicsSystems;
+    
+    std::vector<System*> globalPrePhysicsSystems;
+    std::vector<System*> globalFixedPhysicsSystems;
+    std::vector<System*> globalPostPhysicsSystems;
+
     std::vector<System*> globalLateSystems;
     std::vector<System*> globalRendererSystems;
     std::unordered_map<Type, System*> globalSystems;

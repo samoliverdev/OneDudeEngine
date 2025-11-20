@@ -391,9 +391,14 @@ void SceneManager::AddGlobalSystem(){
     auto newSystem = new T();
 
     globalSystems[GetType<T>()] = newSystem;
-    if(newSystem->Type() & SystemType::Physics) globalPhysicsSystems.push_back(newSystem);
+    
     if(newSystem->Type() & SystemType::Stand) globalStandSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Animation) globalAnimationSystems.push_back(newSystem);
+    
+    if(newSystem->Type() & SystemType::PrePhysics) globalPrePhysicsSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::FixedPhysics) globalFixedPhysicsSystems.push_back(newSystem);
+    if(newSystem->Type() & SystemType::PostPhysics) globalPostPhysicsSystems.push_back(newSystem);
+    
     if(newSystem->Type() & SystemType::Late) globalLateSystems.push_back(newSystem);
     if(newSystem->Type() & SystemType::Renderer) globalRendererSystems.push_back(newSystem);
 }
@@ -406,9 +411,14 @@ void SceneManager::RemoveGlobalSystem(){
     System* s = globalSystems[GetType<T>()];
 
     globalSystems.erase(GetType<T>());
-    globalPhysicsSystems.erase(std::remove(globalPhysicsSystems.begin(), globalPhysicsSystems.end(), s), globalPhysicsSystems.end());
+    
     globalStandSystems.erase(std::remove(globalStandSystems.begin(), globalStandSystems.end(), s), globalStandSystems.end());
     globalAnimationSystems.erase(std::remove(globalAnimationSystems.begin(), globalAnimationSystems.end(), s), globalAnimationSystems.end());
+
+    globalPrePhysicsSystems.erase(std::remove(globalPrePhysicsSystems.begin(), globalPrePhysicsSystems.end(), s), globalPrePhysicsSystems.end());
+    globalFixedPhysicsSystems.erase(std::remove(globalFixedPhysicsSystems.begin(), globalFixedPhysicsSystems.end(), s), globalFixedPhysicsSystems.end());
+    globalPostPhysicsSystems.erase(std::remove(globalPostPhysicsSystems.begin(), globalPostPhysicsSystems.end(), s), globalPostPhysicsSystems.end());
+
     globalLateSystems.erase(std::remove(globalLateSystems.begin(), globalLateSystems.end(), s), globalLateSystems.end());
     globalRendererSystems.erase(std::remove(globalRendererSystems.begin(), globalRendererSystems.end(), s), globalRendererSystems.end());
     

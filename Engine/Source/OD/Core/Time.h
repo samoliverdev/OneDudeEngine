@@ -10,6 +10,8 @@ public:
     static float UnscaledDeltaTime();
     static float TimeScale();
     static void TimeScale(float v);
+    static float FixedDelta(); 
+    static float UnscaledFixedDelta();  
 private:
     static void UnscaledDeltaTime(float v);
 };

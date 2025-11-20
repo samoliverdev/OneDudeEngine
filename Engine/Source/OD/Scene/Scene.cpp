@@ -601,7 +601,9 @@ Scene::~Scene(){
     standSystems.clear();
     animationSystems.clear();
     rendererSystems.clear();
-    physicsSystems.clear();
+    prePhysicsSystems.clear();
+    fixedPhysicsSystems.clear();
+    postPhysicsSystems.clear();
     lateSystems.clear(); 
 }
 
@@ -913,6 +915,8 @@ void Scene::Update(){
     }*/
 
     //if(running == false) return;
+    
+    //--------Stand---------
     for(auto s: standSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
         s->Update(*this);
@@ -927,6 +931,7 @@ void Scene::Update(){
         taskflow.clear();
     }
 
+    //--------Animation---------
     for(auto s: animationSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
         s->AnimationUpdate(*this);
@@ -941,15 +946,45 @@ void Scene::Update(){
         taskflow.clear();
     }
 
-    for(auto s: physicsSystems) s->PhysicsUpdate(*this);
-    for(auto s: SceneManager::Get().globalPhysicsSystems) s->PhysicsUpdate(*this);
+    //--------Pre Physic---------
+    for(auto s: prePhysicsSystems) s->PrePhysicsUpdate(*this);
+    for(auto s: SceneManager::Get().globalPrePhysicsSystems) s->PrePhysicsUpdate(*this);
+    {
+        OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
+        executor.run(taskflow).wait(); 
+        taskflow.clear();
+    }
+
+    //--------Fixed Physic---------
+    float _delta = OD::Time::DeltaTime();
+    float _fixedStep = OD::Time::FixedDelta();
+
+    fixedUpdateAccumulator += _delta;
+
+    if(_fixedStep > 0.0f && _delta >= 0.0f){
+    while(fixedUpdateAccumulator >= _fixedStep){ //INFO: This can be bug if Time::FixedDelta() return 0 
+        for(auto s: SceneManager::Get().globalFixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+        for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+        {
+            //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
+            executor.run(taskflow).wait(); 
+            taskflow.clear();
+        }
+
+        fixedUpdateAccumulator -= _fixedStep;
+    }
+    }
+
+    //--------Post Physic---------
+    for(auto s: postPhysicsSystems) s->PostPhysicsUpdate(*this);
+    for(auto s: SceneManager::Get().globalPostPhysicsSystems) s->PostPhysicsUpdate(*this);
     {
         OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
         taskflow.clear();
     }
     
-
+    //--------Late---------
     for(auto s: lateSystems){
         if(running == false && s->ExecuteAlways() == false) continue;
         s->LateUpdate(*this);
