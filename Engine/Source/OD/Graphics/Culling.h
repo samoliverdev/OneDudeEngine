@@ -181,4 +181,34 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
     }
 };
 
+struct OD_API OBB {
+    glm::vec3 center;
+    glm::vec3 halfSize;
+
+    //union{
+        glm::vec3 axes[3];
+        //glm::mat3 orientation;
+    //};
+
+    OBB() = default;
+    OBB(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& size);
+
+	glm::quat GetRotation() const;
+
+    bool ContainsPoint(const glm::vec3& p) const;
+
+	bool IntersectSegment(
+        const glm::vec3& p0,
+        const glm::vec3& p1
+    ) const;
+
+    bool IntersectSegment(
+        const glm::vec3& p0,
+        const glm::vec3& p1,
+        float& outTmin,
+        glm::vec3& outPoint
+    ) const;
+};
+
+
 }

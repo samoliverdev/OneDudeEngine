@@ -375,4 +375,105 @@ bool AABB::isOnAABB(AABB& other){
 #endif
 }
 
+OBB::OBB(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& size){
+    center = pos;
+    halfSize = size * 0.5f;
+    //orientation = glm::mat3_cast(rot); // rotation matrix
+
+    glm::mat3 m = glm::mat3_cast(rot);
+    axes[0] = m[0]; // X axis
+    axes[1] = m[1]; // Y axis
+    axes[2] = m[2]; // Z axis
+}
+
+glm::quat OBB::GetRotation() const {
+    glm::mat3 m;
+    m[0] = axes[0]; // column-major
+    m[1] = axes[1];
+    m[2] = axes[2];
+    return glm::quat_cast(m);
+}
+
+bool OBB::ContainsPoint(const glm::vec3& p) const{
+    glm::vec3 d = p - center;
+
+    for(int i = 0; i < 3; i++){
+        float dist = glm::dot(d, axes[i]);
+        if(std::abs(dist) > halfSize[i]) return false;
+    }
+    return true;
+}
+
+bool OBB::IntersectSegment(
+    const glm::vec3& p0,
+    const glm::vec3& p1
+) const {
+    glm::vec3 d = p1 - p0;
+    glm::vec3 p = p0 - center;
+
+    float tMin = 0.0f;
+    float tMax = 1.0f;
+
+    for(int i = 0; i < 3; i++){
+        float e = glm::dot(axes[i], p);
+        float f = glm::dot(axes[i], d);
+
+        float h = halfSize[i];
+
+        if(std::abs(f) < 1e-6f){
+            if(std::abs(e) > h) return false;
+        } else {
+            float t1 = (-e - h) / f;
+            float t2 = (-e + h) / f;
+
+            if(t1 > t2) std::swap(t1, t2);
+
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
+
+            if(tMin > tMax) return false;
+        }
+    }
+    return true;
+}
+
+bool OBB::IntersectSegment(
+    const glm::vec3& p0,
+    const glm::vec3& p1,
+    float& outTmin,
+    glm::vec3& outPoint
+) const {
+    glm::vec3 d = p1 - p0;
+    glm::vec3 p = p0 - center;
+
+    float tMin = 0.0f;
+    float tMax = 1.0f;
+
+    for(int i = 0; i < 3; i++){
+        float e = glm::dot(axes[i], p);
+        float f = glm::dot(axes[i], d);
+
+        float h = halfSize[i];
+
+        if(std::abs(f) < 1e-6f){
+            if(std::abs(e) > h) return false;
+        } else {
+            float t1 = (-e - h) / f;
+            float t2 = (-e + h) / f;
+
+            if(t1 > t2) std::swap(t1, t2);
+
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
+
+            if(tMin > tMax) return false;
+        }
+    }
+
+    outTmin = tMin;
+    outPoint = p0 + d * tMin;
+    return true;
+}
+
+
 }

@@ -4137,19 +4137,14 @@ private:
     float mHitFraction;
 };
 
-class SensorBodyFilter : public JPH::BodyFilter {
+class IgnoreSensorBodyFilter : public JPH::BodyFilter {
 public:
-
-	// Pass the physicsWorld or BodyInterface in the constructor if needed
-    SensorBodyFilter(PhysicsWorld* world) : physicsWorld(world) {}
+    IgnoreSensorBodyFilter(PhysicsWorld* world):physicsWorld(world){}
 
     bool ShouldCollide(const JPH::BodyID& inBodyID) const override {
-        // Get the body interface (you'll need to pass this in or access it globally)
-        const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), inBodyID);
-        if(!lock.Succeeded()) return false;
-
-        const JPH::Body& body = lock.GetBody();
-        return body.IsSensor() == false;
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inBodyID);
+        Assert(lock.Succeeded());
+        return lock.GetBody().IsSensor() == false;
     }
 private:
     PhysicsWorld* physicsWorld;
@@ -4169,11 +4164,8 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 
 	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 	ClosestHitRayCollector collector;
-	SensorBodyFilter bodyFilter(physicsWorld);
 
-	//JPH::RayCastResult result;
-	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, {}/*, bodyFilter*/);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
@@ -4181,8 +4173,8 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 		JPH::Vec3 hitPosition = ray.mOrigin + ray.mDirection * hitFraction;
 
 		// Get the body that was hit
-		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), result.mBodyID);
-		if(!lock.Succeeded()) return false;
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), result.mBodyID);
+		Assert(lock.Succeeded());
 
 		const JPH::Body &body = lock.GetBody();
 		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
@@ -4215,7 +4207,6 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 
 	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 	ClosestHitRayCollector collector;
-	SensorBodyFilter bodyFilter(physicsWorld);
 
 	//JPH::RayCastResult result;
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
@@ -4226,6 +4217,51 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
+	if(collector.HadHit()){
+		const JPH::RayCastResult& result = collector.GetHit();
+		JPH::BodyID hitBodyID = result.mBodyID;
+		float hitFraction = result.mFraction; // From 0.0 to 1.0
+		JPH::Vec3 hitPosition = ray.mOrigin + ray.mDirection * hitFraction;
+
+		// Get the body that was hit
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), result.mBodyID);
+		Assert(lock.Succeeded());
+
+		const JPH::Body &body = lock.GetBody();
+		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
+
+		//hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
+		uint32_t _entity;
+		int32_t _index;
+		DecodeUserData(body.GetUserData(), _entity, _index);
+		hit.entity = static_cast<Entity>(_entity);
+		hit.subBodyIndex = _index;
+		hit.hitPoint = FromJolt(hitPoint);
+		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+		return true;
+	}
+
+    return false;
+}
+
+bool PhysicsSystem::RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask){
+	Assert(physicsWorld != nullptr); 
+
+	JPH::RRayCast ray;
+	ray.mOrigin = ToJolt(pos);
+	ray.mDirection = ToJolt(dir);
+
+	JPH::RayCastSettings settings;
+	settings.mBackFaceModeTriangles = JPH::EBackFaceMode::IgnoreBackFaces; // Ignore back-facing triangles
+	settings.mBackFaceModeConvex = JPH::EBackFaceMode::IgnoreBackFaces;   // Ignore back-facing convex shapes
+	settings.mTreatConvexAsSolid = false; //false; // Treat convex shapes as solid
+
+	JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+	ClosestHitRayCollector collector;
+	MyObjectLayerFilter objectLayerFilter(mask);
+	IgnoreSensorBodyFilter bodyFilter(physicsWorld);
+	
 	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter/*, bodyFilter*/);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
@@ -4234,10 +4270,10 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 		JPH::Vec3 hitPosition = ray.mOrigin + ray.mDirection * hitFraction;
 
 		// Get the body that was hit
-		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterface(), result.mBodyID);
-		if(!lock.Succeeded()) return false;
+		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), result.mBodyID);
+		Assert(lock.Succeeded());
 
-		const JPH::Body &body = lock.GetBody();
+		const JPH::Body& body = lock.GetBody();
 		JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
 
 		//hit.entity = static_cast<Entity>(body.GetUserData()); // safe cast
