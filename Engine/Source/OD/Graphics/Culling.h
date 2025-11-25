@@ -6,7 +6,7 @@
 
 namespace OD{
 
-struct OD_API alignas(16) Plane{
+/*struct OD_API alignas(16) Plane{
     Vector3 normal = Vector3Up;
     float distance = 0;
 
@@ -28,6 +28,38 @@ struct OD_API alignas(16) Plane{
 		normal /= mag;
 		distance /= mag;
 	}
+};*/
+
+struct OD_API alignas(16) Plane{
+    glm::vec4 n = glm::vec4(0, 1, 0, 0); // SIMD layout: (nx, ny, nz, distance)
+    glm::vec3 absN = glm::vec3(0, 1, 0); // Precomputed |normal|
+
+    Plane() = default;
+
+    // Construct from point + normal
+    Plane(const glm::vec3& p1, const glm::vec3& norm){
+        glm::vec3 nn = glm::normalize(norm);
+        n = glm::vec4(nn, glm::dot(nn, p1));
+        absN = glm::abs(nn);
+    }
+
+    // Construct from (a,b,c,d)
+    Plane(const glm::vec4& abcd){
+        n = abcd;
+        absN = glm::abs(glm::vec3(abcd));
+    }
+
+    // Signed distance: dot(normal, point) + distance
+    inline float getSignedDistanceToPlane(const glm::vec3& point) const {
+        return glm::dot(glm::vec3(n), point) + n.w;
+    }
+
+    // Normalize plane (normal and distance)
+    inline void normalize(){
+        float mag = glm::length(glm::vec3(n));
+        n /= mag;     // divides xyz and w
+        absN = glm::abs(glm::vec3(n));
+    }
 };
 
 struct OD_API alignas(16) Frustum{

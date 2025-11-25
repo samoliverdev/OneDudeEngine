@@ -24,18 +24,19 @@ struct OD_API StaticRendererComponent{
 
 struct OD_API ModelRendererComponent{
     friend class StandRenderPipeline;
-
-    bool draw = true;
-    Transform localTransform;
-
-    bool useCustomData = false;
-    Vector4 customData;
+    friend class RenderContext;
+    friend struct SkinnedModelRendererComponent;
 
     struct alignas(16) RenderData{
         Matrix4 model;
         AABB aabb;
     };
+
+    Transform localTransform;
     AlignedVector<RenderData> renderData;
+    Vector4 customData;
+    bool useCustomData = false;
+    bool draw = true;
 
     static void OnGui(Entity& e, Scene& scene);
 
@@ -56,6 +57,10 @@ struct OD_API ModelRendererComponent{
     inline std::vector<Ref<Material>>& GetMaterialsOverride(){ return materialsOverride; }
     inline const std::vector<bool>& GetRenderTargetVisibility() const { return renderTargetVisibility; }
 
+    AABB GetAABB() const;
+    AABB GetGlobalAABB(TransformComponent& transform);
+    AABB GetGlobalAABB(Transform& transform);
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, localTransform);
@@ -68,11 +73,6 @@ struct OD_API ModelRendererComponent{
         AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
     }
-
-    AABB GetAABB() const;
-    AABB GetGlobalAABB(TransformComponent& transform);
-    AABB GetGlobalAABB(Transform& transform);
-
 protected:
     AABB boundingVolume;
     std::vector<bool> renderTargetVisibility;
@@ -85,17 +85,16 @@ protected:
 
 struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     friend class StandRenderPipeline;
+    friend class RenderContext;
     
-    Transform skeletonTransform;
     Pose finalPose;
-    bool postUpdatePosePalette = false;
-    bool updateWhenOffscreen = false;
+    Transform skeletonTransform;
     AlignedVector<Matrix4> posePalette;
-
     std::vector<Entity> skeletonEntities;
-
     std::vector<Entity> skeletonEntities2;
     std::vector<int> skeletonSockets;
+    bool postUpdatePosePalette = false;
+    bool updateWhenOffscreen = false;
 
     static void OnGui(Entity& e, Scene& scene);
     

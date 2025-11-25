@@ -8,19 +8,18 @@
 namespace OD{
 
 struct OD_API MeshRendererComponent{
-    AABB boundingVolume;
-    Ref<Mesh> mesh = nullptr;
-    Ref<Material> material = nullptr;
-    Ref<Material> customShadowPass = nullptr;
-
-    bool useCustomData = false;
-    Vector4 customData;
-
     struct RenderData{
         Matrix4 model;
         AABB aabb;
     };
+    
+    AABB boundingVolume;
     RenderData renderData;
+    Ref<Mesh> mesh = nullptr;
+    Ref<Material> material = nullptr;
+    Ref<Material> customShadowPass = nullptr;
+    Vector4 customData;
+    bool useCustomData = false;
 
     static void OnGui(Entity& e, Scene& scene);
 
@@ -40,8 +39,8 @@ struct OD_API MeshRendererComponent{
 struct OD_API SkinnedMeshRendererComponent: public MeshRendererComponent{
     Skeleton skeleton;
     Pose finalPose;
-    bool postUpdatePosePalette = false;
     AlignedVector<Matrix4> posePalette;
+    bool postUpdatePosePalette = false;
 
     template<class Archive>
     void serialize(Archive& ar){

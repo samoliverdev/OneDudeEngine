@@ -3,6 +3,7 @@
 //#include <EASTL/unordered_map.h>
 
 #include <concurrentqueue.h>
+#include <ankerl/unordered_dense.h>
 
 namespace OD{
 
@@ -111,7 +112,8 @@ struct CommandBucket2{
 
 template<typename Key, typename Value>
 struct CommandBucket3{
-    std::unordered_map<Key, std::vector<Value>> commands;
+    ankerl::unordered_dense::map<Key, std::vector<Value>> commands;
+    //std::unordered_map<Key, std::vector<Value>> commands;
     std::function<bool(Value&,Value&)> sortFunction = nullptr;
     //int count;
 
@@ -138,7 +140,8 @@ struct CommandBucket3{
 
 template<typename Key, typename Key2, typename Value>
 struct CommandBucket4{
-    std::unordered_map<Key, std::unordered_map<Key2, Value> > commands;
+    ankerl::unordered_dense::map< Key, ankerl::unordered_dense::map<Key2, Value> > commands;
+    //std::unordered_map<Key, std::unordered_map<Key2, Value> > commands;
 
     inline int Size(){
         return commands.size();

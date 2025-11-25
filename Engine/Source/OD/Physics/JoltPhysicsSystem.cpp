@@ -482,7 +482,7 @@ public:
 
 	virtual BroadPhaseLayer	GetBroadPhaseLayer(ObjectLayer inLayer) const override{
 		return BroadPhaseLayers::MOVING;
-		JPH_ASSERT(inLayer < PhysicsLayers::NUM_LAYERS);
+		JPH_ASSERT(inLayer < Layers::LayerCount);
 		return mObjectToBroadPhase[inLayer];
 	}
 
@@ -773,7 +773,7 @@ struct PhysicsWorld{
 
     ~PhysicsWorld(){
 		delete contactListener;
-		delete renderer;
+		//delete renderer;
         delete tempAllocator;
     }
 };
@@ -1360,8 +1360,8 @@ void RagdollComponent::Constraints(int boneIndex, RigidbodyConstraints constrain
 
 	if(data == nullptr) return;
 	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
-    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->ragdoll->GetBodyID(boneIndex));
-    if(!lock.Succeeded()) return;
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyID(boneIndex));
+    Assert(lock.Succeeded());
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
@@ -1536,10 +1536,10 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			constraint->mPosition1 = constraint->mPosition2 = constraint_positions;
 			constraint->mTwistAxis1 = constraint->mTwistAxis2 = twist_axis;
 			constraint->mPlaneAxis1 = constraint->mPlaneAxis2 = planeAxisWorld;
-			constraint->mTwistMinAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMin); //-DegreesToRadians(twist_angle);
-			constraint->mTwistMaxAngle = DegreesToRadians(ragdoll.parts[p].twistAngleMax); //DegreesToRadians(twist_angle);
-			constraint->mNormalHalfConeAngle = DegreesToRadians(normal_angle);
-			constraint->mPlaneHalfConeAngle = DegreesToRadians(plane_angle);
+			constraint->mTwistMinAngle = math::clamp<float>(DegreesToRadians(ragdoll.parts[p].twistAngleMin), -math::pi<float>(), math::pi<float>()); //-DegreesToRadians(twist_angle);
+			constraint->mTwistMaxAngle = math::clamp<float>(DegreesToRadians(ragdoll.parts[p].twistAngleMax), -math::pi<float>(), math::pi<float>()); //DegreesToRadians(twist_angle);
+			constraint->mNormalHalfConeAngle = math::clamp<float>(DegreesToRadians(normal_angle), -math::pi<float>(), math::pi<float>());
+			constraint->mPlaneHalfConeAngle = math::clamp<float>(DegreesToRadians(plane_angle), -math::pi<float>(), math::pi<float>());
 			part.mToParent = constraint;
 		}
 	}
@@ -1569,6 +1569,10 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 	ragdoll.physicSystem = this;
 	ragdoll.scene = scene;
 	ragdoll.entity = entity;
+
+	if(ragdoll.type == RagdollComponent::Type::Disable){
+		return;
+	}
 	
 	SetJointsAsDirtyIfBodyIsDirty(entity);
     BodyInterface &bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
@@ -2059,10 +2063,11 @@ void RigidbodyComponent::AddExplosionImpulse(float force, Vector3 explosionPosit
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
     angularFactor = v;
     if(data == nullptr) return;
+	if(type != RigidbodyComponent::Type::Dynamic) return;
 
     BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
-    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
-    if(!lock.Succeeded()) return;
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
+    Assert(lock.Succeeded());
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
@@ -2107,9 +2112,8 @@ void RigidbodyComponent::LinearDamping(float v){
 	if(data == nullptr) return;
 
 	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();
-    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
-	Assert(lock.Succeeded() == true);
-    if(!lock.Succeeded()) return;
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
+	Assert(lock.Succeeded());
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
@@ -2125,8 +2129,8 @@ void RigidbodyComponent::AngularDamping(float v){
 	if(data == nullptr) return;
 
 	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
-    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
-    if(!lock.Succeeded()) return;
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
+    Assert(lock.Succeeded());
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
@@ -2155,8 +2159,8 @@ void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
 
 	if(data == nullptr) return;
 	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
-    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterface(), data->bodyID);
-    if(!lock.Succeeded()) return;
+    BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
+    Assert(lock.Succeeded());
 
     Body& body = lock.GetBody();
     MotionProperties* motionProps = body.GetMotionProperties();
@@ -2813,6 +2817,8 @@ Transform VehiclePhysic::GetWheelLocalTransform(int wheelIndex, Vector3 up, Vect
 
 bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Running();*/ }
 
+MyDebugRenderer* debugRenderer = nullptr;
+
 void PhysicsSystem::OnInit(Scene& inScene){
 	scene = &inScene;
 	currentSettings = &GlobalSettings::Get().Get<PhysicsSettings>();
@@ -2894,10 +2900,14 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	physicsWorld->contactListener->physic = this;
 	physicsWorld->physicsSystem.SetContactListener(physicsWorld->contactListener);
 
+	if(debugRenderer == nullptr){
+		debugRenderer = new MyDebugRenderer();
+	}
+
     physicsWorld->tempAllocator = new TempAllocatorImpl((10 * 1024 * 1024)*2);
     physicsWorld->jobSystem.Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
-	physicsWorld->renderer = new MyDebugRenderer();
-	physicsWorld->renderer->scene = scene;
+	physicsWorld->renderer = debugRenderer;// new MyDebugRenderer();
+	//physicsWorld->renderer->scene = scene;
 	physicsWorld->system = this;
 
 	JPH::Ref<MyGroupFilter> groupFilter = new MyGroupFilter();
@@ -2905,7 +2915,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 
 	physicsWorld->physicsSystem.SetGravity(ToJolt(currentSettings->gravity));
 
-	JPH::DebugRenderer::sInstance = physicsWorld->renderer;
+	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 
 	this->scene->GetRegistry().on_destroy<RagdollComponent>().connect<&OnRemoveRagdoll>();
     this->scene->GetRegistry().on_destroy<RigidbodyComponent>().connect<&OnRemoveRigidbody>();
@@ -2923,7 +2933,7 @@ void PhysicsSystem::OnEnd(Scene& inScene){
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 
     UnregisterTypes();
-	JPH::DebugRenderer::sInstance = nullptr;
+	//JPH::DebugRenderer::sInstance = nullptr;
     delete Factory::sInstance;
 	Factory::sInstance = nullptr;
     delete physicsWorld;
@@ -3283,9 +3293,13 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
 							
 							auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
+							//auto boneTargetLocal = math::conjugate(math::normalize(animParentGlobal.Rotation())) * math::normalize(animGlobal.Rotation());
 
 							if(!isfinite(boneTargetLocal.x) || !isfinite(boneTargetLocal.y) || !isfinite(boneTargetLocal.z) || !isfinite(boneTargetLocal.w)) continue;
+
 							c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
+							//Assert(ToJolt(math::normalize(boneTargetLocal)).Normalized().IsNormalized());
+							//c->SetTargetOrientationBS(ToJolt(math::normalize(boneTargetLocal)).Normalized());
 
 							//const float maxVel = 50.0f;
 							//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
@@ -3902,7 +3916,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 			AddRagdoll(entity, ragdoll, trans, info, skinned);
 		}
 		
-		if(ragdoll.type != RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0){
+		if(ragdoll.type != RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0 && ragdoll.type != RagdollComponent::Type::Disable){
 			scene->GetTaskflow().emplace([&](){
 				SyncPoseToRagdoll(skinned, ragdoll, trans, bodyInterface);
 			});
@@ -4080,6 +4094,7 @@ void PhysicsSystem::ShowDebugGizmos(){
 	SelectedBodyDrawFilter selectedBodyDrawFilter;
 	selectedBodyDrawFilter.UpdateSelected();
 
+	physicsWorld->renderer->scene = scene;
 	physicsWorld->renderer->useLineCommand = true;
 	physicsWorld->physicsSystem.DrawBodies(JPH::BodyManager::DrawSettings(), physicsWorld->renderer, &selectedBodyDrawFilter);
 	Graphics::DrawLinesComamnd({0, 1, 0}, 1);

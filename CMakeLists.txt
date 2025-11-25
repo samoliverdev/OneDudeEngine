@@ -179,6 +179,8 @@ if(SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glfw3webgpu)
 endif()
 
+add_subdirectory(Engine/ThirdParty/unordered_dense-4.8.1)
+
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #set(CMAKE_CXX_STANDARD 17)
@@ -288,7 +290,8 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/taskflow/
     Engine/ThirdParty/SPIRV-Reflect/
     Engine/ThirdParty/efsw/include/
-    Engine/ThirdParty/msdf-atlas-gen/msdf-atlas-gen
+    Engine/ThirdParty/msdf-atlas-gen/msdf-atlas-gen/
+    Engine/ThirdParty/unordered_dense-4.8.1/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
@@ -306,6 +309,7 @@ target_link_libraries(Engine PUBLIC
     Jolt
     efsw
     msdf-atlas-gen
+    unordered_dense
     #glslang glslang-default-resource-limits
     #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 

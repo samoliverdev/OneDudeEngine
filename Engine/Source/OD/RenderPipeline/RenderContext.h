@@ -16,21 +16,22 @@ enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
 
 struct OD_API DrawingSettings{
-    bool enableIntancing = true;
     RenderQueueRange renderQueueRange;
     SortType sortType;
     bool decalTarget = false;
+    bool enableIntancing = true;
 };
 
 struct OD_API ShadowDrawingSettings{
-    bool enableIntancing = true;
-    RenderQueueRange renderQueueRange;
-    SortType sortType;
-
     LightComponent light;
     Transform tranform;
 
     IVector4 viewport;
+
+    RenderQueueRange renderQueueRange;
+    SortType sortType;
+
+    bool enableIntancing = true;
 };
 
 struct OD_API ShadowSplitData{
@@ -52,24 +53,38 @@ struct OD_API CommandBaseData{
 };
 
 struct OD_API alignas(16) RenderData{
+    enum Flag : uint32_t {
+        AlwaysDraw        = 1 << 0,
+        RenderShadow      = 1 << 1,
+        IsDecal           = 1 << 2,
+        IsValid           = 1 << 3
+    };
+
     Matrix4 targetMatrix;
     AABB aabb;
+    PerDrawData perDrawData;
     AlignedVector<Matrix4>* posePalette = nullptr;
     Material* targetMaterial;
     Material* customShadowPass = nullptr;
     InstancingBuffer* instancingBuffer = nullptr;
     Mesh* targetMesh;
     float distance;
-    bool awalsDraw = false;
+    uint32_t flags = 0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
+    /*bool awalsDraw = false;
     bool renderShadow = true;
     bool isDecal = false;
+    bool isValid = true;*/
 
-    /*#if EnableExperimentalPerDrawCustomData
-    bool useCustomData = false;
-    Vector4 customData;
-    #endif*/
+    inline void SetFlag(RenderData::Flag flag, bool enabled){
+        if(enabled)
+            flags |= flag;
+        else
+            flags &= ~flag;
+    }
 
-    PerDrawData perDrawData;
+    inline bool HasFlag(RenderData::Flag flag) {
+        return (flags & flag) != 0;
+    }
 };
 
 struct OD_API RenderContextSettings{
@@ -83,6 +98,42 @@ struct OD_API RenderContextSettings{
 #define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
+
+template<typename T>
+class ChunkedVector {
+public:
+    using Chunk = std::vector<T>;
+
+    ChunkedVector():m_chunks(1){}
+
+    ChunkedVector(size_t chunkCount)
+        : m_chunks(chunkCount)
+    {}
+    
+    // Access chunk by index
+    Chunk& operator[](size_t chunkIndex) {
+        assert(chunkIndex < m_chunks.size());
+        return m_chunks[chunkIndex];
+    }
+
+    const Chunk& operator[](size_t chunkIndex) const {
+        assert(chunkIndex < m_chunks.size());
+        return m_chunks[chunkIndex];
+    }
+
+    T& GetNew(int chunkIndex){
+        m_chunks[chunkIndex].emplace_back();
+        return m_chunks[chunkIndex][m_chunks[chunkIndex].size()-1];
+    }
+
+    // Number of chunks
+    size_t chunk_count() const {
+        return m_chunks.size();
+    }
+
+private:
+    std::vector<Chunk> m_chunks;
+};
 
 struct alignas(16) PipelineData{
     Matrix4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
@@ -146,6 +197,18 @@ public:
     void SetupCameraProperties(Camera cam);
     void RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData);
     void RenderDataLoop2(std::function<void(RenderData&)> onReciveRenderData);
+
+    void UpdateRenderData();
+    void RenderDataLoopNew(std::function<void(RenderData&)> onReciveRenderData);
+
+    template<typename Func>
+    void RenderDataLoopNew2(Func onReciveRenderData){
+        for(int i = 0; i < renderData.chunk_count(); i++){
+            for(auto& renderData: renderData[i]){
+                onReciveRenderData(renderData);
+            }
+        }
+    }
 
     void BeginDrawEntityIds();
     void EndDrawEntityIds();
@@ -247,6 +310,8 @@ private:
     Camera cam;
     Scene* scene;
 
+    ChunkedVector<RenderData> renderData;
+
     //entt::view<entt::get_t<MeshRendererComponent, TransformComponent>> meshView;
     //entt::view<entt::get_t<ModelRendererComponent, TransformComponent>> meshRenderView;
 
@@ -254,6 +319,5 @@ private:
     //void SetupShadowDrawTarget(CommandBaseData& cmd, ShadowDrawingTarget& target);
     //static void SetStandUniforms(Camera& cam, SubShader& shader);
 };
-
 
 }

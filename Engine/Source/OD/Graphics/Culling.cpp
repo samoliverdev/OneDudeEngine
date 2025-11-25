@@ -183,7 +183,7 @@ bool Sphere::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
 
 bool SquareAABB::isOnOrForwardPlane(Plane& plane) const{
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const float r = extent * (math::abs(plane.normal.x) + math::abs(plane.normal.y) + math::abs(plane.normal.z));
+    const float r = extent * (plane.absN.x + plane.absN.y + plane.absN.z);// (math::abs(plane.normal.x) + math::abs(plane.normal.y) + math::abs(plane.normal.z));
     return r <= plane.getSignedDistanceToPlane(center);
 }
 
@@ -248,40 +248,40 @@ std::array<Vector3, 8> AABB::getVertice() const{
     return vertice;
 }
 
+//inline float getSignedDistanceToPlane(const Vector3& point) const{
+//	return math::dot(normal, point) + distance;
+//}
+
+#include <xmmintrin.h>
+#include <immintrin.h> // for _mm_dp_ps if available
+
 //see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 bool AABB::isOnOrForwardPlane(Plane& plane) const{
-    #if 0
-
-    // Cria vetores com os valores absolutos das normais e extents
-    __m128 ext = _mm_set_ps(0.0f, extents.z, extents.y, extents.x); // [0, z, y, x]
-    __m128 norm = _mm_set_ps(0.0f, fabsf(plane.normal.z), fabsf(plane.normal.y), fabsf(plane.normal.x));
-    
-    // Multiplica componente a componente: extents * |normal|
-    __m128 r = _mm_mul_ps(ext, norm); // [0, z*|z|, y*|y|, x*|x|]
-
-    // Soma horizontal para obter raio: r.x + r.y + r.z
-    __m128 shuf1 = _mm_shuffle_ps(r, r, _MM_SHUFFLE(2, 1, 0, 3));
-    __m128 shuf2 = _mm_add_ps(r, shuf1);
-    float radius = _mm_cvtss_f32(shuf2) + _mm_cvtss_f32(_mm_shuffle_ps(shuf2, shuf2, _MM_SHUFFLE(1, 1, 1, 1)));
-
-    constexpr float epsilon = 1e-3f;
-    float dist = plane.getSignedDistanceToPlane(center);
-    return (-radius - epsilon <= dist);
-
-    #else
-
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const float r = extents.x * math::abs(plane.normal.x) + 
+    /*const float r = extents.x * math::abs(plane.normal.x) + 
                     extents.y * math::abs(plane.normal.y) +
                     extents.z * math::abs(plane.normal.z);
-
-    //return -r <= plane.getSignedDistanceToPlane(center);
-
     const float d = plane.getSignedDistanceToPlane(center);
     constexpr float epsilon = 1e-3f; // pode ajustar isso conforme precisão
-    return -r - epsilon <= d;
+    return -r - epsilon <= d;*/
 
-    #endif
+    /*glm::vec3 absN = glm::abs(plane.normal);
+    float r = glm::dot(absN, extents);
+    float d = glm::dot(plane.normal, center) + plane.distance;// plane.w;
+    return d >= -r;*/
+
+    float r = glm::dot(plane.absN, extents);
+    float d = glm::dot(glm::vec3(plane.n), center) + plane.n.w;
+    return d >= -r;
+}
+
+bool AABB::isOnFrustum(Frustum& camFrustum){
+    return (isOnOrForwardPlane(camFrustum.leftFace) &&
+        isOnOrForwardPlane(camFrustum.rightFace) &&
+        isOnOrForwardPlane(camFrustum.topFace) &&
+        isOnOrForwardPlane(camFrustum.bottomFace) &&
+        isOnOrForwardPlane(camFrustum.nearFace) &&
+        isOnOrForwardPlane(camFrustum.farFace));
 }
 
 bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
@@ -315,15 +315,6 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         globalAABB.isOnOrForwardPlane(camFrustum.nearFace) &&
         globalAABB.isOnOrForwardPlane(camFrustum.farFace));
 };
-
-bool AABB::isOnFrustum(Frustum& camFrustum){
-    return (isOnOrForwardPlane(camFrustum.leftFace) &&
-        isOnOrForwardPlane(camFrustum.rightFace) &&
-        isOnOrForwardPlane(camFrustum.topFace) &&
-        isOnOrForwardPlane(camFrustum.bottomFace) &&
-        isOnOrForwardPlane(camFrustum.nearFace) &&
-        isOnOrForwardPlane(camFrustum.farFace));
-}
 
 #include <xmmintrin.h>  // SSE
 #ifdef __AVX__

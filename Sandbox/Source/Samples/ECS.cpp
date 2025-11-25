@@ -158,6 +158,9 @@ void ECSSample::OnInit(){
     scene.GetComponent<TransformComponent>(pointLight2).Position(Vector3(-3, 0.5f, 0));
     //*/
 
+    auto mat = LoadFloorMaterial();
+    mat->SetEnableInstancing(true);
+
     for(int i = 0; i < 10000; i++){
         float posRange = 200;
 
@@ -165,8 +168,7 @@ void ECSSample::OnInit(){
         scene.AddComponent<ScriptComponent>(e).AddScript<RotateScript>();
         ModelRendererComponent& mr = scene.AddComponent<ModelRendererComponent>(e);
         mr.SetModel(cubeModel);
-        mr.GetMaterialsOverride()[0] = LoadFloorMaterial();
-        //mr.GetMaterialsOverride()[0]->SetEnableInstancing(true);
+        mr.GetMaterialsOverride()[0] = mat;
     
         float angle = 20.0f * i; 
         scene.GetComponent<TransformComponent>(e).LocalPosition(Vector3(random(-posRange, posRange), random(0, posRange), random(-posRange, posRange)));

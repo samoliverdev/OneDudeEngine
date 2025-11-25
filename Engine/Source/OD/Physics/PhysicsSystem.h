@@ -331,7 +331,7 @@ struct OD_API RagdollComponent{
     Layers layer = Layers::Layer0;
     LayerMask mask = {AllLayersMask};
 
-    enum class Type{Dynamic, Kinematic, Static, Trigger};
+    enum class Type{Dynamic, Kinematic, Static, Trigger, Disable};
     enum class MotorType{None, Jolt, TargetRot, TargetRotLocal};
 
     Type type;

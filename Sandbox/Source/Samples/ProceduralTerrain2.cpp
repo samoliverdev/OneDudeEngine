@@ -99,7 +99,7 @@ inline void SpawnObjectsRef(/*PhysicsSystem& physicsSystem,*/ Scene& scene, Enti
             trans.Position(hit.hitPoint);
         }*/
 
-        auto& staticRenderer = scene.AddComponent<StaticRendererComponent>(e);
+        //auto& staticRenderer = scene.AddComponent<StaticRendererComponent>(e);
         auto& modelRenderer = scene.AddComponent<ModelRendererComponent>(e);
         modelRenderer.SetModel(objectsBuck.models[_or.objectsIndex]);
     }
@@ -291,10 +291,10 @@ void ProceduralTerrain2::OnInit(){
     GenerateByArea(spawnSettings, heighmap, terrainComponent.terrainHeight, toSpawn);
     SpawnObjectsRef(*scene, spawnObjects, terrain, objectsBucks["Rocks"], toSpawn);
 
-    Entity staticClusterEntity = scene->AddEntity("StaticCluster");
+    /*Entity staticClusterEntity = scene->AddEntity("StaticCluster");
     scene->GetComponent<TransformComponent>(staticClusterEntity).LocalPosition({-2500, 0, -2500});
     StaticRendererClusterComponent& staticCluster = scene->AddComponent<StaticRendererClusterComponent>(staticClusterEntity);
-    staticCluster.Create({10, 1, 10}, {4, 1, 4}, 500);
+    staticCluster.Create({10, 1, 10}, {4, 1, 4}, 500);*/
 
     Application::AddModule<Editor>();
     //scene->Start();

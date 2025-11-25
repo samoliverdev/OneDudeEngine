@@ -725,7 +725,7 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
             renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
             renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
             renderData.instancingBuffer = emiter.dataBuffer.get();
-            renderData.renderShadow = material->IsBlend() == false;
+            renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
             renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
             outRenderData.push_back(renderData);
         }
