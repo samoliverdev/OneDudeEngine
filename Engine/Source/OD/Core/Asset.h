@@ -15,16 +15,20 @@ namespace OD{
 
 class OD_API Asset{
 public:
+    enum class SaveType{ 
+        SettingOnly, 
+        AssetBinary, //Portable binary to use for project data 
+        FinalBinary //Final binary to use for final assets packing data
+    };
+
     virtual ~Asset() = default; //virtual ~Asset(){}
     virtual std::string& Path();
     virtual void OnGui(){}
     virtual void Reload(){ LoadFromFile(path); }
-    virtual void Save(){}//INFO: Maybe remove later
-    virtual bool SaveAs(const std::string& path){ return false; }//INFO: Maybe Rename
+    virtual bool Save(const std::string& outPath, SaveType type){ return false; }//INFO: Maybe Rename
     virtual bool LoadFromFile(const std::string& path);
     virtual std::vector<std::string> GetFileAssociations();
     bool HasFileExtension(const std::string& fileExtension);
-
 protected:
     std::string path = "Memory";
 };

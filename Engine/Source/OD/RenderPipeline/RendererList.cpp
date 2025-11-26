@@ -32,6 +32,10 @@ bool DrawInstancingCommand3::operator<(const DrawCommand& a) const{
     return material->MaterialId() < a.material->MaterialId();
 }
 
+bool DrawInstancingCommand4::operator<(const DrawInstancingCommand4& a) const {
+    return material->MaterialId() < a.material->MaterialId();
+}
+
 bool MaterialBind2::operator<(const MaterialBind2& a) const{
     return materialId < a.materialId;
 }
@@ -56,7 +60,7 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
     }
 }   
 
-void RendererList::AddDrawInstancingCommand(DrawCommand&& comand){
+void RendererList::AddDrawInstancingCommand(DrawInstancingCommand4&& comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 

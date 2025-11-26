@@ -173,7 +173,7 @@ public:
 	bool SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius = 2.0f);
 
 	bool LoadFromFile(const std::string& _path) override;
-    bool SaveAs(const std::string& _path) override;
+    bool Save(const std::string& outPath, SaveType type) override;
     std::vector<std::string> GetFileAssociations() override;
 
 	bool InitBake(Scene* scene, AABB bounds, BuildSettings buildSettings, LayerMask layerMask = {});

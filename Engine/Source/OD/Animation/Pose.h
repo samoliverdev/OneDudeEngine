@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Transform.h"
+#include "OD/Serialization/Serialization.h"
 #include <vector>
 
 namespace OD{
@@ -29,9 +30,14 @@ public:
     bool operator==(const Pose& other);
     bool operator!=(const Pose& other);
     inline void Clear(){ joints.clear(); parents.clear(); }
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDump(ar, joints);
+        ArchiveDump(ar, parents);
+    }
 protected:
-    //std::vector<Transform> joints;
-    AlignedVector<Transform> joints;
+    AlignedVector<Transform> joints; //std::vector<Transform> joints;
     std::vector<int> parents;
 };
 

@@ -110,10 +110,6 @@ std::vector<std::string> Model::GetFileAssociations(){
 bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings){
 	model.Clear();
 
-	#ifdef USE_ASSIMP
-	return AssimpLoadModel(model, path, loadSettings);
-	#endif
-
 	auto getExtension = [](const std::string& path) -> std::string {
         size_t dotPos = path.rfind('.');
         return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
@@ -121,16 +117,60 @@ bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSetti
 
 	std::string fileType = getExtension(path);
 
+	if(fileType == "modelasset"){
+		std::ifstream stream(path, std::ios::binary);
+		if(stream.is_open() == false) return false;
+
+		cereal::PortableBinaryInputArchive ar(stream);
+		ar(model);//ArchiveDump(ar, *this);
+
+		model.SetPath(path);
+		return true;
+	}
+
+	if(fileType == "modelbin"){
+		std::ifstream stream(path, std::ios::binary);
+		if(stream.is_open() == false) return false;
+
+		cereal::BinaryInputArchive ar(stream);
+		ar(model);//ArchiveDump(ar, *this);
+
+		model.SetPath(path);
+		return true;
+	}
+
+	#ifdef USE_ASSIMP
+	return AssimpLoadModel(model, path, loadSettings);
+	#endif
+
 	if(fileType == "obj") return ObjLoadModel(model, path, loadSettings);
 	if(fileType == "gltf") return GltfLoadModel(model, path, loadSettings);
 	if(fileType == "glb") return GltfLoadModel(model, path, loadSettings);
-    
+
 	#ifdef USE_ASSIMP
 	return AssimpLoadModel(model, path, loadSettings);
 	#endif
 
 	LogError("File Type Not Supported: %s", fileType.c_str());
 	return false;
+}
+
+bool Model::Save(const std::string& outPath, SaveType type){
+	if(type == Asset::SaveType::SettingOnly) return false;
+
+    std::ofstream os(outPath, std::ios::binary);
+    Assert(os.is_open());
+
+    if(type == Asset::SaveType::AssetBinary){
+        cereal::PortableBinaryOutputArchive ar(os);
+        ar(*this);
+    }
+    if(type == Asset::SaveType::FinalBinary){
+        cereal::BinaryOutputArchive ar(os);
+        ar(*this);
+    }
+
+    return true;
 }
 
 AABB Model::GenerateAABB(Model& model){

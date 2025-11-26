@@ -100,7 +100,7 @@ public:
 
     void OnGui() override;
     void Reload() override;
-    void Save() override;
+    bool Save(const std::string& outPath, SaveType type) override;
 
     static void CreateLuaBind(sol::state& lua);
 

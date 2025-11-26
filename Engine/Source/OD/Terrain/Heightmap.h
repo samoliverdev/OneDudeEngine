@@ -59,7 +59,7 @@ struct OD_API Heightmap: public Asset{
     int height;
 
     bool LoadFromFile(const std::string& _path) override;
-    bool SaveAs(const std::string& _path) override;
+    bool Save(const std::string& outPath, SaveType type) override;
     std::vector<std::string> GetFileAssociations() override;
 };
 

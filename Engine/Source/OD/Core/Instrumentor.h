@@ -8,10 +8,10 @@
 namespace OD{
 
 struct OD_API ProfileResult{
-    const char* name;
     long long start, end;
     uint32_t threadID;
     int parent = -1;
+    const char* name;
 };
 
 class OD_API Instrumentor{
@@ -33,9 +33,9 @@ public:
     ~InstrumentationTimer();
     void Stop();
 private:
-    const char* name;
-    int index;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTimepoint;
+    int index;
+    const char* name;
     bool stopped = false;
 };
 

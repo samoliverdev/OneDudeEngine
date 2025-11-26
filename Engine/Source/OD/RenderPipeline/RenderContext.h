@@ -69,7 +69,7 @@ struct OD_API alignas(16) RenderData{
     InstancingBuffer* instancingBuffer = nullptr;
     Mesh* targetMesh;
     float distance;
-    uint32_t flags = 0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
+    uint32_t flags = Flag::RenderShadow | Flag::IsValid;//  0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
     /*bool awalsDraw = false;
     bool renderShadow = true;
     bool isDecal = false;

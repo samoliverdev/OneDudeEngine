@@ -12,9 +12,14 @@ bool Heightmap::LoadFromFile(const std::string& _path){
     return true;
 }
 
-bool Heightmap::SaveAs(const std::string& _path){
-    path = _path;
-    std::ofstream os(path, std::ios::binary);
+bool Heightmap::Save(const std::string& outPath, SaveType type){
+    if(type == SaveType::SettingOnly) return false;
+    
+    //path = _path;
+    
+    std::ofstream os(outPath, std::ios::binary);
+    if(os.is_open() == false) return false;
+
     cereal::PortableBinaryOutputArchive archive{os};
     archive(*this);
     return true;

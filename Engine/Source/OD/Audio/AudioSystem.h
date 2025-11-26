@@ -35,14 +35,13 @@ struct OD_API AudioSourceComponent{
     }
 
 private:
-    bool loop = false;
-    float volume = 1.0f;
-    float pitch = 1.0f;
     Vector3 position = Vector3(0.0f);// 3D Position
-
     SoLoud::Soloud* soloud = nullptr;
     SoLoud::handle handle = 0;
+    float volume = 1.0f;
+    float pitch = 1.0f;
     bool toPlay = false;
+    bool loop = false;
 };
 
 class OD_API AudioSystem: public System{

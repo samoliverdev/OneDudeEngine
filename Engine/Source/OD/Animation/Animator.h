@@ -11,8 +11,7 @@ namespace OD{
 
 //TODO: Make Serializable
 struct OD_API AnimatorComponent{
-    bool enable = true;
-    
+    friend struct AnimatorSystem;
     enum class LayerBlendMode { Override };
     struct Layer{
         CrossFadeController controller;
@@ -21,9 +20,18 @@ struct OD_API AnimatorComponent{
         bool blendIfClipIsNull = false;
     };
 
-    friend struct AnimatorSystem;
+    
     void Play(ClipT* clip, int layer = 0);
     void FadeTo(ClipT* target, float fadeTime, int layer = 0);
+    void PushLayer();
+    void PopLayer();
+    Layer& GetLayer(int layer);
+    int LayerCount();
+
+    inline bool Enable(){ return enable; }
+    inline void Enable(bool v){ enable = v; }
+
+    static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -31,20 +39,10 @@ struct OD_API AnimatorComponent{
         ArchiveDumpNVP(ar, toPlay);
     }
 
-    static void OnGui(Entity& e, Scene& scene);
-
-    void PushLayer();
-    void PopLayer();
-    Layer& GetLayer(int layer);
-    int LayerCount();
-
 private:
-    //std::vector<Matrix4> posePalette;
-
     std::vector<Layer> layers = {{}};
-    //CrossFadeController controller;
-
     int toPlay = -1;
+    bool enable = true;
 };
 
 struct OD_API AnimatorSystem: public System{

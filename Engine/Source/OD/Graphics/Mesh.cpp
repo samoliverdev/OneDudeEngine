@@ -4,6 +4,8 @@
 #include "OD/Core/Math.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Serialization/SerializationFull.h"
+#include "OD/Core/FileSystemUltis.h"
 
 namespace OD{
 
@@ -443,6 +445,45 @@ Ref<Mesh> Mesh::CenterQuad(bool useIndices){
     #endif
 
     return mesh;*/
+}
+
+bool Mesh::LoadFromFile(const std::string& inpath){
+    std::ifstream stream(inpath, std::ios::binary);
+    if(stream.is_open() == false) return false;
+
+    auto extension = GetFileExtension(inpath);
+
+    if(extension == "meshasset"){
+        cereal::PortableBinaryInputArchive ar(stream);
+        ar(*this);//ArchiveDump(ar, *this);
+        return true;
+    }
+
+    if(extension == "meshbin"){
+        cereal::BinaryInputArchive ar(stream);
+        ar(*this);//ArchiveDump(ar, *this);
+        return true;
+    }
+
+    return false;
+}
+
+bool Mesh::Save(const std::string& outPath, SaveType type){
+    if(type == Asset::SaveType::SettingOnly) return false;
+
+    std::ofstream os(outPath, std::ios::binary);
+    Assert(os.is_open());
+
+    if(type == Asset::SaveType::AssetBinary){
+        cereal::PortableBinaryOutputArchive ar(os);
+        ar(*this);
+    }
+    if(type == Asset::SaveType::FinalBinary){
+        cereal::BinaryOutputArchive ar(os);
+        ar(*this);
+    }
+
+    return true;
 }
 
 }

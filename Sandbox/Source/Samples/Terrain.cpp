@@ -110,7 +110,7 @@ void TerrainSample::OnInit(){
     terrainComponent.SetHeightmap(
         GenerateHeightmap(heightmapSize, heightmapSize, 50, 0.25f/(4*1), 4, 0.5f, 2.0f, Vector2(0, 0))
     );
-    terrainComponent.GetHeightmap()->SaveAs("Sandbox/Datas/Terrain.heightmap");
+    terrainComponent.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap", Asset::SaveType::AssetBinary);
     terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
     terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
     terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg");
@@ -148,7 +148,7 @@ void TerrainSample::OnUpdate(float deltaTime){
     if(Input::IsKeyDown(KeyCode::T)){
         Entity terrain = scene->FindEntityByName("Terrain");
         TerrainComponent& terr = scene->GetComponent<TerrainComponent>(terrain);
-        terr.GetHeightmap()->SaveAs("Sandbox/Datas/Terrain.heightmap");
+        terr.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap",  Asset::SaveType::AssetBinary);
     }
 
     if(Input::IsKeyDown(KeyCode::Y)){

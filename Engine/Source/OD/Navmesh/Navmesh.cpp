@@ -54,7 +54,7 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 			);
 			if(scene.Path() != "Memory" && scene.Running() == false){
 				std::string savePath = scene.Path() + "_Navmesh_" + std::to_string((size_t)e) + ".navmesh";
-				navmeshComponent.navmesh->SaveAs(savePath);
+				navmeshComponent.navmesh->Save(savePath, Asset::SaveType::AssetBinary);
 			}
 		}
 	}
@@ -1650,27 +1650,29 @@ bool Navmesh::SamplePosition(Vector3 position, Vector3& outClosestPoint, float m
 }
 
 // Save the navmesh state to a file
-bool Navmesh::SaveAs(const std::string& path){
-	if (!m_navMesh) return false;
+bool Navmesh::Save(const std::string& outPath, SaveType type){
+	if(type == SaveType::SettingOnly) return false;
 
-    FILE* fp = fopen(path.c_str(), "wb");
-    if (!fp) return false;
+	if(!m_navMesh) return false;
+
+    FILE* fp = fopen(outPath.c_str(), "wb");
+    if(!fp) return false;
 
     // Save navmesh params first
     const dtNavMeshParams* params = m_navMesh->getParams();
     fwrite(params, sizeof(dtNavMeshParams), 1, fp);
 
     // Save tiles
-    for (int i = 0; i < m_navMesh->getMaxTiles(); i++) {
+    for(int i = 0; i < m_navMesh->getMaxTiles(); i++){
         const dtMeshTile* tile = ((const dtNavMesh*)m_navMesh)->getTile(i);
-        if (!tile || !tile->header || !tile->dataSize) continue;
+        if(!tile || !tile->header || !tile->dataSize) continue;
 
         fwrite(&tile->dataSize, sizeof(int), 1, fp);
         fwrite(tile->data, tile->dataSize, 1, fp);
     }
 
     fclose(fp);
-    this->path = path;
+    //this->path = path;
     return true;
 }
 

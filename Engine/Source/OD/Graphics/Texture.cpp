@@ -235,16 +235,25 @@ void Texture2D::Reload(){
     LoadFromFile(path);
 }
 
-void Texture2D::Save(){
-
-    if(path.empty() == false && path != "Memory"){
+bool Texture2D::Save(const std::string& outPath, SaveType type){
+    if(type == Asset::SaveType::SettingOnly){
         std::ofstream os(path + ".meta");
+        if(os.is_open() == false) return false;
+        
         cereal::JSONOutputArchive archive{os};
         archive(CEREAL_NVP(settings));
     }
 
+    return false;
+
+    /*if(path.empty() == false && path != "Memory"){
+        std::ofstream os(path + ".meta");
+        cereal::JSONOutputArchive archive{os};
+        archive(CEREAL_NVP(settings));
+    }*/
+
     //Destroy(*this);
-    Reload();
+    //Reload();
 }
 
 void Texture2D::CreateLuaBind(sol::state& lua){

@@ -46,7 +46,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
         if(ImGui::Button("Create Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
             terrain.heightmap = CreateRef<Heightmap>(width, height);
-            terrain.heightmap->SaveAs(savePath);
+            terrain.heightmap->Save(savePath, Asset::SaveType::AssetBinary);
         }
 
         return;
@@ -67,12 +67,12 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
 
     if(terrain.heightmap->Path() != "Memory"){
         if(ImGui::Button("Save Data")){
-            terrain.heightmap->SaveAs(terrain.heightmap->Path());
+            terrain.heightmap->Save(terrain.heightmap->Path(), Asset::SaveType::AssetBinary);
         }
     } else if(scene.Path() != "Memory"){
         if(ImGui::Button("Save Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
-            terrain.heightmap->SaveAs(savePath);
+            terrain.heightmap->Save(savePath, Asset::SaveType::AssetBinary);
         }
     }
 

@@ -21,7 +21,7 @@ InstrumentationTimer::InstrumentationTimer(const char* _name): name(_name), stop
     startTimepoint = std::chrono::high_resolution_clock::now();
 
     results.push_back({
-        _name, 0, 0, 0, nodesStack.empty() ? -1 : nodesStack[nodesStack.size()-1]
+        0, 0, 0, nodesStack.empty() ? -1 : nodesStack[nodesStack.size()-1], _name
     });
     nodesStack.push_back(results.size()-1);
     index = results.size()-1;

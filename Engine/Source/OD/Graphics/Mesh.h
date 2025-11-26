@@ -78,6 +78,8 @@ public:
     //Mesh& operator=(const Mesh& other) = delete;
     //Mesh(const Mesh& other) = delete;
 
+    bool LoadFromFile(const std::string& path) override;
+    bool Save(const std::string& outPath, SaveType type) override;
     void OnGui() override;
 
     void CalculateNormals();
@@ -108,6 +110,23 @@ public:
     //inline unsigned int RendererId(){ return vao; }
 
     inline int Id(){ return id; }
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, vertices);
+        ArchiveDumpNVP(ar, uv);
+        ArchiveDumpNVP(ar, normals);
+        ArchiveDumpNVP(ar, colors);
+        ArchiveDumpNVP(ar, tangents);
+        ArchiveDumpNVP(ar, weights);
+        ArchiveDumpNVP(ar, influences);
+        ArchiveDumpNVP(ar, indices);
+        ArchiveDumpNVP(ar, drawMode);
+
+        if constexpr (Archive::is_loading()){
+            Submit();
+        }
+    }
 
 private:
     int id;

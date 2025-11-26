@@ -46,6 +46,7 @@ struct DrawMultTypeCommand{
 
 struct OD_API alignas(16) DrawCommand{
     Matrix4 trans;
+    PerDrawData perDrawData;
     SubShader* subShader;
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
@@ -56,18 +57,16 @@ struct OD_API alignas(16) DrawCommand{
     Vector4 customData;
     #endif*/
 
-    PerDrawData perDrawData;
-
     bool operator<(const DrawCommand& a) const;
 };
 
 struct OD_API alignas(16) SkinnedDrawCommand{
     Matrix4 trans;
+    PerDrawData perDrawData;
     SubShader* subShader;
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     AlignedVector<Matrix4>* posePalette;
-    PerDrawData perDrawData;
     float distance;
 
     bool operator<(const SkinnedDrawCommand& a) const;
@@ -121,6 +120,16 @@ struct OD_API DrawInstancingCommand3{
     bool operator<(const DrawCommand& a) const;
 };
 
+struct OD_API alignas(16) DrawInstancingCommand4{
+    Matrix4 trans;
+    SubShader* subShader;
+    Material* material; //Ref<Material> material;
+    Mesh* meshs;// Ref<Mesh> meshs;
+    float distance;
+
+    bool operator<(const DrawInstancingCommand4& a) const;
+};
+
 struct OD_API MaterialBind2{
     float distance;
     uint32_t materialId;
@@ -140,7 +149,7 @@ struct OD_API RendererList{
     void SetOverrideMaterial(Ref<Material> shader);
 
     void AddDrawCommand(DrawCommand&& comand, float distance = 0);  
-    void AddDrawInstancingCommand(DrawCommand&& comand);
+    void AddDrawInstancingCommand(DrawInstancingCommand4&& comand);
     void AddDrawInstancingCommand(DrawInstancingCommand3&& comand);
     void AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance = 0); 
     

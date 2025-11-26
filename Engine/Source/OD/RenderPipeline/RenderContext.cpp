@@ -2218,11 +2218,11 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(data.posePalette != nullptr){
         target.AddSkinnedDrawCommand({
             data.targetMatrix,
+            data.perDrawData,
             data.targetMaterial->CurrentShader().drawTypes[1].get(),
             data.targetMaterial,
             data.targetMesh,
-            data.posePalette,
-            data.perDrawData
+            data.posePalette
         }, data.distance);
         return;
     }
@@ -2243,11 +2243,11 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     } else {
         target.AddDrawCommand({
             data.targetMatrix,
+            data.perDrawData,
             data.targetMaterial->CurrentShader().drawTypes[0].get(),
             data.targetMaterial,
             data.targetMesh,
-            data.distance,
-            data.perDrawData
+            data.distance
             /*#if EnableExperimentalPerDrawCustomData
             data.useCustomData,
             data.customData,
@@ -2515,12 +2515,12 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
             data.targetMatrix,
+            data.perDrawData,
             data.customShadowPass->CurrentShader().drawTypes[1].get(),
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
-            data.posePalette,
-            data.perDrawData
+            data.posePalette
         }, data.distance);
         return;
     }
@@ -2555,11 +2555,11 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 
         commandBuffer.AddDrawCommand({
             data.targetMatrix,
+            data.perDrawData,
             data.customShadowPass->CurrentShader().drawTypes[0].get(),
             data.customShadowPass,
             data.targetMesh,
-            data.distance,
-            data.perDrawData
+            data.distance
             /*#if EnableExperimentalPerDrawCustomData
             data.useCustomData,
             data.customData,
