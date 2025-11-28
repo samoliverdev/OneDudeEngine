@@ -78,7 +78,9 @@ int AnimatorComponent::LayerCount(){
     return layers.size();
 }
 
-AnimatorSystem::AnimatorSystem(){}
+AnimatorSystem::AnimatorSystem(){
+    name = "AnimatorSystem";
+}
 
 int AnimatorSystem::Type(){ 
     return SystemType::Stand | SystemType::Animation; 

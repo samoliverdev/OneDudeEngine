@@ -8,6 +8,7 @@ namespace OD{
 struct SerializationSample: public OD::Module{
     OD::Scene* scene;
 
+    SerializationSample(){ name = "SerializationSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

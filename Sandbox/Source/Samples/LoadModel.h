@@ -26,6 +26,7 @@ struct LoadModelSample: OD::Module {
     bool useInstancingBuffer = true;
     bool useMatrix4x3 = true;
 
+    LoadModelSample(){ name = "LoadModelSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override; 
     void OnRender(float deltaTime) override;

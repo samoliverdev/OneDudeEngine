@@ -40,6 +40,10 @@ extern GraphicsDevice* graphicsDevice;
 
 bool hasLoadGlobalSetting = false;
 
+const std::vector<Module*> Application::Modules(){
+    return modules;
+}
+
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
     auto project = ProjectManager::LoadProject(projectPath);
     if(project == nullptr) return false;
@@ -343,6 +347,9 @@ void Application::_RemoveModule(Module* module){
 void Application::_AddModule(Module* module){
     modules.push_back(module);
     modules.back()->OnInit();
+
+    auto SortFunc = [](Module* a, Module* b){ return a->ExecutionSortPriority() < b->ExecutionSortPriority(); };
+    std::stable_sort(modules.begin(), modules.end(), SortFunc);
 }
 
 const std::vector<Module*>& Application::GetAllModules(){

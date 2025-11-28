@@ -167,6 +167,10 @@ inline void AlignCameraToAABB_Isometric(Transform& cameraTransform, const AABB& 
     cameraTransform.LookAt(center);
 }
 
+int Editor::ExecutionSortPriority(){ 
+    return 10000; 
+};
+
 void Editor::OnInit(){
     ImGuiLayer::SetCleanAll(true);
 
@@ -201,6 +205,7 @@ void Editor::OnInit(){
     mainWorkspace.AddPanel(&profilePanel);
     mainWorkspace.AddPanel(&rendererStatsPanel);
     mainWorkspace.AddPanel(&globalSettingsPanel);
+    mainWorkspace.AddPanel(&runtimeInfoPanel);
 
     std::ifstream is("Editor.Save");
     if(is.fail() == false){
@@ -339,7 +344,13 @@ void Editor::OnUpdate(float deltaTime){
     } else {
         float width = viewportSize.x;
         float height = viewportSize.y;
-        if(open == false){
+        
+        if(drawSceneToCustomFramebuffer){
+            if(open == false){
+                width = Application::ScreenWidth();
+                height = Application::ScreenHeight();
+            }
+        } else {
             width = Application::ScreenWidth();
             height = Application::ScreenHeight();
         }
@@ -354,13 +365,18 @@ void Editor::OnUpdate(float deltaTime){
         renderPipeline->SetOverrideCamera(&editorCam.cam, editorCam.transform);
     }
 
-    if(open == false){
+    if(drawSceneToCustomFramebuffer){
+        if(open == false){
+            renderPipeline->SetOverrideFrameBuffer(nullptr);
+            ImGuiLayer::SetCleanAll(false);
+        } else{
+            ImGuiLayer::SetCleanAll(true);
+            renderPipeline->SetOverrideFrameBuffer(framebuffer);
+            framebuffer->Resize(viewportSize.x, viewportSize.y);
+        }
+    } else {
         renderPipeline->SetOverrideFrameBuffer(nullptr);
         ImGuiLayer::SetCleanAll(false);
-    } else{
-        ImGuiLayer::SetCleanAll(true);
-        renderPipeline->SetOverrideFrameBuffer(framebuffer);
-        framebuffer->Resize(viewportSize.x, viewportSize.y);
     }
 
     /*if(SceneManager::Get().activeScene()->GetSystem<StandRendererSystem>()->finalColor()->IsValid()){
@@ -398,7 +414,7 @@ void Editor::OnRender(float deltaTime){
 void Editor::OnGUI(){
     OD_PROFILE_SCOPE("Editor::OnGUI");
 
-    //OD::ImGuiLayer::SetCleanAll(true);
+    //OD::ImGuiLayer::SetCleanAll(false);
 
     if(open == false) return;
 

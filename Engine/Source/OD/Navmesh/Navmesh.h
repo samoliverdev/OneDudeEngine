@@ -433,6 +433,8 @@ private:
 
 class OD_API NavmeshSystem: public System{
 public:
+	NavmeshSystem(){ name = "NavmeshSystem"; }
+
 	void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;
     

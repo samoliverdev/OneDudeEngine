@@ -5,6 +5,7 @@ using namespace OD;
 
 struct SynthCitySample: Module{
     Entity camera;
+    SynthCitySample(){ name = "SynthCitySample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

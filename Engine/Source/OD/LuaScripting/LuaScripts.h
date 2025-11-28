@@ -80,6 +80,8 @@ private:
 };
 
 struct OD_API LuaScriptSystem: public System{
+    LuaScriptSystem(){ name = "LuaScriptSystem"; }
+
     virtual void OnInit(Scene& scene) override;
     virtual void OnEnd(Scene& scene) override;
 
@@ -93,6 +95,7 @@ private:
 
 class OD_API LuaModule: public Module{
 public:
+    LuaModule(){ name = "LuaModule"; }
     void OnInit() override;
     void OnExit() override;
     void OnUpdate(float deltaTime) override;

@@ -41,6 +41,8 @@ struct BoidSystem: public OD::System{
     float alignmentWeight = 10;
     //System* Clone(Scene* inScene) const override{ return new BoidSystem(inScene); }
 
+    BoidSystem(){ name = "BoidSystem"; }
+
     template<typename T>
     size_t get_index(T* base, T* ptr) {
         return static_cast<size_t>(ptr - base);

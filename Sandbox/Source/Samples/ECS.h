@@ -21,6 +21,7 @@ struct ECSSample: public OD::Module {
 
     void AddTransparent(Vector3 pos);
 
+    ECSSample(){ name = "ECSSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

@@ -284,6 +284,8 @@ private:
 
 class StandRenderPipeline: public BaseRenderPipeline{
 public:
+    StandRenderPipeline(){ name = "StandRenderPipeline"; }
+
     void OnInit(Scene& scene);
     void OnEnd(Scene& scene);
     //~StandRenderPipeline(){}

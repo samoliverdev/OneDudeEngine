@@ -10,6 +10,7 @@ struct NavmeshSample: OD::Module {
     Entity navmeshAgentEntity;
     Entity targetPosEntity;
 
+    NavmeshSample(){ name = "NavmeshSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;  
     void OnRender(float deltaTime) override;

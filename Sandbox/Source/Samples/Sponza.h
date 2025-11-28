@@ -4,6 +4,7 @@
 using namespace OD;
 
 struct SponzaSample: public OD::Module {
+    SponzaSample(){ name = "SponzaSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

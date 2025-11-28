@@ -293,6 +293,11 @@ public:
     
     virtual int ExecutionSortPriority(SystemType type){ return 1; }; 
     virtual bool ExecuteAlways(){ return false; }
+    
+    inline const std::string& Name(){ return name; }
+
+protected:
+    std::string name;
 };
 
 class OD_API Scene: public Asset {

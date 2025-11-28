@@ -9,7 +9,7 @@ namespace OD{
     class Material;
 }
 
-struct BaseMeshSample: OD::Module {
+struct BaseMeshSample: public OD::Module {
     OD::Mesh mesh;
     //Ref<SubShader> meshShader;
     //Ref<SubShader> fontShader;
@@ -23,6 +23,7 @@ struct BaseMeshSample: OD::Module {
     tf::Taskflow taskflow;
     bool executorEnd = false;*/
 
+    BaseMeshSample(){ name = "BaseMeshSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

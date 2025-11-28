@@ -420,6 +420,7 @@ private:
 
 class ParticleManageSystem: public System{
 public:
+    ParticleManageSystem(){ name = "ParticleManageSystem"; }
     int Type() override;
     bool ExecuteAlways() override;
     void Update(Scene& scene) override;

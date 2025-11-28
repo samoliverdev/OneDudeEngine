@@ -3876,12 +3876,21 @@ void OpenGLGraphicsDevice::ImGuiNewFrame(){
 
 void OpenGLGraphicsDevice::ImGuiRenderDrawData(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
+    
     glViewport(0, 0, w, h);
+    glCheckError();
     if(ImGuiLayer::GetCleanAll() == true){
-        glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
+        glClearColor(
+            _clear_color.x,// * _clear_color.w, 
+            _clear_color.y,// * _clear_color.w, 
+            _clear_color.z,// * _clear_color.w, 
+            _clear_color.w
+        );
+        glCheckError();
         glClear(GL_COLOR_BUFFER_BIT);
+        glCheckError();
     }
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 

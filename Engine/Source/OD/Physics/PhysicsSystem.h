@@ -744,6 +744,7 @@ struct OD_API PhysicsSystem: public System{
     void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;
 
+    PhysicsSystem(){ name = "PhysicsSystem"; }
     virtual ~PhysicsSystem() override;
 
     /*System* Clone(Scene* inScene) const override{ 

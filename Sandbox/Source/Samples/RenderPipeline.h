@@ -27,6 +27,7 @@ struct RenderPipelineSample: public OD::Module {
 
     void AddTransparent(Vector3 pos);
 
+    RenderPipelineSample(){ name = "RenderPipelineSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

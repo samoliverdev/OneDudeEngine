@@ -156,6 +156,7 @@ private:
 
 class OD_API TerrainSystem: public System{
 public:
+    TerrainSystem(){ name = "TerrainSystem"; }
     void OnInit(Scene& scene);
 
     virtual int Type() override { return SystemType::PostPhysics; }

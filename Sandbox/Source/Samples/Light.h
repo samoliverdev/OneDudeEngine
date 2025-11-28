@@ -39,6 +39,7 @@ struct LightSample: OD::Module {
         Vector3(-1.3f,  1.0f, -1.5f)  
     };
 
+    LightSample(){ name = "LightSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

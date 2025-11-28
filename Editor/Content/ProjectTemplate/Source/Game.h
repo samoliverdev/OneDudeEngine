@@ -12,6 +12,7 @@ extern "C"{
 
 class Game: public OD::Module{
 public:
+    Game(){ name = "Game"; }
     void OnInit() override;
     void OnExit() override;
     void OnUpdate(float deltaTime) override;

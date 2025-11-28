@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include <string>
 
 namespace OD {
 
@@ -15,6 +16,12 @@ public:
     virtual void OnResize(int width, int height) = 0;
 
     inline virtual bool DeleteOnExit(){ return true; }
+    inline virtual int ExecutionSortPriority(){ return 1; };
+
+    inline const std::string& Name(){ return name; }
+
+protected:
+    std::string name;
 };  
 
 typedef void (*_OnInit)();

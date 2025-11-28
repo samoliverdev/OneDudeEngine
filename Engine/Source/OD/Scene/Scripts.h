@@ -97,6 +97,7 @@ private:
 };
 
 struct OD_API ScriptSystem: public System{
+    ScriptSystem(){ name = "ScriptSystem"; }
     void OnInit(Scene& scene);
     void OnEnd(Scene& scene);
     //System* Clone(Scene* inScene) const override { return new ScriptSystem(inScene); }

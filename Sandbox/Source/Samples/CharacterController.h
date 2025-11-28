@@ -9,6 +9,7 @@ struct CharacterControllerSample: Module {
     Entity camera;
     Navmesh navmesh;
 
+    CharacterControllerSample(){ name = "CharacterControllerSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

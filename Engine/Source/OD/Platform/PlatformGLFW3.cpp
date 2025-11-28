@@ -79,7 +79,7 @@ void imguiOnInit(GLFWwindow* window){
     }
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -90,6 +90,8 @@ void imguiOnInit(GLFWwindow* window){
     }
 
     ImGuiLayer::SetDarkTheme();
+
+    //ImGui::GetStyle().Alpha = 0.9f;   // 50% opacity
 
     auto graphicsDeviceInfo = graphicsDevice->GetInfo();
 

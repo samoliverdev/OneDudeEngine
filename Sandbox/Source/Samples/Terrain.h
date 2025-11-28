@@ -10,6 +10,7 @@ struct TerrainSample: OD::Module {
 
     Ref<Heightmap> GenerateHeightmap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset);
     
+    TerrainSample(){ name = "TerrainSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override; 
     void OnRender(float deltaTime) override;

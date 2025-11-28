@@ -349,15 +349,15 @@ void Scene::AddSystem(){
     auto SortLate = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Late) < b->ExecutionSortPriority(SystemType::Late); };
     auto SortRenderer = [](System* a, System* b){ return a->ExecutionSortPriority(SystemType::Renderer) < b->ExecutionSortPriority(SystemType::Renderer); };
 
-    std::sort(standSystems.begin(), standSystems.end(), SortStand);
-    std::sort(animationSystems.begin(), animationSystems.end(), SortAnimation);
+    std::stable_sort(standSystems.begin(), standSystems.end(), SortStand);
+    std::stable_sort(animationSystems.begin(), animationSystems.end(), SortAnimation);
     
-    std::sort(prePhysicsSystems.begin(), prePhysicsSystems.end(), SortPrePhysics);
-    std::sort(fixedPhysicsSystems.begin(), fixedPhysicsSystems.end(), SortFixedPhysics);
-    std::sort(postPhysicsSystems.begin(), postPhysicsSystems.end(), SortPostPhysics);
+    std::stable_sort(prePhysicsSystems.begin(), prePhysicsSystems.end(), SortPrePhysics);
+    std::stable_sort(fixedPhysicsSystems.begin(), fixedPhysicsSystems.end(), SortFixedPhysics);
+    std::stable_sort(postPhysicsSystems.begin(), postPhysicsSystems.end(), SortPostPhysics);
     
-    std::sort(lateSystems.begin(), lateSystems.end(), SortLate);
-    std::sort(rendererSystems.begin(), rendererSystems.end(), SortRenderer);
+    std::stable_sort(lateSystems.begin(), lateSystems.end(), SortLate);
+    std::stable_sort(rendererSystems.begin(), rendererSystems.end(), SortRenderer);
 }
 
 template<typename T> 

@@ -106,6 +106,7 @@ void AudioSourceComponent::OnGui(Entity& e, Scene& scene){
 }
 
 AudioSystem::AudioSystem(){
+    name = "AudioSystem";
     //soloud.init(); 
     //Erro: call init twice on playing mode
 }

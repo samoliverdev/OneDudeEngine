@@ -1,9 +1,9 @@
 {
     "Editor": {
         "sceneHierarchyPanel.show": true,
-        "contentBrowserPanel.show": false,
+        "contentBrowserPanel.show": true,
         "inspectorPanel.show": true,
-        "viewportPanel.show": true,
+        "viewportPanel.show": false,
         "profilePanel.show": true,
         "rendererStatsPanel.show": true,
         "globalSettingsPanel.show": false

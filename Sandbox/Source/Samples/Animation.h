@@ -52,6 +52,7 @@ struct AnimationSample: public OD::Module{
     int curBone;
     bool animate = true;
 
+    AnimationSample(){ name ="AnimationSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

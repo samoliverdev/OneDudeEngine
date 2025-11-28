@@ -4,6 +4,7 @@
 using namespace OD;
 
 struct AssetPackingSample: public OD::Module {
+    AssetPackingSample(){ name = "AssetPackingSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

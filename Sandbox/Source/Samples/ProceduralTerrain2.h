@@ -21,6 +21,7 @@ struct ProceduralTerrain2: public OD::Module{
 
     Ref<Heightmap> GenerateHeightmap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset);
 
+    ProceduralTerrain2(){ name = "ProceduralTerrain2"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

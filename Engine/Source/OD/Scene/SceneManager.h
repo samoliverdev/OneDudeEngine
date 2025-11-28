@@ -7,6 +7,8 @@ namespace OD{
 
 class OD_API SceneManager: public Module{
 public:
+    //SceneManager(){ name = "SceneManager"; }
+
     enum class SceneState {Playing, Paused, Editor};
 
     static SceneManager& Get();
@@ -47,7 +49,7 @@ public:
     inline bool DeleteOnExit() override { return false; }
 
 private:
-    SceneManager(){}
+    SceneManager(){ name = "SceneManager"; }
 
     struct SerializeFuncs{
         std::string groupName;

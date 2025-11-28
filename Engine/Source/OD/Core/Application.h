@@ -44,7 +44,16 @@ public:
 
     static void RemoveModule(Module* module);
     static void AddModule(Module* module);
-    template<typename T> static void AddModule(){ _AddModule(new T()); }
+
+    static const std::vector<Module*> Modules();
+
+    //template<typename T> static void AddModule(){ _AddModule(new T()); }
+
+    template<typename T, typename... Args>
+    static void AddModule(Args&&... args) {
+        _AddModule(new T(std::forward<Args>(args)...));
+    }
+
 
     static const std::vector<Module*>& GetAllModules();
     

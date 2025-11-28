@@ -2,6 +2,7 @@
 #include <OD/Core/Module.h>
 
 struct BoidsSample: public OD::Module {
+    BoidsSample(){ name = "BoidsSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;  
     void OnRender(float deltaTime) override;

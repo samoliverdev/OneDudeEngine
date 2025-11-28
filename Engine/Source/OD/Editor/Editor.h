@@ -8,6 +8,7 @@
 #include "OD/Editor/Panels/ProfilePanel.h"
 #include "OD/Editor/Panels/RendererStatsPanel.h"
 #include "OD/Editor/Panels/GlobalSettingsPanel.h"
+#include "OD/Editor/Panels/RuntimeInfoPanel.h"
 #include "OD/Serialization/Serialization.h"
 #include "EditorCamera.h"
 #include "Workspace.h"
@@ -25,6 +26,8 @@ class OD_API Editor: public Module{
     friend class ViewportPanel;
 
 public:
+    Editor(bool indrawSceneToCustomFramebuffer = true):drawSceneToCustomFramebuffer(indrawSceneToCustomFramebuffer){ name = "Editor"; }
+
     void OnInit() override;
     void OnExit() override;
     void OnUpdate(float deltaTime) override;
@@ -68,6 +71,8 @@ public:
     void SetPrefabAssetPreview(Ref<Prefab> prefab);
     void SetPrefabAssetPreview(const std::string& path);
 
+    inline bool DrawSceneToCustomFramebuffer(){ return drawSceneToCustomFramebuffer; }
+
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, sceneHierarchyPanel.show);
@@ -79,6 +84,8 @@ public:
         ArchiveDumpNVP(ar, globalSettingsPanel.show);
     }
 
+    int ExecutionSortPriority() override;
+
 private:
     //static Editor* instance;
 
@@ -89,6 +96,7 @@ private:
     ProfilePanel profilePanel;
     RendererStatsPanel rendererStatsPanel;
     GlobalSettingsPanel globalSettingsPanel; 
+    RuntimeInfoPanel runtimeInfoPanel;
     MainWorkspace mainWorkspace;
 
     Entity selectionEntity = EntityNull;
@@ -101,6 +109,7 @@ private:
     //bool showSceneHierarchy = true;
     //bool showInspector = true;
     bool open = true;
+    bool drawSceneToCustomFramebuffer = true;
 
     struct GizmoInteractionState{
         bool active = false;

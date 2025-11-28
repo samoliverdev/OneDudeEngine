@@ -4,10 +4,11 @@
 
 using namespace OD;
 
-struct AnimatorSample: OD::Module {
+struct AnimatorSample: public OD::Module {
     Entity camera;
     //std::vector<FastClip> clips;
 
+    AnimatorSample(){ name = "AnimatorSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;

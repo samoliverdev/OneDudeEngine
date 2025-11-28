@@ -19,6 +19,7 @@ struct PhysicsCubeS: public Script{
 struct PhysicsSample: OD::Module {
     Entity camera;
 
+    PhysicsSample(){ name = "PhysicsSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override; 
     void OnRender(float deltaTime) override;

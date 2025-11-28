@@ -12,6 +12,7 @@ struct DynamicModuleSample: OD::Module {
     Module* currentModule = nullptr;
     void* currentDll = nullptr;
 
+    DynamicModuleSample(){ name = "DynamicModuleSample"; }
     void OnInit() override;
     void OnUpdate(float deltaTime) override;
     void OnRender(float deltaTime) override;
