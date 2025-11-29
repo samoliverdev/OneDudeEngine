@@ -30,7 +30,7 @@ public:
     
     //Matrix4 GetModelMatrix();
 
-    inline Matrix4 Transform::GetModelMatrix(){
+    inline Matrix4 GetModelMatrix() const {
         #ifdef TransformLessDataOptimzation
         return Mathf::TRS(position, rotation, scale);
         #else
@@ -199,7 +199,7 @@ public:
         #endif*/
     }
 
-    inline static Transform Combine(Transform& a, Transform& b){
+    inline static Transform Combine(const Transform& a, const Transform& b){
         //#ifdef ExperimentalTransformOptimzation
 
         /*Transform out;

@@ -494,8 +494,8 @@ struct OD_API JointComponent{
     JointSpace GetJointSpace();
     void SetJointSpace(JointSpace injointSpace);
 
-    void CreateFixed(FixedSettings& settings);
-    void CreateDistance(DistanceSettings& settings);
+    void CreateFixed(const FixedSettings& settings);
+    void CreateDistance(const DistanceSettings& settings);
 
     void SetDistance(float min, float max);
 

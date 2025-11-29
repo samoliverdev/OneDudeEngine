@@ -7,6 +7,7 @@
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Module.h"
 #include "OD/Core/Lua.h"
+#include "OD/Core/Undo.h"
 #include <unordered_map>
 #include <string>
 #include <functional>
@@ -485,7 +486,7 @@ struct GroupOfComps { //TODO: Finish this
 
     static Entity Create(Scene& scene, const std::string& name, Components&&... components){
         Entity entity = scene.AddEntity(name);
-        (emplaceComponent<Components>(scene.GetRegistry(), entity, std::forward<Components>(components)), ...);
+        (EmplaceComponent<Components>(scene.GetRegistry(), entity, std::forward<Components>(components)), ...);
         return entity;
     }
     
@@ -499,8 +500,8 @@ struct GroupOfComps { //TODO: Finish this
     static Entity Create(Scene& scene, const std::string& name, Func&& func){
         Entity entity = scene.AddEntity(name);
         //func(EmplaceComponent<Components>(scene.GetRegistry(), entity, Components{}), ...);
-        (EmplaceOrGetComponent<Components>(registry, entity), ...);
-        func(GetComponent<Components>(registry, entity)...);
+        (EmplaceOrGetComponent<Components>(scene.registry, entity), ...);
+        func(GetComponent<Components>(scene.registry, entity)...);
         return entity;
     }
 

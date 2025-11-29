@@ -39,7 +39,10 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
 
     if(mesh.model != nullptr && mesh.model->renderTargets.size() != mesh.renderTargetVisibility.size()){
         mesh.renderTargetVisibility.resize(mesh.model->renderTargets.size());
-        for(auto& i: mesh.renderTargetVisibility) i = true;
+        //for(auto& i: mesh.renderTargetVisibility) i = true;
+        for(int i = 0; i < mesh.renderTargetVisibility.size(); i++){
+            mesh.renderTargetVisibility[i] = true;
+        }
     }
     if(ImGui::TreeNode("renderTargetVisibility")){
         for(int i = 0; i < mesh.renderTargetVisibility.size(); ++i){
@@ -72,7 +75,10 @@ void ModelRendererComponent::SetModel(Ref<Model> m){
     model = m;
     materialsOverride.resize(model->materials.size());
     renderTargetVisibility.resize(model->renderTargets.size());
-    for(auto& i: renderTargetVisibility) i = true;
+    //for(auto& i: renderTargetVisibility) i = true;
+    for(int i = 0; i < renderTargetVisibility.size(); i++){
+        renderTargetVisibility[i] = true;
+    }
 
     boundingVolume = Model::GenerateAABB(*model);
     //boundingVolumeSphere = Model::GenerateSphereBV(*model);
@@ -260,7 +266,10 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
 
     if(mesh.model != nullptr && mesh.model->renderTargets.size() != mesh.renderTargetVisibility.size()){
         mesh.renderTargetVisibility.resize(mesh.model->renderTargets.size());
-        for(auto& i: mesh.renderTargetVisibility) i = true;
+        //for(auto& i: mesh.renderTargetVisibility) i = true;
+        for(int i = 0; i < mesh.renderTargetVisibility.size(); i++){ 
+            mesh.renderTargetVisibility[i] = true;
+        }
     }
     if(ImGui::TreeNode("renderTargetVisibility")){
         for(int i = 0; i < mesh.renderTargetVisibility.size(); ++i){

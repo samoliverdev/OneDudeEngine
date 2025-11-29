@@ -203,7 +203,8 @@ void LightComponent::OnGui(Entity& e, Scene& scene){
         ImGui::PopItemWidth();
     });
 
-    _AddTableRow("Color", [&](const char* id) {
+    //_AddTableRow("Color", [&](const char* id) {
+    AddTableRow("Color", "##color", [&](const char* id) {
         ImGui::ColorEdit4(id, &light.color);
     });
 

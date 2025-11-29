@@ -2392,13 +2392,13 @@ void JointComponent::SetJointSpace(JointSpace injointSpace){
 	isDirty = true;
 }
 
-void JointComponent::CreateFixed(FixedSettings& settings){
+void JointComponent::CreateFixed(const FixedSettings& settings){
 	isDirty = true;
 	type = JointComponent::Type::Fixed;
 	fixedSettings = settings;
 }
 
-void JointComponent::CreateDistance(DistanceSettings& settings){
+void JointComponent::CreateDistance(const DistanceSettings& settings){
 	isDirty = true;
 	type = JointComponent::Type::Distance;
 	distanceSettings = settings;

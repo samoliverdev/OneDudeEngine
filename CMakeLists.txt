@@ -39,6 +39,8 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
     add_compile_options(/arch:AVX2)
     #add_compile_options(/Qvec-report:2)
 
+    add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus)
+
     if(USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
     endif()

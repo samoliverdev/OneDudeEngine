@@ -49,7 +49,7 @@ void Pose::SetLocalTransform(unsigned int index, const Transform& transform){
     joints[index] = transform;
 }
 
-void Pose::SetGlobalTransform(unsigned int index, Transform& globalTransform){
+void Pose::SetGlobalTransform(unsigned int index, const Transform& globalTransform){
     if(index >= joints.size()) return;
 
     if(parents[index] < 0){// If this joint has no parent (root), local = global

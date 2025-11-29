@@ -20,7 +20,7 @@ public:
     Transform GetLocalTransform(unsigned int index);
     inline Transform& GetLocalTransform2(unsigned int index){ return joints[index]; }
     void SetLocalTransform(unsigned int index, const Transform& transform);
-    void SetGlobalTransform(unsigned int index, Transform& transform); //Test
+    void SetGlobalTransform(unsigned int index, const Transform& transform); //Test
     Transform GetGlobalTransform(unsigned int index);
     Matrix4 GetGlobalMatrix(unsigned int index);
     Matrix4 GetLocalMatrix(unsigned int index);

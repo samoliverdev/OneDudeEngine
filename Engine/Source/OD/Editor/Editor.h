@@ -82,6 +82,7 @@ public:
         ArchiveDumpNVP(ar, profilePanel.show);
         ArchiveDumpNVP(ar, rendererStatsPanel.show);
         ArchiveDumpNVP(ar, globalSettingsPanel.show);
+        ArchiveDumpNVP(ar, runtimeInfoPanel.show);
     }
 
     int ExecutionSortPriority() override;

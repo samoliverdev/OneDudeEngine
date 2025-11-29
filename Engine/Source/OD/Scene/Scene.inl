@@ -229,7 +229,7 @@ T& Scene::GetComponent(Entity id){
 template<typename T> 
 void Scene::AddComponentRecursive(Entity entity){
     if(registry.any_of<T>(entity) == false){
-        registry.emplace<T>(entity);
+        T& c = registry.emplace<T>(entity);
         if constexpr(HasOnCreate<T>::value) c.OnCreate(entity, *this);
     }
 
