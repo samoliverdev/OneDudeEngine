@@ -128,8 +128,7 @@ void ParallelForEach(Scene* scene, Func&& func){
         start_idx += count;
     }
 
-    scene->GetExecutor().run(scene->GetTaskflow()).wait();
-    scene->GetTaskflow().clear();
+    scene->RunAllTaskAndSync();
 }
 
 template<typename... Components, typename Func>
@@ -168,8 +167,7 @@ void ParallelForEach2(Scene* scene, Func&& func) {
     });
 
     //NOTE: i need call this becose the view is destrued on the end of this functions, so maybe in the function use system and sub system to sync the jobs
-    scene->GetExecutor().run(scene->GetTaskflow()).wait();
-    scene->GetTaskflow().clear();
+    scene->RunAllTaskAndSync();
 }
 
 void AnimatorSystem::AnimationUpdate(Scene& scene){

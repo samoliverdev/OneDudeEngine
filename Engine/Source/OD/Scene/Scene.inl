@@ -10,7 +10,6 @@ void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func)
 
     auto& registry = scene.GetRegistry();
     auto& taskflow = scene.GetTaskflow();
-    auto& executor = scene.GetExecutor();
 
     std::unordered_map<Entity, tf::Task> entityTasks;
 
@@ -44,8 +43,7 @@ void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func)
         }
     }
 
-    executor.run(taskflow).wait();
-    taskflow.clear();
+    scene.RunAllTaskAndSync();
 
 #endif
 }

@@ -1,9 +1,12 @@
 #include "Font.h"
+#include "Texture.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/ImGui.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H 
+
+#include <glm/gtx/integer.hpp>
 
 namespace OD{
 
@@ -22,8 +25,9 @@ void InitFreeFont(){
     freeFontHasInited = true;
 }
 
-Ref<Font> Font::CreateFromFile(const std::string& filepath){
+Ref<Font> Font::CreateFromFile(const std::string& filepath, const FontSettings& settings){
     Ref<Font> font = CreateRef<Font>();
+    font->Settings(settings);
     if(font->LoadFromFile(filepath) == false) return nullptr;
     return font;
 }
@@ -141,118 +145,21 @@ static Ref<Texture2D> CreateAndCacheAtlas(
     );
 }
 
+uint32_t NextPow2(uint32_t x) {
+    if (x <= 1) return 1;
+    --x;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x + 1;
+
+    //return glm::ceilPowerOfTwo(x);
+}
+
 bool Font::LoadFromFile(const std::string& inPath){
-    /*InitFreeFont();
-
-    const int fontSize = 48;
-
-    FT_Face face;
-    if(FT_New_Face(ft, inPath.c_str(), 0, &face)){
-        LogError("ERROR::FREETYPE: Failed to load font: %s", inPath.c_str());  
-        Application::Quit();
-        return false;
-    }
-
-    FT_Set_Pixel_Sizes(face, 0, fontSize);*/ 
-
-    /*glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
-    glCheckError();
-  
-    for(unsigned char c = 0; c < 128; c++){
-        // load character glyph 
-        if(FT_Load_Char(face, c, FT_LOAD_RENDER)){
-            LogError("ERROR::FREETYTPE: Failed to load Glyph");
-            continue;
-        }
-        // generate texture
-        unsigned int texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glCheckError();
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RED,
-            face->glyph->bitmap.width,
-            face->glyph->bitmap.rows,
-            0,
-            GL_RED,
-            GL_UNSIGNED_BYTE,
-            face->glyph->bitmap.buffer
-        );
-        glCheckError();
-        // set texture options
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glCheckError();
-        // now store character for later use
-        Character character = {
-            //texture, 
-            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            (unsigned int)face->glyph->advance.x
-        };
-
-        characters.insert(std::pair<char, Character>(c, character));
-    }*/
-
-    /*int padding = 2;
-    int row = 0;
-    int col = padding;
-
-    const int textureWidth = 512;
-    char* textureBuffer = new char[textureWidth  * textureWidth];
-
-    //for(char glyphIdx = 0; glyphIdx < 128; ++glyphIdx){
-    for(char glyphIdx = 32; glyphIdx < 127; ++glyphIdx){
-        FT_UInt glyphIndex = FT_Get_Char_Index(face, glyphIdx);
-        FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT);
-        FT_Error error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-
-        if(col + face->glyph->bitmap.width + padding >= 512){
-            col = padding;
-            row += fontSize;
-        }
-
-        for(unsigned int y = 0; y < face->glyph->bitmap.rows; ++y){
-            for(unsigned int x = 0; x < face->glyph->bitmap.width; ++x){
-                textureBuffer[(row + y) * textureWidth + col + x] = face->glyph->bitmap.buffer[y * face->glyph->bitmap.width + x];
-            }
-        }
-
-        Character character = {
-            //texture, 
-            {col, row},
-            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            (unsigned int)face->glyph->advance.x
-        };
-        characters.insert(std::pair<char, Character>(glyphIdx, character));
-
-        col += face->glyph->bitmap.width + padding;
-    }
-
-    FT_Done_Face(face);
-    //FT_Done_FreeType(ft);
-
-    Texture2DSetting setting;
-    setting.mipmap = false;
-    setting.textureFormat = TextureFormat::RED8;
-    fontAtlas = Texture2D::CreateFromRaw(
-        textureBuffer, 
-        sizeof(char) * (textureWidth * textureWidth), 
-        textureWidth, textureWidth, 
-        TextureDataType::UnsignedByte, setting
-    );
-    Assert(fontAtlas != nullptr);
-
-    delete textureBuffer;
-    path = inPath;
-    return true;*/
-
-    path = inPath;
+    /*path = inPath;
 
     using namespace msdf_atlas;
     
@@ -285,12 +192,22 @@ bool Font::LoadFromFile(const std::string& inPath){
             //packer.setScale(2);
             // Set atlas parameters:
             // setDimensions or setDimensionsConstraint to find the best value
-            packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
-            // setScale for a fixed size or setMinimumScale to use the largest that fits
-            packer.setMinimumScale(40.0*1);
-            // setPixelRange or setUnitRange
-            packer.setPixelRange(2.0*1);
+            
+            // === Derived from fontSize ===
+            float fontSize = 32;
+            float scale      = fontSize;
+            float pixelRange = std::clamp(fontSize * 0.20f, 4.0f, 16.0f);
+            int atlasSize    = NextPow2((int)(fontSize * 64));
+            packer.setDimensions(atlasSize, atlasSize);
+            packer.setMinimumScale(scale);
+            packer.setPixelRange(pixelRange);
             packer.setMiterLimit(1.0);
+
+            //packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
+            //packer.setMinimumScale(40.0);
+            //packer.setPixelRange(2.0*1);
+            //packer.setMiterLimit(1.0);
+
             // Compute atlas layout - pack glyphs
             packer.pack(data->glyphs.data(), data->glyphs.size());
             //packer.setDimensions(2048, 2048);
@@ -333,6 +250,152 @@ bool Font::LoadFromFile(const std::string& inPath){
         }
         msdfgen::deinitializeFreetype(ft);
     }
+    return success;*/
+
+    path = inPath;
+    using namespace msdf_atlas;
+
+    data = new MSDFData();
+    bool success = false;
+
+    if(msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype()){
+        if(msdfgen::FontHandle *font = msdfgen::loadFont(ft, path.c_str())){
+
+            data->fontGeometry = FontGeometry(&data->glyphs);
+            data->fontGeometry.loadCharset(font, 1.0f, Charset::ASCII);
+
+            // Edge coloring only needed for MSDF/SDF
+            if(settings.type == FontType::SDF || settings.type == FontType::MSDF){
+                const double maxCornerAngle = 3.0;
+                for(GlyphGeometry &glyph : data->glyphs){
+                    glyph.edgeColoring(
+                        &msdfgen::edgeColoringInkTrap,
+                        maxCornerAngle, 0
+                    );
+                }
+            }
+
+            // === Derived from font size ===
+            float fontSize = settings.pixelSize;
+            float scale = fontSize;
+            float pixelRange = std::clamp(fontSize * 0.20f, 4.0f, 16.0f);
+            int atlasSize = NextPow2((int)(fontSize * (64/2)));
+
+            TightAtlasPacker packer;
+
+            packer.setDimensions(atlasSize, atlasSize);
+            //packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
+            packer.setMinimumScale(scale);
+            packer.setPixelRange(pixelRange);
+            packer.setMiterLimit(1.0);
+
+            /*packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
+            packer.setMinimumScale(40.0);
+            packer.setPixelRange(2.0*1);
+            packer.setMiterLimit(1.0);*/
+
+            // Compute atlas layout
+            packer.pack(data->glyphs.data(), data->glyphs.size());
+
+            int width = 0, height = 0;
+            packer.getDimensions(width, height);
+
+            TextureFormat texFormat;
+            int channelCount = 1;
+
+            // --------------------------
+            // SELECT GENERATOR BY TYPE
+            // --------------------------
+            if(settings.type == FontType::Raster){
+                // RASTER MODE
+                ImmediateAtlasGenerator<
+                    float,
+                    1,
+                    scanlineGenerator,
+                    BitmapAtlasStorage<byte,1>
+                > generator(width, height);
+
+                generator.setThreadCount(4);
+                generator.generate(data->glyphs.data(), data->glyphs.size());
+
+                auto bitmap = (msdfgen::BitmapConstRef<byte,1>)generator.atlasStorage();
+                texFormat = TextureFormat::RED8;
+                channelCount = 1;
+
+                Texture2DSetting setting;
+                setting.mipmap = false;
+                setting.textureFormat = texFormat;
+
+                fontAtlas = Texture2D::CreateFromRaw(
+                    (void*)bitmap.pixels,
+                    bitmap.width * bitmap.height * channelCount,
+                    bitmap.width, bitmap.height,
+                    TextureDataType::UnsignedByte,
+                    setting
+                );
+            } else if(settings.type == FontType::SDF){
+                // SDF MODE
+                ImmediateAtlasGenerator<
+                    float,
+                    1,
+                    sdfGenerator,
+                    BitmapAtlasStorage<byte,1>
+                > generator(width, height);
+
+                generator.setThreadCount(4);
+                generator.generate(data->glyphs.data(), data->glyphs.size());
+
+                auto bitmap = (msdfgen::BitmapConstRef<byte,1>)generator.atlasStorage();
+                texFormat = TextureFormat::RED8;
+                channelCount = 1;
+
+                Texture2DSetting setting;
+                setting.mipmap = false;
+                setting.textureFormat = texFormat;
+
+                fontAtlas = Texture2D::CreateFromRaw(
+                    (void*)bitmap.pixels,
+                    bitmap.width * bitmap.height * channelCount,
+                    bitmap.width, bitmap.height,
+                    TextureDataType::UnsignedByte,
+                    setting
+                );
+            } else if(settings.type == FontType::MSDF){
+                // MSDF MODE
+                ImmediateAtlasGenerator<
+                    float,
+                    3,
+                    msdfGenerator,
+                    BitmapAtlasStorage<byte,3>
+                > generator(width, height);
+
+                generator.setThreadCount(4);
+                generator.generate(data->glyphs.data(), data->glyphs.size());
+
+                auto bitmap = (msdfgen::BitmapConstRef<byte,3>)generator.atlasStorage();
+                texFormat = TextureFormat::RGB8;
+                channelCount = 3;
+
+                Texture2DSetting setting;
+                setting.mipmap = false;
+                setting.textureFormat = texFormat;
+
+                fontAtlas = Texture2D::CreateFromRaw(
+                    (void*)bitmap.pixels,
+                    bitmap.width * bitmap.height * channelCount,
+                    bitmap.width, bitmap.height,
+                    TextureDataType::UnsignedByte,
+                    setting
+                );
+            }
+
+            success = true;
+            msdfgen::destroyFont(font);
+        }
+
+        msdfgen::deinitializeFreetype(ft);
+    }
+
     return success;
 }
 

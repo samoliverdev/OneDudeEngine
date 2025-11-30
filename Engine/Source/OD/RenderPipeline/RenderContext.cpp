@@ -1693,7 +1693,6 @@ void RenderContext::UpdateRenderData(){
         renderData[i].clear();
     }
 
-    auto& executor = scene->GetExecutor();
     auto& taskflow = scene->GetTaskflow();
 
     {
@@ -1745,8 +1744,7 @@ void RenderContext::UpdateRenderData(){
         data.customData = c.customData;
         #endif
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     {
@@ -1806,8 +1804,7 @@ void RenderContext::UpdateRenderData(){
             _i += 1;
         }
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     {
@@ -1855,8 +1852,7 @@ void RenderContext::UpdateRenderData(){
         data.customData = c.customData;
         #endif
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     {
@@ -1932,8 +1928,7 @@ void RenderContext::UpdateRenderData(){
             _i += 1;
         }
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     {
@@ -1980,8 +1975,7 @@ void RenderContext::UpdateRenderData(){
         data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;
         data.SetFlag(RenderData::Flag::RenderShadow, false);// .renderShadow = false;
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     ///////////////////////////////////////////////
@@ -2033,8 +2027,7 @@ void RenderContext::UpdateRenderData(){
         data.customData = c.customData;
         #endif
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     {
@@ -2097,8 +2090,7 @@ void RenderContext::UpdateRenderData(){
             _i += 1;
         }
     });
-    executor.run(taskflow).wait(); 
-    taskflow.clear();
+    scene->RunAllTaskAndSync();
     }
 
     /////////////////////////////////////////////

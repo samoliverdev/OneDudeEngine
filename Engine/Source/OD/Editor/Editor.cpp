@@ -356,7 +356,7 @@ void Editor::OnUpdate(float deltaTime){
         }
 
         editorCam.OnUpdate();
-        editorCam.cam.isDebug = true;
+        editorCam.cam.type = Camera::Type::SceneView;
         editorCam.cam.SetPerspective(45, 0.1f, 20000.0f, width, height);
         editorCam.cam.viewPos = editorCam.transform.Position();
         editorCam.cam.view = math::inverse(editorCam.transform.GetModelMatrix());
@@ -396,7 +396,7 @@ void Editor::OnUpdate(float deltaTime){
     HandleShotcuts();
 
     assetPrevieweCam.OnUpdate();
-    assetPrevieweCam.cam.isDebug = true;
+    assetPrevieweCam.cam.type = Camera::Type::Preview;
     assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
     assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.Position();
     assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetModelMatrix());

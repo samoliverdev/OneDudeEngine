@@ -2,12 +2,15 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
-#include "Texture.h"
 #include "OD/Serialization/Serialization.h"
 #include <map>
 #include <msdf-atlas-gen.h>
 
 namespace sol{ class state; }
+
+namespace OD{
+    class Texture2D;
+};
 
 namespace OD{
     
@@ -30,6 +33,21 @@ struct OD_API TextParams{
     float lineSpacing = 0.0f;
 };
 
+enum class FontType { 
+    Raster, SDF, MSDF 
+};
+
+struct OD_API FontSettings{
+    float pixelSize = 16.0f;
+    FontType type = FontType::MSDF;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, pixelSize);
+        ArchiveDumpNVP(ar, type);
+    }
+};
+
 class OD_API Font: public Asset{
     friend class OpenGLGraphicsDevice;
 public:
@@ -47,7 +65,7 @@ public:
 
     void OnGui() override;
     
-    static Ref<Font> CreateFromFile(const std::string& filepath);
+    static Ref<Font> CreateFromFile(const std::string& filepath, const FontSettings& settings = {});
     
     bool LoadFromFile(const std::string& path) override;
 
@@ -67,12 +85,16 @@ public:
         ArchiveDump(ar, CEREAL_NVP(path));
     }*/
 
+    inline const FontSettings Settings(){ return settings; }
+    inline void Settings(const FontSettings& insettings){ settings = insettings; }
+
     inline MSDFData* Data(){ return data; }
 
 private:
     MSDFData* data;
     std::map<char, Character> characters; //Fixme opengl texture memory leak
     Ref<Texture2D> fontAtlas;
+    FontSettings settings;
 };
 
 }

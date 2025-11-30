@@ -1,13 +1,16 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
-#include "Module.h"
 #include "Action.h"
 #include <string>
 #include <vector>
 #include <functional>
 
 namespace sol{ class state; }
+
+namespace OD{
+    class Module;
+}
 
 namespace OD {
     
@@ -53,8 +56,7 @@ public:
     static void AddModule(Args&&... args) {
         _AddModule(new T(std::forward<Args>(args)...));
     }
-
-
+    
     static const std::vector<Module*>& GetAllModules();
     
     template<typename T> static T* GetModuleByType(){

@@ -112,6 +112,7 @@ public:
     static bool IsMouseButtonUp(MouseButton button);
 
     static void GetMousePosition(double* x, double* y);
+    static Vector2 GetMouseWheelMove();
 
     static Vector2 GetMouseDelta();
 

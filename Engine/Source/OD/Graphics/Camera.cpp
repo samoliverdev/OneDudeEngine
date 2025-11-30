@@ -32,6 +32,14 @@ void Camera::SetPerspective(float fov, float near, float far, int width, int hei
 }
 
 void Camera::CreateLuaBind(sol::state& lua){
+    lua.new_enum(
+        "CameraType",
+        "Stand", Camera::Type::Stand,
+        "SceneView", Camera::Type::SceneView,
+        "Preview", Camera::Type::Preview,
+        "Reflection", Camera::Type::Reflection
+    );
+
     lua.new_usertype<Camera>(
         "Camera",
         "nearClip", &Camera::nearClip,
@@ -42,7 +50,7 @@ void Camera::CreateLuaBind(sol::state& lua){
         "cleanColor", &Camera::cleanColor,
         "viewPos", &Camera::viewPos,
         "viewportRect", &Camera::viewportRect,
-        "isDebug", &Camera::isDebug
+        "type", &Camera::type
     );
 }
 

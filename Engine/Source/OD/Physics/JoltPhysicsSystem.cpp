@@ -3598,8 +3598,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 		
 	}
 
-	scene->GetExecutor().run(scene->GetTaskflow()).wait();
-	scene->GetTaskflow().clear();
+	scene->RunAllTaskAndSync();
 
 	if(scene->Running() == true){
 		if(EnableInterpolation) PreInterpolate();
@@ -3836,8 +3835,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		}
 
 		//Info: Just for safety
-		scene->GetExecutor().run(scene->GetTaskflow()).wait();
-		scene->GetTaskflow().clear();
+		scene->RunAllTaskAndSync();
 
 		return;
 	}

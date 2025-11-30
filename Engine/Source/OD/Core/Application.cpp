@@ -6,6 +6,7 @@
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/CoreModulesStartup.h"
 #include "OD/Serialization/SerializationFull.h"
+#include "Module.h"
 #include "Project.h"
 #include "ImGui.h"
 #include "Input.h"
@@ -348,8 +349,8 @@ void Application::_AddModule(Module* module){
     modules.push_back(module);
     modules.back()->OnInit();
 
-    auto SortFunc = [](Module* a, Module* b){ return a->ExecutionSortPriority() < b->ExecutionSortPriority(); };
-    std::stable_sort(modules.begin(), modules.end(), SortFunc);
+    //auto SortFunc = [](Module* a, Module* b){ return a->ExecutionSortPriority() < b->ExecutionSortPriority(); };
+    //std::stable_sort(modules.begin(), modules.end(), SortFunc);
 }
 
 const std::vector<Module*>& Application::GetAllModules(){

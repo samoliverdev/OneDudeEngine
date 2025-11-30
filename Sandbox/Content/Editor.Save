@@ -6,6 +6,7 @@
         "viewportPanel.show": false,
         "profilePanel.show": true,
         "rendererStatsPanel.show": true,
-        "globalSettingsPanel.show": false
+        "globalSettingsPanel.show": false,
+        "runtimeInfoPanel.show": true
     }
 }

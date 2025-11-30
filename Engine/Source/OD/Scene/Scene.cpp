@@ -97,8 +97,7 @@ void TransformComponent::UpdateAllTransformMatrix(Scene& scene){
         }
     }
 
-    scene.GetExecutor().run(scene.GetTaskflow()).wait();
-    scene.GetTaskflow().clear();
+    scene.RunAllTaskAndSync();
     #endif
 }
 
@@ -1388,6 +1387,19 @@ void EntityHandle::CreateLuaBind(sol::state& lua){
         "GetEntity", &EntityHandle::GetEntity,
         "IsValid", &EntityHandle::IsValid
     );
+}
+
+/*tf::Executor& Scene::GetExecutor(){ 
+    return executor; 
+}*/
+
+tf::Taskflow& Scene::GetTaskflow(){ 
+    return taskflow; 
+}
+
+void Scene::RunAllTaskAndSync(){
+    executor.run(taskflow).wait();
+    taskflow.clear();
 }
 
 #pragma endregion

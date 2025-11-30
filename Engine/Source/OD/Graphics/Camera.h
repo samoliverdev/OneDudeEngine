@@ -8,6 +8,10 @@ namespace sol{ class state; }
 namespace OD {
 
 struct OD_API Camera {
+    enum class Type: std::int8_t { 
+        Stand, SceneView, Preview, Reflection
+    };
+
     Matrix4 view = Matrix4Identity;
     Matrix4 projection = Matrix4Identity;
     float nearClip;
@@ -19,7 +23,7 @@ struct OD_API Camera {
     Vector3 viewPos;
     Frustum frustum;
     Vector4 viewportRect = Vector4(0, 0, 1, 1);
-    bool isDebug = false;
+    Type type = Type::Stand;
 
     void LookAt(Vector3 eye, Vector3 center,Vector3 up);
     void SetOrtho(float scale, float near, float far, int width, int height);

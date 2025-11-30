@@ -111,8 +111,7 @@ void ScriptSystem::OnEnd(Scene& scene){
 void ScriptSystem::Update(Scene& scene){
     {
     OD_PROFILE_SCOPE("ScriptSystem::Update::Sync");
-    scene.GetExecutor().run(scene.GetTaskflow()).wait(); 
-    scene.GetTaskflow().clear();
+    scene.RunAllTaskAndSync();
     }
 
     OD_PROFILE_SCOPE("ScriptSystem::Update");
@@ -137,8 +136,7 @@ void ScriptSystem::Update(Scene& scene){
 void ScriptSystem::LateUpdate(Scene& scene){
     {
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate::Sync");
-    scene.GetExecutor().run(scene.GetTaskflow()).wait(); 
-    scene.GetTaskflow().clear();
+    scene.RunAllTaskAndSync();
     }
 
     OD_PROFILE_SCOPE("ScriptSystem::LateUpdate");

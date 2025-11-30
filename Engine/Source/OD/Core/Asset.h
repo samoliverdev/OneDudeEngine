@@ -2,11 +2,9 @@
 #include "OD/Defines.h"
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Utils/Allocators.h"
 #include <entt/entt.hpp>
 #include <mutex>
-
-#include "OD/Utils/Allocators.h"
-
 #include <efsw/efsw.hpp>
 
 namespace OD{

@@ -379,8 +379,11 @@ public:
 
     static void CreateLuaBind(sol::state& lua);
 
-    inline auto& GetExecutor(){ return executor; }
-    inline auto& GetTaskflow(){ return taskflow; }
+    void RunAllTaskAndSync();
+    //tf::Executor& GetExecutor();
+    tf::Taskflow& GetTaskflow();
+    //inline auto& GetExecutor(){ return executor; }
+    //inline auto& GetTaskflow(){ return taskflow; }
 private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
