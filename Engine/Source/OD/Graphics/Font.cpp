@@ -282,13 +282,14 @@ bool Font::LoadFromFile(const std::string& inPath){
             }
             // TightAtlasPacker class computes the layout of the atlas.
             TightAtlasPacker packer;
+            //packer.setScale(2);
             // Set atlas parameters:
             // setDimensions or setDimensionsConstraint to find the best value
             packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
             // setScale for a fixed size or setMinimumScale to use the largest that fits
-            packer.setMinimumScale(40.0);
+            packer.setMinimumScale(40.0*1);
             // setPixelRange or setUnitRange
-            packer.setPixelRange(2.0);
+            packer.setPixelRange(2.0*1);
             packer.setMiterLimit(1.0);
             // Compute atlas layout - pack glyphs
             packer.pack(data->glyphs.data(), data->glyphs.size());
@@ -471,11 +472,11 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text, const TextParams
 
     const float spaceAdvance = fontGeometry.getGlyph(' ')->getAdvance();
 
-    for (size_t i = 0; i < text.size(); i++) {
+    for(size_t i = 0; i < text.size(); i++){
         char character = text[i];
-        if (character == '\r') continue;
+        if(character == '\r') continue;
 
-        if (character == '\n') {
+        if(character == '\n'){
             maxX = std::max(maxX, x);
             x = 0;
             y += fsScale * metrics.lineHeight + textParams.lineSpacing;
@@ -483,9 +484,9 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text, const TextParams
             continue;
         }
 
-        if (character == ' ') {
+        if(character == ' '){
             float advance = spaceAdvance;
-            if (i < text.size() - 1) {
+            if(i < text.size() - 1){
                 char nextCharacter = text[i + 1];
                 double dAdvance;
                 fontGeometry.getAdvance(dAdvance, character, nextCharacter);
@@ -502,15 +503,15 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text, const TextParams
         }
 
         auto glyph = fontGeometry.getGlyph(character);
-        if (!glyph) glyph = fontGeometry.getGlyph('?');
-        if (!glyph) continue;
+        if(!glyph) glyph = fontGeometry.getGlyph('?');
+        if(!glyph) continue;
 
         double pl, pb, pr, pt;
         glyph->getQuadPlaneBounds(pl, pb, pr, pt);
         double width = (pr - pl) * fsScale;
 
         double advance = glyph->getAdvance();
-        if (i < text.size() - 1) {
+        if(i < text.size() - 1){
             char nextCharacter = text[i + 1];
             fontGeometry.getAdvance(advance, character, nextCharacter);
         }
@@ -522,6 +523,79 @@ TextMetrics Font::CalculateTextMetrics(const std::string& text, const TextParams
     double height = lineCount * fsScale * metrics.lineHeight;
 
     return { Vector2((float)maxX, (float)height), lineCount, metrics.ascenderY, metrics.descenderY };
+}
+
+TextMetrics Font::CalculateTextMetrics(const std::string& text, float pixelSize, const TextParams& params){
+    const auto& fontGeometry = data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+
+    // EM → Pixel conversion scale
+    const double pxScale = (double)pixelSize / (metrics.ascenderY - metrics.descenderY);
+
+    double x = 0.0;
+    double maxX = 0.0;
+    int lineCount = 1;
+
+    // Get space width (in EM units)
+    const double spaceAdvanceEM = fontGeometry.getGlyph(' ')->getAdvance();
+
+    for(size_t i = 0; i < text.size(); i++){
+
+        char c = text[i];
+        if (c == '\r') continue;
+
+        // New line
+        if (c == '\n') {
+            maxX = std::max(maxX, x);
+            x = 0.0;
+            lineCount++;
+            continue;
+        }
+
+        // Space
+        if (c == ' ') {
+            double adv = spaceAdvanceEM;
+            if (i < text.size() - 1) {
+                double kerned;
+                fontGeometry.getAdvance(kerned, c, text[i+1]);
+                adv = kerned;
+            }
+            x += adv;
+            continue;
+        }
+
+        // Tab = 4 spaces
+        if (c == '\t') {
+            x += 4.0 * spaceAdvanceEM;
+            continue;
+        }
+
+        // Glyph
+        const auto* glyph = fontGeometry.getGlyph(c);
+        if (!glyph) glyph = fontGeometry.getGlyph('?');
+        if (!glyph) continue;
+
+        double adv = glyph->getAdvance();
+        if (i < text.size() - 1) {
+            fontGeometry.getAdvance(adv, c, text[i + 1]);
+        }
+
+        x += adv;
+    }
+
+    maxX = std::max(maxX, x);
+
+    // Convert EM → pixels
+    double widthPx  = maxX * pxScale;
+    double heightPx = (metrics.lineHeight * lineCount) * pxScale +
+                      (lineCount - 1) * params.lineSpacing;
+
+    return {
+        Vector2((float)widthPx, (float)heightPx),
+        lineCount,
+        metrics.ascenderY,
+        metrics.descenderY
+    };
 }
 
 void Font::CreateLuaBind(sol::state& lua){

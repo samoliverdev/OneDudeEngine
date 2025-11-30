@@ -60,14 +60,17 @@ public:
     static void CreateLuaBind(sol::state& lua);
 
     TextMetrics CalculateTextMetrics(const std::string& text, const TextParams& params = {});
+    TextMetrics CalculateTextMetrics(const std::string& text, float pixelSize, const TextParams& params = {});
 
     /*template <class Archive>
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(path));
     }*/
 
+    inline MSDFData* Data(){ return data; }
+
 private:
-    struct MSDFData* data;
+    MSDFData* data;
     std::map<char, Character> characters; //Fixme opengl texture memory leak
     Ref<Texture2D> fontAtlas;
 };
