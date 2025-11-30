@@ -1,10 +1,10 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Platform/OpenGL/GL.h"
 #include "SubShader.h"
 #include <set>
 #include <vector>
 #include <unordered_map>
-#include "OD/Platform/OpenGL/GL.h"
 
 namespace OD{
 

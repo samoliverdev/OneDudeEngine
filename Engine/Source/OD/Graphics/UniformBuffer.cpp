@@ -1,5 +1,6 @@
 #include "UniformBuffer.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 #include "OD/Defines.h"
 
 namespace OD{

@@ -10,6 +10,7 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Serialization/ImGuiArchive.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Mesh.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/Editor/Editor.h"

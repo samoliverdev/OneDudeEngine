@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"

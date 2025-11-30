@@ -1,10 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Graphics/Texture.h"
-#include "OD/Graphics/Material.h"
 #include "OD/Scene/Scene.h"
-#include "Heightmap.h"
+
 
 struct OD_API MeshBorders{
     bool left = false;
@@ -54,6 +52,10 @@ public:
 namespace OD{
 
 class Mesh;
+
+struct Heightmap;
+class Texture2D;
+class Material; 
 
 struct OD_API TerrainComponent{
     friend class TerrainSystem;

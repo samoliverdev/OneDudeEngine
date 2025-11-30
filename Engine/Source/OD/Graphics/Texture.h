@@ -2,7 +2,6 @@
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Serialization/Serialization.h"
-
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 

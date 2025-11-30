@@ -4,7 +4,6 @@
 #include "OD/Core/Color.h"
 #include "Camera.h"
 #include "RendererTypes.h"
-//#include "Graphics.h"
 #include "Framebuffer.h"
 #include "Texture.h"
 #include "SubShader.h"
@@ -57,6 +56,8 @@ public:
     virtual void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h) = 0;
     virtual void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h) = 0;
 
+    virtual void EnableScissor(){}
+    virtual void DisableScissor(){}
     virtual void Scissor(unsigned int x, unsigned int y, int w, int h){}
 
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;

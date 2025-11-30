@@ -11,6 +11,7 @@
 namespace OD{
 
 class Scene;
+class UniformBuffer;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};

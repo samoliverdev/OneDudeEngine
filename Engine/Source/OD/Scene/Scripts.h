@@ -1,9 +1,6 @@
 #pragma once
-#include "OD/Defines.h"
 #include "Scene.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Core/ImGui.h"
-#include <stdlib.h>
 
 namespace OD{
 

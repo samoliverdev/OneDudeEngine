@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/ImGui.h"

@@ -2,9 +2,11 @@
 #include "Ultis/Ultis.h"
 #include <OD/Core/Application.h>
 #include <OD/Core/Instrumentor.h>
+#include <OD/Core/ImGui.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Shader.h>
 #include <OD/Graphics/Texture.h>
+#include <OD/Graphics/InstancingBuffer.h>
 #include <OD/Graphics/Graphics.h>
 
 void LoadModelSample::OnInit(){

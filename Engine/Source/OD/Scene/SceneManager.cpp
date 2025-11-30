@@ -3,6 +3,7 @@
 #include "OD/Core/Lua.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/GlobalSettings.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
 

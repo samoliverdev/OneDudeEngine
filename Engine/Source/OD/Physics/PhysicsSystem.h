@@ -1,8 +1,6 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Graphics/Mesh.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Animation/Pose.h"
 
@@ -13,6 +11,9 @@ namespace JPH{
 }
  
 namespace OD{
+
+//class Model;
+class Mesh;
 
 struct SkinnedModelRendererComponent;
 

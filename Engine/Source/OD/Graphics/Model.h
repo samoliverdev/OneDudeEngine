@@ -3,11 +3,11 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
+#include "OD/Animation/Skeleton.h"
+#include "OD/Animation/Clip.h"
 #include "Mesh.h"
 #include "Material.h"
 #include "Culling.h"
-#include "OD/Animation/Skeleton.h"
-#include "OD/Animation/Clip.h"
 
 namespace OD{
 

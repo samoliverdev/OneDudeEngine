@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Base.h"
+#include "OD/Core/Asset.h"
 #include "OD/Platform/OpenGL/GL.h"
 
 namespace OD{

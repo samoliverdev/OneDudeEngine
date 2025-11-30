@@ -5,7 +5,6 @@
 #include "Camera.h"
 #include "RendererTypes.h"
 #include "Framebuffer.h"
-#include "GraphicsDevice.h"
 
 //#define EnableExperimentalPerDrawCustomData 1
 
@@ -19,6 +18,7 @@ class Model;
 class Framebuffer;
 class Font;
 class Material;
+class InstancingBuffer;
 struct TextParams;
 
 struct GraphicsStats{
@@ -92,6 +92,8 @@ public:
     static void SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
     static void GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h);
 
+    static void EnableScissor();
+    static void DisableScissor();
     static void Scissor(unsigned int x, unsigned int y, int w, int h);
 
     static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);

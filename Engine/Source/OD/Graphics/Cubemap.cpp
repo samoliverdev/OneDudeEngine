@@ -1,6 +1,7 @@
 #include "Cubemap.h"
 #include "SubShader.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 #include "OD/Core/Lua.h"
 #include <stb/stb_image.h>
 #include <vector>

@@ -3,9 +3,8 @@
 #include "OD/Core/Transform.h"
 #include "OD/Core/Asset.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
 #include "OD/Graphics/Camera.h"
-#include "OD/Core/Module.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/Undo.h"
 #include <unordered_map>
@@ -13,7 +12,9 @@
 #include <functional>
 #include <algorithm>
 #include <entt/entt.hpp>
-#include <taskflow/taskflow.hpp> 
+#include <taskflow/taskflow.hpp>
+
+namespace sol{ class state; }
 
 namespace OD {
 

@@ -1,4 +1,5 @@
 #include "Terrain.h"
+#include "Heightmap.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"

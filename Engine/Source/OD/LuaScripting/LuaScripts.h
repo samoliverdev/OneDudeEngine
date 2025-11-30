@@ -1,8 +1,8 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Core/Lua.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Core/Lua.h"
+#include "OD/Core/Module.h"
 
 namespace OD{
 

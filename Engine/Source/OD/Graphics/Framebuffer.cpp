@@ -1,5 +1,6 @@
 #include "Framebuffer.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 #include "OD/Core/Lua.h"
 #include "OD/Defines.h"
 #include "SubShader.h"

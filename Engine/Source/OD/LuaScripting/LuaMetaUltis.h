@@ -1,8 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Base.h"
-#include <entt/entt.hpp>
 #include "OD/Core/Lua.h"
+#include <entt/entt.hpp>
 
 namespace OD{
 

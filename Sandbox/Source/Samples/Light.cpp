@@ -2,6 +2,7 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Graphics.h>
 #include <OD/Core/Application.h>
+#include <OD/Core/ImGui.h>
 #include <assert.h>
 
 void LightSample::OnInit(){

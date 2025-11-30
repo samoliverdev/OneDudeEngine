@@ -1,5 +1,6 @@
 #pragma once
 #include <OD/Core/Module.h>
+#include <OD/Core/Transform.h>
 #include <OD/Graphics/Camera.h>
 #include "Ultis/CameraMovement.h"
 
@@ -7,6 +8,8 @@ namespace OD{
     class Model;
     class SubShader;
     class Mesh;
+    class Framebuffer;
+    class Material;
 }
 
 using namespace OD;

@@ -1,9 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
-#include <vector>
-
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
+#include <vector>
 
 namespace sol{ class state; }
 

@@ -359,8 +359,6 @@ void OpenGLGraphicsDevice::Initialize(){
     prefilterMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
     brdfMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/brdf.glsl"));
     equirectangularToCubemapMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl"));
-
-    glEnable(GL_SCISSOR_TEST);
 }
 
 void OpenGLGraphicsDevice::Shutdown(){
@@ -1709,7 +1707,7 @@ void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* dst, Material& ma
 
 void OpenGLGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
     glViewport(x, y, w, h);
-    glScissor(x, y, w, h);
+    //glScissor(x, y, w, h);
 }
 
 void OpenGLGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){
@@ -1719,6 +1717,14 @@ void OpenGLGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned
     *y = value[1];
     *w = value[2]; 
     *h = value[3];
+}
+
+void OpenGLGraphicsDevice::EnableScissor(){
+    glEnable(GL_SCISSOR_TEST);
+}
+
+void OpenGLGraphicsDevice::DisableScissor(){
+    glDisable(GL_SCISSOR_TEST);
 }
 
 void OpenGLGraphicsDevice::Scissor(unsigned int x, unsigned int y, int w, int h){
