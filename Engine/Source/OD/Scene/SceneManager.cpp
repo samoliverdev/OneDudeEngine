@@ -59,6 +59,7 @@ void SceneManager::OnUpdate(float deltaTime){
         scene->Load(toLoad.c_str());
         scene->Start();
         toLoad = "";
+        isLoading = false;
     }
 
     if(GetActiveScene() == nullptr) return;
@@ -74,6 +75,15 @@ void SceneManager::OnRender(float deltaTime){
 
 void SceneManager::OnGUI(){}
 void SceneManager::OnResize(int width, int height){}
+
+void SceneManager::LoadScene(const std::string& path){ 
+    toLoad = path; 
+    isLoading = true;
+}
+
+bool SceneManager::IsLoading(){ 
+    return isLoading; 
+}
 
 SceneManager::SceneState SceneManager::GetSceneState(){ 
     return sceneState; 

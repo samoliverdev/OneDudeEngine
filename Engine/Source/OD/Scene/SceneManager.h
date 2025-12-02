@@ -12,7 +12,8 @@ public:
 
     static SceneManager& Get();
 
-    inline void LoadScene(const std::string& path){ toLoad = path; }
+    void LoadScene(const std::string& path);
+    bool IsLoading();
 
     SceneState GetSceneState();
     inline bool InEditor();
@@ -91,6 +92,7 @@ private:
     Scene* activeScene;
 
     std::string toLoad;
+    bool isLoading = false;
 
     std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;
     std::unordered_map<std::string, SerializeFuncs> componentsSerializer;
