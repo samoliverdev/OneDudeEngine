@@ -90,6 +90,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, renderTargets);
         ArchiveDumpNVP(ar, meshs);
+        ArchiveDumpNVP(ar, materials);
         ArchiveDumpNVP(ar, matrixs);
         ArchiveDumpNVP(ar, skeleton);
     }

@@ -50,16 +50,16 @@ void AssetPackingSample::OnInit(){
     model->Save("Sandbox/Model.modelasset", Asset::SaveType::AssetBinary);
     model->Save("Sandbox/Model.modelbin", Asset::SaveType::FinalBinary);
 
-    /*Ref<Model> modelBin = AssetManager::Get().LoadAsset<Model>("Sandbox/Model.modelbin");
+    Ref<Model> modelBin = AssetManager::Get().LoadAsset<Model>("Sandbox/Model.modelbin");
     Assert(modelBin != nullptr);
-    scene->Instantiate(modelBin);*/
+    scene->Instantiate(modelBin);
 
-    Ref<Mesh> meshBin = AssetManager::Get().LoadAsset<Mesh>("Sandbox/Mesh.meshbin");
+    /*Ref<Mesh> meshBin = AssetManager::Get().LoadAsset<Mesh>("Sandbox/Mesh.meshbin");
     Assert(meshBin != nullptr);
     Entity meshEntity = scene->AddEntity("Mesh");
     MeshRendererComponent& meshRenderer = scene->AddComponent<MeshRendererComponent>(meshEntity);
     meshRenderer.mesh = meshBin;
-    meshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+    meshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));*/
 
     Application::AddModule<Editor>();
     //scene->Start();
