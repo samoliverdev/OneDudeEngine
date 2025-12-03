@@ -52,7 +52,7 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 				navmeshComponent.buildSettings,
 				navmeshComponent.mask
 			);
-			if(scene.Path() != "Memory" && scene.Running() == false){
+			if(scene.PathIsValid() && scene.Running() == false){
 				std::string savePath = scene.Path() + "_Navmesh_" + std::to_string((size_t)e) + ".navmesh";
 				navmeshComponent.navmesh->Save(savePath, Asset::SaveType::AssetBinary);
 			}

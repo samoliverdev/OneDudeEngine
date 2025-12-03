@@ -93,7 +93,21 @@ public:
         ArchiveDumpNVP(ar, materials);
         ArchiveDumpNVP(ar, matrixs);
         ArchiveDumpNVP(ar, skeleton);
-    }
+
+        /*if constexpr (Archive::is_loading()){
+            int matSize = materials.size();
+            ArchiveDumpNVP(ar, matSize);
+            for(int i = 0; i < matSize; i++){
+                Ref<Material> m = CreateRef<Material>();
+                ArchiveDump(ar, *m);
+                materials.push_back(m);
+            }
+        } else {
+            int matSize = materials.size();
+            ArchiveDumpNVP(ar, matSize);
+            for(int i = 0; i < matSize; i++) ArchiveDump(ar, *materials[i]);
+        }*/
+    }   
 
 private: 
     ModelLoadSettings settings;

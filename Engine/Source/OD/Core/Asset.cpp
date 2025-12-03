@@ -9,6 +9,12 @@ std::string& Asset::Path(){
     return path; 
 }
 
+bool Asset::PathIsValid(){
+    if(path.empty()) return false;
+    if(path[0] == '#') return false;
+    return true;
+}
+
 bool Asset::LoadFromFile(const std::string& path){ 
     return false; 
 }

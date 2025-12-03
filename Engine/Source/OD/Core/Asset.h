@@ -21,6 +21,7 @@ public:
 
     virtual ~Asset() = default; //virtual ~Asset(){}
     virtual std::string& Path();
+    bool PathIsValid();
     virtual void OnGui(){}
     virtual void Reload(){ LoadFromFile(path); }
     virtual bool Save(const std::string& outPath, SaveType type){ return false; }//INFO: Maybe Rename
@@ -28,7 +29,7 @@ public:
     virtual std::vector<std::string> GetFileAssociations();
     bool HasFileExtension(const std::string& fileExtension);
 protected:
-    std::string path = "Memory";
+    std::string path = "#Memory";
 };
 
 class OD_API AssetTypesDB{

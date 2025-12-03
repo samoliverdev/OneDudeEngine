@@ -34,7 +34,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
             }
         }
 
-        if(scene.Path() == "Memory") return;
+        if(scene.PathIsValid() == false) return;
 
         ImGui::Spacing();
 
@@ -66,11 +66,11 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
         }
     }   
 
-    if(terrain.heightmap->Path() != "Memory"){
+    if(terrain.heightmap->PathIsValid() == true){
         if(ImGui::Button("Save Data")){
             terrain.heightmap->Save(terrain.heightmap->Path(), Asset::SaveType::AssetBinary);
         }
-    } else if(scene.Path() != "Memory"){
+    } else if(scene.PathIsValid() == true){
         if(ImGui::Button("Save Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
             terrain.heightmap->Save(savePath, Asset::SaveType::AssetBinary);

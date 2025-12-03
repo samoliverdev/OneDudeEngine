@@ -4,7 +4,9 @@
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/Input.h"
 #include "OD/Core/Application.h"
+#include "OD/Core/Project.h"
 #include "OD/Graphics/GraphicsDevice.h"
+#include "OD/Scene/SceneManager.h"
 #include <imgui/imgui.h>
 #include <ImGuizmo/ImGuizmo.h>
 
@@ -50,6 +52,31 @@ void UpdateFpsCounter(GLFWwindow* window){
         glfwSetWindowTitle( window, tmp );
         #endif
         frame_count = 0;
+    }
+    frame_count++;
+}
+
+void UpdateWindowTitle(GLFWwindow* window){
+    static double previous_seconds;
+    static int frame_count;
+    double current_seconds = glfwGetTime();
+    double elapsed_seconds = current_seconds - previous_seconds;
+    if(elapsed_seconds > 0.25){
+        previous_seconds = current_seconds;
+        double fps = (double)frame_count / elapsed_seconds;
+        frame_count = 0;
+
+        char tmp[128*4];
+        sprintf(
+            tmp, 
+            "%s - %s - Opengl - Fps: %.2f", 
+            ProjectManager::GetActiveProject() != nullptr ? ProjectManager::GetActiveProject()->name.c_str() : "None Project", 
+            SceneManager::Get().GetActiveScene() != nullptr ? SceneManager::Get().GetActiveScene()->Path().c_str() : "None Scene",
+            fps
+        );
+        #if !defined(__EMSCRIPTEN__)
+        glfwSetWindowTitle( window, tmp );
+        #endif
     }
     frame_count++;
 }
@@ -279,7 +306,8 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
 void Platform::PreUpdate(){
     OD_PROFILE_SCOPE("Platform::PreUpdate");
-    UpdateFpsCounter(window);
+    //UpdateFpsCounter(window);
+    UpdateWindowTitle(window);
     //imguiOnPreUpdate();
 }
 
