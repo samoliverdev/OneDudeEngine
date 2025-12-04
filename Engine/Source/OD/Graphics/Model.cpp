@@ -96,6 +96,12 @@ bool Model::LoadFromFile(const std::string& path){
 	return true;
 }
 
+bool Model::LoadFromPackage(const std::string& path, Package& package){
+	bool r = Model::CreateFromPackage(*this, path, package, settings);
+	if(r == false) return false;
+	return true;
+}
+
 std::vector<std::string> Model::GetFileAssociations(){ 
 	return std::vector<std::string>{
 		".obj",
@@ -153,6 +159,55 @@ bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSetti
 
 	LogError("File Type Not Supported: %s", fileType.c_str());
 	return false;
+}
+
+class MemoryBuffer: public std::streambuf{
+public:
+    MemoryBuffer(const char* data, size_t size){
+        char* p = const_cast<char*>(data);
+        setg(p, p, p + size);
+    }
+};
+
+class MemoryInputStream: public std::istream{
+public:
+    MemoryInputStream(const char* data, size_t size)
+        :std::istream(&buffer), buffer(data, size){}
+private:
+    MemoryBuffer buffer;
+};
+
+bool Model::CreateFromPackage(Model& model, std::string const &path, Package& package, ModelLoadSettings loadSettings){
+	model.Clear();
+
+	auto getExtension = [](const std::string& path) -> std::string {
+        size_t dotPos = path.rfind('.');
+        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+    };
+
+	std::string fileType = getExtension(path);
+
+	void* data;
+	size_t dataSize;
+	if(package.ReadFileData(path.c_str(), data, dataSize) == false){
+		package.FreeFileData(data);
+		return false;
+	}
+
+	if(fileType == "modelbin"){
+		MemoryInputStream mem((char*)data, dataSize);
+		cereal::BinaryInputArchive ar(mem);
+		ar(model);//ArchiveDump(ar, *this);
+
+		model.SetPath(path);
+		return true;
+	}
+
+	#ifdef USE_ASSIMP
+	bool result = AssimpLoadModel(model, data, dataSize, fileType.c_str(), loadSettings);
+	package.FreeFileData(data);
+	return result;
+	#endif
 }
 
 bool Model::Save(const std::string& outPath, SaveType type){

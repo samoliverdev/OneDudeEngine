@@ -47,14 +47,19 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int 
 Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, Texture2DSetting settings){
     void* data = nullptr;
     size_t size;
-    if(package.ReadFile(path, data, size) == false) return nullptr;
+    if(package.ReadFileData(path, data, size) == false){
+        package.FreeFileData(data);
+        return nullptr;
+    }
 
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     if(graphicsDevice->Texture2DCreate(*tex, data, size, settings) == false){
         graphicsDevice->Texture2DDestroy(*tex);
+        package.FreeFileData(data);
         return nullptr;
     }
 
+    package.FreeFileData(data);
     return tex;
 }
 

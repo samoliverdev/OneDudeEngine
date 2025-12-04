@@ -19,6 +19,10 @@ bool Asset::LoadFromFile(const std::string& path){
     return false; 
 }
 
+bool Asset::LoadFromPackage(const std::string& path, Package& package){
+    return false;
+}
+
 std::vector<std::string> Asset::GetFileAssociations(){ 
     return std::vector<std::string>(); 
 }
@@ -30,9 +34,14 @@ bool Asset::HasFileExtension(const std::string& fileExtension){
     return false;
 }
 
+/*Ref<Package> Asset::GetPackage(){
+    return package;
+}*/
+
 bool AssetTypesDB::HasAssetByExtension(std::string fileExtension){
     return assetFuncs.find(fileExtension) != assetFuncs.end();
 }
+
 
 AssetTypesDB& AssetTypesDB::Get(){
     static AssetTypesDB global;

@@ -20,6 +20,7 @@
 #include "Samples/Joint.h"
 #include "Samples/LoadScene.h"
 #include "Samples/AssetPacking.h"
+#include "Samples/Package.h"
 #include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -31,7 +32,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 29;
+    int i = 30;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();
@@ -55,6 +56,7 @@ OD::Module* CreateMainModule(){
     if(i == 27) return new ProceduralTerrain2();
     if(i == 28) return new JointSample();
     if(i == 29) return new AssetPackingSample();
+    if(i == 30) return new PackageSample();
 
     return new BaseMeshSample();
 }

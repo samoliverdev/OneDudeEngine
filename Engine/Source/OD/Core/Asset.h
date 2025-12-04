@@ -3,6 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Utils/Allocators.h"
+#include "Package.h"
 #include <entt/entt.hpp>
 #include <mutex>
 #include <efsw/efsw.hpp>
@@ -26,10 +27,13 @@ public:
     virtual void Reload(){ LoadFromFile(path); }
     virtual bool Save(const std::string& outPath, SaveType type){ return false; }//INFO: Maybe Rename
     virtual bool LoadFromFile(const std::string& path);
+    virtual bool LoadFromPackage(const std::string& path, Package& package);
     virtual std::vector<std::string> GetFileAssociations();
     bool HasFileExtension(const std::string& fileExtension);
+    //Ref<Package> GetPackage();
 protected:
     std::string path = "#Memory";
+    //Ref<Package> package = nullptr;
 };
 
 class OD_API AssetTypesDB{

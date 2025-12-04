@@ -16,5 +16,15 @@ bool OD_API AssimpLoadModel(
     std::vector<Clip>* outClips = nullptr
 );
 
+bool OD_API AssimpLoadModel(
+    Model& model, 
+    void* data,
+    size_t dataSize,
+    const char* extHit, 
+    ModelLoadSettings loadSettings, 
+    std::vector<Clip>* outClips = nullptr
+);
+
+
 }
 #endif

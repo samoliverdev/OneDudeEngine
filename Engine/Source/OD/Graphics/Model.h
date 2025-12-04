@@ -77,12 +77,15 @@ public:
     void OnGui() override;
     void SetPath(const std::string& inPath);
     bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
     bool Save(const std::string& outPath, SaveType type) override;
     std::vector<std::string> GetFileAssociations() override;
     void SetShader(Ref<Shader> customShader);
     void Reload() override;
 
     static bool CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings = {});
+    static bool CreateFromPackage(Model& model, std::string const &path, Package& package, ModelLoadSettings loadSettings = {});
+
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
 

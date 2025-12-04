@@ -1,4 +1,4 @@
-#include "Package.h"
+#include "TarPackage.h"
 #include "OD/Base.h"
 #include <cstring>
 #include <cstddef>
@@ -103,13 +103,17 @@ const TarHeader *TarPackage::find_header(const std::string &filepath) const {
     return nullptr;
 }
 
-bool TarPackage::ReadFile(const char* path, void*& outData, size_t& outSize){
+bool TarPackage::ReadFileData(const char* path, void*& outData, size_t& outSize){
     auto h = find_header(path);
     if(h == nullptr) return false;
 
     outData = (void*)h->GetData();
     outSize = (size_t)h->GetSize();
     return true;
+}
+
+void TarPackage::FreeFileData(void*& data){
+
 }
 
 }

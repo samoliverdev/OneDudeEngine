@@ -697,5 +697,114 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
     return true;
 }
 
+bool OD_API AssimpLoadModel(
+    Model& out, 
+    void* data,
+    size_t dataSize, 
+    const char* extHit,
+    ModelLoadSettings loadSettings, 
+    std::vector<Clip>* outClips
+){
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFileFromMemory(
+        data, dataSize, 
+        aiProcess_Triangulate | 
+        aiProcess_GenSmoothNormals | 
+        //aiProcess_FlipUVs | 
+        aiProcess_CalcTangentSpace |
+        aiProcess_PopulateArmatureData
+        | aiProcess_GlobalScale 
+        //| aiProcess_OptimizeGraph 
+        , extHit
+    );
+
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
+        LogError("ERROR::ASSIMP:: %s", importer.GetErrorString());
+        return false;
+    }
+
+    float scale = loadSettings.scale;
+    if (scene->mMetaData) {
+        double fbxUnitScale = 1.0;
+        if (scene->mMetaData->Get("UnitScaleFactor", fbxUnitScale)) {
+            scale *= static_cast<float>(fbxUnitScale);
+            LogInfo("Applying automatic FBX scale: %.4f", scale);
+        }
+    }
+
+    aiMatrix4x4 scaleMatrix;
+    aiMatrix4x4::Scaling(aiVector3D(loadSettings.scale, loadSettings.scale, loadSettings.scale), scaleMatrix);
+    scene->mRootNode->mTransformation = scaleMatrix * scene->mRootNode->mTransformation;
+    
+    LoadData loadData;
+    loadData.model = &out;
+    //loadData.model->SetPath("#Memory");
+    //loadData.directory = path.substr(0, path.find_last_of('/'));
+    loadData.scene = scene;
+
+    LoadSkeleton(loadData, scene->mRootNode);
+
+    for(int i = 0; i < scene->mNumMeshes; i++){
+        Ref<Mesh> mesh = LoadMesh(loadData, scene->mMeshes[i]);
+        loadData.model->meshs.push_back(mesh);
+        loadData.meshs.push_back(scene->mMeshes[i]);
+    }
+
+    /*loadData.materialIndexRemap.resize(scene->mNumMaterials);
+    for(int i = 0; i < scene->mNumMaterials; i++){
+        Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
+        loadData.model->materials.push_back(m);
+        loadData.materials.push_back(scene->mMaterials[i]);
+        loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
+    }*/
+
+    loadData.materialIndexRemap.resize(scene->mNumMaterials);
+    std::unordered_set<unsigned int> usedMaterialIndices;
+    for(unsigned int i = 0; i < scene->mNumMeshes; ++i){
+        const aiMesh* mesh = scene->mMeshes[i];
+        if(mesh->mMaterialIndex < scene->mNumMaterials){
+            usedMaterialIndices.insert(mesh->mMaterialIndex);
+        }
+    }
+    for(unsigned int i = 0; i < scene->mNumMaterials; ++i){
+        aiString name;
+        scene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
+        LogInfo(("Material[" + std::to_string(i) + "]: " + std::string(name.C_Str())).c_str());
+
+        if(usedMaterialIndices.count(i) > 0){
+            Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
+            loadData.model->materials.push_back(m);
+            loadData.materials.push_back(scene->mMaterials[i]);
+            loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
+        }
+    }
+
+    for(int i = 0; i < scene->mNumAnimations; i++){
+        Ref<Clip> out = CreateRef<Clip>();
+        LoadAnimation(loadData, scene->mAnimations[i], *out);
+
+        Ref<ClipT> out2 = CreateRef<ClipT>(OptimizeClipT(*out));
+        loadData.model->animationClips.push_back(out2);
+    }
+
+    LoadRenderTargets(loadData, scene, scene->mRootNode);
+    LoadInvBindPose(loadData);
+
+    for(auto i: loadData.model->renderTargets){
+        Assert(i.meshIndex != -1);
+        Assert(i.meshIndex < loadData.model->meshs.size());
+
+        Assert(i.materialIndex != -1);
+        Assert(i.materialIndex < loadData.model->materials.size());
+
+        Assert(i.bindPoseIndex != -1);
+        Assert(i.bindPoseIndex < loadData.model->skeleton.GetBindPose().Size());
+    }
+
+    return true;
+}
+
+
 }
 #endif
