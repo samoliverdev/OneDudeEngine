@@ -89,12 +89,15 @@ public:
     inline void Settings(const FontSettings& insettings){ settings = insettings; }
 
     inline MSDFData* Data(){ return data; }
+    inline float MsdfPxRange(){ return msdfPxRange; }
 
 private:
     MSDFData* data;
     std::map<char, Character> characters; //Fixme opengl texture memory leak
     Ref<Texture2D> fontAtlas;
     FontSettings settings;
+
+    float msdfPxRange = 0;
 };
 
 }

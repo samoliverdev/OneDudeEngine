@@ -38,6 +38,8 @@ GLFWwindow* window;
 bool vSync = false;
 bool hidden = false;
 
+CursorState cursorState;
+
 void UpdateFpsCounter(GLFWwindow* window){
     static double previous_seconds;
     static int frame_count;
@@ -388,10 +390,15 @@ void Platform::SetWindowSize(int width, int height){
     glfwSetWindowSize(window, width, height);
 }
 
+CursorState Platform::GetCursorState(){
+    return cursorState;
+}
+
 void Platform::SetCursorState(CursorState state){
-    if(state == CursorState::Normal) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    if(state == CursorState::Hidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    if(state == CursorState::Disabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    cursorState = state;
+    if(cursorState == CursorState::Normal) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    if(cursorState == CursorState::Hidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    if(cursorState == CursorState::Disabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void Platform::ShowWindow(bool show){

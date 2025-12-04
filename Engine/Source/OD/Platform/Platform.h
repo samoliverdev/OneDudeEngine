@@ -20,6 +20,7 @@ public:
 
     static void SetWindowSize(int width, int height);
 
+    static CursorState GetCursorState();
     static void SetCursorState(CursorState state);
 
     static void ShowWindow(bool show);

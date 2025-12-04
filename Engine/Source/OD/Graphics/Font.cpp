@@ -281,6 +281,8 @@ bool Font::LoadFromFile(const std::string& inPath){
             float pixelRange = std::clamp(fontSize * 0.20f, 4.0f, 16.0f);
             int atlasSize = NextPow2((int)(fontSize * (64/2)));
 
+            msdfPxRange = pixelRange;
+
             TightAtlasPacker packer;
 
             packer.setDimensions(atlasSize, atlasSize);
@@ -325,6 +327,8 @@ bool Font::LoadFromFile(const std::string& inPath){
                 Texture2DSetting setting;
                 setting.mipmap = false;
                 setting.textureFormat = texFormat;
+                setting.filter = TextureFilter::Linear;
+                setting.wrap = TextureWrapping::ClampToEdge;
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,
@@ -352,6 +356,8 @@ bool Font::LoadFromFile(const std::string& inPath){
                 Texture2DSetting setting;
                 setting.mipmap = false;
                 setting.textureFormat = texFormat;
+                setting.filter = TextureFilter::Linear;
+                setting.wrap = TextureWrapping::ClampToEdge;
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,
@@ -379,6 +385,8 @@ bool Font::LoadFromFile(const std::string& inPath){
                 Texture2DSetting setting;
                 setting.mipmap = false;
                 setting.textureFormat = texFormat;
+                setting.filter = TextureFilter::Linear;
+                setting.wrap = TextureWrapping::ClampToEdge;
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,

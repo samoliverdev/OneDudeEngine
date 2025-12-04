@@ -183,6 +183,8 @@ public:
 
     RenderContext(Scene* scene);
     ~RenderContext();
+    RenderContext(const RenderContext& other) = delete;
+    RenderContext& operator=(const RenderContext& other) = delete;
 
     void Begin();
     void End();

@@ -1,3 +1,7 @@
+#pragma BeginProperties
+    Color4 color
+#pragma EndProperties
+
 #pragma BeginPassDef
     Name MainPass
     CullFace NONE
@@ -36,30 +40,10 @@ Texture2D(0, 1, mainTex, mainSampler)
     in vec2 texCoord;
     out vec4 fragColor;
 
-    float median(float r, float g, float b) {
-        return max(min(r, g), min(max(r, g), b));
-    }
-
-    float screenPxRange(){
-        const float pxRange = 2.0; // set to distance field's pixel range
-        vec2 unitRange = vec2(pxRange) / vec2(textureSize(mainTex, 0));
-        vec2 screenTexSize = vec2(1.0) / fwidth(texCoord);
-        return max(0.5 * dot(unitRange, screenTexSize), 1.0);
-    }
-
     void main(){
-        /*vec4 sampled = vec4(1.0, 1.0, 1.0, texture(mainTex, texCoord).r);
+        vec4 sampled = vec4(1.0, 1.0, 1.0, texture(mainTex, texCoord).r);
         fragColor = vec4(color.rgb, 1.0) * sampled;
-        fragColor = vec4(1, 1, 1, 1) * sampled;*/
-
-        vec4 bgColor = vec4(0, 0, 0, 1);
-        vec4 fgColor = vec4(1, 1, 1, 1);
-        vec3 msd = texture(mainTex, texCoord).rgb;
-        float sd = median(msd.r, msd.g, msd.b);
-        float screenPxDistance = screenPxRange()*(sd - 0.5);
-        float alpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-        fragColor = vec4(fgColor.rgb * alpha, alpha);
-        //fragColor *= color;
+        //fragColor = vec4(1, 1, 1, 1) * sampled;
     }
     #endif
 #endif

@@ -94,7 +94,7 @@ struct OD_API ShadowSettings{
 class OD_API IRenderPass{
 public:
     virtual ~IRenderPass(){}
-    virtual void OnRender(const Camera& cam){}
+    virtual void OnRender(Scene& scene, const Camera& cam){}
 };
 
 enum class RenderStage{

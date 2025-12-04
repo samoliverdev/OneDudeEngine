@@ -834,7 +834,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->BeginUIPass();
     RenderUI();
     for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
-        i->OnRender(camera);
+        i->OnRender(*context->scene, camera);
     }
     context->EndUIPass();
 
