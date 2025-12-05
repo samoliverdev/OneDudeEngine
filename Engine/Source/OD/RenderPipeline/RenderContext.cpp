@@ -201,8 +201,8 @@ int RenderContext::ReadPixeIntFromEntityIdsFramebuffer(int x, int y){
 }
 
 void RenderContext::BeginForwardPass(){
-    Graphics::BeginFramebuffer(*forwardOutColor);
-    ScreenClean();
+    Graphics::BeginFramebuffer(*forwardOutColor, true, cam.cleanColor);
+    //ScreenClean();
 }
 
 void RenderContext::EndForwardPass(){
@@ -212,8 +212,8 @@ void RenderContext::EndForwardPass(){
 void RenderContext::BeginDeferredPass(){
     //Assert(false);
     //Framebuffer::Bind(*deferredOutColor);
-    Graphics::BeginFramebuffer(*deferredOutColor);
-    ScreenClean();
+    Graphics::BeginFramebuffer(*deferredOutColor, true, cam.cleanColor);
+    //ScreenClean();
 }
 
 void RenderContext::EndDeferredPass(){
@@ -288,8 +288,8 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
     EndDeferredPass();
 
     //Framebuffer::Bind(*forwardOutColor);
-    Graphics::BeginFramebuffer(*forwardOutColor);
-    Graphics::Clean(0, 1, 0, 1);
+    Graphics::BeginFramebuffer(*forwardOutColor, true, cam.cleanColor);
+    //Graphics::Clean(0, 1, 0, 1);
 
     //deferredLightPass->SetTexture("gPosition", deferredOutColor, 0);
     deferredLightPass->SetTexture("gNormal", deferredOutColor, 0);
@@ -324,13 +324,13 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Graphics::BeginFramebuffer(*finalColor);
+    Graphics::BeginFramebuffer(*finalColor, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
     Graphics::EndFramebuffer();
 
     if(overrideFramebuffer != nullptr){
-        Graphics::BeginFramebuffer(*overrideFramebuffer);
+        Graphics::BeginFramebuffer(*overrideFramebuffer, true, cam.cleanColor);
         blitShader->SetTexture("mainTex", finalColor, 0);
         Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
         Graphics::EndFramebuffer();
@@ -353,7 +353,7 @@ void RenderContext::EndDrawToScreen(){
 
     Graphics::EndFramebuffer();
 
-    Graphics::BeginFramebuffer(*overrideFramebuffer);
+    Graphics::BeginFramebuffer(*overrideFramebuffer, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
     Graphics::EndFramebuffer();
@@ -425,7 +425,7 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
 }
 
 void RenderContext::BeginUIPass(){
-    Graphics::BeginFramebuffer(*forwardOutColor);
+    Graphics::BeginFramebuffer(*forwardOutColor, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
 

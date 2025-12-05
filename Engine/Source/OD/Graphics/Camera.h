@@ -19,7 +19,7 @@ struct OD_API Camera {
     float fov;
     int width;
     int height;
-    Vector3 cleanColor;
+    Vector4 cleanColor = {0, 0, 0, 1};
     Vector3 viewPos;
     Frustum frustum;
     Vector4 viewportRect = Vector4(0, 0, 1, 1);

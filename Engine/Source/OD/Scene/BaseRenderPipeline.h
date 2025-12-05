@@ -5,7 +5,7 @@
 
 namespace OD{
 
-class BaseRenderPipeline: public System{
+class OD_API BaseRenderPipeline: public System{
 public:
     //BaseRenderPipeline(Scene* inScene):System(inScene){}
 

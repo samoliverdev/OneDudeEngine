@@ -21,6 +21,7 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
     camera.viewportRect = viewportRect;
     camera.viewPos = transform.Position();
     camera.view = math::inverse(transform.GlobalModelMatrix());
+    camera.cleanColor = cleanColor;
     Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
     //Transform _trans = Transform(transform.GlobalModelMatrix());
 
@@ -132,6 +133,10 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
             ImGui::DragFloat("##farClipPlane", &cam.farClipPlane);
         }
     );
+
+    IMGUI_GlobalTableRow("cleanColor", {
+        ImGui::ColorEdit4("##cleanColor", &cam.cleanColor.x);
+    });
 
     IMGUI_EndGlobalTable();
 }

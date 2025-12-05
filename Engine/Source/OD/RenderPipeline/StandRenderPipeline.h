@@ -106,7 +106,7 @@ struct OD_API RenderStagePasses{
     std::vector<IRenderPass*> renderPass[(int)RenderStage::Count];
 };
 
-class Shadows{
+class OD_API Shadows{
     friend class Lighting;
 public:
     Shadows();
@@ -179,7 +179,7 @@ private:
     inline static ShadowedOtherLight shadowedOtherLights[maxShadowedOtherLightCount]; 
 };
 
-class Lighting{
+class OD_API Lighting{
     friend class CameraRenderer;
 public:
     void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
@@ -221,7 +221,7 @@ private:
     inline static Vector4 otherLightShadowData[maxOtherLightCount];
 };
 
-class CameraRenderer{
+class OD_API CameraRenderer{
 public:
     enum class RenderingPath{
         Forward,
@@ -282,7 +282,7 @@ private:
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
 
-class StandRenderPipeline: public BaseRenderPipeline{
+class OD_API StandRenderPipeline: public BaseRenderPipeline{
 public:
     StandRenderPipeline(){ name = "StandRenderPipeline"; }
 
@@ -309,6 +309,8 @@ public:
 
     inline CameraRenderer& GetCameraRenderer(){ return cameraRenderer; }
     inline RenderStagePasses& GetRenderStagePasses(){ return renderStagePasses; }
+
+    void SaveScreenshot(const std::string& filename);
 
 private:
     ShadowSettings shadow;

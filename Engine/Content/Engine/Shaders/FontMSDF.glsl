@@ -43,13 +43,6 @@ Texture2D(0, 1, mainTex, mainSampler)
     in vec2 texCoord;
     out vec4 fragColor;
 
-    /*float screenPxRange(){
-        //const float pxRange = 2.0; // set to distance field's pixel range
-        vec2 unitRange = vec2(pxRange) / vec2(textureSize(mainTex, 0));
-        vec2 screenTexSize = vec2(1.0) / fwidth(texCoord);
-        return max(0.5 * dot(unitRange, screenTexSize), 1.0);
-    }*/
-
     float median(float r, float g, float b) {
         return max(min(r, g), min(max(r, g), b));
     }
@@ -61,6 +54,12 @@ Texture2D(0, 1, mainTex, mainSampler)
         vec2 screenTexSize = inversesqrt(sqr(dFdx(texCoord))+sqr(dFdy(texCoord)));// If inversesqrt is not available, use vec2(1.0)/sqrt
         return max(0.5*dot(unitRange, screenTexSize), 1.0);// Can also be approximated as screenTexSize = vec2(1.0)/fwidth(texCoord);
     }
+
+    /*float screenPxRange(){
+        vec2 unitRange = vec2(pxRange) / vec2(textureSize(mainTex, 0));
+        vec2 screenTexSize = vec2(1.0) / fwidth(texCoord);
+        return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+    }*/
 
     void main(){
         vec3 msd = texture(mainTex, texCoord).rgb;

@@ -19,6 +19,7 @@
 #include "SpriteRendererComponent.h"
 #include <taskflow/taskflow.hpp>
 #include <cstring>
+#include <stb/stb_image_write.h>
 
 namespace OD{
 
@@ -762,7 +763,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         //context->DrawRenderersBuffer(blendDrawTarget, true);
-        context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
         context->DrawGizmos();  
         
@@ -819,7 +820,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //context->BeginForwardPass();
 
         //context->RenderSkyboxLater();
-        context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
         context->DrawGizmos(); 
         context->EndForwardPass();
@@ -1198,6 +1199,33 @@ int StandRenderPipeline::ReadEntityId(int x, int y){
     }
 
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
+}
+
+void StandRenderPipeline::SaveScreenshot(const std::string& filename){
+    Graphics::BeginFramebuffer(*renderContext->GetFinalColor(), false);
+
+    int width = renderContext->GetFinalColor()->Width();
+    int height = renderContext->GetFinalColor()->Height();
+    int channels = 4;
+
+    // Allocate buffer (RGBA8)
+    std::vector<unsigned char> pixels(width * height * channels);
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Flip vertically (OpenGL is upside down)
+    for(int y = 0; y < height / 2; y++){
+        int opposite = height - y - 1;
+        for(int x = 0; x < width * channels; x++){
+            std::swap(pixels[y * width * channels + x], pixels[opposite * width * channels + x]);
+        }
+    }
+
+    // Save PNG
+    stbi_write_png(filename.c_str(), width, height, channels, pixels.data(), width * channels);
+
+    Graphics::EndFramebuffer();
 }
 
 void StandRenderPipeline::Update(Scene& scene){

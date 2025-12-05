@@ -17,7 +17,7 @@ enum class ShadowQuality{ VeryLow = 0, Low, Median, High, VeryHigh, Ultra };
 //enum class MSAAQuality{ MSAA_2, MSAA_4, MSAA_8 };
 
 enum class EnvironmentSky{
-    Cubemap, Color, CustomMaterial
+    Cubemap, Color, CustomMaterial, None
 };
 
 enum class EnvironmentLight{

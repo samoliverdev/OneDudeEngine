@@ -25,7 +25,8 @@ struct OD_API CameraComponent{
     float fieldOfView = 45;
     float nearClipPlane = 0.1f;
     float farClipPlane = 100;
-    Vector4 viewportRect = Vector4(0, 0, 1, 1);
+    Vector4 viewportRect = {0, 0, 1, 1};
+    Vector4 cleanColor = {0, 0, 0, 1};
 
     RenderingPath renderingPath = RenderingPath::Forward;
 
@@ -44,6 +45,7 @@ struct OD_API CameraComponent{
         ArchiveDump(ar, CEREAL_NVP(fieldOfView));
         ArchiveDump(ar, CEREAL_NVP(nearClipPlane));
         ArchiveDump(ar, CEREAL_NVP(farClipPlane));
+        ArchiveDump(ar, CEREAL_NVP(cleanColor));
         ArchiveDump(ar, CEREAL_NVP(renderingPath));
     }
 
