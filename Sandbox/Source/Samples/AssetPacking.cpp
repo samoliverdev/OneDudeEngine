@@ -50,7 +50,7 @@ void AssetPackingSample::OnInit(){
     model->meshs[0]->Save("Sandbox/Mesh.meshbin", Asset::SaveType::FinalBinary);
 
     //model->Save("Sandbox/Model.modelasset", Asset::SaveType::AssetBinary);
-    //model->Save("Sandbox/Model.modelbin", Asset::SaveType::FinalBinary);
+    model->Save("Sandbox/Model.modelbin", Asset::SaveType::FinalBinary);
 
     Ref<Model> modelBin = AssetManager::Get().LoadAsset<Model>("Sandbox/Model.modelbin");
     Assert(modelBin != nullptr);

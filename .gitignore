@@ -6,5 +6,5 @@ Editor/Content/Engine/
 Editor/Content/ProjectTemplate/Content/Engine/
 Sandbox/Content/Engine/
 Sandbox/Content/Sandbox/Models/PolygonCity/
-.meshbin
-.modelbin
+*.meshbin
+*.modelbin
