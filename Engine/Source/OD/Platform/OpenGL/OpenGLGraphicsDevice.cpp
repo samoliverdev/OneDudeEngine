@@ -2807,7 +2807,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     */
     Texture2DDestroy(tex);
 
-    tex.path = "Memory";
+    //tex.path = "Memory";
     //tex.settings = settings;
     tex.glData.wrapS = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
     tex.glData.wrapT = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
@@ -2883,7 +2883,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     */
     Texture2DDestroy(tex);
 
-    tex.path = "Memory";
+    //tex.path = "Memory";
     tex.settings = tex.settings;
     tex.glData.wrapS = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
     tex.glData.wrapT = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
@@ -2925,8 +2925,10 @@ bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uin
     if(Texture2DIsValid(tex) == false) return false;
 
     glBindTexture(GL_TEXTURE_2D, tex.glData.id);
-    std::vector<unsigned char> pixels(tex.width*tex.height*4);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    glCheckError();
+    outData.resize(tex.width*tex.height*4);// std::vector<unsigned char> pixels(tex.width*tex.height*4);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, outData.data());
+    glCheckError();
 
     return true;
 }

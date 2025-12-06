@@ -85,8 +85,8 @@ public:
     ~Texture2D();
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
-    static Ref<Texture2D> CreateFromMemory(void* data, size_t size, Texture2DSetting settings); 
-    static Ref<Texture2D> CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings); 
+    static Ref<Texture2D> CreateFromMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label = ""); 
+    static Ref<Texture2D> CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label = ""); 
     static Ref<Texture2D> CreateFromPackage(const char* path, Package& package, Texture2DSetting settings); 
     static Ref<Texture2D> LoadDefautlTexture2D();
     static Ref<Texture2D> CreateBrdfLUTTexture2D();

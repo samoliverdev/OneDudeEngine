@@ -232,12 +232,37 @@ bool Model::Save(const std::string& outPath, SaveType type){
     return true;
 }
 
+void Model::CreateMaterialsFromTargets(){
+	materials.resize(materialTargets.size());
+	for(int i = 0; i < materialTargets.size(); i++){
+		Ref<Shader> s = settings.customShader != nullptr ? settings.customShader : AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl");
+		Ref<Material> m = CreateRef<Material>(s);
+
+		for(int j = 0; j < materialTargets[i].argNames.size(); j++){
+			if(materialTargets[i].texs[j].isFromTexturesArray){
+				m->SetTexture(
+					materialTargets[i].argNames[j].c_str(),
+					textures[materialTargets[i].texs[j].texIndex]
+				);
+			} else {
+				m->SetTexture(
+					materialTargets[i].argNames[j].c_str(),
+					AssetManager::Get().LoadAsset<Texture2D>(materialTargets[i].texs[j].extPath)
+				);
+			}
+		}
+
+		materials[i] = m;
+	}
+}
+
 void Model::SaveTo(cereal::BinaryOutputArchive& ar){
     ar(renderTargets);
     ar(meshs);
-    ar(materials);
-    ar(matrixs);
 	ar(textures);
+	//ar(materials);
+	ar(materialTargets);
+    ar(matrixs);
 	ar(animationClips);
 	ar(skeleton);
 	ar(settings);
@@ -277,12 +302,15 @@ void Model::SaveTo(cereal::BinaryOutputArchive& ar){
 void Model::LoadFrom(cereal::BinaryInputArchive& ar){
     ar(renderTargets);
     ar(meshs);
-    ar(materials);
 	ar(textures);
+    //ar(materials);
+	ar(materialTargets);
     ar(matrixs);
 	ar(animationClips);
 	ar(skeleton);
 	ar(settings);
+
+	CreateMaterialsFromTargets();
 
 	/*if(settings.generateColliderData){
 		modelShapeData = CreateMeshShapeData(*this);

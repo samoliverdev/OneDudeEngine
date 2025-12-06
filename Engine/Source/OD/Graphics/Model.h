@@ -25,11 +25,40 @@ struct ModelLoadSettings{
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scale);
         ArchiveDumpNVP(ar, generateColliderData);
+
+        AssetRefSerialize<Shader> shaderRef(customShader);
+        ArchiveDumpNVP(ar, shaderRef);
     }
 };
 
 class OD_API Model: public Asset{
 public:
+    struct MaterialTarget{
+        struct Tex{
+            int texIndex;
+            std::string extPath;
+            bool isFromTexturesArray;
+
+            template <class Archive>
+            void serialize(Archive& ar){
+                ar(
+                    texIndex, 
+                    extPath, 
+                    isFromTexturesArray
+                );
+            }
+        };  
+
+        std::vector<std::string> argNames;
+        std::vector<Tex> texs;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDump(ar, argNames);
+            ArchiveDump(ar, texs);
+        }
+    };
+
     struct RenderTarget{
         int meshIndex;
         int materialIndex;
@@ -45,8 +74,9 @@ public:
 
     std::vector<RenderTarget> renderTargets;
     std::vector<Ref<Mesh>> meshs;
-    std::vector<Ref<Material>> materials;
     std::vector<Ref<Texture2D>> textures;
+    std::vector<MaterialTarget> materialTargets;
+    std::vector<Ref<Material>> materials;
     std::vector<Matrix4> matrixs;
     std::vector<Ref<ClipT>> animationClips;
     Skeleton skeleton;
@@ -71,6 +101,8 @@ public:
     static Sphere GenerateSphereBV(Model& model);
 
 private: 
+    void CreateMaterialsFromTargets();
+
     void SaveTo(cereal::BinaryOutputArchive& ar);
     void LoadFrom(cereal::BinaryInputArchive& ar);
 

@@ -1,3 +1,4 @@
+//#define USE_ASSIMP
 #ifdef USE_ASSIMP
 #include "AssimpLoader.h"
 #include "OD/Core/Asset.h"
@@ -190,7 +191,17 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
         Ref<Texture2D> texture = nullptr;
 
         if(paiTexture){
-            if(paiTexture->mHeight == 0){
+            int texIndex = -1;
+            for(int i = 0; i < loadData.scene->mNumTextures; i++){
+                if(paiTexture == loadData.scene->mTextures[i]){
+                    texIndex = i;
+                    break;
+                }
+            }
+            Assert(texIndex >= 0);
+            texture = loadData.model->textures[texIndex];
+
+            /*if(paiTexture->mHeight == 0){
                 texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
                     (void*)paiTexture->pcData, 
                     (size_t)paiTexture->mWidth, 
@@ -198,7 +209,8 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
                 );
             } else {
                 size_t sizeInBytes = paiTexture->mWidth * paiTexture->mHeight * 4;
-                Ref<Texture2D> texture = Texture2D::CreateFromRaw(   //CreateRef<Texture2D>
+                //Ref<Texture2D> 
+                texture = Texture2D::CreateFromRaw(   //CreateRef<Texture2D>
                     (void*)paiTexture->pcData, 
                     sizeInBytes,
                     (size_t)paiTexture->mWidth, 
@@ -206,7 +218,7 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
                     TextureDataType::UnsignedByte,
                     Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true}
                 );
-            }
+            }*/
         } else {
             auto ss = std::string(str.C_Str());
             [](std::string& p) {
@@ -232,6 +244,32 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
     }*/
 
     return textures;
+}
+
+Ref<Texture2D> LoadTextureInternal(LoadData& data, aiTexture* tex, ModelLoadSettings& loadSettings){
+    Ref<Texture2D> texture = nullptr;
+
+    if(tex->mHeight == 0){
+        texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
+            (void*)tex->pcData, 
+            (size_t)tex->mWidth, 
+            Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true},
+            std::string(tex->mFilename.C_Str())
+        );
+    } else {
+        size_t sizeInBytes = tex->mWidth * tex->mHeight * 4;
+        Ref<Texture2D> texture = Texture2D::CreateFromRaw(   //CreateRef<Texture2D>
+            (void*)tex->pcData, 
+            sizeInBytes,
+            (size_t)tex->mWidth, 
+            (size_t)tex->mHeight,
+            TextureDataType::UnsignedByte,
+            Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true},
+            std::string(tex->mFilename.C_Str())
+        );
+    }
+
+    return texture;
 }
 
 /*int getMaterialIndex(aiMaterial *mesh, const aiScene *scene){
@@ -290,6 +328,51 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
     return out;
 }*/
+
+Model::MaterialTarget LoadMaterialTargets(LoadData& data, aiMaterial* material, ModelLoadSettings& loadSettings){
+    Model::MaterialTarget out;
+
+    auto TexToData = [&](Ref<Texture2D>& t) -> Model::MaterialTarget::Tex{
+        if(t->Path()[0] != '#'){
+            return {0, t->Path(), false};
+        }
+
+        int texIndex = -1;
+        for(int i = 0; i < data.model->textures.size(); i++){
+            if(data.model->textures[i] == t){
+                texIndex = i;
+                break;
+            }
+        }
+        Assert(texIndex >= 0);
+
+        return {texIndex, "", true};
+    };
+
+    std::vector<Ref<Texture2D>> diffuseMaps = loadMaterialTextures(data, material, aiTextureType_DIFFUSE, "texture_diffuse");
+    if(diffuseMaps.size() > 0){
+        out.argNames.push_back("mainTex");
+        out.texs.push_back(TexToData(diffuseMaps[0]));
+    }
+
+    std::vector<Ref<Texture2D>> normalMaps = loadMaterialTextures(data, material, aiTextureType_NORMALS, "texture_normal");
+    if(normalMaps.size() > 0){
+        out.argNames.push_back("normal");
+        out.texs.push_back(TexToData(normalMaps[0]));
+    }
+    std::vector<Ref<Texture2D>> normalMaps2 = loadMaterialTextures(data, material, aiTextureType_NORMAL_CAMERA, "texture_normal");
+    if(normalMaps2.size() > 0){
+        out.argNames.push_back("normal");
+        out.texs.push_back(TexToData(normalMaps2[0]));
+    }
+    std::vector<Ref<Texture2D>> normalMaps3 = loadMaterialTextures(data, material, aiTextureType_HEIGHT, "texture_normal");
+    if(normalMaps3.size() > 0){
+        out.argNames.push_back("normal");
+        out.texs.push_back(TexToData(normalMaps3[0]));
+    }
+
+    return out;
+}
 
 Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, ModelLoadSettings& loadSettings){
     Ref<Material> out = CreateRef<Material>();
@@ -651,6 +734,11 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
     }*/
 
+    out.textures.resize(scene->mNumTextures);
+    for(int i = 0; i < scene->mNumTextures; i++){
+        out.textures[i] = LoadTextureInternal(loadData, scene->mTextures[i], loadSettings);
+    }
+
     loadData.materialIndexRemap.resize(scene->mNumMaterials);
     std::unordered_set<unsigned int> usedMaterialIndices;
     for(unsigned int i = 0; i < scene->mNumMeshes; ++i){
@@ -665,8 +753,8 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         LogInfo(("Material[" + std::to_string(i) + "]: " + std::string(name.C_Str())).c_str());
 
         if(usedMaterialIndices.count(i) > 0){
-            Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
-            loadData.model->materials.push_back(m);
+            loadData.model->materials.push_back(LoadMaterial(loadData, scene->mMaterials[i], loadSettings));
+            loadData.model->materialTargets.push_back(LoadMaterialTargets(loadData, scene->mMaterials[i], loadSettings));
             loadData.materials.push_back(scene->mMaterials[i]);
             loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
         }

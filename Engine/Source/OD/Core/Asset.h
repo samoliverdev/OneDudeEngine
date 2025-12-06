@@ -147,7 +147,7 @@ struct OD_API AssetRefSerialize{
             asset = nullptr;
             return;
         }
-        if(dontTryLoadFromMemory && path == "Memory"){
+        if(dontTryLoadFromMemory && (path.empty() || path[0] == '#')){
             return;
         }
         /*if(path == "Memory"){

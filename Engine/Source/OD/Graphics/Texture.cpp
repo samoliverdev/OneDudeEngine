@@ -26,7 +26,7 @@ Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DS
     return tex;
 }
 
-Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSetting settings){
+Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     tex->settings = settings;
     if(graphicsDevice->Texture2DCreate(*tex, data, size) == false){
@@ -34,10 +34,11 @@ Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSet
         return nullptr;
     }
 
+    tex->path = "#" + label;
     return tex;
 }
 
-Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
+Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     tex->settings = settings;
     if(graphicsDevice->Texture2DCreate(*tex, data, size, width, height, dataType) == false){
@@ -45,6 +46,7 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int 
         return nullptr;
     }
 
+    tex->path = "#" + label;
     return tex;
 }
 
@@ -273,12 +275,17 @@ bool Texture2D::GetPixelData(std::vector<uint8_t>& outData){
 }
 
 void Texture2D::SaveTo(cereal::BinaryOutputArchive& ar){
+    settings.textureFormat = TextureFormat::RGBA;
     ar(settings);
 
     int w = Width();
     int h = Height();
     ar(w);
     ar(h);
+
+    /*std::vector<uint8_t> pixelData;
+    GetPixelData(pixelData);
+    ar(pixelData);*/
 
     std::vector<uint8_t> pixelData;
     GetPixelData(pixelData);
@@ -309,6 +316,13 @@ void Texture2D::LoadFrom(cereal::BinaryInputArchive& ar){
     int w, h;
     ar(w);
     ar(h);
+
+    /*std::vector<uint8_t> pixelData;
+    ar(pixelData);
+    if(graphicsDevice->Texture2DCreate(*this, pixelData.data(), 0, w, h, TextureDataType::UnsignedByte) == false){
+        Assert(false);
+        graphicsDevice->Texture2DDestroy(*this);
+    }*/
 
     int pngSize;
     ar(pngSize);
