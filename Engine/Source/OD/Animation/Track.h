@@ -23,6 +23,12 @@ public:
 
     Frame<N>& operator[](unsigned int index);
 
+    template <class Archive>
+    void serialize(Archive& ar){
+        ar(frames);
+        ar(interpolation);
+    }
+
 protected:
     std::vector<Frame<N>> frames;
     Interpolation interpolation;

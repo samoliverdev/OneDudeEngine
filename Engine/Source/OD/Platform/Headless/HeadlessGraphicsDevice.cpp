@@ -54,16 +54,16 @@ bool HeadlessGraphicsDevice::MeshIsValid(Mesh& mesh){ return false; }
 
 void HeadlessGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){}
 void HeadlessGraphicsDevice::EndFramebuffer(){}
-bool HeadlessGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){ return false; }
+bool HeadlessGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){ return false; }
 void HeadlessGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){}
 bool HeadlessGraphicsDevice::FramebufferIsValid(Framebuffer& frambuffer){ return false; }
 void* HeadlessGraphicsDevice::FramebufferColorAttachmentId(Framebuffer& framebuffer, int index){ return nullptr; }
 void* HeadlessGraphicsDevice::FramebufferDepthAttachmentId(Framebuffer& framebuffer){ return nullptr; }
 int HeadlessGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y){ return 0; }
 
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings){ return false; }
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings){ return false; }
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){ return false; }
+bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path){ return false; }
+bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size){ return false; }
+bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType){ return false; }
 void HeadlessGraphicsDevice::Texture2DDestroy(Texture2D& tex){}
 bool HeadlessGraphicsDevice::Texture2DIsValid(Texture2D& tex){ return false; }
 void* HeadlessGraphicsDevice::Texture2DRenderId(Texture2D& tex){ return nullptr; }

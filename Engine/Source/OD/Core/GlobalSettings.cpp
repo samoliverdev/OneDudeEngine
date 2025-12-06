@@ -1,8 +1,9 @@
 #include "GlobalSettings.h"
+#include "ImGui.h"
 
 namespace OD {
 
-void GlobalSettings::Save(const std::string& path) {
+void GlobalSettings::Save(const std::string& path){
     std::ofstream os(path);
     cereal::JSONOutputArchive ar(os);
 
@@ -11,7 +12,7 @@ void GlobalSettings::Save(const std::string& path) {
     }
 }
 
-void GlobalSettings::Load(const std::string& path) {
+void GlobalSettings::Load(const std::string& path){
     /*std::ifstream stream(path);
     cereal::JSONInputArchive ar(stream);
 

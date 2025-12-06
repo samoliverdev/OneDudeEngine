@@ -1,11 +1,4 @@
 #include "Application.h"
-#include "OD/Defines.h"
-#include "OD/Core/GlobalSettings.h"
-#include "OD/Platform/Platform.h"
-#include "OD/Graphics/Graphics.h"
-#include "OD/Graphics/GraphicsDevice.h"
-#include "OD/CoreModulesStartup.h"
-#include "OD/Serialization/SerializationFull.h"
 #include "Module.h"
 #include "Project.h"
 #include "ImGui.h"
@@ -14,6 +7,12 @@
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "Lua.h"
+#include "OD/Core/GlobalSettings.h"
+#include "OD/Platform/Platform.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/GraphicsDevice.h"
+#include "OD/CoreModulesStartup.h"
+#include "OD/Serialization/SerializationFull.h"
 #include <algorithm>
 #include <fstream>
 #include <string>

@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/SerializationFull.h"
-#include "ImGui.h"
 #include <unordered_map>
 #include <string>
 #include <functional>
@@ -10,7 +9,7 @@
 
 namespace OD {
 
-class GlobalSettings {
+class OD_API GlobalSettings {
 public:
     struct Section{
         std::string name;

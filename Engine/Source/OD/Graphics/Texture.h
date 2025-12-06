@@ -5,6 +5,11 @@
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 
+namespace cereal{
+    class BinaryOutputArchive;
+    class BinaryInputArchive;
+}
+
 namespace sol{ class state; }
 
 namespace OD {
@@ -101,7 +106,20 @@ public:
     void Reload() override;
     bool Save(const std::string& outPath, SaveType type) override;
 
+    bool GetPixelData(std::vector<uint8_t>& outData);
+
     static void CreateLuaBind(sol::state& lua);
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        if constexpr(std::is_same_v<Archive, cereal::BinaryOutputArchive>){
+            SaveTo(ar);
+        } else if constexpr(std::is_same_v<Archive, cereal::BinaryInputArchive>){
+            LoadFrom(ar);
+        } else {
+            Assert(false && "Not Supported");
+        }
+    }
 
 private:
     unsigned int width = 0;
@@ -111,6 +129,9 @@ private:
     bool isComplete = false;
     Texture2DDataGL;
     Texture2DDataWG;
+
+    void SaveTo(cereal::BinaryOutputArchive& ar);
+    void LoadFrom(cereal::BinaryInputArchive& ar);
 };
 
 class OD_API Texture2DArray: public Asset{

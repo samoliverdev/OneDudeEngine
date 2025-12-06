@@ -61,16 +61,16 @@ public:
 
     virtual void BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip) override;
     virtual void EndFramebuffer() override;
-    virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) override;
+    virtual bool FramebufferCreate(Framebuffer& frambuffer) override;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) override;
     virtual bool FramebufferIsValid(Framebuffer& frambuffer) override;
     virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) override;
     virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) override;
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) override;
 
-    virtual bool Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings) override;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings) override;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings) override;
+    virtual bool Texture2DCreate(Texture2D& tex, const std::string path) override;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size) override;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType) override;
     virtual void Texture2DDestroy(Texture2D& tex) override;
     virtual bool Texture2DIsValid(Texture2D& tex) override;
     virtual void* Texture2DRenderId(Texture2D& tex) override;

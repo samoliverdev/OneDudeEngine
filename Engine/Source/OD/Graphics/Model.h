@@ -9,33 +9,12 @@
 #include "Material.h"
 #include "Culling.h"
 
+namespace cereal{
+    class BinaryOutputArchive;
+    class BinaryInputArchive;
+}
+
 namespace OD{
-
-/*class Mesh{
-    std::vector<Vector3> vertices;
-    std::vector<Vector3> uv;
-    std::vector<Vector3> normals;
-    std::vector<Vector4> colors;
-    std::vector<Vector3> tangents;
-    std::vector<Vector4> weights;
-    std::vector<IVector4> influences;
-    std::vector<unsigned int> indices;
-};
-
-class Model{
-public:
-    struct RenderTarget{
-        int meshIndex;
-        int materialIndex;
-        int bindPoseIndex;
-    };
-
-    std::vector<RenderTarget> renderTargets;
-    std::vector<Ref<Mesh>> meshs;
-    std::vector<Ref<Material>> materials;
-    std::vector<Ref<Texture2D>> textures;
-    std::vector<Matrix4> matrixs;
-};*/
 
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
@@ -69,8 +48,10 @@ public:
     std::vector<Ref<Material>> materials;
     std::vector<Ref<Texture2D>> textures;
     std::vector<Matrix4> matrixs;
-    Skeleton skeleton;
     std::vector<Ref<ClipT>> animationClips;
+    Skeleton skeleton;
+    ModelLoadSettings settings;
+
     Ref<class MeshShapeData> modelShapeData = nullptr;
 
     Ref<ClipT> FindClipByName(const std::string& name);
@@ -89,31 +70,9 @@ public:
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
 
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, renderTargets);
-        ArchiveDumpNVP(ar, meshs);
-        ArchiveDumpNVP(ar, materials);
-        ArchiveDumpNVP(ar, matrixs);
-        ArchiveDumpNVP(ar, skeleton);
-
-        /*if constexpr (Archive::is_loading()){
-            int matSize = materials.size();
-            ArchiveDumpNVP(ar, matSize);
-            for(int i = 0; i < matSize; i++){
-                Ref<Material> m = CreateRef<Material>();
-                ArchiveDump(ar, *m);
-                materials.push_back(m);
-            }
-        } else {
-            int matSize = materials.size();
-            ArchiveDumpNVP(ar, matSize);
-            for(int i = 0; i < matSize; i++) ArchiveDump(ar, *materials[i]);
-        }*/
-    }   
-
 private: 
-    ModelLoadSettings settings;
+    void SaveTo(cereal::BinaryOutputArchive& ar);
+    void LoadFrom(cereal::BinaryInputArchive& ar);
 
     void Clear();
 };

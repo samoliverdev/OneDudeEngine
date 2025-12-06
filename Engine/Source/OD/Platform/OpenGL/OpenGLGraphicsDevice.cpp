@@ -10,7 +10,7 @@
 #include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Material.h"
-#include "OD/Graphics/Font.h"
+#include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
@@ -2276,21 +2276,21 @@ void OpenGLGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, i
     }
 }
 
-bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification){
+bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){
     if(frambuffer.type == FramebufferType::Stand){
-        specification.colorAttachments = {
+        frambuffer.specification.colorAttachments = {
             {FramebufferTextureFormat::RGBA8}
         };
-        specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
-        specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
-        specification.sample = 1;
+        frambuffer.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        frambuffer.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        frambuffer.specification.sample = 1;
     }
     if(frambuffer.type == FramebufferType::Shadowmap){
-        specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
-        specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+        frambuffer.specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+        frambuffer.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
     }
     if(frambuffer.type == FramebufferType::Deffered){
-        specification.colorAttachments = {
+        frambuffer.specification.colorAttachments = {
             {FramebufferTextureFormat::RGB32F}, // Pos
             {FramebufferTextureFormat::RGB32F}, // Normal
             {FramebufferTextureFormat::RGBA16F}, // Albedo
@@ -2298,48 +2298,48 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             {FramebufferTextureFormat::RGB16F}, // Spec, Metalic, AO
             {FramebufferTextureFormat::RED_INTEGER} // Object ID
         };
-        specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
-        specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
-        specification.sample = 1;
+        frambuffer.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        frambuffer.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        frambuffer.specification.sample = 1;
     }
-    frambuffer.specification = specification;
+    //frambuffer.specification = specification;
 
     auto GenColorAttachment = [&](int index){
-        Assert(IsDepthTypeFormat(specification.colorAttachments[index].colorFormat) == false);
+        Assert(IsDepthTypeFormat(frambuffer.specification.colorAttachments[index].colorFormat) == false);
     
-        GLenum internalFormat = InternalFormatLookup[(int)specification.colorAttachments[index].colorFormat];
-        GLenum format = FormatLookup[(int)specification.colorAttachments[index].colorFormat];
+        GLenum internalFormat = InternalFormatLookup[(int)frambuffer.specification.colorAttachments[index].colorFormat];
+        GLenum format = FormatLookup[(int)frambuffer.specification.colorAttachments[index].colorFormat];
         
-        bool multisample = specification.sample > 1;
+        bool multisample = frambuffer.specification.sample > 1;
     
         unsigned int colorAttachment;
         glGenTextures(1, &colorAttachment);
         glCheckError();
     
         bool hdr = false;
-        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB16F) hdr = true;
-        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB32F) hdr = true;
-        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA16F) hdr = true;
-        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F) hdr = true;
+        if(frambuffer.specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB16F) hdr = true;
+        if(frambuffer.specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB32F) hdr = true;
+        if(frambuffer.specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA16F) hdr = true;
+        if(frambuffer.specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGBA32F) hdr = true;
 
         GLenum type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
-        if(specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB11B10F) type = GL_UNSIGNED_INT_10F_11F_11F_REV;
+        if(frambuffer.specification.colorAttachments[index].colorFormat == FramebufferTextureFormat::RGB11B10F) type = GL_UNSIGNED_INT_10F_11F_11F_REV;
   
-        if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
+        if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
             #if defined(OpenGLEmscripten)
             Assert(false && "not supported");
             #else
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorAttachment);
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, specification.sample, internalFormat, specification.width, specification.height, GL_TRUE);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, frambuffer.specification.sample, internalFormat, frambuffer.specification.width, frambuffer.specification.height, GL_TRUE);
             glCheckError();
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment, 0);
             glCheckError();
             #endif
-        } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D){
             
 
             glBindTexture(GL_TEXTURE_2D, colorAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, 0, format, type, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2347,11 +2347,11 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             glCheckError();
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
             glCheckError();
-        } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
             //Assert(false);
     
             glBindTexture(GL_TEXTURE_2D_ARRAY, colorAttachment);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, type, NULL);
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, frambuffer.specification.sample, 0, format, type, NULL);
             glCheckError();
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -2366,17 +2366,17 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
             //#endif*/
             glCheckError();
-        } else if(specification.type == FramebufferAttachmentType::CUBEMAP){
-            Assert(specification.width == specification.height);
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::CUBEMAP){
+            Assert(frambuffer.specification.width == frambuffer.specification.height);
             glBindTexture(GL_TEXTURE_CUBE_MAP, colorAttachment);
             for(unsigned int i = 0; i < 6; ++i){
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, 0, format, type, NULL);
                 glCheckError();
             }
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, specification.colorAttachments[index].genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, frambuffer.specification.colorAttachments[index].genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glCheckError();
             for(unsigned int i = 0; i < 6; ++i){
@@ -2385,7 +2385,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             }
         }
 
-        if(specification.colorAttachments[index].genMip){
+        if(frambuffer.specification.colorAttachments[index].genMip){
             glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
             glCheckError();
         }
@@ -2394,46 +2394,46 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     };
     
     auto GenDepthAttachment = [&](){
-        if(specification.depthAttachment.colorFormat == FramebufferTextureFormat::None) return;
+        if(frambuffer.specification.depthAttachment.colorFormat == FramebufferTextureFormat::None) return;
     
-        Assert(IsDepthTypeFormat(specification.depthAttachment.colorFormat) == true);
+        Assert(IsDepthTypeFormat(frambuffer.specification.depthAttachment.colorFormat) == true);
     
-        GLenum internalFormat = InternalFormatLookup[(int)specification.depthAttachment.colorFormat]; //GLenum internalFormat = GL_DEPTH24_STENCIL8;
-        GLenum format = FormatLookup[(int)specification.depthAttachment.colorFormat]; //GLenum format = GL_DEPTH_STENCIL;
+        GLenum internalFormat = InternalFormatLookup[(int)frambuffer.specification.depthAttachment.colorFormat]; //GLenum internalFormat = GL_DEPTH24_STENCIL8;
+        GLenum format = FormatLookup[(int)frambuffer.specification.depthAttachment.colorFormat]; //GLenum format = GL_DEPTH_STENCIL;
         GLenum type = GL_UNSIGNED_INT_24_8;
         GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT;
     
-        if(specification.depthAttachment.colorFormat == FramebufferTextureFormat::DEPTH4STENCIL8){
+        if(frambuffer.specification.depthAttachment.colorFormat == FramebufferTextureFormat::DEPTH4STENCIL8){
             internalFormat = GL_DEPTH24_STENCIL8;
             format = GL_DEPTH_STENCIL;
             type = GL_UNSIGNED_INT_24_8;
             attachment = GL_DEPTH_STENCIL_ATTACHMENT;
         }
         
-        if(specification.depthAttachment.colorFormat == FramebufferTextureFormat::DEPTH_COMPONENT){
+        if(frambuffer.specification.depthAttachment.colorFormat == FramebufferTextureFormat::DEPTH_COMPONENT){
             internalFormat = GL_DEPTH_COMPONENT32F;
             format = GL_DEPTH_COMPONENT;
             type = GL_FLOAT;
             attachment = GL_DEPTH_ATTACHMENT;
         }
     
-        bool multisample = specification.sample > 1;
+        bool multisample = frambuffer.specification.sample > 1;
     
         glGenTextures(1, &frambuffer.glData.depthAttachment);
     
-        if(specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
+        if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE){
             #if defined(OpenGLEmscripten)
             Assert(false && "not supported");
             #else
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frambuffer.glData.depthAttachment);
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, specification.sample, internalFormat, specification.width, specification.height, GL_TRUE);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, frambuffer.specification.sample, internalFormat, frambuffer.specification.width, frambuffer.specification.height, GL_TRUE);
             glCheckError();
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, frambuffer.glData.depthAttachment, 0);
             glCheckError();
             #endif
-        } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D){
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D){
             glBindTexture(GL_TEXTURE_2D, frambuffer.glData.depthAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, 0, format, type, NULL);
             glCheckError();
             
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2447,10 +2447,10 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, frambuffer.glData.depthAttachment, 0);
             glCheckError();
-        } else if(specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
             //Assert(false);
             glBindTexture(GL_TEXTURE_2D_ARRAY, frambuffer.glData.depthAttachment);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, specification.width, specification.height, specification.sample, 0, format, type, NULL);
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, frambuffer.specification.sample, 0, format, type, NULL);
             glCheckError();
     
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2468,11 +2468,11 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
             //glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
             //#endif*/
             glCheckError();
-        } else if(specification.type == FramebufferAttachmentType::CUBEMAP){
-            Assert(specification.width == specification.height);
+        } else if(frambuffer.specification.type == FramebufferAttachmentType::CUBEMAP){
+            Assert(frambuffer.specification.width == frambuffer.specification.height);
             glBindTexture(GL_TEXTURE_CUBE_MAP, frambuffer.glData.depthAttachment);
             for(unsigned int i = 0; i < 6; ++i) {
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, specification.width, specification.height, 0, format, type, NULL);
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, frambuffer.specification.width, frambuffer.specification.height, 0, format, type, NULL);
                 glCheckError();
             }
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2499,27 +2499,27 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer, FrameBuffe
     glCheckError();
 
     //Gen Attachments
-    for(int i = 0; i < specification.colorAttachments.size(); i++){
+    for(int i = 0; i < frambuffer.specification.colorAttachments.size(); i++){
         GenColorAttachment(i);
     }
     GenDepthAttachment();
 
-    if(specification.colorAttachments.size() == 0){
+    if(frambuffer.specification.colorAttachments.size() == 0){
         //glDrawBuffer(GL_NONE);
         //glReadBuffer(GL_NONE);
         const GLenum b = GL_NONE;
         glDrawBuffers(1, &b);
         glReadBuffer(GL_NONE);
         glCheckError();
-    } else if(specification.colorAttachments.size() > 1){
+    } else if(frambuffer.specification.colorAttachments.size() > 1){
         //Assert(specification.colorAttachments.size() <= 4);
 		
         std::vector<GLenum> buffers;
-        for(int i = 0; i < specification.colorAttachments.size(); i++){
+        for(int i = 0; i < frambuffer.specification.colorAttachments.size(); i++){
             buffers.push_back(GL_COLOR_ATTACHMENT0+i);
         }
 		
-        glDrawBuffers(specification.colorAttachments.size(), &buffers[0]);
+        glDrawBuffers(frambuffer.specification.colorAttachments.size(), &buffers[0]);
         glCheckError();
     }
 
@@ -2701,7 +2701,7 @@ void OpenGLGraphicsDevice::Texture2DGenerate(Texture2D& tex, unsigned int inWidt
     glCheckError();
 }
 
-bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings){
+bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path){
     /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
@@ -2731,16 +2731,16 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
     Texture2DDestroy(tex);
 
     tex.path = path;// std::string(path);
-    tex.settings = settings;
+    //tex.settings = settings;
     LoadSettings(tex.path.c_str(), tex.settings);
-    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    if(settings.mipmap){
-        tex.glData.filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.filterMin = TextureFilterLookup[(int)tex.settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(tex.settings.mipmap){
+        tex.glData.filterMin = TextureFilterLookupMipmap[(int)tex.settings.filter];
     }
-    tex.glData.filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    tex.mipmap = settings.mipmap;
+    tex.glData.filterMax = TextureFilterLookup[(int)tex.settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    tex.mipmap = tex.settings.mipmap;
 
     stbi_set_flip_vertically_on_load(1);
 
@@ -2759,7 +2759,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
     bool alpha = false;
     if(nrChannels > 3) alpha = true;
 
-    if(settings.textureFormat == TextureFormat::Auto){
+    if(tex.settings.textureFormat == TextureFormat::Auto){
         if(alpha){
             tex.glData.internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
             tex.glData.imageFormat = GL_RGBA;
@@ -2768,8 +2768,8 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
             tex.glData.imageFormat = GL_RGB;
         }
     } else {
-        tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
-        tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+        tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)tex.settings.textureFormat];
+        tex.glData.imageFormat = TextureFormatLookupMipmap[(int)tex.settings.textureFormat];
     }
     
     Texture2DGenerate(tex, width, height, TextureDataType::UnsignedByte, data);
@@ -2778,7 +2778,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
     return true;
 }
 
-bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings){
+bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size){
     /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
@@ -2808,15 +2808,15 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     Texture2DDestroy(tex);
 
     tex.path = "Memory";
-    tex.settings = settings;
-    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    if(settings.mipmap){
-        tex.glData.filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    //tex.settings = settings;
+    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.filterMin = TextureFilterLookup[(int)tex.settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(tex.settings.mipmap){
+        tex.glData.filterMin = TextureFilterLookupMipmap[(int)tex.settings.filter];
     }
-    tex.glData.filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    tex.mipmap = settings.mipmap;
+    tex.glData.filterMax = TextureFilterLookup[(int)tex.settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    tex.mipmap = tex.settings.mipmap;
 
     stbi_set_flip_vertically_on_load(1);
 
@@ -2835,7 +2835,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     bool alpha = false;
     if(nrChannels > 3) alpha = true;
 
-    if(settings.textureFormat == TextureFormat::Auto){
+    if(tex.settings.textureFormat == TextureFormat::Auto){
         if(alpha){
             tex.glData.internalFormat = GL_RGBA; //GL_SRGB_ALPHA; //GL_RGBA;
             tex.glData.imageFormat = GL_RGBA;
@@ -2844,8 +2844,8 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
             tex.glData.imageFormat = GL_RGB;
         }
     } else {
-        tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
-        tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+        tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)tex.settings.textureFormat];
+        tex.glData.imageFormat = TextureFormatLookupMipmap[(int)tex.settings.textureFormat];
     }
 
     Texture2DGenerate(tex, width, height, TextureDataType::UnsignedByte, _data);
@@ -2854,7 +2854,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     return true;
 }
 
-bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings){
+bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType){
     /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
         tex.width = inWidth;
         tex.height = inHeight;
@@ -2884,20 +2884,20 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     Texture2DDestroy(tex);
 
     tex.path = "Memory";
-    tex.settings = settings;
-    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)settings.wrap]; //GL_REPEAT;
-    tex.glData.filterMin = TextureFilterLookup[(int)settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    if(settings.mipmap){
-        tex.glData.filterMin = TextureFilterLookupMipmap[(int)settings.filter];
+    tex.settings = tex.settings;
+    tex.glData.wrapS = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.wrapT = TextureWrappingLookupMipmap[(int)tex.settings.wrap]; //GL_REPEAT;
+    tex.glData.filterMin = TextureFilterLookup[(int)tex.settings.filter];// settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    if(tex.settings.mipmap){
+        tex.glData.filterMin = TextureFilterLookupMipmap[(int)tex.settings.filter];
     }
-    tex.glData.filterMax = TextureFilterLookup[(int)settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
-    tex.mipmap = settings.mipmap;
+    tex.glData.filterMax = TextureFilterLookup[(int)tex.settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
+    tex.mipmap = tex.settings.mipmap;
 
-    Assert(settings.textureFormat != TextureFormat::Auto);
+    Assert(tex.settings.textureFormat != TextureFormat::Auto);
 
-    tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)settings.textureFormat];
-    tex.glData.imageFormat = TextureFormatLookupMipmap[(int)settings.textureFormat];
+    tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)tex.settings.textureFormat];
+    tex.glData.imageFormat = TextureFormatLookupMipmap[(int)tex.settings.textureFormat];
     Texture2DGenerate(tex, width, height, dataType, data);
     tex.isComplete = true;
     return true;
@@ -2919,6 +2919,16 @@ bool OpenGLGraphicsDevice::Texture2DIsValid(Texture2D& tex){
 
 void* OpenGLGraphicsDevice::Texture2DRenderId(Texture2D& tex){
     return (void*)(uint64_t)tex.glData.id;
+}
+
+bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){ 
+    if(Texture2DIsValid(tex) == false) return false;
+
+    glBindTexture(GL_TEXTURE_2D, tex.glData.id);
+    std::vector<unsigned char> pixels(tex.width*tex.height*4);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    return true;
 }
 
 bool OpenGLGraphicsDevice::Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths){

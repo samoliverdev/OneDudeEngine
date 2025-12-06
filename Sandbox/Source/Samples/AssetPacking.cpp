@@ -42,12 +42,14 @@ void AssetPackingSample::OnInit(){
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
-    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+    //Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
+    model->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     
-    model->meshs[0]->Save("Sandbox/Mesh.meshasset", Asset::SaveType::AssetBinary);
+    //model->meshs[0]->Save("Sandbox/Mesh.meshasset", Asset::SaveType::AssetBinary);
     model->meshs[0]->Save("Sandbox/Mesh.meshbin", Asset::SaveType::FinalBinary);
 
-    model->Save("Sandbox/Model.modelasset", Asset::SaveType::AssetBinary);
+    //model->Save("Sandbox/Model.modelasset", Asset::SaveType::AssetBinary);
     model->Save("Sandbox/Model.modelbin", Asset::SaveType::FinalBinary);
 
     Ref<Model> modelBin = AssetManager::Get().LoadAsset<Model>("Sandbox/Model.modelbin");

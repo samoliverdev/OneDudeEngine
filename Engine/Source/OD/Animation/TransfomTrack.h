@@ -85,6 +85,14 @@ public:
         }
         return result;
     }
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ar(id);
+        ar(position);
+        ar(rotation);
+        ar(scale);
+    }
     
 protected:
     unsigned int id;

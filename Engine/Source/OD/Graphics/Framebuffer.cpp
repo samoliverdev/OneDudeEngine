@@ -14,7 +14,7 @@ Framebuffer::Framebuffer(FramebufferType inType, int width, int height, int laye
     specification.width = width;
     specification.height = height;
     if(type == FramebufferType::Shadowmap) specification.sample = layers;
-    graphicsDevice->FramebufferCreate(*this, specification);
+    graphicsDevice->FramebufferCreate(*this);
 }
 
 Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
@@ -45,7 +45,7 @@ bool Framebuffer::IsValid(){
 }
 
 void Framebuffer::Invalidate(){
-    graphicsDevice->FramebufferCreate(*this, specification);
+    graphicsDevice->FramebufferCreate(*this);
 }
 
 int Framebuffer::ReadPixel(int attachmentIndex, int x, int y){

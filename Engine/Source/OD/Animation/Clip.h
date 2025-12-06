@@ -30,6 +30,15 @@ public:
     bool GetLooping();
     void SetLooping(bool inLooping);
 
+    template <class Archive>
+    void serialize(Archive& ar){
+        ar(tracks);
+        ar(name);
+        ar(startTime);
+        ar(endTime);
+        ar(looping);
+    }
+
 protected:
     std::vector<TRACK> tracks;
     std::string name;

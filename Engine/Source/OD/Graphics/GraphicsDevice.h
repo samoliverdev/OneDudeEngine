@@ -4,10 +4,10 @@
 #include "OD/Core/Color.h"
 #include "Camera.h"
 #include "RendererTypes.h"
-#include "Framebuffer.h"
-#include "Texture.h"
+//#include "Framebuffer.h"
+//#include "Texture.h"
 #include "SubShader.h"
-#include "InstancingBuffer.h"
+//#include "InstancingBuffer.h"
 
 namespace OD{
 
@@ -21,6 +21,7 @@ class Texture2D;
 class Texture2DArray;
 class Cubemap;
 class Shader;
+class InstancingBuffer;
 struct GraphicsStats;
 struct PerDrawData;
 struct TextParams;
@@ -80,7 +81,7 @@ public:
 
     virtual void BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip) = 0;
     virtual void EndFramebuffer() = 0;
-    virtual bool FramebufferCreate(Framebuffer& frambuffer, FrameBufferSpecification specification) = 0;
+    virtual bool FramebufferCreate(Framebuffer& frambuffer) = 0;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;
     virtual bool FramebufferIsValid(Framebuffer& frambuffer) = 0;
     virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) = 0;
@@ -108,12 +109,13 @@ public:
     virtual void MeshDestroy(Mesh& mesh) = 0;
     virtual bool MeshIsValid(Mesh& mesh) = 0;
 
-    virtual bool Texture2DCreate(Texture2D& tex, const std::string path, Texture2DSetting settings) = 0;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, Texture2DSetting settings) = 0;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings) = 0;
+    virtual bool Texture2DCreate(Texture2D& tex, const std::string path) = 0;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size) = 0;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType) = 0;
     virtual void Texture2DDestroy(Texture2D& tex) = 0;
     virtual bool Texture2DIsValid(Texture2D& tex) = 0;
     virtual void* Texture2DRenderId(Texture2D& tex) = 0;
+    virtual bool Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){ return false; }
     virtual Ref<Texture2D> Texture2DCreateBrdfLUTTexture2D(){ return nullptr; }
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) = 0; 

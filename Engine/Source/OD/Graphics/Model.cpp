@@ -9,6 +9,8 @@
 #include "OD/Core/Application.h"
 #include <string>
 #include <fstream>
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 
 #include "OD/Editor/Editor.h"
 
@@ -124,14 +126,15 @@ bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSetti
 	std::string fileType = getExtension(path);
 
 	if(fileType == "modelasset"){
-		std::ifstream stream(path, std::ios::binary);
+		Assert(false);
+		/*std::ifstream stream(path, std::ios::binary);
 		if(stream.is_open() == false) return false;
 
 		cereal::PortableBinaryInputArchive ar(stream);
 		ar(model);//ArchiveDump(ar, *this);
 
 		model.SetPath(path);
-		return true;
+		return true;*/
 	}
 
 	if(fileType == "modelbin"){
@@ -139,8 +142,7 @@ bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSetti
 		if(stream.is_open() == false) return false;
 
 		cereal::BinaryInputArchive ar(stream);
-		ar(model);//ArchiveDump(ar, *this);
-
+		model.LoadFrom(ar);
 		model.SetPath(path);
 		return true;
 	}
@@ -195,9 +197,10 @@ bool Model::CreateFromPackage(Model& model, std::string const &path, Package& pa
 	}
 
 	if(fileType == "modelbin"){
+		Assert(false);
 		MemoryInputStream mem((char*)data, dataSize);
 		cereal::BinaryInputArchive ar(mem);
-		ar(model);//ArchiveDump(ar, *this);
+		model.LoadFrom(ar);
 
 		model.SetPath(path);
 		return true;
@@ -217,15 +220,102 @@ bool Model::Save(const std::string& outPath, SaveType type){
     Assert(os.is_open());
 
     if(type == Asset::SaveType::AssetBinary){
-        cereal::PortableBinaryOutputArchive ar(os);
-        ar(*this);
+		Assert(false);
+        /*cereal::PortableBinaryOutputArchive ar(os);
+        ar(*this);*/
     }
     if(type == Asset::SaveType::FinalBinary){
         cereal::BinaryOutputArchive ar(os);
-        ar(*this);
+		SaveTo(ar);
     }
 
     return true;
+}
+
+void Model::SaveTo(cereal::BinaryOutputArchive& ar){
+    ar(renderTargets);
+    ar(meshs);
+    ar(materials);
+    ar(matrixs);
+	ar(textures);
+	ar(animationClips);
+	ar(skeleton);
+	ar(settings);
+
+    /*int texSize = textures.size();
+    ar(texSize);
+
+    for(int i = 0; i < texSize; i++){
+        int w = textures[i]->Width();
+        int h = textures[i]->Height();
+        ar(w);
+        ar(h);
+
+        std::vector<uint8_t> pixelData;
+        textures[i]->GetPixelData(pixelData);
+
+        std::vector<uint8_t> pngData;
+
+        stbi_write_png_to_func(
+            [](void* ctx, void* data, int size) {
+                auto* out = static_cast<std::vector<uint8_t>*>(ctx);
+                uint8_t* bytes = (uint8_t*)data;
+                out->insert(out->end(), bytes, bytes + size);
+            },
+            &pngData,
+            w, h, 4,
+            pixelData.data(),
+            0
+        );
+
+        int pngSize = pngData.size();
+        ar(pngSize);
+        ar(cereal::binary_data(pngData.data(), pngSize));
+    }*/
+}
+
+void Model::LoadFrom(cereal::BinaryInputArchive& ar){
+    ar(renderTargets);
+    ar(meshs);
+    ar(materials);
+	ar(textures);
+    ar(matrixs);
+	ar(animationClips);
+	ar(skeleton);
+	ar(settings);
+
+	/*if(settings.generateColliderData){
+		modelShapeData = CreateMeshShapeData(*this);
+	}
+
+    int texSize;
+    ar(texSize);
+    textures.resize(texSize);
+    for(int i = 0; i < texSize; i++){
+        int w, h;
+        ar(w);
+        ar(h);
+
+        int pngSize;
+        ar(pngSize);
+
+        std::vector<uint8_t> pngData(pngSize);
+        ar(cereal::binary_data(pngData.data(), pngSize));
+
+        int ow, oh, nch;
+        unsigned char* decoded = stbi_load_from_memory(
+            pngData.data(), pngSize,
+            &ow, &oh, &nch, 4
+        );
+
+        if(!decoded){
+			Assert(false); //throw std::runtime_error("Failed to decode PNG in Model::LoadTo");
+        }
+
+        textures[i] = Texture2D::CreateFromRaw(decoded, 0, w, h, TextureDataType::UnsignedByte, {});
+
+        stbi_image_free(decoded);
+    }*/
 }
 
 AABB Model::GenerateAABB(Model& model){
