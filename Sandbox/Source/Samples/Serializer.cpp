@@ -14,6 +14,7 @@
 #include <fstream>
 
 #include "SerializerStatic.h"
+#include "SerializerStatic2.h"
 
 struct _Transform{
     float x = 0;
@@ -43,10 +44,95 @@ struct Player{
     }
 };
 
+struct MyRecord{
+    int x, y;
+    float z;
+
+    template <class Archive>
+    void serialize(Archive & ar){
+        //ar( x, y, z );
+        ar(cereal::make_nvp("x", x));
+        ar(cereal::make_nvp("y", y));
+        ar(cereal::make_nvp("z", z));
+    }
+};
+
 void SerializerSample::OnInit(){
     Player p;
     p.name = "lolo";
     p.trans[0].x = 20;
+
+    {
+    std::ofstream os("Sandbox/test.json");
+    cereal::JSONOutputArchive archive(os);
+    std::string a = "lolo";
+    float b = 50;
+    MyRecord c = {};
+    c.x = 200;
+    archive(cereal::make_nvp("a", a));
+    archive(cereal::make_nvp("b", b));
+    archive(cereal::make_nvp("c", c));
+    }
+
+    {
+    std::ofstream os("Sandbox/test.bin");
+    cereal::BinaryOutputArchive archive(os);
+    std::string a = "lolo";
+    float b = 50;
+    MyRecord c = {};
+    c.x = 200;
+    archive(cereal::make_nvp("a", a));
+    archive(cereal::make_nvp("b", b));
+    archive(cereal::make_nvp("c", c));
+    }
+
+    {
+    std::ofstream os("Sandbox/test.binport");
+    cereal::PortableBinaryOutputArchive archive(os);
+    std::string a = "lolo";
+    float b = 50;
+    MyRecord c = {};
+    c.x = 200;
+    archive(cereal::make_nvp("a", a));
+    archive(cereal::make_nvp("b", b));
+    archive(cereal::make_nvp("c", c));
+    }
+
+    {
+    std::ifstream os("Sandbox/test.binport");
+    cereal::PortableBinaryInputArchive archive(os);
+    std::string a = "";
+    float b = 0;
+    MyRecord c = {};
+    archive(cereal::make_nvp("a", a));
+    archive(cereal::make_nvp("b", b));
+    archive(cereal::make_nvp("c", c));
+    Assert(b == 50);
+    }
+
+    {
+    std::ifstream os("Sandbox/test.json");
+    cereal::JSONInputArchive archive(os);
+    MyRecord c = {};
+    archive(cereal::make_nvp("c", c));
+    Assert(c.x == 200);
+    }
+
+    {
+        std::string a = "lolo";
+        float b = 50;
+        MyRecord c = {};
+        c.x = 200;
+
+        toml::table root;
+        cereal::TomlOutputArchive2 ar(root);
+
+        ar(cereal::make_nvp("a", a));
+        ar(cereal::make_nvp("b", b));
+        ar(cereal::make_nvp("c", c));
+
+        std::cout << root << std::endl;
+    }
 
     {
     std::ofstream os("Sandbox/player.toml");
@@ -67,6 +153,10 @@ void SerializerSample::OnInit(){
     Static::BitseryOutputArchive ar(os);
     ar.object("player", p);
     ar.flush();
+    }
+
+    {
+        toml::table t = toml::table{{"test", 250}}; 
     }
 
     /*{

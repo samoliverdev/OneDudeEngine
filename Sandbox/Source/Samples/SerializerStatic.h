@@ -240,4 +240,7 @@ private:
     bitsery::Serializer<bitsery::InputStreamAdapter>* m_serializer;
 };*/
 
+/////////////////////////////////
+
+
 }
