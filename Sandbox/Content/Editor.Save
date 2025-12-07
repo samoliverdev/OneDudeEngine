@@ -3,7 +3,7 @@
         "sceneHierarchyPanel.show": true,
         "contentBrowserPanel.show": true,
         "inspectorPanel.show": true,
-        "viewportPanel.show": false,
+        "viewportPanel.show": true,
         "profilePanel.show": true,
         "rendererStatsPanel.show": true,
         "globalSettingsPanel.show": false,

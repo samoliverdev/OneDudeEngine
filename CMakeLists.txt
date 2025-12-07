@@ -182,6 +182,8 @@ if(SUPPORT_WEBGPU)
 endif()
 
 add_subdirectory(Engine/ThirdParty/unordered_dense-4.8.1)
+add_subdirectory(Engine/ThirdParty/tomlplusplus-3.4.0)
+add_subdirectory(Engine/ThirdParty/bitsery)
 
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -294,6 +296,8 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/efsw/include/
     Engine/ThirdParty/msdf-atlas-gen/msdf-atlas-gen/
     Engine/ThirdParty/unordered_dense-4.8.1/include/
+    Engine/ThirdParty/tomlplusplus-3.4.0/include/
+    Engine/ThirdParty/bitsery/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
@@ -312,6 +316,8 @@ target_link_libraries(Engine PUBLIC
     efsw
     msdf-atlas-gen
     unordered_dense
+    tomlplusplus_tomlplusplus
+    Bitsery::bitsery
     #glslang glslang-default-resource-limits
     #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 

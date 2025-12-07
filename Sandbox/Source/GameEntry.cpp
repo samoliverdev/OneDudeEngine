@@ -21,6 +21,7 @@
 #include "Samples/LoadScene.h"
 #include "Samples/AssetPacking.h"
 #include "Samples/Package.h"
+#include "Samples/Serializer.h"
 #include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -32,7 +33,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 5;
+    int i = -1;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();
@@ -57,6 +58,7 @@ OD::Module* CreateMainModule(){
     if(i == 28) return new JointSample();
     if(i == 29) return new AssetPackingSample();
     if(i == 30) return new PackageSample();
+    if(i == 31) return new SerializerSample();
 
     return new BaseMeshSample();
 }
