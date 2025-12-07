@@ -3,6 +3,7 @@
 #include <OD/Scene/SceneManager.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Shader.h>
+#include <OD/Graphics/Cubemap.h>
 #include <OD/RenderPipeline/ModelRendererComponent.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>

@@ -8,6 +8,7 @@
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"

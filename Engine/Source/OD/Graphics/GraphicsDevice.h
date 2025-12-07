@@ -5,7 +5,7 @@
 #include "Camera.h"
 #include "RendererTypes.h"
 //#include "Framebuffer.h"
-//#include "Texture.h"
+#include "Texture.h"
 #include "SubShader.h"
 //#include "InstancingBuffer.h"
 
@@ -22,6 +22,7 @@ class Texture2DArray;
 class Cubemap;
 class Shader;
 class InstancingBuffer;
+class UniformBuffer;
 struct GraphicsStats;
 struct PerDrawData;
 struct TextParams;
@@ -109,9 +110,9 @@ public:
     virtual void MeshDestroy(Mesh& mesh) = 0;
     virtual bool MeshIsValid(Mesh& mesh) = 0;
 
-    virtual bool Texture2DCreate(Texture2D& tex, const std::string path) = 0;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size) = 0;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType) = 0;
+    //virtual bool Texture2DCreate(Texture2D& tex, const std::string path) = 0;
+    //virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size) = 0;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType) = 0;
     virtual void Texture2DDestroy(Texture2D& tex) = 0;
     virtual bool Texture2DIsValid(Texture2D& tex) = 0;
     virtual void* Texture2DRenderId(Texture2D& tex) = 0;
@@ -122,7 +123,7 @@ public:
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) = 0;
     virtual bool Texture2DArrayIsValid(Texture2DArray& tex) = 0;
 
-    virtual bool CubemapCreateFromFile(
+    virtual bool CubemapCreateFromFile(//TODO: Update this later, to only reciver raw binary data removing any file load from the graphic device
         Cubemap& cubemap,
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back

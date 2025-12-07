@@ -1,5 +1,4 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Core/Color.h"
 #include "OD/Core/Asset.h"
 #include "OD/Scene/Scene.h"

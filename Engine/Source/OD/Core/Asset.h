@@ -1,5 +1,4 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Utils/Allocators.h"

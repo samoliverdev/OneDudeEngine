@@ -1,10 +1,12 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
-#include "OD/Serialization/CerealImGui.h"
 #include "PostFX.h"
+#include "OD/Serialization/Serialization.h"
 
 namespace OD{
+
+class Material;
+class Framebuffer;
+class Texture2D;
 
 class OD_API SSGIPostFX: public PostFX{
 public:
@@ -12,10 +14,7 @@ public:
     ~SSGIPostFX();
     void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
 
-    inline void OnGui() override {
-        cereal::ImGuiArchive gui;
-        gui(*this);
-    }
+    void OnGui() override;
 
     template <class Archive>
     void serialize(Archive& ar){

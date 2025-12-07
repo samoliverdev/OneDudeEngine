@@ -61,9 +61,7 @@ void* HeadlessGraphicsDevice::FramebufferColorAttachmentId(Framebuffer& framebuf
 void* HeadlessGraphicsDevice::FramebufferDepthAttachmentId(Framebuffer& framebuffer){ return nullptr; }
 int HeadlessGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y){ return 0; }
 
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path){ return false; }
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size){ return false; }
-bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType){ return false; }
+bool HeadlessGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType){ return false; }
 void HeadlessGraphicsDevice::Texture2DDestroy(Texture2D& tex){}
 bool HeadlessGraphicsDevice::Texture2DIsValid(Texture2D& tex){ return false; }
 void* HeadlessGraphicsDevice::Texture2DRenderId(Texture2D& tex){ return nullptr; }

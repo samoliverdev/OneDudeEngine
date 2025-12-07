@@ -1,9 +1,18 @@
 #include "SSGIPostFX.h"
 #include "RenderContext.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Shader.h"
 #include "OD/Core/Application.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
+
+void SSGIPostFX::OnGui(){
+    cereal::ImGuiArchive gui;
+    gui(*this);
+}
 
 SSGIPostFX::SSGIPostFX(){
     enable = false;

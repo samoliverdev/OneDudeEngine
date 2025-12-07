@@ -1,4 +1,7 @@
 #include "ObjLoader.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Material.h"
 #include <tinyobjloader/tiny_obj_loader.h>
 
 namespace OD{

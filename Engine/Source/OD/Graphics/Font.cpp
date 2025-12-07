@@ -332,10 +332,10 @@ bool Font::LoadFromFile(const std::string& inPath){
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,
-                    bitmap.width * bitmap.height * channelCount,
+                    //bitmap.width * bitmap.height * channelCount,
                     bitmap.width, bitmap.height,
                     TextureDataType::UnsignedByte,
-                    setting
+                    setting, "RASTER_ATLAS"
                 );
             } else if(settings.type == FontType::SDF){
                 // SDF MODE
@@ -361,10 +361,10 @@ bool Font::LoadFromFile(const std::string& inPath){
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,
-                    bitmap.width * bitmap.height * channelCount,
+                    //bitmap.width * bitmap.height * channelCount,
                     bitmap.width, bitmap.height,
                     TextureDataType::UnsignedByte,
-                    setting
+                    setting, "SDF_ATLAS"
                 );
             } else if(settings.type == FontType::MSDF){
                 // MSDF MODE
@@ -390,10 +390,10 @@ bool Font::LoadFromFile(const std::string& inPath){
 
                 fontAtlas = Texture2D::CreateFromRaw(
                     (void*)bitmap.pixels,
-                    bitmap.width * bitmap.height * channelCount,
+                    //bitmap.width * bitmap.height * channelCount,
                     bitmap.width, bitmap.height,
                     TextureDataType::UnsignedByte,
-                    setting
+                    setting, "MSDF_ATLAS"
                 );
             }
 

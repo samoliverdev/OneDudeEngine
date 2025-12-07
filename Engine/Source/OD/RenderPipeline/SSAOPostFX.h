@@ -1,10 +1,12 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
-#include "OD/Serialization/CerealImGui.h"
 #include "PostFX.h"
+#include "OD/Serialization/Serialization.h"
 
 namespace OD{
+
+class Framebuffer;
+class Material;
+class Texture2D;
 
 //TODO: Add blur
 class OD_API SSAOPostFX: public PostFX{
@@ -16,10 +18,7 @@ public:
     SSAOPostFX();
     void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
 
-    inline void OnGui() override {
-        cereal::ImGuiArchive gui;
-        gui(*this);
-    }
+    void OnGui() override;
 
     template <class Archive>
     void serialize(Archive& ar){

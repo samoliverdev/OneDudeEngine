@@ -1,4 +1,7 @@
 #include "GLTFLoader2.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Material.h"
 #include <tiny_gltf.h>
 #include <string>
 
@@ -342,7 +345,7 @@ bool GltfLoadModel(
     for(auto& i: gltfModel.images){
         auto tex = Texture2D::CreateFromRaw(
             i.image.data(),
-            i.image.size(),
+            //i.image.size(),
             i.width,
             i.height,
             TextureDataType::UnsignedByte,

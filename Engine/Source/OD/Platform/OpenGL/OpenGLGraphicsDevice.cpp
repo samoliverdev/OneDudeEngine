@@ -10,13 +10,15 @@
 #include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Material.h"
+#include "OD/Graphics/Cubemap.h"
 #include "OD/Graphics/InstancingBuffer.h"
+#include "OD/Graphics/UniformBuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
 #include <fstream>
-#include <stb/stb_image.h>
+#include <stb/stb_image.h> //TODO: Remove this from This Graphic device
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #define UseUniformBuffer 1
@@ -2701,33 +2703,8 @@ void OpenGLGraphicsDevice::Texture2DGenerate(Texture2D& tex, unsigned int inWidt
     glCheckError();
 }
 
+/*
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string path){
-    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
-        tex.width = inWidth;
-        tex.height = inHeight;
-        
-        glGenTextures(1, &tex.glData.id);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, tex.glData.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, tex.glData.internalFormat, tex.width, tex.height, 0, tex.glData.imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
-        glCheckError();
-        
-        if(tex.mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
-        glCheckError();
-    
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.glData.wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.glData.wrapT);
-    
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.glData.filterMin);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.glData.filterMax);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glCheckError();
-    };
-    */
     Texture2DDestroy(tex);
 
     tex.path = path;// std::string(path);
@@ -2779,32 +2756,6 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
 }
 
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size){
-    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
-        tex.width = inWidth;
-        tex.height = inHeight;
-        
-        glGenTextures(1, &tex.glData.id);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, tex.glData.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, tex.glData.internalFormat, tex.width, tex.height, 0, tex.glData.imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
-        glCheckError();
-        
-        if(tex.mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
-        glCheckError();
-    
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.glData.wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.glData.wrapT);
-    
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.glData.filterMin);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.glData.filterMax);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glCheckError();
-    };
-    */
     Texture2DDestroy(tex);
 
     //tex.path = "Memory";
@@ -2852,36 +2803,15 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     stbi_image_free(_data);
     tex.isComplete = true;
     return true;
-}
+}*/
 
-bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType){
-    /*auto Texture2DGenerate = [&](unsigned int inWidth, unsigned int inHeight, TextureDataType dataType, void* data){
-        tex.width = inWidth;
-        tex.height = inHeight;
-        
-        glGenTextures(1, &tex.glData.id);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, tex.glData.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, tex.glData.internalFormat, tex.width, tex.height, 0, tex.glData.imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
-        glCheckError();
-        
-        if(tex.mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
-        glCheckError();
-    
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.glData.wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.glData.wrapT);
-    
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.glData.filterMin);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.glData.filterMax);
-        glCheckError();
-    
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glCheckError();
-    };
-    */
+bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType){
     Texture2DDestroy(tex);
+
+    if(tex.settings.textureFormat == TextureFormat::None){
+        LogError("Texture2DCreate: textureFormat invalid");
+        return false;
+    }
 
     //tex.path = "Memory";
     tex.settings = tex.settings;
@@ -2893,8 +2823,6 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     }
     tex.glData.filterMax = TextureFilterLookup[(int)tex.settings.filter]; //settings.filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST;
     tex.mipmap = tex.settings.mipmap;
-
-    Assert(tex.settings.textureFormat != TextureFormat::Auto);
 
     tex.glData.internalFormat = TextureInternalFormatLookupMipmap[(int)tex.settings.textureFormat];
     tex.glData.imageFormat = TextureFormatLookupMipmap[(int)tex.settings.textureFormat];
@@ -2924,11 +2852,23 @@ void* OpenGLGraphicsDevice::Texture2DRenderId(Texture2D& tex){
 bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){ 
     if(Texture2DIsValid(tex) == false) return false;
 
+    if(!(tex.settings.textureFormat == TextureFormat::RGBA || tex.settings.textureFormat == TextureFormat::RGB)){
+        LogError("Texture format dont Supported");
+        return false;
+    }
+
     glBindTexture(GL_TEXTURE_2D, tex.glData.id);
     glCheckError();
-    outData.resize(tex.width*tex.height*4);// std::vector<unsigned char> pixels(tex.width*tex.height*4);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, outData.data());
-    glCheckError();
+
+    if(tex.settings.textureFormat == TextureFormat::RGBA){
+        outData.resize(tex.width*tex.height*4);// std::vector<unsigned char> pixels(tex.width*tex.height*4);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, outData.data());
+        glCheckError();
+    } else {
+        outData.resize(tex.width*tex.height*3);// std::vector<unsigned char> pixels(tex.width*tex.height*4);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, outData.data());
+        glCheckError();
+    }
 
     return true;
 }

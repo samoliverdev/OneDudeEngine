@@ -1,5 +1,4 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Base.h"
 #include <deque>
 #include <string>

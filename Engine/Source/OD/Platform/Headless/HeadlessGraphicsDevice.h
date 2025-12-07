@@ -68,9 +68,7 @@ public:
     virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) override;
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) override;
 
-    virtual bool Texture2DCreate(Texture2D& tex, const std::string path) override;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size) override;
-    virtual bool Texture2DCreate(Texture2D& tex, void* data, size_t size, int width, int height, TextureDataType dataType) override;
+    virtual bool Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType) override;
     virtual void Texture2DDestroy(Texture2D& tex) override;
     virtual bool Texture2DIsValid(Texture2D& tex) override;
     virtual void* Texture2DRenderId(Texture2D& tex) override;

@@ -1,8 +1,7 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Core/Transform.h"
 #include "OD/Core/Asset.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Core/Transform.h"
+//#include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
 #include "OD/Graphics/Camera.h"
 #include "OD/Core/Lua.h"

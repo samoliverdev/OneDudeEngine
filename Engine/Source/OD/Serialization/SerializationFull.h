@@ -1,5 +1,6 @@
 #pragma once
 #include "Serialization.h"
+#include "OD/Core/Package.h"
 #include <fstream>
 #include <cereal/details/helpers.hpp>
 #include <cereal/access.hpp>
@@ -21,6 +22,24 @@
 #define ODInputArchive cereal::JSONInputArchive
 
 namespace OD{
+
+template<class Archive>
+void LoadArchive(Package& package, const std::string& path, Archive& data, const std::string& name = ""){
+    void* _data = nullptr;
+    size_t size;
+    if(package.ReadFileData(path.c_str(), _data, size)){
+        std::ofstream os(path);
+        cereal::JSONOutputArchive ar(os);
+
+        if(name.empty()){
+            ArchiveDumpNVP(ar, data);
+        } else {
+            ArchiveDumpNamed(ar, name, data);
+        }
+    }
+    package.FreeFileData(_data);
+}
+
 
 template<class Archive>
 void LoadArchive(const std::string& path, Archive& data, const std::string& name = ""){

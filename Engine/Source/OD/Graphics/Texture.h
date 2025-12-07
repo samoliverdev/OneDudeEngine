@@ -1,7 +1,5 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 
@@ -36,7 +34,7 @@ enum class OD_API_IMPORT TextureDataType{
 };
 
 enum class OD_API_IMPORT TextureFormat{
-    Auto,
+    None,
     RGB,
     RGBA,
     //SRGB,
@@ -65,7 +63,7 @@ struct OD_API Texture2DSetting{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrap = TextureWrapping::Repeat;
     bool mipmap = true;
-    TextureFormat textureFormat = TextureFormat::Auto;
+    TextureFormat textureFormat = TextureFormat::None;
 
     template <class Archive>
     void serialize(Archive & ar){
@@ -85,20 +83,24 @@ public:
     ~Texture2D();
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 
-    static Ref<Texture2D> CreateFromMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label = ""); 
-    static Ref<Texture2D> CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label = ""); 
+    static Ref<Texture2D> CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label = ""); 
+    static Ref<Texture2D> CreateFromRaw(void* data, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label = ""); 
     static Ref<Texture2D> CreateFromPackage(const char* path, Package& package, Texture2DSetting settings); 
     static Ref<Texture2D> LoadDefautlTexture2D();
     static Ref<Texture2D> CreateBrdfLUTTexture2D();
-    
+
+    void SetLoadSettings(Texture2DSetting inloadSettings);
+    bool LoadFromFileMemory(void* data, size_t size, const std::string& label = ""); 
     bool LoadFromFile(const std::string& path) override;
+    
     std::vector<std::string> GetFileAssociations() override;
 
     bool IsValid();
     unsigned int Width();
     unsigned int Height();
 
-    inline Texture2DSetting& GetSettings(){ return settings; }//Info: Temp add function
+    //inline Texture2DSetting& GetLoadSettings(){ return loadSettings; }//Info: Temp add function
+    //inline Texture2DSetting GetSettings() const { return settings; }//Info: Temp add function
     
     void* RenderId();
 
@@ -125,6 +127,7 @@ private:
     unsigned int width = 0;
     unsigned int height = 0;
     bool mipmap = false;
+    Texture2DSetting loadSettings{};
     Texture2DSetting settings{};
     bool isComplete = false;
     Texture2DDataGL;

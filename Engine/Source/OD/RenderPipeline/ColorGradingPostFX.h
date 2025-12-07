@@ -1,9 +1,7 @@
 #pragma once
-#include "OD/Defines.h"
+#include "PostFX.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
-#include "PostFX.h"
-
 #include <type_traits>
 
 namespace OD{

@@ -1,17 +1,23 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-#include "OD/Graphics/SubShader.h"
+//#include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
-#include "OD/Graphics/Cubemap.h"
-#include "OD/Graphics/UniformBuffer.h"
-#include "OD/Serialization/Serialization.h"
+//#include "OD/Graphics/Cubemap.h"
+//#include "OD/Graphics/UniformBuffer.h"
+//#include "OD/Serialization/Serialization.h"
 #include "OD/Platform/OpenGL/GL.h"
 
 namespace sol{ class state; }
 
 namespace OD{
+
+//class Shader;
+//class Texture2D;
+class Texture2DArray;
+class Cubemap;
+class UniformBuffer;
+class Framebuffer;
 
 struct OD_API MaterialMap{
     enum class OD_API_IMPORT Type{

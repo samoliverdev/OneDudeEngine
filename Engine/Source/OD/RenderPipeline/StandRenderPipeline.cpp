@@ -5,6 +5,7 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Geometry.h"
 #include "OD/Graphics/Font.h"
+#include "OD/Graphics/UniformBuffer.h"
 #include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"

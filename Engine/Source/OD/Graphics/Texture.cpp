@@ -17,31 +17,28 @@ extern GraphicsDevice* graphicsDevice;
 
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    tex->settings = settings;
-    if(graphicsDevice->Texture2DCreate(*tex, filePath) == false){
-        graphicsDevice->Texture2DDestroy(*tex);
+    tex->SetLoadSettings(settings);
+    if(tex->LoadFromFile(filePath) == false){
         return nullptr;
     }
 
     return tex;
 }
 
-Ref<Texture2D> Texture2D::CreateFromMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label){
+Ref<Texture2D> Texture2D::CreateFromFileMemory(void* data, size_t size, Texture2DSetting settings, const std::string& label){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    tex->settings = settings;
-    if(graphicsDevice->Texture2DCreate(*tex, data, size) == false){
-        graphicsDevice->Texture2DDestroy(*tex);
+    tex->SetLoadSettings(settings);
+    if(tex->LoadFromFileMemory(data, size, label) == false){
         return nullptr;
     }
-
-    tex->path = "#" + label;
     return tex;
 }
 
-Ref<Texture2D> Texture2D::CreateFromRaw(void* data, size_t size, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label){
+Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, TextureDataType dataType, Texture2DSetting settings, const std::string& label){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
+    tex->SetLoadSettings(settings);
     tex->settings = settings;
-    if(graphicsDevice->Texture2DCreate(*tex, data, size, width, height, dataType) == false){
+    if(graphicsDevice->Texture2DCreate(*tex, data, width, height, dataType) == false){
         graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
@@ -57,11 +54,14 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
         package.FreeFileData(data);
         return nullptr;
     }
-
+    
     Ref<Texture2D> tex = CreateRef<Texture2D>();
-    tex->settings = settings;
-    if(graphicsDevice->Texture2DCreate(*tex, data, size) == false){
-        graphicsDevice->Texture2DDestroy(*tex);
+    
+    std::string inpath(path);
+    if(inpath.empty() == false && inpath[0] != '#') LoadArchive(package, inpath + ".meta", settings, "settings");
+
+    tex->SetLoadSettings(settings);
+    if(tex->LoadFromFileMemory(data, size) == false){ //if(graphicsDevice->Texture2DCreate(*tex, data, size) == false){
         package.FreeFileData(data);
         return nullptr;
     }
@@ -70,14 +70,84 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
     return tex;
 }
 
-bool Texture2D::LoadFromFile(const std::string& path){
-    if(path.empty() == false && path != "Memory") LoadOrCreateArchive(path + ".meta", settings, "settings");
-        
-    if(graphicsDevice->Texture2DCreate(*this, path) == false){
-        graphicsDevice->Texture2DDestroy(*this);
+void Texture2D::SetLoadSettings(Texture2DSetting inloadSettings){ 
+    loadSettings = inloadSettings; 
+}
+
+bool Texture2D::LoadFromFileMemory(void* indata, size_t insize, const std::string& label){
+    settings = loadSettings;
+    //rif(inpath.empty() == false && inpath[0] != '#') LoadOrCreateArchive(path + ".meta", settings, "settings");
+
+    stbi_set_flip_vertically_on_load(1);
+
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char* data = stbi_load_from_memory((const stbi_uc*)indata, insize, &width, &height, &nrChannels, 0);
+
+    if(!data){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", path.c_str(), stbi_failure_reason());
+        stbi_image_free(data);
         return false;
     }
 
+    bool alpha = false;
+    if(nrChannels > 3) alpha = true;
+
+    if(alpha){
+        settings.textureFormat = TextureFormat::RGBA;
+        //Assert(size % (sizeof(unsigned char)*4) == 0);
+    } else {
+        settings.textureFormat = TextureFormat::RGB;
+        //Assert(size % (sizeof(unsigned char)*3) == 0);
+    }
+
+    if(graphicsDevice->Texture2DCreate(*this, data, width, height, TextureDataType::UnsignedByte) == false){
+        graphicsDevice->Texture2DDestroy(*this);
+        stbi_image_free(data);
+        return false;
+    }
+
+    path = "#"+label;
+    stbi_image_free(data);
+    return true;
+}
+
+bool Texture2D::LoadFromFile(const std::string& inpath){
+    settings = loadSettings;
+
+    if(inpath.empty() == false && inpath[0] != '#') LoadOrCreateArchive(inpath + ".meta", settings, "settings");
+
+    stbi_set_flip_vertically_on_load(1);
+
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char* data = stbi_load(inpath.c_str(), &width, &height, &nrChannels, 0);
+
+    if(!data){
+        LogError("Cannot load file image %s\nSTB Reason: %s\n", inpath.c_str(), stbi_failure_reason());
+        stbi_image_free(data);
+        return false;
+    }
+
+    bool alpha = false;
+    if(nrChannels > 3) alpha = true;
+
+    if(alpha){
+        settings.textureFormat = TextureFormat::RGBA;
+    } else {
+        settings.textureFormat = TextureFormat::RGB;
+    }
+
+    if(graphicsDevice->Texture2DCreate(*this, data, width, height, TextureDataType::UnsignedByte) == false){
+        graphicsDevice->Texture2DDestroy(*this);
+        stbi_image_free(data);
+        return false;
+    }
+
+    path = inpath;
+    stbi_image_free(data);
     return true;
 }
 
@@ -275,7 +345,7 @@ bool Texture2D::GetPixelData(std::vector<uint8_t>& outData){
 }
 
 void Texture2D::SaveTo(cereal::BinaryOutputArchive& ar){
-    settings.textureFormat = TextureFormat::RGBA;
+    Assert(settings.textureFormat == TextureFormat::RGBA || settings.textureFormat == TextureFormat::RGB);
     ar(settings);
 
     int w = Width();
@@ -286,24 +356,41 @@ void Texture2D::SaveTo(cereal::BinaryOutputArchive& ar){
     /*std::vector<uint8_t> pixelData;
     GetPixelData(pixelData);
     ar(pixelData);*/
-
+    
     std::vector<uint8_t> pixelData;
     GetPixelData(pixelData);
 
     std::vector<uint8_t> pngData;
 
-    int a = stbi_write_png_to_func(
-        [](void* ctx, void* data, int size) {
-            auto* out = static_cast<std::vector<uint8_t>*>(ctx);
-            uint8_t* bytes = (uint8_t*)data;
-            out->insert(out->end(), bytes, bytes + size);
-        },
-        &pngData,
-        w, h, 4,
-        pixelData.data(),
-        0
-    );
-    Assert(a > 0);
+    if(settings.textureFormat == TextureFormat::RGBA){
+        int a = stbi_write_png_to_func(
+            [](void* ctx, void* data, int size) {
+                auto* out = static_cast<std::vector<uint8_t>*>(ctx);
+                uint8_t* bytes = (uint8_t*)data;
+                out->insert(out->end(), bytes, bytes + size);
+            },
+            &pngData,
+            w, h, 4,
+            pixelData.data(),
+            0
+        );
+        Assert(a > 0);
+    }
+
+    if(settings.textureFormat == TextureFormat::RGB){
+        int a = stbi_write_jpg_to_func(
+            [](void* ctx, void* data, int size) {
+                auto* out = static_cast<std::vector<uint8_t>*>(ctx);
+                uint8_t* bytes = (uint8_t*)data;
+                out->insert(out->end(), bytes, bytes + size);
+            },
+            &pngData,
+            w, h, 3,
+            pixelData.data(),
+            0
+        );
+        Assert(a > 0);
+    }
 
     int pngSize = pngData.size();
     ar(pngSize);
@@ -312,6 +399,7 @@ void Texture2D::SaveTo(cereal::BinaryOutputArchive& ar){
 
 void Texture2D::LoadFrom(cereal::BinaryInputArchive& ar){
     ar(settings);
+    Assert(settings.textureFormat == TextureFormat::RGBA || settings.textureFormat == TextureFormat::RGB);
 
     int w, h;
     ar(w);
@@ -333,15 +421,20 @@ void Texture2D::LoadFrom(cereal::BinaryInputArchive& ar){
     int ow, oh, nch;
     unsigned char* decoded = stbi_load_from_memory(
         pngData.data(), pngSize,
-        &ow, &oh, &nch, 4
+        &ow, &oh, &nch, settings.textureFormat == TextureFormat::RGBA ? 4 : 3
     );
+    if(settings.textureFormat == TextureFormat::RGBA){
+        Assert(nch == 4);
+    } else {
+        Assert(nch == 3);
+    }
 
     if(!decoded){
         Assert(false);
         //throw std::runtime_error("Failed to decode PNG in Model::LoadTo");
     }
 
-    if(graphicsDevice->Texture2DCreate(*this, decoded, 0, w, h, TextureDataType::UnsignedByte) == false){
+    if(graphicsDevice->Texture2DCreate(*this, decoded, w, h, TextureDataType::UnsignedByte) == false){
         Assert(false);
         graphicsDevice->Texture2DDestroy(*this);
     }
@@ -366,7 +459,7 @@ void Texture2D::CreateLuaBind(sol::state& lua){
         sol::call_constructor, Texture2D::CreateFromFile,
         "New", Texture2D::CreateFromFile,
         "CreateFromFile", Texture2D::CreateFromFile,
-        "CreateFromMemory", Texture2D::CreateFromMemory,
+        "CreateFromFileMemory", Texture2D::CreateFromFileMemory,
         "CreateFromPackage", Texture2D::CreateFromPackage,
         "LoadDefautlTexture2D", Texture2D::LoadDefautlTexture2D,
         "CreateBrdfLUTTexture2D", Texture2D::CreateBrdfLUTTexture2D,

@@ -1,8 +1,5 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
-
 
 struct OD_API MeshBorders{
     bool left = false;

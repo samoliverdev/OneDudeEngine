@@ -1,9 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Core/ImGui.h"
 #include "ToneMappingPostFX.h"
 #include "ColorGradingPostFX.h"
 #include "BloomPostFX.h"
@@ -11,6 +9,10 @@
 #include "SSGIPostFX.h"
 
 namespace OD{
+
+class Framebuffer;
+class Material;
+class Cubemap;
 
 enum class ShadowQuality{ VeryLow = 0, Low, Median, High, VeryHigh, Ultra };
 //enum class AntiAliasing{ None, MSAA };
@@ -76,28 +78,7 @@ struct OD_API EnvironmentSettings{
 
     //bool hasInited = false;
 
-    EnvironmentSettings(){
-        //return;
-        /*skyCubemap = Cubemap::CreateFromFile(
-            "Engine/Textures/Skybox/right.jpg",
-            "Engine/Textures/Skybox/left.jpg",
-            "Engine/Textures/Skybox/top.jpg",
-            "Engine/Textures/Skybox/bottom.jpg",
-            "Engine/Textures/Skybox/front.jpg",
-            "Engine/Textures/Skybox/back.jpg"
-        );*/
-        skyCubemap = AssetManager::Get().LoadAsset<Cubemap>("DefaultSkyboxCubemap");
-        
-        //skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
-        //skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
-
-        Assert(skyCubemap != nullptr);
-
-        skyCustomMaterial = CreateRef<Material>();
-        skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
-        //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
-        skyCustomMaterial->SetCubemap("mainTex", skyCubemap);
-    }
+    EnvironmentSettings();
 };
 
 struct OD_API EnvironmentComponent{

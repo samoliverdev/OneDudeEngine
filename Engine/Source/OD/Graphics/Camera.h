@@ -1,6 +1,4 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Core/Math.h"
 #include "Culling.h"
 
 namespace sol{ class state; }

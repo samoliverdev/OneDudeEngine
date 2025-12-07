@@ -1,12 +1,12 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
+//#include "OD/Defines.h"
+//#include "OD/Serialization/Serialization.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
 #include "OD/Animation/Skeleton.h"
 #include "OD/Animation/Clip.h"
-#include "Mesh.h"
-#include "Material.h"
+//#include "Mesh.h"
+//#include "Material.h"
 #include "Culling.h"
 
 namespace cereal{
@@ -15,6 +15,11 @@ namespace cereal{
 }
 
 namespace OD{
+
+class Shader;
+class Mesh;
+class Texture2D;
+class Material;
 
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;

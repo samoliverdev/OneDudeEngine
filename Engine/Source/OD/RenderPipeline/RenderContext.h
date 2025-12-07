@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Graphics/Framebuffer.h"
-#include "OD/Graphics/InstancingBuffer.h"
 #include "RendererList.h"
 #include "LightComponent.h"
 #include "PostFX.h"
@@ -12,6 +11,7 @@ namespace OD{
 
 class Scene;
 class UniformBuffer;
+class InstancingBuffer;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};

@@ -11,7 +11,7 @@ int glCheckError_(const char *file, int line, std::function<void()> callback){
 #else
 int glCheckError_(const char *file, int line, std::function<void()> callback){
     GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR){
+    while((errorCode = glGetError()) != GL_NO_ERROR){
         std::string error = "OTHER";
         switch (errorCode){
             case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;

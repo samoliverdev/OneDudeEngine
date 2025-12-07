@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Defines.h"
+#include "OD/Core/Asset.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "SubShader.h"
 #include <set>

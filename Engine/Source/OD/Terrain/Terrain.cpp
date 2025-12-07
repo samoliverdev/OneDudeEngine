@@ -6,6 +6,7 @@
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Texture.h"
 
 namespace OD{
 
@@ -648,7 +649,7 @@ void TerrainSystem::CreateTerrain(TerrainComponent& terrain, Entity e){
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenHeightmapTex");    
     terrain.heightmapTex = Texture2D::CreateFromRaw( 
         (void*)&terrain.heightmap->data[0],
-        (size_t)(terrain.heightmap->data.size() * sizeof(float)),
+        //(size_t)(terrain.heightmap->data.size() * sizeof(float)),
         terrain.heightmap->width, terrain.heightmap->height,
         TextureDataType::Float,
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED32F}
@@ -779,7 +780,7 @@ void TerrainSystem::UpdateTerrainData(TerrainComponent& terrain){
     OD_LOG_PROFILE("TerrainSystem::CreateTerrain::GenHeightmapTex");    
     terrain.heightmapTex = Texture2D::CreateFromRaw( 
         (void*)&terrain.heightmap->data[0],
-        (size_t)(terrain.heightmap->data.size() * sizeof(float)),
+        //(size_t)(terrain.heightmap->data.size() * sizeof(float)),
         terrain.heightmap->width, terrain.heightmap->height,
         TextureDataType::Float,
         Texture2DSetting{TextureFilter::Linear, TextureWrapping::ClampToEdge, true, TextureFormat::RED16F}

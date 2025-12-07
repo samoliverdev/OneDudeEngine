@@ -1,7 +1,33 @@
 #include "EnvironmentComponent.h"
 #include "OD/Serialization/CerealImGui.h"
+#include "OD/Graphics/Cubemap.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Core/ImGui.h"
 
 namespace OD{
+
+EnvironmentSettings::EnvironmentSettings(){
+    //return;
+    /*skyCubemap = Cubemap::CreateFromFile(
+        "Engine/Textures/Skybox/right.jpg",
+        "Engine/Textures/Skybox/left.jpg",
+        "Engine/Textures/Skybox/top.jpg",
+        "Engine/Textures/Skybox/bottom.jpg",
+        "Engine/Textures/Skybox/front.jpg",
+        "Engine/Textures/Skybox/back.jpg"
+    );*/
+    skyCubemap = AssetManager::Get().LoadAsset<Cubemap>("DefaultSkyboxCubemap");
+    
+    //skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
+    //skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
+
+    Assert(skyCubemap != nullptr);
+
+    skyCustomMaterial = CreateRef<Material>();
+    skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
+    skyCustomMaterial->SetCubemap("mainTex", skyCubemap);
+}
 
 void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
     EnvironmentComponent& environment = scene.GetComponent<EnvironmentComponent>(e);

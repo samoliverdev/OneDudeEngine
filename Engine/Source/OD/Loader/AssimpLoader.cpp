@@ -3,6 +3,9 @@
 #include "AssimpLoader.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/SubShader.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Material.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -250,7 +253,7 @@ Ref<Texture2D> LoadTextureInternal(LoadData& data, aiTexture* tex, ModelLoadSett
     Ref<Texture2D> texture = nullptr;
 
     if(tex->mHeight == 0){
-        texture = Texture2D::CreateFromMemory(   //CreateRef<Texture2D>
+        texture = Texture2D::CreateFromFileMemory(   //CreateRef<Texture2D>
             (void*)tex->pcData, 
             (size_t)tex->mWidth, 
             Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true},
@@ -260,11 +263,10 @@ Ref<Texture2D> LoadTextureInternal(LoadData& data, aiTexture* tex, ModelLoadSett
         size_t sizeInBytes = tex->mWidth * tex->mHeight * 4;
         Ref<Texture2D> texture = Texture2D::CreateFromRaw(   //CreateRef<Texture2D>
             (void*)tex->pcData, 
-            sizeInBytes,
             (size_t)tex->mWidth, 
             (size_t)tex->mHeight,
             TextureDataType::UnsignedByte,
-            Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true},
+            Texture2DSetting{TextureFilter::Linear, TextureWrapping::Repeat, true, TextureFormat::RGBA},
             std::string(tex->mFilename.C_Str())
         );
     }

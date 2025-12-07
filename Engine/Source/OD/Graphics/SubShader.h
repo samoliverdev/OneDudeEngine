@@ -1,11 +1,6 @@
 #pragma once
-#include "OD/Defines.h"
-#include "OD/Core/Asset.h"
+//#include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
-#include "Texture.h"
-#include "Cubemap.h"
-#include "Framebuffer.h"
-#include "UniformBuffer.h"
 #include "RendererTypes.h"
 
 #include "OD/Platform/OpenGL/GL.h"

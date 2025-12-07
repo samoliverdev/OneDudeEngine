@@ -1,9 +1,18 @@
 #include "SSAOPostFX.h"
 #include "RenderContext.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Shader.h"
 #include "OD/Core/Application.h"
+#include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
+
+void SSAOPostFX::OnGui() {
+    cereal::ImGuiArchive gui;
+    gui(*this);
+}
 
 SSAOPostFX::SSAOPostFX(){
     enable = false;
@@ -44,7 +53,7 @@ SSAOPostFX::SSAOPostFX(){
         ssaoNoise.push_back(noise);
     } 
     noise = Texture2D::CreateFromRaw(
-        ssaoNoise.data(), ssaoNoise.size() * sizeof(Vector3), 4, 4, TextureDataType::Float, 
+        ssaoNoise.data(), 4, 4, TextureDataType::Float, 
         {TextureFilter::Nearest, TextureWrapping::Repeat, false, TextureFormat::RGB32F}
     );
     Assert(noise != nullptr);

@@ -6,7 +6,8 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "SubShader.h"
-#include "Font.h"
+#include "Cubemap.h"
+#include "Texture.h"
 #include "OD/Defines.h"
 #include "OD/Core/Lua.h"
 

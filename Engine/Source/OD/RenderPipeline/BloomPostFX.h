@@ -1,12 +1,11 @@
 #pragma once
-#include "OD/Defines.h"
 #include "PostFX.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Serialization/CerealImGui.h"
-#include "OD/Graphics/Framebuffer.h"
+
 namespace OD{
     
 class Material;
+class Framebuffer;
 
 class OD_API BloomPostFX: public PostFX{
 public:

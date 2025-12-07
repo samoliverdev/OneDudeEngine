@@ -1,8 +1,6 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
-#include "OD/Serialization/Serialization.h"
 #include <map>
 #include <msdf-atlas-gen.h>
 

@@ -1,6 +1,8 @@
 #include "Light.h"
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Graphics.h>
+#include <OD/Graphics/Framebuffer.h>
+#include <OD/Graphics/Mesh.h>
 #include <OD/Core/Application.h>
 #include <OD/Core/ImGui.h>
 #include <assert.h>

@@ -7,6 +7,8 @@
 #include <OD/RenderPipeline/CameraComponent.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/RenderPipeline/MeshRendererComponent.h>
+#include <OD/RenderPipeline/ModelRendererComponent.h>
+#include <OD/Animation/Animator.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
 #include <OD/Editor/Editor.h>
@@ -45,16 +47,25 @@ void AssetPackingSample::OnInit(){
     //Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
     Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
     model->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+
+    model = AssetManager::Get().LoadAsset<Model>("Standard/Models/YBot.glb");
+    model->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     
     //model->meshs[0]->Save("Sandbox/Mesh.meshasset", Asset::SaveType::AssetBinary);
-    model->meshs[0]->Save("Sandbox/Mesh.meshbin", Asset::SaveType::FinalBinary);
+    //model->meshs[0]->Save("Sandbox/Mesh.meshbin", Asset::SaveType::FinalBinary);
 
     //model->Save("Sandbox/Model.modelasset", Asset::SaveType::AssetBinary);
     model->Save("Sandbox/Model.modelbin", Asset::SaveType::FinalBinary);
 
     Ref<Model> modelBin = AssetManager::Get().LoadAsset<Model>("Sandbox/Model.modelbin");
-    Assert(modelBin != nullptr);
-    scene->Instantiate(modelBin);
+    
+    /*Assert(modelBin != nullptr);
+    scene->Instantiate(modelBin);*/
+
+    Entity modelEntity = scene->AddEntity("Model");
+    SkinnedModelRendererComponent& renderer = scene->AddComponent<SkinnedModelRendererComponent>(modelEntity);
+    renderer.SetModel(modelBin);
+    AnimatorComponent& anim = scene->AddComponent<AnimatorComponent>(modelEntity);
 
     /*Ref<Mesh> meshBin = AssetManager::Get().LoadAsset<Mesh>("Sandbox/Mesh.meshbin");
     Assert(meshBin != nullptr);

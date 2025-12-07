@@ -717,6 +717,8 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
             emiter.SubmitDrawData(*emiter.dataBuffer, trans.GlobalModelMatrix(), &cam);
             if(emiter.dataBuffer->Count() == 0) continue;
 
+            Assert(emiter.rendererModule.material != nullptr);
+
             RenderData renderData;
             renderData.distance = math::distance(trans.Position(), cam.viewPos);
             renderData.distance -= i * 0.01f; 
@@ -728,6 +730,7 @@ void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector
             renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
             renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
             outRenderData.push_back(renderData);
+            
         }
     }
 }
