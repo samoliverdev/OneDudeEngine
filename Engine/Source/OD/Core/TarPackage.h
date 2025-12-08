@@ -50,6 +50,7 @@ public:
     TarPackage(const void *addr);
     const TarHeader *find_header(const std::string &filepath) const;
 
+    bool HasFile(const char* path) override;
     bool ReadFileData(const char* path, void*& outData, size_t& outSize) override;
     void FreeFileData(void*& data) override;
 

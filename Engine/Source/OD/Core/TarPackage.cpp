@@ -88,7 +88,7 @@ TarPackage::TarPackage(const void *addr){
     }
 }
 
-const TarHeader *TarPackage::find_header(const std::string &filepath) const {
+const TarHeader *TarPackage::find_header(const std::string& filepath) const {
     //auto archive_path = "./" + filepath;
     auto archive_path = filepath;
 
@@ -101,6 +101,12 @@ const TarHeader *TarPackage::find_header(const std::string &filepath) const {
     }
 
     return nullptr;
+}
+
+bool TarPackage::HasFile(const char* path){
+    auto h = find_header(path);
+    if(h == nullptr) return false;
+    return true;
 }
 
 bool TarPackage::ReadFileData(const char* path, void*& outData, size_t& outSize){

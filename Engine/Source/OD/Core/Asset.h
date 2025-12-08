@@ -22,9 +22,9 @@ public:
     virtual ~Asset() = default; //virtual ~Asset(){}
     virtual std::string& Path();
     bool PathIsValid();
-    virtual void OnGui(){}
-    virtual void Reload(){ LoadFromFile(path); }
-    virtual bool Save(const std::string& outPath, SaveType type){ return false; }//INFO: Maybe Rename
+    virtual void OnGui();
+    virtual void Reload();
+    virtual bool Save(const std::string& outPath, SaveType type);
     virtual bool LoadFromFile(const std::string& path);
     virtual bool LoadFromPackage(const std::string& path, Package& package);
     virtual std::vector<std::string> GetFileAssociations();
@@ -99,6 +99,9 @@ public:
     void StopHotReload();
     void ApplyHotReload();
 
+    void Mount(Package* p);
+    void UnMount(Package* p);
+
 private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
@@ -114,6 +117,8 @@ private:
     AssetManagerFileUpdateListener* listener;
     std::unordered_set<Ref<Asset>> toApplyHotReload;
     std::mutex toApplyHotReloadMutex;
+
+    std::vector<Package*> packages;
 };
 
 template<class T>
@@ -231,7 +236,22 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     //Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
     #endif
 
-    if(asset->LoadFromFile(path) == false) return nullptr;
+    bool hasLoadedFromPackage = false;
+    for(int i = 0; i < packages.size(); i++){
+        if(packages[i]->HasFile(path.c_str())){
+            if(asset->LoadFromPackage(path, *packages[i])){
+                hasLoadedFromPackage = true;
+                break;
+            }// else {
+            //    return nullptr; //INFO: Maybe force nullptr if asset cold not load from path
+            //}
+        }
+    }
+
+    if(hasLoadedFromPackage == false){
+        if(asset->LoadFromFile(path) == false) return nullptr;
+    }
+    
     db[path] = asset;
     
     //return reinterpret_cast<const Ref<T>&>(asset);

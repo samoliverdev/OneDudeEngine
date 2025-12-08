@@ -15,7 +15,7 @@
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/xml.hpp>
+//#include <cereal/archives/xml.hpp>
 #include <cereal/archives/json.hpp>
 
 #define ODOutputArchive cereal::JSONOutputArchive
@@ -39,7 +39,6 @@ void LoadArchive(Package& package, const std::string& path, Archive& data, const
     }
     package.FreeFileData(_data);
 }
-
 
 template<class Archive>
 void LoadArchive(const std::string& path, Archive& data, const std::string& name = ""){

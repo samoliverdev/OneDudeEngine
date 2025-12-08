@@ -15,6 +15,18 @@ bool Asset::PathIsValid(){
     return true;
 }
 
+void Asset::OnGui(){
+
+}
+
+void Asset::Reload(){ 
+    LoadFromFile(path); 
+}
+
+bool Asset::Save(const std::string& outPath, SaveType type){
+    return false; 
+}
+
 bool Asset::LoadFromFile(const std::string& path){ 
     return false; 
 }
@@ -50,6 +62,14 @@ AssetTypesDB& AssetTypesDB::Get(){
 
 std::unordered_map<std::string, Ref<Asset>>& AssetManager::GetDB(Type id){
     return data[id];
+}
+
+void AssetManager::Mount(Package* p){
+    packages.push_back(p);
+}
+
+void AssetManager::UnMount(Package* p){
+    Assert(false && "To implement");
 }
 
 void AssetManager::UnloadAll(){

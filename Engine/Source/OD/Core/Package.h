@@ -5,6 +5,7 @@ namespace OD{
 
 class OD_API Package{
 public:
+    virtual bool HasFile(const char* path) = 0;
     virtual bool ReadFileData(const char* path, void*& outData, size_t& outSize) = 0;
     virtual void FreeFileData(void*& data) = 0;
 };
