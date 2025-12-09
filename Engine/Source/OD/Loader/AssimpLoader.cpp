@@ -606,7 +606,7 @@ void LoadAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
 }
 
 Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
-    Ref<Mesh> out = CreateRef<Mesh>();
+    Ref<Mesh> out = CreateRef<Mesh>(std::string(mesh->mName.C_Str()));
 
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++){
