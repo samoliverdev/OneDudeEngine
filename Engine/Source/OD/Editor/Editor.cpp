@@ -313,6 +313,10 @@ void Editor::OnUpdate(float deltaTime){
     
     if(Input::IsKeyDown(KeyCode::F5)) open = !open;
 
+    if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::S)){
+        SaveScene();
+    }
+
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Z)){
         UndoManager::Get().Undo();
     }
@@ -506,6 +510,16 @@ void Editor::OpenScene(){
     UnselectAll();
 }
 
+void Editor::SaveScene(){
+    if(SceneManager::Get().GetActiveScene()->Running()) return;
+
+    Scene* scene = SceneManager::Get().GetActiveScene();
+    if(scene->PathIsValid() == false) return;
+    
+    scene->Save(scene->Path().c_str(), EntityNull);
+    curScenePath = scene->Path();
+}
+
 void Editor::SaveAsScene(){
     if(SceneManager::Get().GetActiveScene()->Running()) return;
 
@@ -618,6 +632,7 @@ void Editor::DrawMainMenuBar(){
 
             if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
+            if(ImGui::MenuItem("Save", "Ctrl+S")) SaveScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
             if(ImGui::MenuItem("Undo", "Ctrl+Z")) UndoManager::Get().Undo();

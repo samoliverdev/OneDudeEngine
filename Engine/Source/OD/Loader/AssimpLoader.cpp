@@ -10,7 +10,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <filesystem>
+
 namespace OD{
+
+bool FileExists(const std::string& path){
+    return std::filesystem::exists(path);
+}
 
 namespace AssimpGLMHelpers{
 	inline Matrix4 ConvertMatrixToGLMFormat(const aiMatrix4x4& from){
@@ -394,7 +400,12 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
 
             std::string filename = loadData.directory + '/' + ss;// std::string(str.C_Str());
             //LogWarningExtra("AssimpTexture: %s", filename.c_str());
-            texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
+            if(FileExists(filename)){
+                texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
+            } else {
+                texture = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+            }
+            
             textures.push_back(texture);
         }
 

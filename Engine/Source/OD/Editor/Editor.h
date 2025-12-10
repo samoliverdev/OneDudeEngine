@@ -186,6 +186,7 @@ private:
     void StopScene();
     void NewScene();
     void OpenScene();
+    void SaveScene();
     void SaveAsScene();
 
     void DrawMainMenuBar();
