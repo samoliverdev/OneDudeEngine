@@ -1,8 +1,8 @@
 {
     "settings": {
         "scale": 1.0,
-        "useOnlySkinnedBones": true,
-        "generateColliderData": true,
+        "useOnlySkinnedBones": false,
+        "generateColliderData": false,
         "shaderRef": {
             "isNull": true,
             "path": ""

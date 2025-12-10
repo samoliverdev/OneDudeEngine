@@ -24,11 +24,13 @@ class Material;
 struct ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
     float scale = 1.0f;
+    bool useOnlySkinnedBones = false;
     bool generateColliderData = false; //true;
 
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scale);
+        ArchiveDumpNVP(ar, useOnlySkinnedBones);
         ArchiveDumpNVP(ar, generateColliderData);
 
         AssetRefSerialize<Shader> shaderRef(customShader);

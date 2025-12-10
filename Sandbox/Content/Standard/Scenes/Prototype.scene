@@ -5469,8 +5469,8 @@
                         },
                         "rendererModule": {
                             "matRef": {
-                                "isNull": false,
-                                "path": "Memory"
+                                "isNull": true,
+                                "path": ""
                             },
                             "modelRef": {
                                 "isNull": false,
@@ -5709,8 +5709,8 @@
                         },
                         "rendererModule": {
                             "matRef": {
-                                "isNull": false,
-                                "path": "Memory"
+                                "isNull": true,
+                                "path": ""
                             },
                             "modelRef": {
                                 "isNull": false,
@@ -5955,8 +5955,8 @@
                         },
                         "rendererModule": {
                             "matRef": {
-                                "isNull": false,
-                                "path": "Memory"
+                                "isNull": true,
+                                "path": ""
                             },
                             "modelRef": {
                                 "isNull": false,
@@ -6325,6 +6325,12 @@
             "fieldOfView": 45.0,
             "nearClipPlane": 0.10000000149011612,
             "farClipPlane": 100.0,
+            "cleanColor": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0,
+                "v.w": 1.0
+            },
             "renderingPath": 1
         }
     ],
@@ -9648,7 +9654,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
-                    "skinnedSkeletonIndex": 3,
+                    "skinnedSkeletonIndex": 1,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9697,7 +9703,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 6,
+                    "skinnedSkeletonIndex": 3,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9746,7 +9752,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 2,
-                    "skinnedSkeletonIndex": 8,
+                    "skinnedSkeletonIndex": 6,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9795,7 +9801,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 58,
+                    "skinnedSkeletonIndex": 56,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9844,7 +9850,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 4,
-                    "skinnedSkeletonIndex": 59,
+                    "skinnedSkeletonIndex": 57,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9893,7 +9899,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 63,
+                    "skinnedSkeletonIndex": 61,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9942,7 +9948,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 6,
-                    "skinnedSkeletonIndex": 64,
+                    "skinnedSkeletonIndex": 62,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -9991,7 +9997,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 2,
-                    "skinnedSkeletonIndex": 11,
+                    "skinnedSkeletonIndex": 9,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10040,7 +10046,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 8,
-                    "skinnedSkeletonIndex": 12,
+                    "skinnedSkeletonIndex": 10,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10089,7 +10095,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 2,
-                    "skinnedSkeletonIndex": 35,
+                    "skinnedSkeletonIndex": 33,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10138,7 +10144,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 10,
-                    "skinnedSkeletonIndex": 36,
+                    "skinnedSkeletonIndex": 34,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10206,7 +10212,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": -1,
-                    "skinnedSkeletonIndex": 3,
+                    "skinnedSkeletonIndex": 1,
                     "overrideType": 0,
                     "disableSync": true,
                     "isHips": true,
@@ -10255,7 +10261,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
-                    "skinnedSkeletonIndex": 6,
+                    "skinnedSkeletonIndex": 3,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10304,7 +10310,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 8,
+                    "skinnedSkeletonIndex": 6,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10353,7 +10359,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
-                    "skinnedSkeletonIndex": 58,
+                    "skinnedSkeletonIndex": 56,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10402,7 +10408,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 3,
-                    "skinnedSkeletonIndex": 59,
+                    "skinnedSkeletonIndex": 57,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10451,7 +10457,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 0,
-                    "skinnedSkeletonIndex": 63,
+                    "skinnedSkeletonIndex": 61,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10500,7 +10506,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 5,
-                    "skinnedSkeletonIndex": 64,
+                    "skinnedSkeletonIndex": 62,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10549,7 +10555,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 11,
+                    "skinnedSkeletonIndex": 9,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10598,7 +10604,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 7,
-                    "skinnedSkeletonIndex": 12,
+                    "skinnedSkeletonIndex": 10,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10647,7 +10653,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 1,
-                    "skinnedSkeletonIndex": 35,
+                    "skinnedSkeletonIndex": 33,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,
@@ -10696,7 +10702,7 @@
                         "modelSourceMeshIndex": 0
                     },
                     "parent": 9,
-                    "skinnedSkeletonIndex": 36,
+                    "skinnedSkeletonIndex": 34,
                     "overrideType": 0,
                     "disableSync": false,
                     "isHips": false,

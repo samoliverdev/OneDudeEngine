@@ -58,7 +58,7 @@ public:
     Mesh(const Mesh& mesh);
     ~Mesh() override;
 
-    void AppedFrom(Mesh& mesh);
+    void AppedFrom(const Mesh& mesh);
 
     //Mesh& operator=(const Mesh& other) = delete;
     //Mesh(const Mesh& other) = delete;

@@ -39,12 +39,15 @@ void Model::OnGui(){
 	ImGui::Text("Animation Clips Count: %zd", animationClips.size());
 
 	ImGui::InputFloat("LoadSettings::scale", &settings.scale);
+
+	ImGui::Checkbox("LoadSettings::useOnlySkinnedBones", &settings.useOnlySkinnedBones);
+	ImGui::Checkbox("LoadSettings::generateColliderData", &settings.generateColliderData);
 	
-	if(ImGui::Button("Apply Changes") && path != "Memory"){
+	if(ImGui::Button("Apply Changes") && PathIsValid()){
 		Reload();
 	}
 
-	if(path.empty() == false || path != "Memory"){
+	if(PathIsValid()){
 		auto* editor = Application::GetModuleByType<Editor>();
 		auto* framebuffer = editor->AssetPreviewFramebuffer();
 		editor->SetModelAssetPreview(path);
@@ -79,7 +82,7 @@ void Model::Clear(){
 }
 
 void Model::Reload(){
-    if(path == "Memory"){
+    if(PathIsValid() == false){
         LogError("Can Not Reload Texture2d From Memory");
         return;
     }
@@ -89,7 +92,8 @@ void Model::Reload(){
 }
 
 bool Model::LoadFromFile(const std::string& path){
-	if(path.empty() == false && path != "Memory") LoadOrCreateArchive(path + ".meta", settings, "settings");
+	//if(path.empty() == false && path != "#Memory") 
+		LoadOrCreateArchive(path + ".meta", settings, "settings");
     
 	//return Model::CreateFromFile(*this, path, settings);
 

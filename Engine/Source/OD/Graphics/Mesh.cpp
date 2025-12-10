@@ -54,7 +54,7 @@ Mesh::~Mesh(){
     graphicsDevice->MeshDestroy(*this);
 }
 
-void Mesh::AppedFrom(Mesh& mesh){
+void Mesh::AppedFrom(const Mesh& mesh){
     unsigned int vertexOffset = static_cast<unsigned int>(vertices.size());
 
     vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
@@ -69,6 +69,14 @@ void Mesh::AppedFrom(Mesh& mesh){
     for(unsigned int index : mesh.indices){
         indices.push_back(index + vertexOffset);
     }
+
+    for(unsigned int idx : mesh.indices){
+        Assert(idx < mesh.vertices.size());
+    }
+
+    unsigned maxI = 0;
+    for(auto i : indices) maxI = std::max(maxI, i);
+    LogInfo("Mesh max index = %u", maxI);
 }
 
 void Mesh::OnGui(){

@@ -42,9 +42,9 @@ struct LoadData{
 
     Pose bindPose;
     std::vector<std::string> names;
-
     std::vector<aiBone*> bones;
     std::vector<aiNode*> nodes;
+
     std::vector<aiMesh*> meshs;
     std::vector<aiMaterial*> materials;
 
@@ -77,6 +77,71 @@ int GetNodeIndex(LoadData& loadData, aiNode* node){
     return -1;
 }
 
+std::unordered_set<std::string> CollectUsedBones(const aiScene* scene){
+    std::unordered_set<std::string> usedBones;
+
+    if(!scene || !scene->mRootNode) return usedBones;
+
+    // Helper: Add node and all parents
+    auto AddNodeAndParents = [&](aiNode* node){
+        while(node){
+            usedBones.insert(node->mName.C_Str());
+            node = node->mParent;
+        }
+    };
+
+    // Scan all meshes for bones
+    for(unsigned int m = 0; m < scene->mNumMeshes; m++){
+        aiMesh* mesh = scene->mMeshes[m];
+
+        for(unsigned int b = 0; b < mesh->mNumBones; b++){
+            aiBone* bone = mesh->mBones[b];
+
+            // Find corresponding aiNode
+            aiNode* node = scene->mRootNode->FindNode(bone->mName);
+
+            if(!node) continue; // bone exists but no node? rare but possible
+
+            // Add this bone and its entire parent chain
+            AddNodeAndParents(node);
+        }
+    }
+
+    return usedBones;
+}
+
+void ReadSkeletonOnlySkinBones(
+    LoadData& loadData, 
+    aiNode* node, 
+    int parent,
+    const std::unordered_set<std::string>& usedBones)
+{
+    // If this node is NOT a bone, do not create a new bone entry,
+    // but still traverse its children (they might be bones).
+    int thisBoneId = parent;
+
+    if(usedBones.count(node->mName.C_Str()) != 0){
+        // this node IS a bone used by the skin
+        thisBoneId = (int)loadData.names.size();
+
+        loadData.bindPose.Resize(thisBoneId + 1);
+        loadData.bindPose.SetLocalTransform(
+            thisBoneId,
+            Transform(AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation))
+        );
+        loadData.bindPose.SetParent(thisBoneId, parent);
+
+        loadData.names.push_back(node->mName.C_Str());
+        loadData.nodes.push_back(node);
+    }
+
+    // Always recurse! Even if this is not a bone.
+    // Children may contain bones.
+    for(unsigned int i = 0; i < node->mNumChildren; i++){
+        ReadSkeletonOnlySkinBones(loadData, node->mChildren[i], thisBoneId, usedBones);
+    }
+}
+
 void ReadSkeleton(LoadData& loadData, aiNode* node, int parent = -1){
     Transform t(AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation));
 
@@ -98,9 +163,30 @@ void ReadSkeleton(LoadData& loadData, aiNode* node, int parent = -1){
     }
 }
 
+void LoadSkeletonSkinned(LoadData& data, aiNode* root){
+    auto usedBones = CollectUsedBones(data.scene);
+    ReadSkeletonOnlySkinBones(data, root, -1, usedBones);
+    data.model->skeleton.Set(data.bindPose, data.bindPose, data.names);
+}
+
 void LoadSkeleton(LoadData& data, aiNode* root){
     ReadSkeleton(data, root);
     data.model->skeleton.Set(data.bindPose, data.bindPose, data.names);
+}
+
+void LoadInvBindPoseSkinned(LoadData& data){
+    if(data.model->skeleton.GetInvBindPose().size() != data.bones.size()) return;
+
+    //Assert(data.model->skeleton.GetInvBindPose().size() == data.bones.size());
+
+    for(int i = 0; i < data.bones.size(); i++){
+        Matrix4 m = Matrix4Identity;
+        if(data.bones[i] != nullptr){
+            m = AssimpGLMHelpers::ConvertMatrixToGLMFormat(data.bones[i]->mOffsetMatrix);
+        }
+
+        data.model->skeleton.GetInvBindPose()[i] = m;
+    }
 }
 
 void LoadInvBindPose(LoadData& data){
@@ -661,7 +747,7 @@ Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
     return out;
 }
 
-void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
+void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node, bool useOnlySkinnedBones){
     for(unsigned int i = 0; i < node->mNumMeshes; i++){
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
@@ -672,13 +758,13 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node){
         renderTarget.meshIndex = node->mMeshes[i];
         renderTarget.materialIndex = data.materialIndexRemap[mesh->mMaterialIndex];
         //renderTarget.materialIndex = mesh->mMaterialIndex;
-        renderTarget.bindPoseIndex = GetNodeIndex(data, node);
+        renderTarget.bindPoseIndex = useOnlySkinnedBones ? 0 : GetNodeIndex(data, node);
 
         data.model->renderTargets.push_back(renderTarget);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++){
-        LoadRenderTargets(data, scene, node->mChildren[i]);
+        LoadRenderTargets(data, scene, node->mChildren[i], useOnlySkinnedBones);
     }
 }
 
@@ -720,7 +806,11 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
     loadData.directory = path.substr(0, path.find_last_of('/'));
     loadData.scene = scene;
 
-    LoadSkeleton(loadData, scene->mRootNode);
+    if(loadSettings.useOnlySkinnedBones == false){
+        LoadSkeleton(loadData, scene->mRootNode);
+    } else {
+        LoadSkeletonSkinned(loadData, scene->mRootNode);
+    }
 
     for(int i = 0; i < scene->mNumMeshes; i++){
         Ref<Mesh> mesh = LoadMesh(loadData, scene->mMeshes[i]);
@@ -770,8 +860,13 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         loadData.model->animationClips.push_back(out2);
     }
 
-    LoadRenderTargets(loadData, scene, scene->mRootNode);
-    LoadInvBindPose(loadData);
+    LoadRenderTargets(loadData, scene, scene->mRootNode, loadSettings.useOnlySkinnedBones);
+
+    if(loadSettings.useOnlySkinnedBones == false){
+        LoadInvBindPose(loadData);
+    } else {
+        LoadInvBindPoseSkinned(loadData);
+    }
 
     for(auto i: loadData.model->renderTargets){
         Assert(i.meshIndex != -1);
@@ -795,6 +890,7 @@ bool OD_API AssimpLoadModel(
     ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips
 ){
+    Assert(false && "outdate");
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFileFromMemory(
@@ -878,7 +974,7 @@ bool OD_API AssimpLoadModel(
         loadData.model->animationClips.push_back(out2);
     }
 
-    LoadRenderTargets(loadData, scene, scene->mRootNode);
+    LoadRenderTargets(loadData, scene, scene->mRootNode, loadSettings.useOnlySkinnedBones);
     LoadInvBindPose(loadData);
 
     for(auto i: loadData.model->renderTargets){
