@@ -5,11 +5,3 @@ name = 'lolo'
     [player.transform]
     x = 0.0
     y = 0.0
-
-    [[player.trans]]
-    x = 20.0
-    y = 0.0
-
-    [[player.trans]]
-    x = 0.0
-    y = 0.0

@@ -264,6 +264,84 @@ void ExtractBoneWeightForVertices(LoadData& skeletonData, Ref<Mesh> _mesh, aiMes
     }
 }
 
+void ExtractBoneWeightForVerticesNew(LoadData& skeletonData, Ref<Mesh> _mesh, aiMesh* mesh){
+    const size_t vertexCount = _mesh->vertices.size();
+
+    // Prepare final buffers
+    _mesh->weights.resize(vertexCount, Vector4(0, 0, 0, 0));
+    _mesh->influences.resize(vertexCount, Vector4(-1, -1, -1, -1));
+
+    // --- TEMPORARY ACCUMULATOR (unlimited influences per vertex) ---
+    struct Influence {
+        int bone;
+        float weight;
+    };
+    std::vector<std::vector<Influence>> temp(vertexCount);
+
+    // --- PASS 1: COLLECT BONE INFLUENCES ---
+    for(int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex){
+        aiBone* aiBonePtr = mesh->mBones[boneIndex];
+        std::string boneName = aiBonePtr->mName.C_Str();
+
+        // Resolve bone ID
+        int boneID = GetNodeIndex(skeletonData, boneName);
+        if(boneID < 0)
+            boneID = AddToBindPose(skeletonData, aiBonePtr);
+
+        // Ensure bones array is big enough
+        if(skeletonData.bones.size() < skeletonData.bindPose.Size())
+            skeletonData.bones.resize(skeletonData.bindPose.Size());
+
+        skeletonData.bones[boneID] = aiBonePtr;
+
+        // Gather raw weights for this bone
+        auto weights = aiBonePtr->mWeights;
+        int numWeights = aiBonePtr->mNumWeights;
+
+        for(int i = 0; i < numWeights; ++i){
+            int vertexId = weights[i].mVertexId;
+            float weight = weights[i].mWeight;
+
+            if(vertexId < 0 || vertexId >= (int)vertexCount) continue;
+
+            temp[vertexId].push_back({ boneID, weight });
+        }
+    }
+
+    // --- PASS 2: SORT, CLAMP TO 4, NORMALIZE, WRITE TO FINAL BUFFERS ---
+    for(size_t v = 0; v < vertexCount; ++v){
+        auto& list = temp[v];
+        if(list.empty()) continue;
+
+        // Sort: strongest weights first
+        std::sort(list.begin(), list.end(),
+            [](const Influence& a, const Influence& b) {
+                return a.weight > b.weight;
+            });
+
+        // Keep only the 4 strongest
+        if(list.size() > 4) list.resize(4);
+
+        // Normalize weights (sum must be 1.0)
+        float sum = 0.f;
+        for(auto& e : list) sum += e.weight;
+        if(sum > 0.f)
+            for (auto& e : list) e.weight /= sum;
+
+        // Write to final mesh buffers
+        for (int i = 0; i < 4; i++){
+            if(i < (int)list.size()) {
+                _mesh->influences[v][i] = list[i].bone;
+                _mesh->weights[v][i] = list[i].weight;
+            } else {
+                _mesh->influences[v][i] = -1;
+                _mesh->weights[v][i] = 0.0f;
+            }
+        }
+    }
+}
+
+
 std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial *mat, aiTextureType type, std::string typeName){
     std::vector<Ref<Texture2D>> textures;
     for(unsigned int i = 0; i < mat->GetTextureCount(type); i++){
@@ -739,7 +817,7 @@ Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
     }
 
     if(mesh->HasBones()){
-        ExtractBoneWeightForVertices(data, out, mesh);
+        ExtractBoneWeightForVerticesNew(data, out, mesh);
     }
 
     out->Submit();

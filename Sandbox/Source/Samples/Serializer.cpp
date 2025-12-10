@@ -22,10 +22,9 @@ struct _Transform{
 
     template<typename Archive>
     void serialize(Archive& ar){
-        ar.value("x", x);
-        ar.value("y", y);
+        ar(x, "x");
+        ar(y, "y");
     }
-
 };
 
 struct Player{
@@ -37,12 +36,13 @@ struct Player{
 
     template<typename Archive>
     void serialize(Archive& ar){
-        ar.value("health", health);
-        ar.value("name", name);
-        ar.object("transform", transform);
-        ar.container("trans", trans);
+        ar(health, "health");
+        ar(name, "name");
+        ar(transform, "transform");
+        //ar(trans, "trans");
     }
 };
+
 
 struct MyRecord{
     int x, y;
@@ -54,6 +54,24 @@ struct MyRecord{
         ar(cereal::make_nvp("x", x));
         ar(cereal::make_nvp("y", y));
         ar(cereal::make_nvp("z", z));
+    }
+};
+
+struct PlayerStats{
+    int hp = 100;
+    float stamina = 50.f;
+    std::string name = "Hero";
+
+    
+    //template<typename Archiver> void Serialize(Archiver& ar){
+    void Serialize(Dynamic::IArchive& ar){
+        /*serialize(ar, hp, "hp", "Health");
+        serialize(ar, stamina, "stamina", "Stamina");
+        serialize(ar, name, "name", "Name");*/
+
+        ar(hp, "hp", "Health");
+        ar(stamina, "stamina", "Stamina");
+        ar(name, "name", "Name");
     }
 };
 
@@ -138,21 +156,39 @@ void SerializerSample::OnInit(){
     std::ofstream os("Sandbox/player.toml");
     toml::table root;
     Static::TomlOutputArchive ar(root);
-    ar.object("player", p);
+    ar(p, "player");
     os << root;
     }
 
     {
     std::ofstream os("Sandbox/player.json");
     Static::CerealOutputArchive ar(os);
-    ar.object("player", p);
+    ar(p, "player");
+    }
+
+    {
+    std::ofstream os("Sandbox/player2.json");
+    cereal::JSONOutputArchive ar(os);
+    int a = 20;
+    ar(cereal::make_nvp("a", a));
     }
 
     {
     std::ofstream os("Sandbox/player.bin", std::ios::binary);
     Static::BitseryOutputArchive ar(os);
-    ar.object("player", p);
+    ar(p, "player");
     ar.flush();
+    }
+
+    {
+        Dynamic::PrintArchive ar;
+        PlayerStats stats;
+        std::vector<int> numbers {1,2,3};
+        std::vector<PlayerStats> players{stats, stats};
+
+        serialize(ar, stats, "player", "Player");
+        serialize(ar, numbers, "numbers", "Numbers");
+        serialize(ar, players, "players", "Players");
     }
 
     {
