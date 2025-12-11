@@ -8,6 +8,16 @@
 namespace OD{
 
 enum class AudioSourceMode{ Mode2D, Mode3D };    
+enum Audio3dAttenuation{
+    // No attenuation
+    NoAttenuation = 0,
+    // Inverse distance attenuation model
+    InverseDistance = 1,
+    // Linear distance attenuation model
+    LinearDistance = 2,
+    // Exponential distance attenuation model
+    ExponentialDistance = 3
+};
 
 struct OD_API AudioSourceComponent{
     friend class AudioSystem;
@@ -17,6 +27,7 @@ struct OD_API AudioSourceComponent{
     float maxDistance = 60.0f; // Beyond this, sound fades toward silence but doesn’t hard cut.
     float attenuationRolloff = 1.0f;
     AudioSourceMode mode = AudioSourceMode::Mode3D; 
+    Audio3dAttenuation attenuation = Audio3dAttenuation::InverseDistance;
     
     void Play();
     void Stop();
@@ -24,7 +35,6 @@ struct OD_API AudioSourceComponent{
     void SetVolume(float vol);
     void SetPitch(float p);
     void SetLoop(bool l);
-    void Apply3DSettings();
 
     static void OnGui(Entity& e, Scene& scene);
 
@@ -32,6 +42,16 @@ struct OD_API AudioSourceComponent{
     void serialize(Archive& ar){
         AssetRefSerialize<AudioClip> assetRef(clip);
         ArchiveDumpNVP(ar, assetRef);
+
+        ArchiveDumpNVP(ar, minDistance);
+        ArchiveDumpNVP(ar, maxDistance);
+        ArchiveDumpNVP(ar, attenuationRolloff);
+        ArchiveDumpNVP(ar, mode);
+        ArchiveDumpNVP(ar, attenuation);
+
+        ArchiveDumpNVP(ar, volume);
+        ArchiveDumpNVP(ar, pitch);
+        ArchiveDumpNVP(ar, loop);
     }
 
 private:
