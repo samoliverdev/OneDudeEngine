@@ -4276,7 +4276,7 @@ bool PhysicsSystem::RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit
 	MyObjectLayerFilter objectLayerFilter(mask);
 	IgnoreSensorBodyFilter bodyFilter(physicsWorld);
 	
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter/*, bodyFilter*/);
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter, bodyFilter);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
