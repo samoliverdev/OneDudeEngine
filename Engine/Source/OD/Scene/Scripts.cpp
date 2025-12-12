@@ -6,7 +6,6 @@
 #include <string>
 #include <stdlib.h>
 
-
 namespace OD{
 
 void ScriptModuleInit(){
@@ -26,14 +25,43 @@ void ScriptComponent::OnGui(Entity& e, Scene& scene){
     std::hash<std::string> hasher;
     ScriptComponent& script = scene.GetComponent<ScriptComponent>(e);
 
+    bool removeScript = false;
+
     for(auto i: SceneManager::Get().scriptsSerializer){
         if(i.second.hasComponent(e, scene) == false) continue;
 
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first.c_str()), treeNodeFlags, i.first.c_str());
+
+        if(ImGui::BeginPopupContextItem()){
+            if(ImGui::MenuItem("Remove Component")){
+                removeScript = true;
+            }
+            ImGui::EndPopup();
+        }
+
         if(open){
             i.second.onGui(e, scene);
+            ImGui::TreePop();
         }
-        ImGui::TreePop();
+
+        if(removeScript){
+            i.second.removeScript(script);
+            break;
+        }
+    }
+
+    if(ImGui::Button("Add Script")){
+        ImGui::OpenPopup("AddScript");
+    }
+
+    if(ImGui::BeginPopup("AddScript")){
+        for(auto& i: SceneManager::Get().scriptsSerializer){
+            if(ImGui::MenuItem(i.first.c_str())){
+                i.second.addScript(script);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
     }
 }
 

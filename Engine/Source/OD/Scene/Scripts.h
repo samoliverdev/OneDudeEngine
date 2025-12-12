@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+#include <typeinfo>
 
 namespace OD{
 
@@ -31,17 +32,25 @@ struct OD_API ScriptComponent{
     friend struct ScriptSystem;
     friend struct Scene;
 
-    friend class cereal::access;
-    template <class Archive>
-    void serialize(Archive & ar){}
-
     static void OnGui(Entity& e, Scene& scene);
 
     ScriptComponent() = default;
     ScriptComponent(const ScriptComponent& s);
 
+    template <typename T>
+    T* GetScript(){
+        static_assert(std::is_base_of<OD::Script, T>::value);
+        return static_cast<T*>(instances[GetType<T>()].instance);
+    }
+
+    template<typename T>
+    bool HasScript(){
+        return instances.count(GetType<T>());
+    }
+
     template<typename T>
     T* AddScript(){
+        Assert(HasScript<T>() == false);
         static_assert(std::is_base_of<OD::Script, T>::value);
 
         T* c = new T();
@@ -59,26 +68,29 @@ struct OD_API ScriptComponent{
         return c;
     }
 
-    template <typename T>
-    T* GetScript(){
-        static_assert(std::is_base_of<OD::Script, T>::value);
-        return static_cast<T*>(instances[GetType<T>()].instance);
-    }
-
-    template<typename T>
-    bool HasScript(){
-        return instances.count(GetType<T>());
-    }
-
     template<typename T>
     T* AddOrGetScript(){
         if(HasScript<T>() == false) return AddScript<T>();
         return GetScript<T>();
     }
 
+    template<typename T>
+    void RemoveScript(){
+        if(HasScript<T>() == false) return;
+
+        delete instances[GetType<T>()].instance;
+        instances.erase(GetType<T>());
+    }
+
     void RemoveAllScripts();
 
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive& ar);
+
 private:
+    //Scene* scene = nullptr;
+    //Entity entity = EntityNull;
     int version = 10;
 
     struct ScriptHolder{
@@ -108,3 +120,5 @@ private:
 void ScriptModuleInit();
 
 }
+
+#include "Scripts.inl"

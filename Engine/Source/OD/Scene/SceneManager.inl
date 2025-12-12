@@ -368,6 +368,30 @@ void SceneManager::RegisterScript(const std::string& name){
         }
     };
 
+    funcs.addScript = [](ScriptComponent& script) -> Script*{
+        return script.AddOrGetScript<T>();
+    };
+
+    funcs.removeScript = [](ScriptComponent& script){
+        script.RemoveScript<T>();
+    };
+
+    funcs.scriptSave = [](ODOutputArchive& ar, Script* instance){
+        T* c = dynamic_cast<T*>(instance);
+        Assert(c != nullptr);
+        ar(*c);
+    };
+
+    funcs.scriptLoad = [](ODInputArchive& ar, Script* instance){
+        T* c = dynamic_cast<T*>(instance);
+        Assert(c != nullptr);
+        ar(*c);
+    };
+
+    funcs.getType = [](){
+        return GetType<T>();
+    };
+
     scriptsSerializer[name] = funcs;
 }
 

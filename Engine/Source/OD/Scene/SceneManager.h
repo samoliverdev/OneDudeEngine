@@ -4,6 +4,9 @@
 
 namespace OD{
 
+class Script;
+struct ScriptComponent;
+
 class OD_API SceneManager: public Module{
 public:
     //SceneManager(){ name = "SceneManager"; }
@@ -63,6 +66,13 @@ private:
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
         std::function<void(ODOutputArchive& out, std::vector<entt::entity>& entities, entt::registry& registry, std::string name)> snapshotOut;
         std::function<void(ODInputArchive& out, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string name)> snapshotIn;
+
+        std::function<Script*(ScriptComponent&)> addScript;
+        std::function<void(ScriptComponent&)> removeScript;
+        std::function<void(ODOutputArchive&, Script*)> scriptSave;
+        std::function<void(ODInputArchive&, Script*)> scriptLoad;
+
+        std::function<Type()> getType;
     };
 
     /*struct CoreComponent{
@@ -97,6 +107,7 @@ private:
     std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;
     std::unordered_map<std::string, SerializeFuncs> componentsSerializer;
     std::unordered_map<std::string, SerializeFuncs> scriptsSerializer;
+
     //std::unordered_map<const char*, std::function<void(Scene&)> > addSystemFuncs;
     std::vector< std::function<void(Scene&)> > addSystemFuncs;
 

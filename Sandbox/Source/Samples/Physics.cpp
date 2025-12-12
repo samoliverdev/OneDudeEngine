@@ -255,7 +255,7 @@ void PhysicsSample::OnInit(){
     //scene->Save("test.scene", EntityNull);
     
     //scene->Start();
-    Application::AddModule<Editor>(false);
+    Application::AddModule<Editor>(true);
 
     /*typedef Module* (*CreateInstanceFunc)();
     void* module = Platform::LoadDynamicLibrary("build/Release/dynamic_module.dll");
