@@ -3309,42 +3309,60 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							//}
 						} else {
 							if(ragdoll.parts[p].disableSync) continue;
-							// Work, but in world space
+							
+							/*// Work, but in world space
 							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-							//if (boneIndex <= 0) continue;
 							if(boneIndex < 0) continue;
 
 							Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
 							Quat targetRot = ToJolt(targetTransform.Rotation());
-							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
-							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
-
 
 							Quat currentRot;
 							RVec3 currentPos;
 							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
-
-							//Transform bindGlobalTransform = ragdoll.startPose.GetGlobalTransform(boneIndex); 
-							//Quat bindRot = ToJolt(ragdoll.parts[p].initedRot); //ToJolt(bindGlobalTransform.LocalRotation());
 
 							Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
 							Vec3 axis;
 							float angle;
 							deltaRot.GetAxisAngle(axis, angle);
 
-							// Atual: velocidade angular do corpo
 							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
-
-							// PD controller: torque = P * erro - D * velocidade
 							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
-
-							//bodyInterface.SetAngularVelocity(bodyID, axis * (angle / Application::DeltaTime()));
 
 							if(ragdoll.useTorqueControl)
 								bodyInterface.AddTorque(bodyID, torque);
 							else
-								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));
+								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));*/
+
+							//Work, but in local space
+							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+							if(boneIndex < 0) continue;
+
+							Transform targetTransform = Transform(trans.GlobalModelMatrix() * skinned.finalPose.GetGlobalMatrix(boneIndex));
+							Quat targetRot = ToJolt(targetTransform.Rotation());
+						
+							Quat currentRot;
+							RVec3 currentPos;
+							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
+
+							Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
+							Vec3 axis;
+							float angle;
+							deltaRot.GetAxisAngle(axis, angle);
+
+							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
+							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
+							Vec3 angularVel = axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult);
+
+							torque = ClampVectorLength(torque, (stiffness * ragdoll.parts[p].stiffnessMult) * 10);
+							angularVel = ClampVectorLength(angularVel, (stiffness * ragdoll.parts[p].stiffnessMult) * 10);
+
+							if(ragdoll.useTorqueControl)
+								bodyInterface.AddTorque(bodyID, torque);
+							else
+								bodyInterface.SetAngularVelocity(bodyID, angularVel);
 
 						}
 					}
