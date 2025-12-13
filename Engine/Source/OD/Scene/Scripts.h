@@ -43,6 +43,16 @@ struct OD_API ScriptComponent{
         return static_cast<T*>(instances[GetType<T>()].instance);
     }
 
+    template <typename T>
+    T* GetScriptDynamic(){
+        for(auto& i: instances){
+            T* out = dynamic_cast<T*>(i.second.instance);
+            if(out != nullptr) return out;
+        }
+
+        return nullptr;
+    }
+
     template<typename T>
     bool HasScript(){
         return instances.count(GetType<T>());

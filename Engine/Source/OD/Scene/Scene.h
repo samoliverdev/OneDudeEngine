@@ -423,6 +423,10 @@ class Prefab: public Asset{
 public:
     Prefab();
 
+    template<typename T> bool HasComponentInRoot();
+    template<typename T> T& GetComponentInRoot();
+    template<typename T> T* TryGetComponentInRoot();
+
     inline Entity Root(){ return root; }
 
     void OnGui() override;
