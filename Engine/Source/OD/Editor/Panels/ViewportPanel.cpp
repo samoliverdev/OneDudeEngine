@@ -41,6 +41,15 @@ void ViewportPanel::OnGui(){
         ImGui::Spacing();
         ImGui::Separator();
 
+        ImGui::Checkbox("useCustomResolution", &useCustomResolution);
+        ImGui::PushItemWidth(40.0f);
+        ImGui::DragInt("##customResolutionWidth", &customResolutionWidth);
+        ImGui::DragInt("##customResolutionHeight", &customResolutionHeight);
+        ImGui::PopItemWidth();
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
         if(ImGui::Button("Snap Settings")){
             ImVec2 buttonPos = ImGui::GetItemRectMin();
             ImVec2 buttonSize = ImGui::GetItemRectSize();
@@ -98,6 +107,10 @@ void ViewportPanel::OnGui(){
     auto& io = ImGui::GetIO();
     io.ConfigWindowsMoveFromTitleBarOnly = true;
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    if(useCustomResolution){
+        viewportPanelSize = {(float)customResolutionWidth, (float)customResolutionHeight};
+    }
+
     if(viewportPanelSize.x > 0) editor->viewportSize.x = viewportPanelSize.x;
     if(viewportPanelSize.y > 0) editor->viewportSize.y = viewportPanelSize.y;
 
@@ -107,8 +120,6 @@ void ViewportPanel::OnGui(){
     //ImVec2 m_ViewportBounds[2];
     editor->viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
     editor->viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-    
 
     auto[mx, my] = ImGui::GetMousePos();
     mx -= editor->viewportBounds[0].x;
@@ -161,8 +172,23 @@ void ViewportPanel::OnGui(){
     
     ImVec2 imagePos = ImGui::GetCursorPos();
     
-    ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
-    //ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+    if(useCustomResolution == false){
+        ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+        //ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+    } else {
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        float imgW = (float)editor->viewportSize.x;
+        float imgH = (float)editor->viewportSize.y;
+        float scale = std::min(avail.x / imgW, avail.y / imgH);
+        ImVec2 size = ImVec2(imgW * scale, imgH * scale);
+        // Optional: center the image
+        ImVec2 cursor = ImGui::GetCursorPos();
+        ImGui::SetCursorPos(ImVec2(
+            cursor.x + (avail.x - size.x) * 0.5f,
+            cursor.y + (avail.y - size.y) * 0.5f
+        ));
+        ImGui::Image((ImTextureID)textureId, size, ImVec2(0, 1), ImVec2(1, 0));
+    }
 
     if(ImGui::BeginDragDropTarget()){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ContentBrowserPanelFile");

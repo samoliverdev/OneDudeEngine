@@ -8,6 +8,10 @@ class OD_API ViewportPanel: public EditorPanel{
 public:
     ViewportPanel();
     void OnGui() override;
+private:
+    bool useCustomResolution = false;
+    int customResolutionWidth = 800;
+    int customResolutionHeight = 600;
 };
 
 }
