@@ -1,4 +1,5 @@
 #ifdef __EMSCRIPTEN__
+#include "OD/pch.h"
 #include "Platform.h"
 #include "OD/Base.h"
 

@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Application.h"
 #include "Module.h"
 #include "Project.h"
@@ -13,9 +14,6 @@
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/CoreModulesStartup.h"
 #include "OD/Serialization/SerializationFull.h"
-#include <algorithm>
-#include <fstream>
-#include <string>
 
 namespace OD{
 

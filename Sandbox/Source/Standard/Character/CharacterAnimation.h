@@ -1,6 +1,6 @@
 #pragma once
-#include "OD/Scene/Scene.h"
-#include "OD/Graphics/Model.h"
+#include <OD/Scene/Scene.h>
+#include <OD/Graphics/Model.h>
 
 namespace OD{
     struct AnimatorComponent;

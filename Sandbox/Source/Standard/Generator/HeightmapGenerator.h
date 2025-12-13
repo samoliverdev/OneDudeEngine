@@ -1,7 +1,7 @@
 #pragma once
-#include "OD/Core/Math.h"
-#include "OD/Scene/Scene.h"
-#include "OD/Terrain/Heightmap.h"
+#include <OD/Core/Math.h>
+#include <OD/Scene/Scene.h>
+#include <OD/Terrain/Heightmap.h>
 #include "Standard/Ultis/AnimationCurve.h"
 
 using namespace OD;

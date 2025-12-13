@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "TextRendererComponent.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Core/Lua.h"

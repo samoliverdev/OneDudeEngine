@@ -3,7 +3,6 @@
 #include "Lua.h"
 #include "OD/Base.h"
 #include "OD/Core/Instrumentor.h"
-#include <vector>
 
 namespace OD {
 

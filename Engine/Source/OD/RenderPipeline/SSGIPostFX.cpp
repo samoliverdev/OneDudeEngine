@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "SSGIPostFX.h"
 #include "RenderContext.h"
 #include "OD/Graphics/Graphics.h"

@@ -1,4 +1,7 @@
+#include "OD/pch.h"
 #include "SceneManager.h"
+#include "Prefab.h"
+#include "EntityHandle.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/Instrumentor.h"

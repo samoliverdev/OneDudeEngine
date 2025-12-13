@@ -1,9 +1,7 @@
+#include "OD/pch.h"
 #include "Physics.h"
 #include "Ultis/Ultis.h"
 #include "Ultis/CameraMovement.h"
-#include <assert.h>
-#include <entt/entt.hpp>
-#include <sol/sol.hpp>
 #include <OD/Core/Application.h>
 #include <OD/Core/Input.h>
 #include <OD/Graphics/Model.h>
@@ -16,6 +14,8 @@
 #include <OD/LuaScripting/LuaScripts.h>
 #include <OD/RenderPipeline/UIComponents.h>
 #include <OD/Editor/Editor.h>
+#include <entt/entt.hpp>
+#include <sol/sol.hpp>
 
 void PhysicsCubeS::OnStart(){
     sol::state lua;
@@ -256,6 +256,8 @@ void PhysicsSample::OnInit(){
     
     //scene->Start();
     Application::AddModule<Editor>(true);
+
+    //LogInfo("Testdff!!!!!!!!!!!!");
 
     /*typedef Module* (*CreateInstanceFunc)();
     void* module = Platform::LoadDynamicLibrary("build/Release/dynamic_module.dll");

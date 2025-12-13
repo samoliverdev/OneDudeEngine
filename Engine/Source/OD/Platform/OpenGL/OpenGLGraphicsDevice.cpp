@@ -1,4 +1,5 @@
 #ifdef OPENGL_SUPPORT
+#include "OD/pch.h"
 #include "OpenGLGraphicsDevice.h"
 #include "GL.h"
 #include "OD/Graphics/Graphics.h"
@@ -17,7 +18,6 @@
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
-#include <fstream>
 #include <stb/stb_image.h> //TODO: Remove this from This Graphic device
 #include <imgui/backends/imgui_impl_opengl3.h>
 

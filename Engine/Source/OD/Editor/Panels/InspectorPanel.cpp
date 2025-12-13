@@ -1,15 +1,15 @@
+#include "OD/pch.h"
 #include "InspectorPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Undo.h"
 #include "OD/Scene/Scripts.h"
+#include "OD/Scene/SceneUndos.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/LightComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/EnvironmentComponent.h"
 #include "OD/Physics/PhysicsSystem.h"
-#include <functional>
-#include <string>
 
 namespace OD{
 

@@ -1,7 +1,7 @@
 #include "ThirdPersonCamera.h"
-#include "OD/Platform/Platform.h"
-#include "OD/Core/Input.h"
-#include "OD/Core/Application.h"
+#include <OD/Platform/Platform.h>
+#include <OD/Core/Input.h>
+#include <OD/Core/Application.h>
 
 namespace Standard{
 

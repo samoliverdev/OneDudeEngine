@@ -1,7 +1,7 @@
 #include "Module.h"
-#include "OD/Scene/SceneManager.h"
-#include "OD/Physics/PhysicsSystem.h"
-#include "OD/Animation/Animator.h"
+#include <OD/Scene/SceneManager.h>
+#include <OD/Physics/PhysicsSystem.h>
+#include <OD/Animation/Animator.h>
 #include "Camera/FreeCamera.h"
 #include "Camera/ThirdPersonCamera.h"
 #include "Character/CharacterMovement.h"

@@ -1,5 +1,5 @@
+#include "OD/pch.h"
 #include "Platform.h"
-#include <string.h>
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/Input.h"
@@ -9,6 +9,7 @@
 #include "OD/Scene/SceneManager.h"
 #include <imgui/imgui.h>
 #include <ImGuizmo/ImGuizmo.h>
+#include <string.h>
 
 #ifdef EMSCRIPTEN
 #include<emscripten/emscripten.h>

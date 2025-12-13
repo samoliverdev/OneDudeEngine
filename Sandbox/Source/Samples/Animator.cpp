@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Animator.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
@@ -11,11 +12,6 @@
 #include <OD/Editor/Editor.h>
 #include <OD/Core/Application.h>
 #include <entt/entt.hpp>
-#include <assert.h>
-#include <vector>
-#include <cstddef>
-#include <algorithm>
-#include <execution>
 #include <taskflow/algorithm/for_each.hpp>
 
 /*template<typename T>

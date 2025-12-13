@@ -1,8 +1,7 @@
+#include "OD/pch.h"
 #include "Shader.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
-#include <algorithm>
-#include <numeric>
 
 namespace OD{
 

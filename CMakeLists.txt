@@ -261,7 +261,10 @@ endif()
 #    CXX_EXTENSIONS OFF
 #    COMPILE_WARNING_AS_ERROR ON
 #)
-#target_precompile_headers(Engine PRIVATE Engine/Source/OD/pch.h) #INTERFACE
+target_precompile_headers(Engine 
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>
+    #PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/GlmPch.h>
+) #INTERFACE
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
 if(SUPPORT_WEBGPU)
@@ -355,6 +358,7 @@ if(BUILD_EDITOR)
 
     file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
     add_executable(Editor ${EDITOR_SOURCE_FILES})
+    target_precompile_headers(Editor PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
     target_include_directories(Editor PUBLIC Engine/Source/)
     target_include_directories(Editor PUBLIC Editor/Source/)
     target_link_libraries(Editor Engine)
@@ -376,6 +380,7 @@ if(BUILD_SANDBOX)
     project(Sandbox)
     file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
     add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
+    target_precompile_headers(Sandbox PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
     target_include_directories(Sandbox PUBLIC Engine/Source/)
     target_include_directories(Sandbox PUBLIC Sandbox/Source/)
     target_link_libraries(Sandbox Engine)
@@ -401,6 +406,7 @@ if(BUILD_DYNAMIC_MODULE)
     project(DynamicModule)
     file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/Source/*.cpp)
     add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})
+    target_precompile_headers(DynamicModule PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
     #target_include_directories(dynamic_module PUBLIC engine/vendor/)
     #target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
     #target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)

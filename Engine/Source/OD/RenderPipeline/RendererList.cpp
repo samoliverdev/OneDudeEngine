@@ -1,10 +1,10 @@
+#include "OD/pch.h"
 #include "RendererList.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Instrumentor.h"
 #include "MeshRendererComponent.h"
-#include <algorithm>
 
 namespace OD{
 

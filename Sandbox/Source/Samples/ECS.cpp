@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "ECS.h"
 //#include <OD/AnimationSystem/Animator.h>
 #include "Ultis/CameraMovement.h"
@@ -17,9 +18,7 @@
 #include <soloud_wav.h>
 #include <soloud_speech.h>
 #include <soloud_thread.h>*/
-#include <thread>
 #include <future>
-#include <fstream>
 #include <assert.h>
 //#include <OD/RenderPipeline/StandRenderPipeline.h>
 

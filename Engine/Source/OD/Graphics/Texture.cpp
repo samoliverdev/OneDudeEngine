@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Texture.h"
 #include "SubShader.h"
 #include "OD/Core/Lua.h"
@@ -7,7 +8,6 @@
 #include "GraphicsDevice.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
-#include <fstream>
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 

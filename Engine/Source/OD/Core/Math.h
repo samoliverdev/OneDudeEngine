@@ -1,8 +1,15 @@
 #pragma once
-//#include <math.h>
-//#include <float.h>
 #include <cmath>
 #include <cfloat>
+#include <cstdlib>
+#include <memory>
+#include <vector>
+#include <new>
+#include <type_traits>
+
+#ifdef _MSC_VER
+#include <malloc.h> // _aligned_malloc/_aligned_free
+#endif
 
 //#define GLM_FORCE_PURE
 //#define GLM_FORCE_AVX2
@@ -27,12 +34,8 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/hash.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
-
 #include <glm/simd/matrix.h>
 #include <glm/simd/common.h>
-
-
-#include <memory>
 
 /*template<typename T, size_t Alignment>
 struct AlignedAllocator {
@@ -53,13 +56,6 @@ struct AlignedAllocator {
     }
     template<typename U> struct rebind { using other = AlignedAllocator<U, Alignment>; };
 };*/
-
-#include <cstdlib>
-#include <new>
-#include <type_traits>
-#ifdef _MSC_VER
-#  include <malloc.h> // _aligned_malloc/_aligned_free
-#endif
 
 template<typename T, std::size_t Alignment>
 struct AlignedAllocator {
@@ -119,8 +115,6 @@ struct AlignedAllocator {
     template<typename U>
     bool operator!=(const AlignedAllocator<U, Alignment>&) const noexcept { return false; }
 };
-
-#include <vector>
 
 // Template alias for aligned vectors
 template<typename T>

@@ -1,5 +1,6 @@
 //#define USE_ASSIMP
 #ifdef USE_ASSIMP
+#include "OD/pch.h"
 #include "AssimpLoader.h"
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/SubShader.h"
@@ -9,8 +10,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#include <filesystem>
 
 namespace OD{
 

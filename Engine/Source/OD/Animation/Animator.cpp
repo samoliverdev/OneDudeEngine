@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/JobSystem.h"
@@ -8,8 +9,6 @@
 #include "OD/Scene/SceneManager.h"
 #include <taskflow/taskflow.hpp> 
 #include <taskflow/algorithm/for_each.hpp>
-#include <algorithm>
-#include <execution>
 
 namespace OD{
 

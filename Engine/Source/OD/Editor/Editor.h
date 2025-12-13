@@ -1,5 +1,4 @@
 #pragma once
-#include "OD/Defines.h"
 #include "OD/Core/Module.h"
 #include "OD/Editor/Panels/SceneHierarchyPanel.h"
 #include "OD/Editor/Panels/ContentBrowserPanel.h"

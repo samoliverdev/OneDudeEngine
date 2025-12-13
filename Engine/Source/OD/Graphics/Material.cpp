@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Material.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
@@ -8,10 +9,6 @@
 #include "OD/Core/Asset.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Lua.h"
-#include <fstream>
-#include <filesystem>
-#include <algorithm>
-#include <numeric>
 
 namespace OD{
 

@@ -1,9 +1,8 @@
+#include "OD/pch.h"
 #include "Scripts.h"
 #include "SceneManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
-#include <functional>
-#include <string>
 #include <stdlib.h>
 
 namespace OD{

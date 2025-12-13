@@ -1,7 +1,7 @@
 #include "FreeCamera.h"
-#include "OD/Core/Input.h"
-#include "OD/Scene/Scene.h"
-#include "OD/Core/Application.h"
+#include <OD/Core/Input.h>
+#include <OD/Scene/Scene.h>
+#include <OD/Core/Application.h>
 
 using namespace OD;
 

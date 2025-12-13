@@ -1,8 +1,7 @@
+#include "OD/pch.h"
 #include "Platform.h"
 #include "OD/Base.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
-#include <filesystem>
-#include <string.h>
 
 namespace OD{
 

@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "CoreModulesStartup.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
@@ -14,7 +15,6 @@
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/LuaScripting/LuaScripts.h"
 #include "OD/Terrain/Terrain.h"
-#include <filesystem>
 
 namespace OD{
 

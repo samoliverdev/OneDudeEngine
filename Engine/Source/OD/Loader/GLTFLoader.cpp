@@ -1,5 +1,5 @@
+#include "OD/pch.h"
 #include "GLTFLoader.h"
-#include <iostream>
 #include "OD/Core/Transform.h"
 #include <cgltf.h>
 

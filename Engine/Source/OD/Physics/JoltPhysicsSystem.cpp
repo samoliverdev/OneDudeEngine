@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "PhysicsSystem.h"
 
 #if defined(UseJoltPhysics)
@@ -14,13 +15,7 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/Editor/Editor.h"
-
-#include <unordered_set>
-#include <set>
-#include <algorithm>
-#include <iostream>
 #include <cstdarg>
-#include <thread>
 
 //#define JPH_DEBUG_RENDERER
 

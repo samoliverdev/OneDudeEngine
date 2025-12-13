@@ -1,11 +1,8 @@
+#include "OD/pch.h"
 #include "SubShader.h"
 #include "OD/Defines.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Graphics/Graphics.h"
-#include <string.h>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
 #include <magic_enum/magic_enum.hpp>
 
 namespace OD{

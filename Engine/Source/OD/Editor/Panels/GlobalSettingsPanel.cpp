@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "GlobalSettingsPanel.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"

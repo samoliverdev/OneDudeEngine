@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "RenderPipeline.h"
 #include "Ultis/Ultis.h"
 #include <OD/Scene/SceneManager.h>
@@ -11,8 +12,6 @@
 #include <OD/Core/Application.h>
 #include <OD/Editor/Editor.h>
 #include <assert.h>
-#include <thread>
-#include <fstream>
 //#include <OD/AnimationSystem/Animator.h>
 
 void RenderPipelineSample::AddTransparent(Vector3 pos){

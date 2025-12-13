@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
 #include "Camera.h"
@@ -19,8 +20,6 @@
 #if defined(WEBGPU_SUPPORT)
 #include "OD/Platform/WebGPU/WebGPUGraphicsDevice.h"
 #endif
-
-#include <functional>
 
 namespace OD{
 

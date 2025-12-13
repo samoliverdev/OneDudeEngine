@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "RendererStatsPanel.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/ImGui.h"

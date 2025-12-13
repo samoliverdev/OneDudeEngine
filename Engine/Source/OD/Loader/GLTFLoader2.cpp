@@ -1,9 +1,9 @@
+#include "OD/pch.h"
 #include "GLTFLoader2.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Material.h"
 #include <tiny_gltf.h>
-#include <string>
 
 namespace OD{
 

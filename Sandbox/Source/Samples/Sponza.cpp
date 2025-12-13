@@ -1,8 +1,8 @@
+#include "OD/pch.h"
 #include "Sponza.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
 #include <assert.h>
-#include <fstream>
 #include <OD/Core/Application.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>

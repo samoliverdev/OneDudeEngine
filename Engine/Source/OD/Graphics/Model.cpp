@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "Model.h"
 #include "Shader.h"
 #include "Mesh.h"
@@ -12,8 +13,6 @@
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Core/Application.h"
-#include <string>
-#include <fstream>
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 

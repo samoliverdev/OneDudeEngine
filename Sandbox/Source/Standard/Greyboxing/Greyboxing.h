@@ -1,7 +1,7 @@
 #pragma once
-#include "OD/Graphics/Mesh.h"
-#include "OD/Graphics/Material.h"
-#include "OD/Scene/Scene.h"
+#include <OD/Graphics/Mesh.h>
+#include <OD/Graphics/Material.h>
+#include <OD/Scene/Scene.h>
 
 using namespace OD;
 

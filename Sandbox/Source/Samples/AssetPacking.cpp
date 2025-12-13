@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "AssetPacking.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
@@ -12,7 +13,6 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
 #include <OD/Editor/Editor.h>
-#include <fstream>
 
 void AssetPackingSample::OnInit(){
     LogInfo("Game Init");

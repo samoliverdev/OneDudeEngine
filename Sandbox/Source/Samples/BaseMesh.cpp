@@ -1,9 +1,11 @@
+#include "OD/pch.h"
 #include "BaseMesh.h"
 #include "ECSTest.h"
 #include <OD/Graphics/Font.h>
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Graphics.h>
 #include <OD/Scene/Scene.h>
+#include <OD/Scene/GroupOfComps.h>
 #include <OD/Core/Input.h>
 #include <OD/Core/Application.h>
 #include <OD/Core/ImGui.h>

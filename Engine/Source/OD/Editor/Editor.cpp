@@ -1,24 +1,24 @@
+#include "OD/pch.h"
 #include "Editor.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/Undo.h"
-#include "OD/Scene/Scene.h"
-#include "OD/Scene/SceneManager.h"
-#include "OD/Graphics/Framebuffer.h"
-#include "OD/Scene/BaseRenderPipeline.h"
+#include "OD/Core/Input.h"
+#include "OD/Core/Application.h"
+#include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Platform/Platform.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Scene/Scene.h"
+#include "OD/Scene/Prefab.h"
+#include "OD/Scene/SceneUndos.h"
+#include "OD/Scene/SceneManager.h"
+#include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
-#include "OD/Core/Input.h"
+#include "OD/Utils/File.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
-#include "OD/Core/Application.h"
-#include "OD/Core/Instrumentor.h"
-#include "OD/Utils/File.h"
-#include <filesystem>
-#include <iostream>
-#include <fstream>
 
 namespace OD{
 

@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include "SceneHierarchyPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
@@ -12,8 +13,6 @@
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Model.h"
 //#include "OD/AnimationSystem/Animator.h"
-#include <functional>
-#include <string>
 #include <imgui/imgui_internal.h>
 
 namespace OD{

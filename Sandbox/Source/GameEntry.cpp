@@ -1,3 +1,4 @@
+#include "OD/pch.h"
 #include <OD/Entry.h>
 #include "Samples/BaseMesh.h"
 #include "Samples/LoadModel.h"
@@ -22,7 +23,6 @@
 #include "Samples/AssetPacking.h"
 #include "Samples/Package.h"
 #include "Samples/Serializer.h"
-#include <string>
 
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{

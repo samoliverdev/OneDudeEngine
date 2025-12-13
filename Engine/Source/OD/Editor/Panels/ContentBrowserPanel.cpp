@@ -1,12 +1,10 @@
+#include "OD/pch.h"
 #include "ContentBrowserPanel.h"
 #include "OD/Editor/Editor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Shader.h"
 #include <imgui/imgui_internal.h>
-#include <filesystem>
-#include <fstream>
-#include <chrono>
 
 namespace OD {
 
