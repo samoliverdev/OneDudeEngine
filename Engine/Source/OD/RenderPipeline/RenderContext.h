@@ -77,13 +77,14 @@ struct OD_API alignas(16) RenderData{
     bool isValid = true;*/
 
     inline void SetFlag(RenderData::Flag flag, bool enabled){
-        if(enabled)
+        if(enabled){
             flags |= flag;
-        else
+        } else {
             flags &= ~flag;
+        }
     }
 
-    inline bool HasFlag(RenderData::Flag flag) {
+    inline bool HasFlag(RenderData::Flag flag) const {
         return (flags & flag) != 0;
     }
 };

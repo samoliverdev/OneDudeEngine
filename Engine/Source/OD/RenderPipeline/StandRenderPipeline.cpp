@@ -148,6 +148,7 @@ void Shadows::AddRunComputeRenderList(){
 }
 
 void Shadows::AddRenderData(RenderData& data){
+    if(data.HasFlag(RenderData::Flag::RenderShadow) == false) return;
     //TODO: Check Split data Culling
 
     ShadowDrawingSettings s;
@@ -608,7 +609,9 @@ void CameraRenderer::RunRenderDataLoop(){
     context->UpdateRenderData();
     context->RenderDataLoopNew([&](RenderData& data){
         AddRenderData(data); 
-        if(data.HasFlag(RenderData::Flag::RenderShadow) == true) shadows.AddRenderData(data); 
+        //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
+            shadows.AddRenderData(data);
+        //} 
     });
 
     /*context->GetScene()->GetTaskflow().emplace([&](){
