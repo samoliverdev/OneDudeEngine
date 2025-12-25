@@ -122,6 +122,8 @@ using AlignedVector = std::vector<T, AlignedAllocator<T, 16>>;
 
 namespace glm{
 
+template<typename T> constexpr T sqr(T v) { return v * v; }
+
 inline vec3 projectOnPlane(vec3 vector, vec3 planeNormal){
     return proj(vector, planeNormal);
 }
