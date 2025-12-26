@@ -296,6 +296,7 @@ void SceneManager::RegisterTagComponent(const std::string& name, const std::stri
 
 template<typename T>
 void SceneManager::RegisterComponent(const std::string& name, const std::string& groupName){
+    //TODO: Later use the groupName + name as component key
     Assert(componentsSerializer.find(name) == componentsSerializer.end());
 
     SerializeFuncs funcs;

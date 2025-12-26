@@ -9,6 +9,7 @@
 #include "OD/Scene/SceneManager.h"
 #include <taskflow/taskflow.hpp> 
 #include <taskflow/algorithm/for_each.hpp>
+#include <execution>
 
 namespace OD{
 

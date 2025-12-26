@@ -2,6 +2,8 @@
 #include "Shader.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#include <numeric>
+
 
 namespace OD{
 
