@@ -60,7 +60,7 @@ constexpr int maxSubSteps = 5;
 constexpr int cCollisionSteps = 1;
 
 //constexpr bool EnableFixedRate = true;
-constexpr bool EnableInterpolation = false; //true; //true;
+constexpr bool EnableInterpolation = true; //true; //true;
 constexpr bool EnableFixedPostPhysicUpdate = false;//true;
 
 #pragma region Core
@@ -791,7 +791,7 @@ public:
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		//return;
+		return;
 		lock_guard lock(mutex);
 
 		//cout << "A contact was added" << endl;
@@ -833,7 +833,7 @@ public:
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
-		//return;
+		return;
 		lock_guard lock(mutex);
 
     	const BodyLockRead lock1(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody1ID());
@@ -1489,7 +1489,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
 		//part.mNumVelocityStepsOverride = 20; //16;
 		//part.mNumPositionStepsOverride = 10; //8;
-		part.mMotionQuality = EMotionQuality::LinearCast;
+		part.mMotionQuality = EMotionQuality::Discrete;// EMotionQuality::LinearCast;
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
@@ -3133,7 +3133,7 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 }
 
 void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
-	OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
+	//OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
 
 	Assert(&GlobalSettings::Get().Get<PhysicsSettings>() == currentSettings);
 	if(scene->Running() == false) return;

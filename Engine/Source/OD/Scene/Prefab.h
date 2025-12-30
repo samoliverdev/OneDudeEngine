@@ -3,7 +3,7 @@
 
 namespace OD{
 
-class Prefab: public Asset{
+class OD_API Prefab: public Asset{
     friend class Scene;
 public:
     Prefab();

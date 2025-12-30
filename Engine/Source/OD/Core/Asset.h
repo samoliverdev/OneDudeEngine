@@ -9,7 +9,7 @@
 
 namespace OD{
 
-//#define USE_EXPERIMENTAL_ALLOCATOR
+#define USE_EXPERIMENTAL_ALLOCATOR
 
 class OD_API Asset{
 public:

@@ -215,8 +215,9 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
             if(i == 0){
                 skinned.finalPose = layer.controller.GetCurrentPose();
             } else {
-                if(layer.controller.GetCurrentClip() != nullptr || layer.blendIfClipIsNull) 
+                if(layer.controller.GetCurrentClip() != nullptr || layer.blendIfClipIsNull){ 
                     Blend(layer, skinned.finalPose, layer.controller.GetCurrentPose());
+                }
             }
             i += 1;
         }

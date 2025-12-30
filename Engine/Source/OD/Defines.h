@@ -1,6 +1,6 @@
 #pragma once
 
-//#define FINAL_BUILD
+#define FINAL_BUILD
 
 #ifdef _WIN32
     #define EXPORT_FN __declspec(dllexport)

@@ -79,8 +79,9 @@ Matrix4 Transform::GetModelMatrix(){
 
 Vector3 Transform::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = GetModelMatrix();
-    //return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
-    return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
+    
+    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+    //return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 Transform::TransformDirection(Vector3 dir){
@@ -88,20 +89,23 @@ Vector3 Transform::TransformDirection(Vector3 dir){
     return rotation * dir;*/
 
     Matrix4 matrix4 = GetModelMatrix();
-    //return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
-    return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
+    
+    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    //return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 Transform::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = GetModelMatrix();
-    //return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
-    return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
+    
+    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+    //return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
 }
 
 Vector3 Transform::TransformPoint(Vector3 point){
     Matrix4 matrix4 = GetModelMatrix();
-    //return matrix4 * Vector4(point.x, point.y, point.z, 1);
-    return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
+    
+    return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    //return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
 }
 
 void Transform::OnGui(Transform& transform){

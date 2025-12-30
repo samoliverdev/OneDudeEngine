@@ -212,22 +212,30 @@ Matrix4 TransformComponent::GetLocalModelMatrix(){
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
+    
+    return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);
+    //return math::simdMul(math::inverse(matrix4), Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 TransformComponent::TransformDirection(Vector3 dir){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
+
+    return matrix4 * Vector4(dir.x, dir.y, dir.z, 0);
+    //return math::simdMul(matrix4, Vector4(dir.x, dir.y, dir.z, 0));
 }
 
 Vector3 TransformComponent::InverseTransformPoint(Vector3 point){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
+
+    return math::inverse(matrix4) * Vector4(point.x, point.y, point.z, 1);
+    //return math::simdMul(math::inverse(matrix4), Vector4(point.x, point.y, point.z, 1));
 }
 
 Vector3 TransformComponent::TransformPoint(Vector3 point){
     Matrix4 matrix4 = GlobalModelMatrix();
-    return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
+
+    return matrix4 * Vector4(point.x, point.y, point.z, 1);
+    //return math::simdMul(matrix4, Vector4(point.x, point.y, point.z, 1));
 }
 
 //Quaternion InverseTransformRot(Quaternion world, Quaternion rot){
@@ -919,13 +927,16 @@ void Scene::Update(){
     //if(running == false) return;
     
     //--------Stand---------
-    for(auto s: standSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->Update(*this);
-    }
-    for(auto& s: SceneManager::Get().globalStandSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->Update(*this);
+    {
+        OD_PROFILE_SCOPE("Scene::Update");
+        for(auto s: standSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->Update(*this);
+        }
+        for(auto& s: SceneManager::Get().globalStandSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->Update(*this);
+        }
     }
     {
         OD_PROFILE_SCOPE("Scene::Update::Sync");
@@ -933,14 +944,17 @@ void Scene::Update(){
         taskflow.clear();
     }
 
-    //--------Animation---------
-    for(auto s: animationSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->AnimationUpdate(*this);
-    }
-    for(auto& s: SceneManager::Get().globalAnimationSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->AnimationUpdate(*this);
+    //--------Animation--------
+    {
+        OD_PROFILE_SCOPE("Scene::AnimationUpdate");
+        for(auto s: animationSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->AnimationUpdate(*this);
+        }
+        for(auto& s: SceneManager::Get().globalAnimationSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->AnimationUpdate(*this);
+        }
     }
     {
         OD_PROFILE_SCOPE("Scene::AnimationUpdate::Sync");
@@ -949,10 +963,13 @@ void Scene::Update(){
     }
 
     //--------Pre Physic---------
-    for(auto s: prePhysicsSystems) s->PrePhysicsUpdate(*this);
-    for(auto s: SceneManager::Get().globalPrePhysicsSystems) s->PrePhysicsUpdate(*this);
     {
-        OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
+        OD_PROFILE_SCOPE("Scene::PrePhysicsUpdate");
+        for(auto s: prePhysicsSystems) s->PrePhysicsUpdate(*this);
+        for(auto s: SceneManager::Get().globalPrePhysicsSystems) s->PrePhysicsUpdate(*this);
+    }
+    {
+        OD_PROFILE_SCOPE("Scene::PrePhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
         taskflow.clear();
     }
@@ -962,38 +979,47 @@ void Scene::Update(){
     float _fixedStep = OD::Time::FixedDelta();
 
     fixedUpdateAccumulator += _delta;
-
+    
+    {
+    OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate");
     if(_fixedStep > 0.0f && _delta >= 0.0f){
-    while(fixedUpdateAccumulator >= _fixedStep){ //INFO: This can be bug if Time::FixedDelta() return 0 
-        for(auto s: SceneManager::Get().globalFixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
-        for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
-        {
-            //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
-            executor.run(taskflow).wait(); 
-            taskflow.clear();
-        }
+        while(fixedUpdateAccumulator >= _fixedStep){ //INFO: This can be bug if Time::FixedDelta() return 0 
+            for(auto s: SceneManager::Get().globalFixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+            for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+            {
+                //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
+                executor.run(taskflow).wait(); 
+                taskflow.clear();
+            }
 
-        fixedUpdateAccumulator -= _fixedStep;
+            fixedUpdateAccumulator -= _fixedStep;
+        }
     }
     }
 
     //--------Post Physic---------
-    for(auto s: postPhysicsSystems) s->PostPhysicsUpdate(*this);
-    for(auto s: SceneManager::Get().globalPostPhysicsSystems) s->PostPhysicsUpdate(*this);
     {
-        OD_PROFILE_SCOPE("Scene::PhysicsUpdate::Sync");
+        OD_PROFILE_SCOPE("Scene::PostPhysicsUpdate");
+        for(auto s: postPhysicsSystems) s->PostPhysicsUpdate(*this);
+        for(auto s: SceneManager::Get().globalPostPhysicsSystems) s->PostPhysicsUpdate(*this);
+    }
+    {
+        OD_PROFILE_SCOPE("Scene::PostPhysicsUpdate::Sync");
         executor.run(taskflow).wait(); 
         taskflow.clear();
     }
     
     //--------Late---------
-    for(auto s: lateSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->LateUpdate(*this);
-    }
-    for(auto& s: SceneManager::Get().globalLateSystems){
-        if(running == false && s->ExecuteAlways() == false) continue;
-        s->LateUpdate(*this);
+    {
+        OD_PROFILE_SCOPE("Scene::LateUpdate");
+        for(auto s: lateSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->LateUpdate(*this);
+        }
+        for(auto& s: SceneManager::Get().globalLateSystems){
+            if(running == false && s->ExecuteAlways() == false) continue;
+            s->LateUpdate(*this);
+        }
     }
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");

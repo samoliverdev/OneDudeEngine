@@ -13,7 +13,6 @@ public:
         _funcs.emplace_back(std::forward<Functor>(f)); 
     }
 
-
     template<class... Args>
     void Invoke(Args&&... args) const{
         for(auto& f : _funcs) f(args...);

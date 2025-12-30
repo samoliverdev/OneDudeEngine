@@ -417,8 +417,6 @@ private:
     float fixedUpdateAccumulator = 0;
 };
 
-
-
 }
 
 #include "Scene.inl"

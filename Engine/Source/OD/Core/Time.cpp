@@ -6,7 +6,7 @@ namespace OD{
 
 float unscaledDeltaTime = 0;
 float timeScale = 1;   
-const float fixedDelta = 1.0f / 60.0f; // 60 Hz physics update
+const float fixedDelta = 1.0f / 50.0f; // 60 Hz physics update
 
 float Time::DeltaTime(){
     return unscaledDeltaTime * timeScale;
