@@ -62,6 +62,16 @@ void SceneManager::OnUpdate(float deltaTime){
         scene->Load(toLoad.c_str());
         scene->Start();
         toLoad = "";
+        _toLoad = nullptr;
+        isLoading = false;
+    }
+
+    //Info: Temp, remove this later
+    if(_toLoad != nullptr){
+        activeScene = _clone ? new Scene(*_toLoad) : _toLoad;
+        activeScene->Start();
+        toLoad = "";
+        _toLoad = nullptr;
         isLoading = false;
     }
 
@@ -78,6 +88,13 @@ void SceneManager::OnRender(float deltaTime){
 
 void SceneManager::OnGUI(){}
 void SceneManager::OnResize(int width, int height){}
+
+//Info: Temp, remove this later
+void SceneManager::_LoadScene(Scene* newScene, bool clone){
+    _toLoad = newScene;
+    _clone = clone;
+    isLoading = true;
+}
 
 void SceneManager::LoadScene(const std::string& path){ 
     toLoad = path; 

@@ -15,6 +15,7 @@ public:
 
     static SceneManager& Get();
 
+    void _LoadScene(Scene* newScene, bool clone);
     void LoadScene(const std::string& path);
     bool IsLoading();
 
@@ -102,6 +103,8 @@ private:
     Scene* activeScene;
 
     std::string toLoad;
+    Scene* _toLoad;
+    bool _clone;
     bool isLoading = false;
 
     std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;

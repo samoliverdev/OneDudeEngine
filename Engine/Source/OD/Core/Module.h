@@ -8,12 +8,12 @@ class OD_API Module {
 public:
     virtual ~Module() = default;
 
-    virtual void OnInit() = 0;
-    virtual void OnExit() = 0;
-    virtual void OnUpdate(float deltaTime) = 0;
-    virtual void OnRender(float deltaTime) = 0;
-    virtual void OnGUI() = 0;
-    virtual void OnResize(int width, int height) = 0;
+    virtual void OnInit(){};
+    virtual void OnExit(){};
+    virtual void OnUpdate(float deltaTime){};
+    virtual void OnRender(float deltaTime){};
+    virtual void OnGUI(){};
+    virtual void OnResize(int width, int height){};
 
     inline virtual bool DeleteOnExit(){ return true; }
     inline virtual int ExecutionSortPriority(){ return 1; };
