@@ -25,6 +25,7 @@ using Registry = entt::registry;
 class System;
 class Scene;
 class Model;
+class Prefab;
 
 enum OD_API_IMPORT Layers: int{
     Layer0 = 0,
@@ -344,7 +345,7 @@ public:
 
     Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = LayerNone);
     Entity InstantiatePrefab(const char* prefabPath);
-    Entity InstantiatePrefab(const class Prefab& prefab);
+    Entity InstantiatePrefab(const Prefab& prefab);
     
     Entity GetMainCamera();
 

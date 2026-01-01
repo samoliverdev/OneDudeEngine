@@ -990,10 +990,10 @@ void CameraRenderer::RenderUI(){
         Graphics::DrawMesh(*spriteMesh, *spriteMaterial, model);
     }*/
 
-    auto canvasView = context->GetScene()->GetRegistry().view<CanvasComponent, TransformComponent>();
-    for (auto canvasEntity : canvasView) {
+    auto canvasView = context->GetScene()->GetRegistry().view<CanvasComponent, TransformComponent>(entt::exclude<SelfDisable>);
+    for(auto canvasEntity : canvasView){
         auto& transform = context->GetScene()->GetComponent<TransformComponent>(canvasEntity);
-        for (Entity child : transform.Children()) {
+        for(Entity child : transform.Children()){
             RenderUIRecursive(*context->GetScene(), child, spriteMesh, spriteMaterial, font, fontMaterial);
         }
     }
@@ -1406,7 +1406,7 @@ void StandRenderPipeline::Render(Scene& scene){
             targetRenderPath
         );
     } else {
-        auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>();
+        auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>(entt::exclude<SelfDisable>);
         for(auto entity: camView){
             CameraComponent& cam = camView.get<CameraComponent>(entity);
             TransformComponent& trans = camView.get<TransformComponent>(entity);

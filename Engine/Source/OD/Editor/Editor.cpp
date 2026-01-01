@@ -213,7 +213,7 @@ void Editor::OnInit(){
         archive(cereal::make_nvp("Editor", *this));
     }
 
-    assetPreviewScene = new Scene();
+    assetPreviewScene = CreateRef<Scene>();// new Scene();
     BaseRenderPipeline* renderP = assetPreviewScene->GetSystemDynamic<BaseRenderPipeline>();
     renderP->SetOverrideCamera(&assetPrevieweCam.cam, assetPrevieweCam.transform);
     renderP->SetOverrideFrameBuffer(assetPreviewFramebuffer);
@@ -274,7 +274,7 @@ void Editor::SetPrefabAssetPreview(Ref<Prefab> prefab){
 }
 
 void Editor::SetPrefabAssetPreview(const std::string& path){
-    auto prefab = AssetManager::Get().LoadAsset<Prefab>(path);
+    Ref<Prefab> prefab = AssetManager::Get().LoadAsset<Prefab>(path);
 
     if(lastPrefabAssetPreview != prefab){
         if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
@@ -294,7 +294,7 @@ void Editor::SetPrefabAssetPreview(const std::string& path){
 }
 
 void Editor::OnExit(){
-    delete assetPreviewScene;
+    assetPreviewScene = nullptr; //delete assetPreviewScene;
     delete assetPreviewFramebuffer;
     delete framebuffer;
 
@@ -324,7 +324,7 @@ void Editor::OnUpdate(float deltaTime){
         UndoManager::Get().Redo();
     }
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::D)){
-        auto* scene = SceneManager::Get().GetActiveScene();
+        Ref<Scene> scene = SceneManager::Get().GetActiveScene();
         if(/*scene->IsValid(selectionEntity)*/ _selectedEntities.size() > 0){
             //scene->DuplicateEntity(selectionEntity);
 
@@ -430,7 +430,7 @@ void Editor::OnGUI(){
 
 void Editor::OnResize(int width, int height){}
 
-Scene* lastScene;
+//Scene* lastScene;
 
 void Editor::PlayScene(){
     Assert(SceneManager::Get().GetActiveScene() != nullptr);
@@ -448,7 +448,7 @@ void Editor::PlayScene(){
     lastScene = SceneManager::Get().GetActiveScene();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
     //Scene* s = Scene::Copy(lastScene);
-    Scene* s = new Scene(*lastScene);
+    Ref<Scene> s = CreateRef<Scene>(*lastScene);// new Scene(*lastScene);
     SceneManager::Get().SetActiveScene(s);
     s->Start();
 }
@@ -468,7 +468,7 @@ void Editor::StopScene(){
 
     UnselectAll();
     renderPipeline->SetOverrideFrameBuffer(nullptr);
-    delete SceneManager::Get().GetActiveScene();
+    //delete SceneManager::Get().GetActiveScene();
     SceneManager::Get().SetActiveScene(lastScene);
 
     Platform::SetCursorState(CursorState::Normal);
@@ -483,7 +483,7 @@ void Editor::NewScene(){
         renderPipeline->SetOverrideFrameBuffer(nullptr);
     }*/
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     Entity e = scene->AddEntity("Enviroment");
     scene->AddComponent<EnvironmentComponent>(e);
@@ -502,7 +502,7 @@ void Editor::OpenScene(){
     std::string path = Platform::OpenFile("*.scene"); 
     if(path.empty() == false){
         renderPipeline->SetOverrideFrameBuffer(nullptr);
-        Scene* scene = SceneManager::Get().NewScene();
+        Ref<Scene> scene = SceneManager::Get().NewScene();
 
         scene->Load(path.c_str());
         curScenePath = scene->Path();
@@ -513,7 +513,7 @@ void Editor::OpenScene(){
 void Editor::SaveScene(){
     if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    Scene* scene = SceneManager::Get().GetActiveScene();
+    Ref<Scene> scene = SceneManager::Get().GetActiveScene();
     if(scene->PathIsValid() == false) return;
     
     scene->Save(scene->Path().c_str(), EntityNull);
@@ -525,7 +525,7 @@ void Editor::SaveAsScene(){
 
     std::string path = Platform::SaveFile("*.scene");
     if(path.empty() == false){
-        Scene* scene = SceneManager::Get().GetActiveScene();
+        Ref<Scene> scene = SceneManager::Get().GetActiveScene();
         scene->Save(path.c_str(), EntityNull);
         curScenePath = path;
     } 
@@ -666,7 +666,7 @@ void Editor::DrawMainMenuBar(){
 void Editor::DrawMainWorkspace(){
     OD_PROFILE_SCOPE("Editor::DrawMainWorkspace");
 
-    mainWorkspace.SetScene(SceneManager::Get().GetActiveScene());
+    mainWorkspace.SetScene(SceneManager::Get().GetActiveScene().get());
     mainWorkspace.SetEditor(this);
     mainWorkspace.OnGui();
     

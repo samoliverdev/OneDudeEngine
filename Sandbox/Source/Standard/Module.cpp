@@ -47,7 +47,7 @@ void StandardAssetSystem::Update(Scene& scene){
 
     if(scene.Running() == false) return;
 
-    auto freeCameraView = scene.GetRegistry().view<FreeCamera, TransformComponent>();
+    auto freeCameraView = scene.GetRegistry().view<FreeCamera, TransformComponent>(entt::exclude<SelfDisable>);
     for(auto [entity, camera, trans]: freeCameraView.each()){
         if(camera.hasStarted == false) camera.OnStart(trans);
         camera.OnUpdate(trans);

@@ -39,7 +39,7 @@ void SceneManager::OnInit(){}
 
 void SceneManager::OnExit(){
     if(activeScene != nullptr){
-        delete activeScene;
+        //delete activeScene;
         activeScene = nullptr;
     }
 
@@ -58,21 +58,36 @@ void SceneManager::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("SceneManager::OnUpdate");
 
     if(toLoad.empty() == false){
-        Scene* scene = NewScene();
+        Ref<Scene> scene = NewScene();
         scene->Load(toLoad.c_str());
         scene->Start();
+
         toLoad = "";
-        _toLoad = nullptr;
+        tempScene = nullptr;
+        toLoadTempScene = false;
         isLoading = false;
+        tempScene = nullptr;
     }
 
     //Info: Temp, remove this later
-    if(_toLoad != nullptr){
-        activeScene = _clone ? new Scene(*_toLoad) : _toLoad;
-        activeScene->Start();
-        toLoad = "";
-        _toLoad = nullptr;
-        isLoading = false;
+    if(toLoadTempScene){
+        if(tempSceneIsSave){
+            tempScene = activeScene;
+            activeScene = CreateRef<Scene>(*tempScene);
+            activeScene->Start();
+
+            toLoad = "";
+            isLoading = false;
+            toLoadTempScene = false;
+        } else {
+            activeScene = tempScene;
+            activeScene->Start();
+
+            toLoad = "";
+            isLoading = false;
+            toLoadTempScene = false;
+            tempScene = nullptr;
+        }
     }
 
     if(GetActiveScene() == nullptr) return;
@@ -90,9 +105,9 @@ void SceneManager::OnGUI(){}
 void SceneManager::OnResize(int width, int height){}
 
 //Info: Temp, remove this later
-void SceneManager::_LoadScene(Scene* newScene, bool clone){
-    _toLoad = newScene;
-    _clone = clone;
+void SceneManager::LoadTempClonedScene(bool isSave){
+    toLoadTempScene = true;
+    tempSceneIsSave = isSave;
     isLoading = true;
 }
 
@@ -113,23 +128,23 @@ bool SceneManager::InEditor(){
     return inEditor; 
 }
 
-Scene* SceneManager::GetActiveScene(){ 
+Ref<Scene> SceneManager::GetActiveScene(){ 
     //if(activeScene == nullptr) return NewScene();
     return activeScene; 
 }
 
-void SceneManager::SetActiveScene(Scene* s){ 
+void SceneManager::SetActiveScene(Ref<Scene> s){ 
     activeScene = s; 
 }
 
-Scene* SceneManager::NewScene(){
-    if(activeScene != nullptr) delete activeScene;
-    activeScene = new Scene();
+Ref<Scene> SceneManager::NewScene(){
+    //if(activeScene != nullptr) delete activeScene;
+    activeScene = CreateRef<Scene>();// new Scene();
     return activeScene;
 }
 
 void SceneManager::DestroyActiveScene(){
-    delete activeScene;
+    //delete activeScene;
     activeScene = nullptr;
 }
 

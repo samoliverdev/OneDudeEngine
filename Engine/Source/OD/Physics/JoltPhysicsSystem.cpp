@@ -890,7 +890,7 @@ public:
 
 	void UpdateSelected(){
 		selectedBodies.clear();
-		Scene* scene = SceneManager::Get().GetActiveScene();
+		Ref<Scene> scene = SceneManager::Get().GetActiveScene();
 		if(scene == nullptr) return;
 
 		Editor* editor = Application::GetModuleByType<Editor>();

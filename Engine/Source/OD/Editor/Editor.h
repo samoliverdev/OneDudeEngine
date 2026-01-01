@@ -134,7 +134,8 @@ private:
 
     ImVec2 viewportBounds[2];
 
-    Scene* assetPreviewScene;
+    Ref<Scene> lastScene;
+    Ref<Scene> assetPreviewScene;
     AssetPreviewCamera assetPrevieweCam;
     Framebuffer* assetPreviewFramebuffer;
     Entity assetPreviewEntity = EntityNull;

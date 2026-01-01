@@ -319,7 +319,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
                 std::string pathString = relativePath.string();
                 std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
-                Scene* scene = SceneManager::Get().GetActiveScene();
+                Ref<Scene> scene = SceneManager::Get().GetActiveScene();
                 scene->Save(pathString.c_str(), entity);
             } 
         }

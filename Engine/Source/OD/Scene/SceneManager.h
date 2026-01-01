@@ -15,15 +15,16 @@ public:
 
     static SceneManager& Get();
 
-    void _LoadScene(Scene* newScene, bool clone);
+    void LoadTempClonedScene(bool isSave);
+    
     void LoadScene(const std::string& path);
     bool IsLoading();
 
     SceneState GetSceneState();
     inline bool InEditor();
-    Scene* GetActiveScene();
-    void SetActiveScene(Scene* s);
-    Scene* NewScene();
+    Ref<Scene> GetActiveScene();
+    void SetActiveScene(Ref<Scene> s);
+    Ref<Scene> NewScene();
     void DestroyActiveScene();
 
     template<typename T> void RegisterCoreComponent(const std::string& name, const std::string& groupName = "");
@@ -100,11 +101,13 @@ private:
     SceneState sceneState;
     bool inEditor;
 
-    Scene* activeScene;
-
+    Ref<Scene> activeScene = nullptr;
+    
+    Ref<Scene> tempScene = nullptr;
+    bool tempSceneIsSave = false;
+    bool toLoadTempScene = false;
+    
     std::string toLoad;
-    Scene* _toLoad;
-    bool _clone;
     bool isLoading = false;
 
     std::unordered_map<std::string, SerializeFuncs> coreComponentsSerializer;

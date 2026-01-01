@@ -33,7 +33,7 @@ void RuntimeInfoPanel::OnGui(){
         }
 
         ///////////////////////////////////////
-        Scene* scene = SceneManager::Get().GetActiveScene();
+        Ref<Scene> scene = SceneManager::Get().GetActiveScene();
         if(scene != nullptr){
 
             if(ImGui::TreeNodeEx("Active Scene")){
