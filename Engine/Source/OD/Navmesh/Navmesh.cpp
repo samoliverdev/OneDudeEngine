@@ -33,6 +33,23 @@ void NavmeshModuleInit(){
 	AssetTypesDB::Get().RegisterAssetType<Navmesh>(".navmesh", [](const std::string& path){ return AssetManager::Get().LoadAsset<Navmesh>(path); });
 }
 
+void NavmeshComponent::QuickBake(Scene& scene, Entity& e){
+	TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
+
+	if(navmesh == nullptr) navmesh = CreateRef<Navmesh>();
+	if(navmesh != nullptr){
+		navmesh->Bake(
+			&scene, 
+			AABB(
+				trans.Position(), 
+				size.x, size.y, size.z
+			),
+			buildSettings,
+			mask
+		);
+	}
+}
+
 void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 	TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
 

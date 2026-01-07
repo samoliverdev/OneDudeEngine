@@ -15,7 +15,8 @@ public:
 
     static SceneManager& Get();
 
-    void LoadTempClonedScene(bool isSave);
+    bool _HasTempScene();
+    void _LoadTempClonedScene(bool isSave);
     
     void LoadScene(const std::string& path);
     bool IsLoading();

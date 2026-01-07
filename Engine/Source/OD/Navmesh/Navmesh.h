@@ -374,6 +374,8 @@ struct OD_API NavmeshComponent{
 	Vector3 size = {250, 250, 250};
 	Ref<Navmesh> navmesh;
 
+	void QuickBake(Scene& scene, Entity& e);
+
     static inline void OnGui(Entity& e, Scene& scene);
 
 	template<class Archive> 
@@ -419,6 +421,13 @@ struct OD_API NavmeshAgentComponent{
 			ArchiveDumpNVP(ar, hasInit);
 		}
 	}
+
+	/*NavmeshAgentComponent() = default;
+	DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(NavmeshAgentComponent, {
+        COPY_OR_MOVE(speed);
+        COPY_OR_MOVE(stopDistance);
+    });*/
+
 private:
 	Vector3 destination = {0, 0, 0};
 	Vector3 lastPos = {0, 0, 0};

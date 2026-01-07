@@ -105,10 +105,14 @@ void SceneManager::OnGUI(){}
 void SceneManager::OnResize(int width, int height){}
 
 //Info: Temp, remove this later
-void SceneManager::LoadTempClonedScene(bool isSave){
+void SceneManager::_LoadTempClonedScene(bool isSave){
     toLoadTempScene = true;
     tempSceneIsSave = isSave;
     isLoading = true;
+}
+
+bool SceneManager::_HasTempScene(){
+    return tempScene != nullptr;
 }
 
 void SceneManager::LoadScene(const std::string& path){ 
