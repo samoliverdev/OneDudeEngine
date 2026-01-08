@@ -312,6 +312,8 @@ public:
 
     void SaveScreenshot(const std::string& filename);
 
+    int ExecutionSortPriority(SystemType type) override; 
+
 private:
     ShadowSettings shadow;
 

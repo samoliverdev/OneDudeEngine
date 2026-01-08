@@ -1282,6 +1282,11 @@ void StandRenderPipeline::Update(Scene& scene){
     }
 }
 
+int StandRenderPipeline::ExecutionSortPriority(SystemType type){ 
+    if(type == SystemType::Late) return 2500;
+    return 1; 
+}; 
+
 void StandRenderPipeline::LateUpdate(Scene& scene){
     auto viewSkinnedModelSocket = scene.GetRegistry().view<TransformComponent, SkinnedBoneSocket>();
     for(auto [entity, trans, socket]: viewSkinnedModelSocket.each()){
