@@ -994,7 +994,10 @@ void Scene::Update(){
 
             fixedUpdateAccumulator -= _fixedStep;
         }
-    }
+    }/* else {
+        // PAUSED or invalid fixed step → freeze interpolation safely
+        fixedUpdateAccumulator = std::clamp(fixedUpdateAccumulator, 0.0f, _fixedStep > 0.0f ? _fixedStep : 0.0f);
+    }*/
     }
 
     //--------Post Physic---------

@@ -3659,7 +3659,7 @@ void PhysicsSystem::_SyncRagdollToPose(Scene& scene, SkinnedModelRendererCompone
 		bodyInterface.GetPositionAndRotation(i, pos, rot);
 
 		if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-			float alpha = scene.FixedUpdateAccumulator() / Time::FixedDelta();
+			float alpha = Time::TimeScale() <= 0 ? 1 : scene.FixedUpdateAccumulator() / Time::FixedDelta();
 			Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
 			Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
 
@@ -3700,7 +3700,7 @@ void PhysicsSystem::_SyncRagdollToPose2::operator()(){
 		bodyInterface.GetPositionAndRotation(i, pos, rot);
 
 		if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-			float alpha = scene.FixedUpdateAccumulator() / Time::FixedDelta();
+			float alpha = Time::TimeScale() <= 0 ? 1 : scene.FixedUpdateAccumulator() / Time::FixedDelta();
 			Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
 			Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
 
@@ -3767,7 +3767,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 			bodyInterface.GetPositionAndRotation(i, pos, rot);
 
 			if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-				float alpha = InterpolationAlpha();
+				float alpha = Time::TimeScale() <= 0 ? 1 : InterpolationAlpha();
 				Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
 				Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
 
@@ -3815,7 +3815,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		bodyInterface.GetPositionAndRotation(rb.data->bodyID, pos, rot);
 
 		if(rb.interpolate && rb.previousPosition != Vector3Zero && EnableInterpolation && canInterpolate){
-			float alpha = InterpolationAlpha();
+			float alpha = Time::TimeScale() <= 0 ? 1 : InterpolationAlpha();
 			Vector3 interpolatedPos = math::mix(rb.previousPosition, FromJolt(pos), alpha);
 			Quaternion interpolatedRot = math::slerp(rb.previousRotation, FromJolt(rot), alpha);
 			trans.Position(interpolatedPos);
