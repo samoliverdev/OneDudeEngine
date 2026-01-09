@@ -41,7 +41,7 @@ void RenderPipelineSample::OnInit(){
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
     SceneManager::Get().RegisterScript<RotateScript>("RotateScript");
 
-    OD::Scene* scene = SceneManager::Get().NewScene();
+    OD::Ref<OD::Scene> scene = SceneManager::Get().NewScene();
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<StandRenderPipeline2>();
 

@@ -1,12 +1,13 @@
 #pragma once
 #include <OD/Core/Module.h>
+#include <OD/Base.h>
 
 namespace OD{
     class Scene;
 }
 
 struct SerializationSample: public OD::Module{
-    OD::Scene* scene;
+    OD::Ref<OD::Scene> scene;
 
     SerializationSample(){ name = "SerializationSample"; }
     void OnInit() override;

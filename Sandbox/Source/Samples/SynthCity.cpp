@@ -21,7 +21,7 @@ void SynthCitySample::OnInit(){
 
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<StandRenderPipeline2>();
 

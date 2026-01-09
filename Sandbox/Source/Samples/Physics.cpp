@@ -68,7 +68,7 @@ void PhysicsSample::OnInit(){
     SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     /*scene->Load("test.scene");
     Application::AddModule<Editor>();
@@ -266,7 +266,7 @@ void PhysicsSample::OnInit(){
 }
 
 void PhysicsSample::OnUpdate(float deltaTime){
-    Scene* scene = SceneManager::Get().GetActiveScene();
+    Ref<Scene> scene = SceneManager::Get().GetActiveScene();
     //scene->Update();
     if(scene->Running() == false) return;
 

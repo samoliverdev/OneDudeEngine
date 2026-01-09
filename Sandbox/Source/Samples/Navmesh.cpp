@@ -19,7 +19,7 @@ void NavmeshSample::OnInit(){
     Application::Vsync(false);
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
     scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
@@ -91,7 +91,7 @@ void NavmeshSample::OnInit(){
     navmeshComp.buildSettings.partitionType = SAMPLE_PARTITION_WATERSHED;
 
     AABB navmeshBounds = AABB(Vector3(0, 0, 0), 1000, 1000, 1000);
-    navmeshComp.navmesh->Bake(scene, navmeshBounds, navmeshComp.buildSettings);
+    navmeshComp.navmesh->Bake(scene.get(), navmeshBounds, navmeshComp.buildSettings);
     
     Entity navmeshAgent = scene->AddEntity("NavmeshAgent");
     NavmeshAgentComponent& agent = scene->AddComponent<NavmeshAgentComponent>(navmeshAgent);

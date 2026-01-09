@@ -208,7 +208,7 @@ void SerializerSample::OnInit(){
 
     auto& SceneManager = SceneManager::Get();
     SceneManager.RegisterScript<CameraMovementScript>("CameraMovementScript");
-    OD::Scene* scene = SceneManager.NewScene();
+    OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);

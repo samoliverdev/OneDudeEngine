@@ -3,6 +3,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Animation/Pose.h"
+#include "concurrentqueue.h"
 
 #define UseJoltPhysics
 
@@ -723,18 +724,18 @@ private:
 };
 
 struct OD_API Collision{
-    Entity e1;
-    Entity e2;
-
     Vector3 relativeVelocity;
     Vector3 normal;
-    float penetrationDepth;
-
     Vector3 relativeContactPointOn1;
     Vector3 relativeContactPointOn2;
+    Entity e1;
+    Entity e2;
+    float penetrationDepth;
+    bool body1IsSensor;
+    bool body2IsSensor;
 };
 
-using OnCollisionCallback = void(*)(Scene&, Collision&);
+using OnCollisionCallback = void(*)(Scene&, const Collision&);
 //using OnCollisionCallback = std::function<void(Entity, Entity)>;
 
 struct OD_API PhysicsSystem: public System{
@@ -825,6 +826,9 @@ private:
     std::vector<OnCollisionCallback> onCollisionExitCallbacks;
     std::vector<OnCollisionCallback> onTriggerEnterCallbacks;
     std::vector<OnCollisionCallback> onTriggerExitCallbacks;
+
+    moodycamel::ConcurrentQueue<Collision> onContactAddedData;
+    moodycamel::ConcurrentQueue<Collision> onContactRemovedData;
 
     //float physicsAccumulator = 0.0f;
 

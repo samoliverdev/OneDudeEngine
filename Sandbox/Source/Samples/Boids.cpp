@@ -123,7 +123,7 @@ void BoidsSample::OnInit(){
     SceneManager.RegisterScript<CameraMovementScript>("CameraMovementScript");
     SceneManager.RegisterComponent<BoidComponent>("BoidComponent");
     SceneManager.RegisterSystem<BoidSystem>("BoidSystem");
-    OD::Scene* scene = SceneManager.NewScene();
+    OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
     Ref<Material> floorMaterial = CreateRef<Material>();
     floorMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));

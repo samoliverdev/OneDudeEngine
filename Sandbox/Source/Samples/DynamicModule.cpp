@@ -37,7 +37,7 @@ void DynamicModuleSample::OnInit(){
     SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
     scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};

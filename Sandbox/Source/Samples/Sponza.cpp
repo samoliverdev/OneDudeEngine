@@ -19,7 +19,7 @@ void SponzaSample::OnInit(){
 
     auto& SceneManager = SceneManager::Get();
     SceneManager.RegisterScript<CameraMovementScript>("CameraMovementScript");
-    OD::Scene* scene = SceneManager.NewScene();
+    OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<DeferredRenderPipeline>();

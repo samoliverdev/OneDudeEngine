@@ -167,7 +167,7 @@ void ProceduralTerrain2::OnInit(){
     Application::Vsync(false);
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
@@ -309,7 +309,7 @@ void ProceduralTerrain2::OnUpdate(float deltaTime){
 void ProceduralTerrain2::OnRender(float deltaTime){}
 
 void ProceduralTerrain2::OnGUI(){
-    Scene* scene = SceneManager::Get().GetActiveScene();
+    Ref<Scene> scene = SceneManager::Get().GetActiveScene();
 
     ImGui::Begin("Terrain Settings");
     ImGui::DragInt("seed", &seed);

@@ -70,7 +70,7 @@ void TerrainSample::OnInit(){
     SceneManager::Get().RegisterScript<CameraMovementScript>("CameraMovementScript");
     SceneManager::Get().RegisterScript<PhysicsCubeS>("PhysicsCubeS");
 
-    Scene* scene = SceneManager::Get().NewScene();
+    Ref<Scene> scene = SceneManager::Get().NewScene();
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
@@ -132,7 +132,7 @@ void TerrainSample::OnUpdate(float deltaTime){
     if(Input::IsKeyDown(KeyCode::T)) RenderContext::GetSettings().enableWireframe = !RenderContext::GetSettings().enableWireframe;
     if(Input::IsKeyDown(KeyCode::Y)) RenderContext::GetSettings().enableGizmosRuntime = !RenderContext::GetSettings().enableGizmosRuntime;
 
-    Scene* scene = SceneManager::Get().GetActiveScene();
+    Ref<Scene> scene = SceneManager::Get().GetActiveScene();
     if(scene->Running() == false) return;
 
     if(Input::IsKeyDown(KeyCode::R)){

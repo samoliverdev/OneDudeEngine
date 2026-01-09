@@ -791,8 +791,8 @@ public:
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		return;
-		lock_guard lock(mutex);
+		//return;
+		//lock_guard lock(mutex);
 
 		//cout << "A contact was added" << endl;
 		//InfoComponent& e1 = scene->GetComponent<InfoComponent>(static_cast<Entity>(inBody1.GetUserData()));
@@ -812,6 +812,12 @@ public:
 		collision.relativeVelocity = FromJolt(inBody2.GetLinearVelocity() - inBody1.GetLinearVelocity());
 		collision.relativeContactPointOn1 = FromJolt(inManifold.GetWorldSpaceContactPointOn1(0));
 		collision.relativeContactPointOn2 = FromJolt(inManifold.GetWorldSpaceContactPointOn2(0)); 
+
+		collision.body1IsSensor = inBody1.IsSensor();
+		collision.body2IsSensor = inBody2.IsSensor();
+
+		physic->onContactAddedData.enqueue(collision);
+		return;
 
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
 			for(auto& i: physic->onTriggerEnterCallbacks) i(*scene, collision);
@@ -833,8 +839,8 @@ public:
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
-		return;
-		lock_guard lock(mutex);
+		//return;
+		//lock_guard lock(mutex);
 
     	const BodyLockRead lock1(physic->physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inSubShapePair.GetBody1ID());
 		if(!lock1.Succeeded()) return;
@@ -848,6 +854,12 @@ public:
 		Collision collision;
 		collision.e1 = static_cast<Entity>(inBody1.GetUserData());
 		collision.e2 = static_cast<Entity>(inBody2.GetUserData());
+
+		collision.body1IsSensor = inBody1.IsSensor();
+		collision.body2IsSensor = inBody2.IsSensor();
+
+		physic->onContactRemovedData.enqueue(collision);
+		return;
 
 		if(inBody1.IsSensor() || inBody2.IsSensor()){
 			//for(auto& i: physic->onTriggerExitCallbacks) i(*scene, static_cast<Entity>(inBody1.GetUserData()), static_cast<Entity>(inBody2.GetUserData()), Vector3Zero);
@@ -3623,6 +3635,27 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 			physicsWorld->tempAllocator,
 			&physicsWorld->jobSystem
 		);
+
+		Collision collision;
+		while(onContactAddedData.try_dequeue(collision)){
+			if(collision.body1IsSensor || collision.body2IsSensor){
+				for(auto& i: onTriggerEnterCallbacks) i(*scene, collision);
+			} else {
+				for(auto& i: onCollisionEnterCallbacks) i(*scene, collision);
+			}
+		}
+		while(onContactRemovedData.try_dequeue(collision)){
+			if(collision.body1IsSensor || collision.body2IsSensor){
+				if(collision.body1IsSensor){
+					for(auto& i: onTriggerExitCallbacks) i(*scene, collision);
+				}
+				if(collision.body2IsSensor){
+					for(auto& i: onTriggerExitCallbacks) i(*scene, collision);
+				}
+			} else {
+				for(auto& i: onCollisionExitCallbacks) i(*scene, collision);
+			}
+		}
 	}
 
 	//////////////////////////////////////////////////
