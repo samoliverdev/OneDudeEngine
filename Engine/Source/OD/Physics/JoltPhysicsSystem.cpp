@@ -4350,7 +4350,7 @@ bool PhysicsSystem::RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit
     return false;
 }
 
-std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius) {
+std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius){
     Assert(physicsWorld != nullptr);
 
     std::vector<RayResult> results;
@@ -4417,6 +4417,81 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
         settings,               // Collision settings
         sphereCenter,          // Base offset
         collector              // Collector for results
+    );
+
+    return results;
+}
+
+std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius, LayerMask mask){
+	Assert(physicsWorld != nullptr);
+
+    std::vector<RayResult> results;
+
+    // Convert input to Jolt types
+    JPH::Vec3 sphereCenter = ToJolt(center);
+    JPH::SphereShape sphereShape(radius);
+    JPH::CollideShapeSettings settings;
+    settings.mActiveEdgeMode = JPH::EActiveEdgeMode::CollideOnlyWithActive;
+    settings.mCollisionTolerance = 0.0f; // Exact collision
+    settings.mMaxSeparationDistance = 0.0f; // No penetration allowed
+
+	MyObjectLayerFilter objectLayerFilter(mask);
+
+    // Collector to gather unique hits
+    class SphereOverlapCollector : public JPH::CollideShapeCollector {
+    public:
+        std::vector<RayResult>& mResults;
+        JPH::Vec3 mCenter;
+        const JPH::PhysicsSystem& mPhysicsSystem;
+        std::set<JPH::BodyID> mHitBodyIDs; // Track unique BodyIDs using std::set
+
+        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem)
+            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem) {}
+
+        void AddHit(const JPH::CollideShapeResult& inResult) override {
+            // Only process the first hit for each body
+            if(mHitBodyIDs.find(inResult.mBodyID2) != mHitBodyIDs.end()) {
+                return; // Skip if this body was already processed
+            }
+            mHitBodyIDs.insert(inResult.mBodyID2);
+
+            RayResult hit;
+
+            // Lock the body to get its data
+            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
+            if(!lock.Succeeded()) return;
+
+            const JPH::Body& body = lock.GetBody();
+            //hit.entity = static_cast<Entity>(body.GetUserData());
+			uint32_t _entity;
+			int32_t _index;
+			DecodeUserData(body.GetUserData(), _entity, _index);
+			hit.entity = static_cast<Entity>(_entity);
+			hit.subBodyIndex = _index;
+
+            // Use the closest point on the hit shape as the hit point
+            hit.hitPoint = FromJolt(inResult.mContactPointOn2);
+
+            // Calculate the normal at the contact point
+            hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(inResult.mSubShapeID2, inResult.mContactPointOn2));
+
+            mResults.push_back(hit);
+        }
+    };
+
+    // Perform the sphere overlap query
+    JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem);
+
+    // Use CollideShape to test the sphere against all bodies
+    physicsWorld->physicsSystem.GetNarrowPhaseQuery().CollideShape(
+        &sphereShape,           // The sphere shape
+        JPH::Vec3::sReplicate(1.0f), // Scale of the shape (no scaling)
+        JPH::Mat44::sTranslation(sphereCenter), // Transform of the sphere
+        settings,               // Collision settings
+        sphereCenter,          // Base offset
+        collector,              // Collector for results
+		{}, objectLayerFilter
     );
 
     return results;

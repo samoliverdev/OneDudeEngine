@@ -588,6 +588,7 @@ void AnimatorSample::OnInit(){
     AnimatorComponent& charAnim = charEntity.AddComponent<AnimatorComponent>();
     charAnim.Play(charModel->animationClips[0].get());*/
     
+    int count = 0;
     const int Size = 32*1.5f;
     for(int x = -(Size/2); x <= (Size/2); x++){
         for(int y = -(Size/2); y <= (Size/2); y++){
@@ -606,14 +607,16 @@ void AnimatorSample::OnInit(){
             
             AnimatorComponent& charAnim = scene->AddComponent<AnimatorComponent>(charEntity);
             charAnim.Play(charModel->animationClips[0].get() /*&clips[0]*/);
+            count += 1;
         }
     }
-    
+    LogInfo("Characters Count: %d", count);
+
     //scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
     Application::AddModule<Editor>();
 
-    LogInfo("AnimationCount: %zd", charModel->animationClips.size());
+    LogInfo("Animation Count: %zd", charModel->animationClips.size());
 
     //TODO: Add this patter to the Animator system to impruve cache acess
     /*auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();

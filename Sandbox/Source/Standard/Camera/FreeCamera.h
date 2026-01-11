@@ -17,6 +17,8 @@ public:
     float pitch = 0;
     bool hasStarted = false;
 
+    bool moveRightMouseHold = true;
+
     void OnStart(OD::TransformComponent& transform);
     void OnUpdate(OD::TransformComponent& transform);
 
@@ -24,6 +26,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, moveSpeed);
         ArchiveDumpNVP(ar, rotSpeed);
+        ArchiveDumpNVP(ar, moveRightMouseHold);
     }
 };
 

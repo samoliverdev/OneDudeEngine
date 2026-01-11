@@ -16,7 +16,10 @@ void FreeCamera::OnStart(TransformComponent& transform){
 void FreeCamera::OnUpdate(TransformComponent& transform){
     Vector3 pos = transform.LocalPosition();
 
-    if(Input::IsMouseButton(MouseButton::Right)){
+    bool canMove = Input::IsMouseButton(MouseButton::Right);
+    //if(moveRightMouseHold == false) canMove = true;
+
+    if(canMove){
         if(Input::IsKey(KeyCode::W)) pos += transform.Back() * moveSpeed * Application::DeltaTime();
         if(Input::IsKey(KeyCode::S)) pos += transform.Forward() * moveSpeed * Application::DeltaTime();
         if(Input::IsKey(KeyCode::A)) pos += transform.Left() * moveSpeed * Application::DeltaTime();
@@ -33,7 +36,7 @@ void FreeCamera::OnUpdate(TransformComponent& transform){
     lastX = xpos;
     lastY = ypos;
 
-    if(Input::IsMouseButton(MouseButton::Right)){
+    if(canMove){
         yaw += inputRotateAxisX;
         pitch -= inputRotateAxisY;
         if(pitch > 90) pitch = 90;
