@@ -278,8 +278,11 @@ class OD_API System{
 public:
     virtual ~System(){}
 
-    virtual void OnInit(Scene& scene){}
-    virtual void OnEnd(Scene& scene){}
+    virtual void OnInit(Scene& scene){} // Called a System Constructor
+    virtual void OnEnd(Scene& scene){} // Called a System Destructor
+
+    virtual void OnStart(Scene& scene){} // Call On Start running scene
+    virtual void OnStop(Scene& scene){} // Call On Stop running scene
 
     virtual int Type(){ return SystemType::Stand; } //FIXME: Maybe Rename
     virtual void Update(Scene& scene){}
@@ -369,6 +372,8 @@ public:
     inline float FixedUpdateAccumulator(){ return fixedUpdateAccumulator; }
 
     void Start();
+    void Stop();
+
     void Update();
     void Draw();
 

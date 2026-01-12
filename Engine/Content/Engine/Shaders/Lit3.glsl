@@ -121,22 +121,21 @@ uniform int perDrawInt_1;
         Out(0) vec4 fragColor;
     #endif
 
+    const float PI = 3.14159265359;
+
     vec3 AmbientLight(Surface s){
         return _AmbientLight.rgb * s.color * s.occlusion;
-
-        //const float PI = 3.14159265359;
-        //vec3 ambient = _AmbientLight.rgb;
-        //return ambient * (s.color / PI) * s.occlusion;
+        //return _AmbientLight.rgb * (s.color / PI) * s.occlusion;
     }
     
     vec3 IncomingLight(Surface s, Light l){
-        const float PI = 3.14159265359;
+        
 
-        /*
+        ///*
         float NdotL = max(dot(s.normal, l.direction), 0.0);
         return s.color * l.color * l.attenuation * NdotL;
         //return (s.color / PI) * l.color * l.attenuation * NdotL;
-        */
+        //*/
 
         /*
         vec3 H = normalize(s.viewDirection + l.direction);
@@ -145,24 +144,22 @@ uniform int perDrawInt_1;
         return (s.color * diff + spec) * l.color * l.attenuation;
         */
 
+        /*
         // ---- Half-Lambert diffuse ----
         float NdotL = dot(s.normal, l.direction);
         float halfLambert = NdotL * 0.5 + 0.5;
         halfLambert = max(halfLambert, 0.0);
         halfLambert *= halfLambert; // Valve-style curve
-
         // ---- Smoothness → specular power ----
         float specPower = exp2(s.smoothness * 10.0 + 1.0);
-
         // ---- Blinn-Phong specular ----
         vec3 H = normalize(s.viewDirection + l.direction);
         float spec = pow(max(dot(s.normal, H), 0.0), specPower);
-
         // ---- Combine ----
         vec3 diffuse = s.color * halfLambert;
         vec3 specular = vec3(0);// vec3(spec); // white spec like HL2
-
         return (diffuse + specular) * l.color * l.attenuation;
+        */
     }
 
     vec3 GetEmission(vec2 baseUV){

@@ -40,6 +40,7 @@ void SceneManager::OnInit(){}
 void SceneManager::OnExit(){
     if(activeScene != nullptr){
         //delete activeScene;
+        if(activeScene != nullptr) activeScene->Stop();
         activeScene = nullptr;
     }
 
@@ -58,7 +59,9 @@ void SceneManager::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("SceneManager::OnUpdate");
 
     if(toLoad.empty() == false){
-        Ref<Scene> scene = NewScene();
+        Ref<Scene> scene = CreateRef<Scene>();
+        if(activeScene != nullptr) activeScene->Stop();
+        activeScene = scene;
         scene->Load(toLoad.c_str());
         scene->Start();
 
@@ -73,6 +76,7 @@ void SceneManager::OnUpdate(float deltaTime){
     if(toLoadTempScene){
         if(tempSceneIsSave){
             tempScene = activeScene;
+            if(activeScene != nullptr) activeScene->Stop();
             activeScene = CreateRef<Scene>(*tempScene);
             activeScene->Start();
 
@@ -80,6 +84,7 @@ void SceneManager::OnUpdate(float deltaTime){
             isLoading = false;
             toLoadTempScene = false;
         } else {
+            if(activeScene != nullptr) activeScene->Stop();
             activeScene = tempScene;
             activeScene->Start();
 
@@ -138,17 +143,22 @@ Ref<Scene> SceneManager::GetActiveScene(){
 }
 
 void SceneManager::SetActiveScene(Ref<Scene> s){ 
+    if(activeScene != nullptr) activeScene->Stop();
     activeScene = s; 
 }
 
 Ref<Scene> SceneManager::NewScene(){
     //if(activeScene != nullptr) delete activeScene;
+
+    if(activeScene != nullptr) activeScene->Stop();
     activeScene = CreateRef<Scene>();// new Scene();
+
     return activeScene;
 }
 
 void SceneManager::DestroyActiveScene(){
     //delete activeScene;
+    if(activeScene != nullptr) activeScene->Stop();
     activeScene = nullptr;
 }
 

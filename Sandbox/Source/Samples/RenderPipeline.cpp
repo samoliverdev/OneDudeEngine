@@ -45,7 +45,7 @@ void RenderPipelineSample::OnInit(){
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<StandRenderPipeline2>();
 
-    std::string defaultShaderPath = "Engine/Shaders/Lit2.glsl";
+    std::string defaultShaderPath = "Engine/Shaders/Lit3.glsl";
 
     Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
     floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>(defaultShaderPath));

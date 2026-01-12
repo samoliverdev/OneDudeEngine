@@ -895,8 +895,30 @@ Entity Scene::FindEntityByName(const std::string& name){
 }
 
 void Scene::Start(){
+    if(running) return;
+
     Time::TimeScale(1);
     running = true;
+
+    for(auto& i: SceneManager::Get().globalSystems){
+        i.second->OnStart(*this);
+    }
+    for(auto& i: systems){
+        i.second->OnStart(*this);
+    }
+}
+
+void Scene::Stop(){
+    if(running == false) return;
+
+    running = false;
+
+    for(auto& i: systems){
+        i.second->OnStop(*this);
+    }
+    for(auto& i: SceneManager::Get().globalSystems){
+        i.second->OnStop(*this);
+    }
 }
 
 void Scene::Update(){ 
