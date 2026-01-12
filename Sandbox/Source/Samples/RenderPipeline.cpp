@@ -59,10 +59,10 @@ void RenderPipelineSample::OnInit(){
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
     envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
-    envComp.settings.toneMappingPostFX->enable = true;
+    /*envComp.settings.toneMappingPostFX->enable = true;
     envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
     envComp.settings.colorGradingPostFX->enable = true;
-    envComp.settings.colorGradingPostFX->contrast = 18;
+    envComp.settings.colorGradingPostFX->contrast = 18;*/
     //envComp.settings.bloomPostFX->enable = true;
     //envComp.settings.bloomPostFX->intensity = 0.5f;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
@@ -220,7 +220,7 @@ void RenderPipelineSample::OnInit(){
     light = scene->AddEntity("Directional Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    lightComponent.intensity = 1.5f;
+    lightComponent.intensity = 2.5f;
     lightComponent.renderShadow = true;
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));

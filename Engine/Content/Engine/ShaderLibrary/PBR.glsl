@@ -121,7 +121,8 @@ vec3 AmbientLight(Surface surfaceWS){
 vec3 GetFinalColor(Surface surfaceWS){
     ShadowData shadowData = GetShadowData(surfaceWS);
 	
-	vec3 color = AmbientLight(surfaceWS);
+	vec3 color = AmbientLight(surfaceWS);// * surfaceWS.color * surfaceWS.occlusion;
+
 	for(int i = 0; i < GetDirectionalLightCount(); i++){
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
 		color += IncomingLight(surfaceWS, light);

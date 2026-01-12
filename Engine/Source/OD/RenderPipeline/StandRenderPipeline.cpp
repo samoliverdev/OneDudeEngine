@@ -4,6 +4,7 @@
 #include "OD/Core/Lua.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Scene/SceneManager.h"
+#include "OD/Graphics/Common.h"
 #include "OD/Graphics/Geometry.h"
 #include "OD/Graphics/Font.h"
 #include "OD/Graphics/UniformBuffer.h"
@@ -361,7 +362,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Directional){
             if(curDirLightsCount >= maxDirLightCount) continue;
 
-            dirLightColors[curDirLightsCount] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            dirLightColors[curDirLightsCount] = ToLinear(light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
             dirLightDirections[curDirLightsCount] = Mathf::ToVector4(-trans.Forward());
             Vector2 v = shadows->ReserveDirectionalShadows(light, trans);
             dirLightShadowData[curDirLightsCount] = Vector4(v.x, v.y, 0, 1);
@@ -372,7 +373,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Point){
             if(curOtherLightsCount >= maxOtherLightCount) continue;
 
-            otherLightColors[curOtherLightsCount] = light.color * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            otherLightColors[curOtherLightsCount] = ToLinear(light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
             Vector4 position = Mathf::ToVector4(trans.Position());
             position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
             otherLightPositions[curOtherLightsCount] = position;
@@ -386,7 +387,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Spot){
             if(curOtherLightsCount >= maxOtherLightCount) continue;
 
-            otherLightColors[curOtherLightsCount] = light.color * light.intensity;
+            otherLightColors[curOtherLightsCount] = ToLinear(light.color) * light.intensity;
             Vector4 position = Mathf::ToVector4(trans.Position());
             position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
             otherLightPositions[curOtherLightsCount] = position;
@@ -730,11 +731,11 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
     context->skyMaterial = targetSkyMaterial;
 
-    context->pipelineData._AmbientLight = environmentSettings.ambient;
+    context->pipelineData._AmbientLight = ToLinear(environmentSettings.ambient);
 
     if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-        context->pipelineData._AmbientLight = environmentSettings.ambient;
+        context->pipelineData._AmbientLight = ToLinear(environmentSettings.ambient);
         context->pipelineData._SkyLightIntensity = 0;
         context->pipelineData._IrradianceMapScale = Vector4Zero;
     }
@@ -1154,12 +1155,14 @@ void CameraRenderer::RenderUI(){
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out;
 
+    ///*
     for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
     if(environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
     if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+    //*/
     out.push_back(gamaCorrectionPP);
 
     return out;
