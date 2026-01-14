@@ -776,6 +776,8 @@ struct OD_API PhysicsSystem: public System{
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius);
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius, LayerMask mask);
 
+    std::vector<RayResult> OverlapBox(Vector3 size, Vector3 center, Quaternion rot, float scale, LayerMask mask);
+
     bool IsSimulationEnable();
     void Simulate(float step);
     void SynchronizeMotionStates();

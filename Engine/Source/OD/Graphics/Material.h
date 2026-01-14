@@ -126,6 +126,9 @@ public:
     void SetCubemap(const char* name, Ref<Cubemap> tex);
     void SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 
+    void SetColor3(const char* name, Vector3 value);
+    void SetColor4(const char* name, Vector4 value);
+
     static void SetGlobalInt(const char* name, int value);
     static void SetGlobalFloat(const char* name, float value);
     static void SetGlobalFloat(const char* name, float* value, int count);
@@ -203,8 +206,7 @@ private:
     MaterialDataWG;
 
     void SetFloat(const char* name, float value, float min, float max);
-    void SetColor3(const char* name, Vector3 value);
-    void SetColor4(const char* name, Vector4 value);
+    
 
     void UpdateMaps();
     //static void ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps);
