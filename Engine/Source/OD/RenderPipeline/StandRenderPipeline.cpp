@@ -1615,9 +1615,9 @@ void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity 
         }
     }
 
-    if(scene.HasComponent<SkinnedModelRendererComponent>(e) && scene.HasComponent<AnimatorComponent>(e)){
+    if(scene.HasComponent<SkinnedModelRendererComponent>(e) /*&& scene.HasComponent<AnimatorComponent>(e)*/){
         auto& s = scene.GetComponent<SkinnedModelRendererComponent>(e);
-        auto& c = scene.GetComponent<AnimatorComponent>(e);
+        //auto& c = scene.GetComponent<AnimatorComponent>(e);
         auto& t = scene.GetComponent<TransformComponent>(e);
         if(s.GetModel() != nullptr){
             Transform globalTransform = Transform(
@@ -1625,11 +1625,12 @@ void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity 
             );
 
             Pose pose;
-            if(scene.Running()){ 
+            /*if(scene.Running()){ 
                 pose = c.GetLayer(0).controller.GetCurrentPose();
             } else {
                 pose = s.GetModel()->skeleton.GetBindPose(); 
-            }
+            }*/
+            pose = s.finalPose;
 
             for(int i = 0; i < pose.Size(); i++){
                 if(pose.GetParent(i) < 0) continue;

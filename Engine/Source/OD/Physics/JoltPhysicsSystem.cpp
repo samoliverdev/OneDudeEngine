@@ -63,6 +63,8 @@ constexpr int cCollisionSteps = 1;
 constexpr bool EnableInterpolation = true; //true; //true;
 constexpr bool EnableFixedPostPhysicUpdate = false;//true;
 
+constexpr bool resetFinalPoseWithRestPose = false;
+
 #pragma region Core
 
 void DrawLayerCollisionMatrix(
@@ -1501,7 +1503,7 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		//part.mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
 		//part.mNumVelocityStepsOverride = 20; //16;
 		//part.mNumPositionStepsOverride = 10; //8;
-		part.mMotionQuality = EMotionQuality::Discrete;// EMotionQuality::LinearCast;
+		part.mMotionQuality = EMotionQuality::LinearCast;// EMotionQuality::LinearCast; //TODO: Add a selected option for this later
 		part.mPosition = positions;
 		part.mRotation = rotations;
 		part.mMotionType =  EMotionType::Dynamic;
@@ -3616,6 +3618,21 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							bodyInterface.SetAngularVelocity(body, axis * (angle * Kp));
 					}
 				
+					/*if(ragdoll.parts[p].overrideType == RagdollComponent::Part::OverrideType::Kinematic){
+						BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
+						int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
+						Assert(boneIndex != 0);
+
+						Quaternion tRot;
+						Vector3 tPos;
+						math::extractPosRot(
+							math::simdMul(trans.GlobalModelMatrix(), skinned.finalPose[boneIndex].GetModelMatrix()),
+							tPos, 
+							tRot
+						);
+						bodyInterface.SetPosition(bodyID, ToJolt(tPos), EActivation::Activate);
+						bodyInterface.SetRotation(bodyID, ToJolt(tRot), EActivation::Activate);
+					}*/
 				}
 			}
 			
@@ -3681,7 +3698,7 @@ void PhysicsSystem::_SyncRagdollToPose(Scene& scene, SkinnedModelRendererCompone
 
 	//if(skinned.finalPose.Size() <= 0) return;
 	skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-	skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+	if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
 	auto& pose = skinned.finalPose;
 
@@ -3722,7 +3739,7 @@ void PhysicsSystem::_SyncRagdollToPose2::operator()(){
 
 	//if(skinned.finalPose.Size() <= 0) return;
 	skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-	skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+	if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
 	auto& pose = skinned.finalPose;
 
@@ -3789,7 +3806,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 
 		//if(skinned.finalPose.Size() <= 0) return;
 		skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-		skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
+		if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
 
 		auto& pose = skinned.finalPose;
 
