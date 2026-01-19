@@ -1769,23 +1769,26 @@ void RenderContext::UpdateRenderData(){
 
         //if(c.renderData.size() != model->renderTargets.size()) continue;
 
-        int _i = 0;
-        for(auto i: model->renderTargets){
-            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+        Assert(c.GetRenderTargetVisibility().size() == model->renderTargets.size());
+
+        for(int i = 0; i < model->renderTargets.size(); i++){  //for(auto i: model->renderTargets){
+            auto& target = model->renderTargets[i];
+            if(c.GetRenderTargetVisibility()[i] == false) continue;
+            //if(i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[i] == false) continue;
 
             RenderData& data = renderData.GetNew(taskIndex); 
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[target.materialIndex].get();
+            data.targetMesh = model->meshs[target.meshIndex].get();
             //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
             //data.aabb.Expand2(Vector3(5.5f));
-            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
             }
 
             data.perDrawData.Int_0_SetMask(0, true);
@@ -1802,8 +1805,6 @@ void RenderContext::UpdateRenderData(){
             data.useCustomData = c.useCustomData;
             data.customData = c.customData;
             #endif
-
-            _i += 1;
         }
     });
     scene->RunAllTaskAndSync();
@@ -1876,21 +1877,23 @@ void RenderContext::UpdateRenderData(){
         //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
         if(c.posePalette.size() == 0) c.UpdatePosePalette();
 
-        int _i = 0;
-        for(auto i: model->renderTargets){
-            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+        for(int i = 0; i < model->renderTargets.size(); i++){  //for(auto i: model->renderTargets){
+            auto& target = model->renderTargets[i];
+            if(c.GetRenderTargetVisibility()[i] == false) continue;
+            //if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+            
             RenderData& data = renderData.GetNew(taskIndex);
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[target.materialIndex].get();
+            data.targetMesh = model->meshs[target.meshIndex].get();
 
             auto m1 = t.GlobalModelMatrix();
-            auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+            auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex);
 
             //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
             //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize
@@ -1903,8 +1906,8 @@ void RenderContext::UpdateRenderData(){
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
 
-            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
             }
 
             data.perDrawData.Int_0_SetMask(0, true);
@@ -1926,8 +1929,6 @@ void RenderContext::UpdateRenderData(){
             #endif
 
             if(c.updateWhenOffscreen) data.SetFlag(RenderData::Flag::AlwaysDraw, true);// .awalsDraw = true;
-
-            _i += 1;
         }
     });
     scene->RunAllTaskAndSync();
@@ -2055,8 +2056,9 @@ void RenderContext::UpdateRenderData(){
         }
 
         int _i = 0;
-        for(auto i: model->renderTargets){
-            if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
+        for(int i = 0; i < model->renderTargets.size(); i++){  //for(auto i: model->renderTargets){
+            auto& target = model->renderTargets[i];
+            if(c.GetRenderTargetVisibility()[i] == false) continue;
 
             if(s.staticDatas[_i].isDirt){
                 s.staticDatas[_i].isDirt = false;
@@ -2066,13 +2068,13 @@ void RenderContext::UpdateRenderData(){
 
             RenderData& data = renderData.GetNew(taskIndex);
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[target.materialIndex].get();
+            data.targetMesh = model->meshs[target.meshIndex].get();
             data.targetMatrix =  s.staticDatas[_i].m;
             data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
-            if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
             }
 
             data.perDrawData.Int_0_SetMask(0, true);
