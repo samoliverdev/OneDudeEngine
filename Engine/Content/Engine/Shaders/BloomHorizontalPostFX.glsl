@@ -36,7 +36,7 @@ Texture2D(0, 0, mainTex, mainTexSampler)
 	}
 
 	vec4 BloomHorizontalPassFragment(){
-		vec3 color = vec3(0.0);
+		vec4 color = vec4(0.0);
 		float offsets[9] = float[9](
 			-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0
 		);
@@ -46,9 +46,9 @@ Texture2D(0, 0, mainTex, mainTexSampler)
 		);
 		for(int i = 0; i < 9; i++){
 			float offset = offsets[i] * 2.0 * GetSourceTexelSize().x;
-			color += GetSource(texCoord + vec2(offset, 0.0)).rgb * weights[i];
+			color += GetSource(texCoord + vec2(offset, 0.0)) * weights[i];
 		}
-		return vec4(color, 1.0);
+		return color; //vec4(color, 1.0);
 	}
 
 	void main(){

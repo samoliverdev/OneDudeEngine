@@ -49,6 +49,24 @@ EndUniform()
     const float twoPi = 2.0 * pi;
     const float halfPi = 0.5 * pi;
 
+    float expFactor = 2.0;          // like Three.js
+    float aoPower   = 1.5;          // AO shaping
+    float giClamp   = 7.0;          // HDR energy clamp
+
+    // GTAO fast acos approximation (from Activision)
+    float fastAcos(float x) {
+        float y = abs(x);
+        float p = -0.156583 * y + halfPi;
+        p *= sqrt(1.0 - y);
+        return x >= 0.0 ? p : pi - p;
+    }
+
+    // Exponential sample distribution
+    float expStep(float i, float count, float jitter, float expFactor) {
+        float t = (i + jitter) / count;
+        return pow(t, expFactor);
+    }
+
     // https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
     float randf(int x, int y) {
         return mod(52.9829189 * mod(0.06711056 * float(x) + 0.00583715 * float(y), 1.0), 1.0);
@@ -113,66 +131,96 @@ EndUniform()
             float jitter = randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
         #endif
 
-        for (float slice = 0.0; slice < sliceCount + 0.5; slice += 1.0) {
-            float phi = sliceRotation * (slice + jitter) + pi;
+        for(float slice = 0.0; slice < sliceCount; slice += 1.0){
+            float phi = sliceRotation * (slice + jitter);
             vec2 omega = vec2(cos(phi), sin(phi));
-            vec3 direction = vec3(omega.x, omega.y, 0.0);
-            vec3 orthoDirection = direction - dot(direction, camera) * camera;
-            vec3 axis = cross(direction, camera);
-            vec3 projNormal = normal - axis * dot(normal, axis);
-            float projLength = length(projNormal);
 
-            float signN = sign(dot(orthoDirection, projNormal));
-            float cosN = clamp(dot(projNormal, camera) / projLength, 0.0, 1.0);
-            float n = signN * acos(cosN);
+            // reset occlusion PER SLICE (important)
+            occlusion = 0u;
 
-            for(float currentSample = 0.0; currentSample < sampleCount + 0.5; currentSample += 1.0){
-                #ifdef USE_BLUE_NOISE
-                    float sampleJitter = getNoise(texCoord, currentSample * 0.1);
-                    float sampleStep = (currentSample + sampleJitter) / sampleCount + sampleOffset;
-                #else
-                    float sampleStep = (currentSample + jitter) / sampleCount + sampleOffset;
-                #endif
+            // two-sided sampling
+            for(int side = 0; side < 2; side++){
 
-                vec2 sampleUV = texCoord - sampleStep * sampleScale * omega * aspect;
-                if(sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0){
-                    continue;
+                vec2 dir = (side == 0) ? omega : -omega;
+                vec3 direction = vec3(dir, 0.0);
+
+                vec3 orthoDirection = direction - dot(direction, camera) * camera;
+                vec3 axis = cross(direction, camera);
+
+                vec3 projNormal = normal - axis * dot(normal, axis);
+                float projLen = max(length(projNormal), 1e-4);
+
+                float signN = sign(dot(orthoDirection, projNormal));
+                float cosN  = clamp(dot(projNormal, camera) / projLen, -1.0, 1.0);
+                float n     = signN * fastAcos(cosN);
+
+                for(float i = 0.0; i < sampleCount; i += 1.0){
+                    float stepT = expStep(i, sampleCount, jitter, expFactor);
+                    float step  = stepT * sampleRadius + sampleOffset;
+
+                    vec2 sampleUV = texCoord - step * sampleScale * dir * aspect;
+                    if(any(lessThan(sampleUV, vec2(0.0))) ||
+                        any(greaterThan(sampleUV, vec2(1.0))))
+                        break;
+
+                    vec3 samplePos = GetWorldPos(sampleUV);
+                    samplePos = (view * vec4(samplePos, 1)).xyz;
+
+                    vec3 sampleDist = samplePos - position;
+                    float len = max(length(sampleDist), 1e-4);
+                    vec3 horizonDir = sampleDist / len;
+
+                    // distance-scaled thickness
+                    float thicknessScale = clamp(abs(position.z) * 0.02, 1.0, 5.0);
+                    vec3 backPos = sampleDist - camera * hitThickness * thicknessScale;
+
+                    frontBackHorizon.x = dot(horizonDir, camera);
+                    frontBackHorizon.y = dot(normalize(backPos), camera);
+
+                    frontBackHorizon = vec2(
+                        fastAcos(frontBackHorizon.x),
+                        fastAcos(frontBackHorizon.y)
+                    );
+
+                    frontBackHorizon =
+                        clamp((frontBackHorizon + n + halfPi) / pi, 0.0, 1.0);
+
+                    indirect = updateSectors(
+                        frontBackHorizon.x,
+                        frontBackHorizon.y,
+                        0u
+                    );
+
+                    uint newlyVisible = indirect & ~occlusion;
+                    float vis = float(bitCount(newlyVisible)) / float(sectorCount);
+
+                    if(vis > 0.0){
+                        vec3 sampleNormal = normalize(mat3(view) * GetWorldNormal(sampleUV));
+                        vec3 sampleLight = texture(mainTex, sampleUV).rgb;
+
+                        float ndl = clamp(dot(normal, horizonDir), 0.0, 1.0);
+                        float ldn = clamp(dot(sampleNormal, -horizonDir), 0.0, 1.0);
+
+                        lighting += vis * sampleLight * ndl * ldn;
+                    }
+
+                    occlusion |= indirect;
                 }
-
-                vec3 samplePosition = GetWorldPos(sampleUV); samplePosition = (view * vec4(samplePosition, 1)).xyz;
-                vec3 sampleNormal = normalize(GetWorldNormal(sampleUV)); sampleNormal = normalize(mat3(view) * sampleNormal);
-                vec3 sampleLight = texture(mainTex, sampleUV).rgb;
-                vec3 sampleDistance = samplePosition - position;
-                float sampleLength = max(length(sampleDistance), 0.0001); // Avoid division by zero length(sampleDistance);
-                vec3 sampleHorizon = sampleDistance / sampleLength;
-
-                frontBackHorizon.x = dot(sampleHorizon, camera);
-                frontBackHorizon.y = dot(normalize(sampleDistance - camera * hitThickness), camera);
-
-                frontBackHorizon = acos(frontBackHorizon);
-                frontBackHorizon = clamp((frontBackHorizon + n + halfPi) / pi, 0.0, 1.0);
-
-                indirect = updateSectors(frontBackHorizon.x, frontBackHorizon.y, 0u);
-                lighting += (1.0 - float(bitCount(indirect & ~occlusion)) / float(sectorCount)) *
-                    sampleLight * clamp(dot(normal, sampleHorizon), 0.0, 1.0) *
-                    clamp(dot(sampleNormal, -sampleHorizon), 0.0, 1.0);
-                occlusion |= indirect;
             }
+
             visibility += 1.0 - float(bitCount(occlusion)) / float(sectorCount);
         }
 
         visibility /= sliceCount;
+        visibility = pow(clamp(visibility, 0.0, 1.0), aoPower);
+
         lighting /= sliceCount;
 
-        // Multi-bounce: Add dampened previous-frame indirect lighting
-        //vec3 prevLighting = texture(lastIndirect, texCoord).rgb * 0.5; // Dampen by 50%
-        //lighting += prevLighting;
-
-        //vec3 directLighting = texture(mainTex, texCoord).rgb; // Direct lighting
+        // HDR safety clamp (like Three.js)
+        float lum = dot(lighting, vec3(0.2126, 0.7152, 0.0722));
+        if(lum > giClamp) lighting *= giClamp / lum;
 
         fragColor = vec4(lighting, visibility);
-        //fragColor = vec4(directLighting + lighting, visibility);
-        //fragColor = vec4(directLighting * visibility, 1);
         //fragColor = vec4(vec3(visibility), 1);
     }
 #endif

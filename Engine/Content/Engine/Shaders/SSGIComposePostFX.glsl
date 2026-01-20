@@ -10,6 +10,8 @@ BeginPass
 
     BeginUniform(0, 0, Main)
         Uniform vec4 color;
+        Uniform vec2 giSize;
+        Uniform vec2 screenSize;
     EndUniform()
     Texture2D(0, 1, mainTex, mainSampler)
     Texture2D(0, 2, giAO, giAOSampler)
@@ -38,13 +40,22 @@ BeginPass
 
     //uniform sampler2D mainTex;
 
-    void main() {
-        //fragColor = vec4(1, 0, 0, 1);
-        vec4 color = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
+    void main(){
+        vec3 base = SampleTexture2D(mainTex, mainSampler, texCoord).rgb;
+        vec2 scale = giSize / screenSize;
+        vec2 giUV = texCoord * scale;
+        vec4 giAOData = SampleTexture2D(giAO, giAOSampler, giUV);
+        vec3 gi = giAOData.rgb * 10.0;
+        float ao = 1; //giAOData.r;
+        vec3 color = base + gi * ao;
+        fragColor = vec4(color, 1.0);
+        //fragColor = vec4(vec3(ao), 1.0);
+        //fragColor = vec4(gi, 1.0);
+
+        /*vec4 color = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
         vec4 giAO = SampleTexture2D(giAO, giAOSampler, texCoord); //texture(mainTex, texCoord);
-        
-        fragColor = vec4(color.rgb + giAO.rgb, 1);
-        //fragColor = vec4(giAO.rgb, 1);
+        //fragColor = vec4(color.rgb + giAO.rgb, 1);
+        fragColor = vec4(giAO.rgb, 1);*/
     }
     EndFrag
 EndPass

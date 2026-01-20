@@ -32,6 +32,7 @@ private:
     Ref<Material> giBlurPass2;
     Ref<Material> giComposePass;
     Ref<Material> blitPass;
+    Ref<Material> giUpsamplePass;
     Ref<Texture2D> blueNoise;
 
     class Framebuffer* lastIndirect = nullptr;
