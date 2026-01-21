@@ -45,12 +45,15 @@ BeginPass
         vec2 scale = giSize / screenSize;
         vec2 giUV = texCoord * scale;
         vec4 giAOData = SampleTexture2D(giAO, giAOSampler, giUV);
-        vec3 gi = giAOData.rgb * 10.0;
-        float ao = 1; //giAOData.r;
-        vec3 color = base + gi * ao;
-        fragColor = vec4(color, 1.0);
+        vec3 gi = giAOData.rgb;
+
+        vec3 giEnergy = gi;
+        //giEnergy = min(giEnergy, base * 0.8);
+
+        vec3 color = base + giEnergy;
+        //fragColor = vec4(color, 1.0);
         //fragColor = vec4(vec3(ao), 1.0);
-        //fragColor = vec4(gi, 1.0);
+        fragColor = vec4(gi, 1.0);
 
         /*vec4 color = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
         vec4 giAO = SampleTexture2D(giAO, giAOSampler, texCoord); //texture(mainTex, texCoord);

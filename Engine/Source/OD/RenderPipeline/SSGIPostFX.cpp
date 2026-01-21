@@ -19,9 +19,8 @@ SSGIPostFX::SSGIPostFX(){
     enable = false;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX2.glsl"));
-    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl"));
-    giBlurPass2 = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
+    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
+    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
     blueNoise = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/LDR_RG01_47.png");
@@ -54,6 +53,7 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giPass->SetFloat("sampleRadius", sampleRadius);
     giPass->SetFloat("sliceCount", sliceCount);
     giPass->SetFloat("hitThickness", hitThickness);
+    giPass->SetFloat("giIntensity", giIntensity);
     giPass->SetVector2("screenSize", {spec.width, spec.height});
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
@@ -65,7 +65,6 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     Graphics::EndFramebuffer();
     return;*/
 
-    
     spec.width /= 4; //2;
     spec.height /= 4; //2;
 
@@ -91,67 +90,44 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", src, 0);
     giPass->SetTexture("gNormal", normal, 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("gDepth", deferred, -1);
+    giPass->SetTexture("gAlbedoSpec", deferred, 1);
     giPass->SetTexture("lastIndirect", lastIndirect, 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("noise", blueNoise);
     giPass->SetFloat("sampleCount", sampleCount);
     giPass->SetFloat("sampleRadius", sampleRadius);
     giPass->SetFloat("sliceCount", sliceCount);
     giPass->SetFloat("hitThickness", hitThickness);
+    giPass->SetFloat("giIntensity", giIntensity);
     giPass->SetVector2("screenSize", {spec.width, spec.height});
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    Graphics::BeginFramebuffer(*lastIndirect);
-    Graphics::SetViewport(0, 0, spec.width, spec.height);
-    blitPass->SetTexture("mainTex", ping, 0);
-    Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
-    Graphics::EndFramebuffer();
-
-    ///*
-    Graphics::BeginFramebuffer(*ping);
-    Graphics::SetViewport(0, 0, spec.width, spec.height);
-    giBlurPass->SetTexture("mainTex", lastIndirect, 0);
-    Graphics::DrawFullScreenQuad(*giBlurPass, Matrix4Identity);
-    Graphics::EndFramebuffer();
-
     Graphics::BeginFramebuffer(*pong);
     Graphics::SetViewport(0, 0, spec.width, spec.height);
-    giBlurPass2->SetTexture("mainTex", ping, 0);
-    Graphics::DrawFullScreenQuad(*giBlurPass2, Matrix4Identity);
+    giBlurPass->SetTexture("mainTex", ping, 0);
+    giBlurPass->SetTexture("gDepth", deferred, -1);
+    giBlurPass->SetTexture("gNormal", deferred, 0);
+    giBlurPass->SetVector2("giTexelSize", {1.0f / spec.width, 1.0f / spec.height});
+    giBlurPass->SetVector2("screenSize", {spec.width, spec.height});
+    Graphics::DrawFullScreenQuad(*giBlurPass, Matrix4Identity);
     Graphics::EndFramebuffer();
-    //*/
 
     Framebuffer* giFull = new Framebuffer(deferred->Specification());
 
     Graphics::BeginFramebuffer(*giFull);
-    Graphics::SetViewport(0, 0,
-        deferred->Specification().width,
-        deferred->Specification().height
-    );
+    Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
     giUpsamplePass->SetTexture("giLow", pong, 0);
     giUpsamplePass->SetTexture("gDepth", deferred, -1);
     giUpsamplePass->SetTexture("gNormal", deferred, 0);
     giUpsamplePass->SetFloat("farPlane", context->GetCamera().farClip);
     giUpsamplePass->SetFloat("nearPlane", context->GetCamera().nearClip);
-    giUpsamplePass->SetVector2("giTexelSize", {
-        1.0f / pong->Specification().width,
-        1.0f / pong->Specification().height
-    });
-    giUpsamplePass->SetVector2("screenSize", {
-        deferred->Specification().width,
-        deferred->Specification().height
-    });
+    giUpsamplePass->SetVector2("giTexelSize", {1.0f / spec.width, 1.0f / spec.height});
+    giUpsamplePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
     Graphics::DrawFullScreenQuad(*giUpsamplePass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    giComposePass->SetVector2("giSize", {
-        pong->Specification().width,
-        pong->Specification().height
-    });
-    giComposePass->SetVector2("screenSize", {
-        deferred->Specification().width,
-        deferred->Specification().height
-    });
+    giComposePass->SetVector2("giSize", {deferred->Specification().width, deferred->Specification().height});
+    giComposePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
     Graphics::BeginFramebuffer(*dst);
     Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
     giComposePass->SetTexture("mainTex", src, 0);
@@ -159,9 +135,10 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     Graphics::DrawFullScreenQuad(*giComposePass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    /*Graphics::BeginFramebuffer(*dst);
+    /*Graphics::BeginFramebuffer(*lastIndirect);
     Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
-    Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
+    blitPass->SetTexture("mainTex", ping, 0);
+    Graphics::DrawFullScreenQuad(*blitPass, Matrix4Identity);
     Graphics::EndFramebuffer();*/
 
     delete normal;

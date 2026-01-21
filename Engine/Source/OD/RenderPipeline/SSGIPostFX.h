@@ -24,6 +24,8 @@ public:
         ArchiveDump(ar, CEREAL_NVP(hitThickness));
         ArchiveDump(ar, CEREAL_NVP(sampleCount));
         ArchiveDump(ar, CEREAL_NVP(sliceCount));
+
+        ArchiveDump(ar, CEREAL_NVP(giIntensity));
     }
 
 private:
@@ -41,6 +43,8 @@ private:
     float hitThickness = 0.5f;
     float sampleCount = 4;
     float sliceCount = 4;
+
+    float giIntensity = 1;
     
 };
 

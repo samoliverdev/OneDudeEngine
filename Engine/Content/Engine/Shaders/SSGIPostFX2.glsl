@@ -12,6 +12,7 @@
 Texture2D(0, 5, mainTex, mainTexSampler)
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
+Texture2D(0, 7, gAlbedoSpec, gAlbedoSpecSampler) 
 Texture2D(0, 12, gDepth, gDepthSampler)
 Texture2D(0, 11, noise, noiseSampler)
 Texture2D(0, 12, lastIndirect, lastIndirectSampler)
@@ -22,6 +23,7 @@ BeginUniform(0, 0, Main)
     Uniform float sampleRadius;
     Uniform float sliceCount;
     Uniform float hitThickness;
+    Uniform float giIntensity;
 EndUniform()
 
 #if defined(VERTEX) && defined(MainPass)
@@ -220,7 +222,8 @@ EndUniform()
         float lum = dot(lighting, vec3(0.2126, 0.7152, 0.0722));
         if(lum > giClamp) lighting *= giClamp / lum;
 
-        fragColor = vec4(lighting, visibility);
+        vec3 gi = (lighting * giIntensity);// * texture(gAlbedoSpec, texCoord).rgb;
+        fragColor = vec4(gi * visibility, visibility);
         //fragColor = vec4(vec3(visibility), 1);
     }
 #endif
