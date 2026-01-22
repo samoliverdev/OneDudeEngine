@@ -41,6 +41,39 @@ void Model::OnGui(){
 
 	ImGui::Checkbox("LoadSettings::useOnlySkinnedBones", &settings.useOnlySkinnedBones);
 	ImGui::Checkbox("LoadSettings::generateColliderData", &settings.generateColliderData);
+
+	ImGui::DragInt("LoadSettings::rootMotionIndex", &settings.rootMotionIndex);
+	ImGui::DragFloat3("LoadSettings::rootMotionPosMask", &settings.rootMotionPosMask.x);
+
+	if(ImGui::TreeNode("ClipSettings")){
+		std::vector<bool> clipsHasRootMotion;
+		bool clipsHasRootMotionHasEdited = false;
+		clipsHasRootMotion.resize(animationClips.size());
+		for(int i = 0; i < animationClips.size(); i++){
+			clipsHasRootMotion[i] = animationClips[i]->GetHasRootMotion();
+		}
+		for(int i = 0; i < animationClips.size(); i++){
+			bool hasRootMotion = clipsHasRootMotion[i];
+
+			if(ImGui::TreeNode(animationClips[i]->GetName().c_str())){
+				std::string label = "Root Motion##" + std::to_string(i);
+				if(ImGui::Checkbox(label.c_str(), &hasRootMotion)){
+					clipsHasRootMotion[i] = hasRootMotion;
+
+					// optional: also push it back to the clip itself
+					animationClips[i]->SetHasRootMotion(hasRootMotion);
+					clipsHasRootMotionHasEdited = true;
+				}
+
+				ImGui::TreePop();
+			}
+		}
+		if(clipsHasRootMotionHasEdited){
+			settings.clipsHasRootMotion = clipsHasRootMotion;
+		}
+
+		ImGui::TreePop();
+	}
 	
 	if(ImGui::Button("Apply Changes") && PathIsValid()){
 		Reload();

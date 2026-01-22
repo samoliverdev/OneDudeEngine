@@ -39,7 +39,6 @@ struct OD_API AnimatorComponent{
         ArchiveDumpNVP(ar, toPlay);
 
         ArchiveDumpNVP(ar, _toPlay);
-        ArchiveDumpNVP(ar, testRootMotionBone);
         ArchiveDumpNVP(ar, testRootMotion);
     }
 
@@ -47,7 +46,6 @@ private:
     std::vector<Layer> layers = {{}};
     int toPlay = -1;
     std::string _toPlay = "";
-    int testRootMotionBone = -1;
     bool testRootMotion = false;
     bool enable = true;
 };

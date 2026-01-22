@@ -49,7 +49,7 @@ float TClip<TRACK>::Sample(Pose& outPose, float time, int rootMotionIndex, Vecto
             Vector3 animatedPos = animated.Position();
 
             if(outRootDelta != nullptr){
-                (*outRootDelta) = animated;
+                (*outRootDelta) = hasRootMotion ? animated : Transform();
                 /*outRootDelta->Position({          //INFO: this not fix 'trans.Position(trans.Position() + delta);'
                     motionPosMask.x*animatedPos.x,
                     motionPosMask.y*animatedPos.y,
@@ -150,6 +150,16 @@ bool TClip<TRACK>::GetLooping(){
 template<typename TRACK>
 void TClip<TRACK>::SetLooping(bool inLooping){ 
     looping = inLooping; 
+}
+
+template<typename TRACK>
+bool TClip<TRACK>::GetHasRootMotion(){
+    return hasRootMotion;
+}
+
+template<typename TRACK>
+void TClip<TRACK>::SetHasRootMotion(bool v){
+    hasRootMotion = v;
 }
 
 template<typename TRACK>

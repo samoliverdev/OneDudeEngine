@@ -27,6 +27,10 @@ struct ModelLoadSettings{
     bool useOnlySkinnedBones = false;
     bool generateColliderData = false; //true;
 
+    std::vector<bool> clipsHasRootMotion;
+    Vector3 rootMotionPosMask = {0, 1, 0};
+    int rootMotionIndex = -1;
+
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, scale);
@@ -35,6 +39,10 @@ struct ModelLoadSettings{
 
         AssetRefSerialize<Shader> shaderRef(customShader);
         ArchiveDumpNVP(ar, shaderRef);
+
+        ArchiveDumpNVP(ar, clipsHasRootMotion);
+        ArchiveDumpNVP(ar, rootMotionPosMask);
+        ArchiveDumpNVP(ar, rootMotionIndex);
     }
 };
 
@@ -88,6 +96,8 @@ public:
     std::vector<Ref<ClipT>> animationClips;
     Skeleton skeleton;
     ModelLoadSettings settings;
+    Vector3 rootMotionPosMask = {0, 1, 0};
+    int rootMotionIndex = -1;
 
     Ref<class MeshShapeData> modelShapeData = nullptr;
 

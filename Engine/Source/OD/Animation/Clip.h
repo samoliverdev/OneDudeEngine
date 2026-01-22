@@ -29,6 +29,8 @@ public:
     float GetEndTime();
     bool GetLooping();
     void SetLooping(bool inLooping);
+    bool GetHasRootMotion();
+    void SetHasRootMotion(bool v);
 
     template <class Archive>
     void serialize(Archive& ar){
@@ -45,6 +47,7 @@ protected:
     float startTime;
     float endTime;
     bool looping;
+    bool hasRootMotion = false;
 
     float AdjustTimeToFitRange(float inTime);
 };

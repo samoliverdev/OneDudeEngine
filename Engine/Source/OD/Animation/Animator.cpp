@@ -34,7 +34,6 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
 
     ImGui::DrawString("_ToPlay", anim._toPlay);
 
-    ImGui::InputInt("testRootMotionBone", &anim.testRootMotionBone);
     ImGui::Checkbox("testRootMotion", &anim.testRootMotion);
 }
 
@@ -216,8 +215,8 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
             if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
             if(i.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) i.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
 
-            i.controller.rootMotionIndex = anim.testRootMotionBone;
-            i.controller.rootMotionPosMask = {1, 1, 0};
+            i.controller.rootMotionIndex = model->rootMotionIndex;
+            i.controller.rootMotionPosMask = model->rootMotionPosMask;
 
             i.controller.Update(Application::DeltaTime());
             //i.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 

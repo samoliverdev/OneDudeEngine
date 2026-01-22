@@ -968,6 +968,13 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         Assert(i.bindPoseIndex < loadData.model->skeleton.GetBindPose().Size());
     }
 
+    out.rootMotionIndex = loadSettings.rootMotionIndex;
+	out.rootMotionPosMask = loadSettings.rootMotionPosMask;
+	loadSettings.clipsHasRootMotion.resize(out.animationClips.size());
+	for(int i = 0; i < out.animationClips.size(); i++){
+		out.animationClips[i]->SetHasRootMotion(loadSettings.clipsHasRootMotion[i]);
+	}
+
     return true;
 }
 
