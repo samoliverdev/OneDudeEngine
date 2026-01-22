@@ -85,28 +85,30 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, RigidbodyComponent& rb){
         velocity.z = moveDir.z * moveSpeed;
     }
 
-    /*Vector3 deltaVel = velocity - rb.Velocity();
-    Vector3 impulse = deltaVel * rb.Mass();
-    rb.ApplyImpulse(impulse);*/
-
-    float acceleration = 10;
+    // Work great, but has slide
+    /*float acceleration = 10;
     Vector3 deltaVel = velocity - rb.Velocity();
     Vector3 force = deltaVel * acceleration * rb.Mass();
+    rb.ApplyForce(force);*/
+
+    // Work great without slide
+    float kp = 10.0f;   // acceleration
+    float kd = 1.0f;    // damping
+    Vector3 deltaVel = velocity - rb.Velocity();
+    Vector3 force = deltaVel * kp * rb.Mass() - rb.Velocity() * kd * rb.Mass();
     rb.ApplyForce(force);
 
-    if(math::length2(moveDir) < (0.1f*0.1f)){
+    // Clean Slide
+    /*const float stopEpsilon = 0.05f;
+    if(math::length(rb.Velocity()) < stopEpsilon){
+        rb.Velocity(Vector3Zero);
+    }*/
+
+    if(math::length2(moveDir) < (0.1f*0.1f) && onGround){
         rb.LinearDamping(999);
     } else {
         rb.LinearDamping(0);
     }
-
-    /*float maxSpeed = 1;
-    Vector3 horizontalVel(rb.Velocity().x, 0.0f, rb.Velocity().z);
-    float speed = math::length(horizontalVel);
-    if(speed > maxSpeed){
-        Vector3 excessVel = horizontalVel - math::normalizeSafe(horizontalVel) * maxSpeed;
-        rb.ApplyForce(-excessVel * 10.0f * rb.Mass());
-    }*/
 
     if(moveType == MoveType::Free){
         if(math::length(moveDir) > 0.001f){
