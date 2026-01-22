@@ -27,8 +27,17 @@ public:
     inline bool WasSkeletonSet(){ return wasSkeletonSet; }
     inline Skeleton& GetSkeleton(){ return skeleton; }
     inline float GetCurrentTime(){ return time; }
+
+    inline const Transform& RootDelta(){ return frameDelta; }
+
+    int rootMotionIndex = -1;
+    Vector3 rootMotionPosMask = {1, 1, 0};
     
 protected:
+    Transform prevRoot;
+    Transform frameDelta;
+    float prevTime = 0.0f;
+    bool hasPrevRoot = false;
     std::vector<CrossFadeTarget> targets;
     ClipT* clip;
     float time;

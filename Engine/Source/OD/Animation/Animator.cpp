@@ -31,6 +31,11 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
     ImGui::Checkbox("Enable", &anim.enable);
 
     ImGui::InputInt("ToPlay", &anim.toPlay);
+
+    ImGui::DrawString("_ToPlay", anim._toPlay);
+
+    ImGui::InputInt("testRootMotionBone", &anim.testRootMotionBone);
+    ImGui::Checkbox("testRootMotion", &anim.testRootMotion);
 }
 
 void AnimatorComponent::Play(ClipT* clip, int layer){
@@ -92,6 +97,12 @@ void AnimatorSystem::Update(Scene& scene){
         if(anim.toPlay >= 0 && skinned.GetModel() != nullptr){
             anim.Play(skinned.GetModel()->animationClips[anim.toPlay].get());
             anim.toPlay = -1;
+        }
+
+        if(anim._toPlay.empty() == false && skinned.GetModel() != nullptr){
+            Ref<ClipT> clip = skinned.GetModel()->FindClipByName(anim._toPlay);
+            if(clip != nullptr) anim.Play(clip.get());
+            anim._toPlay = "";
         }
     }
 }
@@ -205,6 +216,9 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
             if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
             if(i.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) i.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
 
+            i.controller.rootMotionIndex = anim.testRootMotionBone;
+            i.controller.rootMotionPosMask = {1, 1, 0};
+
             i.controller.Update(Application::DeltaTime());
             //i.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
             //skinned.finalPose = i.controller.GetCurrentPose();
@@ -252,11 +266,31 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
             }
         });*/
 
-        std::for_each(std::execution::par_unseq, view.begin(), view.end(), [&](auto e){
+        //std::for_each(std::execution::par_unseq, view.begin(), view.end(), [&](auto e){
+        for(auto [e, anim, skinned]: view.each()){
             AnimatorComponent& anim = view.get<AnimatorComponent>(e);
             SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
             HandlerAnimatorByModel(skinned, anim); 
-        });
+
+            if(anim.testRootMotion){
+                TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
+                /*Vector3 worldDelta = anim.layers[0].controller.RootDelta().Position();
+                worldDelta.y = 0;
+                worldDelta.x = 0;
+                trans.Position(trans.Position() + worldDelta);*/
+                //LogInfo("RootDelta: %f %f %f", worldDelta.x, worldDelta.y, worldDelta.z);
+
+                Vector3 delta = trans.TransformDirection( anim.layers[0].controller.RootDelta().Position() );
+                //delta = trans.Rotation() * delta;
+                // remove vertical
+                delta.y = 0;
+                // project onto forward
+                Vector3 fwd = math::normalize(Vector3(trans.Forward().x, 0, trans.Forward().z));
+                delta = fwd * math::dot(delta, fwd);
+                trans.Position(trans.Position() + delta);
+            }
+        }
+        //});
 
          //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
         /*ParallelForEach2<AnimatorComponent, SkinnedModelRendererComponent>(

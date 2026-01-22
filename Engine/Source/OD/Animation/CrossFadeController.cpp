@@ -97,13 +97,32 @@ void CrossFadeController::Update(float dt){
         }
     }
 
+    /*if(clipChanged){//TODO: Maybe i need to implement this
+        hasPrevRoot = false;
+    }*/
+
     numTargets = targets.size();
     pose = skeleton.GetRestPose();
-    time = clip->Sample(pose, time + dt);
+
+    Transform currRoot;
+    time = clip->Sample(pose, time + dt, rootMotionIndex, rootMotionPosMask, &currRoot);
+
+    float newTime = time;
+    bool looped = clip->GetLooping() && newTime < prevTime; // wrapped end → start
+    prevTime = newTime;
+
+    if(!hasPrevRoot || looped){
+        frameDelta = Transform();
+        prevRoot = currRoot;
+        hasPrevRoot = true;
+    } else {
+        frameDelta = Transform::Combine(Transform::Inverse(prevRoot), currRoot);
+        prevRoot = currRoot;
+    }
 
     for(unsigned int i = 0; i < numTargets; i++){
         CrossFadeTarget& target = targets[i];
-        target.time = target.clip->Sample(target.pose, target.time + dt);
+        target.time = target.clip->Sample(target.pose, target.time + dt, rootMotionIndex, rootMotionPosMask);
         target.elapsed += dt;
         float t = target.elapsed / target.duration;
         if(t > 1.0f){ t = 1.0f; }
@@ -116,6 +135,7 @@ void CrossFadeController::Update(float dt){
 }
 
 void CrossFadeController::Update(float dt, Pose& pose){
+    Assert(false && "To Update!!!");
     if(clip == 0 || !wasSkeletonSet) return;
 
     unsigned int numTargets = targets.size();
@@ -131,11 +151,11 @@ void CrossFadeController::Update(float dt, Pose& pose){
 
     numTargets = targets.size();
     pose = skeleton.GetRestPose();
-    time = clip->Sample(pose, time + dt);
+    time = clip->Sample(pose, time + dt, rootMotionIndex, rootMotionPosMask, &frameDelta);
 
     for(unsigned int i = 0; i < numTargets; i++){
         CrossFadeTarget& target = targets[i];
-        target.time = target.clip->Sample(target.pose, target.time + dt);
+        target.time = target.clip->Sample(target.pose, target.time + dt, rootMotionIndex, rootMotionPosMask);
         target.elapsed += dt;
         float t = target.elapsed / target.duration;
         if(t > 1.0f){ t = 1.0f; }

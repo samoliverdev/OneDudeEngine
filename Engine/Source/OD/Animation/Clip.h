@@ -16,7 +16,7 @@ public:
     void SetIdAtIndex(unsigned int index, unsigned int id);
     unsigned int Size();
 
-    float Sample(Pose& outPose, float time);
+    float Sample(Pose& outPose, float time, int rootMotionIndex = -1, Vector3 rootMotionPosMask = {1, 1, 0}, Transform* outDelta = nullptr);
 
     TRACK& operator[](unsigned int joint);
 

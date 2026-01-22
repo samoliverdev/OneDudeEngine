@@ -27,10 +27,16 @@ unsigned int TClip<TRACK>::Size(){
 }
 
 template<typename TRACK>
-float TClip<TRACK>::Sample(Pose& outPose, float time){
+float TClip<TRACK>::Sample(Pose& outPose, float time, int rootMotionIndex, Vector3 rootMotionPosMask, Transform* outRootDelta){
     if(GetDuration() == 0) return 0;
 
     time = AdjustTimeToFitRange(time);
+
+    /*Vector3 motionPosMask = {
+        1.0f - rootMotionPosMask.x,
+        1.0f - rootMotionPosMask.y,
+        1.0f - rootMotionPosMask.z
+    };*/
 
     unsigned int size = tracks.size();
     for(unsigned int i = 0; i < size; ++i){
@@ -39,9 +45,26 @@ float TClip<TRACK>::Sample(Pose& outPose, float time){
         Transform animated = tracks[i].Sample(local, time, looping);
 
         //INFO: Used to ignore RootMotion 
-        if(i == 0){
-            Vector3 newPos(0, animated.Position().y, 0);
+        if(i == rootMotionIndex){
+            Vector3 animatedPos = animated.Position();
+
+            if(outRootDelta != nullptr){
+                (*outRootDelta) = animated;
+                /*outRootDelta->Position({          //INFO: this not fix 'trans.Position(trans.Position() + delta);'
+                    motionPosMask.x*animatedPos.x,
+                    motionPosMask.y*animatedPos.y,
+                    motionPosMask.z*animatedPos.z
+                });*/
+            }
+
+            Vector3 newPos = {
+                rootMotionPosMask.x*animatedPos.x, 
+                rootMotionPosMask.y*animatedPos.y, 
+                rootMotionPosMask.z*animatedPos.z
+            };
             animated.Position(newPos);
+
+            //animated.Rotation(Quaternion::Identity()); // optional
         }
 
         outPose.SetLocalTransform(j, animated);
