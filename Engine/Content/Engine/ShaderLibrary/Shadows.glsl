@@ -44,6 +44,39 @@ struct ShadowData{
     float strength;
 };
 
+#define DIRECTIONAL_PCF_SAMPLES 16
+
+const vec2 PoissonDisk[DIRECTIONAL_PCF_SAMPLES] = vec2[](
+    vec2(-0.94201624, -0.39906216),
+    vec2( 0.94558609, -0.76890725),
+    vec2(-0.09418410, -0.92938870),
+    vec2( 0.34495938,  0.29387760),
+    vec2(-0.91588581,  0.45771432),
+    vec2(-0.81544232, -0.87912464),
+    vec2(-0.38277543,  0.27676845),
+    vec2( 0.97484398,  0.75648379),
+    vec2( 0.44323325, -0.97511554),
+    vec2( 0.53742981, -0.47373420),
+    vec2(-0.26496911, -0.41893023),
+    vec2( 0.79197514,  0.19090188),
+    vec2(-0.24188840,  0.99706507),
+    vec2(-0.81409955,  0.91437590),
+    vec2( 0.19984126,  0.78641367),
+    vec2( 0.14383161, -0.14100790)
+);
+
+mat2 Rotate2D(float a){
+    float s = sin(a);
+    float c = cos(a);
+    return mat2(c, -s, s, c);
+}
+
+float InterleavedGradientNoise(vec2 uv){
+    return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
+}
+
+#define BETTER_SOFT
+
 float FadedShadowStrength(float distance, float scale, float fade){
 	return saturate((1.0 - distance * scale) * fade);
 }
@@ -87,6 +120,7 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS){
 }
 */
 
+
 float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFactor){
     vec3 projCoords = positionSTS.xyz / positionSTS.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -106,45 +140,88 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFac
     return 1.0 - shadow;
 }
 
-float FilterDirectionalShadow(vec4 positionSTS, int layer, float diffuseFactor){
-#if defined(_DIRECTIONAL_PCF)
-    ///*
-    float shadow = 0.0;
-    vec2 texelSize = vec2(1.0) / vec2(TextureSize(_DirectionalShadowAtlas, 0).xy);
-    int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
-    for(int x = -sampleRadius; x <= sampleRadius; x++){
-        for(int y = -sampleRadius; y <= sampleRadius; y++){
+#ifdef BETTER_SOFT
+    float FilterDirectionalShadow(vec4 positionSTS, int layer, float diffuseFactor){
+    #if defined(_DIRECTIONAL_PCF)
+
+        vec3 projCoords = positionSTS.xyz / positionSTS.w;
+        projCoords = projCoords * 0.5 + 0.5;
+
+        if(projCoords.z > 1.0)
+            return 1.0;
+
+        vec2 texelSize = 1.0 / vec2(TextureSize(_DirectionalShadowAtlas, 0).xy);
+
+        // Unity-style soft radius (tweak this)
+        float baseRadius = 2.5;
+        float radius = baseRadius * (1.0 - diffuseFactor);
+
+        // Per-pixel rotation (kills banding)
+        float angle = InterleavedGradientNoise(gl_FragCoord.xy) * 6.2831853;
+        mat2 rot = Rotate2D(angle);
+
+        float shadow = 0.0;
+
+        for(int i = 0; i < DIRECTIONAL_PCF_SAMPLES; i++){
+            vec2 offset = rot * PoissonDisk[i];
+            vec2 uvOffset = offset * radius * texelSize;
+
             shadow += SampleDirectionalShadowAtlas(
-                positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
+                vec4(positionSTS.xy + uvOffset * positionSTS.w,
+                    positionSTS.z,
+                    positionSTS.w),
                 layer,
                 diffuseFactor
             );
         }
-    }
-    shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
-    return shadow;
-    //*/
-    
-    /*
-    vec2 texelSize = 1.0 / textureSize(_DirectionalShadowAtlas, 0).xy;
-    float shadow;
-    float swidth = 0.6;
-    float endp = swidth * 3.0 + swidth / 2.0;
-    for (float y = -endp; y <= endp; y += swidth) {
-        for (float x = -endp; x <= endp; x += swidth) {
-            shadow += SampleDirectionalShadowAtlas(
-                positionSTS + vec4(x * texelSize.x, y * texelSize.y, 0, 0),
-                layer,
-                diffuseFactor
-            );
-        }
-    }
-    return shadow / 64;
-    */
-#else
-    return SampleDirectionalShadowAtlas(positionSTS, layer, diffuseFactor);
-#endif
+
+        return shadow / float(DIRECTIONAL_PCF_SAMPLES);
+
+    #else
+        return SampleDirectionalShadowAtlas(positionSTS, layer, diffuseFactor);
+    #endif
 }
+#else
+    float FilterDirectionalShadow(vec4 positionSTS, int layer, float diffuseFactor){
+    #if defined(_DIRECTIONAL_PCF)
+        ///*
+        float shadow = 0.0;
+        vec2 texelSize = vec2(1.0) / vec2(TextureSize(_DirectionalShadowAtlas, 0).xy);
+        int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
+        for(int x = -sampleRadius; x <= sampleRadius; x++){
+            for(int y = -sampleRadius; y <= sampleRadius; y++){
+                shadow += SampleDirectionalShadowAtlas(
+                    positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
+                    layer,
+                    diffuseFactor
+                );
+            }
+        }
+        shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
+        return shadow;
+        //*/
+        
+        /*
+        vec2 texelSize = 1.0 / textureSize(_DirectionalShadowAtlas, 0).xy;
+        float shadow;
+        float swidth = 0.6;
+        float endp = swidth * 3.0 + swidth / 2.0;
+        for (float y = -endp; y <= endp; y += swidth) {
+            for (float x = -endp; x <= endp; x += swidth) {
+                shadow += SampleDirectionalShadowAtlas(
+                    positionSTS + vec4(x * texelSize.x, y * texelSize.y, 0, 0),
+                    layer,
+                    diffuseFactor
+                );
+            }
+        }
+        return shadow / 64;
+        */
+    #else
+        return SampleDirectionalShadowAtlas(positionSTS, layer, diffuseFactor);
+    #endif
+    }
+#endif
 
 float SampleOtherShadowAltas(vec4 positionSTS, int layer, float diffuseFactor){
     vec3 projCoords = positionSTS.xyz / positionSTS.w;
@@ -163,45 +240,86 @@ float SampleOtherShadowAltas(vec4 positionSTS, int layer, float diffuseFactor){
     return 1.0 - shadow;
 }
 
-float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
-#if defined(_DIRECTIONAL_PCF)
-    ///*
-    float shadow = 0.0;
-    vec2 texelSize = vec2(1.0) / vec2(TextureSize(_OtherShadowAtlas, 0).xy);
-    int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
-    for(int x = -sampleRadius; x <= sampleRadius; x++){
-        for(int y = -sampleRadius; y <= sampleRadius; y++){
-            shadow += SampleOtherShadowAltas(
-                positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
-                layer,
-                diffuseFactor
-            );
-        }
-    }
-    shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
-    return shadow;
-    //*/
+#ifdef BETTER_SOFT
+    float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
+    #if defined(_DIRECTIONAL_PCF)
 
-    /*
-    vec2 texelSize = 1.0 / textureSize(_OtherShadowAtlas, 0).xy;
-    float shadow;
-    float swidth = 0.6;
-    float endp = swidth * 3.0 + swidth / 2.0;
-    for (float y = -endp; y <= endp; y += swidth) {
-        for (float x = -endp; x <= endp; x += swidth) {
+        vec3 projCoords = positionSTS.xyz / positionSTS.w;
+        projCoords = projCoords * 0.5 + 0.5;
+
+        if(projCoords.z > 1.0)
+            return 1.0;
+
+        vec2 texelSize = 1.0 / vec2(TextureSize(_OtherShadowAtlas, 0).xy);
+
+        float baseRadius = 2.0;
+        float radius = baseRadius * (1.0 - diffuseFactor);
+
+        float angle = InterleavedGradientNoise(gl_FragCoord.xy) * 6.2831853;
+        mat2 rot = Rotate2D(angle);
+
+        float shadow = 0.0;
+
+        for(int i = 0; i < DIRECTIONAL_PCF_SAMPLES; i++){
+            vec2 offset = rot * PoissonDisk[i];
+            vec2 uvOffset = offset * radius * texelSize;
+
             shadow += SampleOtherShadowAltas(
-                positionSTS + vec4(x * texelSize.x, y * texelSize.y, 0, 0),
+                vec4(positionSTS.xy + uvOffset * positionSTS.w,
+                    positionSTS.z,
+                    positionSTS.w),
                 layer,
                 diffuseFactor
             );
         }
+
+        return shadow / float(DIRECTIONAL_PCF_SAMPLES);
+
+    #else
+        return SampleOtherShadowAltas(positionSTS, layer, diffuseFactor);
+    #endif
     }
-    return shadow / 64;
-    */
-#else
-    return SampleOtherShadowAltas(positionSTS, layer, diffuseFactor);
+#else 
+    float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
+    #if defined(_DIRECTIONAL_PCF)
+        ///*
+        float shadow = 0.0;
+        vec2 texelSize = vec2(1.0) / vec2(TextureSize(_OtherShadowAtlas, 0).xy);
+        int sampleRadius = DIRECTIONAL_FILTER_SAMPLES;
+        for(int x = -sampleRadius; x <= sampleRadius; x++){
+            for(int y = -sampleRadius; y <= sampleRadius; y++){
+                shadow += SampleOtherShadowAltas(
+                    positionSTS + (vec4(x, y, 0.0, 0.0) * vec4(texelSize.xy, 1.0, 1.0)) ,
+                    layer,
+                    diffuseFactor
+                );
+            }
+        }
+        shadow /= pow((float(sampleRadius) * 2.0 + 1.0), 2.0);
+        return shadow;
+        //*/
+
+        /*
+        vec2 texelSize = 1.0 / textureSize(_OtherShadowAtlas, 0).xy;
+        float shadow;
+        float swidth = 0.6;
+        float endp = swidth * 3.0 + swidth / 2.0;
+        for (float y = -endp; y <= endp; y += swidth) {
+            for (float x = -endp; x <= endp; x += swidth) {
+                shadow += SampleOtherShadowAltas(
+                    positionSTS + vec4(x * texelSize.x, y * texelSize.y, 0, 0),
+                    layer,
+                    diffuseFactor
+                );
+            }
+        }
+        return shadow / 64;
+        */
+    #else
+        return SampleOtherShadowAltas(positionSTS, layer, diffuseFactor);
+    #endif
+    }
 #endif
-}
 
 float GetDirectionalShadowAttenuation(DirectionalShadowData data, Surface surfaceWS){
     #if !defined(_RECEIVE_SHADOWS)

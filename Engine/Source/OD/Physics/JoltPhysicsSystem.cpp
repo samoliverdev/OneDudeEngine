@@ -3280,7 +3280,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							float scale = 1.0f;
 							//if(speed > breakVelocityThreshold) scale = math::clamp<float>(breakVelocityThreshold / speed, 0, 1); // smoothly reduce
 
-							float motorFrequency = gain * scale;    // or convert/gain mapping as you prefer
+							float motorFrequency = (gain * ragdoll.parts[p].stiffnessMult) * scale;    // or convert/gain mapping as you prefer
 							float motorDamping   = damping * scale; // damping term
 							float maxMotorTorque = (stiffness * ragdoll.parts[p].stiffnessMult) * 10; // scale as needed
 
@@ -3302,11 +3302,11 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							Transform animParentGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(parentIndex));
 							Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
 							
-							auto boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
+							Quaternion boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
 							//auto boneTargetLocal = math::conjugate(math::normalize(animParentGlobal.Rotation())) * math::normalize(animGlobal.Rotation());
 
 							if(!isfinite(boneTargetLocal.x) || !isfinite(boneTargetLocal.y) || !isfinite(boneTargetLocal.z) || !isfinite(boneTargetLocal.w)) continue;
-
+							
 							c->SetTargetOrientationBS(ToJolt(boneTargetLocal));
 							//Assert(ToJolt(math::normalize(boneTargetLocal)).Normalized().IsNormalized());
 							//c->SetTargetOrientationBS(ToJolt(math::normalize(boneTargetLocal)).Normalized());
@@ -3345,6 +3345,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 								bodyInterface.SetAngularVelocity(bodyID, axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult));*/
 
 							//Work, but in local space
+							///*
 							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 							if(boneIndex < 0) continue;
@@ -3357,22 +3358,28 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							bodyInterface.GetPositionAndRotation(bodyID, currentPos, currentRot);
 
 							Quat deltaRot = targetRot.Normalized() * currentRot.Normalized().Conjugated();
+							//if(deltaRot.GetW() < 0.0f) deltaRot = -deltaRot;//New
+
 							Vec3 axis;
 							float angle;
 							deltaRot.GetAxisAngle(axis, angle);
+
+							//New
+							//const float maxAngle = math::radians(25.0f);
+							//angle = math::clamp(angle, -maxAngle, maxAngle);
 
 							Vec3 currentAngularVelocity = bodyInterface.GetAngularVelocity(bodyID);
 							Vec3 torque = (stiffness * ragdoll.parts[p].stiffnessMult) * axis * angle - damping * currentAngularVelocity;
 							Vec3 angularVel = axis * angle * (stiffness * ragdoll.parts[p].stiffnessMult);
 
 							torque = ClampVectorLength(torque, (stiffness * ragdoll.parts[p].stiffnessMult) * 10);
-							angularVel = ClampVectorLength(angularVel, (stiffness * ragdoll.parts[p].stiffnessMult) * 10);
+							//angularVel = ClampVectorLength(angularVel, (stiffness * ragdoll.parts[p].stiffnessMult) * 10);
 
-							if(ragdoll.useTorqueControl)
+							//if(ragdoll.useTorqueControl)
 								bodyInterface.AddTorque(bodyID, torque);
-							else
-								bodyInterface.SetAngularVelocity(bodyID, angularVel);
-
+							//else
+							//	bodyInterface.SetAngularVelocity(bodyID, angularVel);
+							//
 						}
 					}
 					
