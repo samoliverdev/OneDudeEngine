@@ -17,12 +17,11 @@
     Name MainPass
     SupportInstancing true
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
-    MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 
     CullFace BACK
     DepthTest LESS
-    Blend ONE ONE_MINUS_SRC_ALPHA
+    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask False    
 #pragma EndPassDef
 
