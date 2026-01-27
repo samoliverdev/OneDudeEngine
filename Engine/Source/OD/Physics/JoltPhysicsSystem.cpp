@@ -1688,10 +1688,10 @@ RigidbodyComponent& RigidbodyComponent::operator=(RigidbodyComponent&& other){
 void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 	RigidbodyComponent& rb = scene.GetComponent<RigidbodyComponent>(e);
 
-    const char* optionsString[] = {"Dynamic", "Static", "Kinematic", "Trigger"};
+    const char* optionsString[] = {"Dynamic", "Static", "Kinematic", "Trigger", "Disable"};
     const char* curOptionString = optionsString[(int)rb.GetType()];
     if(ImGui::BeginCombo("Type", curOptionString)){
-        for(int i = 0; i < 4; i++){
+        for(int i = 0; i < 5; i++){
             bool isSelected = curOptionString == optionsString[i];
             if(ImGui::Selectable(optionsString[i], isSelected)){
                 curOptionString = optionsString[i];
@@ -2191,6 +2191,11 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
+	if(rb.type == RigidbodyComponent::Type::Disable){
+		rb.isDirt = false;
+		return;
+	}
+
 	rb.data = new PhysicObject();
 	rb.data->world = physicsWorld;
 	rb.isDirt = false;
@@ -3940,7 +3945,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 			AddRigidbody(e, rb, transform, info);
 		}
 
-        Assert(rb.data != nullptr);
+        //Assert(rb.data != nullptr);
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
             SyncRbToTrans(rb, transform);

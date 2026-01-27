@@ -153,7 +153,7 @@ struct OD_API RigidbodyComponent{
     RigidbodyComponent(RigidbodyComponent&& other);
     RigidbodyComponent& operator=(RigidbodyComponent&& other);*/
 
-    enum class Type{Dynamic, Static, Kinematic, Trigger, TestDisable};
+    enum class Type{Dynamic, Static, Kinematic, Trigger, Disable};
 
     static void OnGui(Entity& e, Scene& scene);
 
