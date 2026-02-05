@@ -23,7 +23,13 @@
 
 namespace OD{
 
+tf::Executor* executor = nullptr;
+//tf::Taskflow taskflow;
 GlobalSceneData globalSceneData;
+
+void SceneModuleInit(){
+    executor = new tf::Executor(); //TODO: call delete on executor
+}
 
 int LayerMask::GetLayerByName(const std::string& name){
     Assert(globalSceneData.layerNames.size() == Layers::LayerCount);
@@ -591,6 +597,11 @@ Scene::Scene(Scene& other){
 }
 
 Scene::~Scene(){
+    if(taskflow.empty() == false){
+        executor->wait_for_all();
+        taskflow.clear();
+    }
+
     registry.clear();//INFO: Maybe this order fix same crashs
 
     for(auto& i: SceneManager::Get().globalSystems){
@@ -923,7 +934,7 @@ void Scene::Stop(){
 
 void Scene::Update(){ 
     OD_PROFILE_SCOPE("Scene::Update");
-    
+
     //INFO: Experimental Try Catch
     //try{
 
@@ -962,7 +973,7 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::Update::Sync");
-        executor.run(taskflow).wait();
+        executor->run(taskflow).wait();
         taskflow.clear();
     }
 
@@ -980,7 +991,7 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::AnimationUpdate::Sync");
-        executor.run(taskflow).wait(); 
+        executor->run(taskflow).wait(); 
         taskflow.clear();
     }
 
@@ -992,7 +1003,7 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::PrePhysicsUpdate::Sync");
-        executor.run(taskflow).wait(); 
+        executor->run(taskflow).wait(); 
         taskflow.clear();
     }
 
@@ -1010,7 +1021,7 @@ void Scene::Update(){
             for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
             {
                 //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
-                executor.run(taskflow).wait(); 
+                executor->run(taskflow).wait(); 
                 taskflow.clear();
             }
 
@@ -1030,7 +1041,7 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::PostPhysicsUpdate::Sync");
-        executor.run(taskflow).wait(); 
+        executor->run(taskflow).wait(); 
         taskflow.clear();
     }
     
@@ -1048,7 +1059,7 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
-        executor.run(taskflow).wait();
+        executor->run(taskflow).wait();
         taskflow.clear();
     }
     
@@ -1452,7 +1463,7 @@ tf::Taskflow& Scene::GetTaskflow(){
 }
 
 void Scene::RunAllTaskAndSync(){
-    executor.run(taskflow).wait();
+    executor->run(taskflow).wait();
     taskflow.clear();
 }
 

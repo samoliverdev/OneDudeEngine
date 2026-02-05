@@ -10,6 +10,8 @@
 
 namespace OD{
 
+extern void SceneModuleInit();
+
 void SceneManagerModuleInit(){
     Application::AddModule(&SceneManager::Get());
 
@@ -28,6 +30,8 @@ void SceneManagerModuleInit(){
     );
 
     GlobalSettings::Get().Register<GlobalSceneData>("Layers");
+
+    SceneModuleInit();
 }
 
 SceneManager& SceneManager::Get(){

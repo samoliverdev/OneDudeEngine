@@ -7,6 +7,7 @@ class OD_API Prefab: public Asset{
     friend class Scene;
 public:
     Prefab();
+    ~Prefab();
 
     template<typename T> bool HasComponentInRoot();
     template<typename T> T& GetComponentInRoot();

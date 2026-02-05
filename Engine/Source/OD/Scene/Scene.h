@@ -416,7 +416,7 @@ private:
 
     entt::registry registry;
 
-    tf::Executor executor;
+    //tf::Executor executor;
     tf::Taskflow taskflow;
 
     bool transIsDirty = true;

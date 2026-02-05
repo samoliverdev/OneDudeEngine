@@ -11,6 +11,10 @@ Prefab::Prefab(){
 
 }
 
+Prefab::~Prefab(){
+	if(scene != nullptr) delete scene;
+}
+
 void Prefab::OnGui(){
     if(path.empty() == false || path != "Memory"){
 		auto* editor = Application::GetModuleByType<Editor>();
