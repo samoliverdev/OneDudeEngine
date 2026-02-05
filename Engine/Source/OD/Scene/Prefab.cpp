@@ -26,6 +26,7 @@ void Prefab::OnGui(){
 	}
 }
 
+//TODO: Create a base scene and load from this base scene
 bool Prefab::LoadFromFile(const std::string& inpath){
     path = inpath;
     if(scene != nullptr) delete scene;

@@ -9,7 +9,7 @@ option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" ON)
 option(SUPPORT_OPENGL "SUPPORT_OPENGL" ON)
 option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" OFF)
 
-option(USE_DYNAMIC_MSVC_RUNTIME_DLL "USE_DYNAMIC_MSVC_RUNTIME_DLL" ON)
+option(USE_MSVC_RUNTIME_LIBRARY_DLL "USE_MSVC_RUNTIME_LIBRARY_DLL" ON)
 option(USE_SANITIZE_ADDRESS "USE_SANITIZE_ADDRESS" OFF)
 
 option(ADD_RUNTIME_TO_BIN "ADD_RUNTIME_TO_BIN" ON)
@@ -24,15 +24,21 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 
 
 #if(MSVC)
-    if(USE_DYNAMIC_MSVC_RUNTIME_DLL)
-        cmake_policy(SET CMP0091 NEW)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
+    if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+    #    cmake_policy(SET CMP0091 NEW)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")# CACHE STRING "" FORCE)
     else()
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "" FORCE)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")# CACHE STRING "" FORCE)
     endif()
+    #cmake_policy(SET CMP0091 NEW)
+    #if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+    #    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    #else()
+    #    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    #endif()
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
+    #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
+    #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
     #add_compile_options(/O2)
     #add_compile_options(/arch:SSE2)
@@ -92,7 +98,7 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT  OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT  ON CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_DRACO_STATIC  ON CACHE BOOL "" FORCE)
-if(USE_DYNAMIC_MSVC_RUNTIME_DLL)
+if(USE_MSVC_RUNTIME_LIBRARY_DLL)
     set(USE_STATIC_CRT Off CACHE BOOL "" FORCE)
 else()
     set(USE_STATIC_CRT ON CACHE BOOL "" FORCE)
@@ -122,7 +128,12 @@ set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
 set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+    set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+else()
+    set(USE_STATIC_MSVC_RUNTIME_LIBRARY ON CACHE BOOL "" FORCE)
+endif()
+#set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 
 #add_subdirectory(Engine/ThirdParty/glm-1.0.1) 
 
@@ -152,10 +163,10 @@ set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_MSDFGEN_EXTERNAL OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "" FORCE)
-if(USE_STATIC_MSVC_RUNTIME_LIBRARY)
-    set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "" FORCE)
-else()
+if(USE_MSVC_RUNTIME_LIBRARY_DLL)
     set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
+else()
+    set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "" FORCE)
 endif()
 add_subdirectory(Engine/ThirdParty/msdf-atlas-gen)
 
@@ -191,7 +202,12 @@ add_subdirectory(Engine/ThirdParty/bitsery)
 set(DEFAULT_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/" CACHE STRING "")
 MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
 
-MESSAGE("#---------USE_MSVC_RUNTIME_LIBRARY_DLL? " ${USE_MSVC_RUNTIME_LIBRARY_DLL})
+#MESSAGE("#---------USE_MSVC_RUNTIME_LIBRARY_DLL? " ${USE_MSVC_RUNTIME_LIBRARY_DLL})
+
+message(STATUS "USE_MSVC_RUNTIME_LIBRARY_DLL = ${USE_MSVC_RUNTIME_LIBRARY_DLL}")
+message(STATUS "USE_STATIC_MSVC_RUNTIME_LIBRARY = ${USE_STATIC_MSVC_RUNTIME_LIBRARY}")
+message(STATUS "MSDF_ATLAS_DYNAMIC_RUNTIME = ${MSDF_ATLAS_DYNAMIC_RUNTIME}")
+message(STATUS "USE_STATIC_CRT = ${USE_STATIC_CRT}")
 
 if(ADD_RUNTIME_TO_BIN)
     set(CMAKE_DEBUG_POSTFIX "")
@@ -255,6 +271,7 @@ add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()
 add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
+#set_target_properties(Engine PROPERTIES UNITY_BUILD ON)#Thi is to compile fast, but has some erro on compile engine
 #set_target_properties(Engine PROPERTIES
 #    CXX_STANDARD 17
 #    CXX_STANDARD_REQUIRED ON
@@ -276,7 +293,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/glm-1.0.1/
     Engine/ThirdParty/glad46core/
     Engine/ThirdParty/tinygltf/
-    #Engine/ThirdParty/tinyobjloader/
+    Engine/ThirdParty/tinyobjloader/
     Engine/ThirdParty/lua-5.1.5/src/
     Engine/ThirdParty/sol2/include/
     Engine/ThirdParty/cgltf/
@@ -306,6 +323,11 @@ target_include_directories(Engine PUBLIC
     #Engine/ThirdParty/EASTL/include/
     Engine/Source/
 )
+#target_include_directories(Engine PUBLIC 
+#    Engine/ThirdParty/glm-1.0.1/
+#    Engine/ThirdParty/cereal/include/
+#    Engine/Source/
+#)
 
 target_link_libraries(Engine PUBLIC 
     LUA
@@ -326,23 +348,26 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+if(WIN32)
+    target_link_libraries(Engine PRIVATE comctl32)
+endif()
 if(SUPPORT_WEBGPU)
-target_link_libraries(Engine PUBLIC 
+target_link_libraries(Engine PRIVATE 
     glslang glslang-default-resource-limits
     spirv-reflect-static
 )
 endif()
 if(USE_ASSIMP)
-    target_link_libraries(Engine PUBLIC assimp)
-    target_compile_definitions(Engine PUBLIC USE_ASSIMP)
+    target_link_libraries(Engine PRIVATE assimp)
+    target_compile_definitions(Engine PRIVATE USE_ASSIMP)
 endif()
 #target_link_libraries(Engine PRIVATE tinygltf) 
 if(SUPPORT_WEBGPU)
-    target_link_libraries(Engine PUBLIC webgpu glfw3webgpu)
+    target_link_libraries(Engine PRIVATE webgpu glfw3webgpu)
     target_copy_webgpu_binaries(Engine)
 endif()
 if(EMSCRIPTEN)
-    target_compile_definitions(Engine PUBLIC -DEMSCRIPTEN=1)
+    target_compile_definitions(Engine PRIVATE -DEMSCRIPTEN=1)
     set_target_properties(Engine PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1")
 endif()
 #set_target_properties(Engine PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -359,11 +384,11 @@ if(BUILD_EDITOR)
     file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
     add_executable(Editor ${EDITOR_SOURCE_FILES})
     target_precompile_headers(Editor PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
-    target_include_directories(Editor PUBLIC Engine/Source/)
-    target_include_directories(Editor PUBLIC Editor/Source/)
+    target_include_directories(Editor PRIVATE Engine/Source/)
+    target_include_directories(Editor PRIVATE Editor/Source/)
     target_link_libraries(Editor Engine)
-    target_compile_definitions(Editor PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Editor/")
-    target_compile_definitions(Editor PUBLIC ENGINE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
+    target_compile_definitions(Editor PRIVATE RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Editor/")
+    target_compile_definitions(Editor PRIVATE ENGINE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
     add_custom_command(
         TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Editor/Content
@@ -381,17 +406,17 @@ if(BUILD_SANDBOX)
     file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
     add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
     target_precompile_headers(Sandbox PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
-    target_include_directories(Sandbox PUBLIC Engine/Source/)
-    target_include_directories(Sandbox PUBLIC Sandbox/Source/)
+    target_include_directories(Sandbox PRIVATE Engine/Source/)
+    target_include_directories(Sandbox PRIVATE Sandbox/Source/)
     target_link_libraries(Sandbox Engine)
-    target_compile_definitions(Sandbox PUBLIC RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+    target_compile_definitions(Sandbox PRIVATE RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
     add_custom_command(
         TARGET Sandbox POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
     )
     if(EMSCRIPTEN)
         set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
-        target_compile_definitions(Sandbox PUBLIC -DEMSCRIPTEN=1)
+        target_compile_definitions(Sandbox PRIVATE -DEMSCRIPTEN=1)
         set_target_properties(Sandbox PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s ASYNCIFY -s -s EXPORTED_FUNCTIONS=_malloc,_free,setValue,_main -s EXPORTED_RUNTIME_METHODS=cwrap,ccall -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH -s ASSERTIONS -s NO_DISABLE_EXCEPTION_CATCHING --preload-file ${DEFAULT_PROJECT_PATH}Content@./")
         #set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Shaders/Font.glsl)
         set_target_properties(Sandbox PROPERTIES LINK_DEPENDS ${DEFAULT_PROJECT_PATH}Content/Engine/Fonts/fa-solid-900.ttf)
@@ -411,7 +436,7 @@ if(BUILD_DYNAMIC_MODULE)
     #target_include_directories(dynamic_module PUBLIC engine/vendor/cereal/include/)
     #target_include_directories(dynamic_module PUBLIC engine/vendor/magic_enum/include/)
     #target_include_directories(DynamicModule PUBLIC Engine/vendor/taskflow/)
-    target_include_directories(DynamicModule PUBLIC Engine/Source/)
+    target_include_directories(DynamicModule PRIVATE Engine/Source/)
     #target_include_directories(dynamic_module PUBLIC game/src/)
     target_link_libraries(DynamicModule Engine)
     #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
