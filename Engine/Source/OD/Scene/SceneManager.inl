@@ -210,7 +210,7 @@ void SceneManager::RegisterCoreComponent(const std::string& name, const std::str
 template<typename T>
 void SceneManager::UnRegisterCoreComponent(const std::string& name){
     //coreComponentsSerializer[name] = funcs;
-    LogWarning("UnRegisterCoreComponent: %s", name.c_str());
+    LogWarning("UnRegisterCoreComponent: {}", name);
     coreComponentsSerializer.erase(name); 
 }
 

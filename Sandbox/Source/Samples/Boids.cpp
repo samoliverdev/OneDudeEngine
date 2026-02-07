@@ -65,7 +65,7 @@ struct BoidSystem: public OD::System{
 
             size_t transIndex = get_index(firstTrans, &trans);
             size_t boidIndex  = get_index(firstBoid, &boid);
-            LogInfo("Entity index: %zd, Boid index: %zd", transIndex, boidIndex);
+            LogInfo("Entity index: {}, Boid index: {}", transIndex, boidIndex);
 
             Vector3 separationSum = Vector3Zero;
             Vector3 coheshionSum = Vector3Zero;

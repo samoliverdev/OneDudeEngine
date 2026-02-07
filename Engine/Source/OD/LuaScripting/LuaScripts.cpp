@@ -242,7 +242,7 @@ void LuaScriptSystem::Update(Scene& scene){
 
                 if(error2.valid() == false){
                     sol::error err2 = error2;
-                    LogError("Running OnStart script: %s", err2.what());
+                    LogError("Running OnStart script: {}", err2.what());
                 }
             }
 
@@ -254,7 +254,7 @@ void LuaScriptSystem::Update(Scene& scene){
 
             if(error.valid() == false){
                 sol::error err = error;
-                LogError("Running OnUpdate script: %s", err.what());
+                LogError("Running OnUpdate script: {}", err.what());
             }
         }
     }   

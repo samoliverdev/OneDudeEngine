@@ -23,6 +23,7 @@
 #include <chrono>
 #include <numeric>
 #include <thread>
-//#include "Core/Math.h"
+#include <spdlog/spdlog.h>
+#include "Core/Math.h"
 //#include "Defines.h"
 #endif

@@ -1230,13 +1230,13 @@ void Scene::Load(const char* path){
 
     this->path = path;
 
-    LogWarning("LoadingScene: %s Succefu", path);
+    LogWarning("LoadingScene: {} Succefu", path);
 
     TransformComponent::UpdateAllTransformMatrix(*this);
 }
 
 void Scene::_Load(const char* path, entt::entity prefab){
-    LogWarning("LoadingPrefab: %s", path);
+    LogWarning("LoadingPrefab: {}", path);
     //Assert(false);
 
     std::ifstream is(path);

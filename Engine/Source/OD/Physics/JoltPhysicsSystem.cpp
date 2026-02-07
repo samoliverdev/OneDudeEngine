@@ -672,7 +672,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
 		if ((v1 - v0).Cross(v2 - v0).Length() >= 1e-6f) {
 			out->joltTriangles.push_back(JPH::IndexedTriangle(i0, i1, i2));
 		} else {
-			LogWarning("Skipped degenerate triangle: %u, %u, %u", i0, i1, i2);
+			LogWarning("Skipped degenerate triangle: {}, {}, {}", i0, i1, i2);
 		}
 
         /*out->joltTriangles.push_back(JPH::IndexedTriangle(
@@ -735,7 +735,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
     maxExtent = std::max(maxExtent, extent.GetY());
     maxExtent = std::max(maxExtent, extent.GetZ());
     if (maxExtent > 1000.0f) { // Adjust threshold based on your game’s scale
-        LogError("CreateMeshShapeData: Mesh bounding box too large (extent: %s)", std::to_string(maxExtent).c_str());
+        LogError("CreateMeshShapeData: Mesh bounding box too large (extent: {})", std::to_string(maxExtent));
         return nullptr;
     }
 
@@ -2291,7 +2291,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 
 	auto offsetResult = offsetShapeSettings.Create();
 	if (offsetResult.HasError()) {
-        LogError("OffsetShape creation error for entity %s: %s", info.name.c_str(), offsetResult.GetError().c_str());
+        LogError("OffsetShape creation error for entity {}: {}", info.name, offsetResult.GetError());
         return;
     }
     RefConst<Shape> finalShape = offsetResult.Get();
@@ -2303,7 +2303,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		finalShape = new OffsetCenterOfMassShape(finalShape, offset);
 
 		auto cm = finalShape->GetCenterOfMass();
-		LogInfo("CenterOfMass: (%f, %f, %f)", cm.GetX(), cm.GetY(), cm.GetZ());
+		LogInfo("CenterOfMass: ({}, {}, {})", cm.GetX(), cm.GetY(), cm.GetZ());
 	}
 
 	BodyCreationSettings settings(
@@ -2337,7 +2337,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate);
 	// Verify body creation
     if (!bodyInterface.IsAdded(rb.data->bodyID)) {
-        LogError("Failed to add body for entity %s", info.name.c_str());
+        LogError("Failed to add body for entity {}", info.name);
         return;
     }
 

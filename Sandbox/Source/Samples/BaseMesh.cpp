@@ -54,7 +54,7 @@ void BaseMeshSample::OnInit(){
         auto& name = reg.get<Name>(e);
         pos.x += vel.dx;
         pos.y += vel.dy;
-        LogInfo("------Name: %s", name.name.c_str());
+        LogInfo("------Name: {}", name.name.c_str());
     }
     
     LogInfo("Game Init");

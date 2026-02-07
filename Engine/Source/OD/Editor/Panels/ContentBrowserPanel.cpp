@@ -178,17 +178,17 @@ void ContentBrowserPanel::OnGui() {
 
                 if (_selectedFile == pendingDeletePath) _selectedFile.clear();
             } catch (const std::exception& e) {
-                LogError("Error deleting {}: {}", pendingDeletePath.string().c_str(), e.what());
+                LogError("Error deleting {}: {}", pendingDeletePath.string(), e.what());
             }
             ImGui::CloseCurrentPopup();
             popupActive = false;
-            LogInfo("Confirmed deletion for {}", pendingDeletePath.string().c_str());
+            LogInfo("Confirmed deletion for {}", pendingDeletePath.string());
         }
         ImGui::SameLine();
         if (ImGui::Button("No")) {
             ImGui::CloseCurrentPopup();
             popupActive = false;
-            LogInfo("Canceled deletion for {}", pendingDeletePath.string().c_str());
+            LogInfo("Canceled deletion for {}", pendingDeletePath.string());
         }
         ImGui::EndPopup();
     }
@@ -211,7 +211,7 @@ std::string ContentBrowserPanel::GenerateUniqueName(const std::filesystem::path&
 bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
     // Skip if path doesn't exist
     if (!std::filesystem::exists(path)) {
-        LogWarning("Skipping cache for non-existent path: {}", path.string().c_str());
+        LogWarning("Skipping cache for non-existent path: {}", path.string());
         return false;
     }
 
@@ -225,7 +225,7 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
                 needsUpdate = false;
             }
         } catch (const std::exception& e) {
-            LogError("Failed to get last write time for {}: {}", path.string().c_str(), e.what());
+            LogError("Failed to get last write time for {}: {}", path.string(), e.what());
             needsUpdate = true;
         }
     }
@@ -236,7 +236,7 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
     try {
         cache.lastModified = std::filesystem::last_write_time(path);
     } catch (const std::exception& e) {
-        LogError("Failed to set cache last write time for {}: {}", path.string().c_str(), e.what());
+        LogError("Failed to set cache last write time for {}: {}", path.string(), e.what());
         return false;
     }
 
@@ -269,8 +269,8 @@ bool ContentBrowserPanel::CacheDirectory(const std::filesystem::path& path) {
         _dirCache[path] = std::move(cache);
         //LogInfo("Cached directory: {}", path.string().c_str());
         return true;
-    } catch (const std::exception& e) {
-        LogError("Failed to cache directory {}: {}", path.string().c_str(), e.what());
+    } catch (const std::exception& e){
+        LogError("Failed to cache directory {}: {}", path.string(), e.what());
         return false;
     }
 }
@@ -279,8 +279,10 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     static int frameCount = ImGui::GetFrameCount();
     if (frameCount != ImGui::GetFrameCount()) {
         frameCount = ImGui::GetFrameCount();
-        LogInfo("Context menu opened for {} (isDirectory: {}, skipDelete: {}, frame: {})",
-                path.string().c_str(), isDirectory, skipDelete, frameCount);
+        LogInfo(
+            "Context menu opened for {} (isDirectory: {}, skipDelete: {}, frame: {})",
+            path.string(), isDirectory, skipDelete, frameCount
+        );
     }
 
     std::filesystem::path targetDir = isDirectory ? path : path.parent_path();
@@ -291,12 +293,12 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
             std::ofstream file(newFilePath);
             if (!file) throw std::runtime_error("Failed to open file for writing");
             file.close();
-            LogInfo("Created file: {}", newFilePath.string().c_str());
+            LogInfo("Created file: {}", newFilePath.string());
             _dirCache.erase(targetDir);
             UpdateFileCache(targetDir);
             UpdateFilteredFiles();
         } catch (const std::exception& e) {
-            LogError("Failed to create file {}: {}", newFilePath.string().c_str(), e.what());
+            LogError("Failed to create file {}: {}", newFilePath.string(), e.what());
         }
     }
     if (ImGui::MenuItem("Create Material")) {
@@ -312,12 +314,12 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
         std::filesystem::path newFolderPath = targetDir / GenerateUniqueName(targetDir, "NewFolder", "");
         try {
             std::filesystem::create_directory(newFolderPath);
-            LogInfo("Created folder: {}", newFolderPath.string().c_str());
+            LogInfo("Created folder: {}", newFolderPath.string());
             _dirCache.erase(targetDir);
             UpdateFileCache(targetDir);
             UpdateFilteredFiles();
         } catch (const std::filesystem::filesystem_error& e) {
-            LogError("Failed to create folder {}: {}", newFolderPath.string().c_str(), e.what());
+            LogError("Failed to create folder {}: {}", newFolderPath.string(), e.what());
         }
     }
     if (!skipDelete && ImGui::MenuItem("Delete")) {
@@ -338,7 +340,7 @@ void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool
             std::string pathString = relativePath.string();
             std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
-            LogWarning("Save Prefab To: {}", pathString.c_str());
+            LogWarning("Save Prefab To: {}", pathString);
             Entity* targetEntity = (Entity*)payload->Data;
 
             InfoComponent& info = scene->GetComponent<InfoComponent>(*targetEntity);
@@ -378,7 +380,7 @@ void ContentBrowserPanel::UpdateFileCache(const std::filesystem::path& path) {
 
     // Skip if path doesn't exist
     if (!std::filesystem::exists(path)) {
-        LogWarning("Skipping cache update for non-existent path: {}", path.string().c_str());
+        LogWarning("Skipping cache update for non-existent path: {}", path.string());
         return;
     }
 
@@ -393,14 +395,14 @@ void ContentBrowserPanel::UpdateFileCache(const std::filesystem::path& path) {
         _fileCache.insert(_fileCache.end(), newFiles.begin(), newFiles.end());
         LogInfo("Incremental file cache updated for {} with {} total files", path.string().c_str(), _fileCache.size());
     } catch (const std::exception& e) {
-        LogError("Failed to update file cache for {}: {}", path.string().c_str(), e.what());
+        LogError("Failed to update file cache for {}: {}", path.string(), e.what());
     }
 }
 
 void ContentBrowserPanel::CollectAllFiles(const std::filesystem::path& path, std::vector<FileEntry>& outFiles) {
     // Skip if path doesn't exist
     if (!std::filesystem::exists(path)) {
-        LogWarning("Skipping collect files for non-existent path: {}", path.string().c_str());
+        LogWarning("Skipping collect files for non-existent path: {}", path.string());
         return;
     }
 
@@ -420,7 +422,7 @@ void ContentBrowserPanel::CollectAllFiles(const std::filesystem::path& path, std
             CollectAllFiles(dir.path(), outFiles);
         }
     } catch (const std::exception& e) {
-        LogError("Failed to collect files for {}: {}", path.string().c_str(), e.what());
+        LogError("Failed to collect files for {}: {}", path.string(), e.what());
     }
 }
 

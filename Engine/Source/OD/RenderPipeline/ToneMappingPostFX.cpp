@@ -1,7 +1,7 @@
 #include "OD/pch.h"
 #include "ToneMappingPostFX.h"
-#include "OD/Base.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "RenderContext.h"
 #include <magic_enum/magic_enum.hpp>

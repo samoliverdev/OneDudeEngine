@@ -206,6 +206,7 @@ void Editor::OnInit(){
     mainWorkspace.AddPanel(&rendererStatsPanel);
     mainWorkspace.AddPanel(&globalSettingsPanel);
     mainWorkspace.AddPanel(&runtimeInfoPanel);
+    mainWorkspace.AddPanel(&logPanel);
 
     std::ifstream is("Editor.Save");
     if(is.fail() == false){
@@ -617,8 +618,8 @@ void Editor::DrawMainMenuBar(){
                 std::string path = Platform::OpenFolder(); 
                 if(path.empty() == false){
                     auto exe = GetAbsExePath();
-                    LogInfo("Project Dir: %s", path.c_str());
-                    LogInfo("EditorPath: %s", exe.string().c_str());
+                    LogInfo("Project Dir: {}", path.c_str());
+                    LogInfo("EditorPath: {}", exe.string().c_str());
 
                     std::string cmd = exe.string() + " " + path.c_str();
                     //ExecultCmd(cmd.c_str());

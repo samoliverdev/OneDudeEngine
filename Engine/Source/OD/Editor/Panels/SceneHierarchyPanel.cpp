@@ -77,7 +77,7 @@ void SceneHierarchyPanel::OnGui(){
         }*/
         
         if(_toDestroy){
-            LogInfo("To Destroy Entity2: %d", _toDestroyEntity);
+            LogInfo("To Destroy Entity2: {}", (unsigned int)_toDestroyEntity);
             editor->SetSelectionEntity(EntityNull);
             scene->DestroyEntityImmediate(_toDestroyEntity); //scene->DestroyEntity(_toDestroyEntity);
             _toDestroy = false;
@@ -121,7 +121,7 @@ void SceneHierarchyPanel::OnGui(){
                 const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
                 if(payload != nullptr){
                     Entity* targetEntity = (Entity*)payload->Data;
-                    LogInfo("this: %s", scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
+                    LogInfo("this: {}", scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
                     if(scene->IsValid(*targetEntity) && scene->GetComponent<InfoComponent>(*targetEntity).Type() != EntityType::PrefabChild){
                         scene->CleanParent(*targetEntity);
                     }
@@ -154,7 +154,7 @@ void SceneHierarchyPanel::OnGui(){
                         //scene->InstantiatePrefab(*AssetManager::Get().LoadAsset<Prefab>(path->string()));
                     }
 
-                    LogInfo("Reciving File: %s", path->string().c_str());
+                    LogInfo("Reciving File: {}", path->string().c_str());
                 }
 
                 ImGui::EndDragDropTarget();
@@ -233,7 +233,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
         if(payload != nullptr){
             Entity* targetEntity = (Entity*)payload->Data;
-            LogInfo("this: %s to: %s", scene->GetComponent<InfoComponent>(entity).name.c_str(), scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
+            LogInfo("this: {} to: {}", scene->GetComponent<InfoComponent>(entity).name.c_str(), scene->GetComponent<InfoComponent>(*targetEntity).name.c_str());
             if(scene->IsValid(entity) && scene->IsValid(*targetEntity) && entity != *targetEntity){
                 children = *targetEntity;
             }
@@ -268,7 +268,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
                 scene->SetParent(entity, instance);
             }
 
-            LogInfo("Reciving File: %s", path->string().c_str());
+            LogInfo("Reciving File: {}", path->string().c_str());
         }
         ImGui::EndDragDropTarget();
     }
@@ -337,7 +337,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
     }
 
     if(entityDeleted){
-        LogInfo("To Destroy Entity: %d", entity);
+        LogInfo("To Destroy Entity: {}", (unsigned int)entity);
 
         scene->DestroyEntityImmediate(entity); //scene->DestroyEntity(entity);
         editor->SetSelectionEntity(EntityNull);

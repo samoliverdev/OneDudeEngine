@@ -196,6 +196,8 @@ add_subdirectory(Engine/ThirdParty/unordered_dense-4.8.1)
 add_subdirectory(Engine/ThirdParty/tomlplusplus-3.4.0)
 add_subdirectory(Engine/ThirdParty/bitsery)
 
+add_subdirectory(Engine/ThirdParty/spdlog-1.17.0)
+
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #set(CMAKE_CXX_STANDARD 17)
@@ -318,6 +320,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/unordered_dense-4.8.1/include/
     Engine/ThirdParty/tomlplusplus-3.4.0/include/
     Engine/ThirdParty/bitsery/include/
+    #Engine/ThirdParty/spdlog-1.17.0/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
     #Engine/ThirdParty/EASTL/include/
@@ -348,6 +351,8 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+target_link_libraries(Engine PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+#target_link_libraries(Engine PUBLIC spdlog::spdlog_header_only)
 if(WIN32)
     target_link_libraries(Engine PRIVATE comctl32)
 endif()

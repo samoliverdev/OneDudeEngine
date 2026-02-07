@@ -234,7 +234,7 @@ void CharacterControllerSample::OnInit(){
     playerController->idleAnimation = charIdleModel->animationClips[0].get();
     playerController->runningAnimation = charRunningModel->animationClips[0].get();
     //rb.SetType(RigidbodyComponent::Type::Kinematic);
-    LogInfo("CharModel Skeleton RestPose Size: %d", charIdleModel->skeleton.GetRestPose().Size());
+    LogInfo("CharModel Skeleton RestPose Size: {}", charIdleModel->skeleton.GetRestPose().Size());
     Assert(charRenderer.posePalette.size() == charIdleModel->skeleton.GetRestPose().Size());
     AnimatorComponent& charAnim = scene->AddComponent<AnimatorComponent>(playerEntity);
     charAnim.Play(charIdleModel->animationClips[0].get());

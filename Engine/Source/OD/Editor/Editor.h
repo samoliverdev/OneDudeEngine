@@ -8,6 +8,7 @@
 #include "OD/Editor/Panels/RendererStatsPanel.h"
 #include "OD/Editor/Panels/GlobalSettingsPanel.h"
 #include "OD/Editor/Panels/RuntimeInfoPanel.h"
+#include "OD/Editor/Panels/LogPanel.h"
 #include "OD/Serialization/Serialization.h"
 #include "EditorCamera.h"
 #include "Workspace.h"
@@ -82,6 +83,7 @@ public:
         ArchiveDumpNVP(ar, rendererStatsPanel.show);
         ArchiveDumpNVP(ar, globalSettingsPanel.show);
         ArchiveDumpNVP(ar, runtimeInfoPanel.show);
+        ArchiveDumpNVP(ar, logPanel.show);
     }
 
     int ExecutionSortPriority() override;
@@ -97,6 +99,7 @@ private:
     RendererStatsPanel rendererStatsPanel;
     GlobalSettingsPanel globalSettingsPanel; 
     RuntimeInfoPanel runtimeInfoPanel;
+    LogPanel logPanel;
     MainWorkspace mainWorkspace;
 
     Entity selectionEntity = EntityNull;

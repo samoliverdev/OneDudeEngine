@@ -109,7 +109,7 @@ bool Shader::Create(std::string inPath){
     }
 
     if(isComplete == false){
-        LogError("Error To Compile Shader: %s", path.c_str());
+        LogError("Error To Compile Shader: {}", path);
         Destroy();
         return false;
     } 

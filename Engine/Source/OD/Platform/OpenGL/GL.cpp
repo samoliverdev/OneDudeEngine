@@ -3,6 +3,7 @@
 #include "GL.h"
 #include "OD/Defines.h"
 #include "OD/Base.h"
+#include "OD/Core/Log.h"
 
 #ifdef __EMSCRIPTEN__
 int glCheckError_(const char *file, int line, std::function<void()> callback){
@@ -24,7 +25,7 @@ int glCheckError_(const char *file, int line, std::function<void()> callback){
         }
 
         //std::cout << error << " | " << file << " (" << line << ")" << std::endl;
-        LogFatal("OpenGL:ERROR: %s(%d) | %s (%d)\n", error.c_str(), errorCode, file, line);
+        LogFatal("OpenGL:ERROR: {}({}) | {} ({})\n", error.c_str(), errorCode, file, line);
         //Assert(false);
         if(callback != nullptr) callback();
 

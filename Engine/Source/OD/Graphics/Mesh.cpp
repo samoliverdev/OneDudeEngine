@@ -77,7 +77,7 @@ void Mesh::AppedFrom(const Mesh& mesh){
 
     unsigned maxI = 0;
     for(auto i : indices) maxI = std::max(maxI, i);
-    LogInfo("Mesh max index = %u", maxI);
+    LogInfo("Mesh max index = {}", maxI);
 }
 
 void Mesh::OnGui(){

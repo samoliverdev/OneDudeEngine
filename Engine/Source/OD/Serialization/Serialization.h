@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Base.h"
+#include "OD/Core/Log.h"
 #include "OD/Core/Math.h"
 #include <magic_enum/magic_enum.hpp>
 #include <cereal/cereal.hpp>
@@ -24,9 +25,9 @@
 //#define ODInputArchive cereal::JSONInputArchive
 
 #define TYPE_TO_STRING(T) #T
-#define ArchiveDump(archive, data) try{ archive(data); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: %s", e.what()); }
-#define ArchiveDumpNVP(archive, data) try{ archive(CEREAL_NVP(data)); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: %s", e.what()); }
-#define ArchiveDumpNamed(archive, name, data) try{ archive(cereal::make_nvp(name, data)); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: %s", e.what()); }
+#define ArchiveDump(archive, data) try{ archive(data); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: {}", e.what()); }
+#define ArchiveDumpNVP(archive, data) try{ archive(CEREAL_NVP(data)); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: {}", e.what()); }
+#define ArchiveDumpNamed(archive, name, data) try{ archive(cereal::make_nvp(name, data)); }catch(const cereal::Exception& e){ LogWarning("ErrorOnTrySerialize: {}", e.what()); }
 
 /*
 namespace cereal {

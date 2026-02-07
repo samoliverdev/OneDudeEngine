@@ -86,7 +86,7 @@ bool Texture2D::LoadFromFileMemory(void* indata, size_t insize, const std::strin
     unsigned char* data = stbi_load_from_memory((const stbi_uc*)indata, insize, &width, &height, &nrChannels, 0);
 
     if(!data){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", path.c_str(), stbi_failure_reason());
+        LogError("Cannot load file image {}\nSTB Reason: {}\n", path, stbi_failure_reason());
         stbi_image_free(data);
         return false;
     }
@@ -126,7 +126,7 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
     unsigned char* data = stbi_load(inpath.c_str(), &width, &height, &nrChannels, 0);
 
     if(!data){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", inpath.c_str(), stbi_failure_reason());
+        LogError("Cannot load file image {}\nSTB Reason: {}\n", inpath, stbi_failure_reason());
         stbi_image_free(data);
         return false;
     }

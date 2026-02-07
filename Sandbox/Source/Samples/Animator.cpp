@@ -610,13 +610,13 @@ void AnimatorSample::OnInit(){
             count += 1;
         }
     }
-    LogInfo("Characters Count: %d", count);
+    LogInfo("Characters Count: {}", count);
 
     //scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
     Application::AddModule<Editor>();
 
-    LogInfo("Animation Count: %zd", charModel->animationClips.size());
+    LogInfo("Animation Count: {}", charModel->animationClips.size());
 
     //TODO: Add this patter to the Animator system to impruve cache acess
     /*auto view = scene->GetRegistry().group<InfoComponent, AnimatorComponent>();

@@ -3,6 +3,7 @@
     //#include <crtdbg.h>
 #endif
 
+#include "OD/Core/Log.h"
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
@@ -35,6 +36,7 @@ int main(int argc, char *argv[]){
         //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
+    OD::Log::Init();
     OD::CoreModulesStartup();
 
     for(int i = 0; i < argc; i++){
@@ -43,6 +45,7 @@ int main(int argc, char *argv[]){
 
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
         printf("Application failed to create!.\n");
+        OD::Log::Shutdown();
         return 1;
     }
 

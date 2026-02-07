@@ -39,7 +39,7 @@ void AnimatorComponent::OnGui(Entity& e, Scene& scene){
 
 void AnimatorComponent::Play(ClipT* clip, int layer){
     if(layer < 0 && layer >= layers.size()){
-        LogWarning("Try Play Invalid Layer: %d", layer);
+        LogWarning("Try Play Invalid Layer: {}", layer);
         return;
     }
 
@@ -50,7 +50,7 @@ void AnimatorComponent::Play(ClipT* clip, int layer){
 
 void AnimatorComponent::FadeTo(ClipT* target, float fadeTime, int layer){
     if(layer < 0 && layer >= layers.size()){
-        LogWarning("Try FadeTo Invalid Layer: %d", layer);
+        LogWarning("Try FadeTo Invalid Layer: {}", layer);
         return;
     }
 

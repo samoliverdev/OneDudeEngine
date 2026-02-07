@@ -217,7 +217,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
     if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
 
-    LogInfo("LoadAsset: %s", path.c_str());
+    LogInfo("LoadAsset: {}", path.c_str());
 
     #ifdef USE_EXPERIMENTAL_ALLOCATOR
     //INFO: Add Experimental Alloctor
@@ -268,7 +268,7 @@ void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
     //auto& db = GetDB(entt::type_hash<T>::value()); 
     auto& db = GetDB(GetType<T>()); 
 
-    LogInfo("AddAsset: %s", path.c_str());
+    LogInfo("AddAsset: {}", path.c_str());
     db[path] = asset;
 }
 

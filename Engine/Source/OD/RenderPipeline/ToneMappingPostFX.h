@@ -1,10 +1,11 @@
 #pragma once
-#include "OD/Defines.h"
 #include "PostFX.h"
-#include "OD/Graphics/Material.h"
+#include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace OD{
+
+class Material;
 
 class OD_API ToneMappingPostFX: public PostFX{
 public:

@@ -39,13 +39,13 @@ void GlobalSettings::Load(const std::string& path){
             success = true;
         }
     } catch(const std::exception& e){
-        LogError("Failed to load archive: %s", e.what());
+        LogError("Failed to load archive: {}", e.what());
     }
 
     if(!success){
         std::ofstream os(path);
         if(!os.is_open()){
-            LogError("Failed to open file for writing: %s", path.c_str());
+            LogError("Failed to open file for writing: {}", path.c_str());
             return;
         }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Base.h"
+#include "OD/Core/Log.h"
 #include "OD/Core/Lua.h"
 #include <entt/entt.hpp>
 

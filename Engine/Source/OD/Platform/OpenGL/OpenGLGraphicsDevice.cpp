@@ -18,6 +18,7 @@
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/Log.h"
 #include <stb/stb_image.h> //TODO: Remove this from This Graphic device
 #include <imgui/backends/imgui_impl_opengl3.h>
 
@@ -138,7 +139,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
     //if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER) return;
 
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
-    LogError("%s:%s[%s](%d): %s\n", sourceStr.c_str(), typeStr.c_str(), sevStr.c_str(), id, message);
+    LogError("{}:{}[{}]({}): {}\n", sourceStr, typeStr, sevStr, id, message);
 }
 #endif
 
@@ -253,10 +254,10 @@ void OpenGLGraphicsDevice::Initialize(){
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
     #endif
 
-    LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
-    LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));
-    LogInfo("GL_RENDERER: %s", glGetString(GL_RENDERER));
-    LogInfo("GL_SHADING_LANGUAGE_VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    LogInfo("Opengl Version: {}", (char*)glGetString(GL_VERSION));
+    LogInfo("GL_VENDOR: {}", (char*)glGetString(GL_VENDOR));
+    LogInfo("GL_RENDERER: {}", (char*)glGetString(GL_RENDERER));
+    LogInfo("GL_SHADING_LANGUAGE_VERSION: {}", (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     glEnable(GL_DEPTH_TEST); 
 
@@ -291,29 +292,29 @@ void OpenGLGraphicsDevice::Initialize(){
 
     GLint maxLayers;
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
-    LogInfo("MaxArrayTextureLayers: %d", maxLayers);
+    LogInfo("MaxArrayTextureLayers: {}", maxLayers);
 
     //#if OPENGL_DEBUG
     GLint maxVertexUniformComponents;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniformComponents);
-    LogInfo("MaxVertexUniformComponents: %d", maxVertexUniformComponents);
+    LogInfo("MaxVertexUniformComponents: {}", maxVertexUniformComponents);
     //glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxVertexUniformComponents);
     //LogInfo("MaxVertexUniformComponentVectors: %d", maxVertexUniformComponents);
 
     GLint maxFragmentUniformComponents;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxFragmentUniformComponents);
-    LogInfo("MaxFragmentUniformComponents: %d", maxFragmentUniformComponents);
+    LogInfo("MaxFragmentUniformComponents: {}", maxFragmentUniformComponents);
     //glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniformComponents);
     //LogInfo("MaxFragmentUniformComponentVectors: %d", maxFragmentUniformComponents);
     //#endif
 
     GLint maxTextureSize;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    LogInfo("MaxTextureSize: %d", maxTextureSize);
+    LogInfo("MaxTextureSize: {}", maxTextureSize);
 
     GLint maxTextureUnits;
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
-    LogInfo("MaxTextureUnits: %d", maxTextureUnits);
+    LogInfo("MaxTextureUnits: {}", maxTextureUnits);
 
     #if UseUniformBuffer
     glGenBuffers(1, &cameraDataBuffer);
@@ -2890,7 +2891,7 @@ bool OpenGLGraphicsDevice::Texture2DArrayCreate(Texture2DArray& tex, const std::
         unsigned char* data = stbi_load(i.c_str(), &width, &height, &nrComponents, 0);   // Load the first Image of size 512   X   512  (RGB))
 
         if(!data){
-            LogError("Cannot load file image %s\nSTB Reason: %s\n", tex.path.c_str(), stbi_failure_reason());
+            LogError("Cannot load file image {}\nSTB Reason: {}\n", tex.path, stbi_failure_reason());
         }
 
         if(nrComponents > 3){
@@ -3041,12 +3042,12 @@ bool OpenGLGraphicsDevice::CubemapCreateFromFile(
             glCheckError();
             stbi_image_free(data);
         } else {
-            LogError("Cubemap tex failed to load at path: %s", faces[i]);
+            LogError("Cubemap tex failed to load at path: {}", faces[i]);
             //std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
             stbi_image_free(data);
         }
 
-        LogInfo("Loading Cubemap: %s", faces[i]);
+        LogInfo("Loading Cubemap: {}", faces[i]);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, cubemap.mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3452,8 +3453,9 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreatePrefilterMapFromCubeMap(const Re
 bool getUniformInfo(GLuint program, const char* blockName, UniformBufferDef& out){
     // Find the uniform block index
     GLuint blockIndex = glGetUniformBlockIndex(program, blockName);
-    if (blockIndex == GL_INVALID_INDEX) {
-        std::cerr << "Uniform block '" << blockName << "' not found.\n";
+    if(blockIndex == GL_INVALID_INDEX){
+        //std::cerr << "Uniform block '" << blockName << "' not found.\n";
+        LogWarning("Uniform block {} not found.", blockName);
         return false;
     }
 
@@ -3461,8 +3463,9 @@ bool getUniformInfo(GLuint program, const char* blockName, UniformBufferDef& out
     GLint numUniforms;
     glGetActiveUniformBlockiv(program, blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, &numUniforms);
 
-    if (numUniforms == 0) {
-        std::cerr << "Uniform block '" << blockName << "' has no active uniforms.\n";
+    if(numUniforms == 0){
+        //std::cerr << "Uniform block '" << blockName << "' has no active uniforms.\n";
+        LogWarning("Uniform block {} has no active uniforms.", blockName);
         return false;
     }
 
@@ -3789,7 +3792,7 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
            LogInfo("Size: %zd", i.second.size);
         }*/
     } else {
-        LogWarning("No Uniform Buffer Main on: %s", mat.shader->Path().c_str());
+        LogWarning("No Uniform Buffer Main on: {}", mat.shader->Path());
     }
     #endif
 }

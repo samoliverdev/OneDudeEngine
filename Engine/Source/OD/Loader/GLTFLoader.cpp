@@ -165,19 +165,19 @@ cgltf_data* LoadGLTFFile(const char* path){
 	cgltf_data* data = NULL;
 	cgltf_result result = cgltf_parse_file(&options, path, &data);
 	if(result != cgltf_result_success){
-		LogError("Could not load input file: %s", path);
+		LogError("Could not load input file: {}", path);
 		return 0;
 	}
 	result = cgltf_load_buffers(&options, data, path);
 	if(result != cgltf_result_success){
 		cgltf_free(data);
-		LogError("Could not load buffers for: %s", path);
+		LogError("Could not load buffers for: {}", path);
 		return 0;
 	}
 	result = cgltf_validate(data);
 	if(result != cgltf_result_success){
 		cgltf_free(data);
-		LogError("Invalid gltf file: %s", path);
+		LogError("Invalid gltf file: {}", path);
 		return 0;
 	}
 	return data;

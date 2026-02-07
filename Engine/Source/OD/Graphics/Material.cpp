@@ -366,7 +366,7 @@ void Material::UpdateCurrentShader(){
     if(shader->passes[currentPass].shaders.count(key)){
         currentShader = shader->passes[currentPass].shaders[key];
     } else {
-        LogError("No Key: %s", key.c_str());
+        LogError("No Key: {}", key);
         Assert(false);
     }
 }
@@ -599,7 +599,7 @@ void Material::Save(const std::string& path){
     //return;
     //Assert(false && "Not Implemented");
 
-    LogInfo("Saving: %s", path.c_str());
+    LogInfo("Saving: {}", path.c_str());
 
     std::ofstream os(path);
     cereal::JSONOutputArchive archive{os};

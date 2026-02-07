@@ -1467,7 +1467,7 @@ bool WebGPUGraphicsDevice::Texture2DCreate(Texture2D& tex, const std::string pat
     int width, height, channels;
     unsigned char* pixelData = stbi_load(path.c_str(), &width, &height, &channels, 4 /* force 4 channels */);
     if(pixelData == nullptr){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", tex.path.c_str(), stbi_failure_reason());
+        LogError("Cannot load file image {}\nSTB Reason: {}\n", tex.path, stbi_failure_reason());
         return false;
     }
 
@@ -1593,7 +1593,7 @@ bool WebGPUGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
     int width, height, channels;
     unsigned char* pixelData = stbi_load_from_memory((const stbi_uc*)data, size, &width, &height, &channels, 4);
     if(pixelData == nullptr){
-        LogError("Cannot load file image %s\nSTB Reason: %s\n", tex.path.c_str(), stbi_failure_reason());
+        LogError("Cannot load file image {}\nSTB Reason: {}\n", tex.path, stbi_failure_reason());
         return false;
     }
 

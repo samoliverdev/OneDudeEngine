@@ -200,7 +200,7 @@ bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSetti
 	return AssimpLoadModel(model, path, loadSettings);
 	#endif
 
-	LogError("File Type Not Supported: %s", fileType.c_str());
+	LogError("File Type Not Supported: {}", fileType);
 	return false;
 }
 

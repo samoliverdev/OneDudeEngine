@@ -57,9 +57,9 @@ void AnimationSample::OnInit(){
 
     ClipT& _clip = char1Clips[char1Anim.mClip];
     for(int i = 0; i < _clip.Size(); i++){
-        LogInfo("Clip Pos Frames: %d", _clip[i].GetPositionTrack().Size());
-        LogInfo("Clip Rot Frames: %d", _clip[i].GetRotationTrack().Size());
-        LogInfo("Clip Scale Frames: %d", _clip[i].GetScaleTrack().Size());
+        LogInfo("Clip Pos Frames: {}", _clip[i].GetPositionTrack().Size());
+        LogInfo("Clip Rot Frames: {}", _clip[i].GetRotationTrack().Size());
+        LogInfo("Clip Scale Frames: {}", _clip[i].GetScaleTrack().Size());
     }
 
     char1Controller.SetSkeleton(char1Skeleton);
@@ -67,11 +67,11 @@ void AnimationSample::OnInit(){
     char1Controller.Update(0.0f);
     char1Controller.GetCurrentPose().GetMatrixPalette(char1Anim.mPosePalette);
 
-    LogInfo("Clip Count: %zd", char1Clips.size());
+    LogInfo("Clip Count: {}", char1Clips.size());
     for(auto i: char1Clips){
-        LogInfo("Clip Name: %s", i.GetName().c_str());
+        LogInfo("Clip Name: {}", i.GetName().c_str());
     }
-    LogInfo("Mesh Count: %zd", char1Meshs.size());
+    LogInfo("Mesh Count: {}", char1Meshs.size());
 
     //char2Model = OD::AssimpLoadModel("res/animations/Walking.fbx", shader);
     char2Model = CreateRef<Model>();
@@ -101,9 +101,9 @@ void AnimationSample::OnInit(){
     char2Controller.Update(0.0f);
     char2Controller.GetCurrentPose().GetMatrixPalette(char2Anim.mPosePalette);
 
-    LogInfo("Char2 Clip Count: %zd", char2Model->animationClips.size());
+    LogInfo("Char2 Clip Count: {}", char2Model->animationClips.size());
     for(auto i: char2Model->animationClips){
-        LogInfo("Char2 Clip Name: %s", i->GetName().c_str());
+        LogInfo("Char2 Clip Name: {}", i->GetName().c_str());
     }
 
 };

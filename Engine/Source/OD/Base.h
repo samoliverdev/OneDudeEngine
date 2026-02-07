@@ -7,6 +7,9 @@
 #include <typeindex>
 #include <queue> 
 
+//#include "OD/Core/Log.h"
+//#include <spdlog/spdlog.h>
+
 //#include <new>
 //#include <cstddef>
 
@@ -103,6 +106,7 @@ static const char* LogColors[] = {
 
 #endif
 
+/*
 #ifndef FINAL_BUILD
     #define LogInfo(...) _LOG("info", 0, __VA_ARGS__)
 	#define LogWarning(...) _LOG("warning", 1, __VA_ARGS__)
@@ -113,6 +117,16 @@ static const char* LogColors[] = {
 	#define LogWarningExtra(...) _LOG_Extra("warning", 1, __VA_ARGS__)
 	#define LogErrorExtra(...) _LOG_Extra("error", 2, __VA_ARGS__)
     #define LogFatalExtra(...) _LOG_Extra("fatal", 3, __VA_ARGS__)
+
+    #define LogInfo(...)   ::OD::Log::GetLogger()->info(__VA_ARGS__)
+    #define LogWarning(...)  ::OD::Log::GetLogger()->warn(__VA_ARGS__)
+    #define LogError(...)  ::OD::Log::GetLogger()->error(__VA_ARGS__)
+    #define LogFatal(...)  ::OD::Log::GetLogger()->critical(__VA_ARGS__)
+
+    #define LogInfoExtra(...)   ::OD::Log::GetLogger()->info(__VA_ARGS__)
+    #define LogWarningExtra(...)  ::OD::Log::GetLogger()->warn(__VA_ARGS__)
+    #define LogErrorExtra(...)  ::OD::Log::GetLogger()->error(__VA_ARGS__)
+    #define LogFatalExtra(...)  ::OD::Log::GetLogger()->critical(__VA_ARGS__)
 #else
     #define LogInfo(...)
 	#define LogWarning(...)
@@ -124,6 +138,7 @@ static const char* LogColors[] = {
 	#define LogErrorExtra(...)
     #define LogFatalExtra(...)
 #endif
+*/
 //#endif
 
 namespace OD {

@@ -5,6 +5,7 @@
 #include "ImGui.h"
 #include "Input.h"
 #include "Time.h"
+#include "Log.h"
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "Lua.h"
@@ -62,7 +63,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
-
+    
     Graphics::SelectGraphicsDevice();
 
     if(Platform::SystemStartup(
@@ -70,9 +71,11 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
         appConfig.startPosX, 
         appConfig.startPosY,
         appConfig.startWidth,
-        appConfig.startHeight) == false) return false;
+        appConfig.startHeight) == false
+    ) return false;
 
     Graphics::Initialize();
+    
     //Input::_Initialize(0, 0);
     #ifdef __EMSCRIPTEN__
     #else
@@ -278,6 +281,7 @@ void Application::OnExit(){
     Graphics::Shutdown();
     //Input::_Shutdown(0);
     Platform::SystemShutdown(0);
+    OD::Log::Shutdown();
 }
 
 void Application::Quit(){

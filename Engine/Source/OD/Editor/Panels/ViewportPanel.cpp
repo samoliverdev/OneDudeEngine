@@ -144,7 +144,7 @@ void ViewportPanel::OnGui(){
         _mousePos.y >= editor->viewportBounds[0].y && _mousePos.y <= editor->viewportBounds[1].y;
 
         if(insideViewport){
-            LogInfo("ReadPixel(1): %d", entityId);
+            LogInfo("ReadPixel(1): {}", (unsigned int)entityId);
 
             if(entityId >= 0){
                 bool holdMultSelection = Input::IsKey(KeyCode::LShift);
@@ -196,7 +196,7 @@ void ViewportPanel::OnGui(){
 
         if(payload != nullptr){
             std::filesystem::path* path = (std::filesystem::path*)payload->Data;
-            LogInfo("%s", path->string().c_str());
+            LogInfo("{}", path->string().c_str());
         }
 
         const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
@@ -218,7 +218,7 @@ void ViewportPanel::OnGui(){
                 mRenderer.SetModel(model);
             }
 
-            LogInfo("Reciving File: %s", path->string().c_str());
+            LogInfo("Reciving File: {}", path->string().c_str());
         }
         
         ImGui::EndDragDropTarget();

@@ -257,7 +257,7 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     //glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
-    LogInfo("Glfw creationg windows: %s %d %d", applicationName, width, height);
+    LogInfo("Glfw creationg windows: {} {} {}", applicationName, width, height);
     window = glfwCreateWindow(width, height, applicationName, NULL, NULL);
 
     /*const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());

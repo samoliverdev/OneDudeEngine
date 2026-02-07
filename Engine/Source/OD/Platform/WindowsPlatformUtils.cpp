@@ -1,6 +1,7 @@
 #include "OD/pch.h"
 #include "Platform.h"
 #include "OD/Base.h"
+#include "OD/Core/Log.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <filesystem>
 
@@ -17,7 +18,7 @@ std::string Platform::OpenFolder(){
 //Fixme:: r memory leak
 std::string Platform::OpenFile(const char* filter){
     std::string curPath = std::filesystem::current_path().string() + "/";
-    LogWarning("CurPath: %s", curPath.c_str());
+    LogWarning("CurPath: {}", curPath.c_str());
 
     if(strcmp(filter, "") == 0){
         const char* r = tinyfd_openFileDialog("", curPath.c_str(), 0, NULL, NULL, 0);

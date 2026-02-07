@@ -263,7 +263,7 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
 		if(aabb.isOnAABB(bounds) == false) continue;
 
 		if(c.mesh->vertices.size() <= 0){
-			LogWarning("Entity: %s, Navmesh Try RasterizeMesh with Zero Vertices", info.name.c_str());
+			LogWarning("Entity: {}, Navmesh Try RasterizeMesh with Zero Vertices", info.name);
 		}
 
         RasterizeMesh(data, targetMatrix, c.mesh);
@@ -321,7 +321,7 @@ bool Navmesh::RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mes
 	// and array which can hold the max number of triangles you need to process.
 	data.m_triareas = new unsigned char[ntris];
 	if(!data.m_triareas){
-        LogError("buildNavigation: Out of memory 'm_triareas' (%d).", ntris);
+        LogError("buildNavigation: Out of memory 'm_triareas' ({}).", ntris);
 		return false;
 	}
 	
@@ -1461,7 +1461,7 @@ unsigned char* Navmesh::BuildTileMesh(BakeData& data, Scene* scene, const int tx
 		if(data.m_pmesh->nverts >= 0xffff){
 			// The vertex indices are ushorts, and cannot point to more than 0xffff vertices.
 			//m_ctx->log(RC_LOG_ERROR, "Too many vertices per tile %d (max: %d).", m_pmesh->nverts, 0xffff);
-			LogError("Too many vertices per tile %d (max: %d).", data.m_pmesh->nverts, 0xffff);
+			LogError("Too many vertices per tile {} (max: {}).", data.m_pmesh->nverts, 0xffff);
 			return 0;
 		}
 		
