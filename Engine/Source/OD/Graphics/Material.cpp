@@ -599,7 +599,7 @@ void Material::Save(const std::string& path){
     //return;
     //Assert(false && "Not Implemented");
 
-    LogInfo("Saving: {}", path.c_str());
+    LogInfo("Saving: {}", path);
 
     std::ofstream os(path);
     cereal::JSONOutputArchive archive{os};

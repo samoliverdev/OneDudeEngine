@@ -618,8 +618,8 @@ void Editor::DrawMainMenuBar(){
                 std::string path = Platform::OpenFolder(); 
                 if(path.empty() == false){
                     auto exe = GetAbsExePath();
-                    LogInfo("Project Dir: {}", path.c_str());
-                    LogInfo("EditorPath: {}", exe.string().c_str());
+                    LogInfo("Project Dir: {}", path);
+                    LogInfo("EditorPath: {}", exe.string());
 
                     std::string cmd = exe.string() + " " + path.c_str();
                     //ExecultCmd(cmd.c_str());

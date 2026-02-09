@@ -54,7 +54,7 @@ Ref<Mesh> CreatePlaneMesh(Vector2 size, IVector2 resolution, MeshPivot pivot){
     return mesh;
 }
 
-Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot) {
+Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot){
     Ref<Mesh> mesh = CreateRef<Mesh>();
 
     Vector3 offset = (pivot == MeshPivot::Center) ? -size * 0.5f : Vector3(0);
@@ -71,7 +71,22 @@ Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot) {
                 Vector3 worldPos = localPos + offset;
 
                 mesh->vertices.push_back(worldPos);
+                
                 mesh->uv.push_back(Vector3(fx * faceWidth, fy * faceHeight, 0.0f));
+
+                /*Vector3 uv;
+                Vector3 n = glm::normalize(glm::cross(rightDir, upDir));
+                // Choose projection plane based on face normal
+                if(abs(n.y) > 0.5f){
+                    uv = Vector3(worldPos.x, worldPos.z, 0.0f);// Top / Bottom → XZ
+                } else if(abs(n.x) > 0.5f){
+                    uv = Vector3(worldPos.z, worldPos.y, 0.0f);// Left / Right → ZY
+                } else {
+                    uv = Vector3(worldPos.x, worldPos.y, 0.0f);// Front / Back → XY
+                }
+                float metersPerTile = 1.0f; // 1m grid
+                uv /= metersPerTile;
+                mesh->uv.push_back(uv);*/
 
                 Vector3 normal = glm::normalize(glm::cross(rightDir, upDir));
                 mesh->normals.push_back(normal);
@@ -331,7 +346,7 @@ Ref<Mesh> CreateConeMesh(float radius, float height, int radialSegments, int hei
     return mesh;
 }
 
-Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot) {
+Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot){
     Ref<Mesh> mesh = CreateRef<Mesh>();
 
     int latSegments = std::max(2, resolution.y);

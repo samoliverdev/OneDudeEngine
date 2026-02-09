@@ -881,7 +881,7 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
         double fbxUnitScale = 1.0;
         if (scene->mMetaData->Get("UnitScaleFactor", fbxUnitScale)) {
             scale *= static_cast<float>(fbxUnitScale);
-            LogInfo("Applying automatic FBX scale: %.4f {}", scale);
+            LogInfo("Applying automatic FBX scale: {:.4f}", scale);
         }
     }
 
@@ -1011,7 +1011,7 @@ bool OD_API AssimpLoadModel(
         double fbxUnitScale = 1.0;
         if (scene->mMetaData->Get("UnitScaleFactor", fbxUnitScale)) {
             scale *= static_cast<float>(fbxUnitScale);
-            LogInfo("Applying automatic FBX scale: %.4f {}", scale);
+            LogInfo("Applying automatic FBX scale: {:.4f}", scale);
         }
     }
 

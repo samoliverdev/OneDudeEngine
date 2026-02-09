@@ -137,7 +137,7 @@ public:
         std::string fullPath = dir + filename;
         fullPath = removeBasePath(fullPath, std::filesystem::current_path().string() + "\\");
         fullPath = convertToForwardSlashes(fullPath);
-        LogInfo("FileWatching: {}", fullPath.c_str());
+        LogInfo("FileWatching: {}", fullPath);
 
         if(action == efsw::Actions::Modified){
             for(auto& i: assetManager->data){
@@ -155,7 +155,7 @@ void AssetManager::StartHotReload(){
     efsw::FileWatcher* fileWatcher = new efsw::FileWatcher();
     AssetManagerFileUpdateListener* listener = new AssetManagerFileUpdateListener();
     listener->assetManager = this;
-    LogInfo("Start Filewatch on: {}", std::filesystem::current_path().string().c_str());
+    LogInfo("Start Filewatch on: {}", std::filesystem::current_path().string());
     efsw::WatchID watchID = fileWatcher->addWatch(std::filesystem::current_path().string(), listener, true);
     fileWatcher->watch();
 }
@@ -168,7 +168,7 @@ void AssetManager::StopHotReload(){
 void AssetManager::ApplyHotReload(){
     std::lock_guard<std::mutex> lock(toApplyHotReloadMutex);
     for(auto& i: toApplyHotReload){
-        LogInfo("Apply HotReload: {}", i->Path().c_str());
+        LogInfo("Apply HotReload: {}", i->Path());
         i->Reload();
     }
     toApplyHotReload.clear();

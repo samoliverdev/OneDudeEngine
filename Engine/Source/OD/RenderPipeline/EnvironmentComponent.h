@@ -44,6 +44,7 @@ struct OD_API EnvironmentSettings{
 
     ShadowQuality directionalshadowQuality = ShadowQuality::High;
     ShadowQuality othershadowQuality = ShadowQuality::Median;
+    std::array<float, 4> directinalShadowCascade = {0.1f, 0.25f, 0.5f, 1.0f};
 
     float shadowDistance = 150;
     float shadowBias = 0.00001f;
@@ -67,6 +68,7 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, cleanColor);
         ArchiveDumpNVP(ar, directionalshadowQuality);
         ArchiveDumpNVP(ar, othershadowQuality);
+        ArchiveDumpNVP(ar, directinalShadowCascade);
         ArchiveDumpNVP(ar, shadowDistance);
         ArchiveDumpNVP(ar, shadowBias);
         ArchiveDumpNVP(ar, toneMappingPostFX);

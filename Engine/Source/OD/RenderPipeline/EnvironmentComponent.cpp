@@ -59,6 +59,7 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
 
     ImGui::DrawEnumCombo<ShadowQuality>("directionalshadowQuality", &environment.settings.directionalshadowQuality);
     ImGui::DrawEnumCombo<ShadowQuality>("othershadowQuality", &environment.settings.othershadowQuality);
+    ImGui::DragFloat4("directinalShadowCascade", &environment.settings.directinalShadowCascade[0]);
 
     ImGui::DragFloat("shadowDistance", &environment.settings.shadowDistance);
     ImGui::DragFloat("shadowBias", &environment.settings.shadowBias, 0.1f, 0, 1, "%.6f");

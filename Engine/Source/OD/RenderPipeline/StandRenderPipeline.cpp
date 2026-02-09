@@ -1397,6 +1397,11 @@ void StandRenderPipeline::Render(Scene& scene){
     shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->directionalshadowQuality];
     shadow.other.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->othershadowQuality];
 
+    shadow.directional.cascadeRatio1 = environmentSettings->directinalShadowCascade[0];
+    shadow.directional.cascadeRatio2 = environmentSettings->directinalShadowCascade[1];
+    shadow.directional.cascadeRatio3 = environmentSettings->directinalShadowCascade[2];
+    shadow.directional.cascadeRatio4 = environmentSettings->directinalShadowCascade[3];
+
     cameraRenderer.renderStagePasses = &renderStagePasses;
 
     if(overrideCamera != nullptr){

@@ -17,7 +17,7 @@ ContentBrowserPanel::ContentBrowserPanel() {
     _assetsDirectory = std::filesystem::current_path();
     _curDirectory = _assetsDirectory;
 
-    LogInfo("ContentBrowserPanel CurDirectory: {}", _curDirectory.string().c_str());
+    LogInfo("ContentBrowserPanel CurDirectory: {}", _curDirectory.string());
 
     UpdateFileCache();
 }
@@ -118,7 +118,7 @@ void ContentBrowserPanel::OnGui() {
     // Background context menu only if no other menu is open
     if (!contextMenuOpen && ImGui::BeginPopupContextWindow("BackgroundContext")) {
         contextMenuOpen = true;
-        LogInfo("Opening background context menu for {}", _curDirectory.string().c_str());
+        LogInfo("Opening background context menu for {}", _curDirectory.string());
         HandleContextMenu(_curDirectory, true, true);
         ImGui::EndPopup();
     }
@@ -134,7 +134,7 @@ void ContentBrowserPanel::OnGui() {
         pendingDeleteIsDirectory = isDirectory;
         ImGui::OpenPopup("Confirm Delete");
         popupActive = true;
-        LogInfo("Opened delete confirmation popup for {}", path.string().c_str());
+        LogInfo("Opened delete confirmation popup for {}", path.string());
     }
 
     if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -150,16 +150,16 @@ void ContentBrowserPanel::OnGui() {
                 // Perform deletion
                 if (pendingDeleteIsDirectory) {
                     std::filesystem::remove_all(pendingDeletePath);
-                    LogInfo("Deleted directory: {}", pendingDeletePath.string().c_str());
+                    LogInfo("Deleted directory: {}", pendingDeletePath.string());
                 } else {
                     std::filesystem::remove(pendingDeletePath);
-                    LogInfo("Deleted file: {}", pendingDeletePath.string().c_str());
+                    LogInfo("Deleted file: {}", pendingDeletePath.string());
                 }
 
                 // Update current directory if needed
                 if (affectsCurrentDir) {
                     _curDirectory = _assetsDirectory;
-                    LogInfo("Reset _curDirectory to {} after deletion", _curDirectory.string().c_str());
+                    LogInfo("Reset _curDirectory to {} after deletion", _curDirectory.string());
                 }
 
                 // Update caches: avoid processing deleted directory
@@ -169,11 +169,11 @@ void ContentBrowserPanel::OnGui() {
                     _fileCache.clear();
                     _filteredFiles.clear();
                     UpdateFileCache(); // Full rebuild
-                    LogInfo("Rebuilt full cache after deleting {}", pendingDeletePath.string().c_str());
+                    LogInfo("Rebuilt full cache after deleting {}", pendingDeletePath.string());
                 } else {
                     UpdateFileCache(pendingDeletePath.parent_path());
                     UpdateFilteredFiles();
-                    LogInfo("Updated cache for parent {}", pendingDeletePath.parent_path().string().c_str());
+                    LogInfo("Updated cache for parent {}", pendingDeletePath.parent_path().string());
                 }
 
                 if (_selectedFile == pendingDeletePath) _selectedFile.clear();
@@ -324,7 +324,7 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     }
     if (!skipDelete && ImGui::MenuItem("Delete")) {
         toDelete.emplace_back(path, isDirectory);
-        LogInfo("Added to delete queue: {}", path.string().c_str());
+        LogInfo("Added to delete queue: {}", path.string());
     }
 }
 
@@ -393,7 +393,7 @@ void ContentBrowserPanel::UpdateFileCache(const std::filesystem::path& path) {
         std::vector<FileEntry> newFiles;
         CollectAllFiles(path, newFiles);
         _fileCache.insert(_fileCache.end(), newFiles.begin(), newFiles.end());
-        LogInfo("Incremental file cache updated for {} with {} total files", path.string().c_str(), _fileCache.size());
+        LogInfo("Incremental file cache updated for {} with {} total files", path.string(), _fileCache.size());
     } catch (const std::exception& e) {
         LogError("Failed to update file cache for {}: {}", path.string(), e.what());
     }
@@ -445,9 +445,11 @@ void ContentBrowserPanel::UpdateFilteredFiles() {
                   return a.entry.path().filename().string() < b.entry.path().filename().string();
               });
     auto end = std::chrono::high_resolution_clock::now();
-    LogInfo("Filtered {} files for query '{}' and extension '{}' in {} ms",
-            _filteredFiles.size(), searchQuery.c_str(), extensionFilter.c_str(),
-            std::chrono::duration<double, std::milli>(end - start).count());
+    LogInfo(
+        "Filtered {} files for query '{}' and extension '{}' in {} ms",
+        _filteredFiles.size(), searchQuery, extensionFilter,
+        std::chrono::duration<double, std::milli>(end - start).count()
+    );
 }
 
 void ContentBrowserPanel::DrawMatchingFiles(const std::filesystem::path& rootPath) {
@@ -560,7 +562,7 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
 
         if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
             contextMenuOpen = true;
-            LogInfo("Opening directory context menu for {}", dirPath.string().c_str());
+            LogInfo("Opening directory context menu for {}", dirPath.string());
             HandleContextMenu(dirPath, true);
             ImGui::EndPopup();
         }
@@ -604,7 +606,7 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
 
         if (!contextMenuOpen && ImGui::BeginPopupContextItem(label.c_str())) {
             contextMenuOpen = true;
-            LogInfo("Opening file context menu for {}", filePath.string().c_str());
+            LogInfo("Opening file context menu for {}", filePath.string());
             HandleContextMenu(filePath, false);
             ImGui::EndPopup();
         }

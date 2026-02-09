@@ -1690,7 +1690,7 @@ bool Navmesh::Save(const std::string& outPath, SaveType type){
     }
 
     fclose(fp);
-    //this->path = path;
+    this->path = outPath;
     return true;
 }
 

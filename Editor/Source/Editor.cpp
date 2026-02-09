@@ -376,7 +376,7 @@ class Editor: public OD::Module{
         std::string modulePath = ProjectManager::GetActiveProject()->scriptModulePath; //Application::GetProjectSettings().scriptModulePath;
         currentModule = nullptr;
         currentDll = nullptr;
-        LogInfo("DLL Path: {}", modulePath.c_str());
+        LogInfo("DLL Path: {}", modulePath);
 
         if(FileExists(modulePath + ".dll") == false){
             LogError("Load Dynamic Module");
@@ -387,7 +387,7 @@ class Editor: public OD::Module{
         std::filesystem::copy_file(modulePath + ".dll", modulePathCopy, std::filesystem::copy_options::overwrite_existing);
 
         typedef Module* (*CreateInstanceFunc)();
-        currentDll = OD::Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: {}", modulePathCopy.c_str());
+        currentDll = OD::Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: {}", modulePathCopy);
 
         /*auto dllModule = new FuncModule();
         dllModule->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");
@@ -442,7 +442,7 @@ class Editor: public OD::Module{
             std::filesystem::copy_file(pdb, pdb + "_Copy", std::filesystem::copy_options::overwrite_existing);*/
 
         typedef Module* (*CreateInstanceFunc)();
-        currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: {}", modulePathCopy.c_str());
+        currentDll = Platform::LoadDynamicLibrary(modulePathCopy.c_str()); LogInfo("Loading DLL: {}", modulePathCopy);
 
         /*auto c = new OD::FuncModule();
         c->onInit = (OD::_OnInit)OD::Platform::LoadDynamicFunction(currentDll, "GameOnInit");

@@ -72,6 +72,13 @@ struct OD_API ModelRendererComponent{
         ArchiveDumpNVP(ar, modelRef);
         AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
+
+        if(GetRenderTargetVisibility().size() != model->renderTargets.size()){
+            renderTargetVisibility.resize(model->renderTargets.size());
+            for(int i = 0; i < renderTargetVisibility.size(); i++){
+                renderTargetVisibility[i] = true;
+            }
+        }
     }
 protected:
     AABB boundingVolume;

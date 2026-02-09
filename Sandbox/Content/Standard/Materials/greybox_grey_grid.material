@@ -49,7 +49,7 @@
                 "key": "mainTex",
                 "value": {
                     "type": 7,
-                    "texPath": "Standard\\Textures\\GreyboxTextures\\greybox_grey_grid.png"
+                    "texPath": "Standard\\Textures\\GreyboxTextures\\greybox_grey_solid_2.png"
                 }
             },
             {

@@ -15,7 +15,7 @@ void AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(FILE_MOVE_PAYLOAD);
         if(payload != nullptr){
             std::filesystem::path* path = (std::filesystem::path*)payload->Data;
-            LogInfo("{} {}", path->string().c_str(), path->extension().string().c_str());
+            LogInfo("{} {}", path->string(), path->extension().string());
             func(path);
         }
         ImGui::EndDragDropTarget();

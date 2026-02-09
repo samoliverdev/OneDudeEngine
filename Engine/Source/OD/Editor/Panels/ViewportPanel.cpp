@@ -196,7 +196,7 @@ void ViewportPanel::OnGui(){
 
         if(payload != nullptr){
             std::filesystem::path* path = (std::filesystem::path*)payload->Data;
-            LogInfo("{}", path->string().c_str());
+            LogInfo("{}", path->string());
         }
 
         const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
@@ -218,7 +218,7 @@ void ViewportPanel::OnGui(){
                 mRenderer.SetModel(model);
             }
 
-            LogInfo("Reciving File: {}", path->string().c_str());
+            LogInfo("Reciving File: {}", path->string());
         }
         
         ImGui::EndDragDropTarget();
