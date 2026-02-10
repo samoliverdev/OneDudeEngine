@@ -36,8 +36,9 @@ void NavmeshModuleInit(){
 void NavmeshComponent::QuickBake(Scene& scene, Entity& e){
 	TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
 
-	if(navmesh == nullptr) navmesh = CreateRef<Navmesh>();
-	if(navmesh != nullptr){
+	//if(navmesh == nullptr) 
+	navmesh = CreateRef<Navmesh>();
+	//if(navmesh != nullptr){
 		navmesh->Bake(
 			&scene, 
 			AABB(
@@ -47,7 +48,7 @@ void NavmeshComponent::QuickBake(Scene& scene, Entity& e){
 			buildSettings,
 			mask
 		);
-	}
+	//}
 }
 
 void NavmeshComponent::OnGui(Entity& e, Scene& scene){
@@ -262,6 +263,8 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
 		//aabb.Expand(Vector3(1.1f));
 		if(aabb.isOnAABB(bounds) == false) continue;
 
+		//LogInfo("Navmesh::RasterizeScene::Entity: {}", info.name);
+
 		if(c.mesh->vertices.size() <= 0){
 			LogWarning("Entity: {}, Navmesh Try RasterizeMesh with Zero Vertices", info.name);
 		}
@@ -280,6 +283,7 @@ void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
         if(c.GetModel() == nullptr) continue;
         //if(c.GetAABB().isOnFrustum(cam.frustum, t) == false) continue;
 
+		//LogInfo("Navmesh::RasterizeScene::Entity: {}", info.name);
         for(auto i: c.GetModel()->renderTargets){
             auto targetMesh = c.GetModel()->meshs[i.meshIndex];
             auto targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * c.GetModel()->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);

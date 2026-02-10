@@ -36,6 +36,7 @@
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/TransformedShape.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/ShapeCast.h>
@@ -2295,6 +2296,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         return;
     }
     RefConst<Shape> finalShape = offsetResult.Get();
+
+	Vec3 scale = ToJolt(transform.Scale());
+	if (!scale.IsClose(Vec3::sReplicate(1.0f))) {
+		finalShape = ScaledShapeSettings(finalShape, scale).Create().Get();// new ScaledShape(finalShape, scale);
+	}
 
 	// Apply local collider offset
 	if(rb.overrideCenterOfMass){
