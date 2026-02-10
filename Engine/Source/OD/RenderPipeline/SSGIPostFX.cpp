@@ -19,7 +19,7 @@ SSGIPostFX::SSGIPostFX(){
     enable = false;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
+    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX4.glsl"));
     giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
@@ -65,8 +65,8 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     Graphics::EndFramebuffer();
     return;*/
 
-    spec.width /= 4; //2;
-    spec.height /= 4; //2;
+    spec.width /= 1; //2;
+    spec.height /= 1; //2;
 
     auto normal = new Framebuffer(spec);
     auto lighting = new Framebuffer(spec);
@@ -98,7 +98,11 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giPass->SetFloat("sliceCount", sliceCount);
     giPass->SetFloat("hitThickness", hitThickness);
     giPass->SetFloat("giIntensity", giIntensity);
+    giPass->SetFloat("aoIntensity", aoIntensity);
     giPass->SetVector2("screenSize", {spec.width, spec.height});
+    giPass->SetFloat("useScreenSpaceSampling", useScreenSpaceSampling ? 1.0f : 0.0f);
+    giPass->SetFloat("temporalRotation", 1.0f);
+    giPass->SetFloat("backfaceLighting", backfaceLighting);
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 

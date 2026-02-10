@@ -24,8 +24,10 @@ public:
         ArchiveDump(ar, CEREAL_NVP(hitThickness));
         ArchiveDump(ar, CEREAL_NVP(sampleCount));
         ArchiveDump(ar, CEREAL_NVP(sliceCount));
-
+        ArchiveDump(ar, CEREAL_NVP(backfaceLighting));
         ArchiveDump(ar, CEREAL_NVP(giIntensity));
+        ArchiveDump(ar, CEREAL_NVP(aoIntensity));
+        ArchiveDump(ar, CEREAL_NVP(useScreenSpaceSampling));
     }
 
 private:
@@ -43,8 +45,10 @@ private:
     float hitThickness = 0.5f;
     float sampleCount = 4;
     float sliceCount = 4;
-
+    float backfaceLighting = 0;
     float giIntensity = 1;
+    float aoIntensity = 1;
+    bool useScreenSpaceSampling = true; 
     
 };
 

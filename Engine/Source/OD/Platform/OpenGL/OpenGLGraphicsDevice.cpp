@@ -3609,7 +3609,7 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
             //printf("%s", infoLog.data());
             //Assert(false && "Shader compilation failure!");
             LogError("Shader compilation failure!");
-            LogError("%s", infoLog.data());
+            LogError("{}", infoLog.data());
             baseSource.erase(0, toInsert.size());
             return false;
         }
