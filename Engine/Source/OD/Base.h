@@ -7,7 +7,7 @@
 #include <typeindex>
 #include <queue> 
 
-//#include "OD/Core/Log.h"
+#include "OD/Core/Log.h"
 //#include <spdlog/spdlog.h>
 
 //#include <new>
@@ -41,13 +41,13 @@
 
 #ifndef FINAL_BUILD
 
-#define Assert(expr)                                                        \
-    do {                                                                    \
-        if (!(expr)) {                                                      \
-            fprintf(stderr, "Assertion failed: %s, file %s, line %d\n",     \
-                    #expr, __FILE__, __LINE__);                             \
-            DEBUG_BREAK();                                                  \
-        }                                                                   \
+//fprintf(stderr, "Assertion failed: %s, file %s, line %d\n", #expr, __FILE__, __LINE__);  
+#define Assert(expr) \
+    do { \
+        if(!(expr)){ \
+            LogFatal("Assertion failed: {}, file {}, line {}", #expr, __FILE__, __LINE__); \
+            DEBUG_BREAK(); \
+        } \
     } while (0)
 
 #else
