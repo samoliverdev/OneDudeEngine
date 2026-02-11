@@ -23,6 +23,7 @@
 #include "Samples/AssetPacking.h"
 #include "Samples/Package.h"
 #include "Samples/Serializer.h"
+#include "Samples/CubemapFramebuffer.h"
 
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
@@ -33,7 +34,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 12;
+    int i = 32;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();
@@ -59,6 +60,7 @@ OD::Module* CreateMainModule(){
     if(i == 29) return new AssetPackingSample();
     if(i == 30) return new PackageSample();
     if(i == 31) return new SerializerSample();
+    if(i == 32) return new CubemapFramebufferSample();
 
     return new BaseMeshSample();
 }

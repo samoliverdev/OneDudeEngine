@@ -45,6 +45,10 @@ bool Framebuffer::IsValid(){
     return graphicsDevice->FramebufferIsValid(*this);
 }
 
+void Framebuffer::GenMipmap(){
+    graphicsDevice->FramebufferGenMipmap(*this);
+}
+
 void Framebuffer::Invalidate(){
     graphicsDevice->FramebufferCreate(*this);
 }

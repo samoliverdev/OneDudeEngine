@@ -85,6 +85,7 @@ public:
     virtual bool FramebufferCreate(Framebuffer& frambuffer) = 0;
     virtual void FramebufferDestroy(Framebuffer& frambuffer) = 0;
     virtual bool FramebufferIsValid(Framebuffer& frambuffer) = 0;
+    virtual void FramebufferGenMipmap(Framebuffer& Framebuffer){}
     virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) = 0;
     virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) = 0;
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) = 0;

@@ -2233,7 +2233,7 @@ bool IsDepthTypeFormat(FramebufferTextureFormat format){
 }
 
 void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){
-    Assert(frambuffer.glData.renderId > 0);
+    /*Assert(frambuffer.glData.renderId > 0);
     glBindFramebuffer(GL_FRAMEBUFFER, frambuffer.glData.renderId);
     glCheckError();
 
@@ -2252,6 +2252,39 @@ void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean,
     // Set Attachment glFramebufferTexture2D
     glCheckError();
     //glViewport(0, 0, frambuffer.specification.width, frambuffer.specification.height);
+
+    if(clean) Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);*/
+
+    //-------------New-----------
+    Assert(frambuffer.glData.renderId > 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, frambuffer.glData.renderId);
+    glCheckError();
+
+    if(frambuffer.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY){
+        if(frambuffer.glData.depthAttachment){
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, frambuffer.glData.depthAttachment, mip, layer);
+            glCheckError();
+        }
+
+        for(size_t i = 0; i < frambuffer.glData.colorAttachments.size(); i++){
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, frambuffer.glData.colorAttachments[i], mip, layer);
+            glCheckError();
+        }
+    }
+    if(frambuffer.specification.type == FramebufferAttachmentType::CUBEMAP){
+        Assert(layer >= 0 && layer < 6);
+
+        for(size_t i = 0; i < frambuffer.glData.colorAttachments.size(); i++){
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, frambuffer.glData.colorAttachments[i], mip);
+            glCheckError();
+        }
+
+        if(frambuffer.glData.depthAttachment){
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, frambuffer.glData.depthAttachment, mip);
+            glCheckError();
+        }
+    }
 
     if(clean) Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 }
@@ -2279,8 +2312,8 @@ void OpenGLGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, i
     }
 }
 
-bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){
-    if(frambuffer.type == FramebufferType::Stand){
+bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
+    /*if(frambuffer.type == FramebufferType::Stand){
         frambuffer.specification.colorAttachments = {
             {FramebufferTextureFormat::RGBA8}
         };
@@ -2361,13 +2394,8 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glCheckError();
-            //#if defined(OpenGLEmscripten)
-            //Assert(false && "not supported");
-            //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, colorAttachment, 0);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0, 0);
-            ///*#else
-            //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, colorAttachment, 0);
-            //#endif*/
+
             glCheckError();
         } else if(frambuffer.specification.type == FramebufferAttachmentType::CUBEMAP){
             Assert(frambuffer.specification.width == frambuffer.specification.height);
@@ -2467,9 +2495,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){
             //Assert(false && "not supported");
             //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, frambuffer.glData.depthAttachment, 0);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0, 0);
-            ///*#else
-            //glFramebufferTexture(GL_FRAMEBUFFER, attachment, frambuffer.glData.depthAttachment, 0);
-            //#endif*/
+   
             glCheckError();
         } else if(frambuffer.specification.type == FramebufferAttachmentType::CUBEMAP){
             Assert(frambuffer.specification.width == frambuffer.specification.height);
@@ -2535,6 +2561,298 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& frambuffer){
     //Unbind
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
+    return true;*/
+    
+    //-------------New-----------
+    FramebufferDestroy(fb);
+
+    if(fb.type == FramebufferType::Stand){
+        fb.specification.colorAttachments = {
+            {FramebufferTextureFormat::RGBA8}
+        };
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        fb.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        fb.specification.sample = 1;
+    }
+    if(fb.type == FramebufferType::Shadowmap){
+        fb.specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    }
+    if(fb.type == FramebufferType::Deffered){
+        fb.specification.colorAttachments = {
+            {FramebufferTextureFormat::RGB32F}, // Pos
+            {FramebufferTextureFormat::RGB32F}, // Normal
+            {FramebufferTextureFormat::RGBA16F}, // Albedo
+            {FramebufferTextureFormat::RGB16F}, // Emission
+            {FramebufferTextureFormat::RGB16F}, // Spec, Metalic, AO
+            {FramebufferTextureFormat::RED_INTEGER} // Object ID
+        };
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        fb.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+        fb.specification.sample = 1;
+    }
+    //frambuffer.specification = specification;
+
+    glGenFramebuffers(1, &fb.glData.renderId);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.glData.renderId);
+    glCheckError();
+
+    const int width   = fb.specification.width;
+    const int height  = fb.specification.height;
+    const int samples = fb.specification.sample;
+
+    bool isMSAA  = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
+    bool isArray = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    bool isCube  = fb.specification.type == FramebufferAttachmentType::CUBEMAP;
+
+    // -------------------------------------------------------
+    // Color Attachment Lambda
+    // -------------------------------------------------------
+
+    auto GenColorAttachment = [&](int index){
+        auto spec = fb.specification.colorAttachments[index];
+        auto formatEnum = spec.colorFormat;
+
+        Assert(IsDepthTypeFormat(formatEnum) == false);
+
+        GLenum internalFormat = InternalFormatLookup[(int)formatEnum];
+        GLenum format         = FormatLookup[(int)formatEnum];
+
+        GLenum dataType = GL_UNSIGNED_BYTE;
+
+        if(formatEnum == FramebufferTextureFormat::RGB16F  ||
+        formatEnum == FramebufferTextureFormat::RGBA16F ||
+        formatEnum == FramebufferTextureFormat::RGB32F  ||
+        formatEnum == FramebufferTextureFormat::RGBA32F)
+            dataType = GL_FLOAT;
+
+        if(formatEnum == FramebufferTextureFormat::RGB11B10F)
+            dataType = GL_UNSIGNED_INT_10F_11F_11F_REV;
+
+        GLuint tex = 0;
+        glGenTextures(1, &tex);
+        glCheckError();
+
+        int mipCount = 1;
+        if(spec.genMip && !isMSAA) mipCount = spec.mipLevels;// CalculateMipCount(width, height);
+
+
+
+        // --------------------
+        // MSAA
+        // --------------------
+
+        if(isMSAA){
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_TRUE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
+            glCheckError();
+        }
+        // --------------------
+        // 2D
+        // --------------------
+        else if(!isArray && !isCube){
+            glBindTexture(GL_TEXTURE_2D, tex);
+
+            glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, tex, 0);
+            glCheckError();
+        }
+        // --------------------
+        // Array
+        // --------------------
+        else if(isArray){
+            glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
+
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex, 0, 0);
+            glCheckError();
+        }
+        // --------------------
+        // Cubemap
+        // --------------------
+        else if(isCube){
+            Assert(width == height);
+
+            glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_CUBE_MAP_POSITIVE_X, tex, 0);
+            glCheckError();
+        }
+
+        fb.glData.colorAttachments.push_back(tex);
+    };
+
+    // -------------------------------------------------------
+    // Depth Attachment Lambda
+    // -------------------------------------------------------
+    auto GenDepthAttachment = [&](){
+        if(fb.specification.depthAttachment.colorFormat == FramebufferTextureFormat::None) return;
+
+        auto spec = fb.specification.depthAttachment;
+        auto formatEnum = spec.colorFormat;
+
+        Assert(IsDepthTypeFormat(formatEnum));
+
+        GLenum internalFormat = GL_DEPTH24_STENCIL8;
+        GLenum format         = GL_DEPTH_STENCIL;
+        GLenum dataType       = GL_UNSIGNED_INT_24_8;
+        GLenum attachment     = GL_DEPTH_STENCIL_ATTACHMENT;
+
+        if(formatEnum == FramebufferTextureFormat::DEPTH_COMPONENT){
+            internalFormat = GL_DEPTH_COMPONENT32F;
+            format         = GL_DEPTH_COMPONENT;
+            dataType       = GL_FLOAT;
+            attachment     = GL_DEPTH_ATTACHMENT;
+        }
+
+        GLuint tex = 0;
+        glGenTextures(1, &tex);
+        glCheckError();
+
+        const int width  = fb.specification.width;
+        const int height = fb.specification.height;
+        const int samples = fb.specification.sample;
+
+        bool isMSAA  = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
+        bool isArray = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+        bool isCube  = fb.specification.type == FramebufferAttachmentType::CUBEMAP;
+
+        int mipCount = 1;
+        if(spec.genMip && !isMSAA) mipCount = spec.mipLevels; //CalculateMipCount(width, height);
+
+        // --------------------
+        // MSAA (no mip possible)
+        // --------------------
+        if(isMSAA){
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_TRUE);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
+            glCheckError();
+        }
+        // --------------------
+        // 2D
+        // --------------------
+        else if(!isArray && !isCube){
+            glBindTexture(GL_TEXTURE_2D, tex);
+
+            if(spec.genMip){
+                glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, NULL);
+            }
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+            float borderColor[] = { 1.0f,1.0f,1.0f,1.0f };
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex, 0);
+            glCheckError();
+        }
+        // --------------------
+        // Array
+        // --------------------
+        else if(isArray){
+            glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
+
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+            float borderColor[] = { 1.0f,1.0f,1.0f,1.0f };
+            glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, tex, 0, 0);
+            glCheckError();
+        }
+        // --------------------
+        // Cubemap
+        // --------------------
+        else if(isCube){
+            Assert(width == height);
+
+            glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X, tex, 0);
+            glCheckError();
+        }
+
+        fb.glData.depthAttachment = tex;
+    };
+
+    // -------------------------------------------------------
+    // Generate Attachments
+    // -------------------------------------------------------
+
+    for(int i = 0; i < fb.specification.colorAttachments.size(); i++){
+        GenColorAttachment(i);
+    }
+    if(fb.specification.createDepth) GenDepthAttachment();
+
+    // -------------------------------------------------------
+    // Draw Buffers
+    // -------------------------------------------------------
+    if(fb.specification.colorAttachments.size() == 0){
+        const GLenum b = GL_NONE;
+        glDrawBuffers(1, &b);
+        glReadBuffer(GL_NONE);
+        glCheckError();
+    } else if(fb.specification.colorAttachments.size() > 1){
+        std::vector<GLenum> buffers;
+
+        for(int i = 0; i < fb.specification.colorAttachments.size(); i++){
+            buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+        }
+
+        glDrawBuffers((GLsizei)buffers.size(), buffers.data());
+        glCheckError();
+    }
+
+    // -------------------------------------------------------
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+        LogError("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        Assert(false);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
     return true;
 }
 
@@ -2568,6 +2886,34 @@ void OpenGLGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){
 
 bool OpenGLGraphicsDevice::FramebufferIsValid(Framebuffer& frambuffer){
     return frambuffer.glData.renderId > 0;
+}
+
+void OpenGLGraphicsDevice::FramebufferGenMipmap(Framebuffer& fb){
+    bool isMSAA = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
+    if(isMSAA) return;
+
+    bool isArray = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    bool isCube  = fb.specification.type == FramebufferAttachmentType::CUBEMAP;
+
+    GLenum target = GL_TEXTURE_2D;
+    if(isArray) target = GL_TEXTURE_2D_ARRAY;
+    if(isCube)  target = GL_TEXTURE_CUBE_MAP;
+
+    // Color
+    for(size_t i = 0; i < fb.glData.colorAttachments.size(); i++){
+        if(!fb.specification.colorAttachments[i].genMip) continue;
+
+        glBindTexture(target, fb.glData.colorAttachments[i]);
+        glGenerateMipmap(target);
+        glCheckError();
+    }
+
+    // Depth INFO: this is not right If Hi-Z need to make manualy:
+    if(fb.specification.createDepth && fb.specification.depthAttachment.genMip && fb.glData.depthAttachment){
+        glBindTexture(target, fb.glData.depthAttachment);
+        glGenerateMipmap(target);
+        glCheckError();
+    }
 }
 
 void* OpenGLGraphicsDevice::FramebufferColorAttachmentId(Framebuffer& framebuffer, int index){

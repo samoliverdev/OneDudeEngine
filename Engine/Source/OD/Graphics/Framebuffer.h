@@ -24,6 +24,7 @@ enum class OD_API_IMPORT FramebufferAttachmentType{
 struct OD_API FramebufferAttachment{
     FramebufferTextureFormat colorFormat;
     bool genMip = false;
+    int mipLevels = 1;
 };
 
 struct OD_API FrameBufferSpecification{
@@ -34,6 +35,7 @@ struct OD_API FrameBufferSpecification{
 
     std::vector<FramebufferAttachment> colorAttachments;
     FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    bool createDepth = true;
 
     bool swapChainTarget = false;
 };
@@ -58,6 +60,7 @@ public:
 
     void Reload(FrameBufferSpecification specification);
     void Resize(int width, int height);
+    void GenMipmap();
     void Invalidate();
     
     int ReadPixel(int attachmentIndex, int x, int y);
