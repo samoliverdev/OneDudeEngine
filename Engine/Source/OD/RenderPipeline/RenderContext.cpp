@@ -80,6 +80,7 @@ RenderContext::RenderContext(Scene* inScene){
         {FramebufferTextureFormat::RGB11B10F}
         //{FramebufferTextureFormat::RGBA8}
     };
+    framebufferSpecification.createDepth = false;
     framebufferSpecification.sample = 1;
     finalColor = new Framebuffer(framebufferSpecification);
     postFx1 = new Framebuffer(framebufferSpecification);

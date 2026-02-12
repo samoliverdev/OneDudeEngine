@@ -34,9 +34,13 @@ void CubemapFramebufferSample::OnInit(){
     FrameBufferSpecification tempSp;
     tempSp.width = Application::ScreenHeight();
     tempSp.height = Application::ScreenWidth();
-    tempSp.type = FramebufferAttachmentType::TEXTURE_2D;
+    tempSp.type = FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
     tempSp.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
     tempSp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    tempSp.sample = 8;
+    tempFBMultsample = CreateRef<Framebuffer>(tempSp);
+    tempSp.type = FramebufferAttachmentType::TEXTURE_2D;
+    tempSp.createDepth = false;
     tempFB = CreateRef<Framebuffer>(tempSp);
     
     FrameBufferSpecification sp;
@@ -132,8 +136,9 @@ void CubemapFramebufferSample::OnRender(float deltaTime){
         cam.view = math::inverse(camTransform.GetModelMatrix());
 
         tempFB->Resize(Application::ScreenWidth(), Application::ScreenHeight());
+        tempFBMultsample->Resize(Application::ScreenWidth(), Application::ScreenHeight());
         
-        Graphics::BeginFramebuffer(*tempFB, true, {0,0,0,1});
+        Graphics::BeginFramebuffer(*tempFBMultsample, true, {0,0,0,1});
         Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
         Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
         Graphics::SetCamera(cam);
@@ -142,6 +147,8 @@ void CubemapFramebufferSample::OnRender(float deltaTime){
         DrawSky(Matrix4(glm::mat4(glm::mat3(cam.view))));
 
         Graphics::EndFramebuffer();
+
+        Graphics::BlitFramebuffer(tempFBMultsample.get(), tempFB.get(), 0);
     };
 
     auto DrawToFinal = [&](){

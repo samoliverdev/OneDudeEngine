@@ -225,5 +225,9 @@ EndUniform()
         vec3 gi = (lighting * giIntensity);// * texture(gAlbedoSpec, texCoord).rgb;
         fragColor = vec4(gi * visibility, visibility);
         //fragColor = vec4(vec3(visibility), 1);
+
+        vec4 directLighting = texture(mainTex, texCoord);
+        vec4 diffuse = texture(gAlbedoSpec, texCoord);
+        fragColor = vec4((directLighting.rgb * visibility) + (diffuse.rgb * gi), directLighting.a);
     }
 #endif

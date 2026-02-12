@@ -19,7 +19,7 @@ SSGIPostFX::SSGIPostFX(){
     enable = false;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX4.glsl"));
+    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX2.glsl"));
     giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));

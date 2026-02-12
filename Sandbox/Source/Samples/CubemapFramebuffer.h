@@ -18,6 +18,7 @@ struct CubemapFramebufferSample: OD::Module {
     Ref<Mesh> skyMesh;
     Ref<Model> model;
     Ref<Model> model2;
+    Ref<Framebuffer> tempFBMultsample;
     Ref<Framebuffer> tempFB;
     Ref<Framebuffer> cubeFB;
     Ref<Material> mat1;
