@@ -14,6 +14,7 @@ BeginPass
         Uniform vec2 screenSize;
     EndUniform()
     Texture2D(0, 1, mainTex, mainSampler)
+    //Texture2D(0, 1, gAlbedoSpec, gAlbedoSpecSampler)
     Texture2D(0, 2, giAO, giAOSampler)
 
     BeginVertex
@@ -22,7 +23,7 @@ BeginPass
     Out(0) vec3 pos;
     Out(1) vec2 texCoord;
 
-    void main() {
+    void main(){
         pos = vPos;
         #if defined(WebGPU_API)
         texCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
@@ -41,19 +42,22 @@ BeginPass
     //uniform sampler2D mainTex;
 
     void main(){
-        vec3 base = SampleTexture2D(mainTex, mainSampler, texCoord).rgb;
-        vec2 scale = giSize / screenSize;
-        vec2 giUV = texCoord * scale;
-        vec4 giAOData = SampleTexture2D(giAO, giAOSampler, giUV);
-        vec3 gi = giAOData.rgb;
+        vec4 directLighting = SampleTexture2D(mainTex, mainSampler, texCoord);
+        vec2 giUV = texCoord * (giSize / screenSize);
+        vec4 giAO = SampleTexture2D(giAO, giAOSampler, giUV);
+        //vec4 diffuse = texture(gAlbedoSpec, texCoord);
 
-        vec3 giEnergy = gi;
+        fragColor = vec4(giAO.rgb, 1.0);
+        //fragColor = vec4((directLighting.rgb * giAO.a) + (diffuse.rgb * giAO.rgb), directLighting.a);
+        return;
+
+        //vec3 giEnergy = gi;
         //giEnergy = min(giEnergy, base * 0.8);
 
-        vec3 color = base + giEnergy;
+        //vec3 color = base + giEnergy;
         //fragColor = vec4(color, 1.0);
         //fragColor = vec4(vec3(ao), 1.0);
-        fragColor = vec4(gi, 1.0);
+        //fragColor = vec4(gi, 1.0);
 
         /*vec4 color = SampleTexture2D(mainTex, mainSampler, texCoord); //texture(mainTex, texCoord);
         vec4 giAO = SampleTexture2D(giAO, giAOSampler, texCoord); //texture(mainTex, texCoord);

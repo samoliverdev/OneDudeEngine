@@ -260,12 +260,14 @@ void main(){
     prevGI = clamp(prevGI, minGI, maxGI);
     GI = mix(currGI, prevGI, alpha);*/
 
-    fragColor = vec4((GI * giIntensity) * AO, AO);
+    //fragColor = vec4((GI * giIntensity) * AO, AO);
+    fragColor = vec4((GI * giIntensity), AO);
+    return;
 
     vec4 directLighting = texture(mainTex, texCoord);
     vec4 diffuse = texture(gAlbedoSpec, texCoord);
     fragColor = vec4((directLighting.rgb * AO) + (diffuse.rgb * (GI*giIntensity)), directLighting.a);
-
+    
     //vec3 directLighting = texture(mainTex, texCoord).rgb; // Direct lighting
     //fragColor = vec4((directLighting + (GI * giIntensity) * AO), AO);
     //fragColor = vec4(N, AO);
