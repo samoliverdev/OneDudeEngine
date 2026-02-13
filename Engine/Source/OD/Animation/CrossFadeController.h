@@ -23,6 +23,7 @@ public:
     float GetCurrentNormalizedTime();
 
     bool WillOrPlay(ClipT* target);
+    bool WillOrPlayByTag(const char* tag);
     
     inline bool WasSkeletonSet(){ return wasSkeletonSet; }
     inline Skeleton& GetSkeleton(){ return skeleton; }

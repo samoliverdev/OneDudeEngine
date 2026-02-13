@@ -24,6 +24,8 @@ public:
 
     std::string& GetName();
     void SetName(const std::string& inNewName);
+    char* GetTag();
+    void SetTag(const char* tag);
     float GetDuration();
     float GetStartTime();
     float GetEndTime();
@@ -44,6 +46,7 @@ public:
 protected:
     std::vector<TRACK> tracks;
     std::string name;
+    char tag[8] = "";
     float startTime;
     float endTime;
     bool looping;

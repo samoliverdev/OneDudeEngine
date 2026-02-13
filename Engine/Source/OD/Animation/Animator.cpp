@@ -273,19 +273,7 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
 
             if(anim.testRootMotion){
                 TransformComponent& trans = scene.GetComponent<TransformComponent>(e);
-                /*Vector3 worldDelta = anim.layers[0].controller.RootDelta().Position();
-                worldDelta.y = 0;
-                worldDelta.x = 0;
-                trans.Position(trans.Position() + worldDelta);*/
-                //LogInfo("RootDelta: %f %f %f", worldDelta.x, worldDelta.y, worldDelta.z);
-
-                Vector3 delta = trans.TransformDirection( anim.layers[0].controller.RootDelta().Position() );
-                //delta = trans.Rotation() * delta;
-                // remove vertical
-                delta.y = 0;
-                // project onto forward
-                Vector3 fwd = math::normalize(Vector3(trans.Forward().x, 0, trans.Forward().z));
-                delta = fwd * math::dot(delta, fwd);
+                Vector3 delta = anim.layers[0].controller.RootDelta().Position();
                 trans.Position(trans.Position() + delta);
             }
         }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Clip.h"
+#include <cstring>
 
 namespace OD{
 
@@ -32,11 +33,11 @@ float TClip<TRACK>::Sample(Pose& outPose, float time, int rootMotionIndex, Vecto
 
     time = AdjustTimeToFitRange(time);
 
-    /*Vector3 motionPosMask = {
+    Vector3 motionPosMask = {
         1.0f - rootMotionPosMask.x,
         1.0f - rootMotionPosMask.y,
         1.0f - rootMotionPosMask.z
-    };*/
+    };
 
     unsigned int size = tracks.size();
     for(unsigned int i = 0; i < size; ++i){
@@ -44,23 +45,23 @@ float TClip<TRACK>::Sample(Pose& outPose, float time, int rootMotionIndex, Vecto
         Transform local = outPose.GetLocalTransform(j);
         Transform animated = tracks[i].Sample(local, time, looping);
 
-        //INFO: Used to ignore RootMotion 
-        if(i == rootMotionIndex){
+        //Used to ignore RootMotion 
+        if(i == rootMotionIndex && hasRootMotion){
             Vector3 animatedPos = animated.Position();
 
             if(outRootDelta != nullptr){
-                (*outRootDelta) = hasRootMotion ? animated : Transform();
-                /*outRootDelta->Position({          //INFO: this not fix 'trans.Position(trans.Position() + delta);'
-                    motionPosMask.x*animatedPos.x,
-                    motionPosMask.y*animatedPos.y,
-                    motionPosMask.z*animatedPos.z
-                });*/
+                Vector3 newPos2 = {
+                    rootMotionPosMask.x*animatedPos.x, 
+                    rootMotionPosMask.y*animatedPos.y, 
+                    rootMotionPosMask.z*animatedPos.z
+                };
+                (*outRootDelta) = newPos2;
             }
 
             Vector3 newPos = {
-                rootMotionPosMask.x*animatedPos.x, 
-                rootMotionPosMask.y*animatedPos.y, 
-                rootMotionPosMask.z*animatedPos.z
+                motionPosMask.x*animatedPos.x, 
+                motionPosMask.y*animatedPos.y, 
+                motionPosMask.z*animatedPos.z
             };
             animated.Position(newPos);
 
@@ -125,6 +126,22 @@ std::string& TClip<TRACK>::GetName(){
 template<typename TRACK>
 void TClip<TRACK>::SetName(const std::string& inNewName){ 
     name = inNewName; 
+}
+
+template<typename TRACK>
+char* TClip<TRACK>::GetTag(){
+    return tag;
+}
+
+template<typename TRACK>
+void TClip<TRACK>::SetTag(const char* newTag){
+    if(!newTag){
+        tag[0] = '\0';
+        return;
+    }
+
+    std::strncpy(tag, newTag, sizeof(tag) - 1);
+    tag[sizeof(tag) - 1] = '\0'; // guarantee null termination
 }
 
 template<typename TRACK>

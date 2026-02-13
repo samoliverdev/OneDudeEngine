@@ -181,4 +181,14 @@ bool CrossFadeController::WillOrPlay(ClipT* target){
     return false;
 }
 
+bool CrossFadeController::WillOrPlayByTag(const char* tag){
+    if(clip != nullptr && std::strcmp(clip->GetTag(), tag) == 0) return true;
+
+    for(auto& i: targets){
+        if(i.clip != nullptr && std::strcmp(i.clip->GetTag(), tag) == 0) return true;
+    }
+
+    return false;
+}
+
 }
