@@ -209,35 +209,6 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     std::string resolvedPath = path;
 
-    //INFO: Revise this later to work like "Engine/Texture/White"
-    /*namespace fs = std::filesystem;
-    fs::path p(path);
-    bool hasExtension = p.has_extension();
-    if(!hasExtension){
-        T asset;
-        auto extensions = asset.GetFileAssociations();
-        for(const auto& ext : extensions){
-            std::string testPath = path + ext;
-
-            //Check packages
-            for(auto& pkg : packages){
-                if(pkg->HasFile(testPath.c_str())){
-                    resolvedPath = testPath;
-                    goto FOUND_PATH;
-                }
-            }
-
-            //Check filesystem
-            if(std::filesystem::exists(testPath)){
-                resolvedPath = testPath;
-                goto FOUND_PATH;
-            }
-        }
-
-        LogError("Asset not found with any supported extension: {}", path);
-        return nullptr;
-    }*/
-
     //auto& db = GetDB(std::type_index(typeid(T))); 
     //auto& db = data[std::type_index(typeid(T))];
     //auto& db = data[entt::type_hash<T>::value()];
@@ -247,6 +218,42 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
     //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
     if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
+
+    //Find full path if arg path has not ext ex: "Engine/Textures/White" -> ("Engine/Textures/White.png" | "Engine/Textures/White.texturebin" | ...) 
+    namespace fs = std::filesystem;
+    fs::path p(path);
+    bool hasExtension = p.has_extension();
+    if(!hasExtension){
+        T asset;
+        auto extensions = asset.GetFileAssociations();
+
+        bool find = false;
+
+        for(const auto& ext : extensions){
+            std::string testPath = path + ext;
+
+            //Check packages
+            for(auto& pkg : packages){
+                if(pkg->HasFile(testPath.c_str())){
+                    resolvedPath = testPath;
+                    find = true;
+                    break;
+                }
+            }
+
+            //Check filesystem
+            if(std::filesystem::exists(testPath)){
+                resolvedPath = testPath;
+                find = true;
+                break;
+            }
+        }
+
+        if(find == false){
+            LogError("Asset not found with any supported extension: {}", path);
+            return nullptr;
+        }
+    }
 
     LogInfo("LoadAsset: {}", path);
 
@@ -283,7 +290,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
         if(asset->LoadFromFile(resolvedPath) == false) return nullptr;
     }
     
-    db[path] = asset;
+    db[resolvedPath] = asset;
     
     //return reinterpret_cast<const Ref<T>&>(asset);
     return std::static_pointer_cast<T>(asset);

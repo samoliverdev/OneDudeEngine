@@ -656,6 +656,8 @@ Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
 }
 
 Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int>& indices){
+	//TODO: Revisar this, the current function maybe has over doing thing, i fix the crach so problem the current function can be more simple
+	
 	/*
 	if(vertices.empty() || indices.size() < 3) return nullptr;
     if(indices.size() % 3 != 0) return nullptr;
