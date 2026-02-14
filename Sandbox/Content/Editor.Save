@@ -8,6 +8,6 @@
         "rendererStatsPanel.show": true,
         "globalSettingsPanel.show": false,
         "runtimeInfoPanel.show": true,
-        "logPanel.show": true
+        "logPanel.show": false
     }
 }

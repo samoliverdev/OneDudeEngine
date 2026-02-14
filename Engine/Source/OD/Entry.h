@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
     }
 
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
-        printf("Application failed to create!.\n");
+        LogError("Application failed to create!");
         OD::Log::Shutdown();
         return 1;
     }

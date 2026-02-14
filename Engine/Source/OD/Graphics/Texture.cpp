@@ -164,7 +164,7 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
         settings = loadSettings;
 
         // Only image formats use .meta
-        if(path[0] != '#')LoadOrCreateArchive(path + ".meta", settings, "settings");
+        if(path[0] != '#') LoadOrCreateArchive(path + ".meta", settings, "settings");
 
         stbi_set_flip_vertically_on_load(1);
 

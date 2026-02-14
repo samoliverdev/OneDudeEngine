@@ -101,7 +101,7 @@ void AssetPackingSample::OnInit(){
     Application::AddModule<Editor>();
 
     buildsPanel = CreateRef<BuildsPanel>();
-    buildsPanel->buildPath = "C:/Users/sam/Desktop/BuildTest/";
+    buildsPanel->buildPath = "C:/Users/sam/Desktop/BuildTest/Content/";
     Editor* editor = Application::GetModuleByType<Editor>();
     editor->AddCustomPanel(buildsPanel.get());
     //scene->Start();

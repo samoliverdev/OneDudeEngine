@@ -207,6 +207,37 @@ template<class T, typename ... Args>
 Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
 
+    std::string resolvedPath = path;
+
+    //INFO: Revise this later to work like "Engine/Texture/White"
+    /*namespace fs = std::filesystem;
+    fs::path p(path);
+    bool hasExtension = p.has_extension();
+    if(!hasExtension){
+        T asset;
+        auto extensions = asset.GetFileAssociations();
+        for(const auto& ext : extensions){
+            std::string testPath = path + ext;
+
+            //Check packages
+            for(auto& pkg : packages){
+                if(pkg->HasFile(testPath.c_str())){
+                    resolvedPath = testPath;
+                    goto FOUND_PATH;
+                }
+            }
+
+            //Check filesystem
+            if(std::filesystem::exists(testPath)){
+                resolvedPath = testPath;
+                goto FOUND_PATH;
+            }
+        }
+
+        LogError("Asset not found with any supported extension: {}", path);
+        return nullptr;
+    }*/
+
     //auto& db = GetDB(std::type_index(typeid(T))); 
     //auto& db = data[std::type_index(typeid(T))];
     //auto& db = data[entt::type_hash<T>::value()];
@@ -215,7 +246,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
     //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
-    if(db.count(path)) return std::static_pointer_cast<T>(db[path]);
+    if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
 
     LogInfo("LoadAsset: {}", path);
 
@@ -238,8 +269,8 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     bool hasLoadedFromPackage = false;
     for(int i = 0; i < packages.size(); i++){
-        if(packages[i]->HasFile(path.c_str())){
-            if(asset->LoadFromPackage(path, *packages[i])){
+        if(packages[i]->HasFile(resolvedPath.c_str())){
+            if(asset->LoadFromPackage(resolvedPath, *packages[i])){
                 hasLoadedFromPackage = true;
                 break;
             }// else {
@@ -249,7 +280,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     }
 
     if(hasLoadedFromPackage == false){
-        if(asset->LoadFromFile(path) == false) return nullptr;
+        if(asset->LoadFromFile(resolvedPath) == false) return nullptr;
     }
     
     db[path] = asset;

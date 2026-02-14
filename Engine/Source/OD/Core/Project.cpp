@@ -23,7 +23,6 @@ Ref<Project> ProjectManager::NewProject(const char* path, const char* name, cons
 Ref<Project> ProjectManager::LoadProject(const char* path){
     activeProject = CreateRef<Project>();
 
-    //std::filesystem::current_path(projectPath);
     LogInfo("Loading Project Path: {}", path);
     LogWarning("Cur Path: {}", std::filesystem::current_path().string());
 
@@ -44,7 +43,7 @@ Ref<Project> ProjectManager::LoadProject(const char* path){
 
     std::filesystem::current_path(_projectPath + "Content");
 
-    LogWarning("Cur Path: {}", std::filesystem::current_path().string());
+    LogWarning("Loaded Cur Path: {}", std::filesystem::current_path().string());
 
     #endif
 

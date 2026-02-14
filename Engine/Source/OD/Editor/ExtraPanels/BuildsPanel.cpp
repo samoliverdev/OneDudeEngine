@@ -109,10 +109,7 @@ void ReplaceAll(
     }
 };
 
-bool HasExtension(
-    const std::string& ext,             
-    const std::vector<std::string>& list
-){
+bool HasExtension(const std::string& ext, const std::vector<std::string>& list){
     return std::find(list.begin(), list.end(), ext) != list.end();
 }
 
@@ -196,6 +193,53 @@ bool BuildAsset(
     return false; // prevent original file copy
 };
 
+std::string NormalizePath(const fs::path& p){
+    std::string s = p.lexically_normal().generic_string();
+    if(!s.empty() && s.back() != '/'){
+        s += '/';
+    }
+    return s;
+}
+
+bool IsSubPathOf(const fs::path& file, const std::string& folder){
+    std::string filePath = file.lexically_normal().generic_string();
+    std::string folderNorm = folder;
+
+    // ensure folder ends with /
+    if(!folderNorm.empty() && folderNorm.back() != '/'){
+        folderNorm += '/';
+    }
+
+    return filePath.rfind(folderNorm, 0) == 0; // starts_with
+}
+
+bool ShouldSkip(
+    const fs::path& src,
+    const std::vector<std::string>& skipFolders
+){
+    for(const auto& folder : skipFolders){
+        if(IsSubPathOf(src, folder)) return true;
+    }
+    return false;
+}
+
+void RemoveConvertedAssetMeta(
+    const fs::path& buildPath,
+    const std::vector<std::string>& oldPath
+){
+    for(const auto& rel : oldPath){
+        fs::path p = buildPath / rel;
+
+        fs::path meta = p;
+        meta += ".meta";   // blending.png.meta
+
+        if(fs::exists(meta)){
+            fs::remove(meta);
+            LogInfo("Removed old meta: {}", meta.string());
+        }
+    }
+}
+
 BuildsPanel::BuildsPanel(){
     name = "BuildsPanel";
     show = false;
@@ -229,59 +273,14 @@ void BuildsPanel::Build(){
 
     std::vector<std::string> oldPath;
     std::vector<std::string> newPath;
-
-    auto BuildModel = [&](
-        const fs::path& src,
-        const fs::path& buildPath,
-        std::vector<std::string>& oldPath,
-        std::vector<std::string>& newPath
-    ){
-        // 1️⃣ Extension check
-        std::string ext = src.extension().string();
-
-        if(ext != ".glb" && ext != ".glft" && ext != ".fbx")
-            return true; // not a model file → allow normal copy
-
-        // 2️⃣ Get normalized relative source path
-        std::string relativeSrc = GetNormalizedRelativePathFromCurrent(src);
-        LogInfo("Building model: {}", relativeSrc);
-
-        fs::path relativePath(relativeSrc);
-
-        // 3️⃣ Replace extension with .modelbin
-        fs::path relativeModelPath = relativePath;
-        relativeModelPath.replace_extension(".modelbin");
-
-        std::string relativeModelStr = relativeModelPath.generic_string();
-
-        // 4️⃣ Store relative paths (manifest mapping)
-        oldPath.push_back(relativeSrc);
-        newPath.push_back(relativeModelStr);
-
-        // 5️⃣ Build absolute destination path
-        fs::path absoluteSavePath = fs::absolute(buildPath) / relativeModelPath;
-
-        // Ensure directory exists
-        fs::create_directories(absoluteSavePath.parent_path());
-
-        // 6️⃣ Load and save
-        Ref<Model> model = AssetManager::Get().LoadAsset<Model>(relativeSrc);
-        Assert(model != nullptr);
-
-        model->Save(absoluteSavePath.string(), Asset::SaveType::FinalBinary);
-
-        return false; // prevent original file copy
-    };
-
-    auto HasExtension = [](const std::string& ext, const std::vector<std::string>& list) -> bool{
-        return std::find(list.begin(), list.end(), ext) != list.end();
-    };
-
+    
     CopyDirectoryRecursive(
         "./",
         buildPath,
-        {".glb", ".glft", ".fbx", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material"},
+        {},// ".glb", ".glft", ".fbx", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material"},
         [&](const fs::path& src, const fs::path& dst) -> bool {
+            if(ShouldSkip(src, dontBuildAssetFolders)) return true;
+
             std::string ext = src.extension().string();
 
             // Models
@@ -298,6 +297,8 @@ void BuildsPanel::Build(){
         oldPath,
         newPath
     );
+
+    RemoveConvertedAssetMeta(buildPath, oldPath);
 
     sceneManager.SetActiveScene(cur);
 }
