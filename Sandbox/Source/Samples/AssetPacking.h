@@ -1,5 +1,10 @@
 #pragma once
 #include <OD/Core/Module.h>
+#include <OD/Base.h>
+
+namespace OD{
+    class BuildsPanel;
+}
 
 using namespace OD;
 
@@ -11,4 +16,6 @@ struct AssetPackingSample: public OD::Module {
     void OnGUI() override;
     void OnResize(int width, int height) override;
     void OnExit() override;
+private:    
+    Ref<BuildsPanel> buildsPanel = nullptr;
 };

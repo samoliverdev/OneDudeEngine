@@ -114,7 +114,7 @@ bool Texture2D::LoadFromFileMemory(void* indata, size_t insize, const std::strin
 }
 
 bool Texture2D::LoadFromFile(const std::string& inpath){
-    settings = loadSettings;
+    /*settings = loadSettings;
 
     if(inpath.empty() == false && inpath[0] != '#') LoadOrCreateArchive(inpath + ".meta", settings, "settings");
 
@@ -148,7 +148,120 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
 
     path = inpath;
     stbi_image_free(data);
-    return true;
+    return true;*/
+
+    
+    namespace fs = std::filesystem;
+
+    if(inpath.empty()) return false;
+
+    fs::path p(inpath);
+    std::string ext = p.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    // 🔹 Lambda for user-friendly image formats
+    auto LoadFromImageFile = [&](const std::string& path){
+        settings = loadSettings;
+
+        // Only image formats use .meta
+        if(path[0] != '#')LoadOrCreateArchive(path + ".meta", settings, "settings");
+
+        stbi_set_flip_vertically_on_load(1);
+
+        int width = 0;
+        int height = 0;
+        int nrChannels = 0;
+
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+        if(!data){
+            LogError("Cannot load file image {}\nSTB Reason: {}\n", path, stbi_failure_reason());
+            return false;
+        }
+
+        //settings.textureFormat = (nrChannels > 3) ? TextureFormat::RGBA : TextureFormat::RGB;
+        if(nrChannels == 4){
+            settings.textureFormat = TextureFormat::RGBA;
+        } else if(nrChannels == 3){
+            settings.textureFormat = TextureFormat::RGB;
+        } else if(nrChannels == 1){
+            settings.textureFormat = TextureFormat::RED8;
+        } else {
+            Assert(false && "Not supported yet!!!");
+        }
+
+        bool success = graphicsDevice->Texture2DCreate(
+            *this,
+            data,
+            width,
+            height,
+            TextureDataType::UnsignedByte
+        );
+
+        stbi_image_free(data);
+
+        if(!success){
+            graphicsDevice->Texture2DDestroy(*this);
+            return false;
+        }
+
+        this->path = path;
+        return true;
+    };
+
+    auto LoadFromBinaryFile = [&](const std::string& path){
+        std::ifstream is(path, std::ios::binary);
+        if(!is.is_open()) return false;
+
+        cereal::PortableBinaryInputArchive archive{is};
+
+        int width = 0;
+        int height = 0;
+        int nrChannels = 0;
+        size_t size = 0;
+
+        archive(settings);
+        archive(width);
+        archive(height);
+        archive(nrChannels);
+        archive(size);
+
+        std::vector<uint8_t> data(size);
+        archive(cereal::binary_data(data.data(), size));
+
+        //settings.textureFormat = (nrChannels > 3) ? TextureFormat::RGBA : TextureFormat::RGB;
+        if(nrChannels == 4){
+            settings.textureFormat = TextureFormat::RGBA;
+        } else if(nrChannels == 3){
+            settings.textureFormat = TextureFormat::RGB;
+        } else if(nrChannels == 1){
+            settings.textureFormat = TextureFormat::RED8;
+        } else {
+            Assert(false && "Not supported yet!!!");
+        }
+
+        bool success = graphicsDevice->Texture2DCreate(
+            *this,
+            data.data(),
+            width,
+            height,
+            TextureDataType::UnsignedByte
+        );
+
+        if(!success){
+            graphicsDevice->Texture2DDestroy(*this);
+            return false;
+        }
+
+        this->path = path;
+        return true;
+    };
+
+    if(ext == ".texturebin"){
+        return LoadFromBinaryFile(inpath);
+    }
+
+    return LoadFromImageFile(inpath);
 }
 
 std::vector<std::string> Texture2D::GetFileAssociations(){ 
@@ -325,6 +438,36 @@ bool Texture2D::Save(const std::string& outPath, SaveType type){
         
         cereal::JSONOutputArchive archive{os};
         archive(CEREAL_NVP(settings));
+    }
+
+    if(type == Asset::SaveType::FinalBinary){
+        std::ofstream os(outPath, std::ios::binary);
+        if(os.is_open() == false) return false;
+
+        stbi_set_flip_vertically_on_load(1);
+        int width = 0;
+        int height = 0;
+        int nrChannels = 0;
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+        if(!data){
+            LogError("Cannot load file image {}\nSTB Reason: {}\n", path, stbi_failure_reason());
+            return false;
+        }
+
+        size_t size =
+        static_cast<size_t>(width) *
+        static_cast<size_t>(height) *
+        static_cast<size_t>(nrChannels);
+
+        cereal::PortableBinaryOutputArchive archive{os};
+        archive(settings);
+        archive(width);
+        archive(height);
+        archive(nrChannels);
+        archive(size);
+        archive(cereal::binary_data(data, size));
+
+        stbi_image_free(data);
     }
 
     return false;

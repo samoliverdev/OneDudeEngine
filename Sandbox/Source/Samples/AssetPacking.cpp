@@ -12,7 +12,9 @@
 #include <OD/Animation/Animator.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
+#include <OD/Graphics/Texture.h>
 #include <OD/Editor/Editor.h>
+#include <OD/Editor/ExtraPanels/BuildsPanel.h>
 
 void AssetPackingSample::OnInit(){
     LogInfo("Game Init");
@@ -44,6 +46,7 @@ void AssetPackingSample::OnInit(){
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
+    #if 0
     //Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
     Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
     model->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
@@ -65,6 +68,7 @@ void AssetPackingSample::OnInit(){
     Entity modelEntity = scene->AddEntity("Model");
     SkinnedModelRendererComponent& renderer = scene->AddComponent<SkinnedModelRendererComponent>(modelEntity);
     renderer.SetModel(modelBin);
+    //renderer.SetModel(model);
     AnimatorComponent& anim = scene->AddComponent<AnimatorComponent>(modelEntity);
 
     /*Ref<Mesh> meshBin = AssetManager::Get().LoadAsset<Mesh>("Sandbox/Mesh.meshbin");
@@ -73,8 +77,33 @@ void AssetPackingSample::OnInit(){
     MeshRendererComponent& meshRenderer = scene->AddComponent<MeshRendererComponent>(meshEntity);
     meshRenderer.mesh = meshBin;
     meshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));*/
+    #else
+
+    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+    Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.png");
+    Ref<Material> mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+
+    texture->Save("Sandbox/image.texturebin", Asset::SaveType::FinalBinary);
+    
+    Ref<Texture2D> textureBin = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/image.texturebin");
+    Assert(textureBin != nullptr);
+
+    //mat->SetTexture("mainTex", texture);
+    mat->SetTexture("mainTex", textureBin);
+
+    Entity modelEntity = scene->AddEntity("Model");
+    ModelRendererComponent& renderer = scene->AddComponent<ModelRendererComponent>(modelEntity);
+    renderer.SetModel(model);
+    for(auto& i: renderer.GetMaterialsOverride()) i = mat;
+
+    #endif
 
     Application::AddModule<Editor>();
+
+    buildsPanel = CreateRef<BuildsPanel>();
+    buildsPanel->buildPath = "C:/Users/sam/Desktop/BuildTest/";
+    Editor* editor = Application::GetModuleByType<Editor>();
+    editor->AddCustomPanel(buildsPanel.get());
     //scene->Start();
 }
 
