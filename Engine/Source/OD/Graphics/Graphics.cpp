@@ -24,8 +24,11 @@
 namespace OD{
 
 void GraphicsModuleInit(){
+    //TODO: Make a function what will auto do this by Asset
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".png", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Texture2D>(".texturebin", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
+
     AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){ return AssetManager::Get().LoadAsset<Material>(path); });
     
     AssetTypesDB::Get().RegisterAssetType<Model>(".model", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
@@ -33,6 +36,7 @@ void GraphicsModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<Model>(".glb", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
     AssetTypesDB::Get().RegisterAssetType<Model>(".gltf", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
     AssetTypesDB::Get().RegisterAssetType<Model>(".fbx", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Model>(".modelbin", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });
 
     AssetTypesDB::Get().RegisterAssetType<Shader>(".glsl", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
     AssetTypesDB::Get().RegisterAssetType<Shader>(".shader", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });

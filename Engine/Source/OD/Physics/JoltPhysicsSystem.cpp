@@ -66,6 +66,26 @@ constexpr bool EnableFixedPostPhysicUpdate = false;//true;
 
 constexpr bool resetFinalPoseWithRestPose = false;
 
+// Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
+JPH_SUPPRESS_WARNINGS
+
+using namespace JPH;// All Jolt symbols are in the JPH namespace
+using namespace JPH::literals;// If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
+using namespace std;// We're also using STL classes in this example
+
+// Callback for traces, connect this to your own trace function if you have one
+static void TraceImpl(const char *inFMT, ...){
+	// Format the message
+	va_list list;
+	va_start(list, inFMT);
+	char buffer[1024];
+	vsnprintf(buffer, sizeof(buffer), inFMT, list);
+	va_end(list);
+
+	// Print to the TTY
+	cout << buffer << endl;
+}
+
 #pragma region Core
 
 void DrawLayerCollisionMatrix(
@@ -348,11 +368,25 @@ void PhysicsModuleInit(){
 	SceneManager::Get().RegisterCoreComponent<VehiclePhysic>("VehiclePhysic", "Physics");
 
 	OD::GlobalSettings::Get().Register<PhysicsSettings>("Physics");
+
+	JPH::RegisterDefaultAllocator();
+	
+	JPH::Trace = TraceImpl;
+	JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
+
+	JPH::Factory::sInstance = new JPH::Factory();
+	JPH::RegisterTypes();
+}
+
+void PhysicsModuleShutdown(){
+	//UnregisterTypes();
+    
+	delete Factory::sInstance;
+	Factory::sInstance = nullptr; 
 }
 
 uint64_t EncodeUserData(uint32_t u, int32_t i) {
-    return (static_cast<uint64_t>(static_cast<uint32_t>(i)) << 32) |
-           static_cast<uint64_t>(u);
+    return (static_cast<uint64_t>(static_cast<uint32_t>(i)) << 32) | static_cast<uint64_t>(u);
 }
 
 void DecodeUserData(uint64_t packed, uint32_t &u, int32_t &i){
@@ -360,31 +394,11 @@ void DecodeUserData(uint64_t packed, uint32_t &u, int32_t &i){
     i = static_cast<int32_t>((packed >> 32) & 0xFFFFFFFFull);
 }
 
-// Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
-JPH_SUPPRESS_WARNINGS
-
-using namespace JPH;// All Jolt symbols are in the JPH namespace
-using namespace JPH::literals;// If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
-using namespace std;// We're also using STL classes in this example
-
 inline Vector3 FromJolt(JPH::Vec3 v){ return Vector3(v.GetX(), v.GetY(), v.GetZ()); }
 inline Quaternion FromJolt(JPH::Quat q){ return Quaternion(q.GetX(), q.GetY(), q.GetZ(), q.GetW()); }
 
 inline JPH::Vec3 ToJolt(Vector3 v){ return JPH::Vec3(v.x, v.y, v.z); }
 inline JPH::Quat ToJolt(Quaternion q){ return JPH::Quat(q.x, q.y, q.z, q.w); }
-
-// Callback for traces, connect this to your own trace function if you have one
-static void TraceImpl(const char *inFMT, ...){
-	// Format the message
-	va_list list;
-	va_start(list, inFMT);
-	char buffer[1024];
-	vsnprintf(buffer, sizeof(buffer), inFMT, list);
-	va_end(list);
-
-	// Print to the TTY
-	cout << buffer << endl;
-}
 
 #ifdef JPH_ENABLE_ASSERTS
 
@@ -641,17 +655,43 @@ Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
     return CreateMeshShapeData(mesh.vertices, mesh.indices); // Usa a função abaixo
 }
 
-Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices){
+Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int>& indices){
+	/*
+	if(vertices.empty() || indices.size() < 3) return nullptr;
+    if(indices.size() % 3 != 0) return nullptr;
+
+    Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
+
+    out->joltVertices.reserve(vertices.size());
+    for(const auto& v : vertices){
+        out->joltVertices.emplace_back(v.x, v.y, v.z);
+	}
+
+    out->joltTriangles.reserve(indices.size() / 3);
+    for(size_t i = 0; i < indices.size(); i += 3){
+        out->joltTriangles.emplace_back(
+            indices[i],
+            indices[i + 1],
+            indices[i + 2]
+        );
+    }
+
+    if(out->joltTriangles.empty()) return nullptr;
+
+    return out;
+	*/
+
+	///*
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
 
 	// Check for empty input
-    if (vertices.empty() || indices.empty()) {
+    if(vertices.empty() || indices.empty()){
         LogError("CreateMeshShapeData: Empty vertices or indices");
         return nullptr;
     }
 
     // Check index count
-    if (indices.size() % 3 != 0) {
+    if(indices.size() % 3 != 0){
         LogError("CreateMeshShapeData: Index count is not a multiple of 3!");
         return nullptr;
     }
@@ -659,75 +699,54 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
     // Preenche os vértices convertidos
     //JPH::Array<JPH::Float3> joltVertices;
     out->joltVertices.reserve(vertices.size());
-    for(const auto& v : vertices)
+    for(const auto& v : vertices){
         out->joltVertices.push_back(JPH::Float3(v.x, v.y, v.z)); // Float3, não Vec3
+	}
 
     // Preenche os índices (cada 3 índices formam um triângulo)
     //JPH::Array<JPH::IndexedTriangle> joltTriangles;
     out->joltTriangles.reserve(indices.size() / 3);
-    for(size_t i = 0; i < indices.size(); i += 3) {
+    for(size_t i = 0; i < indices.size(); i += 3){
 		uint32_t i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
 		JPH::Vec3 v0 = ToJolt(vertices[i0]);
 		JPH::Vec3 v1 = ToJolt(vertices[i1]);
 		JPH::Vec3 v2 = ToJolt(vertices[i2]);
-		if ((v1 - v0).Cross(v2 - v0).Length() >= 1e-6f) {
+		if((v1 - v0).Cross(v2 - v0).Length() >= 1e-6f) {
 			out->joltTriangles.push_back(JPH::IndexedTriangle(i0, i1, i2));
 		} else {
 			LogWarning("Skipped degenerate triangle: {}, {}, {}", i0, i1, i2);
 		}
-
-        /*out->joltTriangles.push_back(JPH::IndexedTriangle(
-            indices[i],
-            indices[i + 1],
-            indices[i + 2]
-        ));*/
     }
 
 	out->convexPoints.reserve(out->joltVertices.size());
 	for(const auto& v : out->joltVertices)
 		out->convexPoints.push_back(JPH::Vec3(v.x, v.y, v.z));
 
-	if(indices.size() % 3 != 0) {
+	if(indices.size() % 3 != 0){
 		LogError("CreateMeshShapeData: Index count is not a multiple of 3!");
 		return nullptr;
 	}
 
-	if (out->joltVertices.empty() || out->joltTriangles.empty()) {
+	if(out->joltVertices.empty() || out->joltTriangles.empty()){
 		LogError("Empty mesh data for entity ");
 		return nullptr;
 	}
 	// Additional validations
     // 1. Check for valid vertex indices
-    for (const auto& tri : out->joltTriangles) {
-        if (tri.mIdx[0] >= out->joltVertices.size() ||
+    for(const auto& tri : out->joltTriangles) {
+        if(tri.mIdx[0] >= out->joltVertices.size() ||
             tri.mIdx[1] >= out->joltVertices.size() ||
-            tri.mIdx[2] >= out->joltVertices.size()) {
+            tri.mIdx[2] >= out->joltVertices.size()
+		){
             LogError("CreateMeshShapeData: Invalid vertex index in triangle");
             return nullptr;
         }
     }
 
-    // 2. Check for degenerate triangles
-    /*bool hasDegenerate = false;
-    for (const auto& tri : out->joltTriangles) {
-        JPH::Vec3 v0 = out->convexPoints[tri.mIdx[0]];
-        JPH::Vec3 v1 = out->convexPoints[tri.mIdx[1]];
-        JPH::Vec3 v2 = out->convexPoints[tri.mIdx[2]];
-        JPH::Vec3 edge1 = v1 - v0;
-        JPH::Vec3 edge2 = v2 - v0;
-        if (edge1.Cross(edge2).Length() < 1e-6f) {
-            LogError("CreateMeshShapeData: Degenerate triangle detected");
-            hasDegenerate = true;
-        }
-    }
-    if(hasDegenerate){
-        return nullptr; // Stop if any degenerate triangles are found
-    }*/
-
     // 3. Check for reasonable bounding box size
     JPH::Vec3 minBounds(FLT_MAX, FLT_MAX, FLT_MAX);
     JPH::Vec3 maxBounds(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    for (const auto& v : out->convexPoints) {
+    for(const auto& v : out->convexPoints){
         minBounds = JPH::Vec3::sMin(minBounds, v);
         maxBounds = JPH::Vec3::sMax(maxBounds, v);
     }
@@ -735,23 +754,24 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
     float maxExtent = extent.GetX();
     maxExtent = std::max(maxExtent, extent.GetY());
     maxExtent = std::max(maxExtent, extent.GetZ());
-    if (maxExtent > 1000.0f) { // Adjust threshold based on your game’s scale
+    if(maxExtent > 1000.0f){ // Adjust threshold based on your game’s scale
         LogError("CreateMeshShapeData: Mesh bounding box too large (extent: {})", std::to_string(maxExtent));
         return nullptr;
     }
 
     // 4. Check for non-manifold or duplicate vertices (optional, advanced)
     std::set<uint32_t> uniqueVertices;
-    for (const auto& tri : out->joltTriangles) {
+    for(const auto& tri: out->joltTriangles){
         uniqueVertices.insert(tri.mIdx[0]);
         uniqueVertices.insert(tri.mIdx[1]);
         uniqueVertices.insert(tri.mIdx[2]);
     }
-    if (uniqueVertices.size() < out->joltVertices.size()) {
+    if(uniqueVertices.size() < out->joltVertices.size()){
         LogWarning("CreateMeshShapeData: Mesh contains unused vertices");
     }
 
     return out;
+	//*/
 }
 
 struct PhysicsWorld{
@@ -2840,13 +2860,17 @@ bool PhysicsSystem::IsSimulationEnable(){ return true; /*return GetScene()->Runn
 
 MyDebugRenderer* debugRenderer = nullptr;
 
+PhysicsSystem::PhysicsSystem(){
+	name = "PhysicsSystem";
+}
+
 void PhysicsSystem::OnInit(Scene& inScene){
 	scene = &inScene;
 	currentSettings = &GlobalSettings::Get().Get<PhysicsSettings>();
 
    // Register allocation hook. In this example we'll just let Jolt use malloc / free but you can override these if you want (see Memory.h).
 	// This needs to be done before any other Jolt function is called.
-	RegisterDefaultAllocator();
+	/*RegisterDefaultAllocator();
 
 	// Install trace and assert callbacks
 	Trace = TraceImpl;
@@ -2859,7 +2883,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	// Register all physics types with the factory and install their collision handlers with the CollisionDispatch class.
 	// If you have your own custom shape types you probably need to register their handlers with the CollisionDispatch before calling this function.
 	// If you implement your own default material (PhysicsMaterial::sDefault) make sure to initialize it before this function or else this function will create one for you.
-	RegisterTypes();
+	RegisterTypes();*/
 
 	// We need a temp allocator for temporary allocations during the physics update. We're
 	// pre-allocating 10 MB to avoid having to do allocations during the physics update.
@@ -2952,12 +2976,6 @@ void PhysicsSystem::OnEnd(Scene& inScene){
 	this->scene->GetRegistry().on_destroy<JointComponent>().disconnect<&OnRemoveJoint>();
 	scene->GetRegistry().on_destroy<VehiclePhysic>().disconnect<&OnRemoveVehicle>();
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
-
-    UnregisterTypes();
-	//JPH::DebugRenderer::sInstance = nullptr;
-    delete Factory::sInstance;
-	Factory::sInstance = nullptr;
-    delete physicsWorld;
 }
 
 PhysicsSystem::~PhysicsSystem(){
@@ -2966,6 +2984,8 @@ PhysicsSystem::~PhysicsSystem(){
     delete Factory::sInstance;
 	Factory::sInstance = nullptr;
     delete physicsWorld;*/
+
+	delete physicsWorld;
 }
 
 void* PhysicsSystem::GetInternlWorld(){

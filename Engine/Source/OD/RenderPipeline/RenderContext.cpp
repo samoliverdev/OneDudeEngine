@@ -103,15 +103,10 @@ RenderContext::RenderContext(Scene* inScene){
     spriteMesh = Mesh::CenterQuad(false);
     fullScreenQuad = Mesh::FullScreenQuad();
 
-    sphereMesh = CreateRef<Model>();
-    Model::CreateFromFile(*sphereMesh, "Engine/Models/Sphere.obj", {nullptr, 1, false});
-
-    coneMesh = CreateRef<Model>();
-    Model::CreateFromFile(*coneMesh, "Engine/Models/Cone.obj", {nullptr, 1, false});
-
-    decalMesh = CreateRef<Model>();
-    Model::CreateFromFile(*decalMesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
-
+    sphereMesh = Model::CreateFromFile("Engine/Models/Sphere.obj", {nullptr, 1, false});
+    coneMesh = Model::CreateFromFile("Engine/Models/Cone.obj", {nullptr, 1, false});
+    decalMesh = Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
+    
     pipelineDataBuffer = UniformBuffer::Create();
     shadowDataBuffer = UniformBuffer::Create();
 

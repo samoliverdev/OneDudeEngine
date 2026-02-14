@@ -30,14 +30,15 @@ extern OD::Module* CreateMainModule();
 #include <efsw/efsw.hpp>*/
 
 int main(int argc, char *argv[]){
-    int* a = new int();
+    //int* a = new int();
 
     #ifdef _WIN32
         //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
-    OD::Log::Init();
-    OD::CoreModulesStartup();
+    
+    OD::Log::Init();//TODO: Move this to Application 
+    OD::CoreModulesInit();
 
     for(int i = 0; i < argc; i++){
         OD::Application::GetArgs().push_back(std::string(argv[i]));
@@ -45,7 +46,8 @@ int main(int argc, char *argv[]){
 
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
         LogError("Application failed to create!");
-        OD::Log::Shutdown();
+        OD::Log::Shutdown();//TODO: Move this to Application 
+        OD::CoreModulesShutdown();
         return 1;
     }
 
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]){
     fileWatcher->watch();*/
     
     OD::Application::Run();
+    OD::CoreModulesShutdown();
 
     /*delete listener;
     delete fileWatcher;*/

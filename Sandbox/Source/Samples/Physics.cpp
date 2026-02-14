@@ -274,7 +274,7 @@ void PhysicsSample::OnUpdate(float deltaTime){
     RayResult hit;
     //Throwing a Possible Null Expection Pointer Here
     if(scene->GetSystem<PhysicsSystem>()->Raycast(camT.Position(), camT.Back() * 1000.0f, hit)){
-        LogInfo("Hitting: %s", scene->GetComponent<InfoComponent>(hit.entity).name.c_str());
+        LogInfo("Hitting: {}", scene->GetComponent<InfoComponent>(hit.entity).name);
     }
 
     /*Assert(scene->GetRegistry().ctx().get<PhysicsSystem*>() == scene->GetSystem<PhysicsSystem>());

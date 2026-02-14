@@ -29,7 +29,7 @@ class MeshShapeData;
 
 Ref<MeshShapeData> OD_API CreateMeshShapeData(Model& model);
 Ref<MeshShapeData> OD_API CreateMeshShapeData(const Mesh& mesh);
-Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int> indices);
+Ref<MeshShapeData> OD_API CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int>& indices);
 
 enum class RigidbodyConstraints: uint8_t{
     None				= 0b000000,									///< No degrees of freedom are allowed. Note that this is not valid and will crash. Use a static body instead.
@@ -746,7 +746,7 @@ struct OD_API PhysicsSystem: public System{
     void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;
 
-    PhysicsSystem(){ name = "PhysicsSystem"; }
+    PhysicsSystem();
     virtual ~PhysicsSystem() override;
 
     /*System* Clone(Scene* inScene) const override{ 
@@ -855,5 +855,6 @@ public:
 };
 
 void PhysicsModuleInit();
+void PhysicsModuleShutdown();
 
 }

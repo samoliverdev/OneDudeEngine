@@ -1,5 +1,18 @@
 {
     "settings": {
-        "scale": 1.0
+        "scale": 1.0,
+        "useOnlySkinnedBones": false,
+        "generateColliderData": true,
+        "shaderRef": {
+            "isNull": true,
+            "path": ""
+        },
+        "clipsHasRootMotion": [],
+        "rootMotionPosMask": {
+            "v.x": 0.0,
+            "v.y": 1.0,
+            "v.z": 0.0
+        },
+        "rootMotionIndex": -1
     }
 }

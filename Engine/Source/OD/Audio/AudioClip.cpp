@@ -10,7 +10,7 @@ AudioClip::AudioClip(const std::string& filePath){
 bool AudioClip::LoadFromFile(const std::string& path){
     auto result = sample.load(path.c_str());
     if(result != SoLoud::SO_NO_ERROR){
-        LogError("Erro to load: {}", path.c_str());
+        LogError("Erro to load: {}", path);
         return false;
     }
 

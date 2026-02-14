@@ -702,8 +702,7 @@ ParticleRendererFeature::ParticleRendererFeature(){
     material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"));
     material->SetEnableInstancing(true);
     material->SetFloat("smoothness", 0);
-    mesh = CreateRef<Model>();
-    Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
+    mesh = Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
 }
 
 void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData){

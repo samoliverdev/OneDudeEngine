@@ -651,19 +651,20 @@ int main(int argc, char *argv[]){
     defaultProjectPath = RESOURCES_PATH "";
     std::string targetProjectPath = argc > 1 ? argv[1] : "";
     
+    //TODO: Revise CoreModulesInit this can be outdate, in the order of call and forgot to call shutdown
     if(useLauncher){
         while(openLauncher == true){
             if(openLauncher == false) break;
 
             if(targetProjectPath.empty() == false){
-                OD::CoreModulesStartup();
+                OD::CoreModulesInit();
                 OD::Application::Create(editor, GetEditorConfig(), targetProjectPath.c_str());   
                 OD::Application::Run();
                 EditorOnExit();
                 continue;
             }
 
-            OD::CoreModulesStartup();
+            OD::CoreModulesInit();
             OD::Application::Create(launcer, GetLauncherConfig(), defaultProjectPath.c_str());
             OD::Application::Run();
             
@@ -671,14 +672,14 @@ int main(int argc, char *argv[]){
             openLauncher = false;
             if(projectPath.empty() == true) break;
 
-            OD::CoreModulesStartup();
+            OD::CoreModulesInit();
             OD::Application::Create(editor, GetEditorConfig(), projectPath.c_str());   
             OD::Application::Run();
             EditorOnExit();
             projectPath = "";
         }
     } else {
-        OD::CoreModulesStartup();
+        OD::CoreModulesInit();
         OD::Application::Create(
             editor, 
             GetEditorConfig(), 

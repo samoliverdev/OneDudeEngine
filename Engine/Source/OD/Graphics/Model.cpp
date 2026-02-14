@@ -20,6 +20,22 @@
 
 namespace OD{
 
+class MemoryBuffer: public std::streambuf{
+public:
+    MemoryBuffer(const char* data, size_t size){
+        char* p = const_cast<char*>(data);
+        setg(p, p, p + size);
+    }
+};
+
+class MemoryInputStream: public std::istream{
+public:
+    MemoryInputStream(const char* data, size_t size)
+        :std::istream(&buffer), buffer(data, size){}
+private:
+    MemoryBuffer buffer;
+};
+
 Ref<ClipT> Model::FindClipByName(const std::string& name){
 	for(auto& i: animationClips){
 		if(i->GetName() == name) return i;
@@ -125,11 +141,61 @@ void Model::Reload(){
 
 bool Model::LoadFromFile(const std::string& path){
 	//if(path.empty() == false && path != "#Memory") 
-		LoadOrCreateArchive(path + ".meta", settings, "settings");
+		//LoadOrCreateArchive(path + ".meta", settings, "settings");
     
 	//return Model::CreateFromFile(*this, path, settings);
 
-	bool r = Model::CreateFromFile(*this, path, settings);
+	auto _CreateFromFile = [&](std::string const &path){
+		Clear();
+
+		auto getExtension = [](const std::string& path) -> std::string {
+			size_t dotPos = path.rfind('.');
+			return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+		};
+
+		std::string fileType = getExtension(path);
+
+		if(fileType == "modelasset"){
+			Assert(false);
+			/*std::ifstream stream(path, std::ios::binary);
+			if(stream.is_open() == false) return false;
+
+			cereal::PortableBinaryInputArchive ar(stream);
+			ar(model);//ArchiveDump(ar, *this);
+
+			model.SetPath(path);
+			return true;*/
+		}
+
+		if(fileType == "modelbin"){
+			std::ifstream stream(path, std::ios::binary);
+			if(stream.is_open() == false) return false;
+
+			cereal::BinaryInputArchive ar(stream);
+			LoadFrom(ar);
+			SetPath(path);
+			return true;
+		}
+
+		LoadOrCreateArchive(path + ".meta", settings, "settings");
+
+		#ifdef USE_ASSIMP
+		return AssimpLoadModel(*this, path, settings);
+		#endif
+
+		if(fileType == "obj") return ObjLoadModel(*this, path, settings);
+		if(fileType == "gltf") return GltfLoadModel(*this, path, settings);
+		if(fileType == "glb") return GltfLoadModel(*this, path, settings);
+
+		#ifdef USE_ASSIMP
+		return AssimpLoadModel(*this, path, settings);
+		#endif
+
+		LogError("File Type Not Supported: {}", fileType);
+		return false;
+	};
+
+	bool r = _CreateFromFile(path);
 	if(r == false) return false;
 
 	if(settings.generateColliderData){
@@ -140,9 +206,37 @@ bool Model::LoadFromFile(const std::string& path){
 }
 
 bool Model::LoadFromPackage(const std::string& path, Package& package){
-	bool r = Model::CreateFromPackage(*this, path, package, settings);
-	if(r == false) return false;
-	return true;
+	Clear();
+
+	auto getExtension = [](const std::string& path) -> std::string {
+        size_t dotPos = path.rfind('.');
+        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+    };
+
+	std::string fileType = getExtension(path);
+
+	void* data;
+	size_t dataSize;
+	if(package.ReadFileData(path.c_str(), data, dataSize) == false){
+		package.FreeFileData(data);
+		return false;
+	}
+
+	if(fileType == "modelbin"){
+		Assert(false);
+		MemoryInputStream mem((char*)data, dataSize);
+		cereal::BinaryInputArchive ar(mem);
+		LoadFrom(ar);
+
+		SetPath(path);
+		return true;
+	}
+
+	#ifdef USE_ASSIMP
+	bool result = AssimpLoadModel(*this, data, dataSize, fileType.c_str(), settings);
+	package.FreeFileData(data);
+	return result;
+	#endif
 }
 
 std::vector<std::string> Model::GetFileAssociations(){ 
@@ -152,76 +246,29 @@ std::vector<std::string> Model::GetFileAssociations(){
 		".gltf",
 		".blend",
 		".dae",
-		".fbx"
+		".fbx",
+		".modelbin"
 	};
 }
 
-bool Model::CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings){
-	model.Clear();
-
-	auto getExtension = [](const std::string& path) -> std::string {
-        size_t dotPos = path.rfind('.');
-        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
-    };
-
-	std::string fileType = getExtension(path);
-
-	if(fileType == "modelasset"){
-		Assert(false);
-		/*std::ifstream stream(path, std::ios::binary);
-		if(stream.is_open() == false) return false;
-
-		cereal::PortableBinaryInputArchive ar(stream);
-		ar(model);//ArchiveDump(ar, *this);
-
-		model.SetPath(path);
-		return true;*/
-	}
-
-	if(fileType == "modelbin"){
-		std::ifstream stream(path, std::ios::binary);
-		if(stream.is_open() == false) return false;
-
-		cereal::BinaryInputArchive ar(stream);
-		model.LoadFrom(ar);
-		model.SetPath(path);
-		return true;
-	}
-
-	#ifdef USE_ASSIMP
-	return AssimpLoadModel(model, path, loadSettings);
-	#endif
-
-	if(fileType == "obj") return ObjLoadModel(model, path, loadSettings);
-	if(fileType == "gltf") return GltfLoadModel(model, path, loadSettings);
-	if(fileType == "glb") return GltfLoadModel(model, path, loadSettings);
-
-	#ifdef USE_ASSIMP
-	return AssimpLoadModel(model, path, loadSettings);
-	#endif
-
-	LogError("File Type Not Supported: {}", fileType);
-	return false;
+Ref<Model> Model::CreateFromFile(const std::string& path, ModelLoadSettings loadSettings){
+	Ref<Model> out = CreateRef<Model>();
+    out->settings = loadSettings;
+    if(out->LoadFromFile(path) == false){
+        return nullptr;
+    }
+    return out;
 }
 
-class MemoryBuffer: public std::streambuf{
-public:
-    MemoryBuffer(const char* data, size_t size){
-        char* p = const_cast<char*>(data);
-        setg(p, p, p + size);
+Ref<Model> CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings){
+	Ref<Model> out = CreateRef<Model>();
+    out->settings = loadSettings;
+    if(out->LoadFromPackage(path, package) == false){
+        return nullptr;
     }
-};
+    return out;
 
-class MemoryInputStream: public std::istream{
-public:
-    MemoryInputStream(const char* data, size_t size)
-        :std::istream(&buffer), buffer(data, size){}
-private:
-    MemoryBuffer buffer;
-};
-
-bool Model::CreateFromPackage(Model& model, std::string const &path, Package& package, ModelLoadSettings loadSettings){
-	model.Clear();
+	/*model.Clear();
 
 	auto getExtension = [](const std::string& path) -> std::string {
         size_t dotPos = path.rfind('.');
@@ -251,7 +298,7 @@ bool Model::CreateFromPackage(Model& model, std::string const &path, Package& pa
 	bool result = AssimpLoadModel(model, data, dataSize, fileType.c_str(), loadSettings);
 	package.FreeFileData(data);
 	return result;
-	#endif
+	#endif*/
 }
 
 bool Model::Save(const std::string& outPath, SaveType type){

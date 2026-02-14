@@ -267,7 +267,8 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
 std::vector<std::string> Texture2D::GetFileAssociations(){ 
     return std::vector<std::string>{
         ".jpg",
-        ".png"
+        ".png",
+        ".texturebin"
     }; 
 }
 

@@ -158,8 +158,8 @@ void CoreModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Input>();
 }
 
-void CoreModulesStartup(){
-    LogInfo("CoreModulesStartup");
+void CoreModulesInit(){
+    LogInfo("CoreModulesInit");
 
     //INFO: This Order Matter
     CoreModuleInit();
@@ -186,6 +186,10 @@ void CoreModulesStartup(){
     NavmeshModuleInit();
     SceneManagerModuleInit();
     TerrainModuleInit();*/
+}
+
+void CoreModulesShutdown(){
+    PhysicsModuleShutdown();
 }
 
 }

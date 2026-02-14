@@ -111,8 +111,8 @@ public:
     void SetShader(Ref<Shader> customShader);
     void Reload() override;
 
-    static bool CreateFromFile(Model& model, std::string const &path, ModelLoadSettings loadSettings = {});
-    static bool CreateFromPackage(Model& model, std::string const &path, Package& package, ModelLoadSettings loadSettings = {});
+    static Ref<Model> CreateFromFile(const std::string& path, ModelLoadSettings loadSettings = {});
+    static Ref<Model> CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings = {});
 
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);
