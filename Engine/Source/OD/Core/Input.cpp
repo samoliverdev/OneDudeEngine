@@ -107,6 +107,8 @@ Vector2 Input::GetMouseDelta() {
     return Vector2((float)mouseDeltaX, (float)mouseDeltaY);
 }
 
+Vector2 mouseWheelOffsets;
+
 void Input::Update(){
     //return;
     OD_PROFILE_SCOPE("Platform::Update");
@@ -212,6 +214,16 @@ void Input::Update(){
 
     lastMouseX = currentX;
     lastMouseY = currentY;
+
+    //mouseWheelOffsets = {0, 0};
+}
+
+void Input::PostUpdate(){
+    mouseWheelOffsets = {0, 0};
+}
+
+Vector2 Input::GetMouseWheelMove(){
+    return mouseWheelOffsets;
 }
 
 bool Input::IsMouseButtonDown(MouseButton button){

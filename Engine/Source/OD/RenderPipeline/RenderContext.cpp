@@ -1763,6 +1763,8 @@ void RenderContext::UpdateRenderData(){
         Ref<Model> model = c.GetModel();
         if(model == nullptr) return; //continue;
 
+        if(c.finalPose.Size() != model->skeleton.GetBindPose().Size()) c.finalPose = model->skeleton.GetBindPose();
+
         //if(c.renderData.size() != model->renderTargets.size()) continue;
 
         Assert(c.GetRenderTargetVisibility().size() == model->renderTargets.size());
@@ -1777,7 +1779,7 @@ void RenderContext::UpdateRenderData(){
             data.targetMaterial = model->materials[target.materialIndex].get();
             data.targetMesh = model->meshs[target.meshIndex].get();
             //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));// model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
@@ -1889,7 +1891,7 @@ void RenderContext::UpdateRenderData(){
             //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
             //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
+            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex)); //TODO: Maybe use final pose on here
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
             //INFO: Try optimize

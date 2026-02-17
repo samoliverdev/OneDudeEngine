@@ -205,12 +205,12 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos){
     //Input::ProcessMouseMove(xpos, ypos);
 }
 
-Vector2 mouseWheelOffsets;
+extern Vector2 mouseWheelOffsets;
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset){
     //Input::ProcessMouseWheel(xoffset);
-    mouseWheelOffsets.x = xoffset;
-    mouseWheelOffsets.y = yoffset;
+    mouseWheelOffsets.x += xoffset;
+    mouseWheelOffsets.y += yoffset;
 }
 
 bool Platform::SystemStartup(const char* applicationName, int x, int y, int width, int height){
@@ -338,10 +338,6 @@ bool Input::IsMouseButton(MouseButton button){
 
 void Input::GetMousePosition(double* x, double* y){
     glfwGetCursorPos(window, x, y);
-}
-
-Vector2 Input::GetMouseWheelMove(){
-    return mouseWheelOffsets;
 }
 
 bool Platform::PumpMessages(){ 

@@ -32,6 +32,7 @@ struct OD_API ModelRendererComponent{
         AABB aabb;
     };
 
+    Pose finalPose;
     Transform localTransform;
     AlignedVector<RenderData> renderData;
     Vector4 customData;

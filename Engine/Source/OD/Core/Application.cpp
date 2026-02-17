@@ -182,6 +182,7 @@ void Application::Loop(){
     onFrameEnd.Invoke();
     }
 
+    Input::PostUpdate();
     Graphics::_End();
     Platform::LateUpdate();
     Platform::SwapBuffers();

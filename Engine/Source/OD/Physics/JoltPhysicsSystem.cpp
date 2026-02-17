@@ -61,7 +61,7 @@ constexpr int maxSubSteps = 5;
 constexpr int cCollisionSteps = 1;
 
 //constexpr bool EnableFixedRate = true;
-constexpr bool EnableInterpolation = true; //true; //true;
+constexpr bool EnableInterpolation = false; //true; //true; //true;
 constexpr bool EnableFixedPostPhysicUpdate = false;//true;
 
 constexpr bool resetFinalPoseWithRestPose = false;
@@ -677,6 +677,11 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
             indices[i + 2]
         );
     }
+
+	out->convexPoints.reserve(out->joltVertices.size());
+	for(const auto& v : out->joltVertices){
+		out->convexPoints.push_back(JPH::Vec3(v.x, v.y, v.z));
+	}
 
     if(out->joltTriangles.empty()) return nullptr;
 
