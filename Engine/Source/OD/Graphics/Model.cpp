@@ -260,7 +260,7 @@ Ref<Model> Model::CreateFromFile(const std::string& path, ModelLoadSettings load
     return out;
 }
 
-Ref<Model> CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings){
+Ref<Model> Model::CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings){
 	Ref<Model> out = CreateRef<Model>();
     out->settings = loadSettings;
     if(out->LoadFromPackage(path, package) == false){

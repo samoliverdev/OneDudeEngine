@@ -2325,7 +2325,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     RefConst<Shape> finalShape = offsetResult.Get();
 
 	Vec3 scale = ToJolt(transform.Scale());
-	if (!scale.IsClose(Vec3::sReplicate(1.0f))) {
+	if(!scale.IsClose(Vec3::sReplicate(1.0f))){
 		finalShape = ScaledShapeSettings(finalShape, scale).Create().Get();// new ScaledShape(finalShape, scale);
 	}
 
@@ -2351,13 +2351,12 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         info.layer,
         rb.mask.mask // stored in subgroup ID
     );*/
-	//settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
+	settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
 	//settings.mMotionQuality = EMotionQuality::LinearCast;
 	
-	/*settings.mNumVelocityStepsOverride = 50;
-	settings.mNumPositionStepsOverride = 50;
-	*/
-
+	//settings.mNumVelocityStepsOverride = 34;
+	//settings.mNumPositionStepsOverride = 34;
+	
 	settings.mFriction = rb.friction;
 
 	JPH::MassProperties msp;
@@ -2966,6 +2965,14 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	physicsWorld->groupFilter = groupFilter;
 
 	physicsWorld->physicsSystem.SetGravity(ToJolt(currentSettings->gravity));
+
+	/*auto s = physicsWorld->physicsSystem.GetPhysicsSettings();
+	//s.mSpeculativeContactDistance = 0.02f;
+	//s.mPenetrationSlop = 0.002f;
+	s.mNumVelocitySteps = 24*2;
+	s.mNumPositionSteps = 24*2;
+	//s.mMaxPenetrationDistance = 0.2f;
+	physicsWorld->physicsSystem.SetPhysicsSettings(s);*/
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

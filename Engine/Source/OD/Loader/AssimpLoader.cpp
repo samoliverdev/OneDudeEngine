@@ -857,25 +857,13 @@ void LoadRenderTargets(LoadData& data, const aiScene* scene, aiNode* node, bool 
     }
 }
 
-bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings loadSettings, std::vector<Clip>* outClips){
-    Assimp::Importer importer;
-
-    const aiScene* scene = importer.ReadFile(
-        path, 
-        aiProcess_Triangulate | 
-        aiProcess_GenSmoothNormals | 
-        //aiProcess_FlipUVs | 
-        aiProcess_CalcTangentSpace |
-        aiProcess_PopulateArmatureData
-        | aiProcess_GlobalScale 
-        //| aiProcess_OptimizeGraph 
-    );
-
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
-        LogError("ERROR::ASSIMP:: {}", importer.GetErrorString());
-        return false;
-    }
-
+bool AssimpLoadModel_Internal(
+    Model& out,
+    const aiScene* scene,
+    const std::string& virtualPath,
+    ModelLoadSettings loadSettings,
+    std::vector<Clip>* outClips
+){
     float scale = loadSettings.scale;
     if (scene->mMetaData) {
         double fbxUnitScale = 1.0;
@@ -891,8 +879,10 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
     
     LoadData loadData;
     loadData.model = &out;
-    loadData.model->SetPath(path);
-    loadData.directory = path.substr(0, path.find_last_of('/'));
+    //loadData.model->SetPath(path);
+    //loadData.directory = path.substr(0, path.find_last_of('/'));
+    loadData.model->SetPath(virtualPath);
+    loadData.directory = virtualPath;
     loadData.scene = scene;
 
     if(loadSettings.useOnlySkinnedBones == false){
@@ -978,15 +968,57 @@ bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings load
     return true;
 }
 
+bool AssimpLoadModel(Model& out, std::string const &path, ModelLoadSettings loadSettings, std::vector<Clip>* outClips){
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(
+        path, 
+        aiProcess_Triangulate | 
+        aiProcess_GenSmoothNormals | 
+        //aiProcess_FlipUVs | 
+        aiProcess_CalcTangentSpace |
+        aiProcess_PopulateArmatureData
+        | aiProcess_GlobalScale 
+        //| aiProcess_OptimizeGraph 
+    );
+
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
+        LogError("ERROR::ASSIMP:: {}", importer.GetErrorString());
+        return false;
+    }
+
+    return AssimpLoadModel_Internal(out, scene, path, loadSettings, outClips);
+}
+
 bool OD_API AssimpLoadModel(
     Model& out, 
     void* data,
     size_t dataSize, 
-    const char* extHit,
+    const char* extHint,
     ModelLoadSettings loadSettings, 
     std::vector<Clip>* outClips
 ){
-    Assert(false && "outdate");
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFileFromMemory(
+        data,
+        dataSize,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_PopulateArmatureData |
+        aiProcess_GlobalScale,
+        extHint
+    );
+
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
+        LogError("ERROR::ASSIMP:: {}", importer.GetErrorString());
+        return false;
+    }
+
+    return AssimpLoadModel_Internal(out, scene, "#Memory", loadSettings, outClips);
+
+    /*Assert(false && "outdate");
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFileFromMemory(
@@ -1033,14 +1065,6 @@ bool OD_API AssimpLoadModel(
         loadData.meshs.push_back(scene->mMeshes[i]);
     }
 
-    /*loadData.materialIndexRemap.resize(scene->mNumMaterials);
-    for(int i = 0; i < scene->mNumMaterials; i++){
-        Ref<Material> m = LoadMaterial(loadData, scene->mMaterials[i], loadSettings);
-        loadData.model->materials.push_back(m);
-        loadData.materials.push_back(scene->mMaterials[i]);
-        loadData.materialIndexRemap[i] = loadData.materials.size() - 1;
-    }*/
-
     loadData.materialIndexRemap.resize(scene->mNumMaterials);
     std::unordered_set<unsigned int> usedMaterialIndices;
     for(unsigned int i = 0; i < scene->mNumMeshes; ++i){
@@ -1084,9 +1108,8 @@ bool OD_API AssimpLoadModel(
         Assert(i.bindPoseIndex < loadData.model->skeleton.GetBindPose().Size());
     }
 
-    return true;
+    return true;*/
 }
-
 
 }
 #endif

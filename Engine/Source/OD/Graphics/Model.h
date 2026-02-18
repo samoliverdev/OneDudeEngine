@@ -20,8 +20,9 @@ class Shader;
 class Mesh;
 class Texture2D;
 class Material;
+class Package;
 
-struct ModelLoadSettings{
+struct OD_API ModelLoadSettings{
     Ref<Shader> customShader = nullptr;
     float scale = 1.0f;
     bool useOnlySkinnedBones = false;
@@ -48,7 +49,7 @@ struct ModelLoadSettings{
 
 class OD_API Model: public Asset{
 public:
-    struct MaterialTarget{
+    struct OD_API MaterialTarget{
         struct Tex{
             int texIndex;
             std::string extPath;
@@ -74,7 +75,7 @@ public:
         }
     };
 
-    struct RenderTarget{
+    struct OD_API RenderTarget{
         int meshIndex;
         int materialIndex;
         int bindPoseIndex;

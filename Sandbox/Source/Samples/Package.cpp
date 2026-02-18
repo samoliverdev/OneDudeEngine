@@ -4,6 +4,8 @@
 #include "Ultis/Ultis.h"
 #include <OD/Core/Application.h>
 #include <OD/Core/TarPackage.h>
+#include <OD/Core/MinizPackage.h>
+#include <OD/Core/PhysFSPackage.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>
@@ -43,13 +45,20 @@ void PackageSample::OnInit(){
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(95, 95, -30));
 
-    Ref<Package> package = CreateRef<TarPackage>("Sandbox/PackageTest.tar");
+    //Ref<Package> package = CreateRef<TarPackage>("Sandbox/PackageTest.tar");
+    //Ref<Package> package = CreateRef<MinizPackage>("Sandbox/PackageTest.zip");
+
+    PhysFSPackage::Init();
+    PhysFSPackage::Mount("Sandbox/PackageTest.zip");
+    Ref<Package> package = CreateRef<PhysFSPackage>();//fullPath.c_str());
     
     Ref<Texture2D> tex = Texture2D::CreateFromPackage("image.png", *package, {});
-    
-    Ref<Model> model = CreateRef<Model>();// AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
-    //model->LoadFromPackage("Cube.glb", *package);
-    model->LoadFromPackage("Model.modelbin", *package);
+    Ref<Model> model = Model::CreateFromPackage("Cube.glb", *package, {});
+
+    package = nullptr;
+
+    //PhysFSPackage::Unmount("Sandbox/PackageTest.zip");
+    PhysFSPackage::Shutdown();
 
     Assert(model->meshs.size() > 0);
     

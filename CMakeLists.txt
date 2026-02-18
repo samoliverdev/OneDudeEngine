@@ -198,6 +198,14 @@ add_subdirectory(Engine/ThirdParty/bitsery)
 
 add_subdirectory(Engine/ThirdParty/spdlog-1.17.0)
 
+set(MINIZ_STANDALONE_PROJECT OFF CACHE BOOL "" FORCE)
+add_subdirectory(Engine/ThirdParty/miniz)
+
+set(PHYSFS_BUILD_SHARED FALSE CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_TEST FALSE CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_DOCS FALSE CACHE BOOL "" FORCE)
+add_subdirectory(Engine/ThirdParty/physfs-release-3.2.0)
+
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #set(CMAKE_CXX_STANDARD 17)
@@ -320,6 +328,8 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/unordered_dense-4.8.1/include/
     Engine/ThirdParty/tomlplusplus-3.4.0/include/
     Engine/ThirdParty/bitsery/include/
+    Engine/ThirdParty/miniz/
+    Engine/ThirdParty/physfs-release-3.2.0/src/
     #Engine/ThirdParty/spdlog-1.17.0/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
@@ -346,6 +356,8 @@ target_link_libraries(Engine PUBLIC
     unordered_dense
     tomlplusplus_tomlplusplus
     Bitsery::bitsery
+    miniz
+    physfs-static
     #glslang glslang-default-resource-limits
     #spirv-reflect-static
     #spirv-cross-core spirv-cross-c 
