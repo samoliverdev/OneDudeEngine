@@ -29,11 +29,13 @@ bool Asset::Save(const std::string& outPath, SaveType type){
     return false; 
 }
 
-bool Asset::LoadFromFile(const std::string& path){ 
+bool Asset::LoadFromFile(const std::string& path){
+    Assert(false && "Not Implemented"); 
     return false; 
 }
 
 bool Asset::LoadFromPackage(const std::string& path, Package& package){
+    Assert(false && "Not Implemented");
     return false;
 }
 
@@ -71,7 +73,8 @@ void AssetManager::Mount(Package* p){
 }
 
 void AssetManager::UnMount(Package* p){
-    Assert(false && "To implement");
+    if(!p) return;
+    packages.erase(std::remove(packages.begin(), packages.end(), p), packages.end());
 }
 
 void AssetManager::UnloadAll(){

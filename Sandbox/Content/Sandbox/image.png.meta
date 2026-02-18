@@ -1,6 +1,6 @@
 {
     "settings": {
-        "filter": 1,
+        "filter": 0,
         "wrap": 0,
         "mipmap": true,
         "textureFormat": 0

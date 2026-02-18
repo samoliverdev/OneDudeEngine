@@ -3,12 +3,26 @@
 
 namespace OD{
 
-void PhysFSPackage::Init(){
+class OD_API PhysFSPackage: public Package{
+public:
+    bool HasFile(const char* path) override;
+
+    bool ReadFileData(const char* path, void*& outData, size_t& outSize) override;
+    void FreeFileData(void*& data) override;
+
+    size_t GetFileSize(const char* path) const override;
+    bool ReadFile(const char* path, std::vector<uint8_t>& outData) override;
+    std::vector<std::string> ListFiles(const char* directory) const override;
+};
+
+PhysFSPackage package;
+
+void PhysFS::Init(){
     PHYSFS_init(nullptr);
     Assert(PHYSFS_isInit());
 }
 
-bool PhysFSPackage::Mount(const char* path, bool highPriority){
+bool PhysFS::Mount(const char* path, bool highPriority){
     int r = PHYSFS_mount(path, "/", highPriority ? 0 : 1);
     if(!r){
         const char* err = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
@@ -19,13 +33,17 @@ bool PhysFSPackage::Mount(const char* path, bool highPriority){
     return true;
 }
 
-bool PhysFSPackage::Unmount(const char* path){
+bool PhysFS::Unmount(const char* path){
     int r = PHYSFS_unmount(path);
     return r != 0;
 }
 
-void PhysFSPackage::Shutdown(){
+void PhysFS::Shutdown(){
     PHYSFS_deinit();
+}
+
+Package* PhysFS::GetPackage(){
+    return &package;
 }
 
 bool PhysFSPackage::HasFile(const char* path){
@@ -57,7 +75,6 @@ bool PhysFSPackage::ReadFileData(const char* path, void*& outData, size_t& outSi
 
     PHYSFS_readBytes(file, outData, size);
     PHYSFS_close(file);
-
     return true;
 }
 

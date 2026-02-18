@@ -91,7 +91,9 @@ public:
 
     void SetLoadSettings(Texture2DSetting inloadSettings);
     bool LoadFromFileMemory(void* data, size_t size, const std::string& label = ""); 
+    
     bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
     
     std::vector<std::string> GetFileAssociations() override;
 

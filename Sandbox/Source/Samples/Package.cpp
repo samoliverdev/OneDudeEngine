@@ -48,17 +48,18 @@ void PackageSample::OnInit(){
     //Ref<Package> package = CreateRef<TarPackage>("Sandbox/PackageTest.tar");
     //Ref<Package> package = CreateRef<MinizPackage>("Sandbox/PackageTest.zip");
 
-    PhysFSPackage::Init();
-    PhysFSPackage::Mount("Sandbox/PackageTest.zip");
-    Ref<Package> package = CreateRef<PhysFSPackage>();//fullPath.c_str());
+    PhysFS::Init();
+    PhysFS::Mount("Sandbox/PackageTest.zip");
+    AssetManager::Get().Mount(PhysFS::GetPackage());
     
-    Ref<Texture2D> tex = Texture2D::CreateFromPackage("image.png", *package, {});
-    Ref<Model> model = Model::CreateFromPackage("Cube.glb", *package, {});
-
-    package = nullptr;
+    //Ref<Texture2D> tex = Texture2D::CreateFromPackage("image.png", *PhysFS::GetPackage(), {});
+    //Ref<Model> model = Model::CreateFromPackage("Cube.glb", *PhysFS::GetPackage(), {});
+    Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("image.png");
+    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Cube.glb");
 
     //PhysFSPackage::Unmount("Sandbox/PackageTest.zip");
-    PhysFSPackage::Shutdown();
+    AssetManager::Get().UnMount(PhysFS::GetPackage());
+    PhysFS::Shutdown();
 
     Assert(model->meshs.size() > 0);
     

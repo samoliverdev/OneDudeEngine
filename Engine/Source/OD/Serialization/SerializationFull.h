@@ -28,8 +28,9 @@ void LoadArchive(Package& package, const std::string& path, Archive& data, const
     void* _data = nullptr;
     size_t size;
     if(package.ReadFileData(path.c_str(), _data, size)){
-        std::ofstream os(path);
-        cereal::JSONOutputArchive ar(os);
+        std::string jsonData(static_cast<char*>(_data), size);
+        std::istringstream is(jsonData);
+        cereal::JSONInputArchive ar(is);
 
         if(name.empty()){
             ArchiveDumpNVP(ar, data);
@@ -42,8 +43,9 @@ void LoadArchive(Package& package, const std::string& path, Archive& data, const
 
 template<class Archive>
 void LoadArchive(const std::string& path, Archive& data, const std::string& name = ""){
-    std::ofstream os(path);
-    cereal::JSONOutputArchive ar(os);
+    Assert(false && "Need Update and not use OutputArchive");
+    std::ifstream os(path);
+    cereal::JSONInputArchive ar(os);
 
     if(name.empty()){
         ArchiveDumpNVP(ar, data);

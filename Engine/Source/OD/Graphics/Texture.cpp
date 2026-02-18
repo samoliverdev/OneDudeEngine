@@ -48,6 +48,13 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
 }
 
 Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, Texture2DSetting settings){
+    Ref<Texture2D> out = CreateRef<Texture2D>();
+    out->SetLoadSettings(settings);
+    if(out->LoadFromPackage(path, package)){
+        return out;
+    }
+    return out;
+
     void* data = nullptr;
     size_t size;
     if(package.ReadFileData(path, data, size) == false){
@@ -262,6 +269,29 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
     }
 
     return LoadFromImageFile(inpath);
+}
+
+bool Texture2D::LoadFromPackage(const std::string& path, Package& package){
+    void* data = nullptr;
+    size_t size;
+    if(package.ReadFileData(path.c_str(), data, size) == false){
+        package.FreeFileData(data);
+        return false;
+    }
+
+    std::string inpath(path);
+    if(inpath.empty() == false && inpath[0] != '#'){
+        LoadArchive(package, inpath + ".meta", loadSettings, "settings");
+    }
+
+    //SetLoadSettings(settings);
+    if(LoadFromFileMemory(data, size) == false){
+        package.FreeFileData(data);
+        return false;
+    }
+
+    package.FreeFileData(data);
+    return true;
 }
 
 std::vector<std::string> Texture2D::GetFileAssociations(){ 
