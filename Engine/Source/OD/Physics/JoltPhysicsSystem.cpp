@@ -1623,7 +1623,7 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 		nullptr, //physicsWorld->groupFilter, 
 		nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
 	);
-	ragdoll.data->ragdoll = settings->CreateRagdoll(/*ragdoll.layer*/ 0, static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+	ragdoll.data->ragdoll = settings->CreateRagdoll(static_cast<uint32>(entity), static_cast<uint64>(entity), &physicsWorld->physicsSystem);
 	for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
 		BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
 		BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
@@ -1659,6 +1659,10 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 		bodyInterface.SetUserData(bodyID, EncodeUserData(static_cast<uint32_t>(entity), p));
 		//LogInfo("Set Body %zd UserData to %d", p, ragdoll.parts[p].skinnedSkeletonIndex);
 	}
+
+	//BodyID id = ragdoll.data->ragdoll->GetBodyID(0);
+	//LogInfo("---------Layer = {}----------", bodyInterface.GetObjectLayer(id));
+
 	ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 }
 
