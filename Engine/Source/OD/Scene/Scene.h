@@ -307,6 +307,7 @@ protected:
 class OD_API Scene: public Asset {
 public:
     friend struct EntityHandle;
+    friend struct Prefab;
 
     inline bool Running(){ return running; }
 
@@ -390,6 +391,7 @@ public:
     //inline auto& GetExecutor(){ return executor; }
     //inline auto& GetTaskflow(){ return taskflow; }
 private:
+    bool isPrefab = false; //INFO: this is temporary, until refactoty Prefab Load
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(Entity entity, bool removeFromParent = false);

@@ -597,6 +597,9 @@ Scene::Scene(Scene& other){
 }
 
 Scene::~Scene(){
+    if(isPrefab) return;
+
+    //TODO: Maybe mov
     if(taskflow.empty() == false){
         executor->wait_for_all();
         taskflow.clear();
@@ -604,12 +607,14 @@ Scene::~Scene(){
 
     registry.clear();//INFO: Maybe this order fix same crashs
 
+    //TODO: Maybe move this to scene manager, becose this will call even for no stand scene usage, like in prefab and scene preview in editor, or other possible use of scene out of scene manager
     for(auto& i: SceneManager::Get().globalSystems){
         i.second->OnEnd(*this);
     }
     for(auto& i: systems){
         i.second->OnEnd(*this);
     }
+    //
 
     //Delete Later call all OnEnd
     for(auto& i: systems){

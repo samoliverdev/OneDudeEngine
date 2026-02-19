@@ -36,6 +36,7 @@ bool Prefab::LoadFromFile(const std::string& inpath){
     if(scene != nullptr) delete scene;
 
     scene = new Scene(true);
+	scene->isPrefab = true;
     root = scene->InstantiatePrefab(path.c_str());
 
     return true;
