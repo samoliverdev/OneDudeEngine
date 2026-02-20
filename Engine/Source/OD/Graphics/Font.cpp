@@ -159,6 +159,59 @@ uint32_t NextPow2(uint32_t x) {
     //return glm::ceilPowerOfTwo(x);
 }
 
+/* 
+//INFO: Possible New API Desing
+enum class FontUnicodePreset{
+    ASCII,
+    Latin,
+    LatinCyrillic,
+    European,
+    CJK,
+    AllCommon
+};
+
+void BuildCharset(msdf_atlas::Charset& charset, FontUnicodePreset preset){
+    auto AddRange = [&](uint32_t from, uint32_t to){
+        for(uint32_t c = from; c <= to; ++c)
+            charset.add(c);
+    };
+
+    switch(preset){
+        case FontUnicodePreset::ASCII:
+            AddRange(0x20, 0x7E);
+            break;
+
+        case FontUnicodePreset::Latin:
+            AddRange(0x20, 0x017F);
+            break;
+
+        case FontUnicodePreset::LatinCyrillic:
+            AddRange(0x20, 0x017F);
+            AddRange(0x0400, 0x04FF);
+            break;
+
+        case FontUnicodePreset::European:
+            AddRange(0x20, 0x017F);
+            AddRange(0x0370, 0x03FF);
+            AddRange(0x0400, 0x04FF);
+            break;
+
+        case FontUnicodePreset::CJK:
+            AddRange(0x20, 0x017F);
+            AddRange(0x3040, 0x30FF);
+            AddRange(0x4E00, 0x9FFF);
+            break;
+
+        case FontUnicodePreset::AllCommon:
+            AddRange(0x20, 0x017F);
+            AddRange(0x0370, 0x03FF);
+            AddRange(0x0400, 0x04FF);
+            AddRange(0x3040, 0x30FF);
+            AddRange(0x4E00, 0x9FFF);
+            break;
+    }
+}*/
+
 bool Font::LoadFromFile(const std::string& inPath){
     /*path = inPath;
 
@@ -259,11 +312,38 @@ bool Font::LoadFromFile(const std::string& inPath){
     data = new MSDFData();
     bool success = false;
 
+    auto BuildCharset = [&](msdfgen::FontHandle* font){
+        msdf_atlas::Charset charset;
+
+        auto AddRange = [&](uint32_t from, uint32_t to){
+            for(uint32_t c = from; c <= to; ++c)
+                charset.add(c);
+        };
+
+        AddRange(0x0020, 0x007E); // Basic Latin
+        AddRange(0x00A0, 0x00FF); // Latin-1
+        AddRange(0x0100, 0x017F); // Latin Extended
+        AddRange(0x0400, 0x04FF); // Cyrillic
+        //AddRange(0x0370, 0x03FF); // Greek
+        //AddRange(0x3040, 0x30FF); // Japanese kana
+        //AddRange(0x4E00, 0x9FFF); // Chinese (BIG)
+
+        /*for(uint32_t c = 0x20; c <= 0x7E; ++c){
+            charset.add(c);
+        }
+        for(uint32_t c = 0xA0; c <= 0x017F; ++c){ // Extended Latin
+            charset.add(c);
+        }*/
+
+        data->fontGeometry.loadCharset(font, 1.0f, charset, true, true);
+    };
+
     if(msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype()){
         if(msdfgen::FontHandle *font = msdfgen::loadFont(ft, path.c_str())){
-
             data->fontGeometry = FontGeometry(&data->glyphs);
-            data->fontGeometry.loadCharset(font, 1.0f, Charset::ASCII);
+            
+            //data->fontGeometry.loadCharset(font, 1.0f, Charset::ASCII);
+            BuildCharset(font);
 
             // Edge coloring only needed for MSDF/SDF
             if(settings.type == FontType::SDF || settings.type == FontType::MSDF){

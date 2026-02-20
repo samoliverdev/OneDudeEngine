@@ -1567,6 +1567,33 @@ void OpenGLGraphicsDevice::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix
     DrawMesh(*fullScreenQuad, mat, modelMatrix);
 }
 
+static uint32_t DecodeUTF8(const char* s, int& advance){
+    unsigned char c = (unsigned char)s[0];
+
+    if(c < 0x80){
+        advance = 1;
+        return c;
+    } else if((c >> 5) == 0x6){
+        advance = 2;
+        return((c & 0x1F) << 6) | (s[1] & 0x3F);
+    } else if ((c >> 4) == 0xE){
+        advance = 3;
+        return ((c & 0x0F) << 12) |
+               ((s[1] & 0x3F) << 6) |
+               (s[2] & 0x3F);
+    } else if ((c >> 3) == 0x1E){
+        advance = 4;
+        return ((c & 0x07) << 18) |
+               ((s[1] & 0x3F) << 12) |
+               ((s[2] & 0x3F) << 6) |
+               (s[3] & 0x3F);
+    }
+
+    advance = 1;
+    return '?';
+}
+
+//TODO: Move GraphicDevice::DrawText to New High Level Draw API Later, so not need for each graphic device implement this
 void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& textParams){
     const auto& fontGeometry = f.data->fontGeometry;
     const auto& metrics = fontGeometry.getMetrics();
@@ -1589,7 +1616,9 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
     if(alignWithTop) y = -(fsScale * metrics.ascenderY);
 
     const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
-    
+
+    //ACSII
+    /*
     for(size_t i = 0; i < text.size(); i++){
         char character = text[i];
         if(character == '\r') continue;
@@ -1665,6 +1694,95 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
             fontGeometry.getAdvance(advance, character, nextCharacter);
             x += fsScale * advance + 0; //textParams.Kerning;
         }
+    }
+    */
+
+    //UTF-8
+    for(size_t i = 0; i < text.size(); ){
+        int advanceBytes = 0;
+        uint32_t codepoint = DecodeUTF8(&text[i], advanceBytes);
+
+        if(codepoint == '\r'){
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == '\n'){
+            x = 0;
+            y -= fsScale * metrics.lineHeight + textParams.lineSpacing;
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == ' '){
+            double advance = spaceGlyphAdvance;
+
+            if(i + advanceBytes < text.size()){
+                int nextAdvance = 0;
+                uint32_t nextCodepoint = DecodeUTF8(&text[i + advanceBytes], nextAdvance);
+                fontGeometry.getAdvance(advance, codepoint, nextCodepoint);
+            }
+
+            x += fsScale * advance + textParams.kerning;
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == '\t'){
+            x += 4.0f * (fsScale * spaceGlyphAdvance + textParams.kerning);
+            i += advanceBytes;
+            continue;
+        }
+
+        auto glyph = fontGeometry.getGlyph(codepoint);
+        if(!glyph) glyph = fontGeometry.getGlyph('?');
+        if (!glyph) return;
+
+        // ---- same quad code as before ----
+        double al, ab, ar, at;
+        glyph->getQuadAtlasBounds(al, ab, ar, at);
+        glm::vec2 texCoordMin((float)al, (float)ab);
+        glm::vec2 texCoordMax((float)ar, (float)at);
+
+        double pl, pb, pr, pt;
+        glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+        glm::vec2 quadMin((float)pl, (float)pb);
+        glm::vec2 quadMax((float)pr, (float)pt);
+
+        quadMin *= fsScale, quadMax *= fsScale;
+        quadMin += glm::vec2(x, y);
+        quadMax += glm::vec2(x, y);
+
+        float texelWidth = 1.0f / fontAtlas->Width();
+        float texelHeight = 1.0f / fontAtlas->Height();
+        texCoordMin *= glm::vec2(texelWidth, texelHeight);
+        texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+        float vertices[4][5] = {        
+            { quadMin.x, quadMin.y, 0, texCoordMin.x, texCoordMin.y },
+            { quadMin.x, quadMax.y, 0, texCoordMin.x, texCoordMax.y },
+            { quadMax.x, quadMin.y, 0, texCoordMax.x, texCoordMin.y },
+            { quadMax.x, quadMax.y, 0, texCoordMax.x, texCoordMax.y }           
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCheckError();
+
+        // render quad
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glCheckError();
+
+        if(i + advanceBytes < text.size()){
+            int nextAdvance = 0;
+            uint32_t nextCodepoint = DecodeUTF8(&text[i + advanceBytes], nextAdvance);
+
+            double advance = glyph->getAdvance();
+            fontGeometry.getAdvance(advance, codepoint, nextCodepoint);
+            x += fsScale * advance;
+        }
+
+        i += advanceBytes;
     }
 
     #ifdef USE_VAO
