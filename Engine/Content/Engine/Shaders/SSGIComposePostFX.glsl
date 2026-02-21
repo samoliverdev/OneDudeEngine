@@ -14,7 +14,7 @@ BeginPass
         Uniform vec2 screenSize;
     EndUniform()
     Texture2D(0, 1, mainTex, mainSampler)
-    //Texture2D(0, 1, gAlbedoSpec, gAlbedoSpecSampler)
+    Texture2D(0, 1, gAlbedoSpec, gAlbedoSpecSampler)
     Texture2D(0, 2, giAO, giAOSampler)
 
     BeginVertex
@@ -45,10 +45,10 @@ BeginPass
         vec4 directLighting = SampleTexture2D(mainTex, mainSampler, texCoord);
         vec2 giUV = texCoord * (giSize / screenSize);
         vec4 giAO = SampleTexture2D(giAO, giAOSampler, giUV);
-        //vec4 diffuse = texture(gAlbedoSpec, texCoord);
+        vec4 diffuse = texture(gAlbedoSpec, texCoord);
 
         fragColor = vec4(giAO.rgb, 1.0);
-        //fragColor = vec4((directLighting.rgb * giAO.a) + (diffuse.rgb * giAO.rgb), directLighting.a);
+        fragColor = vec4((directLighting.rgb * giAO.a) + (diffuse.rgb * giAO.rgb), directLighting.a);
         return;
 
         //vec3 giEnergy = gi;

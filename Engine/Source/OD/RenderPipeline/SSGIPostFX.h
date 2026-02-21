@@ -28,6 +28,7 @@ public:
         ArchiveDump(ar, CEREAL_NVP(giIntensity));
         ArchiveDump(ar, CEREAL_NVP(aoIntensity));
         ArchiveDump(ar, CEREAL_NVP(useScreenSpaceSampling));
+        ArchiveDump(ar, CEREAL_NVP(denoiseMaxIterations));
     }
 
 private:
@@ -49,6 +50,8 @@ private:
     float giIntensity = 1;
     float aoIntensity = 1;
     bool useScreenSpaceSampling = true; 
+
+    int denoiseMaxIterations = 4;
     
 };
 

@@ -20,7 +20,7 @@ SSGIPostFX::SSGIPostFX(){
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
-    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX.glsl"));
+    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX2.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
     blueNoise = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/LDR_RG01_47.png");
@@ -36,15 +36,28 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
         return;
     }
 
+    auto Blit = [](Framebuffer* _src, Framebuffer* _dst, Ref<Material> blitMat, int pass = 0){
+        Graphics::BeginFramebuffer(*_dst);
+        Graphics::SetViewport(0, 0, _dst->Specification().width, _dst->Specification().height);
+        blitMat->SetPass(pass);
+        blitMat->SetTexture("mainTex", _src, 0);
+        Graphics::DrawFullScreenQuad(*blitMat, Matrix4Identity);
+        Graphics::EndFramebuffer();
+    };
+
     ///*
     Framebuffer* deferred = context->GetDeferredFramebuffer();
     auto spec = src->Specification();
+    spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
 
     auto halfSpec = spec;
     halfSpec.width /= 2;
     halfSpec.height /= 2;
 
     auto gi = new Framebuffer(halfSpec);
+
+    std::array<Framebuffer*, 16> textures;
+    std::vector<Framebuffer*> releaseTemporary;
 
     Graphics::BeginFramebuffer(*gi);
     Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
@@ -67,6 +80,41 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
+    //Blur Pass
+    Framebuffer* currentDestination = textures[0] = new Framebuffer(spec);
+    Blit(gi, currentDestination, giBlurPass, 0);
+
+    Framebuffer* currentSource = currentDestination;
+
+    int i = 1;
+    for(; i < denoiseMaxIterations; i++){
+        spec.width /= 2;
+        spec.height /= 2;
+        if(spec.height < 2){
+            break;
+        }
+
+        currentDestination = textures[i] = new Framebuffer(spec);
+        
+        Blit(currentSource, currentDestination, giBlurPass, 0);
+        //releaseTemporary.push_back(currentSource);
+        
+        currentSource = currentDestination;
+    }
+    for(i -= 2; i >= 0; i--){
+        currentDestination = textures[i];
+        textures[i] = nullptr;
+        
+        Blit(currentSource, currentDestination, giBlurPass, 1);
+        releaseTemporary.push_back(currentSource);
+        
+        currentSource = currentDestination;
+    }
+
+    Blit(currentSource, gi, giBlurPass, 1);
+    releaseTemporary.push_back(currentSource);
+    //
+
     giComposePass->SetVector2("giSize", {deferred->Specification().width, deferred->Specification().height});
     giComposePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
     Graphics::BeginFramebuffer(*dst);
@@ -76,6 +124,9 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giComposePass->SetTexture("giAO", gi, 0);
     Graphics::DrawFullScreenQuad(*giComposePass, Matrix4Identity);
     Graphics::EndFramebuffer();
+
+
+    for(Framebuffer* cur: releaseTemporary) delete cur;
 
     delete gi;
     //*/

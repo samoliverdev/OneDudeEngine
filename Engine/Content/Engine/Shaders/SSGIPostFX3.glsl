@@ -21,6 +21,7 @@ BeginUniform(0, 0, Main)
     Uniform float sliceCount;
     Uniform float hitThickness;
     Uniform float giIntensity;
+    Uniform float aoIntensity;
 EndUniform()
 
 // ============================================================
@@ -243,7 +244,7 @@ void main(){
 
     float AO = pow(
         clamp(aoAccum / sliceCount, 0.0, 1.0),
-        AO_POWER
+        aoIntensity //AO_POWER
     );
 
     vec3 GI = giAccum / sliceCount;
