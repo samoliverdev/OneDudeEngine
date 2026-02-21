@@ -1,13 +1,13 @@
 {
     "Material": {
-        "enableInstancing": false,
-        "shaderPath": "Engine/Shaders/Lit2.glsl",
+        "enableInstancing": true,
+        "shaderPath": "Engine/Shaders/Lit.glsl",
         "maps": [
             {
                 "key": "metallic",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.9190000295639038,
+                    "valueFloat": 1.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -16,7 +16,7 @@
                 "key": "emissionMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Engine/Textures/Black.jpg"
+                    "texPath": "Sandbox/Materials/Complex/circuitry-emission.png"
                 }
             },
             {
@@ -50,9 +50,9 @@
                 "value": {
                     "type": 5,
                     "vec.vector": {
-                        "v.x": 0.0,
-                        "v.y": 0.0,
-                        "v.z": 0.0,
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
@@ -62,21 +62,21 @@
                 "key": "mainTex",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/Textures/brickwall.jpg"
+                    "texPath": "Sandbox/Materials/Complex/circuitry-albedo.png"
                 }
             },
             {
                 "key": "normalMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox\\Textures\\brickwall_normal.jpg"
+                    "texPath": "Engine/Textures/Normal.jpg"
                 }
             },
             {
                 "key": "normalStrength",
                 "value": {
                     "type": 2,
-                    "valueFloat": 6.511000156402588,
+                    "valueFloat": 1.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 10.0
                 }
@@ -85,7 +85,7 @@
                 "key": "maskMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Engine/Textures/White.jpg"
+                    "texPath": "Sandbox/Materials/Complex/circuitry-mask-mods.png"
                 }
             },
             {
@@ -101,7 +101,7 @@
                 "key": "smoothness",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.6430000066757202,
+                    "valueFloat": 0.5,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -113,13 +113,6 @@
                     "valueFloat": 0.5,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
-                }
-            },
-            {
-                "key": "normal",
-                "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/Textures/brickwall_normal.jpg"
                 }
             }
         ]

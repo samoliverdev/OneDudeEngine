@@ -15,6 +15,7 @@ public:
     float threshold = 0.5f;
     float thresholdKnee = 1;
     float intensity = 1.0f;
+    bool debug = false;
 
     BloomPostFX();
     void OnSetup() override;
@@ -31,6 +32,8 @@ public:
         ArchiveDump(ar, CEREAL_NVP(thresholdKnee));
         ArchiveDump(ar, CEREAL_NVP(intensity));
 
+        ArchiveDump(ar, CEREAL_NVP(debug));
+
         if(threshold < 0) threshold = 0;
         thresholdKnee = math::clamp<float>(thresholdKnee, 0, 1);
         if(intensity < 0) intensity = 0;
@@ -42,6 +45,7 @@ public:
     }
 
 private:
+    Ref<Material> bloomMat;
     Ref<Material> blitShader;
     Ref<Material> bloomHorizontalPassShader;
     Ref<Material> bloomVerticalPassShader;

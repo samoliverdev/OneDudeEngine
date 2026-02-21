@@ -1,5 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
+	CullFace BACK
 	DepthTest DISABLE
 #pragma EndPassDef
 
