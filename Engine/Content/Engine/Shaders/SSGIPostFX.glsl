@@ -22,6 +22,7 @@ BeginUniform(0, 0, Main)
     Uniform float sampleRadius;
     Uniform float sliceCount;
     Uniform float hitThickness;
+    Uniform float giIntensity;
 EndUniform()
 
 #if defined(VERTEX) && defined(MainPass)
@@ -170,7 +171,7 @@ EndUniform()
 
         //vec3 directLighting = texture(mainTex, texCoord).rgb; // Direct lighting
 
-        fragColor = vec4(lighting, visibility);
+        fragColor = vec4(lighting * giIntensity, visibility);
         //fragColor = vec4(directLighting + lighting, visibility);
         //fragColor = vec4(directLighting * visibility, 1);
         //fragColor = vec4(vec3(visibility), 1);

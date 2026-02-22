@@ -236,6 +236,10 @@ private:
         //ImGui::DragInt(name, &value, opt.getStep());
         ImGui::DragScalar(name, ImGuiDataType_U32, &value, opt.getStep());
     }
+
+    void DrawUI(const char * name, uint16_t& value, Options opt = Options()){
+        ImGui::DragScalar(name, ImGuiDataType_U16, &value, opt.getStep());
+    }
     
     void DrawUI(const char * name, int& value, Options opt = Options()){
         if(opt.hasMinMax()){

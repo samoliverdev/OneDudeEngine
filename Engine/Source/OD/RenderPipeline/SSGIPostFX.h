@@ -29,6 +29,7 @@ public:
         ArchiveDump(ar, CEREAL_NVP(aoIntensity));
         ArchiveDump(ar, CEREAL_NVP(useScreenSpaceSampling));
         ArchiveDump(ar, CEREAL_NVP(denoiseMaxIterations));
+        ArchiveDump(ar, CEREAL_NVP(debug));
     }
 
 private:
@@ -52,6 +53,7 @@ private:
     bool useScreenSpaceSampling = true; 
 
     int denoiseMaxIterations = 4;
+    bool debug = false;
     
 };
 

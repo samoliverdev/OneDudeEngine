@@ -52,7 +52,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContex
     auto spec = src->Specification();
 
     auto Blit = [](Framebuffer* _src, Framebuffer* _dst, Ref<Material> blitMat, int pass = 0){
-        Graphics::BeginFramebuffer(*_dst);
+        Graphics::BeginFramebuffer(*_dst, false);
         Graphics::SetViewport(0, 0, _dst->Specification().width, _dst->Specification().height);
         blitMat->SetPass(pass);
         blitMat->SetTexture("mainTex", _src, 0);

@@ -50,7 +50,7 @@ RenderContext::RenderContext(Scene* inScene){
     entityIdOutColor = new Framebuffer(framebufferSpecification);
 
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGB11B10F}, 
+        {FramebufferTextureFormat::RGBA16F} //{FramebufferTextureFormat::RGB11B10F}, 
         //{FramebufferTextureFormat::RGBA8}//, 
         //{FramebufferTextureFormat::RED_INTEGER}
     };
@@ -77,7 +77,7 @@ RenderContext::RenderContext(Scene* inScene){
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGB11B10F}
+        {FramebufferTextureFormat::RGBA16F} //{FramebufferTextureFormat::RGB11B10F}
         //{FramebufferTextureFormat::RGBA8}
     };
     framebufferSpecification.createDepth = false;

@@ -115,6 +115,7 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     releaseTemporary.push_back(currentSource);
     //
 
+    giComposePass->SetPass(debug ? 1 : 0);
     giComposePass->SetVector2("giSize", {deferred->Specification().width, deferred->Specification().height});
     giComposePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
     Graphics::BeginFramebuffer(*dst);

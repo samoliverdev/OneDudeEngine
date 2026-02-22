@@ -1,5 +1,7 @@
 #pragma BeginProperties
+    Texture2D mainTex White
     Color4 color
+    Float intensity 1
 #pragma EndProperties
 
 #pragma BeginPassDef
@@ -13,7 +15,7 @@
 
 BeginUniform(0, 0, Main)
     Uniform vec4 color;
-    Uniform int a;
+    Uniform float intensity;
 EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 //Texture2D(0, 2, main2Tex, main2Sampler)
@@ -35,12 +37,8 @@ Texture2D(0, 1, mainTex, mainSampler)
     Out(0) vec4 fragColor;
 
     void main(){
-        vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
+        vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); 
         if(texColor.a < 0.1) discard;
-        fragColor = texColor * color;
-
-        /*for(int i = 0; i < a; i++){
-            fragColor += 0.01 * i;
-        }*/
+        fragColor = vec4(texColor.rgb * (color.rgb * intensity), texColor.a * color.a);
     }
 #endif

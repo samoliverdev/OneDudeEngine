@@ -1,6 +1,14 @@
+#pragma BeginProperties
+    Texture2D mainTex White
+    Color4 color
+    Float intensity 1
+#pragma EndProperties
+
 #pragma BeginPassDef
     Name MainPass
-    SupportInstancing false
+    SupportInstancing true
+    DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
+
     CullFace NONE
     DepthTest LESS
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
@@ -8,41 +16,33 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
+
+BeginUniform(0, 0, Main)
+    Uniform vec4 color;
+    Uniform float intensity;
+EndUniform()
+Texture2D(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
-    layout (location = 2) in vec3 _normal;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    out vec3 pos;
-    out vec3 normal;
-    out vec2 texCoord;
+    Out(0) vec2 _texCoord;
 
     void main(){
-        pos = _pos;
-        normal = _normal;
-        texCoord = _texCoord;
-
-        gl_Position = projection * view * model * vec4(pos, 1.0);
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord.xy;
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    uniform sampler2D mainTex;
-    uniform vec4 color = vec4(1.0);
+    #include Engine/ShaderLibrary/Core.glsl
 
-    in vec3 pos;
-    in vec3 normal;
-    in vec2 texCoord;
-
-    out vec4 fragColor;
+    In(0) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     void main(){
-        vec4 texColor = texture(mainTex, texCoord);
-        fragColor = texColor * color;
+        vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); //texture(sampler2D(mainTex, mainTexSampler), _texCoord); //vec4(_texCoord.xy, 0, 1);// textureSRGB(mainTex, mainTexSampler, _texCoord);
+        //if(texColor.a < 0.1) discard;
+        fragColor = vec4(texColor.rgb * (color.rgb * intensity), texColor.a * color.a);
     }
 #endif

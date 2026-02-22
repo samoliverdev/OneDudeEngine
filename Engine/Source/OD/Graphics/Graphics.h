@@ -118,6 +118,7 @@ public:
     static void DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass = 0);
     static void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0);
 
+    //TODO: Refacoty this, "remove bool clean = true", to avoid mistake bug when i no need to clean or need to clean
     static void BeginFramebuffer(Framebuffer& frambuffer, bool clean = true, Vector4 clearColor = Vector4(0, 0, 0, 1), int layer = 0, int mip = 0);
     static void EndFramebuffer();
 
