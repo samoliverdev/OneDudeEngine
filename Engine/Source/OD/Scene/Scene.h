@@ -354,6 +354,7 @@ public:
     Entity GetMainCamera();
 
     Entity FindEntityByName(const std::string& name);
+    Entity FindEntityByNameInChildren(Entity parent, const std::string& name);
 
     template<typename T> void AddSystem();
     template<typename T> void RemoveSystem();

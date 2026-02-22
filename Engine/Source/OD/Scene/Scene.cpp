@@ -910,6 +910,23 @@ Entity Scene::FindEntityByName(const std::string& name){
     return EntityNull;
 }
 
+Entity Scene::FindEntityByNameInChildren(Entity parent, const std::string& name){
+    TransformComponent& trans = GetComponent<TransformComponent>(parent);
+    for(auto i: trans.Children()){
+        InfoComponent& info = GetComponent<InfoComponent>(i);
+        if(info.name == name){
+            return i;
+        } 
+
+        TransformComponent& child = GetComponent<TransformComponent>(i);
+        if(child.Children().size() > 0){
+            Entity r = FindEntityByNameInChildren(i, name);
+            if(r != EntityNull) return r;
+        }
+    }
+    return EntityNull;
+}
+
 void Scene::Start(){
     if(running) return;
 

@@ -146,14 +146,14 @@ private:
 
         if constexpr (has_ongui_v<T>) {
             // If the struct has its own OnGui()
-            if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                value.OnGui(*this);   // ✅ Calls the custom OnGui
+            if (ImGui::TreeNodeEx(name)) {
+                value.OnGui(*this);  
                 ImGui::TreePop();
             }
         } else {
             // Default serialization fallback
-            if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen)) {
-                (*this)(value);       // ✅ Calls cereal serialization
+            if (ImGui::TreeNodeEx(name)) {
+                (*this)(value);
                 ImGui::TreePop();
             }
         }
@@ -201,7 +201,7 @@ private:
     void DrawUI(const char* name, std::vector<T>& vector, Options opt = Options()){
         int removeIndex = -1;
 
-        if(ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen)){
+        if(ImGui::TreeNodeEx(name)){
             int i = 0;
             for(auto &&value : vector){
                 std::string _name = std::to_string(i);
