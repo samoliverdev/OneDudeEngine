@@ -44,8 +44,6 @@ int main(int argc, char *argv[]){
         OD::Application::GetArgs().push_back(std::string(argv[i]));
     }
 
-    //#define RESOURCES_PATH "C:/Users/sam/Desktop/BuildTest/"
-
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
         LogError("Application failed to create!");
         OD::Log::Shutdown();//TODO: Move this to Application 

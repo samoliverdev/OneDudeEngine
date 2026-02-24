@@ -1,3 +1,5 @@
+#define RESOURCES_PATH "C:/Users/sam/Desktop/BuildTest/"
+
 #include "OD/pch.h"
 #include <OD/Entry.h>
 #include "Samples/BaseMesh.h"
