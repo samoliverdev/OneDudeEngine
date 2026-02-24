@@ -48,7 +48,7 @@ void PackageSample::OnInit(){
     //Ref<Package> package = CreateRef<TarPackage>("Sandbox/PackageTest.tar");
     //Ref<Package> package = CreateRef<MinizPackage>("Sandbox/PackageTest.zip");
 
-    PhysFS::Init();
+    //PhysFS::Init();
     PhysFS::Mount("Sandbox/PackageTest.zip");
     AssetManager::Get().Mount(PhysFS::GetPackage());
     
@@ -58,8 +58,8 @@ void PackageSample::OnInit(){
     Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Cube.glb");
 
     //PhysFSPackage::Unmount("Sandbox/PackageTest.zip");
-    AssetManager::Get().UnMount(PhysFS::GetPackage());
-    PhysFS::Shutdown();
+    //AssetManager::Get().UnMount(PhysFS::GetPackage());
+    //PhysFS::Shutdown();
 
     Assert(model->meshs.size() > 0);
     

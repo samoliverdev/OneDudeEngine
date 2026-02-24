@@ -1035,6 +1035,7 @@ void Scene::Update(){
 
     fixedUpdateAccumulator += _delta;
     
+    #if ENABLE_FIXED
     {
     OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate");
     if(_fixedStep > 0.0f && _delta >= 0.0f){
@@ -1054,6 +1055,19 @@ void Scene::Update(){
         fixedUpdateAccumulator = std::clamp(fixedUpdateAccumulator, 0.0f, _fixedStep > 0.0f ? _fixedStep : 0.0f);
     }*/
     }
+    #else
+    {
+        OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate");
+        for(auto s: SceneManager::Get().globalFixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+        for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
+        {
+            //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
+            executor->run(taskflow).wait(); 
+            taskflow.clear();
+        }
+        fixedUpdateAccumulator -= _delta;
+    }
+    #endif
 
     //--------Post Physic---------
     {

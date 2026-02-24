@@ -658,7 +658,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const Mesh& mesh){
 Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, const std::vector<unsigned int>& indices){
 	//TODO: Revisar this, the current function maybe has over doing thing, i fix the crach so problem the current function can be more simple
 	
-	/*
+	///*
 	if(vertices.empty() || indices.size() < 3) return nullptr;
     if(indices.size() % 3 != 0) return nullptr;
 
@@ -686,9 +686,9 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
     if(out->joltTriangles.empty()) return nullptr;
 
     return out;
-	*/
+	//*/
 
-	///*
+	/*
     Ref<MeshShapeData> out = CreateRef<MeshShapeData>();
 
 	// Check for empty input
@@ -778,7 +778,7 @@ Ref<MeshShapeData> CreateMeshShapeData(const std::vector<Vector3>& vertices, con
     }
 
     return out;
-	//*/
+	*/
 }
 
 struct PhysicsWorld{
@@ -2291,7 +2291,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 
 		if(rb.type == RigidbodyComponent::Type::Dynamic){
 			// Use Convex Hull for dynamic
-			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.meshData->convexPoints);
+			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.meshData->convexPoints, 0.02f);
 			//shapeSettings.SetDensity(rb.mass);
 
 			auto result = shapeSettings.Create();
@@ -2970,13 +2970,14 @@ void PhysicsSystem::OnInit(Scene& inScene){
 
 	physicsWorld->physicsSystem.SetGravity(ToJolt(currentSettings->gravity));
 
-	/*auto s = physicsWorld->physicsSystem.GetPhysicsSettings();
-	//s.mSpeculativeContactDistance = 0.02f;
-	//s.mPenetrationSlop = 0.002f;
-	s.mNumVelocitySteps = 24*2;
-	s.mNumPositionSteps = 24*2;
-	//s.mMaxPenetrationDistance = 0.2f;
-	physicsWorld->physicsSystem.SetPhysicsSettings(s);*/
+	auto s = physicsWorld->physicsSystem.GetPhysicsSettings();
+	s.mPenetrationSlop  = 0.005f;
+	s.mSpeculativeContactDistance = 0.01f;
+	s.mNumVelocitySteps *= 2;
+	s.mNumPositionSteps *= 2;
+	s.mManifoldTolerance = 2.0e-3f;
+	s.mMaxPenetrationDistance = 0.05f;
+	physicsWorld->physicsSystem.SetPhysicsSettings(s);
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

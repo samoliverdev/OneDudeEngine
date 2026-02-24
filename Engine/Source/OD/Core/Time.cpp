@@ -29,11 +29,19 @@ void Time::UnscaledDeltaTime(float v){
 }
 
 float Time::FixedDelta(){
+    #if ENABLE_FIXED
     return fixedDelta * timeScale;
+    #else
+    return DeltaTime();
+    #endif
 }
 
 float Time::UnscaledFixedDelta(){
+    #if ENABLE_FIXED
     return fixedDelta;
+    #else
+    return UnscaledDeltaTime();
+    #endif
 }
 
 } 

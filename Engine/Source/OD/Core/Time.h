@@ -1,6 +1,8 @@
 #pragma once
 #include "OD/Defines.h"
 
+#define ENABLE_FIXED 1
+
 namespace OD{
 
 class OD_API Time{

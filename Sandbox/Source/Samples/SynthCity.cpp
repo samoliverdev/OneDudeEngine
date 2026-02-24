@@ -56,7 +56,7 @@ void SynthCitySample::OnInit(){
 
     //Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/PolygonCity/City.fbx");
 
-    Ref<Model> cityModel = Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
+    Ref<Model> cityModel = Asset::CreateFromFile<Model>("C:/Users/sam/Desktop/Apocalipse.fbx", ModelLoadSettings{nullptr, 1, false});  //Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
     
 
     cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));

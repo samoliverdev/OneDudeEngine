@@ -121,4 +121,20 @@ void SaveArchive(const std::string& path, Archive& data, const std::string& name
     }
 }
 
+class MemoryBuffer: public std::streambuf{
+public:
+    MemoryBuffer(const char* data, size_t size){
+        char* p = const_cast<char*>(data);
+        setg(p, p, p + size);
+    }
+};
+
+class MemoryInputStream: public std::istream{
+public:
+    MemoryInputStream(const char* data, size_t size):std::istream(&buffer), buffer(data, size){}
+private:
+    MemoryBuffer buffer;
+};
+
+
 }

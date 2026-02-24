@@ -20,22 +20,6 @@
 
 namespace OD{
 
-class MemoryBuffer: public std::streambuf{
-public:
-    MemoryBuffer(const char* data, size_t size){
-        char* p = const_cast<char*>(data);
-        setg(p, p, p + size);
-    }
-};
-
-class MemoryInputStream: public std::istream{
-public:
-    MemoryInputStream(const char* data, size_t size)
-        :std::istream(&buffer), buffer(data, size){}
-private:
-    MemoryBuffer buffer;
-};
-
 Ref<ClipT> Model::FindClipByName(const std::string& name){
 	for(auto& i: animationClips){
 		if(i->GetName() == name) return i;
@@ -223,7 +207,7 @@ bool Model::LoadFromPackage(const std::string& path, Package& package){
 	}
 
 	if(fileType == "modelbin"){
-		Assert(false);
+		//Assert(false);
 		MemoryInputStream mem((char*)data, dataSize);
 		cereal::BinaryInputArchive ar(mem);
 		LoadFrom(ar);
@@ -251,7 +235,7 @@ std::vector<std::string> Model::GetFileAssociations(){
 	};
 }
 
-Ref<Model> Model::CreateFromFile(const std::string& path, ModelLoadSettings loadSettings){
+/*Ref<Model> Model::CreateFromFile(const std::string& path, ModelLoadSettings loadSettings){
 	Ref<Model> out = CreateRef<Model>();
     out->settings = loadSettings;
     if(out->LoadFromFile(path) == false){
@@ -267,39 +251,7 @@ Ref<Model> Model::CreateFromPackage(const std::string& path, Package& package, M
         return nullptr;
     }
     return out;
-
-	/*model.Clear();
-
-	auto getExtension = [](const std::string& path) -> std::string {
-        size_t dotPos = path.rfind('.');
-        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
-    };
-
-	std::string fileType = getExtension(path);
-
-	void* data;
-	size_t dataSize;
-	if(package.ReadFileData(path.c_str(), data, dataSize) == false){
-		package.FreeFileData(data);
-		return false;
-	}
-
-	if(fileType == "modelbin"){
-		Assert(false);
-		MemoryInputStream mem((char*)data, dataSize);
-		cereal::BinaryInputArchive ar(mem);
-		model.LoadFrom(ar);
-
-		model.SetPath(path);
-		return true;
-	}
-
-	#ifdef USE_ASSIMP
-	bool result = AssimpLoadModel(model, data, dataSize, fileType.c_str(), loadSettings);
-	package.FreeFileData(data);
-	return result;
-	#endif*/
-}
+}*/
 
 bool Model::Save(const std::string& outPath, SaveType type){
 	if(type == Asset::SaveType::SettingOnly) return false;

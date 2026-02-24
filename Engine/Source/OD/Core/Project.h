@@ -11,6 +11,7 @@ struct OD_API Project{
     std::string startScene = "";
     std::string assetDirectory = "";
     std::string scriptModulePath = "";
+    std::string defaultPackagePath = "";
 
     std::string projectDirectory = "";
     
@@ -20,6 +21,7 @@ struct OD_API Project{
         ArchiveDumpNVP(ar, startScene);
         ArchiveDumpNVP(ar, assetDirectory);
         ArchiveDumpNVP(ar, scriptModulePath);
+        ArchiveDumpNVP(ar, defaultPackagePath);
     }
 };
 

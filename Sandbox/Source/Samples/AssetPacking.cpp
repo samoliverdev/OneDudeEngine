@@ -79,12 +79,18 @@ void AssetPackingSample::OnInit(){
     meshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));*/
     #else
 
-    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
-    Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.png");
-    Ref<Material> mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    //Ref<Shader> shader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl");
+    //shader->Save("Sandbox/lit.shaderbin", Asset::SaveType::FinalBinary);
 
-    texture->Save("Sandbox/image.texturebin", Asset::SaveType::FinalBinary);
-    
+    Ref<Shader> shader2 = AssetManager::Get().LoadAsset<Shader>("Sandbox/Lit");
+
+    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+
+    //Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.png");
+    //texture->Save("Sandbox/image.texturebin", Asset::SaveType::FinalBinary);
+
+    Ref<Material> mat = CreateRef<Material>(shader2);
+
     Ref<Texture2D> textureBin = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/image.texturebin");
     Assert(textureBin != nullptr);
 

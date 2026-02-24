@@ -53,6 +53,18 @@ struct OD_API ShaderPipeline{
     BlendMode srcBlend;
     BlendMode dstBlend;
     bool supportInstancing;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, cullFace);
+        ArchiveDumpNVP(ar, depthTest);
+        ArchiveDumpNVP(ar, depthMask);
+        ArchiveDumpNVP(ar, colorMask);
+        ArchiveDumpNVP(ar, blend);
+        ArchiveDumpNVP(ar, srcBlend);
+        ArchiveDumpNVP(ar, dstBlend);
+        ArchiveDumpNVP(ar, supportInstancing);
+    }
 };
 
 struct OD_API ShaderPassData{
@@ -60,6 +72,13 @@ struct OD_API ShaderPassData{
     ShaderPipeline pipeline;
     std::vector<std::vector<std::string>> properties;
     void UpdateProperties();
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, name);
+        ArchiveDumpNVP(ar, pipeline);
+        ArchiveDumpNVP(ar, properties);
+    }
 };
 
 struct OD_API ShaderSourceData{
@@ -67,6 +86,14 @@ struct OD_API ShaderSourceData{
     std::vector<std::vector<std::string>> pragmas;
     std::vector<ShaderPassData> passes;
     std::string baseSource;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, properties);
+        ArchiveDumpNVP(ar, pragmas);
+        ArchiveDumpNVP(ar, passes);
+        ArchiveDumpNVP(ar, baseSource);
+    }
 };
 
 bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);

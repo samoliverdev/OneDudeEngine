@@ -166,7 +166,7 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
     std::string ext = p.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-    // 🔹 Lambda for user-friendly image formats
+    //Lambda for user-friendly image formats
     auto LoadFromImageFile = [&](const std::string& path){
         settings = loadSettings;
 
@@ -277,6 +277,61 @@ bool Texture2D::LoadFromPackage(const std::string& path, Package& package){
     if(package.ReadFileData(path.c_str(), data, size) == false){
         package.FreeFileData(data);
         return false;
+    }
+
+    namespace fs = std::filesystem;
+    fs::path p(path);
+    std::string ext = p.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    auto LoadFromBinaryFile = [&](){
+        MemoryInputStream mem((char*)data, size);
+        cereal::PortableBinaryInputArchive archive{mem};
+
+        int width = 0;
+        int height = 0;
+        int nrChannels = 0;
+        size_t size = 0;
+
+        archive(settings);
+        archive(width);
+        archive(height);
+        archive(nrChannels);
+        archive(size);
+
+        std::vector<uint8_t> data(size);
+        archive(cereal::binary_data(data.data(), size));
+
+        //settings.textureFormat = (nrChannels > 3) ? TextureFormat::RGBA : TextureFormat::RGB;
+        if(nrChannels == 4){
+            settings.textureFormat = TextureFormat::RGBA;
+        } else if(nrChannels == 3){
+            settings.textureFormat = TextureFormat::RGB;
+        } else if(nrChannels == 1){
+            settings.textureFormat = TextureFormat::RED8;
+        } else {
+            Assert(false && "Not supported yet!!!");
+        }
+
+        bool success = graphicsDevice->Texture2DCreate(
+            *this,
+            data.data(),
+            width,
+            height,
+            TextureDataType::UnsignedByte
+        );
+
+        if(!success){
+            graphicsDevice->Texture2DDestroy(*this);
+            return false;
+        }
+
+        this->path = path;
+        return true;
+    };
+
+    if(ext == ".texturebin"){
+        return LoadFromBinaryFile();
     }
 
     std::string inpath(path);

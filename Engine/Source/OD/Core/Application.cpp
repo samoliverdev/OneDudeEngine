@@ -9,6 +9,7 @@
 #include "Instrumentor.h"
 #include "JobSystem.h"
 #include "Lua.h"
+#include "PhysFSPackage.h"
 #include "OD/Core/GlobalSettings.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
@@ -95,7 +96,17 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     running = true;
     appHasInited = true;
 
+    PhysFS::Init();
+
+    auto PathExists = [](const std::string& path){
+        return std::filesystem::exists(path);
+    };
+
     //OD::AssetManager::Get().StartHotReload();
+    if(project->defaultPackagePath.empty() == false && PathExists(project->defaultPackagePath)){
+        PhysFS::Mount(project->defaultPackagePath.c_str());
+        AssetManager::Get().Mount(PhysFS::GetPackage());
+    }
 
     return true;
 }
@@ -279,6 +290,8 @@ void Application::OnExit(){
     AssetTypesDB::Get().assetFuncs.clear();
     AssetManager::Get().UnloadAll();
     //AssetTypesDB::Get().assetFuncs.clear();
+
+    PhysFS::Shutdown();
 
     Graphics::Shutdown();
     //Input::_Shutdown(0);

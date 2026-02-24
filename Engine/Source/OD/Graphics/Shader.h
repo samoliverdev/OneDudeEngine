@@ -20,7 +20,10 @@ public:
     static Ref<Shader> CreateFromFile(const std::string& filepath);
 
     bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
     std::vector<std::string> GetFileAssociations() override;
+
+    bool Save(const std::string& outPath, SaveType type) override;
 
     inline bool IsComplete(){ return isComplete; }
     inline std::vector<std::vector<std::string>>& Properties(){ return shaderSourceData.properties; }

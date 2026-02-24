@@ -2,8 +2,9 @@
 #include "Shader.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#include "OD/Serialization/SerializationFull.h"
 #include <numeric>
-
+#include <fstream>
 
 namespace OD{
 
@@ -82,14 +83,106 @@ Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
 }
 
 bool Shader::LoadFromFile(const std::string& path){
+    auto getExtension = [](const std::string& path) -> std::string {
+        size_t dotPos = path.rfind('.');
+        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+    };
+
+    std::string fileType = getExtension(path);
+    if(fileType == "shaderbin"){
+        Destroy();
+
+        std::ifstream file(path);
+        if(!file.is_open()) return false;
+
+        cereal::JSONInputArchive ar(file);
+        ar(shaderSourceData);
+
+        this->path = path;
+        errors.clear();
+        isComplete = true;
+        sourcePath = path;
+        //ShaderLoadFile(path, shaderSourceData);
+        passes.resize(shaderSourceData.passes.size());
+        for(int i = 0; i < passes.size(); i++){
+            passes[i].name = shaderSourceData.passes[i].name;
+            bool r = InitPass(i);
+            if(r == false) break;
+        }
+
+        if(isComplete == false){
+            LogError("Error To Compile Shader: {}", path);
+            Destroy();
+            return false;
+        } 
+
+        return true;
+    }
+
     return graphicsDevice->ShaderCreate(*this, path);
+}
+
+bool Shader::LoadFromPackage(const std::string& path, Package& package){
+    auto getExtension = [](const std::string& path) -> std::string {
+        size_t dotPos = path.rfind('.');
+        return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
+    };
+
+    std::string fileType = getExtension(path);
+    Assert(fileType != "glsl" && "File dont surpoted by package");
+    Assert(fileType != "shader" && "File dont surpoted by package");
+
+    void* data;
+	size_t dataSize;
+	if(package.ReadFileData(path.c_str(), data, dataSize) == false){
+		package.FreeFileData(data);
+		return false;
+	}
+
+    MemoryInputStream mem((char*)data, dataSize);
+	cereal::JSONInputArchive ar(mem);
+
+    ar(shaderSourceData);
+    this->path = path;
+    errors.clear();
+    isComplete = true;
+    sourcePath = path;
+    //ShaderLoadFile(path, shaderSourceData);
+    passes.resize(shaderSourceData.passes.size());
+    for(int i = 0; i < passes.size(); i++){
+        passes[i].name = shaderSourceData.passes[i].name;
+        bool r = InitPass(i);
+        if(r == false) break;
+    }
+    if(isComplete == false){
+        LogError("Error To Compile Shader: {}", path);
+        Destroy();
+        return false;
+    } 
+
+    package.FreeFileData(data);
+    return true;
 }
 
 std::vector<std::string> Shader::GetFileAssociations(){ 
     return std::vector<std::string>{
         ".shader",
-        ".glsl"
+        ".glsl",
+        ".shaderbin"
     }; 
+}
+
+bool Shader::Save(const std::string& outPath, SaveType type){
+    if(type == Asset::SaveType::AssetBinary){
+		Assert(false);
+    }
+
+    std::ofstream file(outPath); 
+    if(!file.is_open()) return false;
+
+    cereal::JSONOutputArchive ar(file);
+    ar(shaderSourceData);
+    return true;
 }
 
 bool Shader::Create(std::string inPath){

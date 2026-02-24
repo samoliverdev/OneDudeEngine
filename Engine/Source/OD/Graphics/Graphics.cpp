@@ -40,6 +40,7 @@ void GraphicsModuleInit(){
 
     AssetTypesDB::Get().RegisterAssetType<Shader>(".glsl", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
     AssetTypesDB::Get().RegisterAssetType<Shader>(".shader", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
+    AssetTypesDB::Get().RegisterAssetType<Shader>(".shaderbin", [](const std::string& path){ return AssetManager::Get().LoadAsset<Shader>(path); });
 
     AssetTypesDB::Get().RegisterAssetType<Mesh>(".bin", [](const std::string& path){ return AssetManager::Get().LoadAsset<Mesh>(path); });
 

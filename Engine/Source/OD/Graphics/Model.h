@@ -102,6 +102,9 @@ public:
 
     Ref<class MeshShapeData> modelShapeData = nullptr;
 
+    Model() = default;
+    Model(ModelLoadSettings loadSettings):settings(loadSettings){}
+
     Ref<ClipT> FindClipByName(const std::string& name);
     void OnGui() override;
     void SetPath(const std::string& inPath);
@@ -112,8 +115,8 @@ public:
     void SetShader(Ref<Shader> customShader);
     void Reload() override;
 
-    static Ref<Model> CreateFromFile(const std::string& path, ModelLoadSettings loadSettings = {});
-    static Ref<Model> CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings = {});
+    //static Ref<Model> CreateFromFile(const std::string& path, ModelLoadSettings loadSettings = {});
+    //static Ref<Model> CreateFromPackage(const std::string& path, Package& package, ModelLoadSettings loadSettings = {});
 
     static AABB GenerateAABB(Model& model);
     static Sphere GenerateSphereBV(Model& model);

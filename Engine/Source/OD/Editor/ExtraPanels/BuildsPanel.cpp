@@ -280,7 +280,7 @@ void BuildsPanel::Build(){
     CopyDirectoryRecursive(
         "./",
         buildPath,
-        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".wav", ".mp3", ".ttf", ".ini"},
+        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".wav", ".mp3", ".ttf", ".otf", ".ini"},
         [&](const fs::path& src, const fs::path& dst) -> bool {
             if(ShouldSkip(src, dontBuildAssetFolders)) return true;
 
@@ -289,6 +289,7 @@ void BuildsPanel::Build(){
             // Models
             if(HasExtension(ext, {".glb", ".glft", ".fbx"})) return BuildAsset<Model>(src, buildPath, oldPath, newPath, ".modelbin"); // return BuildModel(src, buildPath, oldPath, newPath);
             if(HasExtension(ext, {".png", ".jpg", ".jpeg"})) return BuildAsset<Texture2D>(src, buildPath, oldPath, newPath, ".texturebin"); // return BuildModel(src, buildPath, oldPath, newPath);
+            if(HasExtension(ext, {".glsl", ".shader"})) return BuildAsset<Shader>(src, buildPath, oldPath, newPath, ".shaderbin"); // return BuildModel(src, buildPath, oldPath, newPath);
             //TODO: Add A Simple audio pack/save to AudioClip
 
             return true; // normal copy
