@@ -351,6 +351,7 @@ public:
     //TODO: To Deprecate later
     //INFO: this can cause alot of asset load, becose new USE_WEAK_PTR Update, if the prefab entity is constant create and destory
     Entity InstantiatePrefab(const char* prefabPath);
+    Entity InstantiatePrefab(const char* prefabPath, Package& package);
     Entity InstantiatePrefab(const Prefab& prefab);
     
     Entity GetMainCamera();
@@ -393,6 +394,9 @@ public:
     tf::Taskflow& GetTaskflow();
     //inline auto& GetExecutor(){ return executor; }
     //inline auto& GetTaskflow(){ return taskflow; }
+
+    bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
 private:
     bool isPrefab = false; //INFO: this is temporary, until refactoty Prefab Load
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity root, std::string prefabPath, bool isRoot = false);

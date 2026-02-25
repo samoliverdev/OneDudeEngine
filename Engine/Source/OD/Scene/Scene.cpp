@@ -1373,6 +1373,77 @@ Entity Scene::InstantiatePrefab(const char* path){
     return root;
 }
 
+Entity Scene::InstantiatePrefab(const char* prefabPath, Package& package){
+    void* data = nullptr;
+    size_t size;
+    if(package.ReadFileData(prefabPath, data, size) == false){
+        package.FreeFileData(data);
+        return EntityNull;
+    }
+
+    MemoryInputStream mem((char*)data, size);
+    //cereal::PortableBinaryInputArchive archive{mem};
+    //std::ifstream is(path);
+    ODInputArchive archive(mem);
+
+    std::unordered_map<entt::entity, entt::entity> loadLookup;
+    std::vector<entt::entity> entities;
+    archive(cereal::make_nvp("Entities", entities));
+
+    Entity root = EntityNull;
+
+    for(auto i: entities){
+        loadLookup[i] = registry.create();
+        if(i == entities[0]) root = loadLookup[i]; //Entity(loadLookup[i], this);
+    } 
+
+    //_LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent");
+    _LoadComponent<InfoComponent>(archive, loadLookup, registry, "InfoComponent", [](InfoComponent& c){
+        if(c.layer < 0 || c.layer >= LayerCount){
+            c.layer = Layers::Layer0;
+        }
+    });
+    _LoadTransform(archive, loadLookup, registry, "TransformComponent", true);
+
+    for(auto i: SceneManager::Get().componentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+    for(auto i: SceneManager::Get().coreComponentsSerializer){
+        try{
+            i.second.snapshotIn(archive, loadLookup, registry, std::string(i.first));
+        }catch(...){}
+    }
+
+    //auto entityView = registry.view<InfoComponent>();
+    for(auto e: loadLookup){
+        if(e.first == entities[0]) continue;
+        InfoComponent& info = registry.get<InfoComponent>(e.second);
+        if(info.entityType == EntityType::PrefabRoot){
+            _Load(info.prefabPath.c_str(), e.second);
+        }
+    }
+
+    TransformComponent& rootTrans = GetComponent<TransformComponent>(root);
+    rootTrans.parent = EntityNull;
+    rootTrans.hasParent = false;
+    rootTrans.UpdateGlobalTransformCacheIfNeeded();
+
+    package.FreeFileData(data);
+    return root;
+}
+
+bool Scene::LoadFromFile(const std::string& path){
+    Assert(false && "Not Implemented");
+    return false;
+}
+
+bool Scene::LoadFromPackage(const std::string& path, Package& package){
+    Assert(false && "Not Implemented");
+    return false;
+}
+
 void Scene::_Unpack(Entity e, bool all, bool unpackRoot){
     InfoComponent& info = GetComponent<InfoComponent>(e);
     TransformComponent& trans = GetComponent<TransformComponent>(e);

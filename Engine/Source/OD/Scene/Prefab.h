@@ -17,6 +17,7 @@ public:
 
     void OnGui() override;
     bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
     std::vector<std::string> GetFileAssociations() override;
 private:
     Scene* scene = nullptr;

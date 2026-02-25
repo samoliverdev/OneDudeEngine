@@ -76,7 +76,7 @@ Shader::Shader(std::string path){
 
 Ref<Shader> Shader::CreateFromFile(const std::string& filepath){
     Ref<Shader> out = CreateRef<Shader>();
-    if(out->Create(filepath) == false){
+    if(out->LoadFromFile(filepath) == false){ //if(out->Create(filepath) == false){
         return nullptr;
     }
     return out;
@@ -103,6 +103,30 @@ bool Shader::LoadFromFile(const std::string& path){
         isComplete = true;
         sourcePath = path;
         //ShaderLoadFile(path, shaderSourceData);
+        passes.resize(shaderSourceData.passes.size());
+        for(int i = 0; i < passes.size(); i++){
+            passes[i].name = shaderSourceData.passes[i].name;
+            bool r = InitPass(i);
+            if(r == false) break;
+        }
+
+        if(isComplete == false){
+            LogError("Error To Compile Shader: {}", path);
+            Destroy();
+            return false;
+        } 
+
+        return true;
+    }
+
+    if(fileType == "glsl" || fileType == "shader"){
+        Destroy();
+    
+        this->path = path;
+        errors.clear();
+        isComplete = true;
+        sourcePath = path;
+        ShaderLoadFile(path, shaderSourceData);
         passes.resize(shaderSourceData.passes.size());
         for(int i = 0; i < passes.size(); i++){
             passes[i].name = shaderSourceData.passes[i].name;
@@ -186,6 +210,7 @@ bool Shader::Save(const std::string& outPath, SaveType type){
 }
 
 bool Shader::Create(std::string inPath){
+    Assert(false && "Outdata");
     //LogInfo("Create Shader: %s", inPath.c_str());
     Destroy();
     

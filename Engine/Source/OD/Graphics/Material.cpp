@@ -621,6 +621,29 @@ bool Material::LoadFromFile(const std::string& inPath){
     return true;
 }
 
+bool Material::LoadFromPackage(const std::string& inPath, Package& package){
+    void* data = nullptr;
+    size_t size;
+    if(package.ReadFileData(inPath.c_str(), data, size) == false){
+        package.FreeFileData(data);
+        return false;
+    }
+
+    path = inPath;
+
+    try{
+        MemoryInputStream mem((char*)data, size);
+        cereal::JSONInputArchive archive{mem};
+        archive(*this);
+    } catch(...){
+        package.FreeFileData(data);
+        return false;
+    }
+
+    package.FreeFileData(data);
+    return true;
+}
+
 std::vector<std::string> Material::GetFileAssociations(){
     return std::vector<std::string>{
 		".material"

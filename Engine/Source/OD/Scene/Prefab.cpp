@@ -39,7 +39,20 @@ bool Prefab::LoadFromFile(const std::string& inpath){
 	scene->isPrefab = true;
     root = scene->InstantiatePrefab(path.c_str());
 
-    return true;
+    return root != EntityNull; //return true;
+}
+
+bool Prefab::LoadFromPackage(const std::string& inpath, Package& package){
+	Assert(false && "Not Fully work becose nested prefabs");
+
+	path = inpath;
+    if(scene != nullptr) delete scene;
+
+    scene = new Scene(true);
+	scene->isPrefab = true;
+    root = scene->InstantiatePrefab(path.c_str(), package);
+
+    return root != EntityNull; //true;
 }
 
 std::vector<std::string> Prefab::GetFileAssociations(){

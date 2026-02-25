@@ -302,7 +302,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
         reinterpret_cast<ArenaLinearAllocator<T>*>(allo)->Init(1000);
     }
     ArenaLinearAllocator<T>* alloc = reinterpret_cast<ArenaLinearAllocator<T>*>(allo);
-    Ref<T> asset = alloc->AllocShared();
+    Ref<T> asset = alloc->AllocShared(std::forward<Args>(args)...);
     #else
 
     Assert(AssetTypesDB::Get().assetFuncsTypes.count(GetType<T>()));

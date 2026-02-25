@@ -58,14 +58,17 @@ public:
         unsigned int advance;    // Offset to advance to next glyph
     };
 
-    //Font() = default;
+    Font() = default;
+    Font(const FontSettings& insettings):settings(insettings){}
     //Font(const std::string& inPath);
+    
 
     void OnGui() override;
     
-    static Ref<Font> CreateFromFile(const std::string& filepath, const FontSettings& settings = {});
+    //static Ref<Font> CreateFromFile(const std::string& filepath, const FontSettings& settings = {});
     
     bool LoadFromFile(const std::string& path) override;
+    bool LoadFromPackage(const std::string& path, Package& package) override;
 
     inline std::vector<std::string> GetFileAssociations() override { 
         return std::vector<std::string>{
@@ -93,7 +96,7 @@ private:
     MSDFData* data;
     std::map<char, Character> characters; //Fixme opengl texture memory leak
     Ref<Texture2D> fontAtlas;
-    FontSettings settings;
+    FontSettings settings = {};
 
     float msdfPxRange = 0;
 };
