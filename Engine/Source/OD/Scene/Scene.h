@@ -348,6 +348,8 @@ public:
     bool IsValid(Entity entity);
 
     Entity Instantiate(const Ref<Model> model, bool staticRenderer = false, int overrideLayer = LayerNone);
+    //TODO: To Deprecate later
+    //INFO: this can cause alot of asset load, becose new USE_WEAK_PTR Update, if the prefab entity is constant create and destory
     Entity InstantiatePrefab(const char* prefabPath);
     Entity InstantiatePrefab(const Prefab& prefab);
     

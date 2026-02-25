@@ -10,6 +10,7 @@
 namespace OD{
 
 #define USE_EXPERIMENTAL_ALLOCATOR
+#define USE_WEAK_PTR
 
 class OD_API Asset{
 public:
@@ -122,13 +123,21 @@ public:
 private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
+    #ifdef USE_WEAK_PTR
+    std::unordered_map<Type, std::unordered_map<std::string, WeakRef<Asset>>> data;
+    #else
     std::unordered_map<Type, std::unordered_map<std::string, Ref<Asset>>> data;
+    #endif
     
     #ifdef USE_EXPERIMENTAL_ALLOCATOR
     std::unordered_map<Type, void*> allocator;
     #endif
 
+    #ifdef USE_WEAK_PTR
+    std::unordered_map<std::string, WeakRef<Asset>>& GetDB(Type id);
+    #else
     std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
+    #endif
 
     efsw::FileWatcher* fileWatcher;
     AssetManagerFileUpdateListener* listener;
@@ -234,7 +243,18 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 
     //if(db.count(path)) return reinterpret_cast<const Ref<T>&>(db[path]);
     //if(db.count(path)) return std::dynamic_pointer_cast<T>(db[path]);
-    if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
+    //if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
+
+    #ifdef USE_WEAK_PTR
+    if(db.count(resolvedPath)){
+        if(auto existing = db[resolvedPath].lock()){
+            return std::static_pointer_cast<T>(existing);
+        }
+        db.erase(resolvedPath);// expired → remove stale entry
+    }
+    #else
+    return if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
+    #endif
 
     //Find full path if arg path has not ext ex: "Engine/Textures/White" -> ("Engine/Textures/White.png" | "Engine/Textures/White.texturebin" | ...) 
     namespace fs = std::filesystem;
@@ -307,7 +327,11 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
         if(asset->LoadFromFile(resolvedPath) == false) return nullptr;
     }
     
+    #ifdef USE_WEAK_PTR
+    db[resolvedPath] = std::static_pointer_cast<Asset>(asset); //asset;
+    #else
     db[resolvedPath] = asset;
+    #endif
     
     //return reinterpret_cast<const Ref<T>&>(asset);
     return std::static_pointer_cast<T>(asset);
@@ -324,7 +348,11 @@ void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
     auto& db = GetDB(GetType<T>()); 
 
     LogInfo("AddAsset: {}", path);
+    #ifdef USE_WEAK_PTR
+    db[path] = std::static_pointer_cast<Asset>(asset); //asset;
+    #else
     db[path] = asset;
+    #endif
 }
 
 }

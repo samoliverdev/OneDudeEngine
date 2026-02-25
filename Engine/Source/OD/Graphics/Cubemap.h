@@ -12,6 +12,8 @@ class OD_API Cubemap: public Asset{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:
+    Cubemap();
+    ~Cubemap();
 
     static Ref<Cubemap> CreateFromFile(
         const char* right, const char* left, const char* top,

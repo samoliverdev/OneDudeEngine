@@ -27,10 +27,10 @@ struct OD_API MaterialMap{
     Type type;
 
     //Dont call destructor if has inside the union
-    Ref<Texture2D> texture;
-    Ref<Texture2DArray> textureArray;
-    Ref<Cubemap> cubemap;
-    Ref<UniformBuffer> buffer;
+    Ref<Texture2D> texture = nullptr;
+    Ref<Texture2DArray> textureArray = nullptr;
+    Ref<Cubemap> cubemap = nullptr;
+    Ref<UniformBuffer> buffer = nullptr;
 
     struct Vec{
         Vector4 vector;
@@ -70,11 +70,19 @@ struct OD_API MaterialMap{
             int listCount ;
         };
     };
+    
 
+    MaterialMap() = default;
+    MaterialMap(const MaterialMap&) = default;
+    MaterialMap& operator=(const MaterialMap&) = default;
+    ~MaterialMap() = default;
+
+    /* This is super bug, is bug allRef<Texture2D> texture..., i dont remenber why i do this but is bug
     MaterialMap(){ memset(this, 0, sizeof(MaterialMap)); }
     MaterialMap(const MaterialMap& other){ memcpy(this, &other, sizeof(MaterialMap)); }
     MaterialMap& operator=(const MaterialMap& other){ memcpy(this, &other, sizeof(MaterialMap)); return *this; }
-    ~MaterialMap(){
+    */
+    //~MaterialMap(){
         /*if(type == MaterialMap::Type::Vector2) vector.~Vector4();
         if(type == MaterialMap::Type::Vector3) vector.~Vector4();
         if(type == MaterialMap::Type::Vector4) vector.~Vector4();
@@ -83,7 +91,7 @@ struct OD_API MaterialMap{
         if(type == MaterialMap::Type::TextureArray) textureArray.~Ref<Texture2DArray>();
         if(type == MaterialMap::Type::Framebuffer) framebuffer->~Framebuffer();
         if(type == MaterialMap::Type::Cubemap) cubemap.~Ref<Cubemap>();*/
-    };
+    //};
 
     template<class Archive> void save(Archive& ar) const;
     template<class Archive> void load(Archive& ar);

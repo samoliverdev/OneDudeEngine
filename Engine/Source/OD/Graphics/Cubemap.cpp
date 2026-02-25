@@ -10,6 +10,14 @@ namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
 
+Cubemap::Cubemap(){
+    LogInfo("OnCreation");
+}
+
+Cubemap::~Cubemap(){
+    LogInfo("OnDestroy: {}", path);
+}
+
 Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
     bool mipmap = true;
     Ref<Cubemap> out = CreateRef<Cubemap>();

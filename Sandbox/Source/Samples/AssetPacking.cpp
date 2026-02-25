@@ -27,6 +27,10 @@ void AssetPackingSample::OnInit(){
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<DeferredRenderPipeline>();
 
+    {
+        AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/water.png");
+    }
+
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);

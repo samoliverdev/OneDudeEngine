@@ -429,7 +429,12 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     */
 }
 
+Texture2D::Texture2D(){
+    LogInfo("OnCreation");
+}
+
 Texture2D::~Texture2D(){
+    LogInfo("OnDestroy: {}", path);
     Assert(graphicsDevice != nullptr);
     graphicsDevice->Texture2DDestroy(*this);
 }

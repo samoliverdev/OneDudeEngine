@@ -133,7 +133,6 @@ void PhysicsSample::OnInit(){
     uiTextRenderer.font = Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-Bold.ttf");
     uiTextRenderer.material = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
     scene->SetParent(uiImage3, uiText);*/
-    
 
     Entity env = scene->AddEntity("Env");
     scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};

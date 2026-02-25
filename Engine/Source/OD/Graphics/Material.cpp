@@ -679,13 +679,25 @@ void Material::UpdateMaps(){
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
             if(i[2] == "White"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg") );
+                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+                Assert(tex != nullptr);
+                Assert(tex->IsValid());
+                SetTexture(i[1].c_str(), tex);
             } else if(i[2] == "Black"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Black.jpg") );
+                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Black.jpg");
+                Assert(tex != nullptr);
+                Assert(tex->IsValid());
+                SetTexture(i[1].c_str(), tex );
             } else if(i[2] == "Normal"){
-                SetTexture(i[1].c_str(), AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Normal.jpg") );
+                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Normal.jpg");
+                Assert(tex != nullptr);
+                Assert(tex->IsValid());
+                SetTexture(i[1].c_str(), tex );
             } else {
-                SetTexture(i[1].c_str(), Texture2D::LoadDefautlTexture2D());
+                Ref<Texture2D> tex = Texture2D::LoadDefautlTexture2D();
+                Assert(tex != nullptr);
+                Assert(tex->IsValid());
+                SetTexture(i[1].c_str(), tex);
             }
         }
 

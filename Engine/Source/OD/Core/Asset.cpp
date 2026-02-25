@@ -64,9 +64,15 @@ AssetTypesDB& AssetTypesDB::Get(){
     return global;
 }
 
+#ifdef USE_WEAK_PTR
+std::unordered_map<std::string, WeakRef<Asset>>& AssetManager::GetDB(Type id){
+    return data[id];
+}
+#else
 std::unordered_map<std::string, Ref<Asset>>& AssetManager::GetDB(Type id){
     return data[id];
 }
+#endif
 
 void AssetManager::Mount(Package* p){
     packages.push_back(p);
@@ -104,6 +110,7 @@ public:
         const std::string& filename, efsw::Action action,
         std::string oldFilename) override 
     {
+        Assert(false && "Outdate becose weak_ptr update");
         /*switch ( action ) {
             case efsw::Actions::Add:
                 std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Added"
@@ -147,7 +154,9 @@ public:
                 if(i.second.count(fullPath) > 0){
                     std::lock_guard<std::mutex> lock(assetManager->toApplyHotReloadMutex);
                     //assetManager->toApplyHotReload.push_back(i.second[fullPath]);
-                    assetManager->toApplyHotReload.insert(i.second[fullPath]);
+                    #ifndef USE_WEAK_PTR
+                    assetManager->toApplyHotReload.insert(i.second[fullPath]); //current code comented becose weak_ptr update
+                    #endif
                 }
             }
         }

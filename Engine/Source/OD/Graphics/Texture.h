@@ -79,7 +79,7 @@ class OD_API Texture2D: public Asset{
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
 public:
-    Texture2D() = default;
+    Texture2D();
     ~Texture2D();
 
     static Ref<Texture2D> CreateFromFile(const std::string& filePath, Texture2DSetting settings); 

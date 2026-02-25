@@ -207,6 +207,7 @@ public:
     unsigned int renderPipelineDataBuffer;
 
     //Ref<SubShader> gismoShader;
+    Ref<Cubemap> defaultSkybox;
     Ref<Material> gismoMaterial;
     Ref<Mesh> fullScreenQuad;
     Ref<Material> brdfMat = nullptr;

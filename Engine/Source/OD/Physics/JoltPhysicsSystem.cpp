@@ -2291,7 +2291,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 
 		if(rb.type == RigidbodyComponent::Type::Dynamic){
 			// Use Convex Hull for dynamic
-			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.meshData->convexPoints, 0.02f);
+			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.meshData->convexPoints);//, 0.02f);
 			//shapeSettings.SetDensity(rb.mass);
 
 			auto result = shapeSettings.Create();
@@ -2970,14 +2970,14 @@ void PhysicsSystem::OnInit(Scene& inScene){
 
 	physicsWorld->physicsSystem.SetGravity(ToJolt(currentSettings->gravity));
 
-	auto s = physicsWorld->physicsSystem.GetPhysicsSettings();
+	/*auto s = physicsWorld->physicsSystem.GetPhysicsSettings();
 	s.mPenetrationSlop  = 0.005f;
 	s.mSpeculativeContactDistance = 0.01f;
 	s.mNumVelocitySteps *= 2;
 	s.mNumPositionSteps *= 2;
 	s.mManifoldTolerance = 2.0e-3f;
 	s.mMaxPenetrationDistance = 0.05f;
-	physicsWorld->physicsSystem.SetPhysicsSettings(s);
+	physicsWorld->physicsSystem.SetPhysicsSettings(s);*/
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
 

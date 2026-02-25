@@ -267,7 +267,7 @@ void OpenGLGraphicsDevice::Initialize(){
     glCheckError();
     #endif
 
-    auto defaultSkybox = Cubemap::CreateFromFile(
+    defaultSkybox = Cubemap::CreateFromFile(
         "Engine/Textures/Skybox/right.jpg",
         "Engine/Textures/Skybox/left.jpg",
         "Engine/Textures/Skybox/top.jpg",
