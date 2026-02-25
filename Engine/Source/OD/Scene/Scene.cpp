@@ -7,6 +7,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/AssetStream.h"
 //#include "OD/Serialization/SerializationFull.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Model.h"
@@ -1230,8 +1231,11 @@ void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::ent
 }
 
 void Scene::Load(const char* path){
-    std::ifstream is(path);
-    ODInputArchive archive(is);
+    AssetStream as(path, AssetManager::Get().GetPackages());
+    ODInputArchive archive(as.GetStream());
+
+    //std::ifstream is(path);
+    //ODInputArchive archive(is);
 
     std::unordered_map<entt::entity, entt::entity> loadLookup;
 
@@ -1275,8 +1279,11 @@ void Scene::_Load(const char* path, entt::entity prefab){
     LogWarning("LoadingPrefab: {}", path);
     //Assert(false);
 
-    std::ifstream is(path);
-    ODInputArchive archive(is);
+    AssetStream as(path, AssetManager::Get().GetPackages());
+    ODInputArchive archive(as.GetStream());
+
+    //std::ifstream is(path);
+    //ODInputArchive archive(is);
 
     std::unordered_map<entt::entity, entt::entity> loadLookup;
     std::vector<entt::entity> entities;

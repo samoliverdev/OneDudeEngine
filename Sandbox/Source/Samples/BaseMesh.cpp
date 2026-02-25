@@ -82,7 +82,7 @@ void BaseMeshSample::OnInit(){
 
     auto lit = OD::Shader::CreateFromFile("Engine/Shaders/Lit.glsl");
 
-    font = OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
+    font = OD::Asset::CreateFromFile<OD::Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  //OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
     Assert(font != nullptr);
     fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 

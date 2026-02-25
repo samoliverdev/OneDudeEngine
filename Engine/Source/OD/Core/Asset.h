@@ -120,6 +120,8 @@ public:
     void Mount(Package* p);
     void UnMount(Package* p);
 
+    inline const std::vector<Package*>& GetPackages(){ return packages; }
+
 private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;

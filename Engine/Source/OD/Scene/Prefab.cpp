@@ -43,7 +43,7 @@ bool Prefab::LoadFromFile(const std::string& inpath){
 }
 
 bool Prefab::LoadFromPackage(const std::string& inpath, Package& package){
-	Assert(false && "Not Fully work becose nested prefabs");
+	//Assert(false && "Not Fully work becose nested prefabs");
 
 	path = inpath;
     if(scene != nullptr) delete scene;
