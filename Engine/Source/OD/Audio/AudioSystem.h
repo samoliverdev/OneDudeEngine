@@ -28,9 +28,11 @@ struct OD_API AudioSourceComponent{
     float attenuationRolloff = 1.0f;
     AudioSourceMode mode = AudioSourceMode::Mode3D; 
     Audio3dAttenuation attenuation = Audio3dAttenuation::InverseDistance;
+    int maxOnShotPlay = -1;
     
     void Play();
     void Stop();
+    void PlayOneShot(Ref<AudioClip> clip);
     void SetPosition(const Vector3& pos);
     void SetVolume(float vol);
     void SetPitch(float p);
@@ -49,6 +51,8 @@ struct OD_API AudioSourceComponent{
         ArchiveDumpNVP(ar, mode);
         ArchiveDumpNVP(ar, attenuation);
 
+        ArchiveDumpNVP(ar, maxOnShotPlay);
+
         ArchiveDumpNVP(ar, volume);
         ArchiveDumpNVP(ar, pitch);
         ArchiveDumpNVP(ar, loop);
@@ -58,6 +62,7 @@ private:
     Vector3 position = Vector3(0.0f);// 3D Position
     SoLoud::Soloud* soloud = nullptr;
     SoLoud::handle handle = 0;
+    std::vector<SoLoud::handle> oneShots;
     float volume = 1.0f;
     float pitch = 1.0f;
     bool toPlay = false;

@@ -33,7 +33,7 @@ void AudioSourceComponent::Play(){
         return;
     }
 
-    //Stop();
+    Stop();
 
     if(mode == AudioSourceMode::Mode3D){
         //clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
@@ -60,7 +60,7 @@ void AudioSourceComponent::Play(){
         soloud->set3dSourceMinMaxDistance(handle, minDistance, maxDistance);
         soloud->set3dSourceAttenuation(handle, attenuation, attenuationRolloff);
         //soloud->setInaudibleBehavior(handle, true, true);
-        soloud->update3dAudio();
+        //soloud->update3dAudio();
         soloud->setPause(handle, false);
     } else {
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
@@ -73,28 +73,70 @@ void AudioSourceComponent::Stop(){
     }
 }
 
-void AudioSourceComponent::SetPosition(const Vector3& pos) {
+void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
+    //TOOD: save clip too, to avoid unload 
+
+    if(!soloud) return;
+
+    if(maxOnShotPlay > 0 &&  oneShots.size() >= maxOnShotPlay) return;
+
+    SoLoud::handle h; 
+    if(mode == AudioSourceMode::Mode3D){
+        //clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
+        //clip->sample.set3dAttenuation(SoLoud::AudioSource::LINEAR_DISTANCE, attenuationRolloff);
+        //clip->sample.setInaudibleBehavior(true, true);
+        h = soloud->play3d(
+            clip->sample, 
+            position.x, position.y, position.z,
+            0, 0, 0,
+            volume, 
+            true
+        );
+    } else {
+        h = soloud->play(clip->sample); // Som 2D sem posição
+    }
+
+    Assert(h != 0);
+
+    soloud->setLooping(h, false);
+    soloud->setVolume(h, volume);
+    soloud->setRelativePlaySpeed(h, pitch);
+    
+    if(mode == AudioSourceMode::Mode3D){
+        soloud->set3dSourceMinMaxDistance(h, minDistance, maxDistance);
+        soloud->set3dSourceAttenuation(h, attenuation, attenuationRolloff);
+        //soloud->update3dAudio();
+        soloud->setInaudibleBehavior(h, false, true);
+        soloud->setPause(h, false);
+    } else {
+        // 2D sound: não usa configurações 3D, ou pode resetar se quiser
+    }
+    
+    oneShots.push_back(h);
+}
+
+void AudioSourceComponent::SetPosition(const Vector3& pos){
     position = pos;
     if (soloud && mode == AudioSourceMode::Mode3D){
         soloud->set3dSourcePosition(handle, pos.x, pos.y, pos.z);
     }
 }
 
-void AudioSourceComponent::SetVolume(float vol) {
+void AudioSourceComponent::SetVolume(float vol){
     volume = vol;
     if(soloud){
         soloud->setVolume(handle, vol);
     }
 }
 
-void AudioSourceComponent::SetPitch(float p) {
+void AudioSourceComponent::SetPitch(float p){
     pitch = p;
     if(soloud){
         soloud->setRelativePlaySpeed(handle, p);
     }
 }
 
-void AudioSourceComponent::SetLoop(bool l) {
+void AudioSourceComponent::SetLoop(bool l){
     loop = l;
     if(soloud){
         soloud->setLooping(handle, l);
@@ -189,9 +231,22 @@ void AudioSystem::Update(Scene& scene){
             soloud.set3dSourcePosition(audio.handle, pos.x, pos.y, pos.z);
         }
         //soloud.set3dSourcePosition(audio.handle, audio.position.x, audio.position.y, audio.position.z);
+
+        for(auto it = audio.oneShots.begin(); it != audio.oneShots.end(); ){
+            if(!soloud.isValidVoiceHandle(*it)){
+                it = audio.oneShots.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        for(auto h : audio.oneShots){
+            soloud.set3dSourcePosition(h, pos.x, pos.y, pos.z);
+        }
     }
 
     soloud.update3dAudio();
+
+    LogInfo("Active voices: {}", soloud.getActiveVoiceCount());
 }
 
 }

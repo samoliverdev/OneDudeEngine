@@ -14,6 +14,8 @@ bool AudioClip::LoadFromFile(const std::string& path){
         return false;
     }
 
+    this->path = path;
+
     return result == SoLoud::SO_NO_ERROR;
 }
 
@@ -31,6 +33,8 @@ bool AudioClip::LoadFromPackage(const std::string& path, Package& package){
         package.FreeFileData(data);
         return false;
     }
+
+    this->path = path;
 
     package.FreeFileData(data);
     return result == SoLoud::SO_NO_ERROR;
