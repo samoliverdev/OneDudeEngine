@@ -36,8 +36,9 @@ void AudioSourceComponent::Play(){
     Stop();
 
     if(mode == AudioSourceMode::Mode3D){
-        //clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
-        //clip->sample.set3dAttenuation(SoLoud::AudioSource::LINEAR_DISTANCE, attenuationRolloff);
+        //INFO: Set this by clip fix some strange distance volume bug, Review this later if need
+        clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
+        clip->sample.set3dAttenuation(attenuation, attenuationRolloff);
         //clip->sample.setInaudibleBehavior(true, true);
         handle = soloud->play3d(
             clip->sample, 
@@ -60,8 +61,8 @@ void AudioSourceComponent::Play(){
         soloud->set3dSourceMinMaxDistance(handle, minDistance, maxDistance);
         soloud->set3dSourceAttenuation(handle, attenuation, attenuationRolloff);
         //soloud->setInaudibleBehavior(handle, true, true);
-        //soloud->update3dAudio();
         soloud->setPause(handle, false);
+        soloud->update3dAudio();
     } else {
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
     }
@@ -80,10 +81,13 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
 
     if(maxOnShotPlay > 0 &&  oneShots.size() >= maxOnShotPlay) return;
 
+    //attenuation = Audio3dAttenuation::LinearDistance;
+
     SoLoud::handle h; 
     if(mode == AudioSourceMode::Mode3D){
-        //clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
-        //clip->sample.set3dAttenuation(SoLoud::AudioSource::LINEAR_DISTANCE, attenuationRolloff);
+        //INFO: Set this by clip fix some strange distance volume bug, Review this later if need
+        clip->sample.set3dMinMaxDistance(minDistance, maxDistance);
+        clip->sample.set3dAttenuation(attenuation, attenuationRolloff);
         //clip->sample.setInaudibleBehavior(true, true);
         h = soloud->play3d(
             clip->sample, 
@@ -105,9 +109,9 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
     if(mode == AudioSourceMode::Mode3D){
         soloud->set3dSourceMinMaxDistance(h, minDistance, maxDistance);
         soloud->set3dSourceAttenuation(h, attenuation, attenuationRolloff);
-        //soloud->update3dAudio();
-        soloud->setInaudibleBehavior(h, false, true);
+        //soloud->setInaudibleBehavior(h, true, true);
         soloud->setPause(h, false);
+        soloud->update3dAudio();  
     } else {
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
     }
@@ -197,18 +201,19 @@ void AudioSystem::Update(Scene& scene){
 
     if(!hasInited){
         soloud.init();
-        //soloud.setMaxActiveVoiceCount(128);
+        soloud.setMaxActiveVoiceCount(255);
+        //soloud.setGlobalVolume(0.2f);
         hasInited = true;
     }
 
     auto cam = scene.GetMainCamera();
     Assert(cam != EntityNull);
     TransformComponent& camTrans = scene.GetComponent<TransformComponent>(cam);
-    Vector3 pos = camTrans.Position();
+    Vector3 camPos = camTrans.Position();
     Vector3 forward = camTrans.Back();
     Vector3 up = camTrans.Up();
     
-    soloud.set3dListenerPosition(pos.x, pos.y, pos.z);  // Simple listener default
+    soloud.set3dListenerPosition(camPos.x, camPos.y, camPos.z);  // Simple listener default
     soloud.set3dListenerAt(forward.x, forward.y, forward.z);
     soloud.set3dListenerUp(up.x, up.y, up.z);
     soloud.set3dListenerVelocity(0, 0, 0);  // Optional for Doppler
@@ -223,15 +228,6 @@ void AudioSystem::Update(Scene& scene){
             audio.Play();
         }
 
-        // Optional: Update position every frame
-        if(audio.mode == AudioSourceMode::Mode3D){
-            TransformComponent& trans = audioView.get<TransformComponent>(e);
-            auto pos = trans.Position();
-            audio.position = pos;
-            soloud.set3dSourcePosition(audio.handle, pos.x, pos.y, pos.z);
-        }
-        //soloud.set3dSourcePosition(audio.handle, audio.position.x, audio.position.y, audio.position.z);
-
         for(auto it = audio.oneShots.begin(); it != audio.oneShots.end(); ){
             if(!soloud.isValidVoiceHandle(*it)){
                 it = audio.oneShots.erase(it);
@@ -239,14 +235,24 @@ void AudioSystem::Update(Scene& scene){
                 ++it;
             }
         }
-        for(auto h : audio.oneShots){
-            soloud.set3dSourcePosition(h, pos.x, pos.y, pos.z);
+
+        // Optional: Update position every frame
+        if(audio.mode == AudioSourceMode::Mode3D){
+            TransformComponent& trans = audioView.get<TransformComponent>(e);
+            auto pos = trans.Position();
+            audio.position = pos;
+            soloud.set3dSourcePosition(audio.handle, pos.x, pos.y, pos.z);
+            //Maybe no need update pos from one shot sounds
+            /*for(auto h : audio.oneShots){
+                soloud.set3dSourcePosition(h, pos.x, pos.y, pos.z);
+            }*/
         }
+        //soloud.set3dSourcePosition(audio.handle, audio.position.x, audio.position.y, audio.position.z); 
     }
 
     soloud.update3dAudio();
 
-    LogInfo("Active voices: {}", soloud.getActiveVoiceCount());
+    //LogInfo("Active voices: {}", soloud.getActiveVoiceCount());
 }
 
 }

@@ -172,11 +172,23 @@ private:
         if(ImGui::TreeNodeEx(name)){
             int index = 0;
             for(auto& asset: value.assets){
+                ImGui::PushID(elementCount++);
                 std::string name = "["+std::to_string(index)+"]";
                 ImGui::DrawAsset<T>(std::string(name), asset);
                 //ImGui::DrawMaterialAsset(name, mesh.materialsOverride[index], mesh.model->materials[index]);
                 index += 1;
+                ImGui::PopID();
             }
+
+            ImGui::PushID(elementCount++);
+            if(ImGui::Button("+")){
+                value.assets.push_back({});
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("-") && value.assets.size() > 0){
+                value.assets.pop_back();
+            }
+            ImGui::PopID();
 
             ImGui::TreePop();
         }
