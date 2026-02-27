@@ -3,6 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Core/Log.h"
 #include "OD/Core/Lua.h"
+#define ENTT_ASSERT(condition, msg) Assert((condition) && (msg))
 #include <entt/entt.hpp>
 
 namespace OD{

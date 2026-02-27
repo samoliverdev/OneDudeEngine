@@ -14,7 +14,7 @@
 #include <OD/LuaScripting/LuaScripts.h>
 #include <OD/RenderPipeline/UIComponents.h>
 #include <OD/Editor/Editor.h>
-#include <entt/entt.hpp>
+//#include <entt/entt.hpp>
 #include <sol/sol.hpp>
 
 void PhysicsCubeS::OnStart(){

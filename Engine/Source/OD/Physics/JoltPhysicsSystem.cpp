@@ -1230,7 +1230,7 @@ Vector3 RagdollComponent::CenterOfMass(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetCenterOfMassPosition(bodyID));
 }
 
@@ -1238,7 +1238,7 @@ Vector3 RagdollComponent::Position(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetPosition(bodyID));
 }
 
@@ -1248,7 +1248,7 @@ Vector3 RagdollComponent::PositionInterpoled(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	
 	float alpha = data->world->system->InterpolationAlpha();
 	Vector3 interpolatedPos = math::mix(parts[boneIndex].previousPosition, FromJolt(bodyInterface.GetPosition(bodyID)), alpha);
@@ -1259,7 +1259,7 @@ void RagdollComponent::Position(int boneIndex, Vector3 position){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetPosition(bodyID, ToJolt(position), EActivation::Activate);
 }
 
@@ -1267,7 +1267,7 @@ Quaternion RagdollComponent::Rotation(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return QuaternionIdentity;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetRotation(bodyID));
 }
 
@@ -1275,7 +1275,7 @@ void RagdollComponent::Rotation(int boneIndex, Quaternion rotation){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetRotation(bodyID, ToJolt(rotation), EActivation::Activate);
 }
 
@@ -1283,7 +1283,7 @@ Vector3 RagdollComponent::Velocity(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetLinearVelocity(bodyID));
 }
 
@@ -1291,7 +1291,7 @@ void RagdollComponent::Velocity(int boneIndex, Vector3 v){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetLinearVelocity(bodyID, ToJolt(v));
 }
 
@@ -1299,7 +1299,7 @@ Vector3 RagdollComponent::AngularVelocity(int boneIndex){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return Vector3Zero;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetAngularVelocity(bodyID));
 }
 
@@ -1307,7 +1307,7 @@ void RagdollComponent::AngularVelocity(int boneIndex, Vector3 v){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetAngularVelocity(bodyID, ToJolt(v));
 }
 
@@ -1315,7 +1315,7 @@ void RagdollComponent::ApplyForce(int boneIndex, Vector3 v){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddForce(bodyID, ToJolt(v));
 }
 
@@ -1323,7 +1323,7 @@ void RagdollComponent::ApplyTorque(int boneIndex, Vector3 v){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddTorque(bodyID, ToJolt(v));
 }
 
@@ -1331,13 +1331,13 @@ void RagdollComponent::ApplyImpulse(int boneIndex, Vector3 v){
 	if(data == nullptr || boneIndex < 0 || boneIndex >= data->ragdoll->GetBodyIDs().size()) return;
 
 	BodyID bodyID = data->ragdoll->GetBodyIDs()[boneIndex];
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddImpulse(bodyID, ToJolt(v));
 }
 
 void RagdollComponent::AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier){
 	if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 
 	for(int i = 0; i < data->ragdoll->GetBodyIDs().size(); i++){
 		JPH::Vec3 explosionCenter = ToJolt(explosionPosition);
@@ -1397,7 +1397,7 @@ void RagdollComponent::Constraints(int boneIndex, RigidbodyConstraints constrain
 	//UpdateSettings();
 
 	if(data == nullptr) return;
-	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	//BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
     BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->ragdoll->GetBodyID(boneIndex));
     Assert(lock.Succeeded());
 
@@ -1948,13 +1948,13 @@ void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
 	isDirt = true;
 	return;
 
-	if(data == nullptr) return;
+	/*if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
 	EMotionType _type = EMotionType::Dynamic;
     if(type == RigidbodyComponent::Type::Static) _type = EMotionType::Static;
 	if(type == RigidbodyComponent::Type::Kinematic) _type = EMotionType::Kinematic;
 	if(type == RigidbodyComponent::Type::Trigger) _type = EMotionType::Kinematic;
-	bodyInterface.SetMotionType(data->bodyID, _type, EActivation::Activate);
+	bodyInterface.SetMotionType(data->bodyID, _type, EActivation::Activate);*/
 }
 
 void RigidbodyComponent::NeverSleep(bool value){
@@ -1963,13 +1963,13 @@ void RigidbodyComponent::NeverSleep(bool value){
 
 Vector3 RigidbodyComponent::CenterOfMass(){
 	if(data == nullptr) return Vector3Zero;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetCenterOfMassPosition(data->bodyID));
 }
 
 Vector3 RigidbodyComponent::Position(){
 	if(data == nullptr) return Vector3Zero;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetPosition(data->bodyID));
 }
 
@@ -1977,7 +1977,7 @@ Vector3 RigidbodyComponent::PositionInterpoled(){
 	if constexpr(EnableInterpolation == false) return Position();
 
 	if(data == nullptr) return Vector3Zero;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();  //data->world->physicsSystem.GetBodyInterface();
 
 	float alpha = data->world->system->InterpolationAlpha(); 
 	Vector3 interpolatedPos = math::mix(previousPosition, FromJolt(bodyInterface.GetPosition(data->bodyID)), alpha);
@@ -1987,25 +1987,25 @@ Vector3 RigidbodyComponent::PositionInterpoled(){
 
 void RigidbodyComponent::Position(Vector3 position){
 	if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();  //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetPosition(data->bodyID, ToJolt(position), EActivation::Activate);
 }
 
 Quaternion RigidbodyComponent::Rotation(){
 	if(data == nullptr) return QuaternionIdentity;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock();  //data->world->physicsSystem.GetBodyInterface();
 	return FromJolt(bodyInterface.GetRotation(data->bodyID));
 }
 
 void RigidbodyComponent::Rotation(Quaternion rotation){
 	if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetRotation(data->bodyID, ToJolt(rotation), EActivation::Activate);
 }
 
 void RigidbodyComponent::SetTransform(const Vector3& pos, const Quaternion& rot){
     if (data == nullptr) return;
-    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
     bodyInterface.SetPositionAndRotation(
         data->bodyID,
         ToJolt(pos),    // current position
@@ -2038,7 +2038,7 @@ Vector3 RigidbodyComponent::AngularVelocity(){
 
 void RigidbodyComponent::AngularVelocity(Vector3 v){
 	if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.SetAngularVelocity(data->bodyID, ToJolt(v));
 }
 
@@ -2050,19 +2050,19 @@ void RigidbodyComponent::ApplyForce(Vector3 v){
 
 void RigidbodyComponent::ApplyTorque(Vector3 v){
     if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddTorque(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::ApplyImpulse(Vector3 v){
     if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 	bodyInterface.AddImpulse(data->bodyID, ToJolt(v));
 }
 
 void RigidbodyComponent::AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier){
 	if(data == nullptr) return;
-	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
 
 	JPH::Vec3 explosionCenter = ToJolt(explosionPosition);
 
@@ -2107,7 +2107,7 @@ void RigidbodyComponent::SetAngularFactor(Vector3 v){
     if(data == nullptr) return;
 	if(type != RigidbodyComponent::Type::Dynamic) return;
 
-    BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+    //BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
     BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
     Assert(lock.Succeeded());
 
@@ -2170,7 +2170,7 @@ void RigidbodyComponent::AngularDamping(float v){
 	angularDamping = v;
 	if(data == nullptr) return;
 
-	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
     BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
     Assert(lock.Succeeded());
 
@@ -2200,7 +2200,7 @@ void RigidbodyComponent::Constraints(RigidbodyConstraints inconstraints){
 	//UpdateSettings();
 
 	if(data == nullptr) return;
-	BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
+	//BodyInterface& bodyInterface = data->world->physicsSystem.GetBodyInterface();
     BodyLockWrite lock(data->world->physicsSystem.GetBodyLockInterfaceNoLock(), data->bodyID);
     Assert(lock.Succeeded());
 
@@ -2220,15 +2220,18 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
     physicsSystem->RemoveRigidbody(e, rb);
     delete rb.data;
+	rb.data = nullptr;
+	rb.isDirt = true;
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
 	if(rb.type == RigidbodyComponent::Type::Disable){
-		rb.isDirt = false;
+		//rb.isDirt = false;
 		return;
 	}
 
 	rb.data = new PhysicObject();
+	Assert(rb.data != nullptr);
 	rb.data->world = physicsWorld;
 	rb.isDirt = false;
 
@@ -2633,7 +2636,7 @@ void PhysicsSystem::OnRemoveVehicle(entt::registry& r, entt::entity e){
 }
 
 void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyComponent& c, TransformComponent& t, InfoComponent& info){
-	BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), c.data->bodyID);
+	BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), c.data->bodyID);
 	if(!lock.Succeeded()) return;
 
 	Body& mCarBody = lock.GetBody();
@@ -3917,6 +3920,8 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 	};
 
 	auto SyncRbToTrans = [&](RigidbodyComponent& rb, TransformComponent& trans){
+		Assert(rb.data != nullptr);
+
 		RVec3 pos;
 		Quat rot;
 		bodyInterface.GetPositionAndRotation(rb.data->bodyID, pos, rot);
@@ -3985,15 +3990,21 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
         TransformComponent& transform = rbView.get<TransformComponent>(e);
         InfoComponent& info = rbView.get<InfoComponent>(e);
 
+		if(rb.type != RigidbodyComponent::Type::Disable && rb.isDirt == false && rb.data == nullptr){
+			LogError("Entity {} Bugged", info.name);
+			Assert(rb.data != nullptr);
+		}
+
+		//if(rb.isDirt){
 		if(rb.isDirt){
 			RemoveRigidbody(e, rb);
 			AddRigidbody(e, rb, transform, info);
 		}
 
-        //Assert(rb.data != nullptr);
+        //Assert(rb.data != nullptr);//This is true now becose i can have none rigidbody type
 
         if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
-            SyncRbToTrans(rb, transform);
+            SyncRbToTrans(rb, transform);//INFO: In some place is pass null data on here, so dirt is false but data is null, Review this later
         } else if(rb.GetType() == RigidbodyComponent::Type::Kinematic){
             //bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
             //bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
@@ -4128,7 +4139,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		static bool sLimitedSlipDifferentials = true;
 
 		if(rb.data != nullptr && veh.data != nullptr){
-			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), rb.data->bodyID);
+			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), rb.data->bodyID);
 			if(!lock.Succeeded()) continue;
 
 			Body& mCarBody = lock.GetBody();
@@ -4154,7 +4165,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		}
 	
 		if(rb.data != nullptr && veh.data != nullptr && veh.handleDebugInputs){
-			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterface(), rb.data->bodyID);
+			BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), rb.data->bodyID);
 			if(!lock.Succeeded()) continue;
 
 			Body& mCarBody = lock.GetBody();
@@ -4458,7 +4469,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
             RayResult hit;
 
             // Lock the body to get its data
-            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
+            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterfaceNoLock(), inResult.mBodyID2);
             if(!lock.Succeeded()) return;
 
             const JPH::Body& body = lock.GetBody();
@@ -4532,7 +4543,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
             RayResult hit;
 
             // Lock the body to get its data
-            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
+            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterfaceNoLock(), inResult.mBodyID2);
             if(!lock.Succeeded()) return;
 
             const JPH::Body& body = lock.GetBody();
@@ -4610,7 +4621,7 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
             RayResult hit;
 
             // Lock the body to get its data
-            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterface(), inResult.mBodyID2);
+            JPH::BodyLockRead lock(mPhysicsSystem.GetBodyLockInterfaceNoLock(), inResult.mBodyID2);
             if(!lock.Succeeded()) return;
 
             const JPH::Body& body = lock.GetBody();

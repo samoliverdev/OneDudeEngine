@@ -11,7 +11,7 @@
 #include <OD/Core/Application.h>
 #include <OD/Editor/Editor.h>
 #include <assert.h>
-#include <entt/entt.hpp>
+//#include <entt/entt.hpp>
 
 void NavmeshSample::OnInit(){
     LogInfo("%sGame Init %s", "\033[0;32m", "\033[0m");

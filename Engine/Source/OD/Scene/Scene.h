@@ -9,6 +9,7 @@
 #include <string>
 #include <functional>
 #include <algorithm>
+#define ENTT_ASSERT(condition, msg) Assert((condition) && (msg))
 #include <entt/entt.hpp>
 #include <taskflow/taskflow.hpp>
 

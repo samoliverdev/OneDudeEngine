@@ -61,8 +61,8 @@ void AudioSourceComponent::Play(){
         soloud->set3dSourceMinMaxDistance(handle, minDistance, maxDistance);
         soloud->set3dSourceAttenuation(handle, attenuation, attenuationRolloff);
         //soloud->setInaudibleBehavior(handle, true, true);
-        soloud->setPause(handle, false);
         soloud->update3dAudio();
+        soloud->setPause(handle, false);
     } else {
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
     }
@@ -110,8 +110,8 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
         soloud->set3dSourceMinMaxDistance(h, minDistance, maxDistance);
         soloud->set3dSourceAttenuation(h, attenuation, attenuationRolloff);
         //soloud->setInaudibleBehavior(h, true, true);
-        soloud->setPause(h, false);
         soloud->update3dAudio();  
+        soloud->setPause(h, false);
     } else {
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
     }

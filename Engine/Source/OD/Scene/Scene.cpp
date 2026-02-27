@@ -617,6 +617,8 @@ Scene::~Scene(){
     }
     //
 
+    //registry.clear();//INFO: Maybe this order fix same crashs
+
     //Delete Later call all OnEnd
     for(auto& i: systems){
         delete i.second;
