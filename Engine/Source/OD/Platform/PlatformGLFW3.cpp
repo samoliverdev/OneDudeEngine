@@ -36,7 +36,9 @@ extern GraphicsDevice* graphicsDevice;
 
 GLFWwindow* window;
 //GLFWwindow* offscreenWindow;
+int windowPosX, windowPosY;
 bool vSync = false;
+bool fullscreen = false;
 bool hidden = false;
 
 CursorState cursorState;
@@ -373,18 +375,97 @@ float Platform::GetTime(){ return glfwGetTime(); }
 void Platform::Sleep(double ms){}
 
 void Platform::SetVSync(bool enabled){
-    if(enabled)
+    if(enabled){
         glfwSwapInterval(1);
-    else
+    } else {
         glfwSwapInterval(0);
+    }
 
     vSync = enabled;
 }
 
 bool Platform::IsVSync(){ return vSync; }
 
+void Platform::SetFullscreen(bool enabled){
+    fullscreen = enabled;
+
+    if(fullscreen){
+        int windowWidth;
+        int windowHeight;
+
+        // Save windowed position & size
+        glfwGetWindowPos(window, &windowPosX, &windowPosY);
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+        // Get primary monitor
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        // Switch to fullscreen
+        glfwSetWindowMonitor(
+            window,
+            monitor,
+            0, 0,
+            windowWidth, //mode->width,
+            windowHeight, //mode->height,
+            mode->refreshRate
+        );
+    } else {
+        int windowWidth;
+        int windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        glfwSetWindowMonitor(
+            window,
+            nullptr,
+            windowPosX,
+            windowPosY,
+            windowWidth,
+            windowHeight,
+            0
+        );
+    }
+}
+
+bool Platform::IsFullscreen(){
+    return fullscreen;
+}
+
 void Platform::SetWindowSize(int width, int height){
     glfwSetWindowSize(window, width, height);
+}
+
+IVector2 Platform::GetWindowSize(){
+    int windowWidth;
+    int windowHeight;
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    return {windowWidth, windowHeight};
+}
+
+std::vector<IVector2> Platform::GetSupportedResolutions(){
+    std::vector<IVector2> result;
+
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if(!monitor) return result;
+
+    int count;
+    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+
+    for(int i = 0; i < count; ++i){
+        IVector2 res{ modes[i].width, modes[i].height };
+
+        // Avoid duplicates (many modes differ only by refresh rate)
+        bool exists = false;
+        for(const auto& r : result){
+            if (r.x == res.x && r.y == res.y){
+                exists = true;
+                break;
+            }
+        }
+
+        if(!exists) result.push_back(res);
+    }
+
+    return result;
 }
 
 CursorState Platform::GetCursorState(){

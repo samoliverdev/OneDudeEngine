@@ -1,4 +1,8 @@
 {
+    "Audio": {
+        "maxActiveVoiceCount": 128,
+        "volume": 1.0
+    },
     "Layers": {
         "layerNames": {
             "value0": "Default",

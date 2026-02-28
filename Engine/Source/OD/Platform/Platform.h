@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Core/Math.h"
 #include <string>
 
 namespace OD{
@@ -18,7 +19,11 @@ public:
     static void SetVSync(bool enabled);
 	static bool IsVSync();
 
+    static void SetFullscreen(bool enabled);
+    static bool IsFullscreen();
     static void SetWindowSize(int width, int height);
+    static IVector2 GetWindowSize();
+    static std::vector<IVector2> GetSupportedResolutions();
 
     static CursorState GetCursorState();
     static void SetCursorState(CursorState state);

@@ -69,6 +69,19 @@ private:
     bool loop = false;
 };
 
+struct OD_API AudioSettings{
+    int maxActiveVoiceCount = 128;
+    float volume = 1;
+
+    template<class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, maxActiveVoiceCount);
+        ArchiveDumpNVP(ar, volume);
+    }
+
+    void OnImGuiRender();
+};
+
 class OD_API AudioSystem: public System{
 public:
     AudioSystem();
@@ -76,6 +89,12 @@ public:
 
     virtual int Type() override { return SystemType::Stand; }
     virtual void Update(Scene& scene) override;
+
+    AudioSettings& GetSettings();
+    void UpdateSettings();
+
+private:
+    //AudioSettings settings;
 };
 
 void AudioModuleInit();

@@ -4,6 +4,8 @@
 #include "OD/Scene/SceneManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Core/GlobalSettings.h"
+#include "OD/Core/ImGui.h"
 #include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_speech.h>
@@ -17,6 +19,8 @@ void AudioModuleInit(){
 
     SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent", "Audio");
     SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
+
+    OD::GlobalSettings::Get().Register<AudioSettings>("Audio");
 }
 
 SoLoud::Soloud soloud;
@@ -167,6 +171,11 @@ void AudioSourceComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DrawEnumCombo<Audio3dAttenuation>("attenuation", &audioSource.attenuation);
 }
 
+void AudioSettings::OnImGuiRender(){
+    ImGui::DragInt("maxActiveVoiceCount", &maxActiveVoiceCount, 0, 255);
+    ImGui::DragFloat("volume", &volume, 1, 0, 2);
+}
+
 AudioSystem::AudioSystem(){
     name = "AudioSystem";
     //soloud.init(); 
@@ -179,6 +188,18 @@ AudioSystem::~AudioSystem(){
         soloud.deinit();
         hasInited = false;
     }
+}
+
+AudioSettings& AudioSystem::GetSettings(){
+    return GlobalSettings::Get().Get<AudioSettings>();
+}
+
+void AudioSystem::UpdateSettings(){
+    if(hasInited == false) return;
+
+    const auto& settings = GlobalSettings::Get().Get<AudioSettings>();
+    soloud.setMaxActiveVoiceCount(settings.maxActiveVoiceCount);
+    soloud.setGlobalVolume(settings.volume);
 }
 
 void AudioSystem::Update(Scene& scene){
@@ -201,9 +222,8 @@ void AudioSystem::Update(Scene& scene){
 
     if(!hasInited){
         soloud.init();
-        soloud.setMaxActiveVoiceCount(255);
-        //soloud.setGlobalVolume(0.2f);
         hasInited = true;
+        UpdateSettings();
     }
 
     auto cam = scene.GetMainCamera();
