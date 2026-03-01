@@ -308,6 +308,8 @@ public:
     }
     
     ParticleEmiter() = default;
+    
+    //TODO: This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments, Review this later
     DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(ParticleEmiter, {
         COPY_OR_MOVE(isLooping);
         COPY_OR_MOVE(duration);

@@ -385,7 +385,7 @@ void PhysicsModuleShutdown(){
 	Factory::sInstance = nullptr; 
 }
 
-uint64_t EncodeUserData(uint32_t u, int32_t i) {
+uint64_t EncodeUserData(uint32_t u, int32_t i){
     return (static_cast<uint64_t>(static_cast<uint32_t>(i)) << 32) | static_cast<uint64_t>(u);
 }
 
@@ -1931,21 +1931,25 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 void RigidbodyComponent::SetShape(CollisionShape inShape){
     shape = inShape;
 	isDirt = true;
+	//LogInfo("isDirt = true");
 }
 
 void RigidbodyComponent::Mass(float m){
 	mass = m;
 	isDirt = true;
+	//LogInfo("isDirt = true");
 }
 
 void RigidbodyComponent::Friction(float f){
 	friction = f;
 	isDirt = true;
+	//LogInfo("isDirt = true");
 }
 
 void RigidbodyComponent::SetType(RigidbodyComponent::Type value){
     type = value;
 	isDirt = true;
+	//LogInfo("isDirt = true");
 	return;
 
 	/*if(data == nullptr) return;
@@ -2186,6 +2190,7 @@ PhysicMotionQuality RigidbodyComponent::MotionQuality(){
 void RigidbodyComponent::MotionQuality(PhysicMotionQuality v){
 	motionQuality = v;
 	isDirt = true;
+	//LogInfo("isDirt = true");
 }
 
 RigidbodyConstraints RigidbodyComponent::Constraints(){
@@ -2218,10 +2223,7 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 	}
 
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
-    physicsSystem->RemoveRigidbody(e, rb);
-    delete rb.data;
-	rb.data = nullptr;
-	rb.isDirt = true;
+	physicsSystem->RemoveRigidbody(e, rb);
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
@@ -2229,6 +2231,8 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		//rb.isDirt = false;
 		return;
 	}
+
+	//LogInfo("AddRigidbody on: {} valid: {}, name: {}", (uint32_t)entity, scene->IsValid(entity), info.name);
 
 	rb.data = new PhysicObject();
 	Assert(rb.data != nullptr);
@@ -2392,9 +2396,12 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
     bodyInterface.RemoveBody(rb.data->bodyID);
     bodyInterface.DestroyBody(rb.data->bodyID);
 
+	//LogInfo("Removing from world: {} {}", (uint32_t)entity, (void*)&physicsWorld->physicsSystem);
+
 	delete rb.data;
 	rb.data = nullptr;
 	rb.isDirt = true;
+	//LogInfo("isDirt = true");
 }
 
 #pragma endregion
@@ -3991,12 +3998,13 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
         InfoComponent& info = rbView.get<InfoComponent>(e);
 
 		if(rb.type != RigidbodyComponent::Type::Disable && rb.isDirt == false && rb.data == nullptr){
-			LogError("Entity {} Bugged", info.name);
+			LogError("Entity {}, {} Bugged", info.name, (uint32_t)e);
 			Assert(rb.data != nullptr);
 		}
 
 		//if(rb.isDirt){
 		if(rb.isDirt){
+			Assert(rb.data == nullptr);
 			RemoveRigidbody(e, rb);
 			AddRigidbody(e, rb, transform, info);
 		}
@@ -4332,6 +4340,15 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
 		hit.subBodyIndex = _index;
 		hit.hitPoint = FromJolt(hitPoint);	
 		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+			
+		//Yes is a bug; //I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later, for now just return false
+		/*if(scene->IsValid(hit.entity) == false){
+			LogError("Physic Body has a invalid Entity");
+			//LogInfo("Removing from world: {}", (void*)&physicsWorld->physicsSystem);
+			return false;
+		}*/
+		Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+		
 		return true;
 	}
 
@@ -4384,6 +4401,15 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 		hit.subBodyIndex = _index;
 		hit.hitPoint = FromJolt(hitPoint);
 		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+
+		//Yes is a bug; //I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later, for now just return false
+		/*if(scene->IsValid(hit.entity) == false){
+			LogError("Physic Body has a invalid Entity");
+			//LogInfo("Removing from world: {}", (void*)&physicsWorld->physicsSystem);
+			return false;
+		}*/
+		Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+
 		return true;
 	}
 
@@ -4429,6 +4455,15 @@ bool PhysicsSystem::RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit
 		hit.subBodyIndex = _index;
 		hit.hitPoint = FromJolt(hitPoint);
 		hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+
+		//Yes is a bug; //I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later, for now just return false
+		/*if(scene->IsValid(hit.entity) == false){
+			LogError("Physic Body has a invalid Entity");
+			//LogInfo("Removing from world: {}", (void*)&physicsWorld->physicsSystem);
+			return false;
+		}*/
+		Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+
 		return true;
 	}
 
@@ -4451,13 +4486,14 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
     // Collector to gather unique hits
     class SphereOverlapCollector : public JPH::CollideShapeCollector {
     public:
+		Scene* scene;
         std::vector<RayResult>& mResults;
         JPH::Vec3 mCenter;
         const JPH::PhysicsSystem& mPhysicsSystem;
         std::set<JPH::BodyID> mHitBodyIDs; // Track unique BodyIDs using std::set
 
-        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem)
-            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem) {}
+        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem, Scene* inscene)
+            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem), scene(inscene) {}
 
         void AddHit(const JPH::CollideShapeResult& inResult) override {
             // Only process the first hit for each body
@@ -4480,6 +4516,14 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 			hit.entity = static_cast<Entity>(_entity);
 			hit.subBodyIndex = _index;
 
+			//Yes is a bug; //I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later
+			/*if(scene->IsValid(hit.entity) == false){
+				LogError("Physic Body has a invalid Entity");
+				//LogInfo("Removing from world: {}", (void*)&mPhysicsSystem);
+				return;
+			}*/
+			Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+
             // Use the closest point on the hit shape as the hit point
             hit.hitPoint = FromJolt(inResult.mContactPointOn2);
 
@@ -4492,7 +4536,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 
     // Perform the sphere overlap query
     JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
-    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem);
+    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem, scene);
 
     // Use CollideShape to test the sphere against all bodies
     physicsWorld->physicsSystem.GetNarrowPhaseQuery().CollideShape(
@@ -4525,13 +4569,14 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
     // Collector to gather unique hits
     class SphereOverlapCollector : public JPH::CollideShapeCollector {
     public:
+		Scene* scene;
         std::vector<RayResult>& mResults;
         JPH::Vec3 mCenter;
         const JPH::PhysicsSystem& mPhysicsSystem;
         std::set<JPH::BodyID> mHitBodyIDs; // Track unique BodyIDs using std::set
 
-        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem)
-            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem) {}
+        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem, Scene* inscene)
+            : mResults(results), mCenter(center), mPhysicsSystem(physicsSystem), scene(inscene) {}
 
         void AddHit(const JPH::CollideShapeResult& inResult) override {
             // Only process the first hit for each body
@@ -4554,6 +4599,14 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 			hit.entity = static_cast<Entity>(_entity);
 			hit.subBodyIndex = _index;
 
+			//Yes is a bug; //I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later
+			/*if(scene->IsValid(hit.entity) == false){
+				LogError("Physic Body has a invalid Entity");
+				//LogInfo("Removing from world: {}", (void*)&mPhysicsSystem);
+				return;
+			}*/
+			Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+
             // Use the closest point on the hit shape as the hit point
             hit.hitPoint = FromJolt(inResult.mContactPointOn2);
 
@@ -4566,7 +4619,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
 
     // Perform the sphere overlap query
     JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
-    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem);
+    SphereOverlapCollector collector(results, sphereCenter, physicsWorld->physicsSystem, scene);
 
     // Use CollideShape to test the sphere against all bodies
     physicsWorld->physicsSystem.GetNarrowPhaseQuery().CollideShape(
@@ -4603,13 +4656,14 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
     // Collector to gather unique hits
     class SphereOverlapCollector : public JPH::CollideShapeCollector{
     public:
+		Scene* scene;
         std::vector<RayResult>& mResults;
         JPH::Vec3 mCenter;
         const JPH::PhysicsSystem& mPhysicsSystem;
         std::set<JPH::BodyID> mHitBodyIDs; // Track unique BodyIDs using std::set
 
-        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem)
-            :mResults(results), mCenter(center), mPhysicsSystem(physicsSystem){}
+        SphereOverlapCollector(std::vector<RayResult>& results, JPH::Vec3 center, const JPH::PhysicsSystem& physicsSystem, Scene* inscene)
+            :mResults(results), mCenter(center), mPhysicsSystem(physicsSystem), scene(inscene){}
 
         void AddHit(const JPH::CollideShapeResult& inResult) override {
             // Only process the first hit for each body
@@ -4632,6 +4686,14 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
 			hit.entity = static_cast<Entity>(_entity);
 			hit.subBodyIndex = _index;
 
+			//Yes is a bug;// I dont now know if this a bug, but is possible destroy a entity and still have a physic body, Review this Later
+			/*if(scene->IsValid(hit.entity) == false){
+				LogError("Physic Body has a invalid Entity");
+				//LogInfo("Removing from world: {}", (void*)&mPhysicsSystem);
+				return;
+			}*/
+			Assert(scene->IsValid(hit.entity) && "Physic Body without a valid entity!!!!!");
+
             // Use the closest point on the hit shape as the hit point
             hit.hitPoint = FromJolt(inResult.mContactPointOn2);
 
@@ -4644,7 +4706,7 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
 
     // Perform the sphere overlap query
     JPH::BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
-    SphereOverlapCollector collector(results, ToJolt(center), physicsWorld->physicsSystem);
+    SphereOverlapCollector collector(results, ToJolt(center), physicsWorld->physicsSystem, scene);
 
     // Use CollideShape to test the sphere against all bodies
     physicsWorld->physicsSystem.GetNarrowPhaseQuery().CollideShape(

@@ -227,7 +227,9 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(centerOfMass));
     }
 
-    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
+    //This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments
+    //For now just dont allow physic run on edit mode
+    /*DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
         COPY_OR_MOVE(shape);
         COPY_OR_MOVE(type);
         COPY_OR_MOVE(interpolate);
@@ -243,7 +245,7 @@ struct OD_API RigidbodyComponent{
 
         COPY_OR_MOVE(overrideCenterOfMass);
         COPY_OR_MOVE(centerOfMass);
-    });
+    });*/
 
     inline const class PhysicObject* InternalData(){ return data; }
 
@@ -264,6 +266,11 @@ private:
     Vector3 previousPosition = Vector3Zero;
     Quaternion previousRotation = QuaternionIdentity;
 
+    //INFO: Becose is not copy this, on destroy entity, entt move/copy for other place some random component data and BUG becose is move/copy nullppt
+    //becose : delete rb.data;
+	//rb.data = nullptr; on RemoveRigidbody
+    // so for now i will remove DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED, but for now running physic on edit mode will not work
+    //Possible solution, use id instead PhysicObject* data
     class PhysicObject* data = nullptr;
     bool isDirt = true;
 };
@@ -408,7 +415,9 @@ struct OD_API RagdollComponent{
         ArchiveDumpNVP(ar, stiffness);
     }
 
-    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
+    //This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments
+    //For now just dont allow physic run on edit mode
+    /*DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RagdollComponent, {
         COPY_OR_MOVE(globalMass);
         COPY_OR_MOVE(linearDamping);
         COPY_OR_MOVE(layer);
@@ -425,7 +434,7 @@ struct OD_API RagdollComponent{
         COPY_OR_MOVE(gain);
         COPY_OR_MOVE(damping);
         COPY_OR_MOVE(stiffness);
-    });
+    });*/
 
     Pose startPose;
 
@@ -592,8 +601,10 @@ struct OD_API HeightmapColliderComponent{
 
     HeightmapColliderComponent() = default;
 
-    //TODO: Add DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED here
-    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(HeightmapColliderComponent, {
+
+    //This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments
+    //For now just dont allow physic run on edit mode
+    /*DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(HeightmapColliderComponent, {
         COPY_OR_MOVE(heights);
         COPY_OR_MOVE(width);
         COPY_OR_MOVE(length);
@@ -601,7 +612,7 @@ struct OD_API HeightmapColliderComponent{
         COPY_OR_MOVE(minHeight);
         COPY_OR_MOVE(maxHeight);
         COPY_OR_MOVE(offset);
-    });
+    });*/
     
 private:
 
@@ -705,7 +716,9 @@ struct OD_API VehiclePhysic{
         ArchiveDump(ar, CEREAL_NVP(handleDebugInputs));
     }
 
-    DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(VehiclePhysic, {
+    //This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments
+    //For now just dont allow physic run on edit mode
+    /*DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(VehiclePhysic, {
         COPY_OR_MOVE(wheels);
         COPY_OR_MOVE(maxSteeringAngle);
         COPY_OR_MOVE(maxRollAngle);
@@ -717,7 +730,7 @@ struct OD_API VehiclePhysic{
         COPY_OR_MOVE(lateralImpulseMultplier);
 
         COPY_OR_MOVE(handleDebugInputs);
-    });
+    });*/
 
 private:
     class VehiclePhysicData* data = nullptr;

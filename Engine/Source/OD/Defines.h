@@ -70,6 +70,8 @@
 #define COPY_OR_MOVE(field) \
     if constexpr (TO_COPY) field = other.field; else field = std::move(other.field);
 
+//Be Very careful with this, becose entt move componet/copy on addEnt,createEnt,addComp,removeComp
+//So on add or remove entity, can easy bug some pointers if is not copied
 #define DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(ClassName, BODY)       \
     ClassName(const ClassName& other) {                             \
         constexpr bool TO_COPY = true;                                        \
