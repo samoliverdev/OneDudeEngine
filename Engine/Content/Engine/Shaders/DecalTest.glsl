@@ -1,6 +1,8 @@
 #pragma BeginProperties
     Color4  color
     Texture2D mainTex White
+    Float smoothness 0.5 0 1
+    Float metallic 0.5 0 1
     Float cutoff 0.5 0 1
     Float decalBlend 1 0 1
     Float normalFade 1 0 1
@@ -15,7 +17,7 @@
 
     CullFace NONE
     DepthMask False
-    DepthTest LESS_EQUAL
+    DepthTest ALWAYS
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
 #pragma EndPassDef
 
@@ -31,6 +33,8 @@ BeginUniform(0, 0, Main)
     Uniform mat4 decalWorldToLocal;
     Uniform vec4 color;
     Uniform float decalBlend;
+    Uniform float smoothness;
+    Uniform float metallic;
     Uniform float cutoff;
     Uniform float normalFade;
     Uniform float startFade;
@@ -93,11 +97,14 @@ uniform int perDrawInt_1;
     in vec3 decalNormalWS;
 
     //Out(2) vec4 gAlbedo;
-    layout(location = 1) out vec4 gAlbedo;
+    layout(location = 1) out vec4 gAlbedoOut;
+    layout(location = 2) out vec4 gOtherOut;
 
     void main(){
         //gAlbedo = vec4(1,1,1,1);
         //return;
+
+        //if(gl_FrontFacing) discard;
 
         mat4 outDecalWorldToLocal = mat4(
             vDecalInvRow0,
@@ -111,7 +118,13 @@ uniform int perDrawInt_1;
         
         // Transform world position into decal local space
         vec3 localPos = (outDecalWorldToLocal * vec4(worldPos, 1.0)).xyz;
+
+        //gAlbedoOut = vec4(localPos * 0.5 + 0.5, 1.0);
+        //gOtherOut = vec4(1,0,0,1);
+        //return;
+
         if(any(greaterThan(abs(localPos), vec3(0.5)))) discard;// Check if inside decal box
+        
 
         vec4 other = texture(gOther, screenUV);
         if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
@@ -126,6 +139,8 @@ uniform int perDrawInt_1;
 
         vec3 normal = unpack_normal_octahedron(texture(gNormal, screenUV).rg); //texture(gNormal, screenUV).rgb;
         vec4 albedo = texture(gAlbedoSpec, screenUV);
+
+        if(dot(decalNormalWS, normal) <= 0.0) discard;
 
         // angle fade (optional)
         //vec3 decalNormalWS = normalize((inverse(outDecalWorldToLocal) * vec4(0,0,1,0)).xyz);
@@ -143,7 +158,8 @@ uniform int perDrawInt_1;
 
         vec3 finalAlbedo = mix(albedo.rgb, decalColor.rgb, decalBlend * decalColor.a * fade);
 
-        gAlbedo.rgb = finalAlbedo;// * albedo.a;
-        gAlbedo.a = 1;
+        gAlbedoOut = vec4(finalAlbedo, 1);
+        gOtherOut = vec4(smoothness, metallic, 1, 1);
+    
     }
 #endif
