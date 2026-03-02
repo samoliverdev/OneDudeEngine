@@ -140,8 +140,8 @@ void SceneHierarchyPanel::OnGui(){
 
                     Model m;
                     if(m.HasFileExtension(getExtension(*path))){
-                        auto _path = path->string();
-                        std::replace(_path.begin(), _path.end(), '\\', '/');
+                        auto _path = path->generic_string();
+                        //std::replace(_path.begin(), _path.end(), '\\', '/');
 
                         Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
                         Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
@@ -253,8 +253,8 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
             Model m;
             if(m.HasFileExtension(getExtension(*path))){
-                auto _path = path->string();
-                std::replace(_path.begin(), _path.end(), '\\', '/');
+                auto _path = path->generic_string();
+                //std::replace(_path.begin(), _path.end(), '\\', '/');
 
                 Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
                 Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));

@@ -28,7 +28,7 @@
 #define OpenglMajorVer 4
 #define OpenglMinorVer 6*/
 
-//#define OPENGL_DEBUG //need enable in OpenglGraphicDevice.cpp too
+#define OPENGL_DEBUG //need enable in OpenglGraphicDevice.cpp too
 
 namespace OD{
 

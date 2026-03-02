@@ -26,7 +26,7 @@
 
 namespace OD{
 
-//#define OPENGL_DEBUG //need enable in PlatformGLFW3.cpp too
+#define OPENGL_DEBUG //need enable in PlatformGLFW3.cpp too
 
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
@@ -140,6 +140,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 
     //printf("%s:%s[%s](%d): %s\n", sourceStr, typeStr, sevStr, id, message);
     LogError("{}:{}[{}]({}): {}\n", sourceStr, typeStr, sevStr, id, message);
+    Assert(false);
 }
 #endif
 
@@ -2762,6 +2763,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
 
         if(isMSAA){
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+            glCheckError();
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_TRUE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
             glCheckError();
@@ -2771,6 +2773,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         // --------------------
         else if(!isArray && !isCube){
             glBindTexture(GL_TEXTURE_2D, tex);
+            glCheckError();
 
             glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
 
@@ -2787,6 +2790,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         // --------------------
         else if(isArray){
             glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+            glCheckError();
 
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
 
@@ -2803,6 +2807,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             Assert(width == height);
 
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+            glCheckError();
 
             glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
 
@@ -2863,6 +2868,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         if(isMSAA){
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_TRUE);
+            glCheckError();
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
             glCheckError();
@@ -2872,6 +2878,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         // --------------------
         else if(!isArray && !isCube){
             glBindTexture(GL_TEXTURE_2D, tex);
+            glCheckError();
 
             if(spec.genMip){
                 glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
@@ -2896,6 +2903,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         // --------------------
         else if(isArray){
             glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+            glCheckError();
 
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
 
@@ -2918,6 +2926,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             Assert(width == height);
 
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+            glCheckError();
 
             glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
 
@@ -3311,7 +3320,8 @@ bool OpenGLGraphicsDevice::Texture2DIsValid(Texture2D& tex){
 }
 
 void* OpenGLGraphicsDevice::Texture2DRenderId(Texture2D& tex){
-    return (void*)(uint64_t)tex.glData.id;
+    //return (void*)(uint64_t)tex.glData.id;
+    return (void*)(intptr_t)tex.glData.id;
 }
 
 bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){ 

@@ -540,7 +540,10 @@ void Material::OnGui(){
 
             ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
                 if(path->string().empty() == false && (path->extension() == ".png" || path->extension() == ".jpg")){
-                    map.texture = AssetManager::Get().LoadAsset<Texture2D>(path->string());
+                    //LogInfo("Dragdrop Path: {}", path->generic_string());
+                    //TODO: Maybe check if AssetManager::Get().LoadAsset<Texture2D> is valid
+                    keepAlive = map.texture; // Avoid opengl crach on imgui becose text was deleted
+                    map.texture = AssetManager::Get().LoadAsset<Texture2D>(path->generic_string());
                     toSave = true;
                 }
             });

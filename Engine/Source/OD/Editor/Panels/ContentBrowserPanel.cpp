@@ -337,8 +337,8 @@ void ContentBrowserPanel::HandleDragDrop(const std::filesystem::path& path, bool
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityMoveDragDrop");
         if (payload != nullptr) {
             auto relativePath = std::filesystem::relative(path, _assetsDirectory);
-            std::string pathString = relativePath.string();
-            std::replace(pathString.begin(), pathString.end(), '\\', '/');
+            std::string pathString = relativePath.generic_string();
+            //std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
             LogWarning("Save Prefab To: {}", pathString);
             Entity* targetEntity = (Entity*)payload->Data;

@@ -34,12 +34,12 @@ void InspectorPanel::OnGui(){
         ImGui::Separator();
         ImGui::Spacing();
         ShowAddComponent(editor->selectionEntity);
-    } else if(editor->selectionOnAsset == true && editor->selectionAsset != nullptr){
+    } else if(editor->selectionOnAsset == true && editor->GetSelectionAsset() != nullptr){
         if(ImGui::Button("GoTo")){
-            editor->contentBrowserPanel.GoTo(editor->selectionAsset->Path());
+            editor->contentBrowserPanel.GoTo(editor->GetSelectionAsset()->Path());
         }
         ImGui::Separator();
-        editor->selectionAsset->OnGui();
+        editor->GetSelectionAsset()->OnGui();
     }
     ImGui::End();
 }

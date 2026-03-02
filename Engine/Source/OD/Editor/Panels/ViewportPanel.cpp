@@ -196,7 +196,7 @@ void ViewportPanel::OnGui(){
 
         if(payload != nullptr){
             std::filesystem::path* path = (std::filesystem::path*)payload->Data;
-            LogInfo("{}", path->string());
+            LogInfo("{}", path->generic_string());
         }
 
         const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload("FILE_MOVE_PAYLOAD");
@@ -212,7 +212,7 @@ void ViewportPanel::OnGui(){
 
             Model m;
             if(m.HasFileExtension(getExtension(*path))){
-                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->string());
+                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->generic_string());
                 Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
                 ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
                 mRenderer.SetModel(model);

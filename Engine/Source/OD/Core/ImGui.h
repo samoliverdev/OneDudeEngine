@@ -148,8 +148,8 @@ namespace ImGui{
         ImGui::EndGroup();
 
         ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
-            std::string _path = path->string();
-            std::replace(_path.begin(), _path.end(), '\\', '/'); // replace all 'x' to 'y'
+            std::string _path = path->generic_string();
+            //std::replace(_path.begin(), _path.end(), '\\', '/'); // replace all 'x' to 'y'
 
             T tempT;
             if(_path.empty() == false && tempT.HasFileExtension(path->extension().string()) == true){
@@ -180,8 +180,8 @@ namespace ImGui{
         ImGui::EndGroup();
 
         ImGui::AcceptFileMovePayload([&](std::filesystem::path* path){
-            std::string _path = path->string();
-            std::replace(_path.begin(), _path.end(), '\\', '/'); // replace all 'x' to 'y'
+            std::string _path = path->generic_string();
+            //std::replace(_path.begin(), _path.end(), '\\', '/'); // replace all 'x' to 'y'
 
             auto HasFileExtension = [&](const std::string& fileExtension){
                 for(auto& i: extension){

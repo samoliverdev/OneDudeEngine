@@ -208,6 +208,8 @@ private:
 
     uint32_t id = 0;
 
+    Ref<Texture2D> keepAlive = nullptr;
+
     bool isDirty = true;
     
     bool isComplete = false;

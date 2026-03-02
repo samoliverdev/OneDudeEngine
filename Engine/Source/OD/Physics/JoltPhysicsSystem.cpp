@@ -2224,6 +2224,9 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
 	physicsSystem->RemoveRigidbody(e, rb);
+
+	rb.data = nullptr;
+	rb.isDirt = true;
 }
 
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
@@ -2987,6 +2990,7 @@ void PhysicsSystem::OnInit(Scene& inScene){
 	s.mNumPositionSteps *= 2;
 	s.mManifoldTolerance = 2.0e-3f;
 	s.mMaxPenetrationDistance = 0.05f;
+	s.mDeterministicSimulation = true;
 	physicsWorld->physicsSystem.SetPhysicsSettings(s);*/
 
 	//JPH::DebugRenderer::sInstance = physicsWorld->renderer;
@@ -4004,7 +4008,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 
 		//if(rb.isDirt){
 		if(rb.isDirt){
-			Assert(rb.data == nullptr);
+			//Assert(rb.data == nullptr);
 			RemoveRigidbody(e, rb);
 			AddRigidbody(e, rb, transform, info);
 		}

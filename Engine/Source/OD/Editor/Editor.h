@@ -10,6 +10,7 @@
 #include "OD/Editor/Panels/RuntimeInfoPanel.h"
 #include "OD/Editor/Panels/LogPanel.h"
 #include "OD/Serialization/Serialization.h"
+#include "OD/Utils/FixedQueue.h"
 #include "EditorCamera.h"
 #include "Workspace.h"
 #include <functional>
@@ -47,7 +48,8 @@ public:
     inline const std::unordered_set<Entity>& GetSelectedEntities() const { return _selectedEntities; }
 
     inline void SetSelectionAsset(Ref<Asset> asset){
-        selectionAsset = asset;
+        //selectionAsset = asset;
+        selectionQueue.Push(asset);
         selectionOnAsset = true;
     }
 
@@ -56,7 +58,8 @@ public:
         selectedEntities.clear();
         _selectedEntities.clear();
 
-        selectionAsset = nullptr;
+        //selectionAsset = nullptr;
+        selectionQueue.Push(nullptr);
         selectionOnAsset = false;
     }
 
@@ -106,7 +109,9 @@ private:
     std::vector<Entity> selectedEntities;
     std::unordered_set<Entity> _selectedEntities;
 
-    Ref<Asset> selectionAsset;
+    //Ref<Asset> selectionAsset;
+    inline Ref<Asset> GetSelectionAsset(){ return selectionQueue.Back(); }
+    FixedQueue<Ref<Asset>> selectionQueue{3};//Used to Keep asset alive/loaded for more time and avoid some crachs
     bool selectionOnAsset;
 
     //bool showSceneHierarchy = true;
