@@ -36,6 +36,8 @@ Material::Material(Ref<Shader> s, bool inenableInstancing){
 }
 
 Material::~Material(){
+    Assert(graphicsDevice != nullptr);
+    graphicsDevice->MaterialDestroy(*this);
     materialIdPool.Push(id);
 }
 

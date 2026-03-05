@@ -28,6 +28,70 @@ namespace OD{
 
 #define OPENGL_DEBUG //need enable in PlatformGLFW3.cpp too
 
+constexpr size_t operator"" _KB(unsigned long long v) { return v * 1024ULL; }
+constexpr size_t operator"" _MB(unsigned long long v) { return v * 1024ULL * 1024ULL; }
+
+struct VRAMTracker{
+    enum class Category{
+        Other, Texture, Mesh, Framebuffer, Buffer, Shader
+    };
+
+    size_t totalAllocatedBytes = 0;
+    size_t totalFreedBytes     = 0;
+
+    // Optional: per-category tracking
+    size_t texturesBytes       = 0;
+    size_t meshBytes       = 0;
+    size_t framebuffersBytes   = 0;
+    size_t buffersBytes        = 0;     // VBO, EBO, UBO, instancing
+    size_t shadersBytes        = 0;     // very rough
+
+    void Add(size_t bytes, Category category = Category::Other){
+        totalAllocatedBytes += bytes;
+        if (category == Category::Texture)      texturesBytes     += bytes;
+        else if (category == Category::Mesh) meshBytes += bytes;
+        else if (category == Category::Framebuffer) framebuffersBytes += bytes;
+        else if (category == Category::Buffer)      buffersBytes      += bytes;
+        else if (category == Category::Shader)      shadersBytes      += bytes;
+
+        Assert(texturesBytes < 2000_MB);
+        Assert(meshBytes < 2000_MB);
+    }
+
+    void Free(size_t bytes, Category category = Category::Other){
+        totalFreedBytes += bytes;
+        if (category == Category::Texture)      texturesBytes     -= bytes;
+        else if (category == Category::Mesh) meshBytes -= bytes;
+        else if (category == Category::Framebuffer) framebuffersBytes -= bytes;
+        else if (category == Category::Buffer)      buffersBytes      -= bytes;
+        else if (category == Category::Shader)      shadersBytes      -= bytes;
+    }
+
+    size_t CurrentUsage() const {
+        return totalAllocatedBytes > totalFreedBytes ? totalAllocatedBytes - totalFreedBytes : 0;
+    }
+
+    // For debugging / UI
+    /*std::string Report() const {
+        char buf[512];
+        snprintf(buf, sizeof(buf),
+            "VRAM estimate: %zu MiB total\n"
+            "  Textures:     %zu MiB\n"
+            "  Framebuffers: %zu MiB\n"
+            "  Buffers:      %zu MiB\n"
+            "  Shaders:      %zu KiB\n",
+            CurrentUsage() / (1024*1024),
+            texturesBytes     / (1024*1024),
+            framebuffersBytes / (1024*1024),
+            buffersBytes      / (1024*1024),
+            shadersBytes      / 1024
+        );
+        return buf;
+    }*/
+};
+
+VRAMTracker vram;   // member of OpenGLGraphicsDevice or global / singleton
+
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
@@ -390,10 +454,26 @@ void OpenGLGraphicsDevice::Begin(){
     lastShader = nullptr;
 
     curPerInstancingDrawData = 0;
+
+    //TODO: destory if(mat.glData.mainBuffer != 0) glDeleteBuffers(1, &mat.glData.mainBuffer); on Shutdown
+
+    auto CalcPerInstancingDrawDataSize = [&](){
+        size_t totalVRAM = 0;
+        for (const auto& drawData : perInstancingDrawData){
+            totalVRAM += drawData.capacity; // capacity is in bytes
+        }
+
+        return totalVRAM;
+    };
+
+    glCheckError();
+
+    //LogInfo("CaPerInstancingDrawDataSize: {}MB", CalcPerInstancingDrawDataSize() / (1024*1024));
 }
 
 void OpenGLGraphicsDevice::End(){
     begin = false;
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::_Begin(){
@@ -401,6 +481,7 @@ void OpenGLGraphicsDevice::_Begin(){
     glBindVertexArray(globalVAO);
     glCheckError();
     #endif
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::_End(){
@@ -408,6 +489,7 @@ void OpenGLGraphicsDevice::_End(){
     glBindVertexArray(0);
     glCheckError();
     #endif
+    glCheckError();
 }
 
 bool OpenGLGraphicsDevice::HasBegin(){
@@ -417,24 +499,29 @@ bool OpenGLGraphicsDevice::HasBegin(){
 void OpenGLGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::EndRenderToScreen(){
     //Application::DrawImGui();
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::Clean(float r, float g, float b, float a){
     glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::CleanColorOnly(float r, float g, float b, float a){
     glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT); 
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::CleanDepthOnly(){
     glClear(GL_DEPTH_BUFFER_BIT); 
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::SetCamera(Camera& inCamera){
@@ -462,6 +549,7 @@ Camera OpenGLGraphicsDevice::GetCamera(){
 
 void OpenGLGraphicsDevice::SetColorMask(Vector4 mask){
     glColorMask(mask.r, mask.g, mask.b, mask.a);
+    glCheckError();
 }   
 
 void OpenGLGraphicsDevice::SetRenderMode(RenderMode mode){
@@ -517,6 +605,7 @@ void OpenGLGraphicsDevice::SetDepthTest(DepthTest depthTest){
         glDepthFunc(GL_NEVER);  
         break;
     }
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::SetCullFace(CullFace cullFace){
@@ -540,6 +629,7 @@ void OpenGLGraphicsDevice::SetCullFace(CullFace cullFace){
         glDisable(GL_CULL_FACE);
         break;
     }
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::SetBlend(bool b){
@@ -567,6 +657,7 @@ int OpenGLGraphicsDevice::BlendModeToGL(BlendMode blendMode){
     if(blendMode == BlendMode::CONSTANT_ALPHA) return GL_CONSTANT_ALPHA;
     if(blendMode == BlendMode::ONE_MINUS_CONSTANT_ALPHA) return GL_ONE_MINUS_CONSTANT_ALPHA;
 
+    glCheckError();
     Assert(false);
     return 0;
 }
@@ -906,7 +997,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(drawType >= 0 && drawType <= 3);
     Assert(mat.currentShader.drawTypes[drawType] != nullptr);
 
-    auto ContainUniformName = [&](SubShader shader, const std::string& name){ 
+    auto ContainUniformName = [&](SubShader& shader, const std::string& name){ 
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
     };
 
@@ -1830,6 +1921,7 @@ void OpenGLGraphicsDevice::DrawQuadPostProcessing(Framebuffer* dst, Material& ma
 void OpenGLGraphicsDevice::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){
     glViewport(x, y, w, h);
     //glScissor(x, y, w, h);
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){
@@ -1839,18 +1931,22 @@ void OpenGLGraphicsDevice::GetViewport(unsigned int*x, unsigned int* y, unsigned
     *y = value[1];
     *w = value[2]; 
     *h = value[3];
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::EnableScissor(){
     glEnable(GL_SCISSOR_TEST);
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::DisableScissor(){
     glDisable(GL_SCISSOR_TEST);
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::Scissor(unsigned int x, unsigned int y, int w, int h){
     glScissor(x, y, w, h);
+    glCheckError();
 }
 
 bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
@@ -2004,6 +2100,11 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
     glBindVertexArray(0);
     glCheckError();
     #endif
+
+    mesh.ramUsage  = mesh.CalculateRamUsage();
+    mesh.vramUsage = mesh.CalculateVRamUsage();
+    vram.Add(mesh.vramUsage, VRAMTracker::Category::Mesh);
+    LogInfo("Mesh VRam: {}MB/{}MB", mesh.vramUsage / (1024 * 1024), vram.meshBytes / (1024 * 1024));
 
     return true;
 }
@@ -2179,22 +2280,26 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     curPerInstancingDrawData++;
 
     // Create or resize buffer if needed
-    if (drawData.vbo == 0 || drawData.capacity < bufferSize) {
-        if (drawData.vbo != 0)
+    if(drawData.vbo == 0 || drawData.capacity < bufferSize) {
+        if(drawData.vbo != 0){
             glDeleteBuffers(1, &drawData.vbo);
+            glCheckError();
+        }
 
         glGenBuffers(1, &drawData.vbo); glCheckError();
-        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
+        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); 
+        glCheckError();
 
-        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,
-            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); 
+        glCheckError();
         
         drawData.capacity = bufferSize;
 
-        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
-            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); 
+        glCheckError();
     } else {
-        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
+        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); 
+        glCheckError();
     }
 
     // Copy matrices to mapped buffer
@@ -2245,20 +2350,24 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     curPerInstancingDrawData++;
 
     // Create or resize buffer if needed
-    if (drawData.vbo == 0 || drawData.capacity < bufferSize) {
-        if (drawData.vbo != 0)
+    if(drawData.vbo == 0 || drawData.capacity < bufferSize){
+        if(drawData.vbo != 0){
             glDeleteBuffers(1, &drawData.vbo);
+            glCheckError();
+        }
 
-        glGenBuffers(1, &drawData.vbo); glCheckError();
-        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
+        glGenBuffers(1, &drawData.vbo); 
+        glCheckError();
+        glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); 
+        glCheckError();
 
-        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,
-            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); 
+        glCheckError();
         
         drawData.capacity = bufferSize;
 
-        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
-            GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); glCheckError();
+        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); 
+        glCheckError();
     } else {
         glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo); glCheckError();
     }
@@ -2306,6 +2415,8 @@ void OpenGLGraphicsDevice::MeshDestroy(Mesh& mesh){
 
     if(mesh.glData.ebo != 0) glDeleteBuffers(1, &mesh.glData.ebo);
 
+    glCheckError();
+
     #ifdef USE_VAO
     if(mesh.glData.vao != 0) glDeleteVertexArrays(1, &mesh.glData.vao);
     #endif
@@ -2325,6 +2436,10 @@ void OpenGLGraphicsDevice::MeshDestroy(Mesh& mesh){
     #ifdef USE_VAO
     mesh.glData.vao = 0;
     #endif
+
+    vram.Free(mesh.vramUsage, VRAMTracker::Category::Mesh);
+    mesh.vramUsage = 0;
+    mesh.ramUsage  = mesh.CalculateRamUsage();
 
     glCheckError();
 }
@@ -3041,6 +3156,8 @@ void OpenGLGraphicsDevice::FramebufferGenMipmap(Framebuffer& fb){
         glGenerateMipmap(target);
         glCheckError();
     }
+
+    glCheckError();
 }
 
 void* OpenGLGraphicsDevice::FramebufferColorAttachmentId(Framebuffer& framebuffer, int index){
@@ -3067,6 +3184,7 @@ int OpenGLGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int atta
     glCheckError();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
     
     return pixelData;
 }
@@ -3281,6 +3399,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, size_t si
 
 bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType){
     Texture2DDestroy(tex);
+    glCheckError();
 
     if(tex.settings.textureFormat == TextureFormat::None){
         LogError("Texture2DCreate: textureFormat invalid");
@@ -3302,6 +3421,31 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width
     tex.glData.imageFormat = TextureFormatLookupMipmap[(int)tex.settings.textureFormat];
     Texture2DGenerate(tex, width, height, dataType, data);
     tex.isComplete = true;
+
+    //--------Compute VRam Usage----------
+    size_t bytesPerPixel = 0;
+    switch(tex.glData.internalFormat){
+        case GL_RGBA: case GL_RGBA8: case GL_SRGB8_ALPHA8:   bytesPerPixel = 4; break;
+        case GL_RGB: case GL_RGB8:  case GL_SRGB8:          bytesPerPixel = 3; break;
+        case GL_RGB16F:                             bytesPerPixel = 6; break;
+        case GL_RGBA16F:                            bytesPerPixel = 8; break;
+        case GL_RGB32F:                             bytesPerPixel = 12; break;
+        case GL_RGBA32F:                            bytesPerPixel = 16; break;
+        case GL_R8:                                 bytesPerPixel = 1; break;
+        case GL_RG16F:                              bytesPerPixel = 4; break;
+        case GL_R11F_G11F_B10F:                     bytesPerPixel = 4; break;
+        default:
+            bytesPerPixel = 4; // conservative fallback
+            LogWarning("Unknown internal format for VRAM estimation: {}", tex.glData.internalFormat);
+    }
+    size_t baseBytes = (size_t)tex.width * tex.height * bytesPerPixel;
+    size_t totalBytes = baseBytes;
+    if(tex.mipmap) totalBytes += baseBytes / 3;// mip chain ≈ +33%
+
+    vram.Add(totalBytes, VRAMTracker::Category::Texture);
+    tex.vramUsage = totalBytes;
+    LogInfo("Textures VRam: {}MB/{}MB", tex.vramUsage / (1024 * 1024) ,vram.texturesBytes / (1024 * 1024));
+
     return true;
 }
 
@@ -3313,6 +3457,9 @@ void OpenGLGraphicsDevice::Texture2DDestroy(Texture2D& tex){
     glCheckError();
 
     tex.isComplete = false;
+
+    vram.Free(tex.vramUsage, VRAMTracker::Category::Texture);
+    tex.vramUsage = 0;
 }
 
 bool OpenGLGraphicsDevice::Texture2DIsValid(Texture2D& tex){
@@ -4244,8 +4391,10 @@ bool OpenGLGraphicsDevice::MaterialCreate(Material& shader){
     return false;
 }
 
-void OpenGLGraphicsDevice::MaterialDestroy(Material& shader){
-
+void OpenGLGraphicsDevice::MaterialDestroy(Material& mat){
+    if(mat.glData.mainUniformData != nullptr) free(mat.glData.mainUniformData);
+    if(mat.glData.mainBuffer != 0) glDeleteBuffers(1, &mat.glData.mainBuffer);
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
@@ -4253,6 +4402,9 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
     Assert(mat.currentShader.drawTypes[0] != nullptr);
 
     if(getUniformInfo(mat.currentShader.drawTypes[0]->glData.id, "Main", mat.glData.mainBufferDef)){
+        if(mat.glData.mainUniformData != nullptr) free(mat.glData.mainUniformData);
+        if(mat.glData.mainBuffer != 0) glDeleteBuffers(1, &mat.glData.mainBuffer);
+
         mat.glData.mainUniformData = malloc(mat.glData.mainBufferDef.size);
         memset(mat.glData.mainUniformData, 0, mat.glData.mainBufferDef.size);
         glGenBuffers(1, &mat.glData.mainBuffer);

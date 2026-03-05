@@ -125,9 +125,14 @@ public:
         }
     }
 
+    virtual size_t RamUsage() override { return ramUsage; }
+    virtual size_t VRamUsage() override { return vramUsage; }
+
 private:
     unsigned int width = 0;
     unsigned int height = 0;
+    size_t ramUsage;
+    size_t vramUsage;
     bool mipmap = false;
     Texture2DSetting loadSettings{};
     Texture2DSetting settings{};

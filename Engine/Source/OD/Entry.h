@@ -29,6 +29,64 @@ extern OD::Module* CreateMainModule();
 /*#include <FileWatch.hpp>
 #include <efsw/efsw.hpp>*/
 
+#define ENABLE_MEMORT_TRACKER 0
+
+#if ENABLE_MEMORT_TRACKER
+#include <crtdbg.h>
+
+constexpr size_t operator"" _MB(unsigned long long v) { return v * 1024ULL * 1024ULL; }
+
+static std::atomic<size_t> g_CurrentMemory = 0;
+static thread_local bool g_InHook = false;
+
+int AllocHook(
+    int allocType,
+    void* userData,
+    size_t size,
+    int blockType,
+    long requestNumber,
+    const unsigned char* filename,
+    int lineNumber)
+{
+    //if (g_InHook) return 1;
+    //g_InHook = true;
+
+    if (allocType == _HOOK_ALLOC)
+    {
+        g_CurrentMemory.fetch_add(size);
+
+        if (size > 500_MB) {
+            __debugbreak();
+        }
+    }
+    else if (allocType == _HOOK_FREE)
+    {
+        if (userData)
+        {
+            size_t realSize = _msize(userData);
+            g_CurrentMemory.fetch_sub(realSize);
+        }
+    }
+    else if (allocType == _HOOK_REALLOC)
+    {
+        if (userData)
+        {
+            size_t oldSize = _msize(userData);
+            g_CurrentMemory.fetch_sub(oldSize);
+        }
+
+        g_CurrentMemory.fetch_add(size);
+    }
+
+    size_t current = g_CurrentMemory.load();
+    if (current > 1250_MB)
+        __debugbreak();
+
+    //g_InHook = false;
+    return 1;
+}
+#endif
+
 int main(int argc, char *argv[]){
     //int* a = new int();
 
@@ -36,7 +94,10 @@ int main(int argc, char *argv[]){
         //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
-    
+    #if ENABLE_MEMORT_TRACKER
+    _CrtSetAllocHook(AllocHook);
+    #endif
+
     OD::Log::Init();//TODO: Move this to Application 
     OD::CoreModulesInit();
 

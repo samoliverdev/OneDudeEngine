@@ -75,7 +75,10 @@ public:
 
     static void CreateLuaBind(sol::state& lua);
 
+    size_t VRamUsage(){ return vramUsage; }
+
 private:
+    size_t vramUsage;
     FramebufferType type;
     FrameBufferSpecification specification;
     FramebufferDataGL;

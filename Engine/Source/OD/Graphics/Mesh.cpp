@@ -163,6 +163,26 @@ void Mesh::CalculateTangent(){
     }
 }
 
+size_t Mesh::CalculateRamUsage(){
+    size_t ram = 0;
+
+    ram += vertices.size() * sizeof(Vector3);
+    ram += uv.size() * sizeof(Vector3);
+    ram += normals.size() * sizeof(Vector3);
+    ram += colors.size() * sizeof(Vector4);
+    ram += tangents.size() * sizeof(Vector3);
+    ram += weights.size() * sizeof(Vector4);
+    ram += influences.size() * sizeof(IVector4);
+    ram += indices.size() * sizeof(unsigned int);
+    ram += instancingModelMatrixs.size() * sizeof(Matrix4);
+
+    return ram;
+}
+
+size_t Mesh::CalculateVRamUsage(){
+    return CalculateRamUsage();//For now is the same
+}
+
 void Mesh::Submit(){
     Assert(isReadable == true && "Only can Update isReadable Mesh");
     Submit(

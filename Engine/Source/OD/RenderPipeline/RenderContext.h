@@ -173,6 +173,7 @@ struct alignas(16) ShadowData{
 
 class OD_API RenderFeature{
 public:
+    virtual ~RenderFeature() = default;
     Scene* scene = nullptr;
     virtual void OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData){}
     virtual void OnRenderUI(const Camera& cam){}

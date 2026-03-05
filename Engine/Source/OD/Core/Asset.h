@@ -32,6 +32,9 @@ public:
     bool HasFileExtension(const std::string& fileExtension);
     //Ref<Package> GetPackage();
 
+    virtual size_t RamUsage(){ return 0; }
+    virtual size_t VRamUsage(){ return 0; }
+
     template<typename T, typename... Args>
     static Ref<T> CreateFromFile(const std::string& path, Args&&... args){
         static_assert(std::is_base_of_v<Asset, T>, "T must derive from Asset");
@@ -255,7 +258,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
         db.erase(resolvedPath);// expired → remove stale entry
     }
     #else
-    return if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
+    if(db.count(resolvedPath)) return std::static_pointer_cast<T>(db[resolvedPath]);
     #endif
 
     //Find full path if arg path has not ext ex: "Engine/Textures/White" -> ("Engine/Textures/White.png" | "Engine/Textures/White.texturebin" | ...) 

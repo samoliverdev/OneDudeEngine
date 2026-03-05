@@ -372,7 +372,7 @@ void PhysicsModuleInit(){
 	JPH::RegisterDefaultAllocator();
 	
 	JPH::Trace = TraceImpl;
-	JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
+	//JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
 
 	JPH::Factory::sInstance = new JPH::Factory();
 	JPH::RegisterTypes();

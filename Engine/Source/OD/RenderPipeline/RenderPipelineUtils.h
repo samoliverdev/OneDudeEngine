@@ -121,8 +121,9 @@ struct CommandBucket3{
         commands.clear();
     }
 
-    inline void Add(Key k, Value v){
-        commands[k].push_back(v);
+    //TODO: Avoid Copy, Review other buckets to do this
+    inline void Add(Key& k, Value&& v){
+        commands[k].push_back(std::move(v));
     }
 
     inline void Sort(){

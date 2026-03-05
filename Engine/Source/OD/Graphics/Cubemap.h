@@ -24,9 +24,14 @@ public:
     static Ref<Cubemap> CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap);  
 
     static void CreateLuaBind(sol::state& lua);
+
+    virtual size_t RamUsage() override { return ramUsage; }
+    virtual size_t VRamUsage() override { return vramUsage; }
     
 private:
     bool mipmap;
+    size_t ramUsage;
+    size_t vramUsage;
     CubemapDataGL; 
 };
 

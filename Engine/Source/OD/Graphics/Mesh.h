@@ -113,16 +113,23 @@ public:
         }
     }
 
+    virtual size_t RamUsage() override { return ramUsage; }
+    virtual size_t VRamUsage() override { return vramUsage; }
+
 private:
     int id;
 
     bool isReadable = false;
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
+    size_t ramUsage;
+    size_t vramUsage;
     MeshDataGL;
     MeshDataWG;
 
     void Bind();
+    size_t CalculateRamUsage();
+    size_t CalculateVRamUsage();
 };
 
 }
