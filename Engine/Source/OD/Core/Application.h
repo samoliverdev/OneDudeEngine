@@ -20,6 +20,7 @@ struct ApplicationConfig {
     int startWidth;
     int startHeight;
     std::string name;
+    bool transparentWindows = false;
 };
 
 class OD_API Application {

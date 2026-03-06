@@ -63,10 +63,10 @@ void LoadModelSample::OnRender(float deltaTime){
     cam.view = math::inverse(camTransform.GetModelMatrix());
 
     Graphics::Begin();
-    Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+    Graphics::Clean(0.0f, 0.0f, 0.0f, 0.0f);
     Graphics::SetCamera(cam);
 
-    Graphics::BeginRenderToScreen();
+    Graphics::BeginRenderToScreen({0, 0, 0, 0});
     if(useInstancing){  
         //model->materials[0]->SetEnableInstancing(true);
         model->materials[0]->DisableKeyword("SKINNED");

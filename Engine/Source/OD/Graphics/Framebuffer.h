@@ -11,7 +11,7 @@ namespace OD{
 class SubShader;
 
 enum class OD_API_IMPORT FramebufferTextureFormat{
-    None, RGB, RGBA8, RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH4STENCIL8, DEPTH_COMPONENT
+    None = 0, RGB, RGBA8, RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER, DEPTH24_STENCIL8, DEPTH32F_STENCIL8, DEPTH_COMPONENT16, DEPTH_COMPONENT24, DEPTH_COMPONENT32, DEPTH_COMPONENT32F
 };
 
 enum class OD_API_IMPORT FramebufferAttachmentType{
@@ -34,7 +34,7 @@ struct OD_API FrameBufferSpecification{
     FramebufferAttachmentType type = FramebufferAttachmentType::TEXTURE_2D;
 
     std::vector<FramebufferAttachment> colorAttachments;
-    FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
     bool createDepth = true;
 
     bool swapChainTarget = false;

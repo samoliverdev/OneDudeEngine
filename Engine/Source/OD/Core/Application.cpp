@@ -68,13 +68,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     
     Graphics::SelectGraphicsDevice();
 
-    if(Platform::SystemStartup(
-        appConfig.name.c_str(), 
-        appConfig.startPosX, 
-        appConfig.startPosY,
-        appConfig.startWidth,
-        appConfig.startHeight) == false
-    ) return false;
+    if(Platform::SystemStartup(appConfig) == false) return false;
 
     Graphics::Initialize();
     

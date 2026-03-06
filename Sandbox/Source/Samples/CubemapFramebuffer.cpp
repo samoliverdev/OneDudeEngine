@@ -36,7 +36,7 @@ void CubemapFramebufferSample::OnInit(){
     tempSp.height = Application::ScreenWidth();
     tempSp.type = FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE;
     tempSp.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
-    tempSp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    tempSp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     tempSp.sample = 8;
     tempFBMultsample = CreateRef<Framebuffer>(tempSp);
     tempSp.type = FramebufferAttachmentType::TEXTURE_2D;
@@ -48,7 +48,7 @@ void CubemapFramebufferSample::OnInit(){
     sp.height = 256*1;
     sp.type = FramebufferAttachmentType::CUBEMAP;
     sp.colorAttachments = {{FramebufferTextureFormat::RGBA8, true, CalculateMipCount(sp.width, sp.height)}};
-    sp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    sp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     cubeFB = CreateRef<Framebuffer>(sp);
 
     skyMesh = Mesh::SkyboxCube();

@@ -31,12 +31,13 @@ OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
         0, 0,
         800, 600,
-        "Game1"
+        "Game1",
+        false
     };
 }
 
 OD::Module* CreateMainModule(){
-    int i = -1; //29; //29;
+    int i = 1;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();

@@ -189,6 +189,7 @@ void Platform::ImguiEnd(){
 }
 
 void imguiOnDestroy(){
+    if(graphicsDevice->ImGuiSupport() == false) return;
     //if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
@@ -215,7 +216,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset){
     mouseWheelOffsets.y += yoffset;
 }
 
-bool Platform::SystemStartup(const char* applicationName, int x, int y, int width, int height){
+bool Platform::SystemStartup(const ApplicationConfig& config){
     if(!glfwInit()){
         LogError("Glfw Erro to init");
         return false;
@@ -259,8 +260,16 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     //glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
-    LogInfo("Glfw creationg windows: {} {} {}", applicationName, width, height);
-    window = glfwCreateWindow(width, height, applicationName, NULL, NULL);
+    //INFO: Experimental
+    if(config.transparentWindows){
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+        glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE); //INFO: to this work, i modied: imgui_impl_glfw see in the: "INFO: Disable to...."
+    }
+
+    LogInfo("Glfw creationg windows: {} {} {}", config.name, config.startWidth, config.startHeight);
+    window = glfwCreateWindow(config.startWidth, config.startHeight, config.name.c_str(), NULL, NULL);
 
     /*const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     width = mode->width;
@@ -298,6 +307,10 @@ bool Platform::SystemStartup(const char* applicationName, int x, int y, int widt
 
     //glViewport(0, 0, width, height);
     imguiOnInit(window);
+
+    if(config.transparentWindows){
+        glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE); //INFO: to this work, i modied: imgui_impl_glfw see in the: "INFO: Disable to...."
+    }
 
     /*LogInfo("Opengl Version: %s", glGetString(GL_VERSION));
     LogInfo("GL_VENDOR: %s", glGetString(GL_VENDOR));

@@ -307,10 +307,12 @@ void OpenGLGraphicsDevice::Initialize(){
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     LogInfo("OpenGLGraphicsDevice::Initialize2");
     //#if !defined(__EMSCRIPTEN__)
-    ImGui_ImplOpenGL3_Init(
-        OpenglHeader 
-        //"#version 150"
-    );
+    if(ImGuiSupport()){
+        ImGui_ImplOpenGL3_Init(
+            OpenglHeader 
+            //"#version 150"
+        );
+    }
     //#endif
 
     #ifdef OPENGL_DEBUG
@@ -2453,16 +2455,15 @@ bool OpenGLGraphicsDevice::MeshIsValid(Mesh& mesh){
 }
 
 int InternalFormatLookup[] = {
-    GL_NONE, GL_RGB, GL_RGBA8, GL_R11F_G11F_B10F, GL_RGB16F, GL_RGBA16F, GL_RGB32F, GL_RGBA32F, GL_R32I, GL_DEPTH24_STENCIL8, GL_DEPTH_COMPONENT
+    GL_NONE, GL_RGB, GL_RGBA8, GL_R11F_G11F_B10F, GL_RGB16F, GL_RGBA16F, GL_RGB32F, GL_RGBA32F, GL_R32I, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F
 };
 
 int FormatLookup[] = {
-    GL_NONE, GL_RGB, GL_RGBA, GL_RGB, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RED_INTEGER, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT
+    GL_NONE, GL_RGB, GL_RGBA, GL_RGB, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RED_INTEGER, GL_DEPTH_STENCIL, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT
 };
 
 bool IsDepthTypeFormat(FramebufferTextureFormat format){
-    if(format == FramebufferTextureFormat::DEPTH4STENCIL8) return true;
-    if(format == FramebufferTextureFormat::DEPTH_COMPONENT) return true;
+    if((int)format >= 9) return true;
     return false;
 }
 
@@ -2804,13 +2805,13 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         fb.specification.colorAttachments = {
             {FramebufferTextureFormat::RGBA8}
         };
-        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
         fb.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
         fb.specification.sample = 1;
     }
     if(fb.type == FramebufferType::Shadowmap){
         fb.specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
-        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     }
     if(fb.type == FramebufferType::Deffered){
         fb.specification.colorAttachments = {
@@ -2821,7 +2822,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             {FramebufferTextureFormat::RGB16F}, // Spec, Metalic, AO
             {FramebufferTextureFormat::RED_INTEGER} // Object ID
         };
-        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
         fb.specification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
         fb.specification.sample = 1;
     }
@@ -2955,7 +2956,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         GLenum dataType       = GL_UNSIGNED_INT_24_8;
         GLenum attachment     = GL_DEPTH_STENCIL_ATTACHMENT;
 
-        if(formatEnum == FramebufferTextureFormat::DEPTH_COMPONENT){
+        if(formatEnum == FramebufferTextureFormat::DEPTH_COMPONENT24){
             internalFormat = GL_DEPTH_COMPONENT32F;
             format         = GL_DEPTH_COMPONENT;
             dataType       = GL_FLOAT;

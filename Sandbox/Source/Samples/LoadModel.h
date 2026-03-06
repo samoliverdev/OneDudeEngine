@@ -24,7 +24,7 @@ struct LoadModelSample: OD::Module {
 
     bool useInstancing = false;
     bool useInstancingBuffer = true;
-    bool useMatrix4x3 = true;
+    bool useMatrix4x3 = false;
 
     LoadModelSample(){ name = "LoadModelSample"; }
     void OnInit() override;

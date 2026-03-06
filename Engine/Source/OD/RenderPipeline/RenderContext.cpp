@@ -44,7 +44,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RED_INTEGER}
     };
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     entityIdOutColor = new Framebuffer(framebufferSpecification);
@@ -54,7 +54,7 @@ RenderContext::RenderContext(Scene* inScene){
         //{FramebufferTextureFormat::RGBA8}//, 
         //{FramebufferTextureFormat::RED_INTEGER}
     };
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     forwardOutColor = new Framebuffer(framebufferSpecification);
@@ -68,7 +68,7 @@ RenderContext::RenderContext(Scene* inScene){
         {FramebufferTextureFormat::RGBA8}//, // Spec, Metalic, AO, Other
         //{FramebufferTextureFormat::RED_INTEGER} // Object ID
     };
-    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH4STENCIL8};
+    framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     deferredOutColor = new Framebuffer(framebufferSpecification);

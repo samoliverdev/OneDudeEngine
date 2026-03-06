@@ -48,7 +48,7 @@ public:
     static void HidePopupProgress();
 
 private:
-    static bool SystemStartup(const char* applicationName, int x, int y, int width, int height);
+    static bool SystemStartup(const struct ApplicationConfig& config);
     static void SystemShutdown(void* plat_state);
 
     static void PreUpdate();
