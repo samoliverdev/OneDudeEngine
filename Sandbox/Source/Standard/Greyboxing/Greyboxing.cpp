@@ -611,30 +611,51 @@ void Greyboxing::UpdateMesh(Scene& scene, Entity e, Ref<Material> defaultMateria
     if(shape == Greyboxing::Shape::Plane){
         meshRenderer.mesh = CreatePlaneMesh(planeSize, resolution, pivot);
         meshRenderer.UpdateAABB();
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
     }
     if(shape == Greyboxing::Shape::Cube){
         meshRenderer.mesh = CreateCubeMesh(cubeSize, resolution, pivot);
         meshRenderer.UpdateAABB();
+
+        Vector3 shapeCenter = Vector3Zero;
+        if(pivot == MeshPivot::Corner){
+            shapeCenter = cubeSize / 2.0f;
+        }
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::BoxShape(cubeSize, shapeCenter));
     }
     if(shape == Greyboxing::Shape::Cylinder){
         meshRenderer.mesh = CreateCylinderMesh(radius, height, resolution, pivot);
         meshRenderer.UpdateAABB();
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
     }
     if(shape == Greyboxing::Shape::Cone){
         meshRenderer.mesh = CreateConeMesh(radius, height, resolution.x, resolution.y, true, pivot);
         meshRenderer.UpdateAABB();
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
     }
     if(shape == Greyboxing::Shape::Sphere){
         meshRenderer.mesh = CreateSphereMesh(radius, resolution, pivot);
         meshRenderer.UpdateAABB();
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
     }
     if(shape == Greyboxing::Shape::Ramp){
         meshRenderer.mesh = CreateRampMesh(cubeSize, pivot);
         meshRenderer.UpdateAABB();
+
+        RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
+        rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
     }
 
-    RigidbodyComponent& rb = scene.AddOrGetComponent<RigidbodyComponent>(e);
-    rb.SetShape(CollisionShape::MeshShape(CreateMeshShapeData(*meshRenderer.mesh)));
 }
 
 }

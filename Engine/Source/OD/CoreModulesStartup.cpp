@@ -164,12 +164,13 @@ void CoreModulesInit(){
     //INFO: This Order Matter
     CoreModuleInit();
     GraphicsModuleInit();
+    SceneManagerModuleInit();
     StandRenderPipelineModuleInit();
 
     AnimatorModuleInit();
     AudioModuleInit();
     NavmeshModuleInit();
-    SceneManagerModuleInit();
+    
     TerrainModuleInit();
 
     ScriptModuleInit();

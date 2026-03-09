@@ -42,6 +42,8 @@ SceneManager& SceneManager::Get(){
 void SceneManager::OnInit(){}
 
 void SceneManager::OnExit(){
+    tempScene = nullptr; 
+
     if(activeScene != nullptr){
         //delete activeScene;
         if(activeScene != nullptr) activeScene->Stop();

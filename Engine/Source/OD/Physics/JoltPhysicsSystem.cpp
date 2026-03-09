@@ -3011,6 +3011,38 @@ void PhysicsSystem::OnEnd(Scene& inScene){
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 }
 
+void PhysicsSystem::OnStart(Scene& scene){
+	//Reset all data from copied scene
+
+	auto rbView = scene.GetRegistry().view<RigidbodyComponent>();
+	for(auto [e, comp]: rbView.each()){
+		comp.data = nullptr;
+		comp.isDirt = true;
+	}
+
+	auto ragdollView = scene.GetRegistry().view<RagdollComponent>();
+	for(auto [e, comp]: ragdollView.each()){
+		comp.data = nullptr;
+		comp.isDirty = true;
+	}
+
+	auto jointView = scene.GetRegistry().view<JointComponent>();
+	for(auto [e, comp]: jointView.each()){
+		comp.data = nullptr;
+		comp.isDirty = true;
+	}
+
+	auto heightmapView = scene.GetRegistry().view<HeightmapColliderComponent>();
+	for(auto [e, comp]: heightmapView.each()){
+		comp.data = nullptr;
+	}
+
+	auto vehicleView = scene.GetRegistry().view<VehiclePhysic>();
+	for(auto [e, comp]: vehicleView.each()){
+		comp.data = nullptr;
+	}
+}
+
 PhysicsSystem::~PhysicsSystem(){
 	/*UnregisterTypes();
 	JPH::DebugRenderer::sInstance = nullptr;

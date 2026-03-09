@@ -288,7 +288,13 @@ void Application::OnExit(){
 
     //OD::AssetManager::Get().StopHotReload();
 
-    for(auto i: modules){
+    /*for(auto i: modules){
+        i->OnExit();
+        if(i->DeleteOnExit()) delete i;
+    }*/
+    //OnExit by reverse orde
+    for(auto it = modules.rbegin(); it != modules.rend(); ++it){
+        auto i = *it;
         i->OnExit();
         if(i->DeleteOnExit()) delete i;
     }

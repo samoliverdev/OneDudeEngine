@@ -759,6 +759,8 @@ struct OD_API PhysicsSystem: public System{
     void OnInit(Scene& scene) override;
     void OnEnd(Scene& scene) override;
 
+    void OnStart(Scene& scene) override;
+
     PhysicsSystem();
     virtual ~PhysicsSystem() override;
 

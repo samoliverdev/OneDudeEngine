@@ -7,7 +7,7 @@ using namespace OD;
 
 namespace Standard{
 
-enum class MeshPivot {
+enum class MeshPivot{
     Center,
     Corner
 };
