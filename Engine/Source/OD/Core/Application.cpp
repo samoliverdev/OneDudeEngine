@@ -28,6 +28,8 @@ bool inUpdate = false;
 
 Action<void()> onFrameEnd;
 
+ApplicationCallbacks callbacks;
+
 //Module* mainModule;
 bool running = true;
 int width;
@@ -45,9 +47,16 @@ const std::vector<Module*> Application::Modules(){
 }
 
 //INFO: Maybe register a Shutdown callback and maybe a init call back too
-bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath){
+bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath, ApplicationCallbacks incallbacks){
+    Log::Init();
+
     auto project = ProjectManager::LoadProject(projectPath);
-    if(project == nullptr) return false;
+    if(project == nullptr){
+        Log::Shutdown();
+        return false;
+    }
+
+    callbacks = incallbacks;
 
     /*auto exists = [](const char *fname){
         FILE *file;
@@ -65,6 +74,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
+
+    
     
     Graphics::SelectGraphicsDevice();
 
@@ -101,6 +112,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
         PhysFS::Mount(project->defaultPackagePath.c_str());
         AssetManager::Get().Mount(PhysFS::GetPackage());
     }
+
+    callbacks.onInit();
 
     return true;
 }
@@ -267,6 +280,8 @@ bool Application::Run(){
 }
 
 void Application::OnExit(){
+    callbacks.onShutdown();
+
     GlobalSettings::Get().Save("../GlobalSettings");
 
     //LogInfo("Application::OnExit");
@@ -290,7 +305,7 @@ void Application::OnExit(){
     Graphics::Shutdown();
     //Input::_Shutdown(0);
     Platform::SystemShutdown(0);
-    OD::Log::Shutdown();
+    Log::Shutdown();
 }
 
 void Application::Quit(){

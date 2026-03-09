@@ -308,7 +308,7 @@ bool DrawLayerCollisionMatrix2(
     return changed;
 }
 
-struct PhysicsSettings {
+struct PhysicsSettings{
     Vector3 gravity = {0, -9.81f, 0};
     int solverIterations = 8;
 
@@ -325,7 +325,7 @@ struct PhysicsSettings {
 	}
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive& ar){
         ArchiveDumpNVP(ar, gravity);
         ArchiveDumpNVP(ar, solverIterations);
 		ArchiveDumpNVP(ar, collisionMatrix);

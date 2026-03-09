@@ -98,17 +98,17 @@ int main(int argc, char *argv[]){
     _CrtSetAllocHook(AllocHook);
     #endif
 
-    OD::Log::Init();//TODO: Move this to Application 
-    OD::CoreModulesInit();
-
     for(int i = 0; i < argc; i++){
         OD::Application::GetArgs().push_back(std::string(argv[i]));
     }
 
-    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "")){
-        LogError("Application failed to create!");
-        OD::Log::Shutdown();//TODO: Move this to Application 
-        OD::CoreModulesShutdown();
+    OD::ApplicationCallbacks callbacks = {
+        [](){ OD::CoreModulesInit(); },
+        [](){ OD::CoreModulesShutdown(); }
+    };
+
+    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "", callbacks)){
+        printf("Application failed to create!");
         return 1;
     }
 
@@ -154,7 +154,6 @@ int main(int argc, char *argv[]){
     fileWatcher->watch();*/
     
     OD::Application::Run();
-    OD::CoreModulesShutdown();
 
     /*delete listener;
     delete fileWatcher;*/

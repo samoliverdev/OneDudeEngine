@@ -99,7 +99,7 @@ enum class KeyCode {
 
 class Application;
 
-class OD_API Input {
+class OD_API Input{
     friend class Application;
 public:
     // keyboard input

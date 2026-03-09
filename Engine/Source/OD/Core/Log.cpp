@@ -5,24 +5,23 @@
 #include <concurrentqueue.h>
 
 namespace OD{
-namespace Log{
  
 std::shared_ptr<spdlog::logger> logger = nullptr;
-moodycamel::ConcurrentQueue<LogEntry> logQueue;
-std::vector<LogEntry> entries;
+moodycamel::ConcurrentQueue<Log::LogEntry> logQueue;
+std::vector<Log::LogEntry> entries;
 constexpr size_t MaxLogCount = 2000;
 
 class LogQueueSink final : public spdlog::sinks::base_sink<std::mutex>{
 protected:
     void sink_it_(const spdlog::details::log_msg& msg) override{
-        LogEntry e;
+        Log::LogEntry e;
         e.message = std::string(msg.payload.data(), msg.payload.size());
 
         switch(msg.level){
-            case spdlog::level::warn:     e.level = Level::Warning; break;
-            case spdlog::level::err:      e.level = Level::Error;   break;
-            case spdlog::level::critical: e.level = Level::Fatal;   break;
-            default:                      e.level = Level::Info;    break;
+            case spdlog::level::warn:     e.level = Log::Level::Warning; break;
+            case spdlog::level::err:      e.level = Log::Level::Error;   break;
+            case spdlog::level::critical: e.level = Log::Level::Fatal;   break;
+            default:                      e.level = Log::Level::Info;    break;
         }
 
         logQueue.enqueue(std::move(e));
@@ -31,7 +30,7 @@ protected:
     void flush_() override {}
 };
 
-void Init(){
+void Log::Init(){
     //std::printf("--------------Log Init--------------\n");
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
@@ -45,30 +44,29 @@ void Init(){
     logger->set_pattern("[%H:%M:%S] [%^%l%$] %v");
 }
 
-void Shutdown(){
+void Log::Shutdown(){
     logger.reset();
     spdlog::shutdown();
 }
 
-std::shared_ptr<spdlog::logger>& GetLogger(){
+std::shared_ptr<spdlog::logger>& Log::GetLogger(){
     return logger;
 }
 
-void DrainQueue(){
-    LogEntry e;
+void Log::DrainQueue(){
+    Log::LogEntry e;
     while(logQueue.try_dequeue(e)){
         if(entries.size() >= MaxLogCount) entries.erase(entries.begin());
         entries.emplace_back(std::move(e));
     }
 }
 
-const std::vector<LogEntry>& GetEntries(){
+const std::vector<Log::LogEntry>& Log::GetEntries(){
     return entries;
 }
 
-void EntriesClear(){
+void Log::EntriesClear(){
     entries.clear();
 }
 
-}
 }

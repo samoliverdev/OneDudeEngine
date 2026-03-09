@@ -4,11 +4,10 @@
 #include <spdlog/spdlog.h>
 
 namespace OD{
-namespace Log{
-    OD_API std::shared_ptr<spdlog::logger>& GetLogger();
-    OD_API void Init();
-    OD_API void Shutdown();
 
+class OD_API Log{
+    friend class Application;
+public:
     enum class Level { Info, Warning, Error, Fatal };
 
     struct OD_API LogEntry{
@@ -16,10 +15,16 @@ namespace Log{
         std::string message;
     };
 
-    OD_API void DrainQueue();
-    OD_API const std::vector<LogEntry>& GetEntries();
-    OD_API void EntriesClear();
-}
+    static std::shared_ptr<spdlog::logger>& GetLogger();
+    static void DrainQueue();
+    static const std::vector<LogEntry>& GetEntries();
+    static void EntriesClear();
+
+private:
+    static void Init();
+    static void Shutdown();
+};
+
 }
 
 #ifndef FINAL_BUILD

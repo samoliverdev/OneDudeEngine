@@ -4,6 +4,7 @@
 #include "RendererList.h"
 #include "LightComponent.h"
 #include "PostFX.h"
+#include "RendererFeature.h"
 #include <vector>
 #include <functional>
 
@@ -12,6 +13,7 @@ namespace OD{
 class Scene;
 class UniformBuffer;
 class InstancingBuffer;
+class RendererFeature;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
@@ -171,6 +173,7 @@ struct alignas(16) ShadowData{
     Matrix4 lightSpaceMatrix;
 };
 
+//TODO: Move this to new RendererFeature
 class OD_API RenderFeature{
 public:
     virtual ~RenderFeature() = default;
@@ -275,6 +278,9 @@ public:
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
 
+    inline Framebuffer* GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
+    inline Framebuffer* GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
+
     template<typename T>
     static void RegisterRenderFeature(){
         _AddRenderFeatures().push_back([&](RenderContext& r){
@@ -287,6 +293,14 @@ public:
 private:
     static std::vector<std::function<void(RenderContext&)>>& _AddRenderFeatures();
     std::vector<RenderFeature*> renderFeatures;
+
+    std::vector<RendererFeature*> rendererFeatures;
+
+    struct OD_API _Renderer: public IRenderer{
+        std::vector<RenderPass*> postFxPasses;
+        void AddPass(RenderPass* pass) override;
+    };
+    _Renderer _renderer;
 
     Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;
@@ -316,6 +330,8 @@ private:
     Scene* scene;
 
     ChunkedVector<RenderData> renderData;
+
+    bool step = false;
 
     //entt::view<entt::get_t<MeshRendererComponent, TransformComponent>> meshView;
     //entt::view<entt::get_t<ModelRendererComponent, TransformComponent>> meshRenderView;

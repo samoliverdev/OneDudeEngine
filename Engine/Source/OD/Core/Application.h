@@ -6,15 +6,15 @@
 #include <vector>
 #include <functional>
 
-namespace sol{ class state; }
-
-namespace OD{
-    class Module;
+namespace sol{ 
+    class state; 
 }
 
-namespace OD {
+namespace OD{
+
+class Module;
     
-struct ApplicationConfig {
+struct ApplicationConfig{
     int startPosX;
     int startPosY;
     int startWidth;
@@ -23,11 +23,16 @@ struct ApplicationConfig {
     bool transparentWindows = false;
 };
 
-class OD_API Application {
+struct ApplicationCallbacks{
+    std::function<void()> onInit;
+    std::function<void()> onShutdown;
+};
+
+class OD_API Application{
     friend class WebGPUGraphicsDevice;
     friend class OpenGLGraphicsDevice;
 public:
-    static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "");
+    static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "", ApplicationCallbacks callbacks = {});
     static bool Run();
     
     static void Quit();

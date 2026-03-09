@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "RenderContext.h"
+#include "RendererFeature.h"
 #include "CameraComponent.h"
 #include "MeshRendererComponent.h"
 #include "ModelRendererComponent.h"
@@ -118,13 +119,18 @@ RenderContext::RenderContext(Scene* inScene){
     }
 
     renderData = ChunkedVector<RenderData>(4);
+
+    for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
+        rendererFeatures.push_back(i());
+    }
 }
 
 RenderContext::~RenderContext(){
-    for(auto& i: renderFeatures){
-        delete i;
-    }
+    for(auto& i: renderFeatures) delete i;
     renderFeatures.clear();
+
+    for(auto& i: rendererFeatures) delete i;
+    rendererFeatures.clear();
 
     delete entityIdOutColor;
     delete deferredOutColor;
@@ -383,10 +389,21 @@ void RenderContext::EndDrawToScreen(){
 
 Framebuffer* finalFramebuffer;
 
+void RenderContext::_Renderer::AddPass(RenderPass* pass){
+    if(pass->event == RenderPassEvent::PostProcess){
+        postFxPasses.push_back(pass);
+    }
+}
+
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     //Graphics::SetDepthMask(false);
 
-    bool step = false;
+    //TODO: Move this to other place later, this is just for test
+    for(auto* i: rendererFeatures){
+        i->AddRenderPasses(_renderer, *this);
+    }
+
+    step = false;
     /*Framebuffer**/ finalFramebuffer = postFx1;
     Graphics::BlitFramebuffer(forwardOutColor, postFx1);
     //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
@@ -414,6 +431,13 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
 
         step = !step;
     }
+
+    for(auto* pass: _renderer.postFxPasses){
+        pass->Setup(*this);
+        pass->Execute(*this);
+        step = !step;
+    }
+    _renderer.postFxPasses.clear();
 
     //Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
     /*Graphics::BeginFramebuffer(*forwardOutColor);
@@ -1595,7 +1619,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 }
 
 template<typename Iter, typename Func>
-void tf_for_each2(tf::Taskflow& taskflow, Iter begin, Iter end, Func func) {
+void tf_for_each2(tf::Taskflow& taskflow, Iter begin, Iter end, Func func){
     size_t total = std::distance(begin, end);
     if (total == 0) return;
 
@@ -1632,7 +1656,7 @@ void tf_for_each2(tf::Taskflow& taskflow, Iter begin, Iter end, Func func) {
 }
 
 template<typename Iter, typename Func>
-void tf_for_each3(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks = 0, Func func = {}) {
+void tf_for_each3(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks = 0, Func func = {}){
     using traits = std::iterator_traits<Iter>;
     using diff_t = typename traits::difference_type;
 

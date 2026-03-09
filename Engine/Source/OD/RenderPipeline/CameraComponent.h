@@ -30,6 +30,15 @@ struct OD_API CameraComponent{
 
     RenderingPath renderingPath = RenderingPath::Forward;
 
+    //TODO: Implement Later
+    /*
+    std::vector<Ref<RenderPass>> passes;
+    std::vector<CommandBufferEntry> commandBuffers;
+
+    void AddPass(Ref<RenderPass> pass){ passes.push_back(pass); }
+    void AddCommandBuffer(int event, Ref<CommandBuffer> cmd){ commandBuffers.push_back({event, cmd}); }
+    */
+
     Camera GetCamera();
     
     void UpdateCameraData(TransformComponent& transform, int width, int height);
