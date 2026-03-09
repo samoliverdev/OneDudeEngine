@@ -131,11 +131,29 @@ public:
     virtual bool UniformBufferIsValid(UniformBuffer& buffer) override;
     virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset) override;
 
+    virtual bool ComputeBufferCreate(ComputeBuffer& buffer, size_t size) override;
+    virtual void ComputeBufferDestroy(ComputeBuffer& buffer) override;
+    virtual bool ComputeBufferIsValid(ComputeBuffer& buffer) override;
+    virtual void ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset) override;
+
     virtual bool InstancingBufferCreate(InstancingBuffer& buffer) override;
     virtual void InstancingBufferDestroy(InstancingBuffer& buffer) override;
     virtual bool InstancingBufferIsValid(InstancingBuffer& buffer) override;
     virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4* data, unsigned int count) override;
     virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4x3* data, unsigned int count) override;
+
+    virtual bool ComputeShaderCreate(ComputeShader& shader, const std::string& source) override;
+    virtual void ComputeShaderDestroy(ComputeShader& shader) override;
+    virtual void ComputeShaderDispatch(ComputeShader& shader, uint32_t x, uint32_t y, uint32_t z) override;
+    virtual void ComputeShaderSetTexture(ComputeShader& shader, const char* name, Ref<Texture2D> tex) override;
+    virtual void ComputeShaderSetTexture(ComputeShader& shader, const char* name, Framebuffer* tex, int attachment) override;
+    virtual void ComputeShaderSetUniformBuffer(ComputeShader& shader, const char* name, Ref<UniformBuffer> buffer, int bind) override;
+    virtual void ComputeShaderSetComputeBuffer(ComputeShader& shader, const char* name, Ref<ComputeBuffer> buffer, int bind) override;
+    virtual void ComputeShaderSetInt(ComputeShader& shader, const char* name, int v) override;
+    virtual void ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v) override;
+    virtual void ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v) override;
+    virtual bool ComputeShaderIsValid(ComputeShader& shader) override;
+    GLint GetUniformLocation(ComputeShader& shader, const char* name);
 
     virtual void Initialize() override;
     virtual void Shutdown() override;

@@ -14,6 +14,8 @@
 #include "OD/Graphics/Cubemap.h"
 #include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Graphics/UniformBuffer.h"
+#include "OD/Graphics/ComputeBuffer.h"
+#include "OD/Graphics/ComputeShader.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Application.h"
@@ -3190,24 +3192,24 @@ int OpenGLGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int atta
     return pixelData;
 }
 
-const int TextureFilterLookup[] = {
+const unsigned int TextureFilterLookup[] = {
     GL_NEAREST,
     GL_LINEAR
 };
 
-const int TextureFilterLookupMipmap[] = {
+const unsigned int TextureFilterLookupMipmap[] = {
     GL_NEAREST_MIPMAP_NEAREST,
     GL_LINEAR_MIPMAP_LINEAR
 };
 
-const int TextureWrappingLookupMipmap[] = {
+const unsigned int TextureWrappingLookupMipmap[] = {
     GL_REPEAT,
     GL_MIRRORED_REPEAT,
     GL_CLAMP_TO_EDGE,
     GL_CLAMP_TO_BORDER
 };
 
-const int TextureFormatLookupMipmap[] = {
+const unsigned int TextureFormatLookupMipmap[] = {
     GL_NONE,
     GL_RGB,
     GL_RGBA,
@@ -3231,7 +3233,7 @@ const int TextureFormatLookupMipmap[] = {
     GL_RGBA,
 };
 
-const int TextureInternalFormatLookupMipmap[] = {
+const unsigned int TextureInternalFormatLookupMipmap[] = {
     GL_NONE,
     GL_RGB,
     GL_RGBA,
@@ -3255,7 +3257,7 @@ const int TextureInternalFormatLookupMipmap[] = {
     GL_RGBA32F,
 };
 
-const int TextureDataTypeFormatLookupMipmap[] = {
+const unsigned int TextureDataTypeFormatLookupMipmap[] = {
     GL_UNSIGNED_BYTE,
     GL_UNSIGNED_INT,
     GL_INT,
@@ -4426,6 +4428,7 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
 
 void OpenGLGraphicsDevice::MaterialOnUnsetShader(Material& shader){}
 
+#pragma region UniformBuffer
 bool OpenGLGraphicsDevice::UniformBufferCreate(UniformBuffer& buffer){
     glGenBuffers(1, &buffer.glData.id);
     glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
@@ -4453,7 +4456,185 @@ void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const voi
     glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
     glCheckError();
 }
+#pragma endregion
 
+#pragma region ComputeBuffer
+bool OpenGLGraphicsDevice::ComputeBufferCreate(ComputeBuffer& buffer, size_t size){ 
+    glGenBuffers(1, &buffer.glData.id);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
+
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        size,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    buffer.glData.size = size;
+    buffer.vramUsage = size;
+
+    return true;
+}
+
+void OpenGLGraphicsDevice::ComputeBufferDestroy(ComputeBuffer& buffer){
+    if(buffer.glData.id != 0) glDeleteBuffers(1, &buffer.glData.id);
+    buffer.glData.id = 0;
+}
+
+bool OpenGLGraphicsDevice::ComputeBufferIsValid(ComputeBuffer& buffer){ 
+    return buffer.glData.id != 0;
+}
+
+void OpenGLGraphicsDevice::ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset){
+    Assert(buffer.glData.id != 0);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
+
+    glBufferSubData(
+        GL_SHADER_STORAGE_BUFFER,
+        offset,
+        size,
+        data
+    );
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+#pragma endregion
+
+#pragma region ComputeShader
+bool OpenGLGraphicsDevice::ComputeShaderCreate(ComputeShader& shader, const std::string& source){
+    GLuint _shader = glCreateShader(GL_COMPUTE_SHADER);
+
+    const char* src = source.c_str();
+    glShaderSource(_shader, 1, &src, nullptr);
+    glCompileShader(_shader);
+
+    GLint success;
+    glGetShaderiv(_shader, GL_COMPILE_STATUS, &success);
+
+    if (!success){
+        char infoLog[1024];
+        glGetShaderInfoLog(_shader, 1024, nullptr, infoLog);
+
+        LogError("Compute shader compile error:\n{}", infoLog);
+        glDeleteShader(_shader);
+        return false;
+    }
+
+    shader.glData.id = glCreateProgram();
+    glAttachShader(shader.glData.id, _shader);
+    glLinkProgram(shader.glData.id);
+
+    glGetProgramiv(shader.glData.id, GL_LINK_STATUS, &success);
+
+    if(!success){
+        char infoLog[1024];
+        glGetProgramInfoLog(shader.glData.id, 1024, nullptr, infoLog);
+
+        LogError("Compute shader link error:\n{}", infoLog);
+        glDeleteShader(_shader);
+        return false;
+    }
+
+    glDeleteShader(_shader);
+
+    return true;
+}
+
+void OpenGLGraphicsDevice::ComputeShaderDestroy(ComputeShader& shader){
+    if(shader.glData.id) glDeleteProgram(shader.glData.id);
+}
+
+void OpenGLGraphicsDevice::ComputeShaderDispatch(ComputeShader& shader, uint32_t x, uint32_t y, uint32_t z){
+    glUseProgram(shader.glData.id);
+    glDispatchCompute(x, y, z);
+    glMemoryBarrier(
+        GL_ALL_BARRIER_BITS
+        //GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT
+    );
+
+    shader.glData.textureSlot = 0;
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const char* name, Ref<Texture2D> tex){
+    glUseProgram(shader.glData.id);
+
+    GLint loc = GetUniformLocation(shader, name);
+
+    glActiveTexture(GL_TEXTURE0 + shader.glData.textureSlot);
+    glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)tex->RenderId());
+
+    glUniform1i(loc, shader.glData.textureSlot);
+
+    shader.glData.textureSlot++;
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const char* name, Framebuffer* fb, int attachment){
+    glUseProgram(shader.glData.id);
+
+    GLuint tex = fb->glData.colorAttachments[attachment];// (GLuint)(uintptr_t)fb->ColorAttachmentId(attachment);
+    GLenum format = InternalFormatLookup[(int)fb->specification.colorAttachments[attachment].colorFormat]; //FramebufferFormatToGL(spec.format);
+
+    Assert(format == GL_RGBA16F);
+
+    glBindImageTexture(
+        shader.glData.textureSlot,
+        tex,
+        0,
+        GL_FALSE,
+        0,
+        GL_READ_WRITE,
+        format //GL_RGBA16F
+    );
+
+    shader.glData.textureSlot++;
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetUniformBuffer(ComputeShader& shader, const char* name, Ref<UniformBuffer> buffer, int bind){
+    glBindBufferBase(GL_UNIFORM_BUFFER, bind, buffer->glData.id);
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetComputeBuffer(ComputeShader& shader, const char* name, Ref<ComputeBuffer> buffer, int bind){
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bind, buffer->glData.id);
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetInt(ComputeShader& shader, const char* name, int v){
+    glUseProgram(shader.glData.id);
+    glUniform1i(GetUniformLocation(shader, name), v);
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v){
+    glUseProgram(shader.glData.id);
+    glUniform1f(GetUniformLocation(shader, name), v);
+}
+
+void OpenGLGraphicsDevice::ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){
+    glUseProgram(shader.glData.id);
+    glUniform4f(
+        GetUniformLocation(shader, name),
+        v.x, v.y, v.z, v.w
+    );
+}
+
+bool OpenGLGraphicsDevice::ComputeShaderIsValid(ComputeShader& shader){
+    return shader.glData.id != 0;
+}   
+
+GLint OpenGLGraphicsDevice::GetUniformLocation(ComputeShader& shader, const char* name){
+    auto it = shader.glData.uniformCache.find(name);
+    if(it != shader.glData.uniformCache.end()) return it->second;
+
+    GLint location = glGetUniformLocation(shader.glData.id, name);
+    shader.glData.uniformCache[name] = location;
+
+    return location;
+}
+#pragma endregion
+
+#pragma region ImGui
 bool OpenGLGraphicsDevice::ImGuiSupport(){
     return true;
 }
@@ -4481,6 +4662,7 @@ void OpenGLGraphicsDevice::ImGuiRenderDrawData(unsigned int x, unsigned int y, u
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+#pragma endregion
 
 }
 #endif

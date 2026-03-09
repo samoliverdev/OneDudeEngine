@@ -1,0 +1,40 @@
+#version 430
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba16f, binding = 1) uniform image2D outputTex;
+layout(std140, binding = 2) uniform BlurParams{
+    int blurRadius;
+    float sigma;
+};
+
+float Gaussian(float x, float s){
+    return exp(-(x * x) / (2.0 * s * s));
+}
+
+void main(){
+    /*
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    vec3 color = texelFetch(inputTex, pixel, 0).rgb;
+    imageStore(outputTex, pixel, vec4(color,1.0));
+    */
+
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    vec3 result = vec3(0.0);
+    float weightSum = 0.0;
+
+    for(int y = -blurRadius; y <= blurRadius; y++){
+        for(int x = -blurRadius; x <= blurRadius; x++){
+            float w = Gaussian(length(vec2(x, y)), sigma);
+
+            vec3 sampleColor = texelFetch(inputTex, pixel + ivec2(x, y), 0).rgb;
+
+            result += sampleColor * w;
+            weightSum += w;
+        }
+    }
+
+    result /= weightSum;
+    imageStore(outputTex, pixel, vec4(result, 1.0));
+}

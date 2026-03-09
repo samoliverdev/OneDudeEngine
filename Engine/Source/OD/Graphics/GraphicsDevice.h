@@ -21,6 +21,8 @@ class Texture2D;
 class Texture2DArray;
 class Cubemap;
 class Shader;
+class ComputeBuffer;
+class ComputeShader;
 class InstancingBuffer;
 class UniformBuffer;
 struct GraphicsStats;
@@ -160,11 +162,28 @@ public:
     virtual bool UniformBufferIsValid(UniformBuffer& buffer){ return false; }
     virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
 
+    virtual bool ComputeBufferCreate(ComputeBuffer& buffer, size_t size){ return false; }
+    virtual void ComputeBufferDestroy(ComputeBuffer& buffer){}
+    virtual bool ComputeBufferIsValid(ComputeBuffer& buffer){ return false; }
+    virtual void ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
+
     virtual bool InstancingBufferCreate(InstancingBuffer& buffer){ return false; }
     virtual void InstancingBufferDestroy(InstancingBuffer& buffer){}
     virtual bool InstancingBufferIsValid(InstancingBuffer& buffer){ return false; }
     virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4* data, unsigned int count){}
     virtual void InstancingBufferSetData(InstancingBuffer& buffer, const Matrix4x3* data, unsigned int count){}
+
+    virtual bool ComputeShaderCreate(ComputeShader& shader, const std::string& source){ return false; }
+    virtual void ComputeShaderDestroy(ComputeShader& shader){}
+    virtual void ComputeShaderDispatch(ComputeShader& shader, uint32_t x, uint32_t y, uint32_t z){}
+    virtual void ComputeShaderSetTexture(ComputeShader& shader, const char* name, Ref<Texture2D> tex){}
+    virtual void ComputeShaderSetTexture(ComputeShader& shader, const char* name, Framebuffer* tex, int attachment){}
+    virtual void ComputeShaderSetUniformBuffer(ComputeShader& shader, const char* name, Ref<UniformBuffer> buffer, int bind){}
+    virtual void ComputeShaderSetComputeBuffer(ComputeShader& shader, const char* name, Ref<ComputeBuffer> buffer, int bind){}
+    virtual void ComputeShaderSetInt(ComputeShader& shader, const char* name, int v){}
+    virtual void ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v){}
+    virtual void ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){}
+    virtual bool ComputeShaderIsValid(ComputeShader& shader){ return false; }
 
     virtual void Initialize() = 0;
     virtual void Shutdown() = 0;

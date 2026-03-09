@@ -1698,9 +1698,9 @@
         },
         {
             "localPosition": {
-                "v.x": -2.137310266494751,
-                "v.y": 1.2274888753890992,
-                "v.z": 0.0050098104402422909
+                "v.x": -0.2798146605491638,
+                "v.y": 2.0932648181915285,
+                "v.z": 0.37282031774520876
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -6237,8 +6237,14 @@
                     "b": 0.800000011920929,
                     "a": 1.0
                 },
-                "directionalshadowQuality": 3,
+                "directionalshadowQuality": 4,
                 "othershadowQuality": 2,
+                "directinalShadowCascade": {
+                    "value0": 0.10000000149011612,
+                    "value1": 0.25,
+                    "value2": 0.5,
+                    "value3": 1.0
+                },
                 "shadowDistance": 150.0,
                 "shadowBias": 0.000009999999747378752,
                 "toneMappingPostFX": {
@@ -6282,7 +6288,8 @@
                             "bicubicUpsampling": true,
                             "threshold": 0.5,
                             "thresholdKnee": 1.0,
-                            "intensity": 1.0
+                            "intensity": 1.0,
+                            "debug": false
                         }
                     }
                 },
@@ -6307,7 +6314,13 @@
                             "sampleRadius": 1.0,
                             "hitThickness": 0.5,
                             "sampleCount": 4.0,
-                            "sliceCount": 4.0
+                            "sliceCount": 4.0,
+                            "backfaceLighting": 0.0,
+                            "giIntensity": 1.0,
+                            "aoIntensity": 1.0,
+                            "useScreenSpaceSampling": true,
+                            "denoiseMaxIterations": 4,
+                            "debug": false
                         }
                     }
                 }
@@ -9311,15 +9324,21 @@
     "AnimatorComponents": [
         {
             "enable": true,
-            "toPlay": -1
+            "toPlay": -1,
+            "_toPlay": "",
+            "testRootMotion": false
         },
         {
             "enable": true,
-            "toPlay": 2
+            "toPlay": 2,
+            "_toPlay": "",
+            "testRootMotion": false
         },
         {
             "enable": true,
-            "toPlay": 1
+            "toPlay": 1,
+            "_toPlay": "",
+            "testRootMotion": false
         }
     ],
     "AnimatorComponentEntities": [
@@ -10859,7 +10878,7 @@
             },
             "mass": 50.0,
             "friction": 0.20000000298023225,
-            "linearDamping": 999.0,
+            "linearDamping": 0.0,
             "angularDamping": 999.0,
             "motionQuality": 0,
             "constraints": 23,

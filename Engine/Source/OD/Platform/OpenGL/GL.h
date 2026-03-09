@@ -130,6 +130,17 @@ struct GLMaterialData{
     unsigned int mainBuffer = 0;
 };
 
+struct GLComputeBufferData{
+    size_t size = 0;
+    unsigned int id = 0;
+};
+
+struct GLComputeShaderData{
+    std::unordered_map<std::string, uint32_t> uniformCache;
+    int textureSlot = 0;
+    unsigned int id = 0;
+};
+
 #define MeshDataGL GLMeshData glData;
 #define FramebufferDataGL GLFramebufferData glData;
 #define Texture2DDataGL GLTexture2DData glData;
@@ -140,6 +151,8 @@ struct GLMaterialData{
 #define MaterialDataGL GLMaterialData glData{};
 #define UniformBufferDataGL GLUniformBufferData glData{};
 #define InstancingBufferDataGL GLInstancingBufferData glData{};
+#define ComputeBufferDataGL GLComputeBufferData glData{};
+#define ComputeShaderDataGL GLComputeShaderData glData{};
 
 int glCheckError_(const char *file, int line, std::function<void()> callback = nullptr);
 

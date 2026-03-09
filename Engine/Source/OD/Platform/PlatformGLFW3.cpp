@@ -189,7 +189,6 @@ void Platform::ImguiEnd(){
 }
 
 void imguiOnDestroy(){
-    if(graphicsDevice->ImGuiSupport() == false) return;
     //if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
