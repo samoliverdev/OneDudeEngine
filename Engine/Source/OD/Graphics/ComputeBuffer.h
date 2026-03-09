@@ -12,6 +12,8 @@ public:
     ~ComputeBuffer();
     bool IsValid();
     void SetData(const void* data, unsigned int size, unsigned int offset = 0);
+    void GetData(void* data, unsigned int size, unsigned int offset = 0);
+    template<typename T> void GetData(T* data, unsigned int count){ GetData(data, sizeof(T) * count, 0); }
     size_t VRamUsage(){ return vramUsage; }
 private:
     size_t vramUsage;

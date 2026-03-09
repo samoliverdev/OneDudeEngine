@@ -135,6 +135,7 @@ public:
     virtual void ComputeBufferDestroy(ComputeBuffer& buffer) override;
     virtual bool ComputeBufferIsValid(ComputeBuffer& buffer) override;
     virtual void ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset) override;
+    virtual void ComputeBufferGetData(ComputeBuffer& buffer, void* data, unsigned int size, unsigned int offset) override;
 
     virtual bool InstancingBufferCreate(InstancingBuffer& buffer) override;
     virtual void InstancingBufferDestroy(InstancingBuffer& buffer) override;
@@ -154,6 +155,9 @@ public:
     virtual void ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v) override;
     virtual bool ComputeShaderIsValid(ComputeShader& shader) override;
     GLint GetUniformLocation(ComputeShader& shader, const char* name);
+
+    virtual void BeginGPUTime() override;
+    virtual double EndGPUTime() override;
 
     virtual void Initialize() override;
     virtual void Shutdown() override;

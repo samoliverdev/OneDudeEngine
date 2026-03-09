@@ -166,6 +166,7 @@ public:
     virtual void ComputeBufferDestroy(ComputeBuffer& buffer){}
     virtual bool ComputeBufferIsValid(ComputeBuffer& buffer){ return false; }
     virtual void ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
+    virtual void ComputeBufferGetData(ComputeBuffer& buffer, void* data, unsigned int size, unsigned int offset){}
 
     virtual bool InstancingBufferCreate(InstancingBuffer& buffer){ return false; }
     virtual void InstancingBufferDestroy(InstancingBuffer& buffer){}
@@ -184,6 +185,9 @@ public:
     virtual void ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v){}
     virtual void ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){}
     virtual bool ComputeShaderIsValid(ComputeShader& shader){ return false; }
+
+    virtual void BeginGPUTime(){}
+    virtual double EndGPUTime(){ return 0; }
 
     virtual void Initialize() = 0;
     virtual void Shutdown() = 0;

@@ -23,4 +23,8 @@ void ComputeBuffer::SetData(const void* data, unsigned int size, unsigned int of
     graphicsDevice->ComputeBufferSetData(*this, data, size, offset);
 }
 
+void ComputeBuffer::GetData(void* data, unsigned int size, unsigned int offset){
+    graphicsDevice->ComputeBufferGetData(*this, data, size, offset);
+}
+
 }

@@ -38,8 +38,6 @@ void ComputeShaderSample::OnInit(){
     buffer = CreateRef<UniformBuffer>();
     buffer->SetData(&params, sizeof(BlurParams));
 
-    computeBuffer = CreateRef<ComputeBuffer>(512);
-
     FrameBufferSpecification spec;
     spec.width = tex->Width();
     spec.height = tex->Height();
@@ -58,22 +56,33 @@ void ComputeShaderSample::OnInit(){
     mesh->uv.push_back(OD::Vector3(0, 1, 0));
     mesh->indices.reserve(10);
     mesh->indices.push_back(0);
-    mesh->indices.push_back(1);
     mesh->indices.push_back(3);
     mesh->indices.push_back(1);
+    mesh->indices.push_back(1);
+    mesh->indices.push_back(3);
     mesh->indices.push_back(2);
-    mesh->indices.push_back(3);
     mesh->Submit();
 
     mat = CreateRef<Material>(Asset::CreateFromFile<Shader>("Engine/Shaders/Unlit.glsl"));
 
+    Graphics::BeginGPUTime();
     computeShader->SetTexture("inputTex", tex);
     computeShader->SetTexture("outputTex", framebuffer.get(), 0);
     computeShader->SetUniformBuffer("BlurParams", buffer, 2);
     computeShader->Dispatch(framebuffer->Width() / 8, framebuffer->Height() / 8, 1);
+    double ms = Graphics::EndGPUTime();
+    LogInfo("Compute GPU time: {} ms", ms);
 
+    Graphics::BeginGPUTime();
     computeShader2->SetComputeBuffer("DataBuffer", computeBuffer, 0);
-    computeShader->Dispatch(16,1,1);
+    computeShader2->Dispatch(16,1,1);
+    double ms2 = Graphics::EndGPUTime();
+    LogInfo("Compute GPU time: {} ms", ms2);
+
+    float result[1024];
+    //computeBuffer->GetData(result, sizeof(result));
+    computeBuffer->GetData(result, 1024);
+    Assert(result[256] == 256*2);
 
     mat->SetTexture("mainTex", framebuffer.get(), 0);
     //mat->SetVector4("color", {1, 0, 0, 1});

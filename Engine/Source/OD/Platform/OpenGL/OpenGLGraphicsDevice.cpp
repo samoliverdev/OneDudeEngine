@@ -4502,6 +4502,19 @@ void OpenGLGraphicsDevice::ComputeBufferSetData(ComputeBuffer& buffer, const voi
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
+
+void OpenGLGraphicsDevice::ComputeBufferGetData(ComputeBuffer& buffer, void* data, unsigned int size, unsigned int offset){
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
+
+    glGetBufferSubData(
+        GL_SHADER_STORAGE_BUFFER,
+        offset,
+        size,
+        data
+    );
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
 #pragma endregion
 
 #pragma region ComputeShader
@@ -4631,6 +4644,23 @@ GLint OpenGLGraphicsDevice::GetUniformLocation(ComputeShader& shader, const char
     shader.glData.uniformCache[name] = location;
 
     return location;
+}
+#pragma endregion
+
+#pragma region Messure
+static GLuint g_gpuQuery = 0;
+void OpenGLGraphicsDevice::BeginGPUTime(){
+    if(g_gpuQuery == 0) glGenQueries(1, &g_gpuQuery);
+    glBeginQuery(GL_TIME_ELAPSED, g_gpuQuery);
+}
+
+double OpenGLGraphicsDevice::EndGPUTime(){
+    glEndQuery(GL_TIME_ELAPSED);
+
+    GLuint64 time = 0;
+    glGetQueryObjectui64v(g_gpuQuery, GL_QUERY_RESULT, &time);
+
+    return time / 1000000.0; // milliseconds
 }
 #pragma endregion
 

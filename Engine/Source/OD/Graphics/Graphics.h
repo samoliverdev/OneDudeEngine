@@ -122,6 +122,9 @@ public:
     static void BeginFramebuffer(Framebuffer& frambuffer, bool clean = true, Vector4 clearColor = Vector4(0, 0, 0, 1), int layer = 0, int mip = 0);
     static void EndFramebuffer();
 
+    static void BeginGPUTime();
+    static double EndGPUTime();
+
     static void CreateLuaBind(sol::state& lua);
 
 private:

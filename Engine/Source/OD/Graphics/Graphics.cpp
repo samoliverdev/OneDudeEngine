@@ -332,4 +332,12 @@ void Graphics::EndFramebuffer(){
     graphicsDevice->EndFramebuffer(); 
 }
 
+void Graphics::BeginGPUTime(){
+    graphicsDevice->BeginGPUTime();
+}
+
+double Graphics::EndGPUTime(){
+    return graphicsDevice->EndGPUTime();
+}
+
 }

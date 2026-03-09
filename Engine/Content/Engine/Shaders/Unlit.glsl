@@ -7,7 +7,7 @@
 #pragma BeginPassDef
     Name MainPass
     SupportInstancing true
-    CullFace NONE
+    CullFace BACK
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
 #pragma EndPassDef
 
