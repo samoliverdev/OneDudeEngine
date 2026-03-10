@@ -1,8 +1,4 @@
 {
-    "Audio": {
-        "maxActiveVoiceCount": 128,
-        "volume": 1.0
-    },
     "Layers": {
         "layerNames": {
             "value0": "Default",
@@ -16,6 +12,10 @@
             "value8": "Layer8",
             "value9": "Layer9"
         }
+    },
+    "Audio": {
+        "maxActiveVoiceCount": 128,
+        "volume": 1.0
     },
     "Physics": {
         "gravity": {

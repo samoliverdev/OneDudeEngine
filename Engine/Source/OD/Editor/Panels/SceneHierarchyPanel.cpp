@@ -275,10 +275,27 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
 
     bool entityDeleted = false;
     if(ImGui::BeginPopupContextItem()){
+        if(ImGui::MenuItem("Move Up")){
+            TransformComponent& trans = scene->GetComponent<TransformComponent>(entity);
+            if(trans.HasParent()){
+                TransformComponent& parent = scene->GetComponent<TransformComponent>(trans.Parent());
+                parent.MoveChildUp(entity);
+            }
+        }
+
+        if(ImGui::MenuItem("Move Down")){
+            TransformComponent& trans = scene->GetComponent<TransformComponent>(entity);
+            if(trans.HasParent()){
+                TransformComponent& parent = scene->GetComponent<TransformComponent>(trans.Parent());
+                parent.MoveChildDown(entity);
+            }
+        }
+
         if(ImGui::MenuItem("Create Empty Entity")){
             auto emptyEntity = scene->AddEntity("Empty Entity");
             scene->SetParent(entity, emptyEntity);
         }
+
         if(ImGui::MenuItem("Add Prefab")){
             std::string path = Platform::OpenFile("*.prefab");
             if(path.empty() == false){
@@ -286,6 +303,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
                 scene->SetParent(entity, emptyEntity);
             }
         }
+
 
         if(info.Type() != EntityType::PrefabChild && ImGui::MenuItem("Delete Entity")){
             entityDeleted = true;

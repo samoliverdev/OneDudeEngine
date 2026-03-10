@@ -459,6 +459,30 @@ bool TransformComponent::FindEntityInChildren(const std::string& name, Entity& o
     return false;
 }
 
+bool TransformComponent::MoveChildUp(Entity child){
+    auto it = std::find(children.begin(), children.end(), child);
+    if(it == children.end()) return false;
+
+    size_t index = std::distance(children.begin(), it);
+
+    if(index == 0) return false; // already first 
+
+    std::swap(children[index], children[index - 1]);
+    return true;
+}
+
+bool TransformComponent::MoveChildDown(Entity child){
+    auto it = std::find(children.begin(), children.end(), child);
+    if(it == children.end()) return false;
+
+    size_t index = std::distance(children.begin(), it);
+
+    if(index >= children.size() - 1) return false; // already last 
+
+    std::swap(children[index], children[index + 1]);
+    return true;
+}
+
 TransformComponent::operator Transform() {
     /*#ifdef ExperimentalTransformOptimzation
     return Transform(Position(), Rotation(), Scale()); 

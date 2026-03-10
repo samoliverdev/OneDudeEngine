@@ -172,6 +172,9 @@ public:
 
     bool FindEntityInChildren(const std::string& name, Entity& out);
 
+    bool MoveChildUp(Entity child);
+    bool MoveChildDown(Entity child);
+
     template <class Archive>
     void serialize(Archive & ar);
 
