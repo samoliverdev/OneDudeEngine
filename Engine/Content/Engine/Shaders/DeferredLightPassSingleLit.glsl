@@ -26,7 +26,7 @@ EndUniform()
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-//Texture2D(0, 9, gEmission, gEmissionSampler)
+Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
 
@@ -67,7 +67,6 @@ Texture2D(0, 10, gDepth, gDepthSampler)
 
         float depth = texture(gDepth, texCoord).r;
         
-        // ⚡ Skip sky pixels — nothing rendered there
         if(depth >= 1.0) discard;
 
 
@@ -81,7 +80,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         //vec3 FragPos = texture(gPosition, texCoord).rgb;
         vec3 Normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
         vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;
-        vec3 Emission = vec3(0, 0, 0);// texture(gEmission, texCoord).rgb;
+        vec3 Emission = texture(gEmission, texCoord).rgb;
         float Specular = texture(gOther, texCoord).r;
         float Metallic = texture(gOther, texCoord).g;
         float AO = texture(gOther, texCoord).b;
@@ -108,12 +107,13 @@ Texture2D(0, 10, gDepth, gDepthSampler)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
 		    color += GetLighting(surface, brdf, light);
-            
+            color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
         #endif
 
         #if defined(INDIRECT)
 	        vec3 color = IndirectBRDF(surface, brdf, gi.diffuse, gi.specular);
+            color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
         #endif
 
@@ -121,6 +121,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
 		    vec3 color = GetLighting(surface, brdf, light);
+            //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
         #endif
 
@@ -128,6 +129,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetOtherLight(lightIndex, surface, shadowData);
 		    vec3 color = Albedo;// GetLighting(surface, brdf, light);
+            //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
         #endif
     }

@@ -21,7 +21,7 @@ EndUniform()
 Texture2D(0, 6, gPosition, gPositionSampler)
 Texture2D(0, 7, gNormal, gNormalSampler)
 Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-//Texture2D(0, 9, gEmission, gEmissionSampler)
+Texture2D(0, 8, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
 
@@ -84,7 +84,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         //vec3 FragPos = texture(gPosition, texCoord).rgb;
         vec3 Normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
         vec3 Albedo = texture(gAlbedoSpec, texCoord).rgb;//this is linar
-        vec3 Emission = vec3(0, 0, 0);// texture(gEmission, texCoord).rgb;
+        vec3 Emission = texture(gEmission, texCoord).rgb;
         float Specular = texture(gOther, texCoord).r;
         float Metallic = texture(gOther, texCoord).g;
         float AO = texture(gOther, texCoord).b;
@@ -106,7 +106,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         BRDF brdf = GetBRDF(surface);
         GI gi = GetGI(surface, brdf);
         vec3 color = GetLighting(surface, brdf, gi);
-        color += Emission; //GetEmission(uv);
+        color += Emission;
         FragColor = vec4(color, surface.alpha);
 
         //FragColor = ApplyFog(FragColor, length(FragPos - viewPos));

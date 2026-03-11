@@ -6,6 +6,7 @@
     Float normalStrength 1 0 10
     Texture2D emissionMap Black
     Color4 emissionColor 0 0 0 0
+    Float emissionIntensity 1 
     Texture2D maskMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
@@ -32,11 +33,12 @@
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
-    Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
     Uniform vec4 emissionColor;
+    Uniform vec3 viewPos;
+    Uniform float normalStrength;
+    Uniform float emissionIntensity;
     Uniform float occlusion;
     Uniform float metallic;
     Uniform float smoothness;
@@ -119,14 +121,15 @@ uniform int perDrawInt_1;
         layout(location = 0) out vec3 gNormal;
         layout(location = 1) out vec4 gAlbedoSpec;
         layout(location = 2) out vec4 gOther;
+        layout(location = 3) out vec3 gEmission;
 
     #else
         Out(0) vec4 fragColor;
     #endif
 
     vec3 GetEmission(vec2 baseUV){
-        vec4 map = SampleTexture2D(emissionMap, emissionMapSampler, baseUV); //texture(emissionMap, baseUV);
-        return map.rgb * emissionColor.rgb;
+        vec4 map = ToLinear(SampleTexture2D(emissionMap, emissionMapSampler, baseUV)); //texture(emissionMap, baseUV);
+        return (map.rgb * emissionColor.rgb) * emissionIntensity;
     }
 
     vec4 GetMask(vec2 baseUV){
@@ -194,16 +197,10 @@ uniform int perDrawInt_1;
         #ifdef Deferred
         
         //gPosition = surface.position;
-        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);// surface.normal;
-        gAlbedoSpec.rgb = surface.color.rgb + GetEmission(uv);
-        //gAlbedoSpec.a = perDrawInt_1; //surface.smoothness;
-        //gEmission.rgb = GetEmission(uv);
-        gOther = vec4(
-            surface.smoothness,
-            surface.metallic,
-            surface.occlusion,
-            perDrawInt_1
-        );
+        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);
+        gAlbedoSpec = vec4(surface.color.rgb, 1);
+        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perDrawInt_1);
+        gEmission = GetEmission(uv);
         /*gOther.r = surface.smoothness;
         gOther.g = surface.metallic;
         gOther.b = surface.occlusion;*/

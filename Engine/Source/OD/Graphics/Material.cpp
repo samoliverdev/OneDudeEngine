@@ -506,12 +506,14 @@ void Material::OnGui(){
 
         if(map.type == MaterialMap::Type::Vector3 && map.vec.vectorIsColor == true){
             if(ImGui::ColorEdit3(name.c_str(), &map.vec.vector[0])){
+                map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need 
                 toSave = true;
             }
         }
 
         if(map.type == MaterialMap::Type::Vector4 && map.vec.vectorIsColor == true){
             if(ImGui::ColorEdit4(name.c_str(), &map.vec.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
+                map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need
                 toSave = true;
             }
         }

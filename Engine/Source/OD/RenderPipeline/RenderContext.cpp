@@ -64,9 +64,10 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.colorAttachments = {
         //{FramebufferTextureFormat::RGB16F}, // Pos
         {FramebufferTextureFormat::RGB16F}, // Normal(R,G) Other(B)
-        {FramebufferTextureFormat::RGBA16F}, // Albedo, Other(A)
+        {FramebufferTextureFormat::RGBA8}, // Albedo, Other(A)
         //{FramebufferTextureFormat::RGB}, // Emission
-        {FramebufferTextureFormat::RGBA8}//, // Spec, Metalic, AO, Other
+        {FramebufferTextureFormat::RGBA8},//, // Spec, Metalic, AO, Other
+        {FramebufferTextureFormat::RGB11B10F} //Emission
         //{FramebufferTextureFormat::RED_INTEGER} // Object ID
     };
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
@@ -243,8 +244,8 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         //deferredLightDirSinglePass->SetTexture("gPosition", deferredOutColor, 0);
         deferredLightDirSinglePass->SetTexture("gNormal", deferredOutColor, 0);
         deferredLightDirSinglePass->SetTexture("gAlbedoSpec", deferredOutColor, 1);
-        //deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
+        deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     } else {
@@ -257,8 +258,8 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         //deferredLightDirSinglePass->SetTexture("gPosition", deferredOutColor, 0);
         deferredLightDirSinglePass->SetTexture("gNormal", deferredOutColor, 0);
         deferredLightDirSinglePass->SetTexture("gAlbedoSpec", deferredOutColor, 1);
-        //deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
+        deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
         deferredLightDirSinglePass->SetInt("lightIndex", index);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
@@ -268,15 +269,15 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
 void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone){
     //deferredLightDirSingleOtherPass->EnableKeyword("OTHER");
     //deferredLightDirSingleOtherPass->SetTexture("gPosition", deferredOutColor, 0);
+
     deferredLightDirSingleOtherPass->SetTexture("gNormal", deferredOutColor, 0);
     deferredLightDirSingleOtherPass->SetTexture("gAlbedoSpec", deferredOutColor, 1);
-    //deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
+    deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightDirSingleOtherPass->SetTexture("gOther", deferredOutColor, 2);
     deferredLightDirSingleOtherPass->SetTexture("gDepth", deferredOutColor, -1);
     deferredLightDirSingleOtherPass->SetInt("lightIndex", index);
     deferredLightDirSingleOtherPass->SetFloat("screenWidth", cam.width);
     deferredLightDirSingleOtherPass->SetFloat("screenHeight", cam.height);
-
     glm::mat4 rotation = glm::mat4(1.0f); // identidade como fallback
     if(glm::length(dir) > 1e-4f){
         rotation = glm::toMat4(glm::quatLookAt(dir, Vector3Up));
