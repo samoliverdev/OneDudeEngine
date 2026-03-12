@@ -59,6 +59,10 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     std::array<Framebuffer*, 16> textures;
     std::vector<Framebuffer*> releaseTemporary;
 
+    Camera cam = context->GetCamera();
+    float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
+    float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
+
     Graphics::BeginFramebuffer(*gi);
     Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
     giPass->SetTexture("mainTex", src, 0); //giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", src, 0);
@@ -77,6 +81,9 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giPass->SetFloat("useScreenSpaceSampling", useScreenSpaceSampling ? 1.0f : 0.0f);
     giPass->SetFloat("temporalRotation", 1.0f);
     giPass->SetFloat("backfaceLighting", backfaceLighting);
+    giPass->SetFloat("cameraNear", cam.nearClip);
+    giPass->SetFloat("cameraFar", cam.farClip);
+    giPass->SetFloat("halfProjScale", halfProjScale);
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
