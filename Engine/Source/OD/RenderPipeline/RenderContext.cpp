@@ -7,6 +7,7 @@
 #include "SpriteRendererComponent.h"
 #include "StaticRendererClusterComponent.h"
 #include "DecalRendererComponent.h"
+#include "BendSssCpu.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Asset.h"
@@ -18,6 +19,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/InstancingBuffer.h"
+#include "OD/Graphics/ComputeShader.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Editor.h"
 #include <taskflow/taskflow.hpp> 
@@ -124,6 +126,17 @@ RenderContext::RenderContext(Scene* inScene){
     for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
         rendererFeatures.push_back(i());
     }
+
+    //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
+    screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
+    screenSpaceShadowData = CreateRef<UniformBuffer>();
+
+    FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
+    framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} };
+    framebufferSpecification2.createDepth = false;
+    framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
+    framebufferSpecification2.sample = 1;
+    screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
 }
 
 RenderContext::~RenderContext(){
@@ -247,6 +260,7 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
+        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     } else {
         if(combinedIndirect){
@@ -261,6 +275,7 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
+        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
         deferredLightDirSinglePass->SetInt("lightIndex", index);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     }
@@ -275,6 +290,7 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightDirSingleOtherPass->SetTexture("gOther", deferredOutColor, 2);
     deferredLightDirSingleOtherPass->SetTexture("gDepth", deferredOutColor, -1);
+    deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
     deferredLightDirSingleOtherPass->SetInt("lightIndex", index);
     deferredLightDirSingleOtherPass->SetFloat("screenWidth", cam.width);
     deferredLightDirSingleOtherPass->SetFloat("screenHeight", cam.height);
@@ -287,6 +303,168 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     Matrix4 worldMatrix = translation * rotation * scale;
 
     Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
+}
+
+struct alignas(16) DispatchParametersGPU{
+    float LightCoordinate[4];
+
+    int WaveOffset[2];
+    float near;
+    float far;
+    //int padding0[2];
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float padding1;
+
+    float FarDepthValue;
+    float NearDepthValue;
+    float InvDepthTextureSize[2];
+};
+
+struct alignas(16) SSSParameters2{
+    float LightCoordinate[4];
+
+    int WaveOffset[2];
+    float DepthBounds[2];
+
+    float InvDepthTextureSize[2];
+    float _pad0[2];
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float FarDepthValue;
+
+    float NearDepthValue;  
+    float _pad1;  
+    float _pad2;  
+    float _pad3; 
+};
+
+void RenderContext::CleanSSS(){
+    auto camera = GetCamera();
+    screenSpaceShadowOutput->Resize(camera.width, camera.height);
+
+    Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);
+    Graphics::EndFramebuffer();
+}
+
+void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
+    #if 1
+    auto camera = GetCamera();
+
+    using namespace Bend;
+    
+    glm::vec3 lightDir = glm::normalize(_lightDir);
+    glm::vec4 lightVec(lightDir, 0.0f);
+    glm::mat4 viewProj = camera.projection * camera.view;
+    glm::vec4 lightProjection = viewProj * lightVec;
+    lightProjection.y = -lightProjection.y; // convert GL clip space → D3D style
+    
+    float inLightProjection[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
+    //inLightProjection[1] = -inLightProjection[1];
+    int viewportSize[2] = { camera.width, camera.height };
+    int minBounds[2] = { 0, 0 };
+    int maxBounds[2] = { camera.width - 1, camera.height - 1 };
+    
+    Bend::DispatchList dispatchList = Bend::BuildDispatchList(
+        inLightProjection,
+        viewportSize,
+        minBounds,
+        maxBounds,
+        false,   // OpenGL uses [0,1] depth
+        64       // wave size
+    );
+
+    SSSParameters2 params{};
+
+    //memcpy(params.LightCoordinate, dispatchList.LightCoordinate_Shader, sizeof(float)*4);
+    params.LightCoordinate[0] = dispatchList.LightCoordinate_Shader[0];
+    params.LightCoordinate[1] = dispatchList.LightCoordinate_Shader[1];
+    params.LightCoordinate[2] = dispatchList.LightCoordinate_Shader[2];
+    params.LightCoordinate[3] = dispatchList.LightCoordinate_Shader[3];
+
+    params.InvDepthTextureSize[0] = 1.0f / camera.width;
+    params.InvDepthTextureSize[1] = 1.0f / camera.height;
+    params.DepthBounds[0] = 0;
+    params.DepthBounds[1] = 1; 
+    params.NearDepthValue = 0.0f;
+    params.FarDepthValue = 1.0f;
+
+    /*params.SurfaceThickness = settings.surfaceThickness;
+    params.BilinearThreshold = settings.bilinearThreshold;
+    params.ShadowContrast = settings.shadowContrast;*/
+
+    params.SurfaceThickness = 0.005f; // 0.02f;
+    params.BilinearThreshold = 0.02f; //0.001f;
+    params.ShadowContrast = 4; //4.0f; //1.0f;
+    
+    for(int i = 0; i < dispatchList.DispatchCount; i++){
+        auto& d = dispatchList.Dispatch[i];
+        params.WaveOffset[0] = d.WaveOffset_Shader[0];
+        params.WaveOffset[1] = d.WaveOffset_Shader[1];
+        screenSpaceShadowData->SetData(&params, sizeof(SSSParameters2));
+
+        screenSpaceShadow->SetTexture("DepthTexture", GetDeferredFramebuffer(), -1);
+        screenSpaceShadow->SetTexture("OutputTexture", screenSpaceShadowOutput.get(), 0);
+        screenSpaceShadow->SetUniformBuffer("Params", screenSpaceShadowData, 2);
+        screenSpaceShadow->Dispatch(d.WaveCount[0], d.WaveCount[1], d.WaveCount[2]);
+    }
+
+    #else
+    using namespace Bend;
+    auto camera = GetCamera();
+    
+    glm::vec3 lightDir = glm::normalize(_lightDir);
+    glm::vec4 lightVec(lightDir, 0.0f);
+    glm::mat4 viewProj = camera.projection * camera.view;
+    glm::vec4 lightProjection = viewProj * lightVec;
+    lightProjection.y = -lightProjection.y; // convert GL clip space → D3D style
+    //glm::vec4 lightProjection = glm::vec4(glm::normalize(_lightDir), 0.0f); //viewProj * lightVec;
+
+    float inLightProjection[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
+    int viewportSize[2] = { camera.width, camera.height };
+    int minBounds[2] = { 0, 0 };
+    int maxBounds[2] = { camera.width - 1, camera.height - 1 };
+
+    Bend::DispatchList dispatchList = Bend::BuildDispatchList(
+        inLightProjection,
+        viewportSize,
+        minBounds,
+        maxBounds,
+        false,   // OpenGL uses [0,1] depth
+        64       // wave size
+    );
+
+    DispatchParametersGPU params{};
+
+    memcpy(params.LightCoordinate, dispatchList.LightCoordinate_Shader, sizeof(float)*4);
+
+    params.near = camera.nearClip;
+    params.far = camera.farClip;
+    params.InvDepthTextureSize[0] = 1.0f / camera.width;
+    params.InvDepthTextureSize[1] = 1.0f / camera.height;
+    params.NearDepthValue = 0.0f;
+    params.FarDepthValue = 1.0f;
+
+    params.SurfaceThickness = 0.005f; // 0.02f;
+    params.BilinearThreshold = 0.02f; //0.001f;
+    params.ShadowContrast = 4.0f; //1.0f;
+    
+    for(int i = 0; i < dispatchList.DispatchCount; i++){
+        auto& d = dispatchList.Dispatch[i];
+        params.WaveOffset[0] = d.WaveOffset_Shader[0];
+        params.WaveOffset[1] = d.WaveOffset_Shader[1];
+        screenSpaceShadowData->SetData(&params, sizeof(DispatchParametersGPU));
+
+        screenSpaceShadow->SetTexture("DepthTexture", GetDeferredFramebuffer(), -1);
+        screenSpaceShadow->SetTexture("OutputTexture", screenSpaceShadowOutput.get(), 0);
+        screenSpaceShadow->SetUniformBuffer("DispatchParams", screenSpaceShadowData, 2);
+        screenSpaceShadow->Dispatch(d.WaveCount[0], d.WaveCount[1], d.WaveCount[2]);
+    }
+    #endif
 }
 
 void RenderContext::EndDeferredPassAndCopyToForwardPass(){

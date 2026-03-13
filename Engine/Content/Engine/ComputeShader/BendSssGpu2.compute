@@ -1,0 +1,302 @@
+#version 450
+
+//Source: https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
+// Modified by Sam Oliver, 2026
+
+// Original Copyright:
+// Copyright 2023 Sony Interactive Entertainment.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#define WAVE_SIZE 64
+#define SAMPLE_COUNT 60*1
+#define HARD_SHADOW_SAMPLES 4*1
+#define FADE_OUT_SAMPLES 8*1
+
+#define READ_COUNT (SAMPLE_COUNT / WAVE_SIZE + 2)
+
+layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = 0) uniform sampler2D DepthTexture;
+layout(rgba32f, binding = 1) uniform image2D OutputTexture;
+
+struct DispatchParameters{
+    vec4 LightCoordinate;
+
+    ivec2 WaveOffset;
+    vec2 DepthBounds;
+
+    vec2 InvDepthTextureSize;
+    vec2 _pad0;
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float FarDepthValue;
+
+    float NearDepthValue;  
+    float _pad1;
+    float _pad2;
+    float _pad3;
+
+    /*bool IgnoreEdgePixels;
+    bool UsePrecisionOffset;
+    bool BilinearSamplingOffsetMode;
+
+    bool DebugOutputEdgeMask;
+    bool DebugOutputThreadIndex;
+    bool DebugOutputWaveIndex;
+    bool UseEarlyOut;*/
+};
+
+const bool IgnoreEdgePixels = true; //false;
+const bool UsePrecisionOffset = true;// false;
+const bool BilinearSamplingOffsetMode = true;// false;
+
+const bool DebugOutputEdgeMask = false;
+const bool DebugOutputThreadIndex = false;
+const bool DebugOutputWaveIndex = false;
+const bool UseEarlyOut = false;
+
+layout(std140, binding = 2) uniform Params{
+    DispatchParameters params;
+};
+
+shared float DepthData[READ_COUNT * WAVE_SIZE];
+shared bool LdsEarlyOut;
+
+bool EarlyOutPixel(ivec2 pixel_xy, float depth){
+    return depth >= params.DepthBounds.y || depth <= params.DepthBounds.x;
+}
+
+void ComputeWavefrontExtents(
+    ivec3 inGroupID,
+    uint inGroupThreadID,
+    out vec2 outDeltaXY,
+    out vec2 outPixelXY,
+    out float outPixelDistance,
+    out bool outMajorAxisX
+){
+    ivec2 xy = inGroupID.yz * WAVE_SIZE + params.WaveOffset;
+    //xy = inGroupID.yz * WAVE_SIZE;
+
+    vec2 light_xy = floor(params.LightCoordinate.xy) + 0.5;
+    vec2 light_xy_fraction = params.LightCoordinate.xy - light_xy;
+
+    bool reverse_direction = params.LightCoordinate.w > 0.0;
+
+    ivec2 sign_xy = sign(xy);
+    //ivec2 sign_xy = ivec2(xy.x >= 0 ? 1 : -1, xy.y >= 0 ? 1 : -1);
+
+    bool horizontal = abs(xy.x + sign_xy.y) < abs(xy.y - sign_xy.x);
+
+    ivec2 axis;
+
+    axis.x = horizontal ? (+sign_xy.y) : 0;
+    axis.y = horizontal ? 0 : (-sign_xy.x);
+
+    xy = axis * int(inGroupID.x) + xy;
+
+    vec2 xy_f = vec2(xy);
+
+    bool x_axis_major = abs(xy_f.x) > abs(xy_f.y);
+
+    float major_axis = x_axis_major ? xy_f.x : xy_f.y;
+
+    float major_axis_start = abs(major_axis);
+    float major_axis_end = abs(major_axis) - float(WAVE_SIZE);
+
+    float ma_light_frac = x_axis_major ? light_xy_fraction.x : light_xy_fraction.y;
+    ma_light_frac = major_axis > 0 ? -ma_light_frac : ma_light_frac;
+
+    vec2 start_xy = xy_f + light_xy;
+
+    vec2 end_xy = mix(
+        params.LightCoordinate.xy,
+        start_xy,
+        (major_axis_end + ma_light_frac) / (major_axis_start + ma_light_frac)
+    );
+
+    vec2 xy_delta = (start_xy - end_xy);
+
+    float thread_step = float(inGroupThreadID ^ (reverse_direction ? 0 : (WAVE_SIZE - 1)));
+
+    vec2 pixel_xy = mix(start_xy, end_xy, thread_step / float(WAVE_SIZE));
+
+    float pixel_distance = major_axis_start - thread_step + ma_light_frac;
+
+    outPixelXY = pixel_xy;
+    outPixelDistance = pixel_distance;
+    outDeltaXY = xy_delta;
+    outMajorAxisX = x_axis_major;
+}
+
+void main(){
+    ivec3 inGroupID = ivec3(gl_WorkGroupID);
+    uint threadID = gl_LocalInvocationID.x;
+    
+    vec2 xy_delta;
+    vec2 pixel_xy;
+    float pixel_distance;
+    bool x_axis_major;
+
+    ComputeWavefrontExtents(
+        inGroupID,
+        threadID,
+        xy_delta,
+        pixel_xy,
+        pixel_distance,
+        x_axis_major
+    );
+
+    float sampling_depth[READ_COUNT];
+    float shadowing_depth[READ_COUNT];
+    float depth_thickness_scale[READ_COUNT];
+    float sample_distance[READ_COUNT];
+
+    float direction = -params.LightCoordinate.w;
+
+    float z_sign = params.NearDepthValue > params.FarDepthValue ? -1 : 1;
+
+    bool is_edge = false;
+    bool skip_pixel = false;
+
+    ivec2 write_xy = ivec2(floor(pixel_xy));
+
+    //imageStore(OutputTexture, write_xy, vec4(params.LightCoordinate.xy / 2000.0, 0, 1));
+    //return;
+
+    for(int i=0;i<READ_COUNT;i++){
+        ivec2 read_xy = ivec2(floor(pixel_xy));
+
+        float minor_axis = x_axis_major ? pixel_xy.y : pixel_xy.x;
+
+        float bilinear = fract(minor_axis) - 0.5;
+
+        vec2 uv = (vec2(read_xy)+0.5) * params.InvDepthTextureSize;
+
+        float depth0 = textureLod(DepthTexture, uv, 0).r;
+
+        vec2 offset = vec2(x_axis_major ? 0 : sign(bilinear), x_axis_major ? sign(bilinear) : 0);
+
+        float depth1 = textureLod(DepthTexture, uv + offset * params.InvDepthTextureSize, 0).r;
+
+        vec2 depths = vec2(depth0, depth1);
+
+        depth_thickness_scale[i] = abs(params.FarDepthValue - depths.x);
+
+        bool use_point_filter = abs(depths.x - depths.y) > depth_thickness_scale[i] * params.BilinearThreshold;
+
+        if(i==0) is_edge = use_point_filter;
+
+        float edge_skip = 1e20;
+
+        if(BilinearSamplingOffsetMode){
+            bilinear = use_point_filter ? 0 : bilinear;
+
+            sampling_depth[i] = mix(depths.x, depths.y, abs(bilinear));
+
+            shadowing_depth[i] = (IgnoreEdgePixels && use_point_filter) ? edge_skip : sampling_depth[i];
+        } else {
+            sampling_depth[i] = depths.x;
+
+            float edge_depth = IgnoreEdgePixels ? edge_skip : depths.x;
+
+            float shadow_depth = depths.x + abs(depths.x-depths.y)*z_sign;
+
+            shadowing_depth[i] = use_point_filter ? edge_depth : shadow_depth;
+        }
+
+        sample_distance[i] = pixel_distance + (WAVE_SIZE*i)*direction;
+
+        pixel_xy += xy_delta * direction;
+    }
+
+    if(UseEarlyOut &&
+       !DebugOutputEdgeMask &&
+       !DebugOutputThreadIndex &&
+       !DebugOutputWaveIndex
+    ){
+        skip_pixel = EarlyOutPixel(write_xy, sampling_depth[0]);
+
+        //bool early_out = !subgroupAny(!skip_pixel);
+        //if(early_out) return;
+
+
+        if(skip_pixel) return;
+    }
+
+    for(int i=0;i<READ_COUNT;i++){
+        float stored_depth = (shadowing_depth[i] - params.LightCoordinate.z) / sample_distance[i];
+
+        if(i!=0) stored_depth = sample_distance[i] > 0 ? stored_depth : 1e10;
+
+        int idx = i*WAVE_SIZE + int(threadID);
+
+        DepthData[idx] = stored_depth;
+    }
+
+    barrier();
+
+    if(skip_pixel) return;
+
+    float start_depth = sampling_depth[0];
+
+    if(UsePrecisionOffset) start_depth = mix(start_depth, params.FarDepthValue, -1.0/65535.0);
+
+    start_depth = (start_depth - params.LightCoordinate.z) / sample_distance[0];
+
+    int sample_index = int(threadID)+1;
+
+    vec4 shadow_value = vec4(1);
+    float hard_shadow = 1;
+
+    float depth_scale = min(sample_distance[0] + direction, 1.0 / params.SurfaceThickness) * sample_distance[0] / depth_thickness_scale[0];
+
+    start_depth = start_depth * depth_scale - z_sign;
+
+    for(int i=0;i<HARD_SHADOW_SAMPLES;i++){
+        float depth_delta = abs(start_depth - DepthData[sample_index+i]*depth_scale);
+
+        hard_shadow = min(hard_shadow, depth_delta);
+    }
+
+    for(int i=HARD_SHADOW_SAMPLES; i < SAMPLE_COUNT - FADE_OUT_SAMPLES; i++){
+        float depth_delta = abs(start_depth - DepthData[sample_index+i]*depth_scale);
+        shadow_value[i & 3] = min(shadow_value[i & 3], depth_delta);
+    }
+
+    for(int i=SAMPLE_COUNT-FADE_OUT_SAMPLES; i<SAMPLE_COUNT;i++){
+        float depth_delta = abs(start_depth - DepthData[sample_index+i]*depth_scale);
+
+        float fade = float(i+1-(SAMPLE_COUNT-FADE_OUT_SAMPLES)) / float(FADE_OUT_SAMPLES+1) * 0.75;
+
+        shadow_value[i&3] = min(shadow_value[i&3], depth_delta + fade);
+    }
+
+    shadow_value = clamp(shadow_value * params.ShadowContrast + (1-params.ShadowContrast),0,1);
+
+    hard_shadow = clamp(hard_shadow * params.ShadowContrast + (1-params.ShadowContrast),0,1);
+
+    float result = dot(shadow_value, vec4(0.25));
+    result = min(hard_shadow, result);
+
+    if(DebugOutputEdgeMask) result = is_edge ? 1 : 0;
+
+    if(DebugOutputThreadIndex) result = float(threadID)/float(WAVE_SIZE);
+
+    if(DebugOutputWaveIndex) result = fract(float(inGroupID.x)/float(WAVE_SIZE));
+
+    //imageStore(OutputTexture, write_xy, vec4(result));
+    imageStore(OutputTexture, write_xy, vec4(result, result, result, 1.0));
+}

@@ -29,6 +29,7 @@ Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
+Texture2D(0, 10, sss, sssSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     In(0) vec3 vPos;
@@ -101,11 +102,18 @@ Texture2D(0, 10, gDepth, gDepthSampler)
 
         FragColor = vec4(1,1,1, 1);
 
+        //FragColor = vec4(texture(sss, texCoord).rgb, surface.alpha);
+        //return;
+
+        float sss = texture(sss, texCoord).r;
+
         #ifdef INDIRECTPLUSDIRECTIONAL
             vec3 color = IndirectBRDF(surface, brdf, gi.diffuse, gi.specular);
 
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
+            light.attenuation = min(light.attenuation, sss);
+
 		    color += GetLighting(surface, brdf, light);
             color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
@@ -120,6 +128,8 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         #if defined(DIRECTIONAL)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
+            //light.attenuation = min(light.attenuation, sss);
+
 		    vec3 color = GetLighting(surface, brdf, light);
             //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);
@@ -128,6 +138,8 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         #if defined(OTHER)
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetOtherLight(lightIndex, surface, shadowData);
+            //light.attenuation = min(light.attenuation, sss);
+            
 		    vec3 color = Albedo;// GetLighting(surface, brdf, light);
             //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, surface.alpha);

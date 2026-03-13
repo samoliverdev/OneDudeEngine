@@ -14,6 +14,7 @@ class Scene;
 class UniformBuffer;
 class InstancingBuffer;
 class RendererFeature;
+class ComputeShader;
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
@@ -182,6 +183,12 @@ public:
     virtual void OnRenderUI(const Camera& cam){}
 };
 
+struct OD_API SSS_Settings{
+    float surfaceThickness = 0.005f;
+    float bilinearThreshold = 0.02f;
+    float shadowContrast = 4;
+};
+
 class OD_API RenderContext{
 public:
     friend class CameraRenderer;
@@ -238,6 +245,9 @@ public:
     void DeferredCopyToForwardPass();
     void DrawDeferredLight(int index = -1, bool combinedIndirect = false);
     void DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone);
+
+    void CleanSSS();
+    void DrawSSS(Vector3 lightDir, SSS_Settings settings = {});
 
     void EndDeferredPassAndCopyToForwardPass();
     
@@ -330,6 +340,10 @@ private:
     Scene* scene;
 
     ChunkedVector<RenderData> renderData;
+
+    Ref<ComputeShader> screenSpaceShadow = nullptr;
+    Ref<UniformBuffer> screenSpaceShadowData = nullptr;
+    Ref<Framebuffer> screenSpaceShadowOutput = nullptr;
 
     bool step = false;
 

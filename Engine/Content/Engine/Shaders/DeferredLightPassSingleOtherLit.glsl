@@ -24,6 +24,7 @@ Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
+Texture2D(0, 10, sss, sssSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     void main() {
@@ -74,6 +75,10 @@ Texture2D(0, 10, gDepth, gDepthSampler)
 
         ShadowData shadowData = GetShadowData(surface);
         Light light = GetOtherLight(lightIndex, surface, shadowData);
+
+        float sss = texture(sss, screenUV).r;
+        //light.attenuation = min(light.attenuation, sss);
+        
         vec3 color = GetLighting(surface, brdf, light);
         //color += Emission;
         FragColor = vec4(color, surface.alpha);

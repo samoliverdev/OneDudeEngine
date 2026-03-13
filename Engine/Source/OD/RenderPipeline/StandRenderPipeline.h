@@ -18,6 +18,8 @@
 
 namespace OD{
 
+class ComputeShader;
+
 class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
@@ -185,6 +187,9 @@ public:
     void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
 	void SetupDirectionalLight();
     void UpdateGlobalShaders();
+
+    Vector3 mainDirectionalLightDir = Vector3Zero;
+
 private:
     RenderContext* context;
     Shadows* shadows;
@@ -270,7 +275,7 @@ private:
 
     Ref<Font> font = nullptr;
     Ref<Material> fontMaterial = nullptr;
-
+    
     GamaCorrectionPP* gamaCorrectionPP = nullptr;
 
     void RunRenderDataLoop();

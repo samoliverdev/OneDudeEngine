@@ -63,6 +63,12 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
 
     ImGui::DragFloat("shadowDistance", &environment.settings.shadowDistance);
     ImGui::DragFloat("shadowBias", &environment.settings.shadowBias, 0.1f, 0, 1, "%.6f");
+
+    ImGui::Checkbox("enableSSS", &environment.settings.enableSSS);
+    ImGui::DragFloat("sssSurfaceThickness", &environment.settings.sssSurfaceThickness);
+    ImGui::DragFloat("sssBilinearThreshold", &environment.settings.sssBilinearThreshold);
+    ImGui::DragFloat("sssShadowContrast", &environment.settings.sssShadowContrast);
+
     //ImGui::Checkbox("shadowBackFaceRender", &environment.settings.shadowBackFaceRender);
 
     //ImGui::Spacing();ImGui::Spacing();

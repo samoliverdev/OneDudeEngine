@@ -2464,6 +2464,42 @@ int FormatLookup[] = {
     GL_NONE, GL_RGB, GL_RGBA, GL_RGB, GL_RGB, GL_RGBA, GL_RGB, GL_RGBA, GL_RED_INTEGER, GL_DEPTH_STENCIL, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT
 };
 
+int DataTypeLookup[] = {
+    GL_NONE,                 // None
+    GL_NONE,                 // RGB
+    GL_NONE,                 // RGBA8
+    GL_NONE,                 // R11F_G11F_B10F
+    GL_NONE,                 // RGB16F
+    GL_NONE,                 // RGBA16F
+    GL_NONE,                 // RGB32F
+    GL_NONE,                 // RGBA32F
+    GL_NONE,                 // R32I
+    GL_UNSIGNED_INT_24_8,    // DEPTH24_STENCIL8
+    GL_FLOAT_32_UNSIGNED_INT_24_8_REV, // DEPTH32F_STENCIL8
+    GL_UNSIGNED_SHORT,       // DEPTH_COMPONENT16
+    GL_UNSIGNED_INT,         // DEPTH_COMPONENT24
+    GL_UNSIGNED_INT,         // DEPTH_COMPONENT32
+    GL_FLOAT                 // DEPTH_COMPONENT32F
+};
+
+int AttachmentLookup[] = {
+    GL_NONE,                   // None
+    GL_NONE,                   // RGB
+    GL_NONE,                   // RGBA8
+    GL_NONE,                   // R11F_G11F_B10F
+    GL_NONE,                   // RGB16F
+    GL_NONE,                   // RGBA16F
+    GL_NONE,                   // RGB32F
+    GL_NONE,                   // RGBA32F
+    GL_NONE,                   // R32I
+    GL_DEPTH_STENCIL_ATTACHMENT, // DEPTH24_STENCIL8
+    GL_DEPTH_STENCIL_ATTACHMENT, // DEPTH32F_STENCIL8
+    GL_DEPTH_ATTACHMENT,      // DEPTH_COMPONENT16
+    GL_DEPTH_ATTACHMENT,      // DEPTH_COMPONENT24
+    GL_DEPTH_ATTACHMENT,      // DEPTH_COMPONENT32
+    GL_DEPTH_ATTACHMENT       // DEPTH_COMPONENT32F
+};
+
 bool IsDepthTypeFormat(FramebufferTextureFormat format){
     if((int)format >= 9) return true;
     return false;
@@ -2953,7 +2989,12 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
 
         Assert(IsDepthTypeFormat(formatEnum));
 
-        GLenum internalFormat = GL_DEPTH24_STENCIL8;
+        GLenum internalFormat = InternalFormatLookup[(int)formatEnum];
+        GLenum format = FormatLookup[(int)formatEnum];
+        GLenum dataType = DataTypeLookup[(int)formatEnum];
+        GLenum attachment = AttachmentLookup[(int)formatEnum];
+
+        /*GLenum internalFormat = GL_DEPTH24_STENCIL8;
         GLenum format         = GL_DEPTH_STENCIL;
         GLenum dataType       = GL_UNSIGNED_INT_24_8;
         GLenum attachment     = GL_DEPTH_STENCIL_ATTACHMENT;
@@ -2963,7 +3004,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             format         = GL_DEPTH_COMPONENT;
             dataType       = GL_FLOAT;
             attachment     = GL_DEPTH_ATTACHMENT;
-        }
+        }*/
 
         GLuint tex = 0;
         glGenTextures(1, &tex);
@@ -3004,8 +3045,11 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
                 glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, NULL);
             }
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            //TODO: Add Filter options
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -4588,20 +4632,30 @@ void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const 
 void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const char* name, Framebuffer* fb, int attachment){
     glUseProgram(shader.glData.id);
 
-    GLuint tex = fb->glData.colorAttachments[attachment];// (GLuint)(uintptr_t)fb->ColorAttachmentId(attachment);
-    GLenum format = InternalFormatLookup[(int)fb->specification.colorAttachments[attachment].colorFormat]; //FramebufferFormatToGL(spec.format);
+    if(attachment < 0){//TODO: This is just temp, create later SetTexture, and SetImage for write
+        GLint loc = GetUniformLocation(shader, name);
+        GLuint tex = fb->glData.depthAttachment;
 
-    Assert(format == GL_RGBA16F);
+        glActiveTexture(GL_TEXTURE0 + shader.glData.textureSlot);
+        glBindTexture(GL_TEXTURE_2D, tex);
 
-    glBindImageTexture(
-        shader.glData.textureSlot,
-        tex,
-        0,
-        GL_FALSE,
-        0,
-        GL_READ_WRITE,
-        format //GL_RGBA16F
-    );
+        glUniform1i(loc, shader.glData.textureSlot);
+    } else {
+        GLuint tex = fb->glData.colorAttachments[attachment];// (GLuint)(uintptr_t)fb->ColorAttachmentId(attachment);
+        GLenum format = InternalFormatLookup[(int)fb->specification.colorAttachments[attachment].colorFormat]; //FramebufferFormatToGL(spec.format);
+
+        //Assert(format == GL_RGBA16F);
+
+        glBindImageTexture(
+            shader.glData.textureSlot,
+            tex,
+            0,
+            GL_FALSE,
+            0,
+            GL_READ_WRITE,
+            format //GL_RGBA16F
+        );
+    }
 
     shader.glData.textureSlot++;
 }

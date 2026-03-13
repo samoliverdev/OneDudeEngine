@@ -8,7 +8,6 @@
         5,
         6,
         7,
-        8,
         9,
         10,
         11,
@@ -211,14 +210,6 @@
         },
         {
             "name": "RagdollTest",
-            "tag": "",
-            "layer": 0,
-            "active": false,
-            "entityType": 0,
-            "prefabPath": ""
-        },
-        {
-            "name": "PointLight",
             "tag": "",
             "layer": 0,
             "active": false,
@@ -1371,7 +1362,6 @@
         5,
         6,
         7,
-        8,
         9,
         10,
         11,
@@ -1611,10 +1601,10 @@
                 "v.z": 0.0
             },
             "localRotation": {
-                "q.x": 0.2885695695877075,
-                "q.y": -0.16848421096801759,
-                "q.z": -0.07247436046600342,
-                "q.w": 0.9397276639938355
+                "q.x": 0.4165482521057129,
+                "q.y": -0.17693114280700684,
+                "q.z": -0.048320136964321139,
+                "q.w": 0.890420138835907
             },
             "localScale": {
                 "v.x": 1.0,
@@ -1679,28 +1669,6 @@
                 "v.x": 3.179563522338867,
                 "v.y": 0.8638708591461182,
                 "v.z": 0.0
-            },
-            "localRotation": {
-                "q.x": 0.0,
-                "q.y": 0.0,
-                "q.z": 0.0,
-                "q.w": 1.0
-            },
-            "localScale": {
-                "v.x": 1.0,
-                "v.y": 1.0,
-                "v.z": 1.0
-            },
-            "children": [],
-            "parent": 4294967295,
-            "hasParent": false,
-            "isCollection": false
-        },
-        {
-            "localPosition": {
-                "v.x": -0.2798146605491638,
-                "v.y": 2.0932648181915285,
-                "v.z": 0.37282031774520876
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -4981,7 +4949,6 @@
         5,
         6,
         7,
-        8,
         9,
         10,
         11,
@@ -6368,29 +6335,10 @@
             "shadowStrength": 1.0,
             "shadowBias": 0.0,
             "shadowNormalBias": 0.0
-        },
-        {
-            "type": 1,
-            "color": {
-                "r": 0.0,
-                "g": 1.0,
-                "b": 0.8453607559204102,
-                "a": 1.0
-            },
-            "intensity": 10.0,
-            "falloff": 1.0,
-            "radius": 5.0,
-            "coneAngleInner": 45.0,
-            "coneAngleOuter": 45.0,
-            "renderShadow": true,
-            "shadowStrength": 1.0,
-            "shadowBias": 0.0,
-            "shadowNormalBias": 0.0
         }
     ],
     "LightComponentEntities": [
-        4,
-        8
+        4
     ],
     "MeshRendererComponents": [
         {},
@@ -10897,7 +10845,7 @@
             "type": 1,
             "interpolate": false,
             "shape": {
-                "type": 3,
+                "type": 0,
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
@@ -10909,9 +10857,9 @@
                     "v.z": 0.0
                 },
                 "size": {
-                    "v.x": 1.0,
-                    "v.y": 1.0,
-                    "v.z": 1.0
+                    "v.x": 4.0,
+                    "v.y": 2.0,
+                    "v.z": 4.0
                 },
                 "radius": 1.0,
                 "height": 1.0,

@@ -8,6 +8,7 @@
 #include "OD/Graphics/Geometry.h"
 #include "OD/Graphics/Font.h"
 #include "OD/Graphics/UniformBuffer.h"
+#include "OD/Graphics/ComputeShader.h"
 #include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
@@ -368,6 +369,7 @@ void Lighting::SetupDirectionalLight(){
             dirLightShadowData[curDirLightsCount] = Vector4(v.x, v.y, 0, 1);
 
             curDirLightsCount += 1;
+            mainDirectionalLightDir = Mathf::ToVector4(-trans.Forward());
         }  
 
         if(light.type == LightComponent::Type::Point){
@@ -428,6 +430,7 @@ void Lighting::UpdateGlobalShaders(){
 #pragma endregion
 
 #pragma region CameraRenderer
+
 CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
@@ -655,6 +658,24 @@ glm::mat4 captureViews[] = {
     glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
 };
 
+/*struct alignas(16) DispatchParametersGPU{
+    float LightCoordinate[4];
+
+    int WaveOffset[2];
+    float near;
+    float far;
+    //int padding0[2];
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float padding1;
+
+    float FarDepthValue;
+    float NearDepthValue;
+    float InvDepthTextureSize[2];
+};*/
+
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
     OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
 
@@ -755,6 +776,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     context->EndDrawEntityIds();*/
 
     if(renderingPath == RenderingPath::Forward){
+        context->CleanSSS();
         context->BeginForwardPass();
         
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -789,6 +811,16 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->EndDeferredPass();
 
         Framebuffer* deferred = context->GetDeferredFramebuffer();
+
+        context->CleanSSS();
+        if(environmentSettings.enableSSS && camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
+            SSS_Settings settings = {
+                environmentSettings.sssSurfaceThickness, 
+                environmentSettings.sssBilinearThreshold, 
+                environmentSettings.sssShadowContrast
+            };
+            context->DrawSSS(lighting.mainDirectionalLightDir, settings);
+        }
  
         /*Graphics::BeginFramebuffer(*deferred, false);
         context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
@@ -831,6 +863,76 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawGizmos(); 
         context->EndForwardPass();
     }
+
+    //----------SSS-----------
+    /*using namespace Bend;
+    if(camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
+        screenSpaceShadowOutput->Resize(camera.width, camera.height);
+
+        Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {0, 0, 0, 0}, 0, 0);
+        Graphics::EndFramebuffer();
+
+        //glm::vec3 lightDir = glm::normalize(-glm::vec3(1,-1,0));
+        glm::vec3 lightDir = -glm::normalize(lighting.mainDirectionalLightDir);
+        lightDir.x = -lightDir.x;
+        lightDir.z = -lightDir.z;
+
+        glm::vec4 lightVec(lightDir, 0.0f);
+        glm::mat4 viewProj = camera.projection * camera.view;
+        glm::vec4 lightProjection = viewProj * lightVec;
+
+        //glm::vec4 lightPos(lightPosition, 1.0f);
+        //glm::vec4 lightProjection = viewProjectionMatrix * lightPos;
+
+        float inLightProjection[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
+        int viewportSize[2] = { camera.width, camera.height };
+        int minBounds[2] = { 0, 0 };
+        int maxBounds[2] = { camera.width - 1, camera.height - 1 };
+
+        Bend::DispatchList dispatchList = Bend::BuildDispatchList(
+            inLightProjection,
+            viewportSize,
+            minBounds,
+            maxBounds,
+            false,   // OpenGL uses [0,1] depth
+            64       // wave size
+        );
+
+        DispatchParametersGPU params{};
+
+        memcpy(params.LightCoordinate, dispatchList.LightCoordinate_Shader, sizeof(float)*4);
+
+        params.SurfaceThickness = 0.005f;
+        params.BilinearThreshold = 0.02f;
+        params.ShadowContrast = 4.0f;
+        params.NearDepthValue = 1.0f;
+        params.FarDepthValue = 0.0f;
+
+        params.near = camera.nearClip;
+        params.far = camera.farClip;
+
+        params.InvDepthTextureSize[0] = 1.0f / camera.width;
+        params.InvDepthTextureSize[1] = 1.0f / camera.height;
+
+        params.SurfaceThickness = 0.005f; // 0.02f;
+        params.BilinearThreshold = 0.02f; //0.001f;
+        params.ShadowContrast = 4.0f; //1.0f;
+        params.NearDepthValue = 0.0f;
+        params.FarDepthValue = 1.0f;
+
+        for(int i = 0; i < dispatchList.DispatchCount; i++){
+            auto& d = dispatchList.Dispatch[i];
+            params.WaveOffset[0] = d.WaveOffset_Shader[0];
+            params.WaveOffset[1] = d.WaveOffset_Shader[1];
+            screenSpaceShadowData->SetData(&params, sizeof(DispatchParametersGPU));
+
+            screenSpaceShadow->SetTexture("DepthTexture", context->GetDeferredFramebuffer(), -1);
+            screenSpaceShadow->SetTexture("OutputTexture", screenSpaceShadowOutput.get(), 0);
+            screenSpaceShadow->SetUniformBuffer("DispatchParams", screenSpaceShadowData, 2);
+            screenSpaceShadow->Dispatch(d.WaveCount[0], d.WaveCount[1], d.WaveCount[2]);
+        }
+    }*/
+    //------------------------
 
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);

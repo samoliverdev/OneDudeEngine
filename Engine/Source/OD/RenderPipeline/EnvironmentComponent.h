@@ -52,6 +52,11 @@ struct OD_API EnvironmentSettings{
     //AntiAliasing antiAliasing;
     //MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
+    bool enableSSS;
+    float sssSurfaceThickness = 0.005f;
+    float sssBilinearThreshold = 0.02f;
+    float sssShadowContrast = 4;
+
     Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
     Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
     Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
@@ -71,6 +76,12 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, directinalShadowCascade);
         ArchiveDumpNVP(ar, shadowDistance);
         ArchiveDumpNVP(ar, shadowBias);
+
+        ArchiveDumpNVP(ar, enableSSS);
+        ArchiveDumpNVP(ar, sssSurfaceThickness);
+        ArchiveDumpNVP(ar, sssBilinearThreshold);
+        ArchiveDumpNVP(ar, sssShadowContrast);
+
         ArchiveDumpNVP(ar, toneMappingPostFX);
         ArchiveDumpNVP(ar, colorGradingPostFX);
         ArchiveDumpNVP(ar, bloomPostFX);
