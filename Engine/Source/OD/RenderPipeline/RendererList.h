@@ -12,6 +12,8 @@
 
 namespace OD{
 
+//TODO: Review/optimaze all struct sizeof later
+
 class Material;
 class Mesh;
 class SubShader;
@@ -23,7 +25,9 @@ struct DrawMultTypeCommand{
     Material* material; //Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     float distance;
-    
+
+    PerDrawData perDrawData;
+
     union{
         struct {
             Matrix4 standTrans;
@@ -38,7 +42,7 @@ struct DrawMultTypeCommand{
             InstancingBuffer* instancingBuffer;
         };
     };
-
+    
     Type type;
 
     bool operator<(const DrawMultTypeCommand& a) const;

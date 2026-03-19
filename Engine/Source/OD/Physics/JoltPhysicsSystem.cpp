@@ -1624,6 +1624,9 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 		nullptr //skinned.finalPose.Size() > 0 ? &skinned.finalPose : nullptr
 	);
 	ragdoll.data->ragdoll = settings->CreateRagdoll(static_cast<uint32>(entity), static_cast<uint64>(entity), &physicsWorld->physicsSystem);
+
+	ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);//INFO: need call this before using SetLinearVelocity, strange i was having eny erro before
+
 	for(int i = 0; i < ragdoll.data->ragdoll->GetBodyCount(); ++i){
 		BodyID bodyID = ragdoll.data->ragdoll->GetBodyID(i);
 		BodyInterface& bi = bodyInterface; //physicsWorld->physicsSystem.GetBodyInterface();
@@ -1663,7 +1666,7 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 	//BodyID id = ragdoll.data->ragdoll->GetBodyID(0);
 	//LogInfo("---------Layer = {}----------", bodyInterface.GetObjectLayer(id));
 
-	ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
+	//ragdoll.data->ragdoll->AddToPhysicsSystem(EActivation::Activate);
 }
 
 void PhysicsSystem::RemoveRagdoll(Entity entity, RagdollComponent& ragdoll){

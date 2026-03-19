@@ -54,6 +54,7 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
         //drawCommands.Add(std::move(comand));
 
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
+        cmd.perDrawData = comand.perDrawData;
         cmd.standTrans = comand.trans;
         cmd.type = DrawMultTypeCommand::Type::Stand;
         sortDrawMultTypeCommands.Add(cmd);
@@ -118,6 +119,7 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
         );*/
 
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
+        cmd.perDrawData = comand.perDrawData;
         cmd.skinnedTrans = comand.trans;
         cmd.skinnedPosePalette = comand.posePalette;
         cmd.type = DrawMultTypeCommand::Type::Skinned;
@@ -355,8 +357,8 @@ void RendererList::Submit(bool skipEntityId){
     lastMat = nullptr;
 
     {
-    OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort");
-    sortDrawMultTypeCommands.Each([&](auto& cm){
+    OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort"); //TODO: Review this and maybe rename
+    sortDrawMultTypeCommands.Each([&](auto& cm){//TODO: Review this and maybe rename
         auto _mat = cm.material;
         if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
 
@@ -367,13 +369,11 @@ void RendererList::Submit(bool skipEntityId){
         lastMat = _mat;
 
         if(cm.type == DrawMultTypeCommand::Type::Stand){
-            Graphics::DrawMesh(*cm.meshs, *_mat, cm.standTrans);
+            Graphics::DrawMesh(*cm.meshs, *_mat, cm.standTrans, &cm.perDrawData);
         }
-
         if(cm.type == DrawMultTypeCommand::Type::Skinned){
-            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.skinnedTrans, cm.skinnedPosePalette->data(), cm.skinnedPosePalette->size());
+            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.skinnedTrans, cm.skinnedPosePalette->data(), cm.skinnedPosePalette->size(), &cm.perDrawData);
         }
-
         if(cm.type == DrawMultTypeCommand::Type::Instancing){
             Graphics::DrawMeshInstancing(*cm.meshs, *_mat, *cm.instancingBuffer, cm.instancingBuffer->Count());
         }
