@@ -297,7 +297,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
         }
     }
 
-    LogInfo("LoadAsset: {}", path);
+    //LogInfo("LoadAsset: {}", path);
 
     #ifdef USE_EXPERIMENTAL_ALLOCATOR
     //INFO: Add Experimental Alloctor

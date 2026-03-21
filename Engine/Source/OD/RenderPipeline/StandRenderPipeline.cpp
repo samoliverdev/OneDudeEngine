@@ -58,6 +58,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<UITextComponent>("UIImageComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent", "Renderer");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
+    //SceneManager::Get().AddGlobalSystem<StandRenderPipeline>();
 
     LuaBindsDB::Get().RegisterLuaBind<CameraComponent>();
     LuaBindsDB::Get().RegisterLuaBind<LightComponent>();

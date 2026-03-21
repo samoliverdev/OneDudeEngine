@@ -47,10 +47,17 @@ const std::vector<Module*> Application::Modules(){
 }
 
 //INFO: Maybe register a Shutdown callback and maybe a init call back too
-bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath, ApplicationCallbacks incallbacks){
+bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath, ApplicationCallbacks incallbacks, Ref<Project> customProj){
     Log::Init();
 
-    auto project = ProjectManager::LoadProject(projectPath);
+    Ref<Project> project = nullptr;
+
+    if(customProj != nullptr){
+        project = ProjectManager::LoadProject(projectPath, customProj);
+    } else {
+        project = ProjectManager::LoadProject(projectPath);
+    }
+
     if(project == nullptr){
         Log::Shutdown();
         return false;

@@ -921,7 +921,7 @@ bool AssimpLoadModel_Internal(
     for(unsigned int i = 0; i < scene->mNumMaterials; ++i){
         aiString name;
         scene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
-        LogInfo(("Material[" + std::to_string(i) + "]: " + std::string(name.C_Str())).c_str());
+        //LogInfo(("Material[" + std::to_string(i) + "]: " + std::string(name.C_Str())).c_str());
 
         if(usedMaterialIndices.count(i) > 0){
             loadData.model->materials.push_back(LoadMaterial(loadData, scene->mMaterials[i], loadSettings));

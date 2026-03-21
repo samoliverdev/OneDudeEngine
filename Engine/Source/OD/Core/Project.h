@@ -28,9 +28,9 @@ struct OD_API Project{
 class OD_API ProjectManager{
 public:
     static Ref<Project> GetActiveProject();
-    //static const Project& GetActiveProject();
     static Ref<Project> NewProject(const char* path, const char* name, const char* templatePath = nullptr);
     static Ref<Project> LoadProject(const char* path);
+    static Ref<Project> LoadProject(const char* path, Ref<Project> proj);
 };
 
 }

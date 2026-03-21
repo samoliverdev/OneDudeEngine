@@ -11,11 +11,11 @@ namespace OD{
 extern GraphicsDevice* graphicsDevice;
 
 Cubemap::Cubemap(){
-    LogInfo("OnCreation");
+    //LogInfo("OnCreation");
 }
 
 Cubemap::~Cubemap(){
-    LogInfo("OnDestroy: {}", path);
+    //LogInfo("OnDestroy: {}", path);
 }
 
 Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){

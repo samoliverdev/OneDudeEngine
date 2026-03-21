@@ -13,6 +13,7 @@ namespace sol{
 namespace OD{
 
 class Module;
+struct Project;
     
 struct ApplicationConfig{
     int startPosX;
@@ -32,7 +33,7 @@ class OD_API Application{
     friend class WebGPUGraphicsDevice;
     friend class OpenGLGraphicsDevice;
 public:
-    static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "", ApplicationCallbacks callbacks = {});
+    static bool Create(Module* mainModule, ApplicationConfig startAppConfig, const char* projectPath = "", ApplicationCallbacks callbacks = {}, Ref<Project> customProj = nullptr);
     static bool Run();
     
     static void Quit();

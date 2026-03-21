@@ -1,18 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
+
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # disables MSVC/GNU extensions
+#set(CMAKE_COMPILE_WARNING_AS_ERROR OFF)
 
-option(ENGINE_SHARED_LIBRARY "" ON)
-option(USE_ASSIMP "Use Assimp support" ON)
-option(BUILD_SANDBOX "BUILD_SANDBOX" ON)
-option(BUILD_EDITOR "BUILD_EDITOR" ON)
-option(BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" ON)
-option(SUPPORT_OPENGL "SUPPORT_OPENGL" ON)
-option(SUPPORT_WEBGPU "SUPPORT_WEBGPU" OFF)
+option(OD_ENGINE_SHARED_LIBRARY "Engine Shared Library" ON)
+option(OD_USE_ASSIMP "Use Assimp support" ON)
+option(OD_BUILD_SANDBOX "BUILD_SANDBOX" ON)
+option(OD_BUILD_EDITOR "BUILD_EDITOR" ON)
+option(OD_BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" ON)
+option(OD_SUPPORT_OPENGL "SUPPORT_OPENGL" ON)
+option(OD_SUPPORT_WEBGPU "SUPPORT_WEBGPU" OFF)
 
-option(USE_MSVC_RUNTIME_LIBRARY_DLL "USE_MSVC_RUNTIME_LIBRARY_DLL" ON)
-option(USE_SANITIZE_ADDRESS "USE_SANITIZE_ADDRESS" OFF)
+option(OD_USE_MSVC_RUNTIME_LIBRARY_DLL "Use MSVC Runtime Library Dll" ON)
+option(OD_USE_SANITIZE_ADDRESS "Use Sanitize Address" OFF)
 
-option(ADD_RUNTIME_TO_BIN "ADD_RUNTIME_TO_BIN" ON)
+option(OD_ADD_RUNTIME_TO_BIN "ADD_RUNTIME_TO_BIN" ON)
 
 #----------------s------------------
 
@@ -20,25 +24,16 @@ if(MSVC)
     message(STATUS "----------Using MSVC compiler----------")
 endif()
 
-message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
+message(STATUS "#-------------USE_ASSIMP is: ${OD_USE_ASSIMP}")
 
 
 #if(MSVC)
-    if(USE_MSVC_RUNTIME_LIBRARY_DLL)
-    #    cmake_policy(SET CMP0091 NEW)
+    cmake_policy(SET CMP0091 NEW)
+    if(OD_USE_MSVC_RUNTIME_LIBRARY_DLL)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")# CACHE STRING "" FORCE)
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")# CACHE STRING "" FORCE)
     endif()
-    #cmake_policy(SET CMP0091 NEW)
-    #if(USE_MSVC_RUNTIME_LIBRARY_DLL)
-    #    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-    #else()
-    #    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    #endif()
-
-    #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
-    #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
     #add_compile_options(/O2)
     #add_compile_options(/arch:SSE2)
@@ -47,14 +42,9 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 
     add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus)
 
-    if(USE_SANITIZE_ADDRESS)
+    if(OD_USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
     endif()
-
-    #add_compile_options(/fsanitize=address /Zi)
-    
-    #add_compile_options(-fsanitize=address -g)
-    #add_link_options(-fsanitize=address -g)
     
 #endif()
 
@@ -66,13 +56,12 @@ message(STATUS "#-------------USE_ASSIMP is: ${USE_ASSIMP}")
 if(EMSCRIPTEN)
     message("Using emscripten!")
     #option(ENGINE_SHARED_LIBRARY "" OFF)
-    set(ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
-    set(BUILD_EDITOR OFF CACHE BOOL "" FORCE)
-    set(BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
-    set(SUPPORT_WEBGPU OFF CACHE BOOL "" FORCE)
+    set(OD_ENGINE_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(OD_BUILD_EDITOR OFF CACHE BOOL "" FORCE)
+    set(OD_BUILD_DYNAMIC_MODULE OFF CACHE BOOL "" FORCE)
+    set(OD_SUPPORT_WEBGPU OFF CACHE BOOL "" FORCE)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-nontrivial-memaccess>)
 elseif(WIN32)
-    #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     message("Using WIN32!")
     #if(MSVC)
     message("Using MSVC!")
@@ -80,10 +69,6 @@ elseif(WIN32)
     add_compile_options(/bigobj)
     add_compile_options(/MP)
     #endif()
-
-    #add_compile_options(/arch:AVX)
-    #add_compile_definitions(__AVX__)
-
 elseif(UNIX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -99,7 +84,7 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT  OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT  ON CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_DRACO_STATIC  ON CACHE BOOL "" FORCE)
-if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+if(OD_USE_MSVC_RUNTIME_LIBRARY_DLL)
     set(USE_STATIC_CRT Off CACHE BOOL "" FORCE)
 else()
     set(USE_STATIC_CRT ON CACHE BOOL "" FORCE)
@@ -129,18 +114,17 @@ set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
 set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+if(OD_USE_MSVC_RUNTIME_LIBRARY_DLL)
     set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 else()
     set(USE_STATIC_MSVC_RUNTIME_LIBRARY ON CACHE BOOL "" FORCE)
 endif()
-#set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 
 #add_subdirectory(Engine/ThirdParty/glm-1.0.1) 
 
 if(EMSCRIPTEN)
     message("Using emscripten!2")
-    message(${ENGINE_SHARED_LIBRARY})
+    message(${OD_ENGINE_SHARED_LIBRARY})
 else()  
     add_subdirectory(Engine/ThirdParty/glfw)
 endif()
@@ -148,7 +132,7 @@ endif()
 add_subdirectory(Engine/ThirdParty/lua-5.1.5)
 add_subdirectory(Engine/ThirdParty/sol2) 
 
-if(USE_ASSIMP)
+if(OD_USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
 
@@ -164,14 +148,14 @@ set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_MSDFGEN_EXTERNAL OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "" FORCE)
-if(USE_MSVC_RUNTIME_LIBRARY_DLL)
+if(OD_USE_MSVC_RUNTIME_LIBRARY_DLL)
     set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
 else()
     set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "" FORCE)
 endif()
 add_subdirectory(Engine/ThirdParty/msdf-atlas-gen)
 
-if(SUPPORT_WEBGPU)
+if(OD_SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glslang)
     add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
 endif()
@@ -182,7 +166,7 @@ endif()
 
 #add_subdirectory(Engine/ThirdParty/tinygltf)
 
-if(SUPPORT_WEBGPU) 
+if(OD_SUPPORT_WEBGPU) 
     #FetchContent_Declare(
     #webgpu
     #GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
@@ -215,12 +199,12 @@ MESSAGE("DEFAULT_PROJECT_PATH? " ${DEFAULT_PROJECT_PATH})
 
 #MESSAGE("#---------USE_MSVC_RUNTIME_LIBRARY_DLL? " ${USE_MSVC_RUNTIME_LIBRARY_DLL})
 
-message(STATUS "USE_MSVC_RUNTIME_LIBRARY_DLL = ${USE_MSVC_RUNTIME_LIBRARY_DLL}")
+message(STATUS "OD_USE_MSVC_RUNTIME_LIBRARY_DLL = ${OD_USE_MSVC_RUNTIME_LIBRARY_DLL}")
 message(STATUS "USE_STATIC_MSVC_RUNTIME_LIBRARY = ${USE_STATIC_MSVC_RUNTIME_LIBRARY}")
 message(STATUS "MSDF_ATLAS_DYNAMIC_RUNTIME = ${MSDF_ATLAS_DYNAMIC_RUNTIME}")
 message(STATUS "USE_STATIC_CRT = ${USE_STATIC_CRT}")
 
-if(ADD_RUNTIME_TO_BIN)
+if(OD_ADD_RUNTIME_TO_BIN)
     set(CMAKE_DEBUG_POSTFIX "")
     set(CMAKE_RELEASE_POSTFIX "")
     set(CMAKE_RELWITHDEBINFO_POSTFIX "")
@@ -266,21 +250,21 @@ set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui_widgets.cpp
     Engine/ThirdParty/imgui/backends/imgui_impl_glfw.cpp
 )
-if(SUPPORT_OPENGL)
+if(OD_SUPPORT_OPENGL)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/backends/imgui_impl_opengl3.cpp
 )
 endif()
-if(SUPPORT_WEBGPU)
+if(OD_SUPPORT_WEBGPU)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/backends/imgui_impl_wgpu.cpp
 )
 endif()
 
-if(ENGINE_SHARED_LIBRARY)
-add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
+if(OD_ENGINE_SHARED_LIBRARY)
+    add_library(Engine SHARED ${ENGINE_SOURCE_FILES})
 else()
-add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
+    add_library(Engine STATIC ${ENGINE_SOURCE_FILES})
 endif()
 #set_target_properties(Engine PROPERTIES UNITY_BUILD ON)#Thi is to compile fast, but has some erro on compile engine
 #set_target_properties(Engine PROPERTIES
@@ -295,7 +279,7 @@ target_precompile_headers(Engine
 ) #INTERFACE
 target_compile_definitions(Engine PUBLIC OD_BUILD_DLL)
 target_compile_definitions(Engine PUBLIC OPENGL_SUPPORT)
-if(SUPPORT_WEBGPU)
+if(OD_SUPPORT_WEBGPU)
     target_compile_definitions(Engine PUBLIC WEBGPU_SUPPORT)
 endif()
 
@@ -369,18 +353,16 @@ target_link_libraries(Engine PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 if(WIN32)
     target_link_libraries(Engine PRIVATE comctl32)
 endif()
-if(SUPPORT_WEBGPU)
-target_link_libraries(Engine PRIVATE 
-    glslang glslang-default-resource-limits
-    spirv-reflect-static
+if(OD_SUPPORT_WEBGPU)
+    target_link_libraries(Engine PRIVATE glslang glslang-default-resource-limits spirv-reflect-static
 )
 endif()
-if(USE_ASSIMP)
+if(OD_USE_ASSIMP)
     target_link_libraries(Engine PRIVATE assimp)
     target_compile_definitions(Engine PRIVATE USE_ASSIMP)
 endif()
 #target_link_libraries(Engine PRIVATE tinygltf) 
-if(SUPPORT_WEBGPU)
+if(OD_SUPPORT_WEBGPU)
     target_link_libraries(Engine PRIVATE webgpu glfw3webgpu)
     target_copy_webgpu_binaries(Engine)
 endif()
@@ -396,7 +378,7 @@ endif()
 #set_property(TARGET Engine PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 #----------------Editor------------------
-if(BUILD_EDITOR)
+if(OD_BUILD_EDITOR)
     project(Editor)
 
     file(GLOB_RECURSE EDITOR_SOURCE_FILES Editor/Source/*.cpp)
@@ -419,7 +401,7 @@ if(BUILD_EDITOR)
 endif()
 
 #----------------Sandbox------------------
-if(BUILD_SANDBOX)
+if(OD_BUILD_SANDBOX)
     project(Sandbox)
     file(GLOB_RECURSE SANDBOX_SOURCE_FILES Sandbox/Source/*.cpp)
     add_executable(Sandbox ${SANDBOX_SOURCE_FILES})
@@ -445,7 +427,7 @@ if(BUILD_SANDBOX)
 endif()
 
 #----------------Dynamic module------------------
-if(BUILD_DYNAMIC_MODULE)
+if(OD_BUILD_DYNAMIC_MODULE)
     project(DynamicModule)
     file(GLOB_RECURSE DYNAMIC_MODULE_SOURCE_FILES DynamicModule/Source/*.cpp)
     add_library(DynamicModule SHARED ${DYNAMIC_MODULE_SOURCE_FILES})

@@ -26,6 +26,14 @@ void operator delete(void* data){
 extern OD::ApplicationConfig GetStartAppConfig();
 extern OD::Module* CreateMainModule();
 
+#ifdef DEFINE_CUSTOM_PROJECT
+extern OD::Ref<OD::Project> CreateCustomProject();
+#else 
+OD::Ref<OD::Project> CreateCustomProject(){
+    return nullptr;
+}
+#endif
+
 /*#include <FileWatch.hpp>
 #include <efsw/efsw.hpp>*/
 
@@ -107,7 +115,7 @@ int main(int argc, char *argv[]){
         [](){ OD::CoreModulesShutdown(); }
     };
 
-    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "", callbacks)){
+    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "", callbacks, CreateCustomProject())){
         printf("Application failed to create!");
         return 1;
     }

@@ -16,6 +16,8 @@
 #include "RendererList.h"
 #include "RenderContext.h"
 
+#define UseAsGlobal 1
+
 namespace OD{
 
 class ComputeShader;
@@ -138,7 +140,7 @@ private:
     Camera cam;
     ShadowDrawingSettings drawSettings;
 
-    inline static const int maxShadowedDirectionalLightCount = 2;
+    inline static const int maxShadowedDirectionalLightCount = 1; //2;
     inline static const int maxShadowedOtherLightCount = 6*3;
     inline static const int maxCascades = 4;
     

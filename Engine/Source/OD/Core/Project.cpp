@@ -6,11 +6,6 @@ namespace OD{
 
 Ref<Project> activeProject = nullptr;
 
-/*const Project& ProjectManager::GetActiveProject(){ 
-    Assert(activeProject != nullptr);
-    return *activeProject; 
-}*/
-
 Ref<Project> ProjectManager::GetActiveProject(){ 
     Assert(activeProject != nullptr); 
     return activeProject; 
@@ -43,6 +38,23 @@ Ref<Project> ProjectManager::LoadProject(const char* path){
 
     std::filesystem::current_path(_projectPath + "Content");
 
+    LogWarning("Loaded Cur Path: {}", std::filesystem::current_path().string());
+
+    #endif
+
+    return activeProject;
+}
+
+Ref<Project> ProjectManager::LoadProject(const char* path, Ref<Project> proj){
+    activeProject = proj;
+
+    LogInfo("Loading Project Path: {}", path);
+    LogWarning("Cur Path: {}", std::filesystem::current_path().string());
+
+    #if !defined(__EMSCRIPTEN__)
+
+    std::string _projectPath(path);
+    std::filesystem::current_path(_projectPath + "Content");
     LogWarning("Loaded Cur Path: {}", std::filesystem::current_path().string());
 
     #endif

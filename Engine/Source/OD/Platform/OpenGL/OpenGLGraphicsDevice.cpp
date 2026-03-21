@@ -2878,6 +2878,62 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
     bool isArray = fb.specification.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
     bool isCube  = fb.specification.type == FramebufferAttachmentType::CUBEMAP;
 
+    // --------------------Calc Vram Usage-------------------------
+    auto CalcBytesPerPixel = [&](FramebufferTextureFormat format) -> size_t {
+        switch(format){
+            case FramebufferTextureFormat::RGBA8:            return 4;
+            case FramebufferTextureFormat::RGB:             return 3;
+            case FramebufferTextureFormat::RED_INTEGER:      return 4;
+
+            case FramebufferTextureFormat::RGB16F:           return 6;  // 3 * 16bit
+            case FramebufferTextureFormat::RGBA16F:          return 8;  // 4 * 16bit
+
+            case FramebufferTextureFormat::RGB32F:           return 12; // 3 * 32bit
+            case FramebufferTextureFormat::RGBA32F:          return 16; // 4 * 32bit
+
+            case FramebufferTextureFormat::RGB11B10F:        return 4;
+
+            case FramebufferTextureFormat::DEPTH24_STENCIL8: return 4;
+            case FramebufferTextureFormat::DEPTH_COMPONENT24:return 4;
+            case FramebufferTextureFormat::DEPTH_COMPONENT32F:return 4;
+
+            default: return 4;
+        }
+    };
+
+    auto CalcMipSize = [&](int w, int h, int mip) -> size_t {
+        return (size_t)std::max(1, w >> mip) * std::max(1, h >> mip);
+    };
+
+    auto CalcTextureVRAM = [&](FramebufferTextureFormat format, int mipCount) -> size_t {
+        mipCount = std::max(1, std::min(mipCount, 16));
+
+        size_t total = 0;
+        size_t bpp = (size_t)CalcBytesPerPixel(format);
+
+        for(int mip = 0; mip < mipCount; mip++){
+            size_t w = std::max(1, width  >> mip);
+            size_t h = std::max(1, height >> mip);
+
+            total += (w * h * bpp);
+        }
+
+        // Apply multipliers carefully
+        if(isMSAA){
+            total *= (size_t)samples;
+        }
+        else if(isArray){
+            total *= (size_t)samples; // layers
+        }
+        else if(isCube){
+            total *= 6;
+        }
+
+        //LogInfo("VRAM Debug: w={} h={} samples={} mip={} result={} bytes", width, height, samples, mipCount, total);
+
+        return total;
+    };
+
     // -------------------------------------------------------
     // Color Attachment Lambda
     // -------------------------------------------------------
@@ -2976,6 +3032,9 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         }
 
         fb.glData.colorAttachments.push_back(tex);
+
+        size_t bytes = CalcTextureVRAM(formatEnum, mipCount);
+        fb.vramUsage += bytes;
     };
 
     // -------------------------------------------------------
@@ -3104,6 +3163,9 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         }
 
         fb.glData.depthAttachment = tex;
+
+        size_t bytes = CalcTextureVRAM(formatEnum, mipCount);
+        fb.vramUsage += bytes;
     };
 
     // -------------------------------------------------------
@@ -3140,6 +3202,11 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         Assert(false);
     }
 
+    
+    vram.Add(fb.vramUsage, VRAMTracker::Category::Framebuffer);
+    //LogInfo("Framebuffer VRam: {}MB/{}MB", fb.vramUsage / (1024 * 1024), vram.framebuffersBytes / (1024 * 1024));
+    LogInfo("Framebuffer VRam: {:.2f}MB / {:.2f}MB", (double)fb.vramUsage / (1024.0 * 1024.0), (double)vram.framebuffersBytes / (1024.0 * 1024.0));
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
     return true;
@@ -3171,6 +3238,9 @@ void OpenGLGraphicsDevice::FramebufferDestroy(Framebuffer& frambuffer){
     frambuffer.glData.renderId = 0;
     frambuffer.glData.colorAttachments.clear();
     frambuffer.glData.depthAttachment = 0;
+
+    vram.Free(frambuffer.vramUsage, VRAMTracker::Category::Framebuffer);
+    frambuffer.vramUsage = 0;
 }
 
 bool OpenGLGraphicsDevice::FramebufferIsValid(Framebuffer& frambuffer){
@@ -4465,7 +4535,7 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
            LogInfo("Size: %zd", i.second.size);
         }*/
     } else {
-        LogWarning("No Uniform Buffer Main on: {}", mat.shader->Path());
+        //LogWarning("No Uniform Buffer Main on: {}", mat.shader->Path());
     }
     #endif
 }

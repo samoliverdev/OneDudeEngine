@@ -78,7 +78,7 @@ public:
     size_t VRamUsage(){ return vramUsage; }
 
 private:
-    size_t vramUsage;
+    size_t vramUsage = 0;
     FramebufferType type;
     FrameBufferSpecification specification;
     FramebufferDataGL;
