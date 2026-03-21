@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Transform.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Core/AlignedAllocator.h"
 #include <vector>
 
 namespace OD{

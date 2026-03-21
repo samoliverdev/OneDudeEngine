@@ -24,7 +24,7 @@ private:
     };
     CopyComponent copyComponentData;
 
-    void ComponentOptionsMenu(Entity e, SceneManager::SerializeFuncs &f, bool& removeComponent);
+    void ComponentOptionsMenu(Entity e, SceneManager::SerializeFuncs& f, bool& removeComponent);
 };
 
 }

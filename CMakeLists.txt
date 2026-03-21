@@ -42,6 +42,9 @@ message(STATUS "#-------------USE_ASSIMP is: ${OD_USE_ASSIMP}")
 
     add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus)
 
+    #add_compile_options(/Bt+)# profiling
+    #add_compile_options(/d2cgsummary) # profiling 2
+
     if(OD_USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
     endif()

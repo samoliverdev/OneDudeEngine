@@ -2,7 +2,6 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Project.h"
-#include <OD/Serialization/Serialization.h>
 #include <OD/Serialization/SerializationFull.h>
 #include <OD/Editor/Editor.h>
 #include <OD/Scene/SceneManager.h>

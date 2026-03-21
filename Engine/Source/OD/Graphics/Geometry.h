@@ -12,6 +12,7 @@
 
 #pragma once
 #include "Culling.h"
+#include <cmath>
 
 namespace OD{
 
@@ -36,8 +37,8 @@ inline AABB transform_aabb_optimized_min_max(AABB box, Matrix4 m){
   Vector3 max_c3 = m[2] * box.GetMax().z + m[3]; // place 4th column add here for free add (MAD)
 
   // minimize and maximize the resulting transforms
-  Vector3 tmin = min(min_c1,max_c1) + min(min_c2, max_c2) + min(min_c3, max_c3);
-  Vector3 tmax = max(min_c1,max_c1) + max(min_c2, max_c2) + max(min_c3, max_c3);
+  Vector3 tmin = min(min_c1, max_c1) + min(min_c2, max_c2) + min(min_c3, max_c3);
+  Vector3 tmax = max(min_c1, max_c1) + max(min_c2, max_c2) + max(min_c3, max_c3);
   
   AABB rbox(tmin, tmax);
   

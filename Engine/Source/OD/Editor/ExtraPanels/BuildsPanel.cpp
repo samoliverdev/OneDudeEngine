@@ -280,7 +280,7 @@ void BuildsPanel::Build(){
     CopyDirectoryRecursive(
         "./",
         buildPath,
-        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".dae", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".wav", ".mp3", ".ttf", ".otf", ".ini"},
+        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".dae", ".scene", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".compute", ".wav", ".mp3", ".ttf", ".otf", ".ini"},
         [&](const fs::path& src, const fs::path& dst) -> bool {
             if(ShouldSkip(src, dontBuildAssetFolders)) return true;
 

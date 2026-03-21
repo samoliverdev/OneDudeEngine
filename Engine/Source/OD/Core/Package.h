@@ -16,6 +16,7 @@ public:
     virtual size_t GetFileSize(const char* path) const { return 0; }
     virtual bool ReadFile(const char* path, std::vector<uint8_t>& outData){ return false; };
     virtual std::vector<std::string> ListFiles(const char* directory) const{ return std::vector<std::string>(); };
+    virtual std::vector<std::string> ListFilesRecursive(const char* directory) const{ Assert(false && "Not Implemented"); return std::vector<std::string>(); };
 };
 
 //TODO: Implement later

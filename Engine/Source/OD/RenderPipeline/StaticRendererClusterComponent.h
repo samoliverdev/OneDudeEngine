@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
+#include "OD/Serialization/SerializationMath.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/RenderPipeline/RendererList.h"
 

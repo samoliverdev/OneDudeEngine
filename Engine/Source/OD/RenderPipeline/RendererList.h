@@ -5,6 +5,7 @@
 #include "OD/Graphics/Camera.h"
 #include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Core/Math.h"
+#include "OD/Core/AlignedAllocator.h"
 #include "RenderPipelineUtils.h"
 //#include <EASTL/vector.h>
 

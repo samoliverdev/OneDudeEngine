@@ -1,6 +1,5 @@
 #include "OD/pch.h"
 #include "Camera.h"
-#include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
 
 namespace OD{

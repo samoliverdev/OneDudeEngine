@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Scene/Scene.h"
+#include "OD/Scene/ECS.h"
 #include "OD/Editor/EditorPanel.h"
 
 namespace OD{

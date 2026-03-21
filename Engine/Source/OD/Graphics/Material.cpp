@@ -5,7 +5,6 @@
 #include "GraphicsDevice.h"
 #include "Texture.h"
 #include "OD/Platform/Platform.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Asset.h"
 #include "OD/Core/ImGui.h"

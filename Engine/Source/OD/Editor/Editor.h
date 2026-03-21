@@ -9,7 +9,6 @@
 #include "OD/Editor/Panels/GlobalSettingsPanel.h"
 #include "OD/Editor/Panels/RuntimeInfoPanel.h"
 #include "OD/Editor/Panels/LogPanel.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Utils/FixedQueue.h"
 #include "EditorCamera.h"
 #include "Workspace.h"

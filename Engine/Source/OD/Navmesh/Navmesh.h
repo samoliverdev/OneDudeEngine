@@ -4,7 +4,7 @@
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 #include "OD/Serialization/CerealImGui.h"
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>

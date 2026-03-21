@@ -25,7 +25,10 @@
 #include <thread>
 #include <spdlog/spdlog.h>
 #include <taskflow/taskflow.hpp>
-#include "Scene/ECS.h"
+#include <sol/sol.hpp>
 #include "Core/Math.h"
+#include "Serialization/SerializationCore.h"
+#include "Scene/ECS.h"
+
 //#include "Defines.h"
 #endif

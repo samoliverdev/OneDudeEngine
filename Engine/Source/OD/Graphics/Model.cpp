@@ -9,7 +9,6 @@
 #include "OD/Loader/GltfLoader2.h"
 #include "OD/Loader/ObjLoader.h"
 #include "OD/Core/ImGui.h"
-#include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Core/Application.h"

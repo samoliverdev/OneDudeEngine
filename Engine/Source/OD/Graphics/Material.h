@@ -1,11 +1,7 @@
 #pragma once
 #include "OD/Core/Asset.h"
-//#include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
-//#include "OD/Graphics/Cubemap.h"
-//#include "OD/Graphics/UniformBuffer.h"
-//#include "OD/Serialization/Serialization.h"
 #include "OD/Platform/OpenGL/GL.h"
 
 namespace sol{ class state; }

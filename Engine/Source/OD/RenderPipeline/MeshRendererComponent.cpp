@@ -1,6 +1,7 @@
 #include "OD/pch.h"
 #include "MeshRendererComponent.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Scene/Scene.h"
 
 namespace OD{
 

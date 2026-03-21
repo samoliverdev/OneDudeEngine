@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/MathUtils.h"
 #include "Pose.h"
 
 namespace OD{

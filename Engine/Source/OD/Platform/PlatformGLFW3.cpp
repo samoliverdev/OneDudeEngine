@@ -62,6 +62,7 @@ void UpdateFpsCounter(GLFWwindow* window){
 }
 
 void UpdateWindowTitle(GLFWwindow* window){
+    #ifndef FINAL_BUILD
     static double previous_seconds;
     static int frame_count;
     double current_seconds = glfwGetTime();
@@ -84,6 +85,7 @@ void UpdateWindowTitle(GLFWwindow* window){
         #endif
     }
     frame_count++;
+    #endif
 }
 
 void imguiOnInit(GLFWwindow* window){

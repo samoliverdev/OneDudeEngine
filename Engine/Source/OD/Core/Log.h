@@ -27,7 +27,7 @@ private:
 
 }
 
-#ifndef FINAL_BUILD
+#if not defined(FINAL_BUILD) || defined(USE_LOG_ON_FINAL_BUILD)
     #define LogInfo(...) ::OD::Log::GetLogger()->info(__VA_ARGS__)
     #define LogWarning(...) ::OD::Log::GetLogger()->warn(__VA_ARGS__)
     #define LogError(...) ::OD::Log::GetLogger()->error(__VA_ARGS__)

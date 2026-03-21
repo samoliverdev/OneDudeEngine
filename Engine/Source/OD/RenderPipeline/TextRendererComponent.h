@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Base.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 #include "OD/Core/Color.h"
 #include "OD/Core/Asset.h"
 

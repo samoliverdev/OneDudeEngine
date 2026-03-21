@@ -12,7 +12,9 @@ public:
 
     size_t GetFileSize(const char* path) const override;
     bool ReadFile(const char* path, std::vector<uint8_t>& outData) override;
+
     std::vector<std::string> ListFiles(const char* directory) const override;
+    std::vector<std::string> ListFilesRecursive(const char* directory) const override;
 };
 
 PhysFSPackage package;
@@ -108,13 +110,71 @@ std::vector<std::string> PhysFSPackage::ListFiles(const char* directory) const{
     char** rc = PHYSFS_enumerateFiles(directory);
     char** i = rc;
 
-    while(*i != nullptr){
+    /*while(*i != nullptr){
         result.emplace_back(directory + std::string("/") + *i);
+        i++;
+    }*/
+
+    const char* separator = "";
+    if(directory && *directory){
+        size_t len = std::strlen(directory);
+        char last = directory[len - 1];
+        if(last != '/' && last != '\\'){
+            separator = "/";
+        }
+    }
+    while(*i != nullptr){
+        result.emplace_back(std::string(directory) + separator + *i);
         i++;
     }
 
     PHYSFS_freeList(rc);
 
+    return result;
+}
+
+std::vector<std::string> PhysFSPackage::ListFilesRecursive(const char* directory) const{
+    std::vector<std::string> result;
+
+    // Precompute separator
+    const char* separator = "";
+    if(directory && *directory){
+        size_t len = std::strlen(directory);
+        char last = directory[len - 1];
+        if(last != '/' && last != '\\'){
+            separator = "/";
+        }
+    }
+
+    char** rc = PHYSFS_enumerateFiles(directory);
+    char** i = rc;
+
+    while(*i != nullptr){
+        std::string fullPath = std::string(directory) + separator + *i;
+
+        PHYSFS_Stat stat;
+        if(PHYSFS_stat(fullPath.c_str(), &stat) != 0){
+            /*if(stat.filetype == PHYSFS_FILETYPE_DIRECTORY){
+                auto subFiles = ListFilesRecursive(fullPath.c_str());// Recurse into subdirectory
+                result.insert(result.end(), subFiles.begin(), subFiles.end());
+            } else {
+                result.emplace_back(fullPath);// It's a file
+            }*/
+
+            if(stat.filetype == PHYSFS_FILETYPE_DIRECTORY){
+                auto subFiles = ListFilesRecursive(fullPath.c_str());
+                result.insert(result.end(), subFiles.begin(), subFiles.end());
+            }
+            else if(stat.filetype == PHYSFS_FILETYPE_REGULAR){
+                result.emplace_back(fullPath);
+            }
+        }
+
+        i++;
+    }
+
+    PHYSFS_freeList(rc);
+    //LogInfo("Count: {}", result.size());
     return result;
 }
 
