@@ -237,7 +237,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     #engine/ThirdParty/glm/*.cpp
     #Engine/ThirdParty/imgui/*.cpp 
     Engine/ThirdParty/ImGuizmo/*.cpp 
-    Engine/ThirdParty/entt/*.cpp
+    Engine/ThirdParty/entt-3.13.2/src/*.cpp
     Engine/Source/*.cpp
 )
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinygltf/tiny_gltf.cc)
@@ -299,7 +299,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/glfw/include/
     Engine/ThirdParty/assimp/include/
     Engine/ThirdParty/JoltPhysics-5.3.0/
-    Engine/ThirdParty/entt/
+    Engine/ThirdParty/entt-3.13.2/src/
     Engine/ThirdParty/soloud/include/
     Engine/ThirdParty/freetype/include/
     Engine/ThirdParty/recastnavigation/Recast/Include/

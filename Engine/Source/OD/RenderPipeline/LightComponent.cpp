@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "LightComponent.h"
+#include "OD/Scene/SceneMeta.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Lua.h"
@@ -264,7 +265,7 @@ void LightComponent::CreateLuaBind(sol::state& lua){
         "Spot", LightComponent::Type::Spot
     );
 
-    Scene::RegisterMetaComponent<LightComponent>();
+    SceneMeta::RegisterMetaComponent<LightComponent>();
     lua.new_usertype<LightComponent>(
         "LightComponent",
         "TypeId", &entt::type_hash<LightComponent>::value,

@@ -3,7 +3,6 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Animation/Clip.h"
 #include "OD/Animation/CrossFadeController.h"
-
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 
@@ -20,7 +19,6 @@ struct OD_API AnimatorComponent{
         bool blendIfClipIsNull = false;
     };
 
-    
     void Play(ClipT* clip, int layer = 0);
     void FadeTo(ClipT* target, float fadeTime, int layer = 0);
     void PushLayer();

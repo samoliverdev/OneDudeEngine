@@ -1,9 +1,11 @@
 #include "OD/pch.h"
 #include "Scene.h"
+#include "SceneMeta.h"
 #include "Prefab.h"
 #include "EntityHandle.h"
 #include "SceneManager.h"
 #include "Scripts.h"
+#include "OD/Core/Lua.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
@@ -501,7 +503,7 @@ Transform TransformComponent::ToTransform(){
 }
 
 void TransformComponent::CreateLuaBind(sol::state& lua){
-    Scene::RegisterMetaComponent<TransformComponent>();
+    SceneMeta::RegisterMetaComponent<TransformComponent>();
     lua.new_usertype<TransformComponent>(
         "TransformComponent",
         "TypeId", &entt::type_hash<TransformComponent>::value,
@@ -527,7 +529,7 @@ void TransformComponent::CreateLuaBind(sol::state& lua){
 #pragma region InfoComponent
 
 void InfoComponent::CreateLuaBind(sol::state& lua){
-    Scene::RegisterMetaComponent<InfoComponent>();
+    SceneMeta::RegisterMetaComponent<InfoComponent>();
     lua.new_usertype<InfoComponent>(
         "InfoComponent",
         "TypeId", &entt::type_hash<InfoComponent>::value,
@@ -1608,6 +1610,5 @@ void Scene::RunAllTaskAndSync(){
 }
 
 #pragma endregion
-
 
 }

@@ -24,6 +24,8 @@
 #include <numeric>
 #include <thread>
 #include <spdlog/spdlog.h>
+#include <taskflow/taskflow.hpp>
+#include "Scene/ECS.h"
 #include "Core/Math.h"
 //#include "Defines.h"
 #endif

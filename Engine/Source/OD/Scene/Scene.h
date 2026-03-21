@@ -9,17 +9,16 @@
 #include <string>
 #include <functional>
 #include <algorithm>
-#define ENTT_ASSERT(condition, msg) Assert((condition) && (msg))
-#include <entt/entt.hpp>
+#include "ECS.h"
 #include <taskflow/taskflow.hpp>
 
 namespace sol{ class state; }
 
 namespace OD {
 
-using Entity = entt::entity;
+/*using Entity = entt::entity;
 using Registry = entt::registry;
-#define EntityNull entt::null
+#define EntityNull entt::null*/
 //#define EntityNull (Entity)UINT32_MAX
 
 //struct Entity;
@@ -255,18 +254,6 @@ private:
     std::string prefabPath;
 };
 
-template<typename T>
-auto _AddComponent(Scene* scene, Entity entity, const sol::table& comp, sol::this_state s);
-
-template<typename T>
-bool _HasComponent(Scene* scene, Entity entity);
-
-template<typename T>
-auto _GetComponent(Scene* scene, Entity entity, sol::this_state s);
-
-template<typename T>
-void _RemoveComponent(Scene* scene, Entity entity);
-
 enum SystemType{//FIXME: Maybe Rename
     None = 0,
     Stand = 1 << 1, 
@@ -432,7 +419,7 @@ private:
     entt::registry registry;
 
     //tf::Executor executor;
-    tf::Taskflow taskflow;
+    tf::Taskflow taskflow; //TODO: Maybe change this to Ref to use forward declaration
 
     bool transIsDirty = true;
     float fixedUpdateAccumulator = 0;

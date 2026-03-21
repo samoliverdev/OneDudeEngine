@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "CameraComponent.h"
+#include "OD/Scene/SceneMeta.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Lua.h"
@@ -148,7 +149,7 @@ void CameraComponent::CreateLuaBind(sol::state& lua){
             "Orthographic", CameraComponent::Type::Orthographic,
             "Perspective", CameraComponent::Type::Perspective
         );
-        Scene::RegisterMetaComponent<CameraComponent>();
+        SceneMeta::RegisterMetaComponent<CameraComponent>();
         lua.new_usertype<CameraComponent>(
             "CameraComponent",
             sol::call_constructor,
