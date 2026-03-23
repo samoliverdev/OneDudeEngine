@@ -1,8 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/SerializationCore.h"
-#include "OD/Serialization/SerializationMath.h"
+#include "OD/Serialization/Serialization.h"
 #include "ToneMappingPostFX.h"
 #include "ColorGradingPostFX.h"
 #include "BloomPostFX.h"

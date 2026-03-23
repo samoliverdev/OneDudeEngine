@@ -4,7 +4,7 @@
 #include "OD/Core/Asset.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/SerializationCore.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
@@ -174,6 +174,7 @@ public:
 	bool SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius = 2.0f);
 
 	bool LoadFromFile(const std::string& _path) override;
+	bool LoadFromPackage(const std::string& path, Package& package) override;
     bool Save(const std::string& outPath, SaveType type) override;
     std::vector<std::string> GetFileAssociations() override;
 

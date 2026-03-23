@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Base.h"
-#include "OD/Serialization/SerializationCore.h"
+#include "OD/Serialization/Serialization.h"
 #include <string>
 #include <filesystem>
 

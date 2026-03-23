@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/SerializationCore.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Core/Lua.h"
 #include "OD/Core/Module.h"
 

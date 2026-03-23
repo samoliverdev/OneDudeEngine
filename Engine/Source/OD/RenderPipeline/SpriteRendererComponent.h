@@ -3,8 +3,7 @@
 #include "OD/Core/Color.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Graphics/Material.h"
-#include "OD/Serialization/SerializationCore.h"
-#include "OD/Serialization/SerializationMath.h"
+#include "OD/Serialization/Serialization.h"
 
 namespace OD{
 

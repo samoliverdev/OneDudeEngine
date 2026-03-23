@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 #include <cereal/cereal.hpp>
 #include "OD/Core/Math.h"
@@ -91,3 +92,4 @@ void serialize(Archive& archive, glm::mat4& m){
 }
 
 }
+#endif

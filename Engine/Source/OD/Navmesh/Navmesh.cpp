@@ -1761,6 +1761,94 @@ bool Navmesh::LoadFromFile(const std::string& path){
     return true;
 }
 
+bool Navmesh::LoadFromPackage(const std::string& path, Package& package){
+	//Assert(false && "Not Implemented!");
+	//return false;
+
+	Cleanup(bakeData);
+
+    void* rawData = nullptr;
+    size_t size = 0;
+
+    if(!package.ReadFileData(path.c_str(), rawData, size) || !rawData || size == 0){
+		package.FreeFileData(rawData);
+        return false;
+	}
+
+    const uint8_t* cursor = static_cast<const uint8_t*>(rawData);
+    const uint8_t* end = cursor + size;
+
+    auto read = [&](void* dst, size_t bytes) -> bool {
+        if(cursor + bytes > end){
+			package.FreeFileData(rawData);
+            return false;
+		}
+        std::memcpy(dst, cursor, bytes);
+        cursor += bytes;
+        return true;
+    };
+
+    // Read navmesh params
+    dtNavMeshParams params{};
+    if(!read(&params, sizeof(dtNavMeshParams))){
+        package.FreeFileData(rawData);
+        return false;
+    }
+
+    // Allocate + init navmesh
+    dtNavMesh* navMesh = dtAllocNavMesh();
+    if(!navMesh || dtStatusFailed(navMesh->init(&params))){
+        if(navMesh) dtFreeNavMesh(navMesh);
+        package.FreeFileData(rawData);
+        return false;
+    }
+
+    // Load tiles
+    while(cursor < end){
+        int dataSize = 0;
+
+        if(!read(&dataSize, sizeof(int))) break;
+        if(dataSize <= 0) break;
+
+        if(cursor + dataSize > end) {
+            dtFreeNavMesh(navMesh);
+            package.FreeFileData(rawData);
+            return false;
+        }
+
+        unsigned char* data = (unsigned char*)dtAlloc(dataSize, DT_ALLOC_PERM);
+        if(!data) {
+            dtFreeNavMesh(navMesh);
+            package.FreeFileData(rawData);
+            return false;
+        }
+
+        std::memcpy(data, cursor, dataSize);
+        cursor += dataSize;
+
+        dtStatus status = navMesh->addTile(data, dataSize, DT_TILE_FREE_DATA, 0, nullptr);
+        if(dtStatusFailed(status)){
+            dtFree(data);
+            dtFreeNavMesh(navMesh);
+            package.FreeFileData(rawData);
+            return false;
+        }
+    }
+
+    package.FreeFileData(rawData);
+
+    // Replace old navmesh
+    m_navMesh = navMesh;
+
+    // Init query
+    if(!m_navQuery) m_navQuery = dtAllocNavMeshQuery();
+
+    m_navQuery->init(m_navMesh, 2048);
+
+    this->path = path;
+    return true;
+}
+
 std::vector<std::string> Navmesh::GetFileAssociations(){
 	return {".navmesh"};
 }

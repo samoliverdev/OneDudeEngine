@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/SerializationCore.h"
-#include "OD/Serialization/SerializationMath.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
 #include "OD/Scene/Scene.h"
 

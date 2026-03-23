@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/SerializationCore.h"
-#include "OD/Serialization/SerializationEnum.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
 #include "AudioClip.h"
 #include <soloud.h>

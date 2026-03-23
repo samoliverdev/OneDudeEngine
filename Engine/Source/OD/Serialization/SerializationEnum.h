@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 #include <magic_enum/magic_enum.hpp>
 #include <cereal/cereal.hpp>
@@ -36,3 +37,4 @@ namespace cereal {
         enumType = magic_enum::enum_cast<TestEnum>(str).value();                                                                
     }                                                                                                                           
 }*/ 
+#endif

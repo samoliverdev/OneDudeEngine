@@ -393,13 +393,15 @@ void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
     params.NearDepthValue = 0.0f;
     params.FarDepthValue = 1.0f;
 
-    /*params.SurfaceThickness = settings.surfaceThickness;
+    #if 1
+    params.SurfaceThickness = settings.surfaceThickness;
     params.BilinearThreshold = settings.bilinearThreshold;
-    params.ShadowContrast = settings.shadowContrast;*/
-
+    params.ShadowContrast = settings.shadowContrast;
+    #else
     params.SurfaceThickness = 0.005f; // 0.02f;
     params.BilinearThreshold = 0.02f; //0.001f;
     params.ShadowContrast = 4; //4.0f; //1.0f;
+    #endif
     
     for(int i = 0; i < dispatchList.DispatchCount; i++){
         auto& d = dispatchList.Dispatch[i];
