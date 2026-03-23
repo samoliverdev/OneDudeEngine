@@ -85,6 +85,12 @@ public:
     Ref<Material> shader;
     Ref<Mesh> mesh;
 
+	std::vector<Vector3> tris;
+	std::vector<Vector3> lines;
+	std::vector<Vector3> points;
+
+	duDebugDrawPrimitives currentMode;
+
     DebugDrawGL(){
         shader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Navmesh.glsl"));
         mesh = CreateRef<Mesh>();
@@ -105,6 +111,10 @@ public:
     }
 
 	virtual void begin(duDebugDrawPrimitives prim, float size = 1.0f){
+		currentMode = prim;
+
+		return;
+		OD_PROFILE_SCOPE("DebugDrawGL::begin");
         //LogWarning("DebugDrawGL::begin %d", prim);
         /*switch(prim){
             case DU_DRAW_POINTS:
@@ -131,25 +141,57 @@ public:
     }
 	
     virtual void vertex(const float* pos, unsigned int color){
+		Vector3 v = Vector3(pos[0], pos[1], pos[2]);
+		switch(currentMode){
+			case DU_DRAW_TRIS:   tris.push_back(v); break;
+			case DU_DRAW_LINES:  lines.push_back(v); break;
+			case DU_DRAW_POINTS: points.push_back(v); break;
+		}
+		return;
+
         //glColor4ubv((GLubyte*)&color);
 	    //glVertex3fv(pos);
         mesh->vertices.push_back(Vector3(pos[0], pos[1], pos[2]));
     }
 	
     virtual void vertex(const float x, const float y, const float z, unsigned int color){
+		Vector3 v = Vector3(x, y, z);
+		switch(currentMode){
+			case DU_DRAW_TRIS:   tris.push_back(v); break;
+			case DU_DRAW_LINES:  lines.push_back(v); break;
+			case DU_DRAW_POINTS: points.push_back(v); break;
+		}
+		return;
+
         //glColor4ubv((GLubyte*)&color);
 	    //glVertex3f(x,y,z);
         mesh->vertices.push_back(Vector3(x, y, z));
     }
 	
     virtual void vertex(const float* pos, unsigned int color, const float* uv){
+		Vector3 v = Vector3(pos[0], pos[1], pos[2]);
+		switch(currentMode){
+			case DU_DRAW_TRIS:   tris.push_back(v); break;
+			case DU_DRAW_LINES:  lines.push_back(v); break;
+			case DU_DRAW_POINTS: points.push_back(v); break;
+		}
+		return;
+
         //glColor4ubv((GLubyte*)&color);
         //glTexCoord2fv(uv);
         //glVertex3fv(pos);
         mesh->vertices.push_back(Vector3(pos[0], pos[1], pos[2]));
     }
 	
-    virtual void vertex(const float x, const float y, const float z, unsigned int color, const float u, const float v){
+    virtual void vertex(const float x, const float y, const float z, unsigned int color, const float u, const float _v){
+		Vector3 v = Vector3(x, y, z);
+		switch(currentMode){
+			case DU_DRAW_TRIS:   tris.push_back(v); break;
+			case DU_DRAW_LINES:  lines.push_back(v); break;
+			case DU_DRAW_POINTS: points.push_back(v); break;
+		}
+		return;
+
         //glColor4ubv((GLubyte*)&color);
         //glTexCoord2f(u,v);
         //glVertex3f(x,y,z);
@@ -157,6 +199,8 @@ public:
     }
 	
     virtual void end(){
+		return;
+		OD_PROFILE_SCOPE("DebugDrawGL::end");
         //glEnd();
         //glLineWidth(1.0f);
         //glPointSize(1.0f);
@@ -168,6 +212,33 @@ public:
         mesh->Submit();
         Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
     }
+
+	void Flush(){
+		if(!tris.empty()){
+			mesh->drawMode = MeshDrawMode::TRIANGLES;
+			mesh->vertices = tris;
+			mesh->Submit();
+			Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
+		}
+
+		if(!lines.empty()){
+			mesh->drawMode = MeshDrawMode::LINES;
+			mesh->vertices = lines;
+			mesh->Submit();
+			Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
+		}
+
+		if(!points.empty()){
+			mesh->drawMode = MeshDrawMode::POINTS;
+			mesh->vertices = points;
+			mesh->Submit();
+			Graphics::DrawMesh(*mesh, *shader, Matrix4Identity);
+		}
+
+		tris.clear();
+		lines.clear();
+		points.clear();
+	}
 };
 
 DebugDrawGL* m_dd = nullptr;
@@ -706,28 +777,43 @@ bool Navmesh::BakeSingle(Scene* scene, AABB bounds, BuildSettings inbuildSetting
 			return false;
 		}
 
-		m_crowd = dtAllocCrowd();
-		m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
-
-		/*struct dtObstacleAvoidanceParams params;
-		memcpy(&params, m_crowd->getObstacleAvoidanceParams(3), sizeof(dtObstacleAvoidanceParams));
-		params.velBias = 0.5f;
-		params.weightDesVel = 2.0f;
-		params.weightCurVel = 0.4f;
-		params.weightSide = 0.8f;
-		params.weightToi = 2.5f;
-		params.weightDir = 1.5f;
-		params.adaptiveDivs = 7;
-		params.adaptiveRings = 2;
-		params.adaptiveDepth = 3;
-		params.gridSize = 33;
-		params.gridDepth = 7;
-		m_crowd->setObstacleAvoidanceParams(3, &params);*/
+		InitCrow();
 	}
 	
 	bakeData.m_ctx->stopTimer(RC_TIMER_TOTAL);
 
 	return true;
+}
+
+void Navmesh::InitCrow(){
+	m_crowd = dtAllocCrowd();
+	m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
+
+	auto* i  = m_crowd->getObstacleAvoidanceParams(0);
+	LogInfo("{}", i->gridSize);
+
+	/*struct dtObstacleAvoidanceParams params;
+	memcpy(&params, m_crowd->getObstacleAvoidanceParams(3), sizeof(dtObstacleAvoidanceParams));
+	params.velBias = 0.5f;
+	params.weightDesVel = 2.0f;
+	params.weightCurVel = 0.4f;
+	params.weightSide = 0.8f;
+	params.weightToi = 2.5f;
+	//params.weightDir = 1.5f;
+	params.adaptiveDivs = 7;
+	params.adaptiveRings = 2;
+	params.adaptiveDepth = 3;
+	params.gridSize = 33;
+	//params.gridDepth = 7;
+	m_crowd->setObstacleAvoidanceParams(3, &params);*/
+
+	struct dtObstacleAvoidanceParams params;
+	memcpy(&params, m_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
+	params.weightDesVel = 0.0f;
+	params.weightCurVel = 0.0f;
+	params.weightSide   = 0.0f;
+	params.weightToi    = 0.0f;
+	m_crowd->setObstacleAvoidanceParams(4, &params);
 }
 
 void Navmesh::_TileInit0(BakeData& data){
@@ -790,8 +876,7 @@ bool Navmesh::TileInit(Scene* scene, AABB bounds){
 		return false;
 	}
 
-	m_crowd = dtAllocCrowd();
-	m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
+	InitCrow();
 	
 	return true;
 }
@@ -1556,22 +1641,22 @@ void Navmesh::DrawDebug(){
 		(m_drawMode == DRAWMODE_NAVMESH ||
 		m_drawMode == DRAWMODE_NAVMESH_TRANS ||
 		m_drawMode == DRAWMODE_NAVMESH_BVTREE ||
-		 m_drawMode == DRAWMODE_NAVMESH_NODES ||
-		m_drawMode == DRAWMODE_NAVMESH_INVIS))
-	{
-		if(m_drawMode != DRAWMODE_NAVMESH_INVIS)
-			duDebugDrawNavMeshWithClosedList(m_dd, *m_navMesh, *m_navQuery, m_navMeshDrawFlags);
-		if(m_drawMode == DRAWMODE_NAVMESH_BVTREE)
-			duDebugDrawNavMeshBVTree(m_dd, *m_navMesh);
-		if(m_drawMode == DRAWMODE_NAVMESH_NODES)
-			duDebugDrawNavMeshNodes(m_dd, *m_navQuery);
+		m_drawMode == DRAWMODE_NAVMESH_NODES ||
+		m_drawMode == DRAWMODE_NAVMESH_INVIS)
+	){
+		if(m_drawMode != DRAWMODE_NAVMESH_INVIS) duDebugDrawNavMeshWithClosedList(m_dd, *m_navMesh, *m_navQuery, m_navMeshDrawFlags);
+		if(m_drawMode == DRAWMODE_NAVMESH_BVTREE) duDebugDrawNavMeshBVTree(m_dd, *m_navMesh);
+		if(m_drawMode == DRAWMODE_NAVMESH_NODES) duDebugDrawNavMeshNodes(m_dd, *m_navQuery);
 		duDebugDrawNavMeshPolysWithFlags(m_dd, *m_navMesh, SAMPLE_POLYFLAGS_DISABLED, duRGBA(0,0,0,128));
 	}
+
+	m_dd->Flush();
 		
 	/*glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);*/	
 }
 
+#if 0
 bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	Assert(m_navMesh != nullptr);
 	Assert(m_navQuery != nullptr);
@@ -1590,11 +1675,13 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	m_filter.setAreaCost(SAMPLE_POLYAREA_JUMP, 1.5f);*/
 
 	float tolerance[3] = {2, 4, 2};
+	//float tolerance[3] = {1.0f, 2.0f, 1.0f};
+	//float tolerance[3] = {0.1f, 0.1f, 0.1f};
 	float _startPos[3] = {startPos.x, startPos.y, startPos.z};
 	float _endPos[3] = {endPos.x, endPos.y, endPos.z};
 
 	int m_nstraightPath = 0;
-	int m_straightPathOptions = 0;
+	int m_straightPathOptions = DT_STRAIGHTPATH_ALL_CROSSINGS; //DT_STRAIGHTPATH_AREA_CROSSINGS; //0;
 
 	//LogWarning("x:%f y:%f z:%f", _startPos[0], _startPos[1], _startPos[2]);
 
@@ -1628,6 +1715,23 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 			outPath.corners.push_back(Vector3(m_straightPath[i], m_straightPath[i+1], m_straightPath[i+2]));
 		}
 
+		/*outPath.corners.clear();
+		for(int i = 0; i < m_nstraightPath; i++){
+			float* p = &m_straightPath[i * 3];
+
+			float closest[3];
+			float height = p[1];
+
+			if(m_straightPathPolys[i]){
+				m_navQuery->closestPointOnPoly(m_straightPathPolys[i], p, closest, nullptr);// Step 1: project point onto polygon surface
+				m_navQuery->getPolyHeight(m_straightPathPolys[i], closest, &height);// Step 2: now safely get height
+				outPath.corners.emplace_back(closest[0], height, closest[2]);
+			}
+			else{	
+				outPath.corners.emplace_back(p[0], p[1], p[2]); // fallback (shouldn't really happen)
+			}
+		}*/
+
 		//outPath.status = NavMeshPathStatus::PathComplete;
 		//LogWarningExtra("OK Count: %zd", outPath.corners.size());
 		return true;
@@ -1638,6 +1742,164 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 	//LogWarningExtra("Not OK");
 	return false;
 }
+#else
+//New Version with better follow navmesh shape, but can gen mult points(test float moveDist = dtMin(x, dist); to find better values
+//TODO: Maybe make this other function and keep older function
+bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
+    Assert(m_navMesh != nullptr);
+    Assert(m_navQuery != nullptr);
+    if(!m_navMesh || !m_navQuery) return false;
+
+    dtQueryFilter filter;
+    filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
+    filter.setExcludeFlags(0);
+
+    float extents[3] = {2, 4, 2};
+
+    float start[3] = {startPos.x, startPos.y, startPos.z};
+    float end[3]   = {endPos.x, endPos.y, endPos.z};
+
+    dtPolyRef startRef = 0, endRef = 0;
+    float nearestStart[3], nearestEnd[3];
+
+    if(dtStatusFailed(m_navQuery->findNearestPoly(start, extents, &filter, &startRef, nearestStart))) return false;
+    if(dtStatusFailed(m_navQuery->findNearestPoly(end, extents, &filter, &endRef, nearestEnd))) return false;
+
+    if(!startRef || !endRef){
+        outPath.status = NavMeshPathStatus::PathInvalid;
+        return false;
+    }
+
+    // --- Step 1: Find polygon path ---
+    dtPolyRef polys[MAX_POLYS];
+    int npolys = 0;
+
+    if(dtStatusFailed(
+        m_navQuery->findPath(
+            startRef, endRef,
+            nearestStart, nearestEnd,
+            &filter,
+            polys, &npolys, MAX_POLYS
+		)
+	)){
+        outPath.status = NavMeshPathStatus::PathInvalid;
+        return false;
+    }
+
+    if(!npolys){
+        outPath.status = NavMeshPathStatus::PathInvalid;
+        return false;
+    }
+
+    // --- Step 2: Build corridor ---
+    dtPathCorridor corridor;
+    corridor.init(MAX_POLYS);
+    corridor.reset(startRef, nearestStart);
+    corridor.setCorridor(nearestEnd, polys, npolys);
+
+    outPath.corners.clear();
+
+    float pos[3];
+    dtVcopy(pos, nearestStart);
+
+    outPath.corners.emplace_back(pos[0], pos[1], pos[2]);
+
+    // THIS is the key parameter
+    const float STEP_SIZE = 4; //0.5f; //0.15f;   // try 0.1 for ultra smooth
+    const int MAX_ITER = 512;
+
+    for(int iter = 0; iter < MAX_ITER; iter++){
+        float cornerVerts[MAX_POLYS * 3];
+        unsigned char cornerFlags[MAX_POLYS];
+        dtPolyRef cornerPolys[MAX_POLYS];
+        int ncorners = corridor.findCorners(
+            cornerVerts,
+            cornerFlags,
+            cornerPolys,
+            MAX_POLYS,
+            m_navQuery,
+            &filter
+        );
+
+        if(ncorners == 0) break;
+
+        // --- Find valid target corner (skip very close ones) ---
+        int targetIndex = 0;
+        for(int i = 0; i < ncorners; i++){
+            if(dtVdist2D(pos, &cornerVerts[i * 3]) > 0.1f){
+                targetIndex = i;
+                break;
+            }
+        }
+
+        float* corner = &cornerVerts[targetIndex * 3];
+		
+		float distToCorner = dtVdist2D(pos, corner);
+		float step = dtClamp(distToCorner * 0.5f, 0.1f, 1.0f);
+
+        // --- Compute SMALL STEP toward corner ---
+        float dir[3];
+        dtVsub(dir, corner, pos);
+        float dist = dtVlen(dir);
+
+        if(dist < 0.001f) break;
+
+		#if 0
+        float moveDist = dtMin(STEP_SIZE, dist);
+		#else
+		float moveDist = dtMin(step, dist);
+		#endif
+        dtVscale(dir, dir, moveDist / dist);
+
+        float target[3];
+        dtVadd(target, pos, dir);
+
+        // --- Move along surface (small step!) ---
+        float result[3];
+        dtPolyRef visited[16];
+        int nvisited = 0;
+
+        m_navQuery->moveAlongSurface(
+            corridor.getFirstPoly(),
+            pos,
+            target,
+            &filter,
+            result,
+            visited,
+            &nvisited,
+            16
+        );
+
+        // --- Update corridor ---
+        corridor.movePosition(result, m_navQuery, &filter);
+
+        // --- Clamp exactly to navmesh ---
+        float clamped[3];
+        m_navQuery->closestPointOnPoly(
+            corridor.getFirstPoly(),
+            result,
+            clamped,
+            nullptr
+        );
+
+        dtVcopy(pos, clamped);
+
+        outPath.corners.emplace_back(pos[0], pos[1], pos[2]);
+
+        // --- Stop if reached end ---
+        if(dtVdist2D(pos, nearestEnd) < 0.05f) break;
+    }
+
+    // --- Final status ---
+    if(polys[npolys - 1] != endRef){
+        outPath.status = NavMeshPathStatus::PathPartial;
+	} else {
+        outPath.status = NavMeshPathStatus::PathComplete;
+	}
+
+    return true;
+}
+#endif
 
 bool Navmesh::SamplePosition(Vector3 position, Vector3& outClosestPoint, float maxSearchRadius){
 	Assert(m_navMesh != nullptr);
@@ -1757,6 +2019,8 @@ bool Navmesh::LoadFromFile(const std::string& path){
     if (!m_navQuery) m_navQuery = dtAllocNavMeshQuery();
     m_navQuery->init(m_navMesh, 2048);
 
+	InitCrow();
+
     this->path = path;
     return true;
 }
@@ -1844,6 +2108,8 @@ bool Navmesh::LoadFromPackage(const std::string& path, Package& package){
     if(!m_navQuery) m_navQuery = dtAllocNavMeshQuery();
 
     m_navQuery->init(m_navMesh, 2048);
+
+	InitCrow();
 
     this->path = path;
     return true;
@@ -1981,18 +2247,21 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 				memset(&ap, 0, sizeof(ap));
 				ap.radius = navmesh->buildSettings.agentRadius;// 0.3f;
 				ap.height = navmesh->buildSettings.agentHeight;// 1.7f;
-				ap.maxAcceleration = 10.0f;
-				ap.maxSpeed = 3.0f;
+				ap.maxAcceleration = 10.0f*2;
+				ap.maxSpeed = agent.speed;// 3.0f;
 				ap.collisionQueryRange = ap.radius * 12.0f;
 				ap.pathOptimizationRange = ap.radius * 30.0f;
 				ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OBSTACLE_AVOIDANCE;
 				ap.obstacleAvoidanceType = 0;
 				ap.separationWeight = 2.0f;
 
-				ap.obstacleAvoidanceType = 3;
-				ap.separationWeight = 1.0f; // experimente valores entre 0.5 e 2.0
+				//ap.obstacleAvoidanceType = 3;
+				//ap.separationWeight = 1.0f; // experimente valores entre 0.5 e 2.0
+
+				//ap.collisionQueryRange = 0.01f; //Disable
 
 				Vector3 pos = trans.Position();
+				Assert(navmesh->m_crowd != nullptr);
 				int idx = navmesh->m_crowd->addAgent(&pos.x, &ap);
 				agent.crowdId = idx;
 				agent.navmesh = navmesh;
@@ -2029,9 +2298,19 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 					Vector3 pos = trans.Position();
 					//Vector3 vel = rb.Velocity();
 
-					ca->npos[0] = pos.x;
+					/*ca->npos[0] = pos.x;
 					ca->npos[1] = pos.y;
-					ca->npos[2] = pos.z;
+					ca->npos[2] = pos.z;*/
+
+					// Blend instead of overwrite 
+					float* npos = ca->npos;
+					Vector3 crowdPos = Vector3(npos[0], npos[1], npos[2]);
+					Vector3 physPos  = trans.Position();
+					Vector3 corrected = math::mix(crowdPos, physPos, 0.2f); //TODO: change 0.2 to variable
+					npos[0] = corrected.x;
+					npos[1] = corrected.y;
+					npos[2] = corrected.z;
+
 
 					/*ca->vel[0] = vel.x;
 					ca->vel[1] = vel.y;
@@ -2212,6 +2491,13 @@ void NavmeshSystem::OnDrawGizmos(Scene& scene, Camera& cam){
 				navmeshComponent.path.corners[i+1] + Vector3(0, 0.1f, 0), 
 				Vector3(1, 0, 0), 
 				1
+			);
+		}
+
+		for(int i = 0; i < navmeshComponent.path.corners.size(); i++){
+			Graphics::DrawWireCube(
+				Transform(navmeshComponent.path.corners[i], QuaternionIdentity, Vector3(0.25f)).GetModelMatrix(),
+				Vector3(1, 0, 0), 1
 			);
 		}
 	}

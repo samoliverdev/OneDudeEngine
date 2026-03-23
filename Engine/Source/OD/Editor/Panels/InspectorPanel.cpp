@@ -241,7 +241,8 @@ void InspectorPanel::DrawComponents(Entity entity){
             UndoManager::Get().Execute(CreateScope<UndoValueComponentCommand<InfoComponent>>(&scene, e, old, info));
         }
 
-        ImGui::Text("Id: %zd", (size_t)e);
+        ImGui::Text("Id: %d", (uint32_t)e);
+        ImGui::Text("Id2: %d", (uint32_t)entt::to_integral(e));
         //ImGui::Text("Type: %d", info.Type());
 
         //TODO: Update this

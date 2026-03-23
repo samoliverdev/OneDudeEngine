@@ -377,8 +377,12 @@ void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
         false,   // OpenGL uses [0,1] depth
         64       // wave size
     );
-
+    
+    #if 0
+    DispatchParametersGPU params{};
+    #else
     SSSParameters2 params{};
+    #endif
 
     //memcpy(params.LightCoordinate, dispatchList.LightCoordinate_Shader, sizeof(float)*4);
     params.LightCoordinate[0] = dispatchList.LightCoordinate_Shader[0];
@@ -388,8 +392,10 @@ void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
 
     params.InvDepthTextureSize[0] = 1.0f / camera.width;
     params.InvDepthTextureSize[1] = 1.0f / camera.height;
+    #if 1
     params.DepthBounds[0] = 0;
     params.DepthBounds[1] = 1; 
+    #endif
     params.NearDepthValue = 0.0f;
     params.FarDepthValue = 1.0f;
 

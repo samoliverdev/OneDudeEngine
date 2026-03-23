@@ -59,9 +59,9 @@ struct DispatchParameters{
     bool UseEarlyOut;*/
 };
 
-const bool IgnoreEdgePixels = true; //false;
-const bool UsePrecisionOffset = true;// false;
-const bool BilinearSamplingOffsetMode = true;// false;
+const bool IgnoreEdgePixels = false; //false;
+const bool UsePrecisionOffset = false;// false;
+const bool BilinearSamplingOffsetMode = false;// false;
 
 const bool DebugOutputEdgeMask = false;
 const bool DebugOutputThreadIndex = false;

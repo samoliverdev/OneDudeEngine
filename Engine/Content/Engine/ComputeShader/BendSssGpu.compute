@@ -29,7 +29,7 @@ layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 layout(binding = 0) uniform sampler2D DepthTexture;
 layout(rgba32f, binding = 1) uniform writeonly image2D OutputTexture;
-layout(std140, binding = 2) uniform DispatchParameters{
+layout(std140, binding = 2) uniform Params{
     vec4 LightCoordinate;
 
     ivec2 WaveOffset;
@@ -69,8 +69,8 @@ float LinearizeDepth(float depth){
 }
 
 float SampleDepth(vec2 pixel){
-    //return textureLod(DepthTexture, pixel * InvDepthTextureSize, 0).r;
-    return LinearizeDepth(textureLod(DepthTexture, pixel * InvDepthTextureSize, 0).r);
+    return textureLod(DepthTexture, pixel * InvDepthTextureSize, 0).r;
+    //return LinearizeDepth(textureLod(DepthTexture, pixel * InvDepthTextureSize, 0).r);
 }
 
 void ComputeWavefrontExtents(
@@ -168,7 +168,7 @@ void main(){
 
         thicknessScale[i] = abs(FarDepthValue - depth0);
 
-        bool pointFilter = abs(depth0-depth1) > thicknessScale[i]*BilinearThreshold;
+        bool pointFilter = abs(depth0-depth1) > thicknessScale[i]*_BilinearThreshold;
 
         if(i==0) isEdge = pointFilter;
 
@@ -191,7 +191,7 @@ void main(){
 
     float startDepth = samplingDepth[0];
     startDepth = (startDepth-LightCoordinate.z) / sampleDistance[0];
-    float depthScale = min(sampleDistance[0]+direction, 1.0/SurfaceThickness) * sampleDistance[0] / thicknessScale[0];
+    float depthScale = min(sampleDistance[0]+direction, 1.0/_SurfaceThickness) * sampleDistance[0] / thicknessScale[0];
     startDepth = startDepth * depthScale - zSign;
     int sampleIndex = int(threadID) + 1;
 
@@ -214,8 +214,8 @@ void main(){
         shadowValue[i&3] = min(shadowValue[i&3],delta+fade);
     }
 
-    shadowValue = clamp(shadowValue*ShadowContrast + (1.0-ShadowContrast),0.0,1.0);
-    hardShadow = clamp(hardShadow*ShadowContrast + (1.0-ShadowContrast),0.0,1.0);
+    shadowValue = clamp(shadowValue*_ShadowContrast + (1.0-_ShadowContrast),0.0,1.0);
+    hardShadow = clamp(hardShadow*_ShadowContrast + (1.0-_ShadowContrast),0.0,1.0);
     float result = dot(shadowValue,vec4(0.25));
     result = min(hardShadow,result);
 

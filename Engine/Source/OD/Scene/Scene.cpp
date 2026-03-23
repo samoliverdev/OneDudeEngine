@@ -113,6 +113,7 @@ void TransformComponent::UpdateGlobalTransformCacheIfNeeded(bool updateChild){
     //if(globalIsDirty){
         //globalIsDirty = false;
         if(hasParent && isCollection == false){
+            Assert(registry->any_of<TransformComponent>(parent) == true);
             TransformComponent& p = registry->get<TransformComponent>(parent);
             //p.UpdateGlobalTransformCacheIfNeeded();
             #ifdef TransformLessDataOptimzation
@@ -732,11 +733,11 @@ Entity Scene::_DuplicateEntity(Entity e, bool isRoot, Scene& source){
     t.registry = &registry;
     t.children.clear();
 
-    if(isRoot && t.HasParent()){
+    //if(isRoot && t.HasParent()){
         //SetParent(t.parent, other);
         t.hasParent = false;
         t.parent = EntityNull;
-    }
+    //}
 
     registry.emplace_or_replace<InfoComponent>(other, source.registry.get<InfoComponent>(e));
     

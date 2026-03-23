@@ -357,6 +357,8 @@ private:
 	bool RasterizeMesh(BakeData& data, const Matrix4& model, Ref<Mesh>& mesh);
 	void GetTilePos(const float* pos, int& tx, int& ty);
 	unsigned char* BuildTileMesh(BakeData& data, Scene* scene, const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize);
+
+	void InitCrow();
 };
 
 struct OD_API NavmeshSkipTag{
