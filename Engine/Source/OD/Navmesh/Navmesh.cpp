@@ -790,7 +790,7 @@ void Navmesh::InitCrow(){
 	m_crowd->init(5000, buildSettings.agentRadius, m_navMesh);
 
 	auto* i  = m_crowd->getObstacleAvoidanceParams(0);
-	LogInfo("{}", i->gridSize);
+	//LogInfo("{}", i->gridSize);
 
 	/*struct dtObstacleAvoidanceParams params;
 	memcpy(&params, m_crowd->getObstacleAvoidanceParams(3), sizeof(dtObstacleAvoidanceParams));
@@ -1844,7 +1844,7 @@ bool Navmesh::FindPath(Vector3 startPos, Vector3 endPos, NavMeshPath& outPath){
 
         if(dist < 0.001f) break;
 
-		#if 0
+		#if 1
         float moveDist = dtMin(STEP_SIZE, dist);
 		#else
 		float moveDist = dtMin(step, dist);
@@ -2258,6 +2258,9 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 				//ap.obstacleAvoidanceType = 3;
 				//ap.separationWeight = 1.0f; // experimente valores entre 0.5 e 2.0
 
+				ap.obstacleAvoidanceType = 0;
+				ap.separationWeight = 2.5f;
+
 				//ap.collisionQueryRange = 0.01f; //Disable
 
 				Vector3 pos = trans.Position();
@@ -2306,7 +2309,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 					float* npos = ca->npos;
 					Vector3 crowdPos = Vector3(npos[0], npos[1], npos[2]);
 					Vector3 physPos  = trans.Position();
-					Vector3 corrected = math::mix(crowdPos, physPos, 0.2f); //TODO: change 0.2 to variable
+					Vector3 corrected = math::mix(crowdPos, physPos, 0.5f); //TODO: change 0.2 to variable
 					npos[0] = corrected.x;
 					npos[1] = corrected.y;
 					npos[2] = corrected.z;

@@ -8,9 +8,102 @@
 #include <string>
 #include <functional>
 
+#include <miniz.h>
+
 namespace OD{
 
 namespace fs = std::filesystem;
+
+bool ShouldSkipZip(const fs::path& file, const std::vector<std::string>& skipList){
+    std::string p = file.lexically_normal().generic_string();
+
+    for(const auto& s : skipList){
+        if(p.find(s) != std::string::npos) return true;
+    }
+    return false;
+}
+    
+bool ZipDirectory(
+    const fs::path& sourceDir,
+    const fs::path& zipPath,
+    const std::vector<std::string>& skipList,
+    std::vector<fs::path>& zippedFiles // OUTPUT
+){
+    mz_zip_archive zip = {};
+    
+    if(!mz_zip_writer_init_file(&zip, zipPath.generic_string().c_str(), 0)){
+        LogError("Failed to init zip");
+        return false;
+    }
+
+    for(const auto& entry : fs::recursive_directory_iterator(sourceDir)){
+        if(!entry.is_regular_file()) continue;
+
+        const fs::path& filePath = entry.path();
+
+        if(filePath.generic_string() == zipPath.generic_string()) continue;
+        if(ShouldSkipZip(filePath, skipList)) continue;
+
+        fs::path relPath = fs::relative(filePath, sourceDir);
+        std::string zipEntryName = relPath.generic_string();
+
+        if(mz_zip_writer_add_file(
+            &zip,
+            zipEntryName.c_str(),
+            filePath.string().c_str(),
+            nullptr,
+            0,
+            MZ_BEST_COMPRESSION
+        )){
+            // track ONLY successfully zipped files
+            zippedFiles.push_back(filePath);
+        }
+        else{
+            LogError("Failed to add to zip: {}", filePath.generic_string());
+        }
+    }
+
+    mz_zip_writer_finalize_archive(&zip);
+    mz_zip_writer_end(&zip);
+
+    return true;
+}
+
+void DeleteZippedFiles(const std::vector<fs::path>& files){
+    for(const auto& f: files){
+        std::error_code ec;
+        fs::remove(f, ec);
+
+        if(ec){
+            LogError("Failed to delete: {}", f.generic_string());
+        }
+    }
+}
+
+void RemoveEmptyDirectories(const fs::path& root){
+    // reverse order ensures children are processed first
+    std::vector<fs::path> dirs;
+
+    for(const auto& entry : fs::recursive_directory_iterator(root)){
+        if(entry.is_directory()){
+            dirs.push_back(entry.path());
+        }
+    }
+
+    // iterate backwards (deepest first)
+    for(auto it = dirs.rbegin(); it != dirs.rend(); ++it){
+        const fs::path& dir = *it;
+
+        std::error_code ec;
+        if(fs::is_empty(dir, ec)){
+            fs::remove(dir, ec);
+
+            if(ec){
+                LogError("Failed to remove dir: {}", dir.string());
+            }
+        }
+    }
+}
 
 // Callback type: return true to copy, false to skip
 using FileCallback = std::function<bool(const fs::path& sourcePath, const fs::path& destPath)>;
@@ -159,32 +252,32 @@ bool BuildAsset(
     std::vector<std::string>& newPath,
     std::string finalExt
 ){
-    // 1️⃣ Extension check
+    // 1 Extension check
     std::string ext = src.extension().string();
 
-    // 2️⃣ Get normalized relative source path
+    // 2 Get normalized relative source path
     std::string relativeSrc = GetNormalizedRelativePathFromCurrent(src);
     LogInfo("Building model: {}", relativeSrc);
 
     fs::path relativePath(relativeSrc);
 
-    // 3️⃣ Replace extension with .modelbin
+    // 3 Replace extension with .modelbin
     fs::path relativeModelPath = relativePath;
     relativeModelPath.replace_extension(finalExt);
 
     std::string relativeModelStr = relativeModelPath.generic_string();
 
-    // 4️⃣ Store relative paths (manifest mapping)
+    // 4 Store relative paths (manifest mapping)
     oldPath.push_back(relativeSrc);
     newPath.push_back(relativeModelStr);
 
-    // 5️⃣ Build absolute destination path
+    // 5 Build absolute destination path
     fs::path absoluteSavePath = fs::absolute(buildPath) / relativeModelPath;
 
     // Ensure directory exists
     fs::create_directories(absoluteSavePath.parent_path());
 
-    // 6️⃣ Load and save
+    // 6 Load and save
     Ref<T> asset = AssetManager::Get().LoadAsset<T>(relativeSrc);
     if(asset == nullptr){
         LogError("Erro to load {}", relativeSrc);
@@ -280,7 +373,7 @@ void BuildsPanel::Build(){
     CopyDirectoryRecursive(
         "./",
         buildPath,
-        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".dae", ".scene", ".navmesh", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".compute", ".wav", ".mp3", ".ttf", ".otf", ".ini"},
+        {".meta", ".glb", ".glft", ".fbx", ".obj", ".mtl", ".dae", ".scene", ".navmesh", ".prefab", ".png", ".jpg", ".jpeg", ".material", ".glsl", ".shader", ".compute", ".wav", ".mp3", ".ttf", ".otf"/*, ".ini"*/},
         [&](const fs::path& src, const fs::path& dst) -> bool {
             if(ShouldSkip(src, dontBuildAssetFolders)) return true;
 
@@ -304,6 +397,21 @@ void BuildsPanel::Build(){
     );
 
     RemoveConvertedAssetMeta(buildPath, oldPath);
+
+    //-----------Zipping---------
+    fs::path zipPath = fs::path(buildPath) / packZipName; //"Build.zip";
+
+    std::vector<fs::path> zippedFiles;
+    LogInfo("Creating zip: {}", zipPath.generic_string());
+
+    if(ZipDirectory(buildPath, zipPath, dontZipAssetFolders, zippedFiles)){
+        LogInfo("Zip created successfully!");
+        DeleteZippedFiles(zippedFiles); // delete ONLY what was zipped
+        RemoveEmptyDirectories(buildPath);
+    }
+    else{
+        LogError("Failed to create zip!");
+    }
 
     sceneManager.SetActiveScene(cur);
 }

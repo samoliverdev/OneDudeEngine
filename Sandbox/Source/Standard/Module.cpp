@@ -67,10 +67,10 @@ void StandardAssetSystem::Update(Scene& scene){
 }
 
 void StandardAssetSystem::FixedPhysicsUpdate(Scene& scene){
-    auto charMovemetView = scene.GetRegistry().view<CharacterMovement, RigidbodyComponent>();
-    for(auto [entity, movement, rb]: charMovemetView.each()){
+    auto charMovemetView = scene.GetRegistry().view<CharacterMovement, TransformComponent, RigidbodyComponent>();
+    for(auto [entity, movement, trans, rb]: charMovemetView.each()){
         if(movement.hasStarted == false) movement.OnStart(rb);
-        movement.OnFixedUpdate(scene, rb);
+        movement.OnFixedUpdate(scene, trans, rb);
     }
 }
 

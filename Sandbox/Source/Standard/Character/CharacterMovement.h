@@ -24,6 +24,9 @@ public:
     float moveSpeed = 6;
     float freeTurnSpeed = 20;
     float strafeTurnSpeed = 20;
+    
+    bool jumpRequested = false;
+    float jumpForce = 5.0f;
 
     bool hasStarted = false;
     
@@ -31,10 +34,13 @@ public:
     Vector3 groundNormal = Vector3Zero; 
     Vector3 moveDir = Vector3Zero;
     Vector3 lookDir = Vector3Zero;
+
     bool lastStickToTheFloor = true;
 
+    float isNotOnGroundTimer = -1;
+    
     void OnStart(RigidbodyComponent& rb);
-    void OnFixedUpdate(Scene& scene, RigidbodyComponent& rb);
+    void OnFixedUpdate(Scene& scene, TransformComponent trans, RigidbodyComponent& rb);
 
     float GetAxisHorizontal();
     float GetAxisVertical();
@@ -48,6 +54,8 @@ public:
         ArchiveDumpNVP(ar, moveSpeed);
         ArchiveDumpNVP(ar, freeTurnSpeed);
         ArchiveDumpNVP(ar, strafeTurnSpeed);
+
+        ArchiveDumpNVP(ar, jumpForce);
 
         ArchiveDumpNVP(ar, onGround);
     }
