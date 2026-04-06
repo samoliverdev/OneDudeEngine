@@ -29,6 +29,8 @@ void GraphicsModuleInit(){
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".jpg", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
     AssetTypesDB::Get().RegisterAssetType<Texture2D>(".texturebin", [](const std::string& path){ return AssetManager::Get().LoadAsset<Texture2D>(path); });
 
+    AssetTypesDB::Get().RegisterAssetType<Cubemap>(".hdr", [](const std::string& path){ return AssetManager::Get().LoadAsset<Cubemap>(path); });
+
     AssetTypesDB::Get().RegisterAssetType<Material>(".material", [](const std::string& path){ return AssetManager::Get().LoadAsset<Material>(path); });
     
     AssetTypesDB::Get().RegisterAssetType<Model>(".model", [](const std::string& path){ return AssetManager::Get().LoadAsset<Model>(path); });

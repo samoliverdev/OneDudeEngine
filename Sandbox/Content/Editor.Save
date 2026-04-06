@@ -7,7 +7,7 @@
         "profilePanel.show": true,
         "rendererStatsPanel.show": true,
         "globalSettingsPanel.show": false,
-        "runtimeInfoPanel.show": true,
+        "runtimeInfoPanel.show": false,
         "logPanel.show": false
     }
 }

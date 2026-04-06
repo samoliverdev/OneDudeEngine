@@ -4269,6 +4269,144 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO ){
     glBindVertexArray(0);
 }
 
+bool OpenGLGraphicsDevice::CubemapCreateFromFileHDR(Cubemap& cubemap, const char* hdri){
+    unsigned int captureFBO;
+    unsigned int captureRBO;
+    glGenFramebuffers(1, &captureFBO);
+    glGenRenderbuffers(1, &captureRBO);
+    glCheckError();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+    glCheckError();
+
+    // pbr: load the HDR environment map
+    // ---------------------------------
+    stbi_set_flip_vertically_on_load(true);
+    int width, height, nrComponents;
+    float *data = stbi_loadf(hdri, &width, &height, &nrComponents, 0);
+    unsigned int hdrTexture;
+    if(data){
+        glGenTextures(1, &hdrTexture);
+        glBindTexture(GL_TEXTURE_2D, hdrTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
+        glCheckError();
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glCheckError();
+
+        stbi_image_free(data);
+    } else {
+        //std::cout << "Failed to load HDR image." << std::endl;
+        LogError("Failed to load HDR image.");
+        cubemap.glData.id = 0;
+        return false;
+    }
+
+    // pbr: setup cubemap to render to and attach to framebuffer
+    // ---------------------------------------------------------
+    unsigned int envCubemap;
+    glGenTextures(1, &envCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+    glCheckError();
+    for(unsigned int i = 0; i < 6; ++i){
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+        glCheckError();
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCheckError();
+
+    // pbr: convert HDR equirectangular environment map to cubemap equivalent
+    // ----------------------------------------------------------------------
+    equirectangularToCubemapMat->SetInt("equirectangularMap", 0);
+    equirectangularToCubemapMat->SetMatrix4("projection2", captureProjection2);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, hdrTexture);
+    glCheckError();
+
+    unsigned int cubeVAO = 0;
+    unsigned int cubeVBO = 0;
+
+    glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glCheckError();
+    for(unsigned int i = 0; i < 6; ++i){
+        equirectangularToCubemapMat->SetMatrix4("view2", captureViews2[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCheckError();
+
+        DrawMesh(*_cubeMesh, *equirectangularToCubemapMat, Matrix4Identity);
+        //renderCube(cubeVAO, cubeVBO);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
+
+    // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
+    // --------------------------------------------------------------------------------
+    unsigned int irradianceMap;
+    glGenTextures(1, &irradianceMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+    glCheckError();
+    for (unsigned int i = 0; i < 6; ++i){
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+        glCheckError();
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCheckError();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+    glCheckError();
+
+    // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
+    // -----------------------------------------------------------------------------
+    irradianceMat->SetInt("environmentMap", 0);
+    irradianceMat->SetMatrix4("projection2", captureProjection2);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+    glCheckError();
+
+    glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glCheckError();
+
+    for(unsigned int i = 0; i < 6; ++i){
+        irradianceMat->SetMatrix4("view2", captureViews2[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCheckError();
+
+        DrawMesh(*_cubeMesh, *irradianceMat, Matrix4Identity);
+        //renderCube(cubeVAO, cubeVBO);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCheckError();
+
+    glDeleteFramebuffers(1, &captureFBO);
+    glDeleteRenderbuffers(1, &captureRBO);
+    glDeleteTextures(1, &irradianceMap);
+    glDeleteTextures(1, &hdrTexture);
+
+    cubemap.glData.id = envCubemap;
+    //out->renderId = irradianceMap;
+    return true;
+}
+
 Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateFromFileHDR(const char* hdri){
     unsigned int captureFBO;
     unsigned int captureRBO;

@@ -25,6 +25,9 @@ public:
 
     static void CreateLuaBind(sol::state& lua);
 
+    bool LoadFromFile(const std::string& path) override;
+    std::vector<std::string> GetFileAssociations() override;
+
     virtual size_t RamUsage() override { return ramUsage; }
     virtual size_t VRamUsage() override { return vramUsage; }
     

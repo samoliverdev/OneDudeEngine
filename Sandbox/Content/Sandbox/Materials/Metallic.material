@@ -1,0 +1,129 @@
+{
+    "Material": {
+        "enableInstancing": false,
+        "shaderPath": "Engine/Shaders/Lit.glsl",
+        "maps": [
+            {
+                "key": "metallic",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "emissionMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/Black.jpg"
+                }
+            },
+            {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "sizeOffset",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": false
+                }
+            },
+            {
+                "key": "emissionColor",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
+                }
+            },
+            {
+                "key": "normalMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/Normal.jpg"
+                }
+            },
+            {
+                "key": "normalStrength",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 10.0
+                }
+            },
+            {
+                "key": "maskMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
+                }
+            },
+            {
+                "key": "occlusion",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "smoothness",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "cutoff",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.5,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "emissionIntensity",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 0.0
+                }
+            }
+        ]
+    }
+}

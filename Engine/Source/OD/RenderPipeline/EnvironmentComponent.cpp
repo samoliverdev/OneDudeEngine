@@ -36,7 +36,10 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DrawEnumCombo<EnvironmentSky>("environmentSky", &environment.settings.environmentSky);
     if(environment.settings.environmentSky == EnvironmentSky::Cubemap){
         std::string skyCubemap("skyCubemap");;
-        ImGui::DrawAsset<Cubemap>(skyCubemap, environment.settings.skyCubemap);
+        if(ImGui::DrawAsset<Cubemap>(skyCubemap, environment.settings.skyCubemap)){
+            environment.settings.skyIrradianceMap = nullptr;
+            environment.settings.skyPrefilterMap = nullptr;
+        }
     }
     if(environment.settings.environmentSky == EnvironmentSky::Color){
         ImGui::ColorEdit3("skyColor", &environment.settings.cleanColor);

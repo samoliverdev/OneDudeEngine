@@ -131,6 +131,7 @@ public:
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back
     ) = 0; 
+    virtual bool CubemapCreateFromFileHDR(Cubemap& cubemap, const char* hdri){ return false; }
     virtual void CubemapDestroy(Cubemap& cubemap) = 0;
     virtual bool CubemapIsValid(Cubemap& tex) = 0;
 

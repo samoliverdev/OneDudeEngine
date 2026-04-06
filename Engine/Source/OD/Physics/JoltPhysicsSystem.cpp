@@ -2410,6 +2410,16 @@ void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
 	//LogInfo("isDirt = true");
 }
 
+void PhysicsSystem::UpdateRigidbodyInternalData(Entity e){
+	if(scene->HasComponent<RigidbodyComponent>(e) == false) return;
+
+	RigidbodyComponent& rb = scene->GetComponent<RigidbodyComponent>(e);
+	TransformComponent& trans = scene->GetComponent<TransformComponent>(e);
+	InfoComponent& info = scene->GetComponent<InfoComponent>(e);
+	RemoveRigidbody(e, rb);
+	AddRigidbody(e, rb, trans, info);
+}
+
 #pragma endregion
 
 #pragma region JointComponent

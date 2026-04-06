@@ -87,6 +87,9 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, bloomPostFX);
         ArchiveDumpNVP(ar, ssaoPostFX);
         ArchiveDumpNVP(ar, ssgiPostFX);
+
+        AssetRefSerialize<Cubemap> skyCubemap_(skyCubemap);
+        ArchiveDumpNamed(ar, "skyCubemap", skyCubemap_);
     }
 
     //bool hasInited = false;

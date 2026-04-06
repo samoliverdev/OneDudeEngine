@@ -100,6 +100,7 @@ public:
         const char* right, const char* left, const char* top,
         const char* bottom, const char* front, const char* back
     ) override; 
+    virtual bool CubemapCreateFromFileHDR(Cubemap& cubemap, const char* hdri) override;
     virtual void CubemapDestroy(Cubemap& cubemap) override;
     virtual bool CubemapIsValid(Cubemap& tex) override;
 

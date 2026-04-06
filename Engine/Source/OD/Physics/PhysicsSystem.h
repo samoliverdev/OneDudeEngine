@@ -813,6 +813,8 @@ struct OD_API PhysicsSystem: public System{
 
     float InterpolationAlpha();
 
+    void UpdateRigidbodyInternalData(Entity e);
+
 private:
     void CheckForCollisionEvents();
 

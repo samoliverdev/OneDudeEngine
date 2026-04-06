@@ -333,6 +333,15 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
     */
 }
 
+bool Cubemap::LoadFromFile(const std::string& path){
+    this->path = path; 
+    return graphicsDevice->CubemapCreateFromFileHDR(*this, path.c_str());
+}
+
+std::vector<std::string> Cubemap::GetFileAssociations(){
+    return {".hdr"};
+}
+
 void Cubemap::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Cubemap>(
         "Cubemap",

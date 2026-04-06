@@ -8,6 +8,7 @@
         5,
         6,
         7,
+        8,
         9,
         10,
         11,
@@ -1351,6 +1352,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "Cube",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -1362,6 +1371,7 @@
         5,
         6,
         7,
+        8,
         9,
         10,
         11,
@@ -1601,10 +1611,10 @@
                 "v.z": 0.0
             },
             "localRotation": {
-                "q.x": 0.4165482521057129,
-                "q.y": -0.17693114280700684,
-                "q.z": -0.048320136964321139,
-                "q.w": 0.890420138835907
+                "q.x": 0.07573986798524857,
+                "q.y": -0.8344321250915527,
+                "q.z": 0.3826347887516022,
+                "q.w": 0.389329195022583
             },
             "localScale": {
                 "v.x": 1.0,
@@ -1636,7 +1646,7 @@
             "children": [
                 2,
                 3,
-                10
+                9
             ],
             "parent": 4294967295,
             "hasParent": false,
@@ -1924,7 +1934,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -1946,7 +1956,8 @@
                 "v.z": 1.0
             },
             "children": [
-                19,
+                18,
+                20,
                 21,
                 22,
                 23,
@@ -2070,8 +2081,7 @@
                 141,
                 142,
                 143,
-                144,
-                145
+                144
             ],
             "parent": 4294967295,
             "hasParent": false,
@@ -2095,7 +2105,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2117,7 +2127,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2139,7 +2149,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2161,7 +2171,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2183,7 +2193,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2205,7 +2215,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2227,7 +2237,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2249,7 +2259,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2271,7 +2281,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2293,7 +2303,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2315,7 +2325,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2337,7 +2347,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2359,7 +2369,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2381,7 +2391,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2403,7 +2413,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2425,7 +2435,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2447,7 +2457,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2469,7 +2479,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2491,7 +2501,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2513,7 +2523,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2535,7 +2545,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2557,7 +2567,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2579,7 +2589,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2601,7 +2611,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2623,7 +2633,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2645,7 +2655,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2667,7 +2677,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2689,7 +2699,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2711,7 +2721,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2733,7 +2743,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2755,7 +2765,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2777,7 +2787,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2799,7 +2809,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2821,7 +2831,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2843,7 +2853,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2865,7 +2875,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2887,7 +2897,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2909,7 +2919,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2931,7 +2941,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2953,7 +2963,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2975,7 +2985,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -2997,7 +3007,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3019,7 +3029,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3041,7 +3051,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3063,7 +3073,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3085,7 +3095,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3107,7 +3117,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3129,7 +3139,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3151,7 +3161,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3173,7 +3183,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3195,7 +3205,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3217,7 +3227,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3239,7 +3249,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3261,7 +3271,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3283,7 +3293,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3305,7 +3315,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3327,7 +3337,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3349,7 +3359,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3371,7 +3381,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3393,7 +3403,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3415,7 +3425,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3437,7 +3447,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3459,7 +3469,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3481,7 +3491,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3503,7 +3513,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3525,7 +3535,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3547,7 +3557,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3569,7 +3579,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3591,7 +3601,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3613,7 +3623,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3635,7 +3645,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3657,7 +3667,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3679,7 +3689,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3701,7 +3711,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3723,7 +3733,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3745,7 +3755,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3767,7 +3777,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3789,7 +3799,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3811,7 +3821,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3833,7 +3843,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3855,7 +3865,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3877,7 +3887,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3899,7 +3909,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3921,7 +3931,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3943,7 +3953,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3965,7 +3975,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -3987,7 +3997,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4009,7 +4019,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4031,7 +4041,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4053,7 +4063,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4075,7 +4085,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4097,7 +4107,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4119,7 +4129,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4141,7 +4151,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4163,7 +4173,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4185,7 +4195,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4207,7 +4217,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4229,7 +4239,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4251,7 +4261,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4273,7 +4283,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4295,7 +4305,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4317,7 +4327,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4339,7 +4349,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4361,7 +4371,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4383,7 +4393,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4405,7 +4415,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4427,7 +4437,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4449,7 +4459,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4471,7 +4481,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4493,7 +4503,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4515,7 +4525,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4537,7 +4547,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4559,7 +4569,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4581,7 +4591,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4603,7 +4613,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4625,7 +4635,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4647,7 +4657,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4669,7 +4679,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4691,7 +4701,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4713,7 +4723,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4735,7 +4745,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4757,7 +4767,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4779,7 +4789,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4801,7 +4811,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4823,7 +4833,7 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 20,
+            "parent": 19,
             "hasParent": true,
             "isCollection": false
         },
@@ -4889,7 +4899,7 @@
                 "v.z": 1.0
             },
             "children": [
-                150
+                149
             ],
             "parent": 4294967295,
             "hasParent": false,
@@ -4935,8 +4945,30 @@
                 "v.z": 1.0
             },
             "children": [],
-            "parent": 148,
+            "parent": 147,
             "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": -2.8938424587249758,
+                "v.y": 3.0,
+                "v.z": -0.13500678539276124
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
             "isCollection": false
         }
     ],
@@ -4949,6 +4981,7 @@
         5,
         6,
         7,
+        8,
         9,
         10,
         11,
@@ -5117,6 +5150,7 @@
             "moveSpeed": 6.0,
             "freeTurnSpeed": 20.0,
             "strafeTurnSpeed": 20.0,
+            "jumpForce": 5.0,
             "onGround": false
         }
     ],
@@ -5200,7 +5234,7 @@
     "Standard/GreyboxingEntities": [
         2,
         3,
-        10
+        9
     ],
     "Standard/ParticleComponents": [
         {
@@ -6183,9 +6217,9 @@
         }
     ],
     "Standard/ParticleComponentEntities": [
-        11,
-        15,
-        16
+        10,
+        14,
+        15
     ],
     "EnvironmentComponents": [
         {
@@ -6214,13 +6248,17 @@
                 },
                 "shadowDistance": 150.0,
                 "shadowBias": 0.000009999999747378752,
+                "enableSSS": true,
+                "sssSurfaceThickness": 0.004999999888241291,
+                "sssBilinearThreshold": 0.019999999552965165,
+                "sssShadowContrast": 4.0,
                 "toneMappingPostFX": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483649,
                         "data": {
-                            "enable": false,
-                            "mode": -1,
+                            "enable": true,
+                            "mode": 1,
                             "exposure": 1.0
                         }
                     }
@@ -6290,6 +6328,10 @@
                             "debug": false
                         }
                     }
+                },
+                "skyCubemap": {
+                    "isNull": false,
+                    "path": "Sandbox/HDRIs/kloofendal_43d_clear_puresky_2k.hdr"
                 }
             }
         }
@@ -6348,7 +6390,7 @@
     "MeshRendererComponentEntities": [
         2,
         3,
-        10
+        9
     ],
     "ModelRendererComponents": [
         {
@@ -6590,14 +6632,63 @@
                     "Standard/Materials/greybox_blue_grid.material"
                 ]
             }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "extents": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "modelRef": {
+                "isNull": false,
+                "path": "Engine/Models/Sphere.obj"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Sandbox/Materials/Metallic.material"
+                ]
+            }
         }
     ],
     "ModelRendererComponentEntities": [
-        12,
-        14,
+        11,
+        13,
+        145,
         146,
         147,
-        148
+        150
     ],
     "SkinnedModelRendererComponents": [
         {
@@ -6811,8 +6902,8 @@
     "SkinnedModelRendererComponentEntities": [
         6,
         7,
-        9,
-        149
+        8,
+        148
     ],
     "DecalRendererComponents": [
         {
@@ -9139,10 +9230,11 @@
         }
     ],
     "DecalRendererComponentEntities": [
-        13,
+        12,
+        16,
         17,
         18,
-        19,
+        20,
         21,
         22,
         23,
@@ -9266,8 +9358,7 @@
         141,
         142,
         143,
-        144,
-        145
+        144
     ],
     "AnimatorComponents": [
         {
@@ -9291,8 +9382,8 @@
     ],
     "AnimatorComponentEntities": [
         6,
-        9,
-        149
+        8,
+        148
     ],
     "VehiclePhysics": [
         {
@@ -9365,7 +9456,7 @@
         }
     ],
     "VehiclePhysicEntities": [
-        12
+        11
     ],
     "RagdollComponents": [
         {
@@ -10702,8 +10793,8 @@
     ],
     "RagdollComponentEntities": [
         7,
-        9,
-        149
+        8,
+        148
     ],
     "RigidbodyComponents": [
         {
@@ -11110,18 +11201,64 @@
                 "v.y": 0.0,
                 "v.z": 0.0
             }
+        },
+        {
+            "type": 0,
+            "interpolate": true,
+            "shape": {
+                "type": 1,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": 0
+            },
+            "mass": 1.0,
+            "friction": 0.20000000298023225,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05000000074505806,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            }
         }
     ],
     "RigidbodyComponentEntities": [
         2,
         3,
         6,
-        10,
-        12,
-        14,
+        9,
+        11,
+        13,
+        145,
         146,
         147,
-        148
+        150
     ],
     "JointComponents": [
         {
@@ -11198,7 +11335,7 @@
         }
     ],
     "JointComponentEntities": [
-        147,
-        148
+        146,
+        147
     ]
 }

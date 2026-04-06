@@ -32,14 +32,14 @@ struct GraphicsStats{
 
 enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
 
-struct OD_API PerDrawData {
+struct OD_API alignas(16) PerDrawData {
     //std::vector<int> int_0;
     //std::vector<Vector4> vector4_0;
 
     std::array<Vector4, 2> vector4_0;
     //int int_0_Count = 0;
 
-    std::array<int, 2> int_0;
+    std::array<int, 4> int_0;
     //int vector4_0_Count = 0;
 
     unsigned char vector4_0_Mask = 0;

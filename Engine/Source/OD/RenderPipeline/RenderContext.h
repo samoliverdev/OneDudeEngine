@@ -66,8 +66,8 @@ struct OD_API alignas(16) RenderData{
     };
 
     Matrix4 targetMatrix;
-    AABB aabb;
     PerDrawData perDrawData;
+    AABB aabb;
     AlignedVector<Matrix4>* posePalette = nullptr;
     Material* targetMaterial;
     Material* customShadowPass = nullptr;
