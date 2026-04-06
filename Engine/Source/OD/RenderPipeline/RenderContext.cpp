@@ -352,6 +352,7 @@ void RenderContext::CleanSSS(){
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
+    return;
     #if 1
     auto camera = GetCamera();
 

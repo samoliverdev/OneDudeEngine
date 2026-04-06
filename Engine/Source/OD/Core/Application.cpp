@@ -343,6 +343,8 @@ void Application::_OnResize(int inWidth, int inHeight){
     width = inWidth;
     heigth = inHeight;
 
+    if(width == 0 || heigth == 0)return; // skip
+
     //mainModule->OnResize(_width, _height);
     for(auto i: modules) i->OnResize(width, heigth);
 }

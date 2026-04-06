@@ -19,7 +19,7 @@
     #include <glad.h>
     #define OpenGLVersion 4
     //#define OPENGL_CHECK_ERRORS 1
-    #define OpenglHeader "#version 330 core"
+    #define OpenglHeader "#version 460 core"
 #endif
 #if defined(OpenGL33)
     #include <glad33Core/glad.h>
@@ -37,7 +37,6 @@
     #define OpenGLVersion 3
     //#define OPENGL_CHECK_ERRORS 1
 #endif
-
 
 
 #define USE_VAO 1

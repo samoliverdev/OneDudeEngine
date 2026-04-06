@@ -35,6 +35,10 @@ void Framebuffer::Reload(FrameBufferSpecification inSpecification){
 }
 
 void Framebuffer::Resize(int width, int height){
+    if(width == 0 || height == 0) return; // avoid crash
+
+    Assert(width != 0);
+    Assert(height != 0);
     if(specification.width == width && specification.height == height) return;
     specification.width = width;
     specification.height = height;

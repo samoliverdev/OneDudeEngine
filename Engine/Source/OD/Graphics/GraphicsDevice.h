@@ -186,6 +186,8 @@ public:
     virtual void ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){}
     virtual bool ComputeShaderIsValid(ComputeShader& shader){ return false; }
 
+    virtual bool SupportCompute(){ return false; }
+
     virtual void BeginGPUTime(){}
     virtual double EndGPUTime(){ return 0; }
 

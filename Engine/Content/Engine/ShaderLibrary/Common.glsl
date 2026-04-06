@@ -32,9 +32,11 @@ Source: http://jcgt.org/published/0003/02/01/paper.pdf
 */
 
 // For each component of v, returns -1 if the component is < 0, else 1
-vec2 sign_not_zero(vec2 v) {
-    #if 1
-        // Branch-Less version
+vec2 sign_not_zero(vec2 v){
+    return step(vec2(0.0), v) * 2.0 - 1.0;
+
+    /*#if 0
+        // Branch-Less version, but can not work on some drive/opengl version
         return fma(step(vec2(0.0), v), vec2(2.0), vec2(-1.0));
     #else
         // Version with branches (for GLSL < 4.00)
@@ -42,7 +44,7 @@ vec2 sign_not_zero(vec2 v) {
             v.x >= 0 ? 1.0 : -1.0,
             v.y >= 0 ? 1.0 : -1.0
         );
-    #endif
+    #endif*/
 }
 
 // Packs a 3-component normal to 2 channels using octahedron normals

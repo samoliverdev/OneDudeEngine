@@ -63,7 +63,11 @@ const float EXP_FACTOR   = 2.0;
 const float GI_CLAMP     = 7.0;
 
 uint BitCount(uint v){
-    return uint(bitCount(v));
+    v = v - ((v >> 1u) & 0x55555555u);
+    v = (v & 0x33333333u) + ((v >> 2u) & 0x33333333u);
+    return ((v + (v >> 4u) & 0xF0F0F0Fu) * 0x1010101u) >> 24u;
+
+    //return uint(bitCount(v));
 }
 
 // ============================================================

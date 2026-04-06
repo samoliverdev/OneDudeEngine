@@ -230,7 +230,7 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
         if(graphicsDeviceInfo.version == 4){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //GLFW_OPENGL_CORE_PROFILE);
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
             #ifdef OPENGL_DEBUG
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -238,6 +238,7 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
         } else if(graphicsDeviceInfo.version == 3){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
         } else {
@@ -280,6 +281,11 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
     if(!window){
         glfwTerminate();
         LogError("Glfw Erro on window creation");
+
+        const char* desc;
+        int code = glfwGetError(&desc);
+        LogError("GLFW Error {}: {}", code, desc);
+
         return false;
     }
 

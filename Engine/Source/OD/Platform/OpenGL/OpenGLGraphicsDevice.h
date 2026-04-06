@@ -156,6 +156,8 @@ public:
     virtual bool ComputeShaderIsValid(ComputeShader& shader) override;
     GLint GetUniformLocation(ComputeShader& shader, const char* name);
 
+    virtual bool SupportCompute() override;
+
     virtual void BeginGPUTime() override;
     virtual double EndGPUTime() override;
 

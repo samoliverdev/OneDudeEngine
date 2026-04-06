@@ -36,8 +36,8 @@ message(STATUS "#-------------USE_ASSIMP is: ${OD_USE_ASSIMP}")
     endif()
 
     #add_compile_options(/O2)
-    #add_compile_options(/arch:SSE2)
-    add_compile_options(/arch:AVX2)
+    add_compile_options(/arch:SSE2)
+    #add_compile_options(/arch:AVX2)
     #add_compile_options(/Qvec-report:2)
 
     add_compile_options(/permissive- /Zc:preprocessor /Zc:__cplusplus)

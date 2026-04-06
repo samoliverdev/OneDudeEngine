@@ -98,7 +98,11 @@ GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
     GL_POINTS,
+    #ifdef OpenGL46
     GL_QUADS,
+    #else
+    GL_NONE,
+    #endif
     GL_TRIANGLE_STRIP
 };  
 
@@ -211,6 +215,61 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 #endif
 
 Ref<Mesh> _cubeMesh = nullptr;
+
+#if 1
+void ValidateTextures(){
+    GLint maxUnits = 0;
+    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
+
+    for(int i = 0; i < maxUnits; i++){
+        glActiveTexture(GL_TEXTURE0 + i);
+
+        GLint tex = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &tex);
+
+        if(tex == 0) continue; // unused slot is fine
+
+        Assert(glIsTexture(tex));
+        if(!glIsTexture(tex)) {
+            printf("Invalid texture at unit %d\n", i);
+            __debugbreak();
+        }
+
+        GLint width = 0;
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+
+        Assert(width > 0);
+        if (width == 0) {
+            printf("Texture has NO DATA at unit %d\n", i);
+            __debugbreak();
+        }
+    }
+}
+
+void OnDrawAssetsTest(){
+    // Check program
+    GLint program = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+    Assert(program != 0);
+
+    // Check texture unit 0
+    /*glActiveTexture(GL_TEXTURE0);
+
+    GLint tex = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &tex);
+    Assert(tex != 0);
+    Assert(glIsTexture(tex));
+
+    // Check texture has data
+    GLint width = 0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    Assert(width > 0);*/
+
+    ValidateTextures();
+}
+#else
+#define OnDrawAssetsTest()
+#endif
 
 void OpenGLGraphicsDevice::Initialize(){
     auto CreateLineVAO = [&](unsigned int* vao, unsigned int* vbo, int vertexCount){
@@ -1295,10 +1354,14 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     mesh.Bind();
     #endif
 
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
     if(mesh.glData.ebo != 0){
+        OnDrawAssetsTest();
         glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
         glCheckError();
     } else {
+        OnDrawAssetsTest();
         glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
         glCheckError();
     }
@@ -1333,10 +1396,14 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     mesh.Bind();
     #endif
 
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
     if(mesh.glData.ebo != 0){
+        OnDrawAssetsTest();
         glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
         glCheckError();
     } else {
+        OnDrawAssetsTest();
         glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
         glCheckError();
     }
@@ -1360,10 +1427,14 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     mesh.Bind();
     #endif
 
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
     if(mesh.glData.ebo != 0){
+        OnDrawAssetsTest();
         glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
         glCheckError();
     } else {
+        OnDrawAssetsTest();
         glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
         glCheckError();
     }
@@ -1390,10 +1461,14 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     mesh.Bind();
     #endif
 
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
     if(mesh.glData.ebo != 0){
+        OnDrawAssetsTest();
         glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
         glCheckError();
     } else {
+        OnDrawAssetsTest();
         glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
         glCheckError();
     }
@@ -1460,14 +1535,16 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Instanc
         glCheckError();
     }
 
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
     // Draw instanced
     if(mesh.glData.ebo != 0){
-        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode],
-                                mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
+        OnDrawAssetsTest();
+        glDrawElementsInstanced(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0, count);
         glCheckError();
     } else {
-        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode],
-                              0, mesh.vertexCount, count);
+        OnDrawAssetsTest();
+        glDrawArraysInstanced(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount, count);
         glCheckError();
     }
 
@@ -1539,6 +1616,7 @@ void OpenGLGraphicsDevice::DrawLinesComamnd(Vector3 color, int lineWidth){
         int batchVertexCount = std::min<int>(lineCommandsData.size() - i, 2 * MAX_LINES_VERTEX_DRAWCALL * 3);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * batchVertexCount, &lineCommandsData[i]);
 	    glCheckError();
+        OnDrawAssetsTest();
         glDrawArrays(GL_LINES, 0, batchVertexCount/3);
         glCheckError();
     }
@@ -1577,6 +1655,7 @@ void OpenGLGraphicsDevice::DrawLine(Vector3 start, Vector3 end, Vector3 color, i
 
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
+    OnDrawAssetsTest();
 	glDrawArrays(GL_LINES, 0, 2);
     glCheckError();
 
@@ -1618,6 +1697,7 @@ void OpenGLGraphicsDevice::DrawLine(Matrix4 model, Vector3 start, Vector3 end, V
 
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
+    OnDrawAssetsTest();
 	glDrawArrays(GL_LINES, 0, 2);
     glCheckError();
 	
@@ -1652,6 +1732,7 @@ void OpenGLGraphicsDevice::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int 
     #endif
     
     glLineWidth(lineWidth);
+    OnDrawAssetsTest();
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
     glCheckError();
 
@@ -1866,6 +1947,7 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
         glCheckError();
 
         // render quad
+        OnDrawAssetsTest();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glCheckError();
 
@@ -2269,7 +2351,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     #endif
     */  
 
-    Assert(count > 0);
+    /*Assert(count > 0);
     if (count <= 0) return;
 
     const size_t matrixSize = sizeof(Matrix4);
@@ -2335,11 +2417,122 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     #ifdef USE_VAO
     glBindVertexArray(0); glCheckError();
+    #endif*/
+
+    Assert(count > 0);
+    if(count <= 0) return;
+
+    const size_t matrixSize = sizeof(Matrix4);
+    const size_t bufferSize = matrixSize * count;
+
+    // Ensure pool
+    if(curPerInstancingDrawData >= perInstancingDrawData.size()) {
+        perInstancingDrawData.resize(curPerInstancingDrawData + 1);
+    }
+
+    PerDrawInstanceData& drawData = perInstancingDrawData[curPerInstancingDrawData];
+    curPerInstancingDrawData++;
+
+    if(drawData.vbo == 0){
+        glGenBuffers(1, &drawData.vbo);
+        glCheckError();
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo);
+    glCheckError();
+
+    #ifdef OPENGL46
+    //--------------------------------------------------
+    // Modern path (persistent mapping)
+    //--------------------------------------------------
+    if(drawData.capacity < bufferSize){
+        if(drawData.vbo != 0){
+            glDeleteBuffers(1, &drawData.vbo);
+            glGenBuffers(1, &drawData.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo);
+        }
+
+        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,
+            GL_MAP_WRITE_BIT |
+            GL_MAP_PERSISTENT_BIT |
+            GL_MAP_COHERENT_BIT);
+
+        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
+            GL_MAP_WRITE_BIT |
+            GL_MAP_PERSISTENT_BIT |
+            GL_MAP_COHERENT_BIT);
+
+        drawData.capacity = bufferSize;
+    }
+
+    // just memcpy (no map/unmap per frame)
+    std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+
+    #else
+    //--------------------------------------------------
+    // OpenGL 3.3 fallback
+    //--------------------------------------------------
+
+    // Resize if needed
+    if(drawData.capacity < bufferSize){
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
+        drawData.capacity = bufferSize;
+    }
+
+    // Option 1 (recommended): orphan + subdata
+    glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW); // orphan
+    glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, modelMatrixs);
+
+    // Option 2 (alternative): map/unmap
+    /*
+    void* ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
+        GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+
+    if(ptr){
+        memcpy(ptr, modelMatrixs, bufferSize);
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+    */
+
     #endif
+
+    //----------------------------------------
+    // Attribute setup (same for both paths)
+    //----------------------------------------
+
+    #ifdef USE_VAO
+    Assert(mesh.glData.vao != 0);
+    glBindVertexArray(mesh.glData.vao);
+    #endif
+
+    std::size_t vec4Size = sizeof(glm::vec4);
+
+    glEnableVertexAttribArray(10);
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(0));
+
+    glEnableVertexAttribArray(11);
+    glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(1 * vec4Size));
+
+    glEnableVertexAttribArray(12);
+    glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(2 * vec4Size));
+
+    glEnableVertexAttribArray(13);
+    glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), (void*)(3 * vec4Size));
+
+    glVertexAttribDivisor(10, 1);
+    glVertexAttribDivisor(11, 1);
+    glVertexAttribDivisor(12, 1);
+    glVertexAttribDivisor(13, 1);
+
+    #ifdef USE_VAO
+    glBindVertexArray(0);
+    #endif
+
+    glCheckError();
 }
 
 void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4x3* modelMatrixs, int count){
-    Assert(count > 0);
+    /*Assert(count > 0);
     if(count <= 0) return;
 
     const size_t matrixSize = sizeof(Matrix4x3);
@@ -2402,7 +2595,119 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     #ifdef USE_VAO
     glBindVertexArray(0); glCheckError();
-    #endif
+    #endif*/
+
+    Assert(count > 0);
+    if (count <= 0) return;
+
+    const size_t matrixSize = sizeof(Matrix4x3);
+    const size_t bufferSize = matrixSize * count;
+
+    // Ensure pool
+    if(curPerInstancingDrawData >= perInstancingDrawData.size()){
+        perInstancingDrawData.resize(curPerInstancingDrawData + 1);
+    }
+
+    PerDrawInstanceData& drawData = perInstancingDrawData[curPerInstancingDrawData];
+    curPerInstancingDrawData++;
+
+    if(drawData.vbo == 0){
+        glGenBuffers(1, &drawData.vbo);
+        glCheckError();
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo);
+    glCheckError();
+
+#ifdef OPENGL46
+    //--------------------------------------------------
+    // Persistent mapping path
+    //--------------------------------------------------
+    if (drawData.capacity < bufferSize){
+        if(drawData.vbo != 0) {
+            glDeleteBuffers(1, &drawData.vbo);
+            glGenBuffers(1, &drawData.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo);
+        }
+
+        glBufferStorage(GL_ARRAY_BUFFER, bufferSize, nullptr,
+            GL_MAP_WRITE_BIT |
+            GL_MAP_PERSISTENT_BIT |
+            GL_MAP_COHERENT_BIT);
+        glCheckError();
+
+        drawData.mappedPtr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
+            GL_MAP_WRITE_BIT |
+            GL_MAP_PERSISTENT_BIT |
+            GL_MAP_COHERENT_BIT);
+        glCheckError();
+
+        drawData.capacity = bufferSize;
+    }
+
+    // Just memcpy
+    std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+
+#else
+    //--------------------------------------------------
+    // OpenGL 3.3 fallback
+    //--------------------------------------------------
+
+    if(drawData.capacity < bufferSize){
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
+        drawData.capacity = bufferSize;
+    }
+
+    // Orphan + upload (best for avoiding stalls)
+    glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, modelMatrixs);
+
+    // Alternative (if you want mapping instead):
+    /*
+    void* ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, bufferSize,
+        GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+
+    if(ptr){
+        memcpy(ptr, modelMatrixs, bufferSize);
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+    */
+
+#endif
+
+    //--------------------------------------------------
+    // Attribute setup (3x vec4 = mat4x3)
+    //--------------------------------------------------
+
+#ifdef USE_VAO
+    Assert(mesh.glData.vao != 0);
+    glBindVertexArray(mesh.glData.vao);
+    glCheckError();
+#endif
+
+    std::size_t vec4Size = sizeof(glm::vec4);
+
+    glEnableVertexAttribArray(10);
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(0));
+
+    glEnableVertexAttribArray(11);
+    glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(1 * vec4Size));
+
+    glEnableVertexAttribArray(12);
+    glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x3), (void*)(2 * vec4Size));
+
+    glCheckError();
+
+    glVertexAttribDivisor(10, 1);
+    glVertexAttribDivisor(11, 1);
+    glVertexAttribDivisor(12, 1);
+
+    glCheckError();
+
+#ifdef USE_VAO
+    glBindVertexArray(0);
+    glCheckError();
+#endif
 }
 
 void OpenGLGraphicsDevice::MeshDestroy(Mesh& mesh){
@@ -2984,8 +3289,18 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         else if(!isArray && !isCube){
             glBindTexture(GL_TEXTURE_2D, tex);
             glCheckError();
-
+            
+            #ifdef OpenGL46
             glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
+            #else
+            int w = width;
+            int h = height;
+            for(int mip = 0; mip < mipCount; mip++){
+                glTexImage2D(GL_TEXTURE_2D, mip, internalFormat, w, h, 0, format, dataType, nullptr);
+                w = std::max(1, w / 2);
+                h = std::max(1, h / 2);
+            }
+            #endif
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3001,8 +3316,18 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         else if(isArray){
             glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
             glCheckError();
-
+            
+            #ifdef OPENGL46
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
+            #else
+            int w = width;
+            int h = height;
+            for(int mip = 0; mip < mipCount; mip++){
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, mip, internalFormat, w, h, samples, 0, format, dataType, nullptr);
+                w = std::max(1, w / 2);
+                h = std::max(1, h / 2);
+            }
+            #endif
 
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3019,7 +3344,23 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
             glCheckError();
 
+            #ifdef OPENGL46
             glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
+            #else
+            int w = width;
+            int h = height;
+            for(int mip = 0; mip < mipCount; mip++){
+                for(int face = 0; face < 6; face++){
+                    glTexImage2D(
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+                        mip, internalFormat, w, h, 0,
+                        format, dataType, nullptr
+                    );
+                }
+                w = std::max(1, w / 2);
+                h = std::max(1, h / 2);
+            }
+            #endif
 
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3099,7 +3440,17 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             glCheckError();
 
             if(spec.genMip){
+                #ifdef OPENGL46
                 glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
+                #else
+                int w = width;
+                int h = height;
+                for(int mip = 0; mip < mipCount; mip++) {
+                    glTexImage2D(GL_TEXTURE_2D, mip, internalFormat, w, h, 0, format, dataType, nullptr);
+                    w = std::max(1, w / 2);
+                    h = std::max(1, h / 2);
+                }
+                #endif
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, NULL);
             }
@@ -3126,7 +3477,17 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
             glCheckError();
 
+            #ifdef OPENGL46
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, samples);
+            #else
+            int w = width;
+            int h = height;
+            for(int mip = 0; mip < mipCount; mip++){
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, mip, internalFormat, w, h, samples, 0, format, dataType, nullptr);
+                w = std::max(1, w / 2);
+                h = std::max(1, h / 2);
+            }
+            #endif
 
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3149,7 +3510,23 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
             glCheckError();
 
+            #ifdef OPENGL46
             glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, internalFormat, width, height);
+            #else
+            int w = width;
+            int h = height;
+            for(int mip = 0; mip < mipCount; mip++){
+                for(int face = 0; face < 6; face++){
+                    glTexImage2D(
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+                        mip, internalFormat, w, h, 0,
+                        format, dataType, nullptr
+                    );
+                }
+                w = std::max(1, w / 2);
+                h = std::max(1, h / 2);
+            }
+            #endif
 
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, spec.genMip ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3182,6 +3559,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
     // -------------------------------------------------------
     if(fb.specification.colorAttachments.size() == 0){
         const GLenum b = GL_NONE;
+        //OnDrawAssetsTest();
         glDrawBuffers(1, &b);
         glReadBuffer(GL_NONE);
         glCheckError();
@@ -3192,6 +3570,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
             buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
         }
 
+        //OnDrawAssetsTest();
         glDrawBuffers((GLsizei)buffers.size(), buffers.data());
         glCheckError();
     }
@@ -3885,6 +4264,7 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO ){
     }
     // render Cube
     glBindVertexArray(cubeVAO);
+    OnDrawAssetsTest();
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 }
@@ -4573,7 +4953,8 @@ void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const voi
 #pragma endregion
 
 #pragma region ComputeBuffer
-bool OpenGLGraphicsDevice::ComputeBufferCreate(ComputeBuffer& buffer, size_t size){ 
+bool OpenGLGraphicsDevice::ComputeBufferCreate(ComputeBuffer& buffer, size_t size){
+    #ifdef OpenGL46 
     glGenBuffers(1, &buffer.glData.id);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
@@ -4591,11 +4972,16 @@ bool OpenGLGraphicsDevice::ComputeBufferCreate(ComputeBuffer& buffer, size_t siz
     buffer.vramUsage = size;
 
     return true;
+    #else
+    return false;
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeBufferDestroy(ComputeBuffer& buffer){
+    #ifdef OpenGL46
     if(buffer.glData.id != 0) glDeleteBuffers(1, &buffer.glData.id);
     buffer.glData.id = 0;
+    #endif
 }
 
 bool OpenGLGraphicsDevice::ComputeBufferIsValid(ComputeBuffer& buffer){ 
@@ -4603,6 +4989,7 @@ bool OpenGLGraphicsDevice::ComputeBufferIsValid(ComputeBuffer& buffer){
 }
 
 void OpenGLGraphicsDevice::ComputeBufferSetData(ComputeBuffer& buffer, const void* data, unsigned int size, unsigned int offset){
+    #ifdef OpenGL46
     Assert(buffer.glData.id != 0);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
@@ -4615,9 +5002,11 @@ void OpenGLGraphicsDevice::ComputeBufferSetData(ComputeBuffer& buffer, const voi
     );
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeBufferGetData(ComputeBuffer& buffer, void* data, unsigned int size, unsigned int offset){
+    #ifdef OpenGL46
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.glData.id);
 
     glGetBufferSubData(
@@ -4628,11 +5017,13 @@ void OpenGLGraphicsDevice::ComputeBufferGetData(ComputeBuffer& buffer, void* dat
     );
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    #endif
 }
 #pragma endregion
 
 #pragma region ComputeShader
 bool OpenGLGraphicsDevice::ComputeShaderCreate(ComputeShader& shader, const std::string& source){
+    #ifdef OpenGL46
     GLuint _shader = glCreateShader(GL_COMPUTE_SHADER);
 
     const char* src = source.c_str();
@@ -4669,13 +5060,19 @@ bool OpenGLGraphicsDevice::ComputeShaderCreate(ComputeShader& shader, const std:
     glDeleteShader(_shader);
 
     return true;
+    #else
+    return false;
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderDestroy(ComputeShader& shader){
+    #ifdef OpenGL46
     if(shader.glData.id) glDeleteProgram(shader.glData.id);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderDispatch(ComputeShader& shader, uint32_t x, uint32_t y, uint32_t z){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
     glDispatchCompute(x, y, z);
     glMemoryBarrier(
@@ -4684,9 +5081,11 @@ void OpenGLGraphicsDevice::ComputeShaderDispatch(ComputeShader& shader, uint32_t
     );
 
     shader.glData.textureSlot = 0;
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const char* name, Ref<Texture2D> tex){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
 
     GLint loc = GetUniformLocation(shader, name);
@@ -4697,9 +5096,11 @@ void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const 
     glUniform1i(loc, shader.glData.textureSlot);
 
     shader.glData.textureSlot++;
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const char* name, Framebuffer* fb, int attachment){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
 
     if(attachment < 0){//TODO: This is just temp, create later SetTexture, and SetImage for write
@@ -4728,32 +5129,43 @@ void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const 
     }
 
     shader.glData.textureSlot++;
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetUniformBuffer(ComputeShader& shader, const char* name, Ref<UniformBuffer> buffer, int bind){
+    #ifdef OpenGL46
     glBindBufferBase(GL_UNIFORM_BUFFER, bind, buffer->glData.id);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetComputeBuffer(ComputeShader& shader, const char* name, Ref<ComputeBuffer> buffer, int bind){
+    #ifdef OpenGL46
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bind, buffer->glData.id);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetInt(ComputeShader& shader, const char* name, int v){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
     glUniform1i(GetUniformLocation(shader, name), v);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
     glUniform1f(GetUniformLocation(shader, name), v);
+    #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){
+    #ifdef OpenGL46
     glUseProgram(shader.glData.id);
     glUniform4f(
         GetUniformLocation(shader, name),
         v.x, v.y, v.z, v.w
     );
+    #endif
 }
 
 bool OpenGLGraphicsDevice::ComputeShaderIsValid(ComputeShader& shader){
@@ -4761,6 +5173,7 @@ bool OpenGLGraphicsDevice::ComputeShaderIsValid(ComputeShader& shader){
 }   
 
 GLint OpenGLGraphicsDevice::GetUniformLocation(ComputeShader& shader, const char* name){
+    #ifdef OpenGL46
     auto it = shader.glData.uniformCache.find(name);
     if(it != shader.glData.uniformCache.end()) return it->second;
 
@@ -4768,7 +5181,18 @@ GLint OpenGLGraphicsDevice::GetUniformLocation(ComputeShader& shader, const char
     shader.glData.uniformCache[name] = location;
 
     return location;
+    #else
+    return 0;
+    #endif
 }
+
+bool OpenGLGraphicsDevice::SupportCompute(){
+    #ifdef OpenGL46
+    return true;
+    #endif 
+    return false; 
+}
+
 #pragma endregion
 
 #pragma region Messure
