@@ -122,6 +122,7 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
     IMGUI_BeginGlobalTable("CameraProperties");
 
     IMGUI_GlobalTableRow("projection", ImGui::DrawEnumCombo<CameraComponent::Type>("##projection", &cam.type));
+    IMGUI_GlobalTableRow("IsMain", ImGui::Checkbox("#IsMain", &cam.isMain));
     IMGUI_GlobalTableRow("renderingPath", ImGui::DrawEnumCombo<CameraComponent::RenderingPath>("##renderingPath", &cam.renderingPath));
     if(cam.type == CameraComponent::Type::Orthographic){
         IMGUI_GlobalTableRow("size", ImGui::DragFloat("##size", &cam.orthographicSize));

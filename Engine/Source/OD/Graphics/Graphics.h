@@ -30,6 +30,13 @@ struct GraphicsStats{
     int materialSubmitDatas;
 };
 
+struct GPUMemoryStats{
+    size_t texturesBytes = 0;
+    size_t meshBytes = 0;
+    size_t framebuffersBytes = 0;
+    size_t buffersBytes = 0;
+};
+  
 enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
 
 struct OD_API alignas(16) PerDrawData {
@@ -73,6 +80,7 @@ class OD_API Graphics {
     friend class Material;
 public:
     static GraphicsStats& GetStats();
+    static GPUMemoryStats& GetMemoryStats();
     static void Begin();
     static void End();
     static bool HasBegin();

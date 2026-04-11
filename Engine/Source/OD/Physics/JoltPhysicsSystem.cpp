@@ -843,6 +843,12 @@ public:
 		collision.relativeContactPointOn1 = FromJolt(inManifold.GetWorldSpaceContactPointOn1(0));
 		collision.relativeContactPointOn2 = FromJolt(inManifold.GetWorldSpaceContactPointOn2(0)); 
 
+		//TODO: Test this later, becose include angular vel too
+		/*const Vec3 contactPoint = inManifold.GetWorldSpaceContactPointOn1(0);
+		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
+		Vec3 v2 = inBody2.GetLinearVelocity() + inBody2.GetAngularVelocity().Cross(contactPoint - inBody2.GetCenterOfMassPosition());
+		collision.relativeVelocity = FromJolt(v2 - v1);*/
+
 		collision.body1IsSensor = inBody1.IsSensor();
 		collision.body2IsSensor = inBody2.IsSensor();
 

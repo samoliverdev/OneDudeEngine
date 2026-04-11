@@ -28,7 +28,6 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
-
 #include Engine/ShaderLibrary/UniformsDef.glsl
 #include Engine/ShaderLibrary/TexturesDef.glsl
 

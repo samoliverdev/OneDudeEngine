@@ -45,19 +45,21 @@ void Model::OnGui(){
 	ImGui::DragFloat3("LoadSettings::rootMotionPosMask", &settings.rootMotionPosMask.x);
 
 	if(ImGui::TreeNode("ClipSettings")){
-		std::vector<bool> clipsHasRootMotion;
+		//std::vector<bool> clipsHasRootMotion;
+		std::unordered_map<std::string, bool> clipsHasRootMotion;
+
 		bool clipsHasRootMotionHasEdited = false;
-		clipsHasRootMotion.resize(animationClips.size());
+		//clipsHasRootMotion.resize(animationClips.size());
 		for(int i = 0; i < animationClips.size(); i++){
-			clipsHasRootMotion[i] = animationClips[i]->GetHasRootMotion();
+			clipsHasRootMotion[animationClips[i]->GetName()] = animationClips[i]->GetHasRootMotion();
 		}
 		for(int i = 0; i < animationClips.size(); i++){
-			bool hasRootMotion = clipsHasRootMotion[i];
+			bool hasRootMotion = clipsHasRootMotion[animationClips[i]->GetName()];
 
 			if(ImGui::TreeNode(animationClips[i]->GetName().c_str())){
 				std::string label = "Root Motion##" + std::to_string(i);
 				if(ImGui::Checkbox(label.c_str(), &hasRootMotion)){
-					clipsHasRootMotion[i] = hasRootMotion;
+					clipsHasRootMotion[animationClips[i]->GetName()] = hasRootMotion;
 
 					// optional: also push it back to the clip itself
 					animationClips[i]->SetHasRootMotion(hasRootMotion);

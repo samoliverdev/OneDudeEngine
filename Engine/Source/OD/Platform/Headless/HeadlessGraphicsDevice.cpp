@@ -5,6 +5,7 @@ namespace OD{
 void HeadlessGraphicsDevice::LoadContext(void* data){}
 
 GraphicsStats& HeadlessGraphicsDevice::GetStats(){ return stats; }
+GPUMemoryStats& HeadlessGraphicsDevice::GetMemoryStats(){ return memoryStats; }
 GraphicsDeviceInfo HeadlessGraphicsDevice::GetInfo(){ return info; }
 
 void HeadlessGraphicsDevice::Begin(){}

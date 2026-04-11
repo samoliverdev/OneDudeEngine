@@ -9,6 +9,7 @@ public:
     virtual void LoadContext(void* data) override;
 
     virtual GraphicsStats& GetStats() override;
+    virtual GPUMemoryStats& GetMemoryStats() override;
     virtual GraphicsDeviceInfo GetInfo() override;
 
     virtual void Begin() override;
@@ -115,6 +116,7 @@ public:
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;
+    GPUMemoryStats memoryStats;
     Camera camera;
 };
 

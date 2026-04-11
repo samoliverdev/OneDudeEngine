@@ -960,9 +960,15 @@ bool AssimpLoadModel_Internal(
 
     out.rootMotionIndex = loadSettings.rootMotionIndex;
 	out.rootMotionPosMask = loadSettings.rootMotionPosMask;
-	loadSettings.clipsHasRootMotion.resize(out.animationClips.size());
+	//loadSettings.clipsHasRootMotion.resize(out.animationClips.size());
 	for(int i = 0; i < out.animationClips.size(); i++){
-		out.animationClips[i]->SetHasRootMotion(loadSettings.clipsHasRootMotion[i]);
+		//out.animationClips[i]->SetHasRootMotion(loadSettings.clipsHasRootMotion[i]);
+
+        auto it = loadSettings.clipsHasRootMotion.find(out.animationClips[i]->GetName());
+        if(it != loadSettings.clipsHasRootMotion.end())
+            out.animationClips[i]->SetHasRootMotion(it->second);
+        else
+            out.animationClips[i]->SetHasRootMotion(false);
 	}
 
     return true;

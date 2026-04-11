@@ -27,7 +27,8 @@ struct OD_API ModelLoadSettings{
     bool useOnlySkinnedBones = false;
     bool generateColliderData = false; //true;
 
-    std::vector<bool> clipsHasRootMotion;
+    //std::vector<bool> clipsHasRootMotion;
+    std::unordered_map<std::string, bool> clipsHasRootMotion;
     Vector3 rootMotionPosMask = {0, 1, 0};
     int rootMotionIndex = -1;
 

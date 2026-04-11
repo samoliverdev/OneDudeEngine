@@ -124,6 +124,14 @@ GraphicsStats& OpenGLGraphicsDevice::GetStats(){
     return stats; 
 }
 
+GPUMemoryStats& OpenGLGraphicsDevice::GetMemoryStats(){
+    memoryStats.buffersBytes = vram.buffersBytes;
+    memoryStats.framebuffersBytes = vram.framebuffersBytes;
+    memoryStats.meshBytes = vram.meshBytes;
+    memoryStats.texturesBytes = vram.texturesBytes;
+    return memoryStats;
+}
+
 GraphicsDeviceInfo OpenGLGraphicsDevice::GetInfo(){
     return info;
 }
@@ -2190,7 +2198,7 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
     mesh.ramUsage  = mesh.CalculateRamUsage();
     mesh.vramUsage = mesh.CalculateVRamUsage();
     vram.Add(mesh.vramUsage, VRAMTracker::Category::Mesh);
-    LogInfo("Mesh VRam: {}MB/{}MB", mesh.vramUsage / (1024 * 1024), vram.meshBytes / (1024 * 1024));
+    //LogInfo("Mesh VRam: {}MB/{}MB", mesh.vramUsage / (1024 * 1024), vram.meshBytes / (1024 * 1024));
 
     return true;
 }
@@ -3154,7 +3162,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
     }
     if(fb.type == FramebufferType::Shadowmap){
         fb.specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
-        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
+        fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
     }
     if(fb.type == FramebufferType::Deffered){
         fb.specification.colorAttachments = {
@@ -3584,7 +3592,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
     
     vram.Add(fb.vramUsage, VRAMTracker::Category::Framebuffer);
     //LogInfo("Framebuffer VRam: {}MB/{}MB", fb.vramUsage / (1024 * 1024), vram.framebuffersBytes / (1024 * 1024));
-    LogInfo("Framebuffer VRam: {:.2f}MB / {:.2f}MB", (double)fb.vramUsage / (1024.0 * 1024.0), (double)vram.framebuffersBytes / (1024.0 * 1024.0));
+    //LogInfo("Framebuffer VRam: {:.2f}MB / {:.2f}MB", (double)fb.vramUsage / (1024.0 * 1024.0), (double)vram.framebuffersBytes / (1024.0 * 1024.0));
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
@@ -3940,7 +3948,7 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width
 
     vram.Add(totalBytes, VRAMTracker::Category::Texture);
     tex.vramUsage = totalBytes;
-    LogInfo("Textures VRam: {}MB/{}MB", tex.vramUsage / (1024 * 1024) ,vram.texturesBytes / (1024 * 1024));
+    //LogInfo("Textures VRam: {}MB/{}MB", tex.vramUsage / (1024 * 1024) ,vram.texturesBytes / (1024 * 1024));
 
     return true;
 }
