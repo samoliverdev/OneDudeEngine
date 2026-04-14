@@ -156,10 +156,16 @@ uniform int perDrawInt_1;
         // fade near top/bottom
         float fade = 1 * angleFade;
 
-        vec3 finalAlbedo = mix(albedo.rgb, decalColor.rgb, decalBlend * decalColor.a * fade);
+        float blendFactor = decalBlend * decalColor.a * fade;
+        vec3 finalAlbedo = mix(albedo.rgb, decalColor.rgb, blendFactor);
 
-        gAlbedoOut = vec4(finalAlbedo, 1);
-        gOtherOut = vec4(smoothness, metallic, 1, 1);
-    
+        gAlbedoOut = vec4(finalAlbedo, blendFactor /*1*/);
+        //gOtherOut = vec4(smoothness, metallic, 1, 1);
+        gOtherOut = vec4(
+            mix(other.r, smoothness, blendFactor),
+            mix(other.g, metallic, blendFactor),
+            other.b,
+            other.a
+        );
     }
 #endif

@@ -171,6 +171,10 @@ ClipT* CrossFadeController::GetCurrentClip(){
     return clip;
 }
 
+bool CrossFadeController::IsInTransition(){
+    return targets.size() > 1;
+}
+
 bool CrossFadeController::WillOrPlay(ClipT* target){
     if(clip == target) return true;
 

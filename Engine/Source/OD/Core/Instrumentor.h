@@ -14,6 +14,12 @@ struct OD_API ProfileResult{
     const char* name;
 };
 
+struct OD_API GpuProfileResult{
+    double time;
+    int parent = -1;
+    const char* name;
+};
+
 class OD_API Instrumentor{
     friend class InstrumentationTimer;
 public:
@@ -21,6 +27,8 @@ public:
     static void EndLoop();
 
     static const std::vector<ProfileResult>& Results();
+    static const std::vector<GpuProfileResult>& ResultsGpu();
+
     //static Instrumentor& Get();
 //private:
     //std::vector<ProfileResult> results;
@@ -50,6 +58,17 @@ private:
     bool stopped = false;
 };
 
+class OD_API GpuInstrumentationTimer{
+public:
+    GpuInstrumentationTimer(const char* _name);
+    ~GpuInstrumentationTimer();
+    void Stop();
+private:
+    int index;
+    const char* name;
+    bool stopped = false;
+};
+
 }
 
 #if OD_PROFILE
@@ -57,6 +76,8 @@ private:
     #define OD_PROFILE_FUNCTION() OD_PROFILE_SCOPE(__FUNCSIG__)
     #define OD_LOG_PROFILE(name) ::OD::SimpleTimer timer##__LINE__([](float duration){ LogWarning("{}: {:.3f}.ms", name, duration);})
     #define OD_LOG_PROFILE2(name, str) ::OD::SimpleTimer timer##__LINE__([](float duration){ LogWarning("{}: {:.3f}.ms", str, duration);})
+
+    #define OD_GPU_PROFILE_SCOPE(name) ::OD::GpuInstrumentationTimer gpuTimer##__LINE__(name);
 #else
     #define OD_PROFILE_SCOPE(name)
     #define OD_PROFILE_FUNCTION()

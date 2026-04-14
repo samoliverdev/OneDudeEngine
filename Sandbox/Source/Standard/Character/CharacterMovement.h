@@ -18,6 +18,8 @@ public:
     };
 
     bool enable = true;
+    bool enableMovement = true;
+    bool enableRotation = true;
     bool handleInputs = false;
 
     MoveType moveType; 
@@ -48,6 +50,8 @@ public:
     template <class Archive>
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
+        ArchiveDumpNVP(ar, enableMovement);
+        ArchiveDumpNVP(ar, enableRotation);
         ArchiveDumpNVP(ar, handleInputs);
 
         ArchiveDumpNVP(ar, moveType);

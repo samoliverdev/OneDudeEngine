@@ -38,27 +38,88 @@ void DrawNode(int index){
     }
 }
 
+std::vector<int> GetChildrensGpu(unsigned int index){
+    auto results = Instrumentor::ResultsGpu();
+    std::vector<int> out;
+    
+    for(int i = 0; i < results.size(); i++){
+        if(results[i].parent == index) out.push_back(i);
+    }
+
+    return out;
+}
+
+void DrawNodeGpu(int index){
+    auto results = Instrumentor::ResultsGpu();
+    GpuProfileResult& result = results[index];
+    std::vector<int> ch = GetChildrensGpu(index);
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+    if(ch.size() == 0) flags |= ImGuiTreeNodeFlags_Leaf;
+
+    double durration = result.time;
+    if(ImGui::TreeNodeEx(result.name, flags, "%s: %.3f.ms", result.name, durration)){
+        for(auto i: ch){
+            DrawNode(i);
+        }
+        ImGui::TreePop();
+    }
+}
+
+
 void ProfilePanel::OnGui(){
     if(ImGui::Begin("Profile", &show)){
         ImGui::DrawEnumCombo<ViewMode>("ViewMode", &viewMode);
 
-        ImGui::Text("Results Count:: %zd", Instrumentor::Results().size());
+        if(ImGui::BeginTabBar("RendererTabs")){
 
-        ImGui::Separator();
+            if(ImGui::BeginTabItem("CPU")){
+                ImGui::Text("Results Count:: %zd", Instrumentor::Results().size());
 
-        if(viewMode == ViewMode::List){
-            for(auto i: Instrumentor::Results()){ 
-                float durration = (i.end - i.start) * 0.001f;
-                ImGui::Text("%s: %.3f.ms", i.name, durration);
+                ImGui::Separator();
+
+                if(viewMode == ViewMode::List){
+                    for(auto i: Instrumentor::Results()){ 
+                        float durration = (i.end - i.start) * 0.001f;
+                        ImGui::Text("%s: %.3f.ms", i.name, durration);
+                    }
+                }
+
+                if(viewMode == ViewMode::Tree && Instrumentor::Results().size() > 0){
+                    auto results = Instrumentor::Results();
+                    for(int i = 0; i < results.size(); i++){ 
+                        if(results[i].parent >= 0) continue;
+                        DrawNode(i);
+                    }
+                }
+
+                ImGui::EndTabItem();
             }
-        }
 
-        if(viewMode == ViewMode::Tree && Instrumentor::Results().size() > 0){
-            auto results = Instrumentor::Results();
-            for(int i = 0; i < results.size(); i++){ 
-                if(results[i].parent >= 0) continue;
-                DrawNode(i);
+            if(ImGui::BeginTabItem("GPU")){
+                ImGui::Text("Results Count:: %zd", Instrumentor::ResultsGpu().size());
+
+                ImGui::Separator();
+
+                if(viewMode == ViewMode::List){
+                    for(auto i: Instrumentor::ResultsGpu()){ 
+                        double durration = i.time; 
+                        ImGui::Text("%s: %.3f.ms", i.name, durration);
+                    }
+                }
+
+                if(viewMode == ViewMode::Tree && Instrumentor::ResultsGpu().size() > 0){
+                    auto results = Instrumentor::ResultsGpu();
+                    for(int i = 0; i < results.size(); i++){ 
+                        if(results[i].parent >= 0) continue;
+                        DrawNodeGpu(i);
+                    }
+                }
+
+                ImGui::EndTabItem();
             }
+
+            ImGui::EndTabBar();
         }
     }
     ImGui::End();

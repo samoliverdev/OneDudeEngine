@@ -5342,7 +5342,7 @@ bool OpenGLGraphicsDevice::SupportCompute(){
 #pragma endregion
 
 #pragma region Messure
-static GLuint g_gpuQuery = 0;
+/*static GLuint g_gpuQuery = 0;
 void OpenGLGraphicsDevice::BeginGPUTime(){
     if(g_gpuQuery == 0) glGenQueries(1, &g_gpuQuery);
     glBeginQuery(GL_TIME_ELAPSED, g_gpuQuery);
@@ -5355,6 +5355,47 @@ double OpenGLGraphicsDevice::EndGPUTime(){
     glGetQueryObjectui64v(g_gpuQuery, GL_QUERY_RESULT, &time);
 
     return time / 1000000.0; // milliseconds
+}*/
+
+//More Fast
+static const int QUERY_COUNT = 4;
+static GLuint g_gpuQueries[QUERY_COUNT] = {};
+static bool g_queryUsed[QUERY_COUNT] = {};
+static int g_gpuQueryIndex = 0;
+static double g_lastTimeMs = 0.0;
+static bool g_initialized = false;
+
+void OpenGLGraphicsDevice::BeginGPUTime(){
+    if(!g_initialized){
+        glGenQueries(QUERY_COUNT, g_gpuQueries);
+        g_initialized = true;
+    }
+
+    glBeginQuery(GL_TIME_ELAPSED, g_gpuQueries[g_gpuQueryIndex]);
+}
+
+double OpenGLGraphicsDevice::EndGPUTime(){
+    glEndQuery(GL_TIME_ELAPSED);
+
+    // mark current query as valid
+    g_queryUsed[g_gpuQueryIndex] = true;
+
+    int readIndex = (g_gpuQueryIndex + 1) % QUERY_COUNT;
+
+    // Only read if this query was actually used before
+    if(g_queryUsed[readIndex]){
+        GLuint available = 0;
+        glGetQueryObjectuiv(g_gpuQueries[readIndex], GL_QUERY_RESULT_AVAILABLE, &available);
+
+        if(available){
+            GLuint64 time = 0;
+            glGetQueryObjectui64v(g_gpuQueries[readIndex], GL_QUERY_RESULT, &time);
+            g_lastTimeMs = time / 1000000.0;
+        }
+    }
+
+    g_gpuQueryIndex = (g_gpuQueryIndex + 1) % QUERY_COUNT;
+    return g_lastTimeMs;
 }
 #pragma endregion
 

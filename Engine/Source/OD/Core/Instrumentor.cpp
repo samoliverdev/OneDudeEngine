@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "Instrumentor.h"
+#include "OD/Graphics/Graphics.h"
 
 namespace OD{
 
@@ -7,16 +8,26 @@ std::vector<ProfileResult> last;
 std::vector<ProfileResult> results;
 std::vector<int> nodesStack;
 
+std::vector<GpuProfileResult> lastGpu;
+std::vector<GpuProfileResult> resultsGpu;
+std::vector<int> nodesStackGpu;
+
 void Instrumentor::BeginLoop(){
     results.clear();
     nodesStack.clear();
+
+    resultsGpu.clear();
+    nodesStackGpu.clear();
 }
 
 void Instrumentor::EndLoop(){
     last = results;
+
+    lastGpu = resultsGpu;
 }
 
 const std::vector<ProfileResult>& Instrumentor::Results(){ return last; }
+const std::vector<GpuProfileResult>& Instrumentor::ResultsGpu(){ return lastGpu; }
 
 InstrumentationTimer::InstrumentationTimer(const char* _name): name(_name), stopped(false){
     startTimepoint = std::chrono::high_resolution_clock::now();
@@ -47,6 +58,26 @@ void InstrumentationTimer::Stop(){
     results[index].threadID = threadID;
     nodesStack.pop_back();
 
+    stopped = true;
+}
+
+GpuInstrumentationTimer::GpuInstrumentationTimer(const char* _name): name(_name), stopped(false){
+    resultsGpu.push_back({
+        0, nodesStackGpu.empty() ? -1 : nodesStackGpu[nodesStackGpu.size()-1], _name
+    });
+    nodesStackGpu.push_back(resultsGpu.size()-1);
+    index = resultsGpu.size()-1;
+
+    Graphics::BeginGPUTime();
+}
+
+GpuInstrumentationTimer::~GpuInstrumentationTimer(){
+    if(!stopped) Stop();
+}
+
+void GpuInstrumentationTimer::Stop(){
+    resultsGpu[index].time = Graphics::EndGPUTime();
+    nodesStackGpu.pop_back();
     stopped = true;
 }
 

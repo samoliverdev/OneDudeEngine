@@ -22,6 +22,8 @@ public:
 
     float GetCurrentNormalizedTime();
 
+    bool IsInTransition();
+
     bool WillOrPlay(ClipT* target);
     bool WillOrPlayByTag(const char* tag);
     

@@ -679,6 +679,7 @@ glm::mat4 captureViews[] = {
 
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
     OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
+    OD_GPU_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
 
     if(environmentSettings.skyCubemap != nullptr && environmentSettings.skyIrradianceMap == nullptr){
         /*FrameBufferSpecification specification;

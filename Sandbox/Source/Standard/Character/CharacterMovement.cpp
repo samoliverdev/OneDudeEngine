@@ -162,7 +162,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     float kd = 1.0f;    // damping
     Vector3 deltaVel = velocity - rb.Velocity();
     Vector3 force = deltaVel * kp * rb.Mass() - rb.Velocity() * kd * rb.Mass();
-    rb.ApplyForce(force);
+    if(enableMovement) rb.ApplyForce(force);
 
     /*// Clean Slide
     const float stopEpsilon = 0.05f;
@@ -176,7 +176,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     }
 
     if(moveType == MoveType::Free){
-        if(math::length(moveDir) > 0.001f){
+        if(math::length(moveDir) > 0.001f && enableRotation){
             rb.Rotation(
                 math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Time::FixedDelta())
             );
@@ -184,7 +184,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     }
 
     if(moveType == MoveType::Strafe){
-        if (math::length(lookDir) > 0.001f) {
+        if (math::length(lookDir) > 0.001f && enableRotation){
             rb.Rotation(
                 math::slerp(rb.Rotation(), math::quatLookAt(-lookDir, Vector3Up), strafeTurnSpeed * Time::FixedDelta())
             );

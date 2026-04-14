@@ -56,7 +56,7 @@ void SynthCitySample::OnInit(){
 
     //Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/PolygonCity/City.fbx");
 
-    Ref<Model> cityModel = Asset::CreateFromFile<Model>("C:/Users/sam/Desktop/Apocalipse.fbx", ModelLoadSettings{nullptr, 1, false});  //Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
+    Ref<Model> cityModel = Asset::CreateFromFile<Model>("C:/Users/sam/Desktop/City.fbx", ModelLoadSettings{nullptr, 1, false});  //Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
     
 
     cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
@@ -69,7 +69,7 @@ void SynthCitySample::OnInit(){
     cityTransform.LocalScale(Vector3(0.01f, 0.01f, 0.01f));*/
 
     Entity city = scene->Instantiate(cityModel, false);
-    scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(0.01f));
+    scene->GetComponent<TransformComponent>(city).LocalScale(Vector3(1));
 
     Application::AddModule<Editor>();
     //scene->Start();
