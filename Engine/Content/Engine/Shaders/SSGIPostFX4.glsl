@@ -28,9 +28,10 @@ BeginUniform(0, 0, Main)
     Uniform float cameraNear;
     Uniform float cameraFar;
     Uniform float halfProjScale;
+
+    Uniform float _HalfProjScale;
+    Uniform vec4 _Resolution;
 EndUniform()
-
-
 
 // ============================================================
 // VERTEX
@@ -57,247 +58,272 @@ out vec4 FragColor;
 
 #include Engine/ShaderLibrary/Vertex.glsl
 
-#define stepCount sampleCount
-#define thickness hitThickness
-#define radius sampleRadius
+const float PI      = 3.14159265359;
+const float HALF_PI = 1.57079632679;
+const float TWO_PI  = 6.28318530718;
 
-const float useLinearThickness = 0; //false;
+//const vec4 _Resolution = vec4(800,600, 0, 0); // xy = size, zw = 1/size
 
-const float temporalDirection = 0;
-const float temporalOffset = 0;
-const float expFactor = 2;
+const float _Radius = 12;
+const float _GIIntensity = 10;
+const float _AOIntensity = 1;
+const float _Thickness = 1;
+const float _ExpFactor = 3;
+const float _BackfaceLighting = 0;
+const int _StepCount = 12;
+const int _SliceCount = 2;
 
-const uint MAX_RAY = 32u;
+const float _TemporalDirection = 0;
+const float _TemporalOffset = 0;
 
-uint globalOccludedBitfield = 0u;
+//const float _HalfProjScale = 0;
 
-float luminance(vec3 c){
-    return dot(c, vec3(0.2126,0.7152,0.0722));
-}
+const float _CameraFar = 100;
+const float _UseLinearThickness = 0;      // 0 or 1
+const float _UseScreenSpaceSampling = 1;  // 0 or 1
 
-float sampleDepth(vec2 uv){
+#define saturate(x) clamp(x, 0.0, 1.0)
+
+float SampleDepth(vec2 uv){
     return texture(gDepth, uv).r;
-}
+} 
 
-vec3 sampleNormal(vec2 uv){
-    vec3 n = unpack_normal_octahedron(texture(gNormal, uv).rg);
-    return normalize(mat3(view) * n);
-
-    //return normalize(texture(gNormal, uv).xyz);
-}
-
-vec3 sampleBeauty(vec2 uv){
-    return texture(mainTex, uv).rgb;
-}
-
-vec3 getViewPosition(vec2 uv, float depth){
+vec3 GetViewPos(vec2 uv, float depth){
     vec3 wp = reconstructWorldPos(
         uv,
-        texture(gDepth, uv).r,
+        depth,
         invProjection,
         invView
     );
     return (view * vec4(wp, 1.0)).xyz;
-
-    /*vec4 clip = vec4(uv * 2.0 - 1.0, depth, 1.0);
-    vec4 view = invProjection * clip;
-    return view.xyz / view.w;*/
 }
 
-vec2 GTAOFastAcos(vec2 value){
-    vec2 outVal = abs(value) * -0.156583 + 1.57079632679;
-    outVal *= sqrt(1.0 - abs(value));
-
-    vec2 r;
-    r.x = value.x >= 0.0 ? outVal.x : 3.14159265 - outVal.x;
-    r.y = value.y >= 0.0 ? outVal.y : 3.14159265 - outVal.y;
-
-    return r;
+vec3 SampleNormal(vec2 uv){
+    vec3 n = unpack_normal_octahedron(texture(gNormal, uv).rg);
+    return normalize(mat3(view) * n);
 }
 
-float spatialOffsets(vec2 position){
-    return 0.25 * float((int(position.y) - int(position.x)) & 3);
+vec3 SampleColor(vec2 uv){
+    return texture(mainTex, uv).rgb;
 }
 
-uint countBits(uint x){
-    //return bitCount(x);
-    return uint(bitCount(x));
+uint CountBits(uint v){
+    /*v = v - ((v >> 1u) & 0x55555555u);
+    v = (v & 0x33333333u) + ((v >> 2u) & 0x33333333u);
+    return ((v + (v >> 4u) & 0xF0F0F0Fu) * 0x1010101u) >> 24u;*/
+
+    return uint(bitCount(v));
 }
 
-vec3 horizonSampling(
-    float directionIsRight,
-    float RADIUS,
-    vec3 viewPosition,
-    vec2 slideDirTexelSize,
-    float initialRayStep,
-    vec2 uvNode,
+vec2 GTAOFastAcos(vec2 x){
+    vec2 res = abs(x) * -0.156583 + HALF_PI;
+    res *= sqrt(1 - abs(x));
+
+    return vec2(
+        x.x >= 0 ? res.x : PI - res.x,
+        x.y >= 0 ? res.y : PI - res.y
+    );
+}
+
+float SpatialOffset(vec2 pixel){
+    int x = int(pixel.x);
+    int y = int(pixel.y);
+    return 0.25 * float((y - x) & 3);
+}
+
+#define Test
+
+vec3 HorizonSampling(
+    float directionRight,
+    float radius,
+    vec3 viewPos,
+    vec2 dirTexel,
+    float initialStep,
+    vec2 uv,
     vec3 viewDir,
-    vec3 viewNormal,
-    float n
+    vec3 normal,
+    float n,
+    inout uint globalMask
 ){
+    vec3 color = vec3(0.0, 0.0, 0.0);
+
+    #ifndef Test
+    float stepRadius = max(radius * _HalfProjScale / -viewPos.z, float(_StepCount));
+    #else
     float stepRadius;
 
-    if(useScreenSpaceSampling > 0)
-        stepRadius = RADIUS * (screenSize.x * 0.5) / 16.0;
-    else
-        stepRadius = max(RADIUS * halfProjScale / (-viewPosition.z), float(stepCount));
+    if(_UseScreenSpaceSampling > 0.5){
+        // matches three.js
+        stepRadius = radius * (_Resolution.x * 0.5) / 16.0;
+    }else{
+        stepRadius = max(radius * _HalfProjScale / -viewPos.z, float(_StepCount));
+    }
+    #endif
 
-    stepRadius /= (float(stepCount) + 1.0);
+    stepRadius /= (_StepCount + 1);
 
-    float radiusVS = max(1.0, float(stepCount - 1u)) * stepRadius;
+    float radiusVS = max(1, _StepCount - 1) * stepRadius;
 
-    vec2 uvDirection = directionIsRight > 0 ? vec2(1,-1) : vec2(-1,1);
-    float samplingDirection = directionIsRight > 0 ? 1.0 : -1.0;
+    //float2 uvDir = directionRight ? float2(1, -1) : float2(-1, 1);
+    vec2 uvDir = directionRight > 0.5 ? vec2(1, 1) : vec2(-1, -1);
+    float signDir = directionRight > 0.5 ? 1 : -1;
 
-    vec3 color = vec3(0);
+    //[loop]
+    for(int i = 0; i < _StepCount; i++){
+        float offset = pow(abs(stepRadius * (i + initialStep) / radiusVS), _ExpFactor) * radiusVS;
+        vec2 uvOffset = dirTexel * max(offset, i + 1);
 
-    vec3 lastSampleViewPosition = viewPosition;
+        vec2 suv = uv + uvOffset * uvDir;
 
-    for(uint i=0u;i<stepCount;i++){
-        float offset = pow(abs(stepRadius * (float(i) + initialRayStep) / radiusVS), expFactor) * radiusVS;
-        vec2 uvOffset = slideDirTexelSize * max(offset, float(i)+1.0);
+        if(suv.x <= 0 || suv.y <= 0 || suv.x >= 1 || suv.y >= 1) break;
 
-        vec2 sampleUV = uvNode + uvOffset*uvDirection;
+        float d = SampleDepth(suv);
+        vec3 samplePos = GetViewPos(suv, d);
 
-        if(sampleUV.x <= 0 ||sampleUV.y <= 0 ||sampleUV.x >= 1 || sampleUV.y >= 1) break;
+        vec3 dir = normalize(samplePos - viewPos);
 
-        float depth = sampleDepth(sampleUV);
+        #ifndef Test
+        vec3 backDir = normalize(samplePos - viewDir * _Thickness - viewPos);
+        #else
+        float linearThickness = 1.0;
+        if(_UseLinearThickness > 0.5){
+            // viewPos.z is NEGATIVE in view space
+            float depthFactor = saturate(-samplePos.z / _CameraFar);
+            linearThickness = depthFactor * 100.0;
+        }
 
-        vec3 sampleViewPosition = getViewPosition(sampleUV, depth);
+        vec3 backDir = normalize(samplePos - viewDir * (_Thickness * linearThickness) - viewPos);
+        #endif
 
-        vec3 pixelToSample = normalize(sampleViewPosition-viewPosition);
+        vec2 horizons = vec2(dot(dir, viewDir), dot(backDir, viewDir));
+        //float2 horizons = float2(dot(dir, normal), dot(backDir, normal));
+        horizons = GTAOFastAcos(clamp(horizons, -1, 1));
 
-        float linearThicknessMultiplier = useLinearThickness > 0 ? clamp((-sampleViewPosition.z) / cameraFar, 0.0, 1.0) * 100.0 : 1.0;
+        horizons = (signDir * -horizons - (n - HALF_PI)) / PI;
+        horizons = clamp(horizons, 0, 1);
 
-        vec3 pixelToSampleBackface = normalize(sampleViewPosition - linearThicknessMultiplier*viewDir*thickness - viewPosition);
+        if(directionRight > 0.5) horizons = horizons.yx;
 
-        vec2 frontBackHorizon = vec2(dot(pixelToSample,viewDir), dot(pixelToSampleBackface,viewDir));
+        float minH = horizons.x;
+        float maxH = horizons.y;
 
-        frontBackHorizon = GTAOFastAcos(clamp(frontBackHorizon,-1,1));
+        //uint start = (uint)(minH * 32);
+        //uint len = (uint)ceil((maxH - minH) * 32);
+        uint start = uint(minH * 32.0);
+        uint len   = uint(ceil((maxH - minH) * 32.0));
 
-        frontBackHorizon = clamp((samplingDirection*-frontBackHorizon - (n-1.57079632679))/3.14159265, 0.0,1.0);
+        //uint mask = len > 0 ? (0xFFFFFFFF >> (32 - len)) : 0;
+        uint mask = len > 0u ? (0xFFFFFFFFu >> (32u - len)) : 0u;
+        
+        mask <<= start;
 
-        if(directionIsRight > 0) frontBackHorizon = frontBackHorizon.yx;
+        mask &= ~globalMask;
 
-        float minHorizon = frontBackHorizon.x;
-        float maxHorizon = frontBackHorizon.y;
+        globalMask |= mask;
 
-        uint startHorizonInt = uint(frontBackHorizon.x * float(MAX_RAY));
-        uint angleHorizonInt = uint(ceil((maxHorizon-minHorizon)*float(MAX_RAY)));
+        uint hits = CountBits(mask);
 
-        uint angleHorizonBitfield = angleHorizonInt>0u ? (0xFFFFFFFFu >> (32u - MAX_RAY + (MAX_RAY-angleHorizonInt))) : 0u;
+        if(hits > 0){
+            vec3 light = SampleColor(suv);
 
-        uint currentOccludedBitfield = angleHorizonBitfield << startHorizonInt;
+            if(dot(light, vec3(1.0)) > 0.001){
+                float ndl = saturate(dot(normal, dir));
 
-        currentOccludedBitfield &= ~globalOccludedBitfield;
+                if(ndl > 0.001){
+                    vec3 lightNormal = SampleNormal(suv);
+                    float lndl = dot(lightNormal, -dir);
 
-        globalOccludedBitfield |= currentOccludedBitfield;
+                    float d = (sign(lndl) < 0) ? abs(lndl) * _BackfaceLighting : abs(lndl);
 
-        uint numOccludedZones = countBits(currentOccludedBitfield);
+                    lndl = (_BackfaceLighting > 0 && dot(lightNormal, viewDir) > 0) ? d : saturate(lndl);
 
-        if(numOccludedZones > 0u){
-            vec3 lightColor = sampleBeauty(sampleUV);
-
-            if(luminance(lightColor)>0.001){
-                vec3 lightDirectionVS = normalize(pixelToSample);
-
-                float normalDotLightDirection = clamp(dot(viewNormal,lightDirectionVS),0,1);
-
-                if(normalDotLightDirection > 0.001){
-
-                    vec3 lightNormalVS = sampleNormal(sampleUV);
-
-                    float lightNormalDotLightDirection = dot(lightNormalVS,-lightDirectionVS);
-
-                    float d = sign(lightNormalDotLightDirection) < 0 ? abs(lightNormalDotLightDirection) * backfaceLighting : abs(lightNormalDotLightDirection);
-
-                    if(backfaceLighting > 0 && dot(lightNormalVS, viewDir) > 0)
-                        lightNormalDotLightDirection = d;
-                    else
-                        lightNormalDotLightDirection = clamp(lightNormalDotLightDirection, 0, 1);
-
-                    color += float(numOccludedZones) / float(MAX_RAY) * lightColor * normalDotLightDirection * lightNormalDotLightDirection;
+                    color += (hits / 32.0) * light * ndl * lndl;
                 }
             }
         }
-
-        lastSampleViewPosition = sampleViewPosition;
     }
 
     return color;
 }
 
-void main(){
-    float depth = sampleDepth(vUV);
+float InterleavedGradientNoise(vec2 pixel){
+    // pixel = integer pixel coords (VERY important)
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pixel, magic.xy)));
+}
 
-    if(depth >= 1.0) discard;
+float Rand(vec2 co){
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
 
-    vec3 viewPosition = getViewPosition(vUV,depth);
+//======================================================
+// MAIN GI
+//======================================================
+vec4 ComputeSSGI(vec2 uv){
+    float depth = SampleDepth(uv);
+    if (depth >= 1.0) discard;
 
-    vec3 viewNormal = sampleNormal(vUV);
+    vec3 viewPos = GetViewPos(uv, depth);
+    vec3 normal = SampleNormal(uv);
+    vec3 viewDir = normalize(-viewPos);
 
-    vec3 viewDir = normalize(-viewPosition);
+    //return float4(viewPos, 1);
 
-    vec2 screenCoord = gl_FragCoord.xy;
+    //float noise = frac(sin(dot(uv * _Resolution.xy, float2(12.9898,78.233))) * 43758.5453);
+    //float initialStep = frac(noise + _TemporalOffset);
 
-    float noiseOffset = spatialOffsets(screenCoord);
+    vec2 pixel = uv * _Resolution.xy;// _ScreenParams.xy;
+    //float2 pixel = floor(uv * _ScreenParams.xy);
 
-    float noiseDirection = fract(sin(dot(screenCoord,vec2(12.9898,78.233)))*43758.5453);
+    //float noiseOffset = frac(0.25 * fmod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
+    float noiseOffset = SpatialOffset(pixel);
+    float noiseDirection = InterleavedGradientNoise(pixel); // interleaved gradient noise
+    float temporalOffset = _TemporalOffset;// 1.0; // temporal (if disabled, set to 1)
+    float temporalDirection = _TemporalDirection;// 1.0;
+    float noiseJitterIdx = temporalDirection * 0.02; // jitter index (optional but in your code)
+    float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0); // initial ray step (THIS IS VERY IMPORTANT)
 
-    float noiseJitterIdx = temporalDirection*0.02;
-
-    float initialRayStep =
-    fract(noiseOffset + temporalOffset) +
-    fract(sin(dot(vUV+noiseJitterIdx,vec2(12.9898,78.233)))*43758.5453);
-
-    float ao = 0.0;
     vec3 color = vec3(0);
+    float ao = 0;
 
-    for(uint i=0u;i<sliceCount;i++){
-        float rotationAngle = (float(i)+noiseDirection+temporalDirection) * 3.14159265/float(sliceCount);
+    //[loop]
+    for(int i = 0; i < _SliceCount; i++){
+        //float angle = (i + noise + _TemporalDirection) * PI / _SliceCount;
+        float angle = (i + noiseDirection + _TemporalDirection) * PI / _SliceCount;
 
-        vec3 sliceDir = vec3(cos(rotationAngle),sin(rotationAngle),0);
+        vec2 dir = vec2(cos(angle), sin(angle));
+        //vec2 texel = dir / _Resolution.xy;
+        vec2 texel = dir * (1.0 / min(_Resolution.x, _Resolution.y));
 
-        vec2 slideDirTexelSize = sliceDir.xy/screenSize;
+        //vec3 planeNormal = normalize(cross(vec3(dir,0), viewDir));
+        vec3 planeNormal = normalize(cross(vec3(dir.x, dir.y, 0.0), viewDir));
+        vec3 tangent = cross(viewDir, planeNormal);
 
-        vec3 planeNormal = normalize(cross(sliceDir,viewDir));
+        vec3 projNormal = normal - planeNormal * dot(normal, planeNormal);
+        vec3 projNorm = normalize(projNormal);
 
-        vec3 tangent = cross(viewDir,planeNormal);
+        float cosN = clamp(dot(projNorm, viewDir), -1, 1);
+        float n = -sign(dot(projNormal, tangent)) * acos(cosN);
 
-        vec3 projectedNormal = viewNormal - planeNormal*dot(viewNormal,planeNormal);
+        uint mask = 0;
 
-        vec3 projectedNormalNormalized = normalize(projectedNormal);
+        color += HorizonSampling(1, _Radius, viewPos, texel, initialStep, uv, viewDir, normal, n, mask);
+        color += HorizonSampling(0, _Radius, viewPos, texel, initialStep, uv, viewDir, normal, n, mask);
 
-        float cos_n = clamp(dot(projectedNormalNormalized,viewDir),-1,1);
-
-        float n = -sign(dot(projectedNormal,tangent)) * acos(cos_n);
-
-        globalOccludedBitfield = 0u;
-
-        color += horizonSampling(1, radius, viewPosition, slideDirTexelSize, initialRayStep, vUV, viewDir, viewNormal, n);
-
-        color += horizonSampling(0, radius, viewPosition, slideDirTexelSize, initialRayStep, vUV, viewDir, viewNormal, n);
-
-        ao += float(bitCount(globalOccludedBitfield))/float(MAX_RAY);
+        ao += CountBits(mask) / 32.0;
     }
 
-    ao /= float(sliceCount);
+    ao /= _SliceCount;
+    ao = saturate( pow(1 - saturate(ao), _AOIntensity) );
 
-    ao = clamp(pow(1.0-clamp(ao, 0, 1), aoIntensity), 0, 1);
+    color /= _SliceCount;
+    color *= _GIIntensity;
 
-    color /= float(sliceCount);
+    return vec4(color, ao);
+}
 
-    color *= giIntensity;
-
-    float maxLuminance = 7.0;
-
-    float currentLuminance = luminance(color);
-
-    float scale = currentLuminance > maxLuminance ? maxLuminance / currentLuminance : 1.0;
-
-    color *= scale;
-
-    FragColor = vec4(color,ao);
+void main(){
+    FragColor = ComputeSSGI(vUV);
 }
 
 #endif

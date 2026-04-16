@@ -19,7 +19,7 @@ SSGIPostFX::SSGIPostFX(){
     enable = false;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
+    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX4.glsl"));
     giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX2.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
@@ -51,8 +51,8 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
 
     auto halfSpec = spec;
-    halfSpec.width /= 2;
-    halfSpec.height /= 2;
+    //halfSpec.width /= 2;
+    //halfSpec.height /= 2;
 
     auto gi = new Framebuffer(halfSpec);
 
@@ -61,7 +61,8 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
 
     Camera cam = context->GetCamera();
     float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
-    float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
+    //float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
+    float halfProjScale = spec.height / (2.0f *  math::tan(cam.fov * 0.5f * Deg2Rad));
 
     Graphics::BeginFramebuffer(*gi);
     Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
@@ -84,6 +85,8 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giPass->SetFloat("cameraNear", cam.nearClip);
     giPass->SetFloat("cameraFar", cam.farClip);
     giPass->SetFloat("halfProjScale", halfProjScale);
+    giPass->SetFloat("_HalfProjScale", halfProjScale);
+    giPass->SetVector4("_Resolution", {spec.width, spec.height, 0, 0});
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
