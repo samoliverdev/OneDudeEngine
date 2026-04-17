@@ -62,7 +62,7 @@ private:
     Vector3 position = Vector3(0.0f);// 3D Position
     SoLoud::Soloud* soloud = nullptr;
     SoLoud::handle handle = 0;
-    std::vector<SoLoud::handle> oneShots;
+    //std::vector<SoLoud::handle> oneShots;
     float volume = 1.0f;
     float pitch = 1.0f;
     bool toPlay = false;

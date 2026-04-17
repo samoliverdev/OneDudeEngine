@@ -34,6 +34,16 @@ Material::Material(Ref<Shader> s, bool inenableInstancing){
     SetEnableInstancing(inenableInstancing);
 }
 
+//TODO: This can be have some bug by copy everything, need test this later
+Material::Material(const Material& other){
+    maps = other.maps;
+    path = "#Memory";
+
+    if(other.shader != nullptr) SetShader(other.shader);
+    id = materialIdPool.Pop();
+    SetEnableInstancing(other.enableInstancing);
+}
+
 Material::~Material(){
     Assert(graphicsDevice != nullptr);
     graphicsDevice->MaterialDestroy(*this);

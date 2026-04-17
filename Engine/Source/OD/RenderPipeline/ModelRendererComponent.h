@@ -39,6 +39,7 @@ struct OD_API ModelRendererComponent{
     AlignedVector<RenderData> renderData;
     Vector4 customData;
     bool useCustomData = false;
+    bool castShadow = true;
     bool draw = true;
 
     static void OnGui(Entity& e, Scene& scene);
@@ -70,6 +71,8 @@ struct OD_API ModelRendererComponent{
         ArchiveDumpNVP(ar, subMeshIndex);
         ArchiveDumpNVP(ar, boundingVolume);
         ArchiveDumpNVP(ar, renderTargetVisibility);
+
+        ArchiveDumpNVP(ar, castShadow);
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
@@ -127,6 +130,8 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
         ArchiveDumpNVP(ar, subMeshIndex);
         ArchiveDumpNVP(ar, boundingVolume);
         ArchiveDumpNVP(ar, renderTargetVisibility);
+
+        ArchiveDumpNVP(ar, castShadow);
 
         ArchiveDumpNVP(ar, updateWhenOffscreen);
 

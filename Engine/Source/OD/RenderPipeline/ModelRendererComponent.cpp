@@ -57,6 +57,9 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
         ImGui::TreePop();
     }
 
+    ImGui::Checkbox("CastShadow", &mesh.castShadow);
+    ImGui::Checkbox("Draw", &mesh.draw);
+
     /*ImGui::Spacing(); ImGui::Spacing(); 
 
     if(mesh.model != nullptr && ImGui::TreeNode("Info")){

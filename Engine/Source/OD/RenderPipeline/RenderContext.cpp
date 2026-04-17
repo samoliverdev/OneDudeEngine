@@ -2011,6 +2011,8 @@ void RenderContext::UpdateRenderData(){
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
+            if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
+
             #if EnableExperimentalPerDrawCustomData
             data.useCustomData = c.useCustomData;
             data.customData = c.customData;
@@ -2139,6 +2141,7 @@ void RenderContext::UpdateRenderData(){
             #endif
 
             if(c.updateWhenOffscreen) data.SetFlag(RenderData::Flag::AlwaysDraw, true);// .awalsDraw = true;
+            if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
         }
     });
     scene->RunAllTaskAndSync();

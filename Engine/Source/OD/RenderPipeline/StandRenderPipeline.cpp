@@ -1536,7 +1536,7 @@ void StandRenderPipeline::Render(Scene& scene){
                 height = renderContext->overrideFramebuffer->Height();
             }
 
-            cam.UpdateCameraData(trans, width, height);
+            if(width > 0 && height > 0)cam.UpdateCameraData(trans, width, height);
             //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
             cameraRenderer.Render(
                 cam.GetCamera(), 

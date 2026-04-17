@@ -102,8 +102,11 @@ class OD_API Material: public Asset{
     friend class WebGPUGraphicsDevice;
 public:
     Material();
+    Material(const Material& other);
     Material(Ref<Shader> s, bool enableInstancing = false);
     ~Material();
+    
+    //Material& operator=(const Material& other) = default;
 
     Ref<Shader> GetShader();
     void SetShader(Ref<Shader> s);

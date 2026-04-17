@@ -81,7 +81,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
 
     if(!soloud) return;
 
-    if(maxOnShotPlay > 0 &&  oneShots.size() >= maxOnShotPlay) return;
+    //if(maxOnShotPlay > 0 && oneShots.size() >= maxOnShotPlay) return;
 
     //attenuation = Audio3dAttenuation::LinearDistance;
 
@@ -118,7 +118,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> clip){
         // 2D sound: não usa configurações 3D, ou pode resetar se quiser
     }
     
-    oneShots.push_back(h);
+    //oneShots.push_back(h);
 }
 
 void AudioSourceComponent::SetPosition(const Vector3& pos){
@@ -246,13 +246,14 @@ void AudioSystem::Update(Scene& scene){
             audio.Play();
         }
 
-        for(auto it = audio.oneShots.begin(); it != audio.oneShots.end(); ){
+        //INFO: this "if(!soloud.isValidVoiceHandle(*it)){" is cause freeze on some mutex lock
+        /*for(auto it = audio.oneShots.begin(); it != audio.oneShots.end(); ){
             if(!soloud.isValidVoiceHandle(*it)){
                 it = audio.oneShots.erase(it);
             } else {
                 ++it;
             }
-        }
+        }*/
 
         // Optional: Update position every frame
         if(audio.mode == AudioSourceMode::Mode3D){
