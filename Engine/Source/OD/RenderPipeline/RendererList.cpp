@@ -88,7 +88,7 @@ void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
     Assert(comand.material != nullptr);
     Assert(comand.meshs != nullptr);
 
-    if(sortType == SortType::None){
+    //if(sortType == SortType::None){
         #ifdef UseExperimentalCommandBucket5
         DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
         #else
@@ -98,12 +98,13 @@ void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
         c.material = comand.material;
         c.meshs = comand.meshs;
         c.buffers.push_back(comand.buffer);
-    } else {
+    /*} else {
+        //INFO: This gen more material submit, becose no bacth/group by material
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
         cmd.instancingBuffer = comand.buffer;
         cmd.type = DrawMultTypeCommand::Type::Instancing;
         sortDrawMultTypeCommands.Add(cmd);
-    }
+    }*/
 }
 
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
@@ -117,7 +118,7 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
             {distance, comand.material->MaterialId()}, 
             std::move(comand)
         );*/
-
+        
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
         cmd.perDrawData = comand.perDrawData;
         cmd.skinnedTrans = comand.trans;

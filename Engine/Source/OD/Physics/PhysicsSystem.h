@@ -249,6 +249,8 @@ struct OD_API RigidbodyComponent{
 
     inline const class PhysicObject* InternalData(){ return data; }
 
+    inline void SetDirt(){ isDirt = true; }
+
 private:
     CollisionShape shape;
     Type type = Type::Dynamic;
