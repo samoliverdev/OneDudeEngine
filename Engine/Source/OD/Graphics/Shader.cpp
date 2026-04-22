@@ -401,6 +401,39 @@ Ref<SubShader> Shader::GetCurrentShader(){
     }
 }*/
 
+std::string ExtractShaderName(const std::string& path){
+    size_t slash = path.find_last_of("/\\");
+    std::string filename = (slash == std::string::npos) ? path : path.substr(slash + 1);
+
+    size_t dot = filename.find_last_of('.');
+    if(dot != std::string::npos)
+        filename = filename.substr(0, dot);
+
+    return filename;
+}
+
+std::string BuildKeywordString(const std::vector<std::string>& keywords){
+    std::string result;
+
+    for(size_t i = 0; i < keywords.size(); i++){
+        result += keywords[i];
+        if(i != keywords.size() - 1)
+            result += "_";
+    }
+
+    return result;
+}
+
+std::string DrawTypeToString(Shader::DrawType type){
+    switch(type){
+        case Shader::DrawType::DefaultDraw: return "DEFAULT";
+        case Shader::DrawType::SkinnedDraw: return "SKINNED";
+        case Shader::DrawType::InstancingDraw: return "INSTANCING";
+        case Shader::DrawType::InstancingDraw43: return "INSTANCING43";
+    }
+    return "UNKNOWN";
+}
+
 void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass, const std::set<DrawType>& drawTypes){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());
     _enabledKeywords.push_back(passes[pass].name);
@@ -428,6 +461,12 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.insert(0, instancing43Keyworld);
 
         Ref<SubShader> shader = CreateRef<SubShader>();
+
+        std::string baseName = ExtractShaderName(path);
+        std::string keywordStr = BuildKeywordString(_enabledKeywords);
+        std::string drawTypeStr = DrawTypeToString(drawType);
+        shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
+
         graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,
             shaderSourceData.baseSource, 

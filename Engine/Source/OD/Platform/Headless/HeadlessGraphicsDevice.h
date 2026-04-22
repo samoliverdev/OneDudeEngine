@@ -10,6 +10,7 @@ public:
 
     virtual GraphicsStats& GetStats() override;
     virtual GPUMemoryStats& GetMemoryStats() override;
+    virtual GraphicsDebug& GetGraphicsDebug() override;
     virtual GraphicsDeviceInfo GetInfo() override;
 
     virtual void Begin() override;
@@ -116,6 +117,7 @@ public:
 
     GraphicsDeviceInfo info;
     GraphicsStats stats;
+    GraphicsDebug graphicsDebugData;
     GPUMemoryStats memoryStats;
     Camera camera;
 };

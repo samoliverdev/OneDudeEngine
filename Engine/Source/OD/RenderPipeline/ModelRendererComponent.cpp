@@ -57,6 +57,7 @@ void ModelRendererComponent::OnGui(Entity& e, Scene& scene){
         ImGui::TreePop();
     }
 
+    ImGui::DrawAsset<Material>("customShadowPass", mesh.customShadowPass);
     ImGui::Checkbox("CastShadow", &mesh.castShadow);
     ImGui::Checkbox("Draw", &mesh.draw);
 
@@ -288,6 +289,10 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     }
 
     ImGui::Checkbox("updateWhenOffscreen", &mesh.updateWhenOffscreen);
+
+    ImGui::DrawAsset<Material>("customShadowPass", mesh.customShadowPass);
+    ImGui::Checkbox("CastShadow", &mesh.castShadow);
+    ImGui::Checkbox("Draw", &mesh.draw);
 
     /*if(mesh.model == nullptr){
         ImGui::Text("Path: None");

@@ -37,6 +37,7 @@ struct OD_API ModelRendererComponent{
     Pose finalPose;
     Transform localTransform;
     AlignedVector<RenderData> renderData;
+    Ref<Material> customShadowPass = nullptr;
     Vector4 customData;
     bool useCustomData = false;
     bool castShadow = true;
@@ -76,8 +77,12 @@ struct OD_API ModelRendererComponent{
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
+
         AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
+
+        AssetRefSerialize<Material> _customShadowPass(customShadowPass);
+        ArchiveDumpNamed(ar, "customShadowPass", _customShadowPass);
 
         if(GetRenderTargetVisibility().size() != model->renderTargets.size()){
             renderTargetVisibility.resize(model->renderTargets.size());
@@ -137,8 +142,12 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
+
         AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
+
+        AssetRefSerialize<Material> _customShadowPass(customShadowPass);
+        ArchiveDumpNamed(ar, "customShadowPass", _customShadowPass);
     }
 };
 

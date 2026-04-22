@@ -28,6 +28,11 @@ Material::Material(){
     id = materialIdPool.Pop();
 }
 
+Material::Material(const std::string& label){
+    id = materialIdPool.Pop();
+    path = "#" + label;
+}
+
 Material::Material(Ref<Shader> s, bool inenableInstancing){
     SetShader(s);
     id = materialIdPool.Pop();
@@ -55,6 +60,8 @@ Ref<Shader> Material::GetShader(){
 }
 
 void Material::SetShader(Ref<Shader> s){ 
+    isDirty = true;
+    isDirtyUniformData = true;
     shader = s; 
     //graphicsDevice->MaterialOnSetShader(*this);
     UpdateCurrentShader();
@@ -94,14 +101,14 @@ void Material::SetInt(const char* name, int value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Int;
     map.valueInt = value;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetFloat(const char* name, float value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Float;
     map.valueFloat = value;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetFloat(const char* name, float value, float min, float max){
@@ -110,7 +117,7 @@ void Material::SetFloat(const char* name, float value, float min, float max){
     map.valueFloat = value;
     map.valueFloatMin = min;
     map.valueFloatMax = max;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetFloat(const char* name, float* value, int count){
@@ -118,28 +125,28 @@ void Material::SetFloat(const char* name, float* value, int count){
     map.type = MaterialMap::Type::FloatList;
     map.list = value;
     map.listCount = count;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetVector2(const char* name, Vector2 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector2;
     map.vec.vector = Vector4(value.x, value.y, 0, 1);
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetVector3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
     map.vec.vector = Vector4(value.x, value.y, value.z, 1);
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetVector4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
     map.vec.vector = value;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetColor3(const char* name, Vector3 value){
@@ -147,7 +154,7 @@ void Material::SetColor3(const char* name, Vector3 value){
     map.type = MaterialMap::Type::Vector3;
     map.vec.vector = ToLinear(Vector4(value.x, value.y, value.z, 1));
     map.vec.vectorIsColor = true;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetColor4(const char* name, Vector4 value){
@@ -155,7 +162,7 @@ void Material::SetColor4(const char* name, Vector4 value){
     map.type = MaterialMap::Type::Vector4;
     map.vec.vector = ToLinear(value);
     map.vec.vectorIsColor = true;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetVector4(const char* name, Vector4* value, int count){
@@ -163,14 +170,14 @@ void Material::SetVector4(const char* name, Vector4* value, int count){
     map.type = MaterialMap::Type::Vector4List;
     map.list = value;
     map.listCount = count;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetMatrix4(const char* name, Matrix4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Matrix4;
     map.matrix = value;
-    isDirty = true;
+    isDirtyUniformData = true;
 }   
 
 void Material::SetMatrix4(const char* name, Matrix4* value, int count){
@@ -178,7 +185,7 @@ void Material::SetMatrix4(const char* name, Matrix4* value, int count){
     map.type = MaterialMap::Type::Matrix4List;
     map.list = value;
     map.listCount = count;
-    isDirty = true;
+    isDirtyUniformData = true;
 }
 
 void Material::SetTexture(const char* name, Ref<Texture2D> tex){
@@ -316,6 +323,7 @@ void Material::DisableKeyword(const std::string& keyword){
     }
 
     isDirty = true;
+    //isDirtyUniformData = true; //INFO: for now, i think dont need
 }
 
 void Material::EnableKeyword(const std::string& keyword){
@@ -333,6 +341,7 @@ void Material::EnableKeyword(const std::string& keyword){
     }
 
     isDirty = true;
+    //isDirtyUniformData = true; //INFO: for now, i think dont need
 }
 
 std::set<std::string> Material::GetEnabledKeywords(){
@@ -459,6 +468,7 @@ void Material::OnGui(){
     if(ImGui::DrawAsset<Shader>(s, tempShader, nullptr) && tempShader != shader){
         SetShader(tempShader);
         toSave = true;
+        isDirty = isDirtyUniformData = true;
     }
 
     /*ImGui::BeginGroup();
@@ -487,10 +497,12 @@ void Material::OnGui(){
             if(map.valueFloatMax != map.valueFloatMin){
                 if(ImGui::SliderFloat(name.c_str(), &map.valueFloat, map.valueFloatMin, map.valueFloatMax)){
                     toSave = true;
+                    isDirty = isDirtyUniformData = true;
                 }
             } else {
                 if(ImGui::DragFloat(name.c_str(), &map.valueFloat, 1/*, map.valueFloatMin, map.valueFloatMax*/)){
                     toSave = true;
+                    isDirty = isDirtyUniformData = true;
                 }
             }
         }
@@ -498,18 +510,21 @@ void Material::OnGui(){
         if(map.type == MaterialMap::Type::Vector2){
             if(ImGui::DragFloat2(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
         }
         
         if(map.type == MaterialMap::Type::Vector3 && map.vec.vectorIsColor == false){
             if(ImGui::DragFloat3(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
         }
 
         if(map.type == MaterialMap::Type::Vector4 && map.vec.vectorIsColor == false){
             if(ImGui::DragFloat4(name.c_str(), &map.vec.vector[0])){
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
         }
 
@@ -517,6 +532,7 @@ void Material::OnGui(){
             if(ImGui::ColorEdit3(name.c_str(), &map.vec.vector[0])){
                 map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need 
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
         }
 
@@ -524,6 +540,7 @@ void Material::OnGui(){
             if(ImGui::ColorEdit4(name.c_str(), &map.vec.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
                 map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
         }
 
@@ -545,6 +562,7 @@ void Material::OnGui(){
             if(ImGui::SmallButton("X")){
                 map.texture = Texture2D::LoadDefautlTexture2D();
                 toSave = true;
+                isDirty = isDirtyUniformData = true;
             }
             ImGui::EndGroup();
             if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
@@ -558,6 +576,7 @@ void Material::OnGui(){
                     keepAlive = map.texture; // Avoid opengl crach on imgui becose text was deleted
                     map.texture = AssetManager::Get().LoadAsset<Texture2D>(path->generic_string());
                     toSave = true;
+                    isDirty = isDirtyUniformData = true;
                 }
             });
 
@@ -568,6 +587,7 @@ void Material::OnGui(){
 
     if(currentShader.drawTypes[0] != nullptr && currentShader.drawTypes[0]->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
+        isDirty = isDirtyUniformData = true;
     }
 
     /*ImGui::Spacing();ImGui::Spacing();

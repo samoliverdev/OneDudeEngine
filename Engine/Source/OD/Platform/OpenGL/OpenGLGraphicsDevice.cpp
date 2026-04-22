@@ -124,6 +124,10 @@ GraphicsStats& OpenGLGraphicsDevice::GetStats(){
     return stats; 
 }
 
+GraphicsDebug& OpenGLGraphicsDevice::GetGraphicsDebug(){ 
+    return debugData; 
+}
+
 GPUMemoryStats& OpenGLGraphicsDevice::GetMemoryStats(){
     memoryStats.buffersBytes = vram.buffersBytes;
     memoryStats.framebuffersBytes = vram.framebuffersBytes;
@@ -514,17 +518,22 @@ void OpenGLGraphicsDevice::Shutdown(){
 }
 
 void OpenGLGraphicsDevice::Begin(){
+    //TODO: Add #ifn FINAL_BUILD on debugData and stats updates
+
     stats.drawCalls = 0;
     stats.vertices = 0;
     stats.tris = 0;
     stats.shaderBinds = 0;
     stats.uniformSet = 0;
+    stats.uniformBufferUpdates = 0;
     stats.materialSubmitDatas = 0;
     begin = true;
     lastMat = nullptr;
     lastShader = nullptr;
 
     curPerInstancingDrawData = 0;
+
+    debugData.datas.clear();
 
     //TODO: destory if(mat.glData.mainBuffer != 0) glDeleteBuffers(1, &mat.glData.mainBuffer); on Shutdown
 
@@ -571,11 +580,13 @@ void OpenGLGraphicsDevice::BeginRenderToScreen(Vector4 clearColor){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
     glCheckError();
+    debugData.BeginPass(nullptr);
 }
 
 void OpenGLGraphicsDevice::EndRenderToScreen(){
     //Application::DrawImGui();
     glCheckError();
+    debugData.EndPass();
 }
 
 void OpenGLGraphicsDevice::Clean(float r, float g, float b, float a){
@@ -611,6 +622,7 @@ void OpenGLGraphicsDevice::SetCamera(Camera& inCamera){
     glCheckError();
     glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraData), &data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
     glCheckError();
+    stats.uniformBufferUpdates += 1;
     #endif
 }
 
@@ -751,6 +763,7 @@ int OpenGLGraphicsDevice::SubShaderGetLocation(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name, float value){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     glUniform1f(SubShaderGetLocation(shader, name), value);
     glCheckError();
     /*glCheckError2([&](){ 
@@ -760,6 +773,7 @@ void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name
 
 void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name, float* value, int count){
     stats.uniformSet += 1;
+    debugData.UniformSet(name);
     glUniform1fv(SubShaderGetLocation(shader, name), (GLsizei)count, (GLfloat*)value);
     glCheckError();
 }
@@ -781,6 +795,7 @@ void OpenGLGraphicsDevice::SubShaderSetVector2(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetVector3(SubShader& shader, const char* name, Vector3 value){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform3f(SubShaderGetLocation(shader, name), value.x, value.y, value.z);
@@ -792,6 +807,7 @@ void OpenGLGraphicsDevice::SubShaderSetVector3(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* name, Vector4 value){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4f(SubShaderGetLocation(shader, name), value.x, value.y, value.z, value.w);
@@ -800,6 +816,7 @@ void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* name, Vector4* value, int count){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniform4fv(SubShaderGetLocation(shader, name), (GLsizei)count, (GLfloat*)value);
@@ -808,6 +825,7 @@ void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* name, Matrix4 value){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(SubShaderGetLocation(shader, name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
@@ -819,6 +837,7 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* name, std::vector<Matrix4>& value){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
     glUniformMatrix4fv(SubShaderGetLocation(shader, name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
@@ -835,6 +854,7 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
     Assert(shader.glData.id == currentProgram);
 
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
     glUniformMatrix4fv(SubShaderGetLocation(shader, name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
     glCheckError();
@@ -866,6 +886,7 @@ void OpenGLGraphicsDevice::UniformBufferBind(UniformBuffer& buffer, int index){
 
 void OpenGLGraphicsDevice::SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index){
     Graphics::GetStats().uniformSet += 1;
+    debugData.UniformSet(name);
     //glActiveTexture(GL_TEXTURE0 + index); glCheckError();
     Texture2DBind(value, index);
     SubShaderSetInt(shader, name, index);
@@ -887,6 +908,7 @@ void OpenGLGraphicsDevice::SubShaderSetCubemap(SubShader& shader, const char* na
 
 void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char* name, Framebuffer& framebuffer, int index, int colorAttachmentIndex){
     stats.uniformSet += 1;
+    debugData.UniformSet(name);
 
     Assert(framebuffer.Specification().type != FramebufferAttachmentType::TEXTURE_2D_MULTISAMPLE);
     //Assert(framebuffer.specification().sample <= 1);
@@ -1064,6 +1086,7 @@ bool OpenGLGraphicsDevice::SubShaderSetUniformBuffer(SubShader& shader, const ch
     }
 }
 */
+#if 0
 void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(drawType >= 0 && drawType <= 3);
     Assert(mat.currentShader.drawTypes[drawType] != nullptr);
@@ -1209,6 +1232,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
 
     auto SubmitGraphicDatas = [&](Material& material){
         stats.materialSubmitDatas += 1;
+        debugData.BindMaterial(&material);
         material.currentTextureSlot = 0;
         material.currentBufferSlot = 0;
         material.UpdateCurrentShader();
@@ -1282,6 +1306,224 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     }
     lastShader = mat.currentShader.drawTypes[drawType].get();
 }  
+#else
+void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
+    Assert(drawType >= 0 && drawType <= 3);
+    Assert(mat.currentShader.drawTypes[drawType] != nullptr);
+
+    auto ContainUniformName = [&](SubShader& shader, const std::string& name){ 
+        return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
+    };
+
+    auto ApplyUniformTo = [&](Material& material, SubShader& shader, const std::unordered_map<std::string, MaterialMap>& maps){
+        for(const auto& i: maps){
+            const MaterialMap& map = i.second;
+
+            #if UseUniformBuffer
+            if(material.glData.mainUniformData != nullptr && material.glData.mainBufferDef.members.count(i.first)){
+                const UniformBufferDef::Member m = material.glData.mainBufferDef.members[i.first];
+
+                if(map.type == MaterialMap::Type::Int){
+                    Assert(m.size >= sizeof(int));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.valueInt, sizeof(int));
+                } else if(map.type == MaterialMap::Type::Float){
+                    Assert(m.size >= sizeof(float));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.valueFloat, sizeof(float));
+                } else if(map.type == MaterialMap::Type::Vector2){
+                    //#ifdef GLM_FORCE_ALIGNED
+                        Assert(m.size >= (sizeof(float) * 2));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 2);
+                    /*#else
+                        Assert(m.size >= sizeof(Vector2));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+                    #endif*/
+                } else if(map.type == MaterialMap::Type::Vector3){
+                    //#ifdef GLM_FORCE_ALIGNED
+                        Assert(m.size >= (sizeof(float) * 3));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 3);
+                    /*#else
+                        Assert(m.size >= sizeof(Vector3));
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
+                    #endif*/
+                } else if(map.type == MaterialMap::Type::Vector4){
+                    Assert(m.size >= sizeof(Vector4));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector4));
+                } else if(map.type == MaterialMap::Type::Matrix4){
+                    Assert(m.size >= sizeof(Matrix4));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.matrix, sizeof(Matrix4));
+                } else if(map.type == MaterialMap::Type::FloatList){
+                    Assert(map.list != nullptr);
+                    Assert(map.listCount > 0);
+
+                    //Assert(m.size >= sizeof(float) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : 16; // fallback seguro
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    float* src = static_cast<float*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(float));
+                    }
+                } else if(map.type == MaterialMap::Type::Vector4List){
+                    Assert(map.list != nullptr);
+                    Assert(map.listCount > 0);
+
+                    //Assert(m.size >= sizeof(Vector4) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : sizeof(Vector4);
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    Vector4* src = static_cast<Vector4*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(Vector4));
+                    }
+                } else if(map.type == MaterialMap::Type::Matrix4List){
+                    Assert(map.list != nullptr);
+                    Assert(map.listCount > 0);
+                    
+                    //Assert(m.size >= sizeof(Matrix4) * map.listCount);
+                    //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
+                    int stride = m.arrayStride > 0 ? m.arrayStride : sizeof(Matrix4); // normalmente 64
+                    char* base = (char*)material.glData.mainUniformData + m.pos;
+                    Matrix4* src = static_cast<Matrix4*>(map.list);
+                    for(int j = 0; j < map.listCount; ++j){
+                        memcpy(base + j * stride, &src[j], sizeof(Matrix4));
+                    }
+                } else {
+                    Assert(false && "Type Not Supported in A UnifomBuffer");
+                }
+                continue;
+            }
+            #endif
+            
+            if(ContainUniformName(shader, i.first) == false) continue;
+
+            if(map.type == MaterialMap::Type::Int){
+                SubShaderSetInt(shader, i.first.c_str(), map.valueInt);
+            }
+            if(map.type == MaterialMap::Type::Float){
+                SubShaderSetFloat(shader, i.first.c_str(), map.valueFloat);
+            }
+            if(map.type == MaterialMap::Type::Vector2){
+                SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
+            }
+            if(map.type == MaterialMap::Type::Vector3){
+                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+            }
+            if(map.type == MaterialMap::Type::Vector4){
+                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+            }
+            if(map.type == MaterialMap::Type::Matrix4){
+                SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);
+            }
+            if(map.type == MaterialMap::Type::Buffer){
+                if(i.second.buffer == nullptr) continue;
+                Assert(i.second.buffer != nullptr);
+                SubShaderSetUniformBuffer(shader, i.first.c_str(), *i.second.buffer, material.currentBufferSlot);
+                material.currentBufferSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::Texture){
+                if(i.second.texture == nullptr) continue;//TODO: Add a default texure by type if is null
+                Assert(i.second.texture != nullptr);
+                SubShaderSetTexture2D(shader, i.first.c_str(), *i.second.texture, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::TextureArray){
+                SubShaderSetTexture2DArray(shader, i.first.c_str(), *i.second.textureArray, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::Framebuffer){
+                SubShaderSetFramebuffer(shader, i.first.c_str(), *i.second.framebuffer, material.currentTextureSlot, map.framebufferAttachment);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::Cubemap){
+                SubShaderSetCubemap(shader, i.first.c_str(), *i.second.cubemap, material.currentTextureSlot);
+                material.currentTextureSlot += 1;
+            }
+            if(map.type == MaterialMap::Type::FloatList){
+                SubShaderSetFloat(shader, i.first.c_str(), static_cast<float*>(map.list), map.listCount);
+            }
+            if(map.type == MaterialMap::Type::Vector4List){
+                SubShaderSetVector4(shader, i.first.c_str(), static_cast<Vector4*>(map.list), map.listCount);
+            }
+            if(map.type == MaterialMap::Type::Matrix4List){
+                SubShaderSetMatrix4(shader, i.first.c_str(), static_cast<Matrix4*>(map.list), map.listCount);
+            }
+        }
+    };
+
+    auto _PreBind = [&](Material& material){
+        material.UpdateCurrentShader();
+    };
+
+    auto _BindShader = [&](SubShader& shader){
+        SubShaderBind(shader); 
+        
+        #if UseUniformBuffer
+        unsigned int index = glGetUniformBlockIndex(shader.glData.id, "CamDraw");   
+        if(index != GL_INVALID_INDEX){
+            glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
+            glCheckError(); 
+            glUniformBlockBinding(shader.glData.id, index, mat.currentBufferSlot); // 0);
+            mat.currentBufferSlot += 1;
+            glCheckError(); 
+        } else {
+            SubShaderSetMatrix4(shader, "projection", camera.projection);
+            SubShaderSetMatrix4(shader, "view", camera.view);
+        }  
+        #else
+        SubShaderSetMatrix4(shader, "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
+        SubShaderSetMatrix4(shader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
+        #endif
+    };
+
+    auto _BindMaterial = [&](Material& material){
+        stats.materialSubmitDatas += 1;
+        debugData.BindMaterial(&material);
+        material.currentTextureSlot = 0;
+        material.currentBufferSlot = 0;
+
+        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
+        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
+        Assert(material.currentTextureSlot < 32);
+
+        #if UseUniformBuffer
+        if(material.glData.mainBuffer != 0 && material.isDirtyUniformData == true){
+            glBindBuffer(GL_UNIFORM_BUFFER, material.glData.mainBuffer);
+            glCheckError();
+            glBufferData(GL_UNIFORM_BUFFER, material.glData.mainBufferDef.size, material.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+            glCheckError();
+            stats.uniformBufferUpdates += 1;
+        }
+        unsigned int index2 = glGetUniformBlockIndex(material.currentShader.drawTypes[drawType]->glData.id, "Main");  
+        if(index2 != GL_INVALID_INDEX){
+            glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
+            glCheckError(); 
+            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
+            mat.currentBufferSlot += 1;
+            glCheckError(); 
+        }  
+
+        #endif
+    };
+
+    Assert(mat.GetShader() != nullptr);
+    if(mat.GetShader() == nullptr) return;
+
+    Assert(mat.currentShader.drawTypes[drawType] != nullptr && "Shader is not vali!");
+    Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
+
+    if(&mat != lastMat || mat.isDirty == true) _PreBind(mat);
+    if(mat.currentShader.drawTypes[drawType].get() != lastShader) _BindShader(*mat.currentShader.drawTypes[drawType]);
+    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true) _BindMaterial(mat);
+
+    mat.isDirtyUniformData = false;
+    mat.isDirty = false;
+
+    lastMat = &mat;
+    lastShader = mat.currentShader.drawTypes[drawType].get();
+}  
+#endif
 
 void OpenGLGraphicsDevice::SendPerDrawData(PerDrawData& perDrawData){
     /*if(perDrawData.int_0_Count > 0) SubShaderSetInt(*lastShader, "perDrawInt_0", perDrawData.int_0[0]);
@@ -1354,6 +1596,7 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount;
     stats.tris += mesh.indiceCount / 3;
+    debugData.DrawMesh(&mesh);
     
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1396,6 +1639,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount;
     stats.tris += mesh.indiceCount / 3;
+    debugData.DrawMeshSkinned(&mesh);
     
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1428,6 +1672,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
     stats.tris += (mesh.indiceCount * count) / 3;
+    debugData.DrawMeshInstancing(&mesh);
 
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1462,6 +1707,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
     stats.tris += (mesh.indiceCount * count) / 3;
+    debugData.DrawMeshInstancing(&mesh);
 
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
@@ -1496,6 +1742,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Instanc
     stats.drawCalls += 1;
     stats.vertices += mesh.vertexCount * count;
     stats.tris += (mesh.indiceCount * count) / 3;
+    debugData.DrawMeshInstancing(&mesh);
 
     // Bind mesh geometry
     #ifdef USE_VAO
@@ -2873,11 +3120,14 @@ void OpenGLGraphicsDevice::BeginFramebuffer(Framebuffer& frambuffer, bool clean,
     }
 
     if(clean) Clean(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+
+    debugData.BeginPass(&frambuffer);
 }
 
 void OpenGLGraphicsDevice::EndFramebuffer(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCheckError();
+    debugData.EndPass();
 }
 
 void OpenGLGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
@@ -5019,6 +5269,7 @@ void OpenGLGraphicsDevice::SubShaderBind(SubShader& shader){
     glCheckError();
     
     stats.shaderBinds += 1;
+    debugData.BindShader(&shader);
 }
 
 bool OpenGLGraphicsDevice::ShaderCreate(Shader& shader, std::string inPath){
@@ -5095,6 +5346,7 @@ void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const voi
     glCheckError();
     glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
     glCheckError();
+    stats.uniformBufferUpdates += 1;
 }
 #pragma endregion
 

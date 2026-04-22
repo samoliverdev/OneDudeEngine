@@ -107,6 +107,8 @@ struct OD_API SubShader{
     SubShaderDataGL;
     SubShaderDataWG;
 
+    std::string name = "NoName";
+
     inline bool SupportInstancing(){ return pipeline.supportInstancing; }
     inline CullFace GetCullFace(){ return pipeline.cullFace; }
     inline DepthTest GetDepthTest(){ return pipeline.depthTest; }

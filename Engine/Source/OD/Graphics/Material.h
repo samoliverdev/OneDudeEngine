@@ -102,6 +102,7 @@ class OD_API Material: public Asset{
     friend class WebGPUGraphicsDevice;
 public:
     Material();
+    Material(const std::string& label);
     Material(const Material& other);
     Material(Ref<Shader> s, bool enableInstancing = false);
     ~Material();
@@ -210,6 +211,7 @@ private:
     Ref<Texture2D> keepAlive = nullptr;
 
     bool isDirty = true;
+    bool isDirtyUniformData = true; //INFO: This is new, and was not test so much, so this can bug something else
     
     bool isComplete = false;
     MaterialDataGL;

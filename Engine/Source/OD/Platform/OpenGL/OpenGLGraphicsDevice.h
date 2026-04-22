@@ -14,6 +14,7 @@ public:
 
     virtual GraphicsStats& GetStats() override;
     virtual GPUMemoryStats& GetMemoryStats() override;
+    virtual GraphicsDebug& GetGraphicsDebug() override;
     virtual GraphicsDeviceInfo GetInfo() override;
 
     virtual void Begin() override;
@@ -242,6 +243,7 @@ public:
     Ref<Material> equirectangularToCubemapMat = nullptr;
     Camera camera;
     GraphicsStats stats;
+    GraphicsDebug debugData;
     GPUMemoryStats memoryStats;
     Material* lastMat = nullptr;
     SubShader* lastShader = nullptr;

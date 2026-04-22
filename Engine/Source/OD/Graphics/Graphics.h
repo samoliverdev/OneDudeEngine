@@ -27,7 +27,67 @@ struct GraphicsStats{
     int tris;
     int shaderBinds;
     int uniformSet;
+    int uniformBufferUpdates;
     int materialSubmitDatas;
+};
+
+struct GraphicsDebug{
+    enum class Type{DrawMesh, DrawMeshSkinned, DrawMeshInstancing, BindMaterial, BindShader, BeginPass, EndPass, UniformSet};
+
+    struct Data{
+        Type type;
+
+        union{
+            struct { Mesh* drawMesh; };
+            struct { Mesh* drawMeshSkinned; };
+            struct { Mesh* drawMeshSkinned; };
+            struct { Material* bindMaterial; };
+            struct { SubShader* bindSubShader; };
+            struct { Framebuffer* pass; };
+            struct { const char* uniformSet; };
+        }; 
+    };
+
+    inline void DrawMesh(Mesh* mesh){
+        datas.push_back({Type::DrawMesh});
+        datas.back().drawMesh = mesh;
+    }
+
+    inline void DrawMeshSkinned(Mesh* mesh){
+        datas.push_back({Type::DrawMeshSkinned});
+        datas.back().drawMesh = mesh;
+    }
+
+    inline void DrawMeshInstancing(Mesh* mesh){
+        datas.push_back({Type::DrawMeshInstancing});
+        datas.back().drawMesh = mesh;
+    }
+
+    inline void BindMaterial(Material* mat){
+        datas.push_back({Type::BindMaterial});
+        datas.back().bindMaterial = mat;
+    }
+
+    inline void BindShader(SubShader* shader){
+        datas.push_back({Type::BindShader});
+        datas.back().bindSubShader = shader;
+    }
+
+    inline void BeginPass(Framebuffer* a){
+        datas.push_back({Type::BeginPass});
+        datas.back().pass = a;
+    }
+
+    inline void EndPass(){
+        datas.push_back({Type::EndPass});
+    }
+
+    inline void UniformSet(const char* n){
+        datas.push_back({Type::UniformSet});
+        datas.back().uniformSet = n;
+    }
+
+    std::vector<Data> datas;
 };
 
 struct GPUMemoryStats{
@@ -81,6 +141,7 @@ class OD_API Graphics {
 public:
     static GraphicsStats& GetStats();
     static GPUMemoryStats& GetMemoryStats();
+    static GraphicsDebug& GetGraphicsDebug();
     static void Begin();
     static void End();
     static bool HasBegin();

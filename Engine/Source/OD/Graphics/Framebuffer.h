@@ -77,6 +77,8 @@ public:
 
     size_t VRamUsage(){ return vramUsage; }
 
+    std::string name = "NoName";
+
 private:
     size_t vramUsage = 0;
     FramebufferType type;

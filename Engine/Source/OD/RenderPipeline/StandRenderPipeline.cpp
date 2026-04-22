@@ -78,9 +78,11 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(specification);*/
 
     directionalShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
+    directionalShadowAtlas->name = "directionalShadowAtlas";
     otherShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
+    otherShadowAtlas->name = "otherShadowAtlas";
 
-    shadowPass = CreateRef<Material>();
+    shadowPass = CreateRef<Material>("DefaultShadowMap");
     shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 

@@ -195,6 +195,10 @@ GraphicsStats& Graphics::GetStats(){
     return graphicsDevice->GetStats(); 
 }
 
+GraphicsDebug& Graphics::GetGraphicsDebug(){
+    return graphicsDevice->GetGraphicsDebug(); 
+}
+
 GPUMemoryStats& Graphics::GetMemoryStats(){
     return graphicsDevice->GetMemoryStats();
 }

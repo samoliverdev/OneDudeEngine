@@ -51,6 +51,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     entityIdOutColor = new Framebuffer(framebufferSpecification);
+    entityIdOutColor->name = "entityIdOutColor";
 
     framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGBA16F} //{FramebufferTextureFormat::RGB11B10F}, 
@@ -61,6 +62,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     forwardOutColor = new Framebuffer(framebufferSpecification);
+    forwardOutColor->name = "forwardOutColor";
     //forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.colorAttachments = {
@@ -76,6 +78,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     deferredOutColor = new Framebuffer(framebufferSpecification);
+    deferredOutColor->name = "deferredOutColor";
     //deferredOutColor->ColorAttachmentId(3);
     //deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
@@ -87,8 +90,11 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.createDepth = false;
     framebufferSpecification.sample = 1;
     finalColor = new Framebuffer(framebufferSpecification);
+    finalColor->name = "finalColor";
     postFx1 = new Framebuffer(framebufferSpecification);
+    postFx1->name = "postFx1";
     postFx2 = new Framebuffer(framebufferSpecification);
+    postFx2->name = "postFx2";
     //finalColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
@@ -2011,6 +2017,8 @@ void RenderContext::UpdateRenderData(){
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
+            data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
+
             if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
 
             #if EnableExperimentalPerDrawCustomData
@@ -2127,7 +2135,7 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.int_0[0] = ((int)e) + 1;
             data.perDrawData.int_0[1] = info.layer;
 
-            data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
+            data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
 
             //TODO: Refactory perDrawData to avoid memory alocation
             if(c.useCustomData){

@@ -26,6 +26,7 @@ class ComputeShader;
 class InstancingBuffer;
 class UniformBuffer;
 struct GraphicsStats;
+struct GraphicsDebug;
 struct GPUMemoryStats;
 struct PerDrawData;
 struct TextParams;
@@ -42,6 +43,7 @@ public:
 
     virtual GraphicsStats& GetStats() = 0;
     virtual GPUMemoryStats& GetMemoryStats() = 0;
+    virtual GraphicsDebug& GetGraphicsDebug() = 0;
     virtual GraphicsDeviceInfo GetInfo() = 0;
 
     virtual void LoadContext(void* data) = 0;
