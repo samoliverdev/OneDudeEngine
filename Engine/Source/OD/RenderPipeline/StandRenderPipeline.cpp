@@ -9,6 +9,7 @@
 #include "OD/Graphics/Font.h"
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
+#include "OD/Graphics/Gizmos.h"
 #include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
@@ -337,6 +338,29 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
     return data;
 }
 
+void Shadows::DrawCascadeFrustums(){
+    Vector3 colors[4] = {
+        Vector3(1,0,0),
+        Vector3(0,1,0),
+        Vector3(0,0,1),
+        Vector3(0,0,0)
+    };
+
+    float scales[4] = {
+        1, 1.1f, 1.2f, 1.3f
+    };
+
+    for(int i = 0; i < 4; i++){
+        Matrix4 scale = math::scale(Matrix4Identity, Vector3One * scales[i]);
+
+        Gizmos::DrawFrustum(
+            shadowDirectionalLightsSplits[i].frustum, 
+            Matrix4Identity, 
+            colors[i]
+        );
+    }
+}
+
 #pragma endregion
 
 #pragma region Lighting
@@ -557,7 +581,7 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
-    blendDrawSettings.enableIntancing = true; //false;
+    blendDrawSettings.enableIntancing = false; //true; //false;
     blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
@@ -1672,6 +1696,8 @@ void StandRenderPipeline::OnDrawGizmos(Scene& scene, Camera& cm){
             1
         );
     }
+
+    cameraRenderer.GetShadows().DrawCascadeFrustums();
 }
 
 void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity e){

@@ -2159,6 +2159,15 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 	Ref<Navmesh> navmesh = nullptr;
 	NavmeshComponent::AgentUpdateMode updateMode;
 
+	auto updateReached = [&](NavmeshAgentComponent& agent, TransformComponent& trans){
+		if(agent.reach == false) return;
+
+		float distance2 = math::distance2(trans.Position(), agent.destination);
+		if(distance2 >= math::sqr(agent.stopDistance*1.25f)){
+			agent.Reset();
+		}
+	};
+
 	int navmeshCount = 0;
 	auto navmeshView = scene.GetRegistry().view<NavmeshComponent>();
 	for(auto e: navmeshView){
@@ -2172,6 +2181,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 	if(navmesh == nullptr) return;
 
 	if(updateMode == NavmeshComponent::AgentUpdateMode::FindPath){
+		OD_PROFILE_SCOPE("NavmeshSystem::Update::FindPath");
 		#if InternalSystemsMulthread
 		scene.GetTaskflow().emplace([=, &scene](tf::Subflow& subflow){
 		#endif
@@ -2179,6 +2189,8 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 			for(auto e: navmeshAgentView){
 				NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
 				TransformComponent& transform = navmeshAgentView.get<TransformComponent>(e);
+
+				//updateReached(navmeshComponent, transform);
 
 				if(navmeshComponent.isDirty){
 					navmeshComponent.isDirty = false;
@@ -2239,9 +2251,14 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 	}
 
 	if(updateMode == NavmeshComponent::AgentUpdateMode::Crowd){
+		OD_PROFILE_SCOPE("NavmeshSystem::Update::Crowd");
 		auto navmeshAgentView = scene.GetRegistry().view<NavmeshAgentComponent, TransformComponent>();
-		
+
+		{
+		OD_PROFILE_SCOPE("NavmeshSystem::Update::Crowd::1");
 		for(auto [entity, agent, trans] : navmeshAgentView.each()){
+			//updateReached(agent, trans);
+
 			if(agent.crowdId == -1){
 				dtCrowdAgentParams ap;
 				memset(&ap, 0, sizeof(ap));
@@ -2275,7 +2292,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 				agent.isDirty = false;
 
 				agent.lastPos = trans.Position();
-				navmesh->FindPath(trans.Position(), agent.destination, agent.path);
+				navmesh->FindPath(trans.Position(), agent.destination, agent.path);//INFO: Maybe is not right call this, and maybe instead need read current path calced from requestMoveTarget
 				agent.curPathIndex = 1;//-1;
 				agent.reach = false;
 
@@ -2305,11 +2322,21 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 					ca->npos[1] = pos.y;
 					ca->npos[2] = pos.z;*/
 
+					//INFO: Possible best sync methods
+					//Sync by threshold: if(distance(crowdPos, physPos) > threshold)
+					//Sync Velocity too: 
+					//Vector3 vel = rb.Velocity();
+					//ca->vel[0] = vel.x;
+					//ca->vel[1] = vel.y;
+					//ca->vel[2] = vel.z;
+					// And I think is best make ther user manager this like Unity
+
 					// Blend instead of overwrite 
 					float* npos = ca->npos;
 					Vector3 crowdPos = Vector3(npos[0], npos[1], npos[2]);
 					Vector3 physPos  = trans.Position();
 					Vector3 corrected = math::mix(crowdPos, physPos, 0.5f); //TODO: change 0.2 to variable
+					//Vector3 corrected = physPos;
 					npos[0] = corrected.x;
 					npos[1] = corrected.y;
 					npos[2] = corrected.z;
@@ -2321,10 +2348,24 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 				}
 			}
 		}
+		}
 
+		{
+		OD_PROFILE_SCOPE("NavmeshSystem::Update::Crowd::2");
 		// Update the crowd simulation
 		navmesh->m_crowd->update(Application::DeltaTime(), nullptr);
 
+		/*static float accumulator = 0.0f;
+		const float step = 1.0f / 20.0f; // 20 Hz crowd update (good baseline)
+		accumulator += Application::DeltaTime();
+		while (accumulator >= step){
+			navmesh->m_crowd->update(step, nullptr);
+			accumulator -= step;
+		}*/
+		}
+
+		{
+		OD_PROFILE_SCOPE("NavmeshSystem::Update::Crowd::3");
 		// Apply positions and check arrival
 		for(auto [entity, agent, trans] : navmeshAgentView.each()){
 			const dtCrowdAgent* a = navmesh->m_crowd->getAgent(agent.crowdId);
@@ -2361,6 +2402,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 						editable->vel[0] = 0; editable->vel[1] = 0; editable->vel[2] = 0;
 					}
 				}
+			}
 			}
 		}
 	}
@@ -2480,30 +2522,43 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 	}
 }
 
+void NavmeshSystem::DrawNavmeshAgentComponentGizmos(NavmeshAgentComponent& navmeshComponent, TransformComponent& trans){
+	Vector3 desiredVelocityP0 = trans.Position() + Vector3Up * 0.25f;
+	Vector3 desiredVelocityP1 = desiredVelocityP0 + navmeshComponent.desiredVelocity;
+	Graphics::DrawLine(
+			desiredVelocityP0, 
+			desiredVelocityP1, 
+			Vector3(0, 0, 0), 
+			1
+		);
+
+	if(navmeshComponent.path.status == NavMeshPathStatus::PathInvalid) return;
+	if(navmeshComponent.path.corners.size() < 2) return;
+
+	for(int i = 0; i < navmeshComponent.path.corners.size()-1; i++){
+		Graphics::DrawLine(
+			navmeshComponent.path.corners[i] + Vector3(0, 0.1f, 0), 
+			navmeshComponent.path.corners[i+1] + Vector3(0, 0.1f, 0), 
+			Vector3(1, 0, 0), 
+			1
+		);
+	}
+
+	for(int i = 0; i < navmeshComponent.path.corners.size(); i++){
+		Graphics::DrawWireCube(
+			Transform(navmeshComponent.path.corners[i], QuaternionIdentity, Vector3(0.25f)).GetModelMatrix(),
+			Vector3(1, 0, 0), 1
+		);
+	}
+}
+
 void NavmeshSystem::OnDrawGizmos(Scene& scene, Camera& cam){
 	//return;
-	auto navmeshAgentView = scene.GetRegistry().view<NavmeshAgentComponent>();
+	/*auto navmeshAgentView = scene.GetRegistry().view<NavmeshAgentComponent>();
 	for(auto e: navmeshAgentView){
 		NavmeshAgentComponent& navmeshComponent = navmeshAgentView.get<NavmeshAgentComponent>(e);
-		if(navmeshComponent.path.status == NavMeshPathStatus::PathInvalid) continue;
-		if(navmeshComponent.path.corners.size() < 2) continue;
-
-		for(int i = 0; i < navmeshComponent.path.corners.size()-1; i++){
-			Graphics::DrawLine(
-				navmeshComponent.path.corners[i] + Vector3(0, 0.1f, 0), 
-				navmeshComponent.path.corners[i+1] + Vector3(0, 0.1f, 0), 
-				Vector3(1, 0, 0), 
-				1
-			);
-		}
-
-		for(int i = 0; i < navmeshComponent.path.corners.size(); i++){
-			Graphics::DrawWireCube(
-				Transform(navmeshComponent.path.corners[i], QuaternionIdentity, Vector3(0.25f)).GetModelMatrix(),
-				Vector3(1, 0, 0), 1
-			);
-		}
-	}
+		DrawNavmeshAgentComponentGizmos(navmeshComponent);
+	}*/
 
 	auto navmeshView = scene.GetRegistry().view<NavmeshComponent, TransformComponent>();
 	for(auto e: navmeshView){
@@ -2557,12 +2612,17 @@ void NavmeshSystem::OnDrawGizmos(Scene& scene, Camera& cam){
 }
 
 void NavmeshSystem::OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity){
-	if(scene.HasComponent<NavmeshComponent>(entity) == false) return;
+	if(scene.HasComponent<NavmeshComponent>(entity)){
+		auto& n = scene.GetComponent<NavmeshComponent>(entity);
+		if(n.navmesh != nullptr) n.navmesh->DrawDebug();
+	}
 
-	auto& n = scene.GetComponent<NavmeshComponent>(entity);
-	if(n.navmesh == nullptr) return;
-    
-	n.navmesh->DrawDebug();
+	if(scene.HasComponent<NavmeshAgentComponent>(entity)){
+		DrawNavmeshAgentComponentGizmos(
+			scene.GetComponent<NavmeshAgentComponent>(entity),
+			scene.GetComponent<TransformComponent>(entity)
+		);
+	}
 }
 
 }

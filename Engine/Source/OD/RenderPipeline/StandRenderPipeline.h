@@ -127,6 +127,8 @@ public:
     inline Framebuffer* GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
     inline Framebuffer* GetOtherShadowAtlas(){ return otherShadowAtlas; };
 
+    void DrawCascadeFrustums();
+
 private:
     void RenderDirectionalShadows();
     void RenderOtherShadows();

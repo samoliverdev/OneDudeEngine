@@ -266,7 +266,7 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
         });*/
 
         //std::for_each(std::execution::par_unseq, view.begin(), view.end(), [&](auto e){
-        for(auto [e, anim, skinned]: view.each()){
+        /*for(auto [e, anim, skinned]: view.each()){
             AnimatorComponent& anim = view.get<AnimatorComponent>(e);
             SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
             HandlerAnimatorByModel(skinned, anim); 
@@ -276,7 +276,7 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
                 Vector3 delta = anim.layers[0].controller.RootDelta().Position();
                 trans.Position(trans.Position() + delta);
             }
-        }
+        }*/
         //});
 
          //With the Animator sample this cache friend dont make any fps difference, maybe low amount of animators
@@ -286,6 +286,12 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
                 HandlerAnimatorByModel(skinned, anim); 
             }
         );*/
+
+        for(auto e: view){
+            AnimatorComponent& anim = view.get<AnimatorComponent>(e);
+            SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
+            scene.GetTaskflow().emplace([&](){ HandlerAnimatorByModel(skinned, anim); });
+        }
 
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);

@@ -94,6 +94,9 @@ struct VRAMTracker{
 
 VRAMTracker vram;   // member of OpenGLGraphicsDevice or global / singleton
 
+//INFO: This is becose GL_POINTS is equal of GL_NONE (0) 
+#define INVALID_DRAW_MODE 0xFFFFFFFF
+
 GLenum meshDrawModeLookup[] = {
     GL_TRIANGLES,
     GL_LINES,
@@ -101,7 +104,7 @@ GLenum meshDrawModeLookup[] = {
     #ifdef OpenGL46
     GL_QUADS,
     #else
-    GL_NONE,
+    INVALID_DRAW_MODE, //GL_NONE,
     #endif
     GL_TRIANGLE_STRIP
 };  
@@ -1605,7 +1608,7 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     mesh.Bind();
     #endif
 
-    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != INVALID_DRAW_MODE && "Dont support the current mesh.drawMode!");
 
     if(mesh.glData.ebo != 0){
         OnDrawAssetsTest();

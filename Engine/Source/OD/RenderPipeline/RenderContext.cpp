@@ -20,6 +20,7 @@
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
+#include "OD/Graphics/Gizmos.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Editor.h"
 #include <taskflow/taskflow.hpp> 
@@ -2545,7 +2546,7 @@ void RenderContext::DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bo
     commandBuffer.Submit();
 }
 
-void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
+//void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
 
 void RenderContext::DrawGizmos(){
     OD_PROFILE_SCOPE("RenderContext::DrawGizmos"); 
@@ -2592,7 +2593,8 @@ void RenderContext::DrawGizmos(){
 
         c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
         cm = c.GetCamera(); //Camera cm = c.GetCamera();
-        _DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+        //_DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
+        Gizmos::DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
     }
 
     /*auto meshRenderView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
@@ -2808,6 +2810,7 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
     commandBuffer.SetOverrideMaterial(nullptr);
 }
 
+/*
 Vector3 _Plane3Intersect(Plane p1, Plane p2, Plane p3){ //get the intersection point of 3 planes
     return ( ( -p1.n.w * math::cross( Vector3(p2.n), Vector3(p3.n) ) ) +
             ( -p2.n.w * math::cross( Vector3(p3.n), Vector3(p1.n) ) ) +
@@ -2840,6 +2843,7 @@ void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color = Vector3(1,1,1)
         Graphics::DrawLine(model, nearCorners[i], farCorners[i], color, 1); //sides of the created projection matrix
     }
 }
+*/
 
 std::vector<Vector4> getFrustumCornersWorldSpace2(const Matrix4& proj, const Matrix4& view){
     const auto inv = math::inverse(math::simdMul(proj, view));
@@ -2893,7 +2897,7 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     }
 
     // Tune this parameter according to the scene
-    constexpr float zMult = 10; //10.0f;
+    constexpr float zMult = 20; //10; //10.0f;
     if(minZ < 0){
         minZ *= zMult;
     } else {

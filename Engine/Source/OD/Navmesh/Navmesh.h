@@ -459,6 +459,7 @@ public:
 	virtual void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity) override;
 private:
 	static void OnRemoveAgent(entt::registry& r, entt::entity e);
+	void DrawNavmeshAgentComponentGizmos(NavmeshAgentComponent& navmeshComponent, TransformComponent& trans);
 
 	//Scene* scene;
 };
