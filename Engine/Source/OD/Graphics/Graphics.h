@@ -12,6 +12,8 @@ namespace sol{ class state; }
 
 namespace OD {
 
+const int MAX_BONES = 120;
+
 class SubShader;
 class Mesh;
 class Model;
@@ -19,6 +21,7 @@ class Framebuffer;
 class Font;
 class Material;
 class InstancingBuffer;
+class UniformBuffer;
 struct TextParams;
 
 struct GraphicsStats{
@@ -167,6 +170,7 @@ public:
 
     static void DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr);
     static void DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData = nullptr);
+    static void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData = nullptr);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count);
     static void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4x3* animMatrixs, int count);
     static void DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count);

@@ -70,6 +70,7 @@ public:
 
     virtual void DrawMesh(Mesh& mesh, Material& shader, Matrix4 modelMatrix, PerDrawData* perDrawData) = 0;
     virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData) = 0;
+    virtual void DrawMeshSkinned(Mesh& mesh, Material& shader, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData){}
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4* animMatrixs, int count) = 0;
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, Matrix4x3* animMatrixs, int count){}
     virtual void DrawMeshInstancing(Mesh& mesh, Material& shader, InstancingBuffer& buffer, int count){}
@@ -162,10 +163,10 @@ public:
     virtual void MaterialOnSetShader(Material& shader) = 0;
     virtual void MaterialOnUnsetShader(Material& shader) = 0;
 
-    virtual bool UniformBufferCreate(UniformBuffer& buffer){ return false; }
+    virtual bool UniformBufferCreate(UniformBuffer& buffer, size_t size){ return false; }
     virtual void UniformBufferDestroy(UniformBuffer& buffer){}
     virtual bool UniformBufferIsValid(UniformBuffer& buffer){ return false; }
-    virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset = 0){}
+    virtual void UniformBufferSetData(UniformBuffer& buffer, const void* data, size_t size, size_t offset = 0){}
 
     virtual bool ComputeBufferCreate(ComputeBuffer& buffer, size_t size){ return false; }
     virtual void ComputeBufferDestroy(ComputeBuffer& buffer){}

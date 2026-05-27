@@ -279,6 +279,10 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4
     graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count, perDrawData); 
 }
 
+void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData){
+    graphicsDevice->DrawMeshSkinned(mesh, mat, model, data, count, perDrawData); 
+}
+
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 
     graphicsDevice->DrawMeshInstancing(mesh, mat, animMatrixs, count); 
 }

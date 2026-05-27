@@ -33,11 +33,13 @@ public:
         DefaultDraw = 0,
         SkinnedDraw = 1,
         InstancingDraw = 2,
-        InstancingDraw43 = 3
+        InstancingDraw43 = 3,
+        SkinnedDraw2 = 4,
+        Count = 5
     };
 
     struct SubShaderTarget{
-        Ref<SubShader> drawTypes[4] = {nullptr, nullptr, nullptr, nullptr};
+        Ref<SubShader> drawTypes[5] = {nullptr, nullptr, nullptr, nullptr, nullptr};
     };
 
 private:

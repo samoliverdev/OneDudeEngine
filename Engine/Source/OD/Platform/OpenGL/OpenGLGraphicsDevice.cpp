@@ -231,7 +231,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 
 Ref<Mesh> _cubeMesh = nullptr;
 
-#if 1
+#if 0
 void ValidateTextures(){
     GLint maxUnits = 0;
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
@@ -1311,7 +1311,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
 }  
 #else
 void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
-    Assert(drawType >= 0 && drawType <= 3);
+    Assert(drawType >= 0 && drawType < (int)Shader::DrawType::Count);
     Assert(mat.currentShader.drawTypes[drawType] != nullptr);
 
     auto ContainUniformName = [&](SubShader& shader, const std::string& name){ 
@@ -1622,8 +1622,11 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
 }
 
 void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
+    //LogInfo("DrawMeshSkinned1");
     if(mat.currentShader.drawTypes[1] == nullptr) return;
     BindMaterial(mat, 1);
+
+    Assert(count <= MAX_BONES);
     
     if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
 
@@ -1635,7 +1638,11 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     }
 
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
-    
+
+    //Matrix4 temp[120] = {};
+    //memcpy(temp, animMatrixs, count * sizeof(Matrix4));
+    //SubShaderSetMatrix4(*lastShader, "animated", temp, 120);
+
     SubShaderSetMatrix4(*lastShader, "animated", animMatrixs, count);
     SubShaderSetMatrix4(*lastShader, "model", modelMatrix);
     
@@ -1664,9 +1671,59 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     }
 }
 
+void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData){
+    //LogInfo("DrawMeshSkinned2");
+    if(mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2] == nullptr) return;
+    BindMaterial(mat, (int)Shader::DrawType::SkinnedDraw2);
+    
+    Assert(count <= MAX_BONES);
+    
+    if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
+
+    if(MeshIsValid(mesh) == false){
+        #ifdef GRAPHIC_LOG_ERROR
+        LogError("DrawMesh::InvalidMesh");
+        #endif
+        return;
+    }
+
+    Assert(MeshIsValid(mesh) && "Mesh is not vali!");
+    Assert(data != nullptr);
+    
+    //SubShaderSetMatrix4(*lastShader, "animated", animMatrixs, count);
+    SubShaderSetMatrix4(*lastShader, "model", model);
+    bool r = SubShaderSetUniformBuffer(*lastShader, "PerDrawData", *data, 10); //TODO: Change later this hard code slot index
+    //Assert(r == true);
+    
+    stats.drawCalls += 1;
+    stats.vertices += mesh.vertexCount;
+    stats.tris += mesh.indiceCount / 3;
+    debugData.DrawMeshSkinned(&mesh);
+    
+    #ifdef USE_VAO
+    glBindVertexArray(mesh.glData.vao);
+    glCheckError();
+    #else
+    mesh.Bind();
+    #endif
+
+    Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
+
+    if(mesh.glData.ebo != 0){
+        OnDrawAssetsTest();
+        glDrawElements(meshDrawModeLookup[(int)mesh.drawMode], mesh.indiceCount, GL_UNSIGNED_INT, 0);
+        glCheckError();
+    } else {
+        OnDrawAssetsTest();
+        glDrawArrays(meshDrawModeLookup[(int)mesh.drawMode], 0, mesh.vertexCount);
+        glCheckError();
+    }
+
+}
+
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
-    if(mat.currentShader.drawTypes[2] == nullptr) return;
-    BindMaterial(mat, 2);
+    if(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw] == nullptr) return;
+    BindMaterial(mat, (int)Shader::DrawType::InstancingDraw);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
 
@@ -1700,8 +1757,8 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4x3* modelMatrixs, int count){
-    if(mat.currentShader.drawTypes[3] == nullptr) return;
-    BindMaterial(mat, 3);
+    if(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw43] == nullptr) return;
+    BindMaterial(mat, (int)Shader::DrawType::InstancingDraw43);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
 
@@ -5323,9 +5380,15 @@ void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
 void OpenGLGraphicsDevice::MaterialOnUnsetShader(Material& shader){}
 
 #pragma region UniformBuffer
-bool OpenGLGraphicsDevice::UniformBufferCreate(UniformBuffer& buffer){
+bool OpenGLGraphicsDevice::UniformBufferCreate(UniformBuffer& buffer, size_t size){
     glGenBuffers(1, &buffer.glData.id);
     glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
+    glBufferData(
+        GL_UNIFORM_BUFFER,
+        size,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
     glCheckError();
     
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -5343,11 +5406,17 @@ bool OpenGLGraphicsDevice::UniformBufferIsValid(UniformBuffer& buffer){
     return buffer.glData.id != 0;
 }
 
-void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const void* data, unsigned int size, unsigned int offset){
+void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const void* data, size_t size, size_t offset){
     Assert(UniformBufferIsValid(buffer) == true);
     glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
     glCheckError();
-    glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+    //glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+    glBufferSubData(
+        GL_UNIFORM_BUFFER,
+        0,
+        size,
+        data
+    );
     glCheckError();
     stats.uniformBufferUpdates += 1;
 }

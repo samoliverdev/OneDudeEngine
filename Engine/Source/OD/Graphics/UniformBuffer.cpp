@@ -8,12 +8,8 @@ namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
 
-Ref<UniformBuffer> UniformBuffer::Create(){
-    Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();
-    if(graphicsDevice->UniformBufferCreate(*buffer) == false){
-        graphicsDevice->UniformBufferDestroy(*buffer);
-        return nullptr;
-    }
+Ref<UniformBuffer> UniformBuffer::Create(size_t size){
+    Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>(size);
     return buffer;
 
     /*Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();
@@ -28,8 +24,8 @@ Ref<UniformBuffer> UniformBuffer::Create(){
     return buffer;*/
 }
 
-UniformBuffer::UniformBuffer(){
-    graphicsDevice->UniformBufferCreate(*this);
+UniformBuffer::UniformBuffer(size_t size){
+    graphicsDevice->UniformBufferCreate(*this, size);
 }
 
 UniformBuffer::~UniformBuffer(){
@@ -54,7 +50,7 @@ bool UniformBuffer::IsValid(){
     glCheckError();*/ 
 //}
 
-void UniformBuffer::SetData(const void* data, unsigned int size, unsigned int offset){
+void UniformBuffer::SetData(const void* data, size_t size, size_t offset){
     graphicsDevice->UniformBufferSetData(*this, data, size, offset);
 
     /*Assert(IsValid() == true);

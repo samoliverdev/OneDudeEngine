@@ -40,6 +40,44 @@ RenderContextSettings& RenderContext::GetSettings(){
     return settings;
 }
 
+struct alignas(16) DispatchParametersGPU{
+    float LightCoordinate[4];
+
+    int WaveOffset[2];
+    float near;
+    float far;
+    //int padding0[2];
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float padding1;
+
+    float FarDepthValue;
+    float NearDepthValue;
+    float InvDepthTextureSize[2];
+};
+
+struct alignas(16) SSSParameters2{
+    float LightCoordinate[4];
+
+    int WaveOffset[2];
+    float DepthBounds[2];
+
+    float InvDepthTextureSize[2];
+    float _pad0[2];
+
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    float FarDepthValue;
+
+    float NearDepthValue;  
+    float _pad1;  
+    float _pad2;  
+    float _pad3; 
+};
+
 RenderContext::RenderContext(Scene* inScene){
     scene = inScene;
 
@@ -118,8 +156,8 @@ RenderContext::RenderContext(Scene* inScene){
     coneMesh = Asset::CreateFromFile<Model>("Engine/Models/Cone.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cone.obj", {nullptr, 1, false});
     decalMesh = Asset::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
     
-    pipelineDataBuffer = UniformBuffer::Create();
-    shadowDataBuffer = UniformBuffer::Create();
+    pipelineDataBuffer = UniformBuffer::Create(sizeof(PipelineData));
+    shadowDataBuffer = UniformBuffer::Create(sizeof(ShadowData));
 
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
@@ -136,7 +174,7 @@ RenderContext::RenderContext(Scene* inScene){
 
     //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
     screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
-    screenSpaceShadowData = CreateRef<UniformBuffer>();
+    screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
 
     FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} };
@@ -312,43 +350,6 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
 }
 
-struct alignas(16) DispatchParametersGPU{
-    float LightCoordinate[4];
-
-    int WaveOffset[2];
-    float near;
-    float far;
-    //int padding0[2];
-
-    float SurfaceThickness;
-    float BilinearThreshold;
-    float ShadowContrast;
-    float padding1;
-
-    float FarDepthValue;
-    float NearDepthValue;
-    float InvDepthTextureSize[2];
-};
-
-struct alignas(16) SSSParameters2{
-    float LightCoordinate[4];
-
-    int WaveOffset[2];
-    float DepthBounds[2];
-
-    float InvDepthTextureSize[2];
-    float _pad0[2];
-
-    float SurfaceThickness;
-    float BilinearThreshold;
-    float ShadowContrast;
-    float FarDepthValue;
-
-    float NearDepthValue;  
-    float _pad1;  
-    float _pad2;  
-    float _pad3; 
-};
 
 void RenderContext::CleanSSS(){
     auto camera = GetCamera();
@@ -2122,6 +2123,7 @@ void RenderContext::UpdateRenderData(){
                 c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
             }
             data.posePalette = &c.posePalette;
+            data.skinnedBuffer = c.useSkinnedData == false ? nullptr : c.skinnedData.get(); //c.skinnedData == nullptr ? nullptr : (c.useSkinnedData ? c.skinnedData.get() : nullptr);
             
             //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
@@ -2154,6 +2156,17 @@ void RenderContext::UpdateRenderData(){
         }
     });
     scene->RunAllTaskAndSync();
+
+    auto skinnedView2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    for(auto [entity, skinned]: skinnedView2.each()){
+        if(skinned.useSkinnedData == false) continue;
+
+        if(skinned.skinnedData == nullptr){
+            skinned.skinnedData = CreateRef<UniformBuffer>(sizeof(Matrix4) * MAX_BONES); //120);
+        }
+        //if(skinned.posePalette.size() == 0) continue;
+        skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());
+    }
     }
 
     {
@@ -2440,7 +2453,8 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             data.targetMaterial->CurrentShader().drawTypes[1].get(),
             data.targetMaterial,
             data.targetMesh,
-            data.posePalette
+            data.posePalette,
+            data.skinnedBuffer
         }, data.distance);
         return;
     }
@@ -2739,7 +2753,8 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
-            data.posePalette
+            data.posePalette,
+            data.skinnedBuffer
         }, data.distance);
         return;
     }

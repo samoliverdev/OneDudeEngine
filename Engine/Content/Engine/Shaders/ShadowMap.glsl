@@ -1,6 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
-    DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
+    DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
     CullFace BACK
     DepthTest LESS
     Blend Off

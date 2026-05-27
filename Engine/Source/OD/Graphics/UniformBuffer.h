@@ -8,13 +8,13 @@ class OD_API UniformBuffer{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:
-    static Ref<UniformBuffer> Create();
+    static Ref<UniformBuffer> Create(size_t size);
 
-    UniformBuffer();
+    UniformBuffer(size_t size);
     ~UniformBuffer();
     
     bool IsValid();
-    void SetData(const void* data, unsigned int size, unsigned int offset = 0);
+    void SetData(const void* data, size_t size, size_t offset = 0);
 
     size_t VRamUsage(){ return vramUsage; }
 

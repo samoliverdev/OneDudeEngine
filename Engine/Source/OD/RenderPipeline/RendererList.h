@@ -72,6 +72,7 @@ struct OD_API alignas(16) SkinnedDrawCommand{
     Material* material;// Ref<Material> material;
     Mesh* meshs;// Ref<Mesh> meshs;
     AlignedVector<Matrix4>* posePalette;
+    UniformBuffer* skinnedData = nullptr;
     float distance;
 
     bool operator<(const SkinnedDrawCommand& a) const;

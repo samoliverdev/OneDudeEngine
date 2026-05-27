@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Graphics/Model.h"
+#include "OD/Graphics/UniformBuffer.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Ecs.h"
 #include "OD/Core/Color.h"
@@ -111,6 +112,8 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
     std::vector<Entity> skeletonEntities;
     std::vector<Entity> skeletonEntities2;
     std::vector<int> skeletonSockets;
+    Ref<UniformBuffer> skinnedData = nullptr;
+    bool useSkinnedData = false;
     bool postUpdatePosePalette = false;
     bool updateWhenOffscreen = false;
 
@@ -139,6 +142,7 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
         ArchiveDumpNVP(ar, castShadow);
 
         ArchiveDumpNVP(ar, updateWhenOffscreen);
+        ArchiveDumpNVP(ar, useSkinnedData);
 
         AssetRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);

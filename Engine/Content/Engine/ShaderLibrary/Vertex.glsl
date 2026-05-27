@@ -31,7 +31,7 @@ layout(location = 1) in vec2 texCoord;
 layout(location = 2) in vec3 normal;
 layout(location = 4) in vec3 tangents;
 
-#ifdef SKINNED
+#if defined(SKINNED) || defined(SKINNED2)
 layout(location = 5) in ivec4 boneIds;
 layout(location = 6) in vec4 weights;
 #endif
@@ -53,20 +53,17 @@ layout(location = 6) in vec4 weights;
     layout(location = 12) in vec4 a_ModelMatrix_2;
 #endif
 
-#ifdef SKINNED
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
 
-#if defined(OpenGL_API) && defined(UseUniformBuffer)
+#if defined(SKINNED)
     uniform mat4 animated[MAX_BONES];
-#else
-
-BeginUniform(1, 1, Anim)
-    Uniform mat4 animated[MAX_BONES];
-EndUniform()
-
 #endif
 
+#if defined(SKINNED2)
+layout(std140) uniform PerDrawData {
+    mat4 animated[MAX_BONES];
+};
 #endif
 
 /*
@@ -91,12 +88,20 @@ mat4 GetModelMatrix(){
         vec4(a_ModelMatrix_0.w, a_ModelMatrix_1.w, a_ModelMatrix_2.w, 1.0)  // col 3 (translation / w)
     );*/
 #else
-    return model;
+    /*#ifdef SKINNED2
+        mat4 scaleMat = mat4(1.0);
+        scaleMat[0][0] = 5;
+        scaleMat[1][1] = 5;
+        scaleMat[2][2] = 5;
+        return model * scaleMat; // or scaleMat * model (see below)
+    #else*/
+        return model;
+    //#endif
 #endif
 }
 
 vec4 GetLocalPos(){
-#ifdef SKINNED
+#if defined(SKINNED) || defined(SKINNED2)
     mat4 skin = animated[boneIds.x] * weights.x +
     animated[boneIds.y] * weights.y +
     animated[boneIds.z] * weights.z +
@@ -108,7 +113,7 @@ vec4 GetLocalPos(){
 }
 
 vec3 GetLocalNormal(){
-#ifdef SKINNED
+#if defined(SKINNED) || defined(SKINNED2)
     mat3 skinNormalMatrix = mat3(animated[boneIds.x]) * weights.x +
                         mat3(animated[boneIds.y]) * weights.y +
                         mat3(animated[boneIds.z]) * weights.z +
@@ -120,7 +125,7 @@ vec3 GetLocalNormal(){
 }
 
 vec3 GetLocalTangent(){
-#ifdef SKINNED
+#if defined(SKINNED) || defined(SKINNED2)
     mat3 skinTangentMatrix = mat3(animated[boneIds.x]) * weights.x +
                              mat3(animated[boneIds.y]) * weights.y +
                              mat3(animated[boneIds.z]) * weights.z +

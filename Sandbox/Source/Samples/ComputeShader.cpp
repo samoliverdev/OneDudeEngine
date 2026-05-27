@@ -35,7 +35,7 @@ void ComputeShaderSample::OnInit(){
     BlurParams params;
     params.blurRadius = 25;
     params.sigma = params.blurRadius * 0.5f;
-    buffer = CreateRef<UniformBuffer>();
+    buffer = CreateRef<UniformBuffer>(sizeof(BlurParams));
     buffer->SetData(&params, sizeof(BlurParams));
 
     FrameBufferSpecification spec;

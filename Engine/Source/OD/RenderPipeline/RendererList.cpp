@@ -352,7 +352,12 @@ void RendererList::Submit(bool skipEntityId){
         lastMat = _mat;
 
         if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
+
+        if(cm.skinnedData != nullptr){
+            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.skinnedData, cm.posePalette->size(), &cm.perDrawData);
+        } else {
+            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
+        }
     });
     }
     lastMat = nullptr;

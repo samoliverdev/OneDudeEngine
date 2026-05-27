@@ -241,9 +241,13 @@ void Shader::Destroy(){
             //if(j.second == nullptr) continue;
             //graphicsDevice->SubShaderDestroy(*j.second); //SubShader::Destroy(*j.second);
 
-            if(j.second.drawTypes[0] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[0]);
-            if(j.second.drawTypes[1] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[1]);
-            if(j.second.drawTypes[2] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[2]);
+            //if(j.second.drawTypes[0] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[0]);
+            //if(j.second.drawTypes[1] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[1]);
+            //if(j.second.drawTypes[2] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[2]);
+
+            for(int _i = 0; _i < (int)Shader::DrawType::Count; _i++){
+                if(j.second.drawTypes[_i] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[_i]);
+            }
         }
     }
     passes.clear();
@@ -286,10 +290,12 @@ bool Shader::InitPass(int pass){
         }
 
         if(i[0] == "DrawType"){
+            //TODO: On here i think is trigger SKINNED and SKINNED2 at same time
             for(int j = 1; j < i.size(); j++){
                 if(i[j] == "SKINNED") drawTypes.insert(Shader::DrawType::SkinnedDraw);
                 if(i[j] == "INSTANCING") drawTypes.insert(Shader::DrawType::InstancingDraw);
                 if(i[j] == "INSTANCINGMATRIX43") drawTypes.insert(Shader::DrawType::InstancingDraw43);
+                if(i[j] == "SKINNED2") drawTypes.insert(Shader::DrawType::SkinnedDraw2);
             }
         }
     }
@@ -430,6 +436,7 @@ std::string DrawTypeToString(Shader::DrawType type){
         case Shader::DrawType::SkinnedDraw: return "SKINNED";
         case Shader::DrawType::InstancingDraw: return "INSTANCING";
         case Shader::DrawType::InstancingDraw43: return "INSTANCING43";
+        case Shader::DrawType::SkinnedDraw2: return "SKINNED2";
     }
     return "UNKNOWN";
 }
@@ -455,10 +462,12 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::string skinnedKeyworld = "#define SKINNED\n";
         std::string instancingKeyworld = "#define INSTANCING\n";
         std::string instancing43Keyworld = "#define INSTANCINGMATRIX43\n";
+        std::string skinned2Keyworld = "#define SKINNED2\n";
 
         if(drawType == Shader::DrawType::SkinnedDraw) shaderSourceData.baseSource.insert(0, skinnedKeyworld);
         if(drawType == Shader::DrawType::InstancingDraw) shaderSourceData.baseSource.insert(0, instancingKeyworld);
         if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.insert(0, instancing43Keyworld);
+        if(drawType == Shader::DrawType::SkinnedDraw2) shaderSourceData.baseSource.insert(0, skinned2Keyworld);
 
         Ref<SubShader> shader = CreateRef<SubShader>();
 
@@ -481,6 +490,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         if(drawType == Shader::DrawType::SkinnedDraw) shaderSourceData.baseSource.erase(0, skinnedKeyworld.size());
         if(drawType == Shader::DrawType::InstancingDraw) shaderSourceData.baseSource.erase(0, instancingKeyworld.size());
         if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.erase(0, instancing43Keyworld.size());
+        if(drawType == Shader::DrawType::SkinnedDraw2) shaderSourceData.baseSource.erase(0, skinned2Keyworld.size());
 
         _shader.drawTypes[(int)drawType] = shader;
     }

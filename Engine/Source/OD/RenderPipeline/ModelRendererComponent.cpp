@@ -293,6 +293,7 @@ void SkinnedModelRendererComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DrawAsset<Material>("customShadowPass", mesh.customShadowPass);
     ImGui::Checkbox("CastShadow", &mesh.castShadow);
     ImGui::Checkbox("Draw", &mesh.draw);
+    ImGui::Checkbox("UseSkinnedData", &mesh.useSkinnedData);
 
     /*if(mesh.model == nullptr){
         ImGui::Text("Path: None");
