@@ -28,6 +28,7 @@
 #include "Samples/CubemapFramebuffer.h"
 #include "Samples/ComputeShader.h"
 #include "Samples/SSGI.h"
+#include "Samples/UI.h"
 
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
@@ -39,7 +40,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 34;
+    int i = 27;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();
@@ -68,6 +69,7 @@ OD::Module* CreateMainModule(){
     if(i == 32) return new CubemapFramebufferSample();
     if(i == 33) return new ComputeShaderSample();
     if(i == 34) return new SSGISample();
+    if(i == 35) return new UISample();
 
     return new BaseMeshSample();
 }

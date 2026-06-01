@@ -15,7 +15,7 @@ bool Heightmap::LoadFromFile(const std::string& _path){
 bool Heightmap::Save(const std::string& outPath, SaveType type){
     if(type == SaveType::SettingOnly) return false;
     
-    //path = _path;
+    path = outPath;
     
     std::ofstream os(outPath, std::ios::binary);
     if(os.is_open() == false) return false;

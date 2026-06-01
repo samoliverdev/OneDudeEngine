@@ -8,8 +8,11 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
-BeginUniform(0, 0, Main)
+BeginUniform(3, 0, ShadowData)
     Uniform mat4 lightSpaceMatrix;
+EndUniform()
+
+BeginUniform(0, 0, Main)
     Uniform float heightScale;
     Uniform vec2 heightmapTilling;// = vec2(1, 1);
     Uniform vec2 heightmapOffset;// = vec2(0, 0);

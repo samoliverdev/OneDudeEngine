@@ -55,6 +55,7 @@ EndUniform()
 
 #define USE_PERDRAW
 uniform vec4 perDrawVector4_0;
+uniform int perDrawInt_1;
 
 Texture2D(0, 6, heightMap, heightMapSampler)
 Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
@@ -198,13 +199,10 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     uniform float cutoff  = 0.5;*/
 
     #ifdef Deferred
-        Out(9) vec4 gAlbedoSpec;
-
-        Out(1) vec3 gPosition;
-        Out(2) vec3 gNormal;
-        //Out(3) vec4 gAlbedoSpec;
-        Out(3) vec3 gEmission;
-        Out(4) vec3 gOther;
+        layout(location = 0) out vec3 gNormal;
+        layout(location = 1) out vec4 gAlbedoSpec;
+        layout(location = 2) out vec4 gOther;
+        layout(location = 3) out vec3 gEmission;
     #else
         Out(0) vec4 fragColor;
     #endif
@@ -215,8 +213,9 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
     //Source: https://forum.unity.com/threads/calculate-vertex-normals-in-shader-from-heightmap.169871/
     vec3 filterNormalLod(vec2 uv){
-        vec2 texSize = textureSize(heightMap, 0);
-        vec2 texelSize = vec2(1.0 / texSize.x, 1.0 / texSize.y);
+        //vec2 texSize = textureSize(heightMap, 0);
+        //vec2 texelSize = vec2(1.0 / texSize.x, 1.0 / texSize.y);
+        vec2 texelSize = 1.0 / vec2(textureSize(heightMap, 0));
         
         /*float h0 = texture(heightMap, uv + ( vec2( 0,-1) * texelSize) ).r * heightScale;
         float h1 = texture(heightMap, uv + ( vec2(-1, 0) * texelSize) ).r * heightScale;
@@ -417,14 +416,19 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
         #ifdef Deferred
         
-        gPosition = surface.position;
+        /*gPosition = surface.position;
         gNormal = surface.normal;
         gAlbedoSpec.rgb = surface.color.rgb;
         //gAlbedoSpec.a = surface.smoothness;
         gEmission.rgb = GetEmission(baseUV);
         gOther.r = surface.smoothness;
         gOther.g = surface.metallic;
-        gOther.b = surface.occlusion;
+        gOther.b = surface.occlusion;*/
+
+        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);
+        gAlbedoSpec = vec4(surface.color.rgb, 1);
+        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perDrawInt_1);
+        gEmission = GetEmission(baseUV);
         
         #else
 

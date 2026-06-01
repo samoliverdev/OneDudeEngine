@@ -1697,7 +1697,7 @@ void StandRenderPipeline::OnDrawGizmos(Scene& scene, Camera& cm){
         );
     }
 
-    cameraRenderer.GetShadows().DrawCascadeFrustums();
+    //cameraRenderer.GetShadows().DrawCascadeFrustums();
 }
 
 void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity e){

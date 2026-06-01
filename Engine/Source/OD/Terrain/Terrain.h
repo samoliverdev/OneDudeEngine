@@ -93,6 +93,9 @@ struct OD_API TerrainComponent{
         ArchiveDumpNVP(ar, terrainHeight);
         ArchiveDumpNVP(ar, texTilling);
 
+        ArchiveDumpNVP(ar, chunkWidthCount);
+        ArchiveDumpNVP(ar, mapChunkSize);
+
         AssetRefSerialize<Heightmap> _heightmap(heightmap);
         ArchiveDump(ar, CEREAL_NVP(_heightmap));
 

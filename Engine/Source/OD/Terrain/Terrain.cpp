@@ -44,7 +44,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
         static int height = 1025; 
 
         ImGui::DragInt("Width", &width);
-        ImGui::DragInt("Width", &height);
+        ImGui::DragInt("Height", &height);
 
         if(ImGui::Button("Create Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
