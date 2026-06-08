@@ -62,6 +62,7 @@ struct OD_API CollisionShape{
     Type type;
     Vector3 center = {0, 0, 0};
     Vector3 rotation = {0, 0, 0};
+    Quaternion rot = QuaternionIdentity;
     Vector3 size = {1,1,1};
     float radius = 1;
     float height = 1;
@@ -162,6 +163,10 @@ struct OD_API RigidbodyComponent{
     
     inline CollisionShape GetShape(){ return shape; }
     void SetShape(CollisionShape shape);
+
+    inline const std::vector<CollisionShape>& GetExtraShapes(){ return extraShapes; }
+    void PushExtraShape(CollisionShape shape);
+    void PopExtraShape();
     
     inline float Mass(){ return mass; }
     void Mass(float mass);
@@ -214,6 +219,7 @@ struct OD_API RigidbodyComponent{
         ArchiveDump(ar, CEREAL_NVP(type));
         ArchiveDump(ar, CEREAL_NVP(interpolate));
         ArchiveDump(ar, CEREAL_NVP(shape));
+        ArchiveDump(ar, CEREAL_NVP(extraShapes));
         ArchiveDump(ar, CEREAL_NVP(mass));
         ArchiveDump(ar, CEREAL_NVP(friction));
         ArchiveDump(ar, CEREAL_NVP(linearDamping));
@@ -253,6 +259,7 @@ struct OD_API RigidbodyComponent{
 
 private:
     CollisionShape shape;
+    std::vector<CollisionShape> extraShapes;
     Type type = Type::Dynamic;
     Vector3 angularFactor = {1, 1, 1};
     bool overrideCenterOfMass = false;

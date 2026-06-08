@@ -37,6 +37,8 @@
 #include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
+#include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
 #include <Jolt/Physics/Collision/TransformedShape.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/ShapeCast.h>
@@ -1778,7 +1780,7 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
 	ImGui::DrawLayerMask("mask", rb.mask);
 
-    CollisionShape shape = rb.GetShape();
+    /*CollisionShape shape = rb.GetShape();
 
     ImGui::Spacing();
     ImGui::SeparatorText("CollisionShape");
@@ -1788,23 +1790,6 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
         shape.type = _shape;
         rb.SetShape(shape);
     }
-
-    /*const char* shapeTypeString[] = {"Box", "Sphere", "Capsule"};
-    const char* curShapeTypeString = shapeTypeString[(int)rb.GetShape().type];
-    if(ImGui::BeginCombo("CollisionShape", curShapeTypeString)){
-        for(int i = 0; i < 2; i++){
-            bool isSelected = curShapeTypeString == shapeTypeString[i];
-            if(ImGui::Selectable(shapeTypeString[i], isSelected)){
-                curShapeTypeString = shapeTypeString[i];
-                shape.type = (CollisionShape::Type)i;
-                rb.SetShape(shape);
-            }
-
-            if(isSelected) ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }*/
 
     shape = rb.GetShape();
 
@@ -1887,6 +1872,90 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 		}
 	}
 
+	ImGui::Spacing();*/
+
+	auto DrawShapeUI = [&](CollisionShape& shape) -> bool {
+		bool update = false;
+
+		// Type
+		if(ImGui::DrawEnumCombo<CollisionShape::Type>("Type", &shape.type)){
+			update = true;
+		}
+
+		// Common: center
+		float center[3] = {shape.center.x, shape.center.y, shape.center.z};
+		if(ImGui::DragFloat3("center", center)){
+			shape.center = Vector3(center[0], center[1], center[2]);
+			update = true;
+		}
+
+		if(shape.type == CollisionShape::Type::Box){
+			float size[3] = {shape.size.x, shape.size.y, shape.size.z};
+			if(ImGui::DragFloat3("size", size)){
+				shape.size = Vector3(size[0], size[1], size[2]);
+				update = true;
+			}
+		} else if(shape.type == CollisionShape::Type::Sphere){
+			if(ImGui::DragFloat("radius", &shape.radius)){
+				update = true;
+			}
+		} else if(shape.type == CollisionShape::Type::Capsule){
+			if(ImGui::DragFloat("radius", &shape.radius)) update = true;
+			if(ImGui::DragFloat("height", &shape.height)) update = true;
+		} else if(shape.type == CollisionShape::Type::Model){
+			if(ImGui::DrawAsset<Model>("modelSource", shape.modelSource)) update = true;
+			if(ImGui::DragInt("meshIndex", &shape.modelSourceMeshIndex)) update = true;
+
+			if(update){
+				shape.meshData = nullptr;
+			}
+		}
+
+		return update;
+	};
+
+	ImGui::SeparatorText("Main Shape");
+
+	CollisionShape shape = rb.GetShape();
+
+	ImGui::Spacing();
+	ImGui::PushID("MainShape");
+	if(DrawShapeUI(shape)){
+		rb.SetShape(shape);
+	}
+	ImGui::PopID();
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Extra Shapes");
+
+	// Draw all extra shapes
+	auto& extras = rb.extraShapes;
+
+	for(int i = 0; i < (int)extras.size(); i++){
+		ImGui::PushID(i);
+		if(ImGui::CollapsingHeader(("Shape " + std::to_string(i)).c_str(), ImGuiTreeNodeFlags_DefaultOpen)){
+			CollisionShape shape = extras[i];
+			bool update = false;
+			update |= DrawShapeUI(shape);
+			if(update){
+				rb.extraShapes[i] = shape;
+				rb.SetDirt();
+			}
+		}
+
+		ImGui::PopID();
+	}
+
+	// Add button
+	if(ImGui::Button("+ Push Shape")){
+		CollisionShape newShape;
+		newShape.type = CollisionShape::Type::Box;
+		rb.PushExtraShape(newShape);
+	}
+	if(ImGui::Button("- Pop Shape")){
+		rb.PopExtraShape();
+	}
+
 	ImGui::Spacing();
 
 	PhysicMotionQuality motionQuality = rb.MotionQuality();
@@ -1941,6 +2010,16 @@ void RigidbodyComponent::SetShape(CollisionShape inShape){
     shape = inShape;
 	isDirt = true;
 	//LogInfo("isDirt = true");
+}
+
+void RigidbodyComponent::PushExtraShape(CollisionShape shape){
+	isDirt = true;
+	extraShapes.push_back(shape);
+}
+
+void RigidbodyComponent::PopExtraShape(){
+	isDirt = true;
+	extraShapes.pop_back();
 }
 
 void RigidbodyComponent::Mass(float m){
@@ -2260,7 +2339,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
 	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
 
-    JPH::Ref<Shape> shape = nullptr;
+    /*JPH::Ref<Shape> shape = nullptr;
     if(rb.shape.type == CollisionShape::Type::Box){
 		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
 		//shapeSettings.SetDensity(rb.mass);
@@ -2286,9 +2365,9 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 
 		if(rb.shape.type == CollisionShape::Type::Model && rb.shape.meshData == nullptr){
 			Assert(rb.shape.modelSource != nullptr);
-			/*Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
-			Assert(rb.shape.modelSourceMeshIndex >= 0);
-			rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);*/
+			Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
+			//Assert(rb.shape.modelSourceMeshIndex >= 0);
+			//rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
 			if(rb.shape.modelSourceMeshIndex < 0){
 				rb.shape.meshData = CreateMeshShapeData(*rb.shape.modelSource);
 			} else if(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size()){
@@ -2345,7 +2424,133 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         LogError("OffsetShape creation error for entity {}: {}", info.name, offsetResult.GetError());
         return;
     }
-    RefConst<Shape> finalShape = offsetResult.Get();
+    RefConst<Shape> finalShape = offsetResult.Get();*/	
+
+	struct temp{
+		RefConst<Shape> shape;
+		Vec3 offset;
+		Quat rot;
+	};
+
+	// Lambda to build a Jolt shape from CollisionShape
+	auto BuildShape = [&](CollisionShape& s, bool compound = false) -> RefConst<Shape>{
+		RefConst<Shape> shape = nullptr;
+
+		if(s.type == CollisionShape::Type::Box){
+			BoxShapeSettings settings(ToJolt(s.size * 0.5f));
+			shape = settings.Create().Get();
+		} else if(s.type == CollisionShape::Type::Sphere){
+			SphereShapeSettings settings(s.radius);
+			shape = settings.Create().Get();
+		} else if(s.type == CollisionShape::Type::Capsule){
+			float halfHeight = (s.height - 2.0f * s.radius) * 0.5f;
+			Assert(halfHeight >= 0.0f);
+
+			CapsuleShapeSettings settings(halfHeight, s.radius);
+			shape = settings.Create().Get();
+		} else if(s.type == CollisionShape::Type::Mesh || s.type == CollisionShape::Type::Model){	
+			if(s.type == CollisionShape::Type::Model && s.meshData == nullptr){
+				Assert(s.modelSource != nullptr);
+
+				if(s.modelSourceMeshIndex < 0){
+					s.meshData = CreateMeshShapeData(*s.modelSource);
+				} else if(s.modelSourceMeshIndex < s.modelSource->meshs.size()){
+					s.meshData = CreateMeshShapeData(*s.modelSource->meshs[s.modelSourceMeshIndex]);
+				} else {
+					Assert(false);
+				}
+			}
+
+			if(!s.meshData || s.meshData->joltVertices.empty() || s.meshData->joltTriangles.empty())
+				return nullptr;
+
+			if(rb.type == RigidbodyComponent::Type::Dynamic){
+				ConvexHullShapeSettings settings(s.meshData->convexPoints);
+				auto result = settings.Create();
+				if(result.HasError()) return nullptr;
+				shape = result.Get();
+			} else {
+				MeshShapeSettings settings(s.meshData->joltVertices, s.meshData->joltTriangles);
+				settings.SetEmbedded();
+
+				auto result = settings.Create();
+				if(result.HasError()) return nullptr;
+				shape = result.Get();
+			}
+		}
+
+		if(!shape) return nullptr;
+
+		if(compound) return shape;
+
+		//if(s.center == Vector3Zero){
+		auto IsNearZero = [](const Vector3& v){
+			return glm::length2(v) < 1e-6f;
+		};
+
+		auto IsNearIdentity = [](const Quaternion& q){
+			Quaternion nq = glm::normalize(q);
+			float dot = glm::dot(nq, QuaternionIdentity);
+			return std::abs(dot) > (1.0f - 1e-6f);
+		};
+
+		if(IsNearZero(s.center) && IsNearIdentity(s.rot)){
+			return shape;
+		}
+
+		// Apply local offset
+		RotatedTranslatedShapeSettings offset(
+			ToJolt(s.center),
+			ToJolt(s.rot),// Quat::sIdentity(),
+			shape
+		);
+
+		auto result = offset.Create();
+		if(result.HasError()) return nullptr;
+
+		return result.Get();
+	};
+
+	std::vector<RefConst<Shape>> subShapes;
+	// Main shape
+	{
+		auto shape = BuildShape(rb.shape);
+		if(shape)
+			subShapes.emplace_back(shape);
+	}
+	// Extra shapes
+	for(auto& extra : rb.extraShapes){
+		auto shape = BuildShape(extra, false); //TODO: update to use compad on here: BuildShape(extra, true);
+		if(shape) subShapes.emplace_back(shape);
+	}
+	Assert(subShapes.size() >= 1);
+
+	RefConst<Shape> finalShape;
+	// Single vs compound
+	if(subShapes.size() == 1){
+		finalShape = subShapes[0];
+	} else {
+		if(type == EMotionType::Dynamic){
+			MutableCompoundShapeSettings settings;
+			for(auto& s : subShapes) settings.AddShape(Vec3::sZero(), Quat::sIdentity(), s); //TODO: update to use compad on here: pos, rot
+			auto result = settings.Create();
+			Assert(result.HasError() == false && result.GetError().c_str());
+			finalShape = result.Get();
+		} else {
+			StaticCompoundShapeSettings compoundSettings;
+			for(auto& s : subShapes) compoundSettings.AddShape(Vec3::sZero(), Quat::sIdentity(), s); //TODO: update to use compad on here: pos, rot
+			auto result = compoundSettings.Create();
+			Assert(result.HasError() == false && result.GetError().c_str());
+
+			/*if(result.HasError()){
+				LogError("Compound shape error: {}", result.GetError());
+				return;
+			}*/
+
+			finalShape = result.Get();
+		}
+	}
+
 
 	Vec3 scale = ToJolt(transform.Scale());
 	if(!scale.IsClose(Vec3::sReplicate(1.0f))){
@@ -2362,6 +2567,8 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		LogInfo("CenterOfMass: ({}, {}, {})", cm.GetX(), cm.GetY(), cm.GetZ());
 	}
 
+
+	
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
     );
