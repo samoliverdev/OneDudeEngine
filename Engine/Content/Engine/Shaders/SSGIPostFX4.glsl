@@ -68,17 +68,17 @@ const float _Radius = 12;
 const float _GIIntensity = 10;
 const float _AOIntensity = 1;
 const float _Thickness = 1;
-const float _ExpFactor = 3;
+const float _ExpFactor = 2;
 const float _BackfaceLighting = 0;
-const int _StepCount = 12;
+const int _StepCount = 8;
 const int _SliceCount = 2;
 
-const float _TemporalDirection = 0;
-const float _TemporalOffset = 0;
+const float _TemporalDirection = 1;
+const float _TemporalOffset = 1;
 
 //const float _HalfProjScale = 0;
 
-const float _CameraFar = 100;
+//const float _CameraFar = 100;
 const float _UseLinearThickness = 0;      // 0 or 1
 const float _UseScreenSpaceSampling = 1;  // 0 or 1
 
@@ -164,7 +164,6 @@ vec3 HorizonSampling(
 
     float radiusVS = max(1, _StepCount - 1) * stepRadius;
 
-    //float2 uvDir = directionRight ? float2(1, -1) : float2(-1, 1);
     vec2 uvDir = directionRight > 0.5 ? vec2(1, 1) : vec2(-1, -1);
     float signDir = directionRight > 0.5 ? 1 : -1;
 
@@ -188,7 +187,7 @@ vec3 HorizonSampling(
         float linearThickness = 1.0;
         if(_UseLinearThickness > 0.5){
             // viewPos.z is NEGATIVE in view space
-            float depthFactor = saturate(-samplePos.z / _CameraFar);
+            float depthFactor = saturate(-samplePos.z / cameraFar); //_CameraFar);
             linearThickness = depthFactor * 100.0;
         }
 
@@ -237,7 +236,7 @@ vec3 HorizonSampling(
 
                     lndl = (_BackfaceLighting > 0 && dot(lightNormal, viewDir) > 0) ? d : saturate(lndl);
 
-                    color += (hits / 32.0) * light * ndl * lndl;
+                    color += (float(hits) / 32.0) * light * ndl * lndl;
                 }
             }
         }
@@ -256,26 +255,39 @@ float Rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
+// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
+float randf(int x, int y) {
+    return mod(52.9829189 * mod(0.06711056 * float(x) + 0.00583715 * float(y), 1.0), 1.0);
+}
+
+float randf(vec2 st) {
+    return mod(52.9829189 * mod(0.06711056 * float(st.x) + 0.00583715 * float(st.y), 1.0), 1.0);
+}
+
+float blueNoise(vec2 uv){
+    return randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
+    //return texture(noise, uv * screenSize / 64.0).r - 0.5;
+}
+
 //======================================================
 // MAIN GI
 //======================================================
 vec4 ComputeSSGI(vec2 uv){
     float depth = SampleDepth(uv);
-    if (depth >= 1.0) discard;
+    //if(depth >= 1.0) discard;
 
     vec3 viewPos = GetViewPos(uv, depth);
     vec3 normal = SampleNormal(uv);
     vec3 viewDir = normalize(-viewPos);
 
-    //return float4(viewPos, 1);
+    //float noise = fract(sin(dot(uv * _Resolution.xy, vec2(12.9898,78.233))) * 43758.5453);
+    //float initialStep = fract(noise + _TemporalOffset);
 
-    //float noise = frac(sin(dot(uv * _Resolution.xy, float2(12.9898,78.233))) * 43758.5453);
-    //float initialStep = frac(noise + _TemporalOffset);
-
-    vec2 pixel = uv * _Resolution.xy;// _ScreenParams.xy;
+    //vec2 pixel = uv * _Resolution.xy;// _ScreenParams.xy;
+    vec2 pixel = floor(uv * _Resolution.xy);
     //float2 pixel = floor(uv * _ScreenParams.xy);
 
-    //float noiseOffset = frac(0.25 * fmod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
+    //float noiseOffset = fract(0.25 * mod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
     float noiseOffset = SpatialOffset(pixel);
     float noiseDirection = InterleavedGradientNoise(pixel); // interleaved gradient noise
     float temporalOffset = _TemporalOffset;// 1.0; // temporal (if disabled, set to 1)
@@ -286,17 +298,24 @@ vec4 ComputeSSGI(vec2 uv){
     vec3 color = vec3(0);
     float ao = 0;
 
+    //return vec4(noiseOffset, 0, 0, 1);
+    //return vec4(normalize(-viewPos) * 0.5 + 0.5, 1.0);
+
+    //vec2 aspect = vec2(_Resolution.y / _Resolution.x, 1.0);
+    vec2 aspect = screenSize.yx / screenSize.x;
+    float projScale = (-_Radius * projection[0][0]) / viewPos.z;
+
     //[loop]
     for(int i = 0; i < _SliceCount; i++){
         //float angle = (i + noise + _TemporalDirection) * PI / _SliceCount;
-        float angle = (i + noiseDirection + _TemporalDirection) * PI / _SliceCount;
+        float angle = (i + noiseDirection + _TemporalDirection) * (PI / _SliceCount);
 
         vec2 dir = vec2(cos(angle), sin(angle));
-        //vec2 texel = dir / _Resolution.xy;
-        vec2 texel = dir * (1.0 / min(_Resolution.x, _Resolution.y));
+        vec2 texel = dir / _Resolution.xy;
+        //vec2 texel = (dir / _Resolution.xy) * projScale * aspect;
+        //vec2 texel = dir * (1.0 / min(_Resolution.x, _Resolution.y));
 
-        //vec3 planeNormal = normalize(cross(vec3(dir,0), viewDir));
-        vec3 planeNormal = normalize(cross(vec3(dir.x, dir.y, 0.0), viewDir));
+        vec3 planeNormal = normalize(cross(vec3(dir,0), viewDir));
         vec3 tangent = cross(viewDir, planeNormal);
 
         vec3 projNormal = normal - planeNormal * dot(normal, planeNormal);
@@ -310,7 +329,7 @@ vec4 ComputeSSGI(vec2 uv){
         color += HorizonSampling(1, _Radius, viewPos, texel, initialStep, uv, viewDir, normal, n, mask);
         color += HorizonSampling(0, _Radius, viewPos, texel, initialStep, uv, viewDir, normal, n, mask);
 
-        ao += CountBits(mask) / 32.0;
+        ao += float(CountBits(mask)) / 32.0;
     }
 
     ao /= _SliceCount;

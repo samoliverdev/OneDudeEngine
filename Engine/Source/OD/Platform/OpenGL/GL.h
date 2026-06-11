@@ -39,7 +39,7 @@
 #endif
 
 
-#define USE_VAO 1
+//#define USE_VAO 1
 
 #include <functional>
 #include <vector>

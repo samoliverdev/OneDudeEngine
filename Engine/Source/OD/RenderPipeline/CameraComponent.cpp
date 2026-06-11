@@ -22,10 +22,24 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
     camera.height = height;
     camera.viewportRect = viewportRect;
     camera.viewPos = transform.Position();
-    camera.view = math::inverse(transform.GlobalModelMatrix());
+    //camera.view = math::inverse(transform.GlobalModelMatrix());
     camera.cleanColor = cleanColor;
     Transform _trans = Transform(transform.Position(), transform.Rotation(), transform.LocalScale());
     //Transform _trans = Transform(transform.GlobalModelMatrix());
+
+    Vector3 pos = transform.Position();
+    Quaternion rot = glm::normalize(transform.Rotation());
+    Matrix4 R = mat4_cast(rot);
+    glm::mat4 view = glm::transpose(R) * glm::translate(glm::mat4(1.0f), -pos);
+    camera.view = view;
+
+    /*glm::vec3 position = transform.Position();
+    glm::quat orientation = glm::normalize(transform.Rotation());
+    // Camera view matrix = inverse of camera transform
+    glm::mat4 translate = glm::translate(glm::mat4(1.0f), -position);
+    glm::mat4 rotate   = glm::mat4_cast(orientation);
+    glm::mat4 view     = translate * glm::transpose(rotate);   // or rotate^{-1} * translate
+    camera.view = view;*/
 
     /*if(type == Type::Perspective){
         camera.frustum = CreateFrustumFromCamera(

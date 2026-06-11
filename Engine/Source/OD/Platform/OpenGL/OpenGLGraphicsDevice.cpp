@@ -230,6 +230,7 @@ void DebugCallback(unsigned int source, unsigned int type, unsigned int id, unsi
 #endif
 
 Ref<Mesh> _cubeMesh = nullptr;
+unsigned int globalMat4VBO = 0;
 
 #if 0
 void ValidateTextures(){
@@ -402,6 +403,10 @@ void OpenGLGraphicsDevice::Initialize(){
     LogInfo("GL_RENDERER: {}", (char*)glGetString(GL_RENDERER));
     LogInfo("GL_SHADING_LANGUAGE_VERSION: {}", (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+    GLint maxBindings = 0;
+    glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxBindings);
+    LogInfo("GL_MAX_UNIFORM_BUFFER_BINDINGS: {}", maxBindings);
+
     glEnable(GL_DEPTH_TEST); 
 
     #ifndef USE_VAO
@@ -505,6 +510,11 @@ void OpenGLGraphicsDevice::Initialize(){
     prefilterMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
     brdfMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/brdf.glsl"));
     equirectangularToCubemapMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl"));
+
+    glGenBuffers(1, &globalMat4VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, globalMat4VBO);
+    Matrix4 m = Matrix4Identity;
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4), &m, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW //GL_STREAM_DRAW
 }
 
 void OpenGLGraphicsDevice::Shutdown(){
@@ -560,6 +570,7 @@ void OpenGLGraphicsDevice::End(){
 }
 
 void OpenGLGraphicsDevice::_Begin(){
+    return;
     #ifndef USE_VAO
     glBindVertexArray(globalVAO);
     glCheckError();
@@ -568,6 +579,7 @@ void OpenGLGraphicsDevice::_Begin(){
 }
 
 void OpenGLGraphicsDevice::_End(){
+    return;
     #ifndef USE_VAO
     glBindVertexArray(0);
     glCheckError();
@@ -1459,14 +1471,18 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
 
     auto _BindShader = [&](SubShader& shader){
         SubShaderBind(shader); 
-        
+
+        Assert(mat.currentBufferSlot >= 0 && "currentBufferSlot became negative!");
+        Assert(mat.currentBufferSlot < 16 && "currentBufferSlot is too high! Only 4-8 binding points are safe on most drivers");
+
         #if UseUniformBuffer
         unsigned int index = glGetUniformBlockIndex(shader.glData.id, "CamDraw");   
         if(index != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
             glCheckError(); 
-            glUniformBlockBinding(shader.glData.id, index, mat.currentBufferSlot); // 0);
+            //TODO: temp hard code becose some strange(only in some pos and angle) bug on here, fix this later
+            glUniformBlockBinding(shader.glData.id, index, 0); //mat.currentBufferSlot); // 0);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         } else {
@@ -1483,7 +1499,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
         stats.materialSubmitDatas += 1;
         debugData.BindMaterial(&material);
         material.currentTextureSlot = 0;
-        material.currentBufferSlot = 0;
+        material.currentBufferSlot = 1; //INFO: is 1 becose 0 is used for CamDraw
 
         ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
         ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
@@ -1605,7 +1621,7 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
     glBindVertexArray(mesh.glData.vao);
     glCheckError();
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     Assert(meshDrawModeLookup[(int)mesh.drawMode] != INVALID_DRAW_MODE && "Dont support the current mesh.drawMode!");
@@ -1655,7 +1671,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     glBindVertexArray(mesh.glData.vao);
     glCheckError();
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
@@ -1704,7 +1720,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
     glBindVertexArray(mesh.glData.vao);
     glCheckError();
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
@@ -1722,6 +1738,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
+    Assert(count > 0);
     if(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw] == nullptr) return;
     BindMaterial(mat, (int)Shader::DrawType::InstancingDraw);
     
@@ -1737,7 +1754,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
@@ -1772,7 +1789,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     Assert(meshDrawModeLookup[(int)mesh.drawMode] != GL_NONE && "Dont support the current mesh.drawMode!");
@@ -1808,7 +1825,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Instanc
     #ifdef USE_VAO
     glBindVertexArray(mesh.glData.vao);
     #else
-    mesh.Bind();
+    MeshBind(mesh); //mesh.Bind();
     #endif
 
     // Bind instancing buffer
@@ -2100,6 +2117,23 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
     glBindVertexArray(textQuadVAO);
     glCheckError();
     #endif
+    
+    #ifndef USE_VAO
+    glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE,
+        5 * sizeof(float),
+        (void*)0
+    );
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE,
+        5 * sizeof(float),
+        (void*)(3 * sizeof(float))
+    );
+    glCheckError();
+    #endif
 
     double x = 0.0;
     double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
@@ -2350,6 +2384,71 @@ void OpenGLGraphicsDevice::Scissor(unsigned int x, unsigned int y, int w, int h)
     glCheckError();
 }
 
+void OpenGLGraphicsDevice::MeshBind(Mesh& mesh){
+    // --- POSITION ---
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.vertexVbo);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+
+    // --- UV ---
+    if(mesh.glData.uvVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.uvVbo);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+    } else {
+        glDisableVertexAttribArray(1);
+    }
+
+    // --- NORMAL ---
+    if(mesh.glData.normalVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.normalVbo);
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+    } else {
+        glDisableVertexAttribArray(2);
+    }
+
+    // --- COLOR ---
+    if(mesh.glData.colorVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.colorVbo);
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
+    } else {
+        glDisableVertexAttribArray(3);
+    }
+
+    // --- TANGENT ---
+    if(mesh.glData.tangentVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.tangentVbo);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
+    } else {
+        glDisableVertexAttribArray(4);
+    }
+
+    // --- BONES ---
+    if(mesh.glData.jointVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.jointVbo);
+        glEnableVertexAttribArray(5);
+        glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
+    } else {
+        glDisableVertexAttribArray(5);
+    }
+
+    if(mesh.glData.weightsVbo != 0){
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.weightsVbo);
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
+    } else {
+        glDisableVertexAttribArray(6);
+    }
+
+    // --- INDEX BUFFER ---
+    if(mesh.glData.ebo != 0){
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
+    }
+}
+
 bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
     Mesh& mesh,
     std::vector<unsigned int>* indices,
@@ -2555,6 +2654,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
 }
 
 void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count){
+    //OLD
     /*#ifdef USE_VAO
     Assert(mesh.glData.vao != 0);
     glBindVertexArray(mesh.glData.vao);
@@ -2589,13 +2689,33 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_STATIC_DRAW); //GL_STREAM_DRAW
             glCheckError();
+
+            #ifndef USE_VAO
+            std::size_t vec4Size = sizeof(glm::vec4);
+            glEnableVertexAttribArray(10); 
+            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+            glEnableVertexAttribArray(11); 
+            glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+            glEnableVertexAttribArray(12); 
+            glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+            glEnableVertexAttribArray(13); 
+            glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+            glCheckError();
+
+            glVertexAttribDivisor(10, 1);
+            glVertexAttribDivisor(11, 1);
+            glVertexAttribDivisor(12, 1);
+            glVertexAttribDivisor(13, 1);
+            glCheckError();
+            #endif
         }
     }
 
     #ifdef USE_VAO
     glBindVertexArray(0);
     glCheckError();
-    #endif*/
+    #endif
+    return;*/
 
     /*
     static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -2734,8 +2854,17 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     glBindVertexArray(0); glCheckError();
     #endif*/
 
+    //New
+    Assert(sizeof(Matrix4) == sizeof(glm::mat4));
+    Assert(sizeof(glm::mat4) == sizeof(float) * 16);
+
     Assert(count > 0);
     if(count <= 0) return;
+
+    #ifdef USE_VAO
+    Assert(mesh.glData.vao != 0);
+    glBindVertexArray(mesh.glData.vao);
+    #endif
 
     const size_t matrixSize = sizeof(Matrix4);
     const size_t bufferSize = matrixSize * count;
@@ -2756,7 +2885,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     glBindBuffer(GL_ARRAY_BUFFER, drawData.vbo);
     glCheckError();
 
-    #ifdef OPENGL46
+    #ifdef OpenGL46 //OPENGL46
     //--------------------------------------------------
     // Modern path (persistent mapping)
     //--------------------------------------------------
@@ -2815,10 +2944,10 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     // Attribute setup (same for both paths)
     //----------------------------------------
 
-    #ifdef USE_VAO
+    /*#ifdef USE_VAO
     Assert(mesh.glData.vao != 0);
     glBindVertexArray(mesh.glData.vao);
-    #endif
+    #endif*/
 
     std::size_t vec4Size = sizeof(glm::vec4);
 
@@ -2838,12 +2967,12 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     glVertexAttribDivisor(11, 1);
     glVertexAttribDivisor(12, 1);
     glVertexAttribDivisor(13, 1);
+    glCheckError();
 
     #ifdef USE_VAO
     glBindVertexArray(0);
-    #endif
-
     glCheckError();
+    #endif
 }
 
 void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4x3* modelMatrixs, int count){
@@ -4518,53 +4647,57 @@ glm::mat4 captureViews2[] = {
 };
 
 void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO ){
+    float vertices[] = {
+        // back face
+        -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+        -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+        -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+        // front face
+        -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+        -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+        -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+        // left face
+        -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+        -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+        -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+        -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+        -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+        -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+        // right face
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+            1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+            1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+        // bottom face
+        -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+        -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+        -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+        // top face
+        -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+            1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+        -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+        -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+    };
+
     // initialize (if necessary)
-    if(cubeVAO == 0){
-        float vertices[] = {
-            // back face
-            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-            // front face
-            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-            // left face
-            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-            // right face
-             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-            // bottom face
-            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-             1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-            // top face
-            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-             1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-             1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-             1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
-        };
+    /*if(cubeVAO == 0){
+        
         glGenVertexArrays(1, &cubeVAO);
+        glBindVertexArray(cubeVAO);
+        //glGenVertexArrays(1, &cubeVAO);
         glGenBuffers(1, &cubeVBO);
         // fill buffer
         glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
@@ -4584,7 +4717,69 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO ){
     glBindVertexArray(cubeVAO);
     OnDrawAssetsTest();
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);*/
+
+    // initialize (if necessary)
+    if (cubeVAO == 0){
+        glGenBuffers(1, &cubeVBO);
+
+    #ifdef USE_VAO
+        glGenVertexArrays(1, &cubeVAO);
+        glBindVertexArray(cubeVAO);
+    #endif
+
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    #ifdef USE_VAO
+        // VAO stores attribute state
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    #else
+        // no VAO: just unbind buffer after upload (safe here)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    #endif
+    }
+
+    // =========================
+    // RENDER
+    // =========================
+
+#ifdef USE_VAO
+    glBindVertexArray(cubeVAO);
+#else
+    // Rebind everything manually
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+#endif
+    OnDrawAssetsTest();
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+#ifdef USE_VAO
     glBindVertexArray(0);
+#else
+    // optional cleanup (not strictly required)
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+#endif
 }
 
 bool OpenGLGraphicsDevice::CubemapCreateFromFileHDR(Cubemap& cubemap, const char* hdri){

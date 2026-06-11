@@ -2339,6 +2339,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
 	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
 
+	//-----------Old-----------
     /*JPH::Ref<Shape> shape = nullptr;
     if(rb.shape.type == CollisionShape::Type::Box){
 		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
@@ -2424,8 +2425,9 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         LogError("OffsetShape creation error for entity {}: {}", info.name, offsetResult.GetError());
         return;
     }
-    RefConst<Shape> finalShape = offsetResult.Get();*/	
+    RefConst<Shape> finalShape = offsetResult.Get();*/
 
+	//-----------New-----------
 	struct temp{
 		RefConst<Shape> shape;
 		Vec3 offset;
@@ -2461,8 +2463,15 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 				}
 			}
 
-			if(!s.meshData || s.meshData->joltVertices.empty() || s.meshData->joltTriangles.empty())
-				return nullptr;
+			if(s.meshData == nullptr) return nullptr;
+			if(s.meshData->joltVertices.size() <= 0) return nullptr;
+			if(s.meshData->joltTriangles.size() <= 0) return nullptr;
+			if(s.meshData->convexPoints.size() <= 0) return nullptr;
+
+			Assert(s.meshData != nullptr);
+			Assert(s.meshData->joltVertices.size() > 0);
+			Assert(s.meshData->joltTriangles.size() > 0);
+			Assert(s.meshData->convexPoints.size() > 0);
 
 			if(rb.type == RigidbodyComponent::Type::Dynamic){
 				ConvexHullShapeSettings settings(s.meshData->convexPoints);
@@ -2515,8 +2524,11 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	// Main shape
 	{
 		auto shape = BuildShape(rb.shape);
-		if(shape)
+		if(shape){
 			subShapes.emplace_back(shape);
+		} else {
+			return;
+		}
 	}
 	// Extra shapes
 	for(auto& extra : rb.extraShapes){
@@ -2542,15 +2554,14 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 			auto result = compoundSettings.Create();
 			Assert(result.HasError() == false && result.GetError().c_str());
 
-			/*if(result.HasError()){
-				LogError("Compound shape error: {}", result.GetError());
-				return;
-			}*/
+			//if(result.HasError()){
+			//	LogError("Compound shape error: {}", result.GetError());
+			//	return;
+			//}
 
 			finalShape = result.Get();
 		}
 	}
-
 
 	Vec3 scale = ToJolt(transform.Scale());
 	if(!scale.IsClose(Vec3::sReplicate(1.0f))){
@@ -2567,8 +2578,6 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 		LogInfo("CenterOfMass: ({}, {}, {})", cm.GetX(), cm.GetY(), cm.GetZ());
 	}
 
-
-	
 	BodyCreationSettings settings(
         finalShape, ToJolt(transform.Position()), ToJolt(transform.Rotation()), type, info.layer //PhysicsLayers::MOVING 
     );

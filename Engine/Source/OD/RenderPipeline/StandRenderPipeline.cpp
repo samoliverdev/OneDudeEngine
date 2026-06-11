@@ -569,7 +569,7 @@ void CameraRenderer::RunRenderDataLoop(){
     decalDrawTarget.Clean();
     entityIdDrawTarget.Clean();
 
-    entityIdDrawSettings.enableIntancing = true;
+    entityIdDrawSettings.enableIntancing = false;
     entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
     entityIdDrawSettings.sortType = SortType::None;
     entityIdDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
@@ -581,7 +581,7 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
-    blendDrawSettings.enableIntancing = false; //true; //false;
+    blendDrawSettings.enableIntancing = true; //true; //false;
     blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
     blendDrawSettings.sortType = SortType::CommonTransparent;
     blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
@@ -1723,16 +1723,29 @@ void StandRenderPipeline::OnDrawGizmosSelected(Scene& scene, Camera& cm, Entity 
         auto& t = scene.GetComponent<TransformComponent>(e);
         if(c.GetModel() != nullptr){
 
-            Transform globalTransform = Transform(t.GlobalModelMatrix() * c.localTransform.GetModelMatrix());
-
+            Transform globalTransform = Transform(t.GlobalModelMatrix() /** c.localTransform.GetModelMatrix()*/);
             AABB aabb = c.GetAABB();
             AABB globalAABB = c.GetGlobalAABB(globalTransform);
             globalAABB = transform_aabb_optimized_abs_center_extents(aabb, globalTransform.GetModelMatrix());
-
             Vector3 color = Vector3(0,0,1);
             if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(1, 0, 0);
 
             Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+
+            /*if(c.finalPose.Size() == c.model->renderTargets.size()){
+                for(int i = 0; i < c.model->renderTargets.size(); i++){
+                    auto& target = c.model->renderTargets[i];
+                    Matrix4 mat = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));
+
+                    AABB aabb = c.GetAABB();
+                    AABB globalAABB = transform_aabb_optimized_abs_center_extents(aabb, mat);
+
+                    Vector3 color = Vector3(0,1,0);
+                    //if(aabb.isOnFrustum(cm.frustum, globalTransform)) color = Vector3(0, 1, 0);
+
+                    Graphics::DrawWireCube(Mathf::TRS(globalAABB.center, QuaternionIdentity, globalAABB.extents*2.0f), color, 1);
+                }
+            }*/
         }
     }
 

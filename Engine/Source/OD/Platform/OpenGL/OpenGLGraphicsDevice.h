@@ -60,6 +60,7 @@ public:
     virtual void DrawQuadPostProcessing(Framebuffer* dst, Material& shader, int pass = 0) override;
     virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0) override;
 
+    void MeshBind(Mesh& mesh);
     virtual bool MeshCreateOrSubmit(
         Mesh& mesh,
         std::vector<unsigned int>* indices,

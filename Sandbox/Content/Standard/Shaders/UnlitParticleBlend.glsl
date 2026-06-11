@@ -11,9 +11,8 @@
 
     CullFace NONE
     DepthTest NONE
-    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask False
-
+    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
 #pragma EndPassDef
 
 //SRC_ALPHA ONE_MINUS_SRC_ALPHA
@@ -50,12 +49,8 @@ Texture2D(0, 1, mainTex, mainSampler)
     Out(0) vec4 fragColor;
 
     void main(){
-        //vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); 
-        //fragColor = texColor * outColor; //* color;
-
         vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); 
         if(texColor.a < cutoff) discard;
-
         fragColor = texColor * outColor; //* color;
     }
 #endif

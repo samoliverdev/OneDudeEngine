@@ -160,7 +160,17 @@ struct CommandBucket4{
         //std::sort(commands.begin(), commands.end());
     }
 
-    inline void Each(std::function<void(Value& value)> func){
+    /*inline void Each(std::function<void(Value& value)> func){
+        for(auto& i: commands){
+            for(auto& j: i.second){
+                func(j.second);
+            }
+        }
+    }*/
+
+    //More Fast
+    template<typename Func>
+    inline void Each(Func&& func){
         for(auto& i: commands){
             for(auto& j: i.second){
                 func(j.second);

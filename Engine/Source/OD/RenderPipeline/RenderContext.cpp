@@ -2002,7 +2002,7 @@ void RenderContext::UpdateRenderData(){
             data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));// model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()); //data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
             //data.aabb.Expand2(Vector3(5.5f));
             if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
