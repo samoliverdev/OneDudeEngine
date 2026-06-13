@@ -2546,13 +2546,20 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 			MutableCompoundShapeSettings settings;
 			for(auto& s : subShapes) settings.AddShape(Vec3::sZero(), Quat::sIdentity(), s); //TODO: update to use compad on here: pos, rot
 			auto result = settings.Create();
-			Assert(result.HasError() == false && result.GetError().c_str());
+			if(result.HasError()){
+				LogError("{}", result.GetError().c_str());
+				Assert(false && result.GetError().c_str());
+			}
+			
 			finalShape = result.Get();
 		} else {
 			StaticCompoundShapeSettings compoundSettings;
 			for(auto& s : subShapes) compoundSettings.AddShape(Vec3::sZero(), Quat::sIdentity(), s); //TODO: update to use compad on here: pos, rot
 			auto result = compoundSettings.Create();
-			Assert(result.HasError() == false && result.GetError().c_str());
+			if(result.HasError()){
+				LogError("{}", result.GetError().c_str());
+				Assert(false && result.GetError().c_str());
+			}
 
 			//if(result.HasError()){
 			//	LogError("Compound shape error: {}", result.GetError());

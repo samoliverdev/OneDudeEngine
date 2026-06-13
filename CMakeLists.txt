@@ -139,7 +139,7 @@ if(OD_USE_ASSIMP)
     add_subdirectory(Engine/ThirdParty/assimp)
 endif()
 
-add_subdirectory(Engine/ThirdParty/soloud)
+#add_subdirectory(Engine/ThirdParty/soloud)
 add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
 add_subdirectory(Engine/ThirdParty/efsw)
@@ -241,6 +241,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     #Engine/ThirdParty/imgui/*.cpp 
     Engine/ThirdParty/ImGuizmo/*.cpp 
     Engine/ThirdParty/entt-3.13.2/src/*.cpp
+    Engine/ThirdParty/miniaudio/*.c
     Engine/Source/*.cpp
 )
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinygltf/tiny_gltf.cc)
@@ -318,6 +319,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/bitsery/include/
     Engine/ThirdParty/miniz/
     Engine/ThirdParty/physfs-release-3.2.0/src/
+    Engine/ThirdParty/miniaudio/
     #Engine/ThirdParty/spdlog-1.17.0/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
@@ -335,7 +337,7 @@ target_link_libraries(Engine PUBLIC
     sol2
     glfw 
     #assimp
-    soloud
+    #soloud
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
     Jolt

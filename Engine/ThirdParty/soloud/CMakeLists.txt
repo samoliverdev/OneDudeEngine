@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(soloud)
 
 add_definitions(-DWITH_MINIAUDIO)
-#add_definitions(-DWITH_WASAPI)
+add_definitions(-DWITH_WASAPI)
 #add_definitions(-DWITH_WINMM)
 
 file(GLOB_RECURSE SOLOUD_SOURCE_FILES 
@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOLOUD_SOURCE_FILES
     src/core/*.c*
     src/filter/*.c*
     src/backend/miniaudio/*.c*
-    #src/backend/wasapi/*.c*
+    src/backend/wasapi/*.c*
     #src/backend/winmm/*.c*
 )
 add_library(soloud STATIC ${SOLOUD_SOURCE_FILES})

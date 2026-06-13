@@ -893,12 +893,6 @@ void OpenGLGraphicsDevice::CubemapBind(Cubemap& cubemap, int index){
     glCheckError();
 }
 
-void OpenGLGraphicsDevice::UniformBufferBind(UniformBuffer& buffer, int index){
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
-    glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer.glData.id);
-    glCheckError();
-}
-
 void OpenGLGraphicsDevice::SubShaderSetTexture2D(SubShader& shader, const char* name, Texture2D& value, int index){
     Graphics::GetStats().uniformSet += 1;
     debugData.UniformSet(name);
@@ -952,6 +946,12 @@ void OpenGLGraphicsDevice::SubShaderSetFramebuffer(SubShader& shader, const char
 
     //glCheckError();
     SubShaderSetInt(shader, name, index);
+}
+
+void OpenGLGraphicsDevice::UniformBufferBind(UniformBuffer& buffer, int index){
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer.glData.id);
+    glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer.glData.id);
+    glCheckError();
 }
 
 bool OpenGLGraphicsDevice::SubShaderSetUniformBuffer(SubShader& shader, const char* name, UniformBuffer& buffer, int index){
@@ -1482,7 +1482,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
             glCheckError(); 
             //TODO: temp hard code becose some strange(only in some pos and angle) bug on here, fix this later
-            glUniformBlockBinding(shader.glData.id, index, 0); //mat.currentBufferSlot); // 0);
+            glUniformBlockBinding(shader.glData.id, index, mat.currentBufferSlot); // 0);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         } else {
@@ -1498,8 +1498,8 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     auto _BindMaterial = [&](Material& material){
         stats.materialSubmitDatas += 1;
         debugData.BindMaterial(&material);
-        material.currentTextureSlot = 0;
-        material.currentBufferSlot = 1; //INFO: is 1 becose 0 is used for CamDraw
+        //material.currentTextureSlot = 0;
+        //material.currentBufferSlot = 0; //1; //INFO: is 1 becose 0 is used for CamDraw
 
         ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
         ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
@@ -1532,9 +1532,18 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(mat.currentShader.drawTypes[drawType] != nullptr && "Shader is not vali!");
     Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
 
-    if(&mat != lastMat || mat.isDirty == true) _PreBind(mat);
+    //INFO: this binds can be bug the mat.currentBufferSlot, becose is possible _BindShader without _BindMaterial, or the inverse too
+    /*if(&mat != lastMat || mat.isDirty == true) _PreBind(mat);
     if(mat.currentShader.drawTypes[drawType].get() != lastShader) _BindShader(*mat.currentShader.drawTypes[drawType]);
-    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true) _BindMaterial(mat);
+    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true) _BindMaterial(mat);*/
+
+    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true || mat.currentShader.drawTypes[drawType].get() != lastShader){
+        mat.currentTextureSlot = 0;
+        mat.currentBufferSlot = 0;
+        _PreBind(mat);
+        _BindShader(*mat.currentShader.drawTypes[drawType]);
+        _BindMaterial(mat);
+    }
 
     mat.isDirtyUniformData = false;
     mat.isDirty = false;

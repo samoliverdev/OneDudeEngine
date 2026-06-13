@@ -3,7 +3,8 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
 #include "AudioClip.h"
-#include <soloud.h>
+#include "AudioDef.h"
+//#include <soloud.h>
 
 namespace OD{
 
@@ -29,7 +30,8 @@ struct OD_API AudioSourceComponent{
     AudioSourceMode mode = AudioSourceMode::Mode3D; 
     Audio3dAttenuation attenuation = Audio3dAttenuation::InverseDistance;
     int maxOnShotPlay = -1;
-    
+
+    bool IsPlaying() const;
     void Play();
     void Stop();
     void PlayOneShot(Ref<AudioClip> clip);
@@ -60,8 +62,9 @@ struct OD_API AudioSourceComponent{
 
 private:
     Vector3 position = Vector3(0.0f);// 3D Position
-    SoLoud::Soloud* soloud = nullptr;
-    SoLoud::handle handle = 0;
+    //SoLoud::Soloud* soloud = nullptr;
+    //SoLoud::handle handle = 0;
+    AUDIO_COMP_DATA
     //std::vector<SoLoud::handle> oneShots;
     float volume = 1.0f;
     float pitch = 1.0f;
@@ -95,6 +98,7 @@ public:
 
 private:
     //AudioSettings settings;
+    float m_3dUpdateTimer = 0.0f;
 };
 
 void AudioModuleInit();

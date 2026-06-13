@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Asset.h"
-#include <soloud_wav.h>
+#include "AudioDef.h"
 
 namespace OD{
 
@@ -11,13 +11,15 @@ class OD_API AudioClip: public Asset{
 public:
     AudioClip() = default;
     AudioClip(const std::string& filePath);
+    ~AudioClip();
 
     bool LoadFromFile(const std::string& path) override;
     bool LoadFromPackage(const std::string& path, Package& package) override;
     std::vector<std::string> GetFileAssociations() override;
 
 private:
-    SoLoud::Wav sample;
+    AUDIO_CLIP_DATA
+    bool loaded = false;
 };
 
 }

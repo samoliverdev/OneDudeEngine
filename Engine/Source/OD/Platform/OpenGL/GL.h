@@ -38,7 +38,6 @@
     //#define OPENGL_CHECK_ERRORS 1
 #endif
 
-
 //#define USE_VAO 1
 
 #include <functional>
