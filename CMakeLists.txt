@@ -47,6 +47,7 @@ message(STATUS "#-------------USE_ASSIMP is: ${OD_USE_ASSIMP}")
 
     if(OD_USE_SANITIZE_ADDRESS)
         add_compile_options(/fsanitize=address /Zi)
+        add_link_options(/fsanitize=address)
     endif()
     
 #endif()

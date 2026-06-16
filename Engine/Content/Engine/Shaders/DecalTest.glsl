@@ -127,6 +127,8 @@ uniform int perDrawInt_1;
         
 
         vec4 other = texture(gOther, screenUV);
+        //gAlbedoOut = vec4(texture(gOther, screenUV).aaa, 1);
+        //return;
         if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
 
         // Compute UV inside decal box

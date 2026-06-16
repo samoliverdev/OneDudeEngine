@@ -180,6 +180,76 @@ void ParallelForEach2(Scene* scene, Func&& func) {
     scene->RunAllTaskAndSync();
 }
 
+void AnimatorSystem::HandlerAnimatorByModel(SkinnedModelRendererComponent& skinned, AnimatorComponent& anim){
+    Assert(anim.layers.size() >= 1);
+
+    if(skinned.GetModel() == nullptr) return;
+    if(anim.enable == false) return;
+
+    Ref<Model> model = skinned.GetModel();
+
+    for(auto& i: anim.layers){
+        if(skinned.posePalette.size() < model->skeleton.GetRestPose().Size()) skinned.posePalette.resize(model->skeleton.GetRestPose().Size());
+        if(i.controller.GetCurrentPose().Size() != model->skeleton.GetBindPose().Size()) i.controller.SetSkeleton(model->skeleton); //Info: This Can work better if the model is change
+
+        i.controller.rootMotionIndex = model->rootMotionIndex;
+        i.controller.rootMotionPosMask = model->rootMotionPosMask;
+
+        i.controller.Update(Application::DeltaTime());
+        //i.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
+        //skinned.finalPose = i.controller.GetCurrentPose();
+    }
+
+    int i = 0;
+    for(auto& layer: anim.layers){
+        if(i == 0){
+            skinned.finalPose = layer.controller.GetCurrentPose();
+        } else {
+            if(layer.controller.GetCurrentClip() != nullptr || layer.blendIfClipIsNull){ 
+                Blend(layer, skinned.finalPose, layer.controller.GetCurrentPose());
+            }
+        }
+        i += 1;
+    }
+
+    skinned.finalPose.GetMatrixPalette(skinned.posePalette, model->skeleton.GetInvBindPose()); 
+}
+
+void AnimatorSystem::Blend(AnimatorComponent::Layer& layer, Pose& in, Pose& toBlend){
+    Assert(in.Size() == toBlend.Size());
+
+    if(layer.controller.GetSkeleton().GetBindPose().Size() == layer.mask.size()){
+        auto& cur = layer.controller.GetCurrentPose();
+        for(int i = 0; i < cur.Size(); i++){
+            in.SetLocalTransform(i, Transform::Mix(in.GetLocalTransform(i), toBlend.GetLocalTransform(i), layer.mask[i]));
+        }
+    } else {
+        auto& cur = layer.controller.GetCurrentPose();
+        for(int i = 0; i < cur.Size(); i++){
+            in.SetLocalTransform(i, toBlend.GetLocalTransform(i));
+        }
+    }
+}
+
+void AnimatorSystem::HandlerAnimatorByMesh(SkinnedMeshRendererComponent& skinned, AnimatorComponent& anim){
+    Assert(anim.layers.size() >= 1);
+
+    if(skinned.mesh == nullptr) return;
+    if(skinned.skeleton.GetBindPose().Size() <= 0) return;
+    if(anim.enable == false) return;
+
+    for(auto& i: anim.layers){
+        if(skinned.posePalette.size() < skinned.skeleton.GetRestPose().Size()) skinned.posePalette.resize(skinned.skeleton.GetRestPose().Size());
+        if(i.controller.GetCurrentPose().Size() != skinned.skeleton.GetBindPose().Size()) i.controller.SetSkeleton(skinned.skeleton); //Info: This Can work better if the model is change
+
+        //FIXME: this probabily is not work well, make like HandlerAnimatorByModel
+        i.controller.Update(Application::DeltaTime());
+        i.controller.GetCurrentPose().GetMatrixPalette(skinned.posePalette, skinned.skeleton.GetInvBindPose()); 
+        skinned.finalPose = i.controller.GetCurrentPose();
+    }
+};
+
+
 void AnimatorSystem::AnimationUpdate(Scene& scene){
     #ifdef __EMSCRIPTEN__
     return;
@@ -187,7 +257,7 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
 
     OD_PROFILE_SCOPE("AnimatorSystem::Update");
 
-    auto Blend = [&](AnimatorComponent::Layer& layer, Pose& in, Pose& toBlend){
+    /*auto Blend = [&](AnimatorComponent::Layer& layer, Pose& in, Pose& toBlend){
         Assert(in.Size() == toBlend.Size());
 
         if(layer.controller.GetSkeleton().GetBindPose().Size() == layer.mask.size()){
@@ -255,6 +325,7 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
             skinned.finalPose = i.controller.GetCurrentPose();
         }
     };
+    */
 
     #if InternalSystemsMulthread
         auto view = scene.GetRegistry().group<AnimatorComponent, SkinnedModelRendererComponent>();
@@ -288,14 +359,24 @@ void AnimatorSystem::AnimationUpdate(Scene& scene){
         );*/
 
         for(auto e: view){
-            AnimatorComponent& anim = view.get<AnimatorComponent>(e);
+            /*AnimatorComponent& anim = view.get<AnimatorComponent>(e);
             SkinnedModelRendererComponent& skinned = view.get<SkinnedModelRendererComponent>(e);
-            scene.GetTaskflow().emplace([&](){ HandlerAnimatorByModel(skinned, anim); });
+            scene.GetTaskflow().emplace([&](){ 
+                HandlerAnimatorByModel(skinned, anim); 
+            });*/
+
+            //INFO: Doing this way becose fsanitize=address erros
+            auto* anim = &view.get<AnimatorComponent>(e);
+            auto* skinned = &view.get<SkinnedModelRendererComponent>(e);
+            scene.GetTaskflow().emplace([anim, skinned, this]() {
+                HandlerAnimatorByModel(*skinned, *anim);
+            });
         }
 
         for(auto e: view2){
             AnimatorComponent& anim = view2.get<AnimatorComponent>(e);
             SkinnedMeshRendererComponent& skinned = view2.get<SkinnedMeshRendererComponent>(e);
+            //TODO: Update to avoid fsanitize=address erros
             scene.GetTaskflow().emplace([&](){ HandlerAnimatorByMesh(skinned, anim); });
         }
     #else 

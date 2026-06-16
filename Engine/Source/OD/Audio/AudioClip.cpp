@@ -15,6 +15,7 @@ AudioClip::~AudioClip(){
     #ifdef AUDIO_BACKEND_MINIAUDIO
     if(loaded) ma_sound_uninit(&sound);
     #endif 
+    //LogInfo("DESTROYED: {}", path);
 }
 
 bool AudioClip::LoadFromFile(const std::string& path){
@@ -44,6 +45,49 @@ bool AudioClip::LoadFromFile(const std::string& path){
         LogError("Failed to load audio file: {}", path);
         return false;
     }
+
+    /*ma_decoder_config dconfig = ma_decoder_config_init(
+        ma_format_f32,  // FORCE FLOAT
+        0,              // keep original channels
+        0               // keep original sample rate
+    );
+
+    ma_decoder decoder;
+    auto result2 = ma_decoder_init_file(path.c_str(), &dconfig, &decoder);
+    Assert(result2 == MA_SUCCESS);
+
+    //ma_decoder decoder;
+    //auto result2 = ma_decoder_init_file(path.c_str(), nullptr, &decoder);
+    //Assert(result2 == MA_SUCCESS);
+    
+    ma_uint64 frameCount;
+    result2 = ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
+    Assert(result2 == MA_SUCCESS);
+    //std::vector<float> pcm(frameCount * decoder.outputChannels);
+    pcmData.resize(frameCount * decoder.outputChannels);
+    result2 = ma_decoder_read_pcm_frames(&decoder, pcmData.data(), frameCount, nullptr);
+    Assert(result2 == MA_SUCCESS);
+    ma_audio_buffer_config config = ma_audio_buffer_config_init(
+        ma_format_f32,
+        decoder.outputChannels,
+        frameCount,
+        pcmData.data(),
+        nullptr
+    );
+    result2 = ma_audio_buffer_init(&config, &buffer);
+    Assert(result2 == MA_SUCCESS);
+
+    LogInfo("Channels: {}", decoder.outputChannels);
+    LogInfo("FrameCount: {}", frameCount);
+    LogInfo("First sample: {}", pcmData[0]);
+
+    result2 = ma_decoder_uninit(&decoder);
+    Assert(result2 == MA_SUCCESS);
+
+    if(result2 != MA_SUCCESS){
+        LogError("Failed to load audio file: {}", path);
+        return false;
+    }*/
 
     this->path = path;
     this->loaded = true;

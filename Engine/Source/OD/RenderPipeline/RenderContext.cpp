@@ -109,7 +109,7 @@ RenderContext::RenderContext(Scene* inScene){
         {FramebufferTextureFormat::RGB16F}, // Normal(R,G) Other(B)
         {FramebufferTextureFormat::RGBA8}, // Albedo, Other(A)
         //{FramebufferTextureFormat::RGB}, // Emission
-        {FramebufferTextureFormat::RGBA8},//, // Spec, Metalic, AO, Other
+        {FramebufferTextureFormat::RGBA16F},//, // Spec, Metalic, AO, Other //INFO: if is RGBA8 Other used current for layer, bug becose will be clamped to  0-1
         {FramebufferTextureFormat::RGB11B10F} //Emission
         //{FramebufferTextureFormat::RED_INTEGER} // Object ID
     };
@@ -349,7 +349,6 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
 
     Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
 }
-
 
 void RenderContext::CleanSSS(){
     auto camera = GetCamera();

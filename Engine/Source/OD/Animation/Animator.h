@@ -55,6 +55,11 @@ struct OD_API AnimatorSystem: public System{
     virtual int Type() override;
     virtual void Update(Scene& scene) override;
     virtual void AnimationUpdate(Scene& scene) override;
+
+private:
+    void Blend(AnimatorComponent::Layer& layer, Pose& in, Pose& toBlend);
+    void HandlerAnimatorByModel(SkinnedModelRendererComponent& skinned, AnimatorComponent& anim);
+    void HandlerAnimatorByMesh(SkinnedMeshRendererComponent& skinned, AnimatorComponent& anim);
 };
 
 void AnimatorModuleInit();

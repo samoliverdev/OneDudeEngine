@@ -90,6 +90,7 @@ public:
     AudioSystem();
     ~AudioSystem() override;
 
+    virtual void OnStop(Scene& scene) override;
     virtual int Type() override { return SystemType::Stand; }
     virtual void Update(Scene& scene) override;
 

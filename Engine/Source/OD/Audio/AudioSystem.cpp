@@ -236,6 +236,10 @@ AudioSystem::~AudioSystem(){
     }
 }
 
+void AudioSystem::OnStop(Scene& scene){
+
+}
+
 AudioSettings& AudioSystem::GetSettings(){
     return GlobalSettings::Get().Get<AudioSettings>();
 }
@@ -391,7 +395,7 @@ void AudioModuleInit(){
 
 bool AudioSourceComponent::IsPlaying() const{
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
-    if(hasInited == false) return false;
+    if(clipHasInited == false) return false;
     return ma_sound_is_playing(&sourceSound);
 }
 
@@ -408,6 +412,9 @@ void AudioSourceComponent::Play(){
     // Clone the sound (lightweight)
     ma_result result = ma_sound_init_copy(&engine, &clip->sound, 0, nullptr, &sourceSound);
     if(result != MA_SUCCESS) return;
+
+    //ma_result result = ma_sound_init_from_data_source(&engine, &clip->buffer, 0, nullptr, &sourceSound);
+    //if(result != MA_SUCCESS) return;
 
     ma_sound_set_looping(&sourceSound, loop);
     ma_sound_set_volume(&sourceSound, volume);
@@ -429,20 +436,18 @@ void AudioSourceComponent::Play(){
         Assert(false);
     }
 
-    hasInited = true;
+    clipHasInited = true;
 }
 
 void AudioSourceComponent::Stop(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
-
-    if(hasInited == false) return;
+    if(clipHasInited == false) return;
     
     if(ma_sound_is_playing(&sourceSound)){
         ma_sound_stop(&sourceSound);
     }
     ma_sound_uninit(&sourceSound);
-
-    hasInited = false;
+    clipHasInited = false;
 }
 
 void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
@@ -466,8 +471,6 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     }
 
     auto result = ma_sound_start(temp);
-    // Note: temp will be cleaned up automatically when finished (miniaudio handles it)
-
     if(result != MA_SUCCESS){
         Assert(false);
     }
@@ -479,6 +482,7 @@ void AudioSourceComponent::SetPosition(const Vector3& pos){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     position = pos;
+    if(clipHasInited == false) return;
     if(ma_sound_is_playing(&sourceSound) && mode == AudioSourceMode::Mode3D){
         ma_sound_set_position(&sourceSound, pos.x, pos.y, pos.z);
     }
@@ -488,6 +492,7 @@ void AudioSourceComponent::SetVolume(float vol){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     volume = std::clamp(vol, 0.0f, 2.0f);
+    if(clipHasInited == false) return;
     ma_sound_set_volume(&sourceSound, volume);
 }
 
@@ -495,6 +500,7 @@ void AudioSourceComponent::SetPitch(float p){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     pitch = std::clamp(p, 0.1f, 4.0f);
+    if(clipHasInited == false) return;
     ma_sound_set_pitch(&sourceSound, pitch);
 }
 
@@ -502,6 +508,7 @@ void AudioSourceComponent::SetLoop(bool l){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     loop = l;
+    if(clipHasInited == false) return;
     ma_sound_set_looping(&sourceSound, loop);
 }
 
@@ -535,10 +542,33 @@ AudioSystem::AudioSystem(){
     name = "AudioSystem";
     //soloud.init(); 
     //Erro: call init twice on playing mode
+
+    //ma_engine_start(&engine);
 }
 
 AudioSystem::~AudioSystem(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+
+    //ma_engine_stop(&engine);
+    //ma_device_stop(engine.pDevice); // optional deeper stop
+}
+
+void AudioSystem::OnStop(Scene& scene){
+    auto view = scene.GetRegistry().view<AudioSourceComponent>();
+    for(auto [e, audio]: view.each()){
+        if(audio.clipHasInited == true){
+            //if(ma_sound_is_playing(&audio.sourceSound)) ma_sound_stop(&audio.sourceSound);
+            ma_sound_uninit(&audio.sourceSound);
+        }
+
+        for(size_t i = 0; i < audio.oneShots.size(); i++){
+            ma_sound* s = audio.oneShots[i];
+            //if(ma_sound_is_playing(s)) ma_sound_stop(s);
+            ma_sound_uninit(s);
+            delete s;
+        }
+        audio.oneShots.clear();
+    }
 }
 
 AudioSettings& AudioSystem::GetSettings(){
@@ -584,7 +614,7 @@ void AudioSystem::Update(Scene& scene){
             Vector3 pos = trans.Position();
             audio.position = pos;
 
-            if(ma_sound_is_playing(&audio.sourceSound)){
+            if(audio.clipHasInited && ma_sound_is_playing(&audio.sourceSound)){
                 ma_sound_set_position(&audio.sourceSound, pos.x, pos.y, pos.z);
             }
         }
@@ -605,6 +635,125 @@ void AudioSystem::Update(Scene& scene){
             }
         }
     }
+}
+
+}
+#endif
+
+#ifdef AUDIO_BACKEND_NONE
+#include <thread>
+
+namespace OD{
+
+ma_engine engine{};
+bool hasInited = false;
+
+std::thread::id mainThreadID;
+
+inline bool IsMainThread(){
+    return std::this_thread::get_id() == mainThreadID;
+}
+
+void AudioModuleInit(){
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+
+    SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent", "Audio");
+    SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");
+
+    OD::GlobalSettings::Get().Register<AudioSettings>("Audio");
+
+    mainThreadID = std::this_thread::get_id();
+
+}
+
+bool AudioSourceComponent::IsPlaying() const{
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+    return false;
+}
+
+void AudioSourceComponent::Play(){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::Stop(){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::SetPosition(const Vector3& pos){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::SetVolume(float vol){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::SetPitch(float p){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::SetLoop(bool l){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSourceComponent::OnGui(Entity& e, Scene& scene){
+    AudioSourceComponent& audioSource = scene.GetComponent<AudioSourceComponent>(e);
+
+    if(ImGui::Checkbox("Loop", &audioSource.loop)){
+        audioSource.SetLoop(audioSource.loop);
+    }
+    if(ImGui::DragFloat("Volume", &audioSource.volume)){
+        audioSource.SetVolume(audioSource.volume);
+    }
+    if(ImGui::DragFloat("Pitch", &audioSource.pitch)){
+        audioSource.SetPitch(audioSource.pitch);
+    }
+
+    ImGui::DragFloat("minDistance", &audioSource.minDistance);
+    ImGui::DragFloat("maxDistance", &audioSource.maxDistance);
+    ImGui::DragFloat("attenuationRolloff", &audioSource.attenuationRolloff);
+    ImGui::DrawEnumCombo<AudioSourceMode>("mode", &audioSource.mode);
+    ImGui::DrawEnumCombo<Audio3dAttenuation>("attenuation", &audioSource.attenuation);
+}
+
+void AudioSettings::OnImGuiRender(){
+    ImGui::DragInt("maxActiveVoiceCount", &maxActiveVoiceCount, 0, 255);
+    ImGui::DragFloat("volume", &volume, 1, 0, 2);
+}
+
+AudioSystem::AudioSystem(){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+    name = "AudioSystem";
+    //soloud.init(); 
+    //Erro: call init twice on playing mode
+}
+
+AudioSystem::~AudioSystem(){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+}
+
+void AudioSystem::OnStop(Scene& scene){
+
+}
+
+AudioSettings& AudioSystem::GetSettings(){
+    return GlobalSettings::Get().Get<AudioSettings>();
+}
+
+void AudioSystem::UpdateSettings(){
+    if(hasInited == false) return;
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+
+    const auto& settings = GlobalSettings::Get().Get<AudioSettings>();
+}
+
+void AudioSystem::Update(Scene& scene){
+    OD_PROFILE_SCOPE("ScriptSystem::Update");
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 }
 
 }
