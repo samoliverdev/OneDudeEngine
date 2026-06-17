@@ -32,8 +32,8 @@ struct OD_API MeshRendererComponent{
         //AssetRefSerialize<Mesh> meshRef(mesh);
         //ArchiveDumpNVP(ar, meshRef);
 
-        //AssetRefSerialize<Material> materialRef(material);
-        //ArchiveDumpNVP(ar, materialRef);
+        //AssetRefSerialize<Material> _material(material);
+        //ArchiveDumpNamed(ar, "material", _material);
     }
 
     void UpdateAABB(Vector3 scale = Vector3One);

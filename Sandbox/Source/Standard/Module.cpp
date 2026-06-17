@@ -9,6 +9,7 @@
 #include "Greyboxing/Greyboxing.h"
 #include "Generator/HeightmapGenerator.h"
 #include "ParticleSystem/ParticleSystem.h"
+#include "Effects/LineRenderer.h"
 
 namespace Standard{
 
@@ -24,6 +25,8 @@ void ModuleInit(){
     RenderContext::RegisterRenderFeature<ParticleRendererFeature>();
     SceneManager::Get().RegisterComponent<ParticleComponent>("Standard/ParticleComponent", "Standard");
     SceneManager::Get().RegisterSystem<ParticleManageSystem>("Standard/ParticleManageSystem");
+
+    SceneManager::Get().RegisterComponent<LineRenderer>("Standard/LineRenderer", "Standard");
 }
 
 StandardAssetSystem::StandardAssetSystem(){
@@ -43,6 +46,12 @@ void StandardAssetSystem::Update(Scene& scene){
             greyboxing.isDirty = false;
             greyboxing.UpdateMesh(scene, entity, defaultMaterial);
         }
+    }
+
+    auto lineRendererView = scene.GetRegistry().view<LineRenderer, TransformComponent>();
+    for(auto [entity, line, trans]: lineRendererView.each()){
+        if(line.isDirty == false) continue;
+        line.UpdateMesh(scene, entity);
     }
 
     if(scene.Running() == false) return;
