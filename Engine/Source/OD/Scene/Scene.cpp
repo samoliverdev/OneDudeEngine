@@ -216,6 +216,7 @@ Matrix4 TransformComponent::GetLocalModelMatrix(){
 }
 
 Vector3 TransformComponent::InverseTransformDirection(Vector3 dir){
+    //TODO: change to Quaternion rot = Rotation(); to match unity, and make this function InverseTransformVector, the same for TransformDirection
     Matrix4 matrix4 = GlobalModelMatrix();
     
     return math::inverse(matrix4) * Vector4(dir.x, dir.y, dir.z, 0);

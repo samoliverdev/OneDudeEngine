@@ -2152,6 +2152,12 @@ void RigidbodyComponent::ApplyImpulse(Vector3 v){
 	bodyInterface.AddImpulse(data->bodyID, ToJolt(v));
 }
 
+void RigidbodyComponent::AddLinearVelocity(Vector3 v){
+	if(data == nullptr) return;
+	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();
+	bodyInterface.AddLinearVelocity(data->bodyID, ToJolt(v));
+}
+
 void RigidbodyComponent::AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier){
 	if(data == nullptr) return;
 	BodyInterface &bodyInterface = data->world->physicsSystem.GetBodyInterfaceNoLock(); //data->world->physicsSystem.GetBodyInterface();

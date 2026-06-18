@@ -194,9 +194,11 @@ struct OD_API RigidbodyComponent{
     Vector3 AngularVelocity();
     void AngularVelocity(Vector3 v);
 
+    //TODO: Reneme Apply to Add 
     void ApplyForce(Vector3 v);
     void ApplyTorque(Vector3 v);
     void ApplyImpulse(Vector3 v);
+    void AddLinearVelocity(Vector3 v);
 
     void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
 
