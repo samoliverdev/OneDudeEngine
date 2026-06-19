@@ -257,6 +257,9 @@ private:
     RendererList opaqueDrawTarget;
     DrawingSettings opaqueDrawSettings;
 
+    RendererList opaqueForwardOnlyDrawTarget;
+    DrawingSettings opaqueForwardOnlyDrawSettings;
+
     RendererList blendDrawTarget;
     DrawingSettings blendDrawSettings;
 

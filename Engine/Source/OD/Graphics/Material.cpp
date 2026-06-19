@@ -372,6 +372,14 @@ int Material::PassCount(){
     return shader->passes.size();
 }
 
+const std::vector<std::string>& Material::TagsString(){
+    return shader->passes[0].tagsString;
+}
+
+const std::vector<uint32_t>& Material::TagsHash(){
+    return shader->passes[0].tagsHash;
+}
+
 std::string Material::GetKey(const std::set<std::string>& keyworlds){
     if(keyworlds.size() == 0) return "";
     return std::accumulate(keyworlds.begin(), keyworlds.end(), std::string(""));

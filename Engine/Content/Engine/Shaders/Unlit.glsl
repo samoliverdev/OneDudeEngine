@@ -8,6 +8,7 @@
     Name MainPass
     SupportInstancing true
     CullFace BACK
+    Tags ForwardOnly
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
 #pragma EndPassDef
 

@@ -64,7 +64,7 @@ Texture2D(0, 0, sourceTex, sourceTexSampler)
 
     /*vec3 Prefilter(vec3 c){
         float brightness = max(c.r, max(c.g, c.b));
-        float contribution = max(0, brightness - threshold);
+        float contribution = max(0, brightness - _filter.x);
         contribution /= max(brightness, 0.00001);
         return c * contribution;
     }*/

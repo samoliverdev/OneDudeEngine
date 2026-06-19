@@ -157,6 +157,11 @@ public:
     int GetPass();
     int PassCount();
 
+    //INFO: This function dont check if the current material is null or not, and return the tags of the first pass only
+    const std::vector<std::string>& TagsString();
+    //INFO: This function dont check if the current material is null or not, and return the tags of the first pass only
+    const std::vector<uint32_t>& TagsHash();
+
     inline int MainPass(){ return mainPass; }
     inline int DepthPass(){ return depthPass; }
 

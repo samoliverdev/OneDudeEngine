@@ -102,6 +102,7 @@ struct OD_API SubShader{
     ShaderPipeline pipeline;
     std::vector<std::string> enabledKeyworlds;
     std::vector<std::vector<std::string>> pragmas;
+
     //std::unordered_map<std::string, int> uniforms;
     //std::vector<std::string> _uniforms;
     SubShaderDataGL;

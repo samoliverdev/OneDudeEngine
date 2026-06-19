@@ -25,6 +25,8 @@ struct OD_API DrawingSettings{
     SortType sortType;
     bool decalTarget = false;
     bool enableIntancing = true;
+    std::vector<uint32_t> requiredTags; //TODO: Experimental, Messure the performace Later
+    std::vector<uint32_t> excludedTags; //TODO: Experimental, Messure the performace Later 
 };
 
 struct OD_API ShadowDrawingSettings{

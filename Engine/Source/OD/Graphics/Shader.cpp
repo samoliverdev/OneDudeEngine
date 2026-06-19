@@ -2,6 +2,7 @@
 #include "Shader.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#include "OD/Core/Hash.h"
 #include "OD/Serialization/SerializationFull.h"
 #include <numeric>
 #include <fstream>
@@ -297,6 +298,13 @@ bool Shader::InitPass(int pass){
                 if(i[j] == "INSTANCINGMATRIX43") drawTypes.insert(Shader::DrawType::InstancingDraw43);
                 if(i[j] == "SKINNED2") drawTypes.insert(Shader::DrawType::SkinnedDraw2);
             }
+        }
+
+        if(i[0] == "Tags"){
+            for(int j = 1; j < i.size(); j++){
+                passes[pass].tagsString.push_back(i[j]);
+                passes[pass].tagsHash.push_back(Hash::StringToHash(i[j]));
+            } 
         }
     }
     for(auto& i: multCompile){

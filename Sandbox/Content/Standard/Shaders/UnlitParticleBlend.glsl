@@ -50,7 +50,6 @@ Texture2D(0, 1, mainTex, mainSampler)
 
     void main(){
         vec4 texColor = ToLinear(SampleTexture2D(mainTex, mainSampler, _texCoord)); 
-        if(texColor.a < cutoff) discard;
         fragColor = texColor * outColor; //* color;
     }
 #endif

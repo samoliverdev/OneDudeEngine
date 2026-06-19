@@ -50,7 +50,7 @@ BRDF GetBRDF(Surface surface){
     vec3 dielectricSpecular = vec3(MIN_REFLECTIVITY);
     vec3 F0 = mix(dielectricSpecular, surface.color, metallic);
 
-    // ⚠️ Unity-style energy compensation (base reflectivity já consome parte da luz)
+    // Unity-style energy compensation (base reflectivity já consome parte da luz)
     float oneMinusReflectivity = 1.0 - max(max(F0.r, F0.g), F0.b); // mesmo que no seu OneMinusReflectivity()
     brdf.diffuse = surface.color * oneMinusReflectivity;
 
@@ -73,7 +73,7 @@ BRDF GetBRDF(Surface surface){
     vec3 F0 = mix(dielectricF0, surface.color, metallic); // F0 = albedo se metal
 
     brdf.specular = F0;
-    brdf.diffuse = surface.color * (1.0 - metallic); // ⚠️ Essa é a chave!
+    brdf.diffuse = surface.color * (1.0 - metallic); // Essa é a chave!
     brdf.perceptualRoughness = perceptualRoughness;
     brdf.roughness = roughness;
 
@@ -95,8 +95,44 @@ float SpecularStrength(Surface surface, BRDF brdf, Light light){
 	return r2 / (d2 * (lh2 + 0.001) * normalization);
 }
 
+float SpecularStrength2(Surface surface, BRDF brdf, Light light){
+    vec3 N = surface.normal;
+    vec3 V = surface.viewDirection;
+    vec3 L = light.direction;
+
+    vec3 H = normalize(L + V);
+
+    float NdotL = saturate(dot(N, L));
+    float NdotV = saturate(dot(N, V));
+    float NdotH = saturate(dot(N, H));
+    float VdotH = saturate(dot(V, H));
+
+    float a = brdf.roughness;
+    float a2 = a * a;
+
+    // GGX Normal Distribution Function (D)
+    float denom = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
+    float D = a2 / (3.14159265 * denom * denom + 1e-6);
+
+    // Geometry term (Smith Schlick-GGX)
+    float k = (a + 1.0);
+    k = (k * k) / 8.0;
+
+    float G_V = NdotV / (NdotV * (1.0 - k) + k + 1e-6);
+    float G_L = NdotL / (NdotL * (1.0 - k) + k + 1e-6);
+    float G = G_V * G_L;
+
+    // Fresnel (Schlick)
+    float F = pow(1.0 - saturate(VdotH), 5.0);
+
+    // Final specular
+    float spec = (D * G * F) / (4.0 * NdotL * NdotV + 1e-6);
+
+    return spec;
+}
+
 vec3 DirectBRDF(Surface surface, BRDF brdf, Light light){
-	return SpecularStrength(surface, brdf, light) * brdf.specular + brdf.diffuse;
+	return SpecularStrength2(surface, brdf, light) * brdf.specular + brdf.diffuse;
 }
  
 vec3 _fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness){

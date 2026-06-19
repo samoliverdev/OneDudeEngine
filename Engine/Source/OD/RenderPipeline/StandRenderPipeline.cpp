@@ -2,6 +2,7 @@
 #include "StandRenderPipeline.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
+#include "OD/Core/Hash.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Common.h"
@@ -565,6 +566,7 @@ void CameraRenderer::RunRenderDataLoop(){
     OD_PROFILE_SCOPE("CameraRenderer::RunRenderDataLoop");
 
     opaqueDrawTarget.Clean();
+    opaqueForwardOnlyDrawTarget.Clean();
     blendDrawTarget.Clean();
     decalDrawTarget.Clean();
     entityIdDrawTarget.Clean();
@@ -578,7 +580,14 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueDrawSettings.enableIntancing = true;
     opaqueDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
     opaqueDrawSettings.sortType = SortType::CommonOpaque;
+    opaqueDrawSettings.excludedTags.push_back(Hash::StringToHash("ForwardOnly"));
     opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
+    
+    opaqueForwardOnlyDrawSettings.enableIntancing = true;
+    opaqueForwardOnlyDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
+    opaqueForwardOnlyDrawSettings.sortType = SortType::CommonOpaque;
+    opaqueForwardOnlyDrawSettings.requiredTags.push_back(Hash::StringToHash("ForwardOnly"));
+    opaqueForwardOnlyDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
 
     //----------Transparent Settings-----------
     blendDrawSettings.enableIntancing = true; //true; //false;
@@ -669,6 +678,7 @@ void CameraRenderer::RunRenderDataLoop(){
 void CameraRenderer::AddRenderData(RenderData& data){
     if(data.aabb.isOnFrustum(camera.frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) return;
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
+    context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
     context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
     context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
     context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
@@ -814,7 +824,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //Graphics::SetDepthTest(DepthTest::LESS);
 
         //Graphics::SetColorMask(0,0,0,0);
-        context->DrawRenderersBuffer(opaqueDrawTarget, true);
+
+        context->DrawRenderersBuffer(opaqueDrawTarget, true);//TODO: Maybe remove sort on here
+        context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);//TODO: Maybe remove sort on here
         
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
@@ -827,7 +839,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     } else {
         context->BeginDeferredPass();
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        context->DrawRenderersBuffer(opaqueDrawTarget, true, true);
+        context->DrawRenderersBuffer(opaqueDrawTarget, true, true);//TODO: Maybe remove sort on here
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
@@ -884,6 +896,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
         #endif
         //context->BeginForwardPass();
+
+        context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
 
         //context->RenderSkyboxLater();
         if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();

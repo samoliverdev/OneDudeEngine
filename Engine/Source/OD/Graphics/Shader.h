@@ -42,6 +42,10 @@ public:
         Ref<SubShader> drawTypes[5] = {nullptr, nullptr, nullptr, nullptr, nullptr};
     };
 
+    inline int PassesCount(){return passes.size(); }
+    inline const std::vector<std::string>& TagsString(int pass){ return passes[pass].tagsString; }
+    inline const std::vector<uint32_t>& TagsHash(int pass){ return passes[pass].tagsHash; }
+
 private:
     struct KeyworldSpace{
         std::vector<std::string> keyworlds;
@@ -51,6 +55,8 @@ private:
     struct Pass{
         std::string name;
         std::unordered_map<std::string, SubShaderTarget> shaders;
+        std::vector<std::string> tagsString;
+        std::vector<uint32_t> tagsHash;
     };
 
     ShaderSourceData shaderSourceData;

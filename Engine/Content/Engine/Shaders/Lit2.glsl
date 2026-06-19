@@ -7,6 +7,7 @@
     Texture2D emissionMap Black
     Color4 emissionColor 0 0 0 0
     Texture2D maskMap White
+    Float emissionIntensity 1 
     Float occlusion 1 0 1
     Float metallic 0 0 1
     Float smoothness 0.5 0.0 1.0
@@ -41,6 +42,7 @@ BeginUniform(0, 0, Main)
     Uniform float metallic;
     Uniform float smoothness;
     Uniform float cutoff;
+    Uniform float emissionIntensity;
 EndUniform()
 
 Texture2D(0, 6, mainTex, mainTexSampler)
@@ -114,6 +116,7 @@ uniform int perDrawInt_1;
         layout(location = 0) out vec3 gNormal;
         layout(location = 1) out vec4 gAlbedoSpec;
         layout(location = 2) out vec4 gOther;
+        layout(location = 3) out vec3 gEmission;
 
     #else
         Out(0) vec4 fragColor;
@@ -121,7 +124,7 @@ uniform int perDrawInt_1;
 
     vec3 GetEmission(vec2 baseUV){
         vec4 map = SampleTexture2D(emissionMap, emissionMapSampler, baseUV); //texture(emissionMap, baseUV);
-        return map.rgb * emissionColor.rgb;
+        return (map.rgb * emissionColor.rgb) * emissionIntensity;
     }
 
     vec4 GetMask(vec2 baseUV){
@@ -190,16 +193,12 @@ uniform int perDrawInt_1;
         
         //gPosition = surface.position;
         gNormal = vec3(pack_normal_octahedron(surface.normal), 0); //surface.normal;
-        gAlbedoSpec.rgb = surface.color.rgb + GetEmission(uv);
+        gAlbedoSpec.rgb = surface.color.rgb;// + GetEmission(uv);
         //gAlbedoSpec.a = perDrawInt_1;
         //gAlbedoSpec.a = surface.smoothness;
-        //gEmission.rgb = GetEmission(uv);
-        gOther = vec4(
-            surface.smoothness,
-            surface.metallic,
-            surface.occlusion,
-            perDrawInt_1
-        );
+        gEmission.rgb = GetEmission(uv);
+        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perDrawInt_1);
+        
         
         #else
 

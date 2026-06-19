@@ -2419,9 +2419,61 @@ void RenderContext::RenderDataLoopNew(std::function<void(RenderData&)> onReciveR
     }
 }
 
+inline bool HasAllTags(const std::vector<uint32_t>& required, const std::vector<uint32_t>& tags){
+    //if(required.size() > tags.size()) return false;
+    if(tags.size() <= 0) return false;
+    for(uint32_t r : required){
+        bool found = false;
+        for(uint32_t t : tags){
+            if(t == r){
+                found = true;
+                break;
+            }
+        }
+        if(!found) return false;
+    }
+    return true;
+}
+
+//Maybe more fast
+inline bool HasAllTags2(const std::vector<uint32_t>& required, const std::vector<uint32_t>& tags){
+    //if(required.size() > tags.size()) return false;
+    if(tags.size() <= 0) return false;
+    for(uint32_t r : required){
+        bool found = false;
+        for(uint32_t t : tags){
+            found |= (t == r);
+        }
+        if(!found) return false;
+    }
+    return true;
+}
+
+inline bool HasAnyTags(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b){
+    if(a.empty() || b.empty()) return false;
+    for(uint32_t x : a){
+        for(uint32_t y : b){
+            if(x == y) return true;
+        }
+    }
+    return false;
+}
+
 void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, RendererList& target){
+    Assert(data.targetMaterial != nullptr);
+
     if(data.HasFlag(RenderData::Flag::IsDecal) && settings.decalTarget == false) return;
     if(settings.decalTarget && data.HasFlag(RenderData::Flag::IsDecal) == false) return;
+
+    //TODO: Experimental, Messure the performace Later
+    if(settings.requiredTags.size() > 0){
+        if(HasAllTags2(settings.requiredTags, data.targetMaterial->TagsHash()) == false) return;
+    }
+
+    //TODO: Experimental, Messure the performace Later
+    if(settings.excludedTags.size() > 0){
+        if(HasAnyTags(settings.excludedTags, data.targetMaterial->TagsHash()) == true) return;
+    }
 
     bool isBlend = data.targetMaterial->IsBlend();
     bool isInstancing = data.targetMaterial->EnableInstancingValid();
