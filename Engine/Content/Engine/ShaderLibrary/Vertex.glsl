@@ -80,6 +80,7 @@ mat4 GetModelMatrix(){
     return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
     #endif
 #elif defined(INSTANCINGMATRIX43)
+    //INFO: This can be bug, becose probaly a_ModelMatrix_0 is not row, i think is colum
     return transpose(mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, vec4(0,0,0,1)));
     /*return mat4(
         vec4(a_ModelMatrix_0.x, a_ModelMatrix_1.x, a_ModelMatrix_2.x, 0.0), // col 0

@@ -177,7 +177,7 @@ uniform int perDrawInt_1;
 
         Surface surface;
         surface.position = outWorldPos;
-        surface.normal = outWorldNormal;// _normal;
+        surface.normal = _normal; //outWorldNormal;// _normal;
         surface.viewDirection = normalize(viewPos - outWorldPos);
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;

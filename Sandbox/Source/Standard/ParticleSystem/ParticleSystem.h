@@ -90,6 +90,21 @@ public:
     void OnInitParticle(ParticleData& particle) override;
 };
 
+class InitialRotationModule: public IInitParticleModule{
+public:
+    float minRotation = 0;
+    float maxRotation = 0;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, minRotation);
+        ArchiveDumpNVP(ar, maxRotation);
+    }
+
+    void OnGui() override;
+    void OnInitParticle(ParticleData& particle) override;
+};
+
 class InitialSizeModule: public IInitParticleModule{
 public:
     bool uniforSize = true;
@@ -241,6 +256,7 @@ struct ParticleData{
     float startLife = 0;
     float life = 0;
     float cameradistance;
+    float rotation = 0;
     bool handleCollision = false;
 
     inline bool IsDead(){ return life <= 0; }
@@ -297,6 +313,7 @@ public:
         ArchiveDumpNVP(ar, initialLifeModule);
         ArchiveDumpNVP(ar, initialVelocityModule);
         ArchiveDumpNVP(ar, initialSizeModule);
+        ArchiveDumpNVP(ar, initialRotationModule);
         ArchiveDumpNVP(ar, initialColorModule);
 
         ArchiveDumpNVP(ar, updaterModule);
@@ -321,6 +338,7 @@ public:
         COPY_OR_MOVE(spawnModule);
         COPY_OR_MOVE(initialLifeModule);
         COPY_OR_MOVE(initialVelocityModule);
+        COPY_OR_MOVE(initialRotationModule);
         COPY_OR_MOVE(initialSizeModule);
         COPY_OR_MOVE(initialColorModule);
         
@@ -358,6 +376,7 @@ private:
     SpawnModule spawnModule;
     InitialLifeModule initialLifeModule;
     InitialVelocityModule initialVelocityModule;
+    InitialRotationModule initialRotationModule;
     InitialSizeModule initialSizeModule; 
     InitialColorModule initialColorModule;
     

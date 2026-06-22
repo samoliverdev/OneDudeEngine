@@ -107,7 +107,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.colorAttachments = {
         //{FramebufferTextureFormat::RGB16F}, // Pos
         {FramebufferTextureFormat::RGB16F}, // Normal(R,G) Other(B)
-        {FramebufferTextureFormat::RGBA8}, // Albedo, Other(A)
+        {FramebufferTextureFormat::RGBA16F}, // Albedo, Other(A)
         //{FramebufferTextureFormat::RGB}, // Emission
         {FramebufferTextureFormat::RGBA16F},//, // Spec, Metalic, AO, Other //INFO: if is RGBA8 Other used current for layer, bug becose will be clamped to  0-1
         {FramebufferTextureFormat::RGB11B10F} //Emission

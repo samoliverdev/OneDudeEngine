@@ -1,6 +1,7 @@
 #include "ParticleSystem.h"
 #include "Standard/Ultis/Ultis.h"
 #include <OD/Core/Time.h>
+#include <OD/Graphics/Common.h>
 #include <OD/Graphics/Geometry.h>
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Model.h>
@@ -67,6 +68,17 @@ void InitialVelocityModule::OnInitParticle(ParticleData& particle){
     ); 
 }
 
+void InitialRotationModule::OnGui(){
+    if(ImGui::CollapsingHeader("InitialRotation")){
+        ImGui::DragFloat("minSize", &minRotation);
+        ImGui::DragFloat("maxSize", &maxRotation);
+    }
+}
+
+void InitialRotationModule::OnInitParticle(ParticleData& particle){
+    particle.rotation = Ultis::RandomRange(minRotation, maxRotation);
+}
+
 void InitialSizeModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialSize")){
         ImGui::Checkbox("uniforSize", &uniforSize);
@@ -92,6 +104,8 @@ void InitialSizeModule::OnInitParticle(ParticleData& particle){
         ); 
     }
 }
+
+
 
 void InitialColorModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialColor")){
@@ -266,6 +280,7 @@ void ParticleEmiter::OnGui(){
 
     initialLifeModule.OnGui();
     initialVelocityModule.OnGui();
+    initialRotationModule.OnGui();
     initialSizeModule.OnGui();
     initialColorModule.OnGui();
 
@@ -299,6 +314,7 @@ void ParticleEmiter::BindModules(){
     
     initParticleModules.push_back(&initialLifeModule);
     initParticleModules.push_back(&initialVelocityModule);
+    initParticleModules.push_back(&initialRotationModule);
     initParticleModules.push_back(&initialSizeModule);
     initParticleModules.push_back(&initialColorModule);
 
@@ -476,8 +492,30 @@ glm::mat4 MakeBillboard(const glm::vec3& objectPos, const glm::mat4& view, const
     glm::mat4 model(1.0f);
     model[0] = glm::vec4(camRight,   0.0f);
     model[1] = glm::vec4(camUp,      0.0f);
-    model[2] = glm::vec4(camForward, 0.0f);
+    model[2] = glm::vec4(-camForward, 0.0f);
     model[3] = glm::vec4(objectPos,  1.0f);
+
+    return model;
+}
+
+glm::mat4 MakeBillboard(const glm::vec3& objectPos, const glm::mat4& view, float rotationRad){
+    glm::vec3 camRight   = glm::normalize(glm::vec3(view[0][0], view[1][0], view[2][0]));
+    glm::vec3 camUp      = glm::normalize(glm::vec3(view[0][1], view[1][1], view[2][1]));
+    glm::vec3 camForward = -glm::normalize(glm::vec3(view[0][2], view[1][2], view[2][2]));
+
+    glm::vec3 normal = -camForward; // face camera
+
+    float c = cos(rotationRad);
+    float s = sin(rotationRad);
+
+    glm::vec3 right = camRight * c + camUp * s;
+    glm::vec3 up    = camUp * c - camRight * s;
+
+    glm::mat4 model(1.0f);
+    model[0] = glm::vec4(right,  0.0f);
+    model[1] = glm::vec4(up,     0.0f);
+    model[2] = glm::vec4(normal, 0.0f);
+    model[3] = glm::vec4(objectPos, 1.0f);
 
     return model;
 }
@@ -501,11 +539,14 @@ glm::mat4 MakeBillboardViewPlusVelocity(
     glm::vec3 axisY = glm::normalize(velCam);
 
     // Local Z axis → facing camera
-    glm::vec3 axisZ = glm::vec3(0, 0, 1); // billboard always faces camera
+    glm::vec3 axisZ = glm::vec3(0, 0, -1); // billboard always faces camera
 
     // Local X axis → cross(Y, Z)
-    glm::vec3 axisX = glm::normalize(glm::cross(axisY, axisZ));
-    axisY = glm::normalize(glm::cross(axisZ, axisX));
+    //glm::vec3 axisX = glm::normalize(glm::cross(axisY, axisZ));
+    //axisY = glm::normalize(glm::cross(axisZ, axisX));
+
+    glm::vec3 axisX = glm::normalize(glm::cross(axisZ, axisY));
+    axisY = glm::normalize(glm::cross(axisX, axisZ));
 
     // Build rotation in camera space
     glm::mat3 rot;
@@ -559,7 +600,8 @@ void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
 
         Assert(cam != nullptr);
         if(rendererModule.orientation == RendererModule::Orientation::View){
-            targetModelMatrix = MakeBillboard(t.Position(), cam->view, cam->projection) * glm::scale(glm::mat4(1.0f), t.Scale());
+            //targetModelMatrix = MakeBillboard(t.Position(), cam->view, cam->projection) * glm::scale(glm::mat4(1.0f), t.Scale());
+            targetModelMatrix = MakeBillboard(t.Position(), cam->view, math::radians(particles[_i].rotation)) * glm::scale(glm::mat4(1.0f), t.Scale());
         }
 
         if(rendererModule.orientation == RendererModule::Orientation::Velocity){
@@ -581,10 +623,10 @@ void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
         
         if(simulationSpace == SimulationSpace::Local){
             auto m = root * targetModelMatrix;
-            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
+            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), ToLinear((Vector4)particles[_i].color));
         } else {
             auto m = targetModelMatrix;
-            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), (Vector4)particles[_i].color);
+            drawData[i] = Matrix4(math::row(m, 0), math::row(m, 1), math::row(m, 2), ToLinear((Vector4)particles[_i].color));
         }
 
         i += 1;
@@ -593,6 +635,19 @@ void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
     SortDrawDataByParticleDistance(drawData, particles);
 
     buffer.SetData(drawData.data(), particlesCount);
+
+    glm::mat4 m(1.0f);
+    m[3] = glm::vec4(10.0f, 20.0f, 30.0f, 1.0f);
+
+    auto r0 = math::row(m, 0);
+    auto r1 = math::row(m, 1);
+    auto r2 = math::row(m, 2);
+    auto r3 = math::row(m, 3);
+
+    Assert(r0 == glm::vec4(1, 0, 0, 10));
+    Assert(r1 == glm::vec4(0, 1, 0, 20));
+    Assert(r2 == glm::vec4(0, 0, 1, 30));
+    Assert(r3 == glm::vec4(0, 0, 0, 1));
 }
 
 void ParticleSystem::OnGui(){
