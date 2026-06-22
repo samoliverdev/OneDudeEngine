@@ -78,6 +78,13 @@ struct alignas(16) SSSParameters2{
     float _pad3; 
 };
 
+inline void SetPerInstanceData(Matrix4& matrix, Vector4& data){
+    matrix[0][3] = data.x;
+    matrix[1][3] = data.y;
+    matrix[2][3] = data.z;
+    matrix[3][3] = data.w;
+}
+
 RenderContext::RenderContext(Scene* inScene){
     scene = inScene;
 
@@ -1298,6 +1305,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
     //}
 }
 
+//Deprecated
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
@@ -1805,6 +1813,8 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
             );
         }
 
+        SetPerInstanceData(data.targetMatrix, decal.perInstanceData);
+
         data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;
         data.SetFlag(RenderData::Flag::RenderShadow, false);// .renderShadow = false;
 
@@ -2208,6 +2218,8 @@ void RenderContext::UpdateRenderData(){
                 AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
             );
         }
+
+        SetPerInstanceData(data.targetMatrix, decal.perInstanceData);
 
         data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;
         data.SetFlag(RenderData::Flag::RenderShadow, false);// .renderShadow = false;

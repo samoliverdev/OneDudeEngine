@@ -152,7 +152,7 @@ void Material::SetVector4(const char* name, Vector4 value){
 void Material::SetColor3(const char* name, Vector3 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector3;
-    map.vec.vector = ToLinear(Vector4(value.x, value.y, value.z, 1));
+    map.vec.vector = Vector4(value.x, value.y, value.z, 1);
     map.vec.vectorIsColor = true;
     isDirtyUniformData = true;
 }
@@ -160,7 +160,7 @@ void Material::SetColor3(const char* name, Vector3 value){
 void Material::SetColor4(const char* name, Vector4 value){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Vector4;
-    map.vec.vector = ToLinear(value);
+    map.vec.vector = value;
     map.vec.vectorIsColor = true;
     isDirtyUniformData = true;
 }
@@ -538,7 +538,7 @@ void Material::OnGui(){
 
         if(map.type == MaterialMap::Type::Vector3 && map.vec.vectorIsColor == true){
             if(ImGui::ColorEdit3(name.c_str(), &map.vec.vector[0])){
-                map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need 
+                map.vec.vector = map.vec.vector;//TODO: Maybe check if this is realy need 
                 toSave = true;
                 isDirty = isDirtyUniformData = true;
             }
@@ -546,7 +546,7 @@ void Material::OnGui(){
 
         if(map.type == MaterialMap::Type::Vector4 && map.vec.vectorIsColor == true){
             if(ImGui::ColorEdit4(name.c_str(), &map.vec.vector[0]/*, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR*/)){
-                map.vec.vector = ToLinear(map.vec.vector);//TODO: Maybe check if this is realy need
+                map.vec.vector = map.vec.vector;//TODO: Maybe check if this is realy need
                 toSave = true;
                 isDirty = isDirtyUniformData = true;
             }

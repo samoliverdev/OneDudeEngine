@@ -391,7 +391,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Directional){
             if(curDirLightsCount >= maxDirLightCount) continue;
 
-            dirLightColors[curDirLightsCount] = ToLinear(light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            dirLightColors[curDirLightsCount] = ToLinear((Vector4)light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
             dirLightDirections[curDirLightsCount] = Mathf::ToVector4(-trans.Forward());
             Vector2 v = shadows->ReserveDirectionalShadows(light, trans);
             dirLightShadowData[curDirLightsCount] = Vector4(v.x, v.y, 0, 1);
@@ -403,7 +403,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Point){
             if(curOtherLightsCount >= maxOtherLightCount) continue;
 
-            otherLightColors[curOtherLightsCount] = ToLinear(light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
+            otherLightColors[curOtherLightsCount] = ToLinear((Vector4)light.color) * light.intensity; //Mathf::ToVector4(light.color * light.intensity);
             Vector4 position = Mathf::ToVector4(trans.Position());
             position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
             otherLightPositions[curOtherLightsCount] = position;
@@ -417,7 +417,7 @@ void Lighting::SetupDirectionalLight(){
         if(light.type == LightComponent::Type::Spot){
             if(curOtherLightsCount >= maxOtherLightCount) continue;
 
-            otherLightColors[curOtherLightsCount] = ToLinear(light.color) * light.intensity;
+            otherLightColors[curOtherLightsCount] = ToLinear((Vector4)light.color) * light.intensity;
             Vector4 position = Mathf::ToVector4(trans.Position());
             position.w = 1.0f / math::max(light.radius*light.radius, 0.00001f);
             otherLightPositions[curOtherLightsCount] = position;
@@ -790,11 +790,11 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     }
     context->skyMaterial = targetSkyMaterial;
 
-    context->pipelineData._AmbientLight = ToLinear(environmentSettings.ambient);
+    context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
 
     if(environmentSettings.environmentLight == EnvironmentLight::Color){
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
-        context->pipelineData._AmbientLight = ToLinear(environmentSettings.ambient);
+        context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
         context->pipelineData._SkyLightIntensity = 0;
         context->pipelineData._IrradianceMapScale = Vector4Zero;
     }

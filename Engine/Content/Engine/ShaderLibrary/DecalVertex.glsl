@@ -8,12 +8,14 @@ flat out vec4 vDecalInvRow3;
 
 out vec3 decalNormalWS;
 out vec3 objWorldPos;
+flat out vec4 perInstanceData;
 
 void main() {
     mat4 model = GetModelMatrix();
 
     OutPosition = projection * view * model * GetLocalPos();
     objWorldPos = (model * vec4(0, 0, 0, 1)).xyz;
+    perInstanceData = GetPerInstanceData();
 
     mat4 invModel = inverse(model);
 

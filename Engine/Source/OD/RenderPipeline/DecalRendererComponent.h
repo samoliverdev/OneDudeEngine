@@ -9,6 +9,7 @@
 namespace OD{
 
 struct OD_API DecalRendererComponent{
+    Vector4 perInstanceData = Vector4Zero;
     Vector3 offset;
     Vector3 size = {1, 1, 1};
     Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DecalTest.glsl"));// nullptr;
@@ -21,6 +22,8 @@ struct OD_API DecalRendererComponent{
 
     template<class Archive>
     void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, perInstanceData);
+
         ArchiveDumpNVP(ar, offset);
         ArchiveDumpNVP(ar, size);
 

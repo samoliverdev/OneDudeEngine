@@ -17,6 +17,8 @@ void DecalRendererComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DrawAsset<Material>("material", decal.material);
 
     ImGui::DragInt("customLayerIndex", &decal.customLayerIndex);
+
+    ImGui::DragFloat4("perInstanceData", &decal.perInstanceData.x);
 }
 
 }

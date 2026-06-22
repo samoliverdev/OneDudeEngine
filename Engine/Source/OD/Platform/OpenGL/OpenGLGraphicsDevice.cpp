@@ -2,6 +2,7 @@
 #include "OD/pch.h"
 #include "OpenGLGraphicsDevice.h"
 #include "GL.h"
+#include "OD/Graphics/Common.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
 #include "OD/Graphics/Framebuffer.h"
@@ -1354,15 +1355,19 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
                     #endif*/
                 } else if(map.type == MaterialMap::Type::Vector3){
                     //#ifdef GLM_FORCE_ALIGNED
+                        Vector3 v = Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z);
+                        if(map.vec.vectorIsColor) v = ToLinear(v);
                         Assert(m.size >= (sizeof(float) * 3));
-                        memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector.x, sizeof(float) * 3);
+                        memcpy((char*)material.glData.mainUniformData + m.pos, &v.x, sizeof(float) * 3);
                     /*#else
                         Assert(m.size >= sizeof(Vector3));
                         memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
                     #endif*/
                 } else if(map.type == MaterialMap::Type::Vector4){
+                    Vector4 v = map.vec.vector;
+                    if(map.vec.vectorIsColor) v = ToLinear(v);
                     Assert(m.size >= sizeof(Vector4));
-                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector4));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &v, sizeof(Vector4));
                 } else if(map.type == MaterialMap::Type::Matrix4){
                     Assert(m.size >= sizeof(Matrix4));
                     memcpy((char*)material.glData.mainUniformData + m.pos, &map.matrix, sizeof(Matrix4));
@@ -1421,10 +1426,11 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
                 SubShaderSetVector2(shader, i.first.c_str(), Vector2(map.vec.vector.x, map.vec.vector.y));
             }
             if(map.type == MaterialMap::Type::Vector3){
-                SubShaderSetVector3(shader, i.first.c_str(), Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z));
+                Vector3 v = Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z);
+                SubShaderSetVector3(shader, i.first.c_str(), map.vec.vectorIsColor ? ToLinear(v) : v);
             }
             if(map.type == MaterialMap::Type::Vector4){
-                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vector);
+                SubShaderSetVector4(shader, i.first.c_str(), map.vec.vectorIsColor ? ToLinear(map.vec.vector) : map.vec.vector);
             }
             if(map.type == MaterialMap::Type::Matrix4){
                 SubShaderSetMatrix4(shader, i.first.c_str(), i.second.matrix);

@@ -72,12 +72,32 @@ layout(std140) uniform PerDrawData {
 #endif
 */
 
+vec4 GetPerInstanceData(){
+    #ifdef INSTANCING
+        return vec4(modelInstancing[0][3], modelInstancing[1][3], modelInstancing[2][3], modelInstancing[3][3]);
+    #else 
+        return vec4(model[0][3], model[1][3], model[2][3], model[3][3]);
+    #endif
+}
+
 mat4 GetModelMatrix(){
 #ifdef INSTANCING
     #ifdef OpenGL_API
-        return modelInstancing;
+        mat4 result = modelInstancing;
+        result[0][3] = 0;
+        result[1][3] = 0;
+        result[2][3] = 0;
+        result[3][3] = 1;
+        return result;
+        //return modelInstancing;
     #else
-    return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
+    mat4 result = mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);;
+        result[0][3] = 0;
+        result[1][3] = 0;
+        result[2][3] = 0;
+        result[3][3] = 1;
+        return result;
+    //return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
     #endif
 #elif defined(INSTANCINGMATRIX43)
     //INFO: This can be bug, becose probaly a_ModelMatrix_0 is not row, i think is colum
@@ -96,7 +116,13 @@ mat4 GetModelMatrix(){
         scaleMat[2][2] = 5;
         return model * scaleMat; // or scaleMat * model (see below)
     #else*/
-        return model;
+        mat4 result = model;
+        result[0][3] = 0;
+        result[1][3] = 0;
+        result[2][3] = 0;
+        result[3][3] = 1;
+        return result;
+        //return model;
     //#endif
 #endif
 }

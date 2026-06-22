@@ -8,6 +8,7 @@ flat in vec4 vDecalInvRow3;
 
 in vec3 decalNormalWS;
 in vec3 objWorldPos;
+flat in vec4 perInstanceData;
 
 layout(location = 1) out vec4 gAlbedoOut;
 layout(location = 2) out vec4 gOtherOut;
@@ -49,6 +50,7 @@ void main(){
     IN.localPos = localPos;
     IN.surfaceNormalWS = surfaceNormalWS;
     IN.decalNormalWS = decalNormalWS;
+    IN.perInstanceData = perInstanceData;
     IN.gAlbedo = texture(gAlbedoSpec, screenUV);
     IN.gOther = other;
 

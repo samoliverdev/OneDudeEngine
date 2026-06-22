@@ -9,6 +9,8 @@ struct DecalInput {
     vec3 surfaceNormalWS;
     vec3 decalNormalWS;
 
+    vec4 perInstanceData;
+
     vec4 gAlbedo;
     vec4 gOther;
 };
