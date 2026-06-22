@@ -147,6 +147,37 @@ Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes){
     return out;
 }
 
+Frustum CreateFrustumFromMatrix(const glm::mat4& m, bool normalizePlanes){
+    // m should be projection * view for world-space culling
+
+    glm::vec4 row0(m[0][0], m[1][0], m[2][0], m[3][0]);
+    glm::vec4 row1(m[0][1], m[1][1], m[2][1], m[3][1]);
+    glm::vec4 row2(m[0][2], m[1][2], m[2][2], m[3][2]);
+    glm::vec4 row3(m[0][3], m[1][3], m[2][3], m[3][3]);
+
+    Frustum out;
+
+    out.leftFace   = Plane(row3 + row0);
+    out.rightFace  = Plane(row3 - row0);
+    out.bottomFace = Plane(row3 + row1);
+    out.topFace    = Plane(row3 - row1);
+
+    // OpenGL NDC z is [-1, 1]
+    out.nearFace   = Plane(row3 + row2);
+    out.farFace    = Plane(row3 - row2);
+
+    if(normalizePlanes){
+        out.leftFace.normalize();
+        out.rightFace.normalize();
+        out.bottomFace.normalize();
+        out.topFace.normalize();
+        out.nearFace.normalize();
+        out.farFace.normalize();
+    }
+
+    return out;
+}
+
 bool BoundingVolume::isOnFrustum(Frustum& camFrustum) const{
     return (isOnOrForwardPlane(camFrustum.leftFace) &&
         isOnOrForwardPlane(camFrustum.rightFace) &&

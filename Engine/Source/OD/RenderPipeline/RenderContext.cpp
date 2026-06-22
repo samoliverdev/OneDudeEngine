@@ -2955,7 +2955,8 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     if(outFrustom != nullptr){
         //*outFrustom = CreateFrustumFromMatrix(lightView,proj);
         Matrix4 viewProj = math::simdMul(lightView, proj);
-        *outFrustom = CreateFrustumFromMatrix2(math::transpose( math::simdMul(proj, lightView) ));
+        //*outFrustom = CreateFrustumFromMatrix2(math::transpose( math::simdMul(proj, lightView) ));
+        *outFrustom = CreateFrustumFromMatrix(math::simdMul(proj, lightView));
     }
 
     float minX = std::numeric_limits<float>::max();
@@ -3026,7 +3027,8 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
         splitData[i].projViewMatrix = lightMatrixs[i];
         //splitData[i].splitDistance = shadowCascadeLevels[i];
         //splitData[i].frustum = frustums[i];
-        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(lightMatrixs[i]));
+        //splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(lightMatrixs[i]));
+        splitData[i].frustum = CreateFrustumFromMatrix(lightMatrixs[i]);
     }
 }
 
@@ -3035,7 +3037,8 @@ void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightCom
     auto lightView = glm::lookAt(transform.Position(), transform.Position() - (-transform.Forward()), Vector3Up);
 
     splitData->projViewMatrix = lightProjection * lightView;
-    splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
+    //splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
+    splitData->frustum = CreateFrustumFromMatrix(splitData->projViewMatrix);
 }
 
 void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
@@ -3064,7 +3067,8 @@ void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightCo
 
     for(int i = 0; i < 6; i++){
         splitData[i].projViewMatrix = shadowMats[i];
-        splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(shadowMats[i]));
+        //splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(shadowMats[i]));
+        splitData[i].frustum = CreateFrustumFromMatrix(shadowMats[i]);
     }
 }
 

@@ -74,6 +74,7 @@ struct OD_API alignas(16) Frustum{
 /*Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
 Frustum CreateFrustumFromOthor(Transform& cam, float orthographicSize, float aspect, float zNear, float zFar);
 Frustum CreateFrustumFromMatrix(const Matrix4& viewMatrix, const Matrix4& projectionMatrix);*/
+Frustum CreateFrustumFromMatrix(const Matrix4& mat, bool normalizePlanes = true);
 Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes = true);
 
 struct OD_API BoundingVolume{

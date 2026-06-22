@@ -2670,7 +2670,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
 
 void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Matrix4* modelMatrixs, int count){
     //OLD
-    /*#ifdef USE_VAO
+    #ifdef USE_VAO
     Assert(mesh.glData.vao != 0);
     glBindVertexArray(mesh.glData.vao);
     glCheckError();
@@ -2730,7 +2730,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     glBindVertexArray(0);
     glCheckError();
     #endif
-    return;*/
+    return;
 
     /*
     static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -2869,7 +2869,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     glBindVertexArray(0); glCheckError();
     #endif*/
 
-    //New
+    //New, But this is flick sometimes randonly, maybe need sync this "std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);"
     Assert(sizeof(Matrix4) == sizeof(glm::mat4));
     Assert(sizeof(glm::mat4) == sizeof(float) * 16);
 

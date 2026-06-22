@@ -371,7 +371,8 @@ void Editor::OnUpdate(float deltaTime){
         glm::mat4 view = glm::transpose(R) * glm::translate(glm::mat4(1.0f), -pos);
         editorCam.cam.view  = view;
         //editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
-        editorCam.cam.frustum = CreateFrustumFromMatrix2(math::transpose( editorCam.cam.projection * editorCam.cam.view ));
+        //editorCam.cam.frustum = CreateFrustumFromMatrix2(math::transpose( editorCam.cam.projection * editorCam.cam.view ));
+        editorCam.cam.frustum = CreateFrustumFromMatrix(editorCam.cam.projection * editorCam.cam.view);
         renderPipeline->SetOverrideCamera(&editorCam.cam, editorCam.transform);
     }
 
@@ -410,8 +411,8 @@ void Editor::OnUpdate(float deltaTime){
     assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
     assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.Position();
     assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetModelMatrix());
-    assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix2(
-        math::transpose(assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view)
+    assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix(
+        assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view
     );
     assetPreviewScene->Update();
     assetPreviewScene->Draw();
