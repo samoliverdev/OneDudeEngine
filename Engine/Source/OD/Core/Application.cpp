@@ -164,6 +164,7 @@ void Application::Loop(){
     lastFrame = currentFrame; 
 
     Time::UnscaledDeltaTime(deltaTime);
+    Time::Update(deltaTime);
 
     Platform::PumpMessages();
     //Platform::PreUpdate();

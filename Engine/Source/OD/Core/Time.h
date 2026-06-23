@@ -8,6 +8,9 @@ namespace OD{
 class OD_API Time{
     friend class Application;
 public:
+    static float TimeSinceStartup();
+    static float UnscaledTime();
+
     static float DeltaTime();
     static float UnscaledDeltaTime();
     static float TimeScale();
@@ -16,6 +19,7 @@ public:
     static float UnscaledFixedDelta();  
 private:
     static void UnscaledDeltaTime(float v);
+    static void Update(float dt);
 };
 
 }

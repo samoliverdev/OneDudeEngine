@@ -3091,7 +3091,9 @@ void PhysicsSystem::AddVehicle(Entity entity, VehiclePhysic& veh, RigidbodyCompo
 		}
 	);
 
+	//TODO: Add A enum to select the wheel collsion type
 	VehicleCollisionTester* vehicle_tester = new VehicleCollisionTesterRay(info.layer);
+	//VehicleCollisionTester* vehicle_tester = new  VehicleCollisionTesterCastCylinder(info.layer); 
 	veh.data->vehicleConstraint->SetVehicleCollisionTester(vehicle_tester);
 
 	physicsWorld->physicsSystem.AddConstraint(veh.data->vehicleConstraint);
