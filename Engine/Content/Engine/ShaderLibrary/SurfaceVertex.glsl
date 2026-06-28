@@ -7,6 +7,7 @@ Out(2) vec3 outWorldNormal;
 Out(3) vec3 outT;
 Out(4) vec3 outB;
 Out(5) vec3 outN;
+Out(6) vec4 perInstanceDataOut;
 
 #ifndef CUSTOM_VERTEX
 
@@ -26,6 +27,8 @@ void SurfaceVertexDefault(){
     outT = T;
     outB = B;
     outN = N;
+
+    perInstanceDataOut = GetPerInstanceData();
 
     outWorldPos = vec3(model * localPos);
     outWorldNormal = mat3(transpose(inverse(model))) * localNormal;

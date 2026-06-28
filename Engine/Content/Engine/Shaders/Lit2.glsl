@@ -63,6 +63,8 @@ uniform int perDrawInt_1;
     Out(6) vec3 outB;
     Out(7) vec3 outN;
 
+    out vec4 perInstanceDataOut;
+
     void main(){
         vec4 localPos = GetLocalPos();
         mat4 targetModelMatrix = GetModelMatrix();
@@ -73,6 +75,7 @@ uniform int perDrawInt_1;
         outPos = localPos.xyz;// pos;
         outNormal = normal;
         outTexCoord = texCoord;
+        perInstanceDataOut = GetPerInstanceData();
         
         //outTBN = mat3(T, B, N);
         outT = T;
@@ -104,6 +107,8 @@ uniform int perDrawInt_1;
     In(5) vec3 outT;
     In(6) vec3 outB;
     In(7) vec3 outN;
+
+    in vec4 perInstanceDataOut;
     
     #ifdef Deferred
         /*Out(9) vec4 gAlbedoSpec;
@@ -197,7 +202,7 @@ uniform int perDrawInt_1;
         //gAlbedoSpec.a = perDrawInt_1;
         //gAlbedoSpec.a = surface.smoothness;
         gEmission.rgb = GetEmission(uv);
-        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perDrawInt_1);
+        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perInstanceDataOut.w); //perDrawInt_1);
         
         
         #else

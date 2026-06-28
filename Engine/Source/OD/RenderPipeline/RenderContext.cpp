@@ -1966,6 +1966,9 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.vector4_0[0] = c.customData;
         }
 
+        Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+        SetPerInstanceData(data.targetMatrix, perInstanceData);
+
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
         data.customData = c.customData;
@@ -2027,9 +2030,12 @@ void RenderContext::UpdateRenderData(){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
             }
+            
+            Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+            SetPerInstanceData(data.targetMatrix, perInstanceData);
 
             data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
-
+            
             if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
 
             #if EnableExperimentalPerDrawCustomData
@@ -2080,6 +2086,9 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
         }
+
+        Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+        SetPerInstanceData(data.targetMatrix, perInstanceData);
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -2155,6 +2164,9 @@ void RenderContext::UpdateRenderData(){
                 data.perDrawData.vector4_0[0] = c.customData;
             }
 
+            Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+            SetPerInstanceData(data.targetMatrix, perInstanceData);
+
             #if EnableExperimentalPerDrawCustomData
             data.useCustomData = c.useCustomData;
             data.customData = c.customData;
@@ -2219,6 +2231,7 @@ void RenderContext::UpdateRenderData(){
             );
         }
 
+        decal.perInstanceData.w = float(decal.customLayerIndex);
         SetPerInstanceData(data.targetMatrix, decal.perInstanceData);
 
         data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;

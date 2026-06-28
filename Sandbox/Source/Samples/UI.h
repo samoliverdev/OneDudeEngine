@@ -5,10 +5,13 @@
 namespace OD{
     class Texture2D;
     class Material;
+    class Font;
 };
 
 struct UISample: public OD::Module {
     OD::Ref<OD::Texture2D> panelSprite;
+    OD::Ref<OD::Font> font;
+    OD::Ref<OD::Material> fontMat;
 
     UISample(){ name = "UISample"; }
     void OnInit() override;

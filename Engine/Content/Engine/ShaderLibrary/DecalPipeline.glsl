@@ -35,7 +35,8 @@ void main(){
 
     vec4 other = texture(gOther, screenUV);
 
-    if(perDrawInt_1 >= 0 && perDrawInt_1 != int(other.a))
+    //if(perDrawInt_1 >= 0 && perDrawInt_1 != int(other.a))
+    if(perInstanceData.w >= 0 && perInstanceData.w != int(other.a))
         discard;
 
     vec3 surfaceNormalWS = unpack_normal_octahedron(texture(gNormal, screenUV).rg);

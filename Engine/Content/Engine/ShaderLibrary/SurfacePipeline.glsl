@@ -7,6 +7,7 @@ In(2) vec3 outWorldNormal;
 In(3) vec3 outT;
 In(4) vec3 outB;
 In(5) vec3 outN;
+In(6) vec4 perInstanceDataOut;
 
 #ifdef Deferred
 layout(location = 0) out vec3 gNormal;
@@ -59,7 +60,7 @@ void main(){
     #ifdef Deferred
         gNormal = vec3(pack_normal_octahedron(surface.normal), 0.0);
         gAlbedoSpec = vec4(surface.color, 1.0);
-        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, float(perDrawInt_1));
+        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perInstanceDataOut.w); // float(perDrawInt_1));
         gEmission = surf.emission;
     #else
         BRDF brdf = GetBRDF(surface);
