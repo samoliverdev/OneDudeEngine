@@ -14,72 +14,71 @@
 using namespace OD;
 using namespace Standard;
 
-enum class SizingType{
-    Fixed, Percent
-};
-
-struct SizingAxis{
-    SizingType type = SizingType::Fixed;
-    float value = 0;
-
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, type);
-        ArchiveDumpNVP(ar, value);
-    }
-};
-
-#define FixedSize(x) SizingAxis{SizingType::Fixed, x}
-#define PercentSize(x) SizingAxis{SizingType::Percent, x}
-
-struct Sizing{
-    SizingAxis width;
-    SizingAxis height;
-
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, width);
-        ArchiveDumpNVP(ar, height);
-    }
-};
-
-enum class LayoutDirection{ LeftToRight, TopToBotton};
-
-struct Padding{
-    uint16_t left;
-    uint16_t right;
-    uint16_t top;
-    uint16_t bottom;
-
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, left);
-        ArchiveDumpNVP(ar, right);
-        ArchiveDumpNVP(ar, top);
-        ArchiveDumpNVP(ar, bottom);
-    }
-};
-
-struct LayoutConfig{
-    Padding padding;
-    uint16_t childGap;
-    Vector2 childAlignment; //(0=left/top, 0.5=center, 1=right/bottom)
-
-    template <class Archive>
-    void serialize(Archive& ar){
-        ArchiveDumpNVP(ar, padding);
-        ArchiveDumpNVP(ar, childGap);
-        ArchiveDumpNVP(ar, childAlignment);
-    }
-};
-
-enum class LayoutMode{
-    Absolute,
-    Horizontal,
-    Vertical
-};
-
 struct UIElement{
+    enum class SizingType{
+        Fixed, Percent
+    };
+
+    struct SizingAxis{
+        SizingType type = SizingType::Fixed;
+        float value = 0;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, type);
+            ArchiveDumpNVP(ar, value);
+        }
+    };
+
+    struct Sizing{
+        SizingAxis width;
+        SizingAxis height;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, width);
+            ArchiveDumpNVP(ar, height);
+        }
+    };
+
+    enum class LayoutDirection{ 
+        LeftToRight, TopToBotton
+    };
+
+    struct Padding{
+        uint16_t left;
+        uint16_t right;
+        uint16_t top;
+        uint16_t bottom;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, left);
+            ArchiveDumpNVP(ar, right);
+            ArchiveDumpNVP(ar, top);
+            ArchiveDumpNVP(ar, bottom);
+        }
+    };
+
+    struct LayoutConfig{
+        Padding padding;
+        uint16_t childGap;
+        Vector2 childAlignment; //(0=left/top, 0.5=center, 1=right/bottom)
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, padding);
+            ArchiveDumpNVP(ar, childGap);
+            ArchiveDumpNVP(ar, childAlignment);
+        }
+    };
+
+    enum class LayoutMode{
+        Absolute,
+        Horizontal,
+        Vertical
+    };
+
     int parent = -1;
     int firstChild = -1;
     int nextSibling = -1;
@@ -124,17 +123,21 @@ struct UIElement{
     UIElement& Text(const std::string& _text, float size, Vector2 align = {0, 0}){ text = _text; fontSize = size; textAlign = align; return *this; }
 };
 
-enum class Scaling{
-    None, ScreenMatch
-};
+#define FixedSize(x) UIElement::SizingAxis{UIElement::SizingType::Fixed, x}
+#define PercentSize(x) UIElement::SizingAxis{UIElement::SizingType::Percent, x}
 
 struct UIContext{
+    enum class Scaling{
+        None, ScreenMatch
+    };
+
     Scaling scaling = Scaling::None;
     Vector2 baseResolution = {1920, 1080}; //{1280, 720};
     Vector2 currentResolution = {1280, 720};
 
     std::vector<UIElement> elements;
     std::vector<int> stack;
+    std::vector<int> drawOrder;
 
     std::vector<int> _stack;
     std::vector<int> _children;
@@ -144,9 +147,36 @@ struct UIContext{
 
     Ref<Texture2D> baseTex = nullptr;
     Ref<Font> baseFont = nullptr;
+    
+    int hoveredElement = -1;
+    int pressedElement = -1;
 
     float lastXOffset = 0;
     float lastYOffset = 0;
+
+    bool PointInElement(Vector2 mouse, const UIElement& el){
+        Vector2 pos = el.finalPos; //scaling == Scaling::ScreenMatch ? UIScale(el.finalPos) : el.finalPos;
+        Vector2 size = el.finalSize; //scaling == Scaling::ScreenMatch ? UIScale(el.finalSize) : el.finalSize;
+        return mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y;
+    }
+
+    void UpdateHover(){
+        hoveredElement = -1;
+
+        double mx, my;
+        Input::GetMousePosition(&mx, &my);
+
+        Vector2 mouse = {(float)mx, (float)my};
+
+        for(int i = 0; i < (int)drawOrder.size(); i++){
+            int index = drawOrder[i];
+
+            if(PointInElement(mouse, elements[index])){
+                hoveredElement = index;
+                if(Input::IsMouseButtonDown(MouseButton::Left)) pressedElement = index;
+            }
+        }
+    }
 
     float ComputeScale() const {
         float sx = currentResolution.x / baseResolution.x;
@@ -252,15 +282,15 @@ struct UIContext{
         return anchor;
     }
 
-    Vector2 GetSize(Sizing size, Vector2 parentSize){
+    Vector2 GetSize(UIElement::Sizing size, Vector2 parentSize){
         float x = size.width.value;
         float y = size.height.value;
 
-        if(size.width.type == SizingType::Percent){
+        if(size.width.type == UIElement::SizingType::Percent){
             x = parentSize.x * size.width.value;
         }
 
-        if(size.height.type == SizingType::Percent){
+        if(size.height.type == UIElement::SizingType::Percent){
             y = parentSize.y * size.height.value;
         }
 
@@ -279,7 +309,7 @@ struct UIContext{
             UIElement& c = elements[child];
             Vector2 size = GetSize(c.size, parent.finalSize);
 
-            if(parent.layoutMode == LayoutMode::Vertical){
+            if(parent.layoutMode == UIElement::LayoutMode::Vertical){
                 totalMain += /*c.*/size.x;
                 maxCross = std::max(maxCross, /*c.*/size.y);
             } else {
@@ -294,7 +324,7 @@ struct UIContext{
         if(count > 1)
             totalMain += (count - 1) * parent.layout.childGap;
 
-        if(parent.layoutMode == LayoutMode::Vertical)
+        if(parent.layoutMode == UIElement::LayoutMode::Vertical)
             return { totalMain, maxCross };
 
         return { maxCross, totalMain };
@@ -313,7 +343,7 @@ struct UIContext{
         if(el.parent != -1){
             UIElement& parent = elements[el.parent];
 
-            if(parent.layoutMode == LayoutMode::Absolute){
+            if(parent.layoutMode == UIElement::LayoutMode::Absolute){
                 //Vector2 anchorPoint = ComputeAnchorPoint(parent.finalSize, el.anchor);
                 //el.finalPos = parent.finalPos + anchorPoint + el.pos;
 
@@ -323,10 +353,10 @@ struct UIContext{
             } else {
                 el.finalPos = parent.finalPos + parent.childOffset;
 
-                if(parent.layoutMode == LayoutMode::Horizontal){
+                if(parent.layoutMode == UIElement::LayoutMode::Horizontal){
                     parent.childOffset.x += el.finalSize.x + parent.layout.childGap;
                 }
-                if(parent.layoutMode == LayoutMode::Vertical){
+                if(parent.layoutMode == UIElement::LayoutMode::Vertical){
                     parent.childOffset.y += el.finalSize.y + parent.layout.childGap;
                 }
             }
@@ -334,9 +364,9 @@ struct UIContext{
             el.finalPos = el.pos;
 
             //INFO: This is not working, for now root dont support anchor and pivot for now
-            /*Vector2 anchorPoint = GetCanvasSize() * el.anchor;
+            Vector2 anchorPoint = GetCanvasSize() * el.anchor;
             Vector2 pivotOffset = el.finalSize * el.pivot;
-            el.finalPos = anchorPoint + el.pos - pivotOffset;*/
+            el.finalPos = anchorPoint + el.pos - pivotOffset;
         }
 
         if(!el.text.empty()){
@@ -345,7 +375,7 @@ struct UIContext{
 
             el.finalTextPos = el.finalPos + (el.finalSize - textSize) * el.textAlign;
 
-            Padding& p = el.layout.padding;
+            UIElement::Padding& p = el.layout.padding;
             Vector2 contentPos = el.finalPos + Vector2((float)p.left,(float)p.top);
             Vector2 contentSize = el.finalSize - Vector2((float)(p.left + p.right), (float)(p.top + p.bottom));
 
@@ -359,8 +389,8 @@ struct UIContext{
 
         el.childOffset = {0, 0};
 
-        if(el.layoutMode != LayoutMode::Absolute){
-            Padding& p = el.layout.padding;
+        if(el.layoutMode != UIElement::LayoutMode::Absolute){
+            UIElement::Padding& p = el.layout.padding;
 
             Vector2 contentPos = {
                 (float)p.left,
@@ -400,8 +430,12 @@ struct UIContext{
         Vector2 size = scaling == Scaling::ScreenMatch ? UIScale(el.finalSize) : el.finalSize;
 
         // Hit test: simple AABB
-        bool hovered = mouseX >= pos.x && mouseX <= (pos.x + size.x) && mouseY >= pos.y && mouseY <= (pos.y + size.y);
-        bool clicked = hovered && Input::IsMouseButtonDown(MouseButton::Left);
+        bool hovered = index == hoveredElement; // mouseX >= pos.x && mouseX <= (pos.x + size.x) && mouseY >= pos.y && mouseY <= (pos.y + size.y);
+        bool clicked = index == pressedElement; //hovered && Input::IsMouseButtonDown(MouseButton::Left);
+
+        if(clicked){
+            LogInfo("Clicked on: {}", index);
+        }
             
         UI::DrawPanel(
             el.tex, pos, size, 0, 0, 
@@ -429,7 +463,8 @@ struct UIContext{
 
             // same code from Traverse(index)
             ComputeElementLayout(index);
-            DrawElement(index);
+            //DrawElement(index);
+            drawOrder.push_back(index);
 
             // Push children in reverse order so traversal stays first -> last
             //std::vector<int> children;
@@ -538,6 +573,13 @@ struct UIContext{
             if(elements[i].parent == -1) TraverseIterative(i);
         }
     }
+
+    void DrawAll(){
+        for(int i = 0; i < drawOrder.size(); i++){
+            DrawElement(drawOrder[i]);
+        }
+        drawOrder.clear();
+    }
 };
 
 void UISample::OnInit(){
@@ -576,8 +618,6 @@ void UISample::OnRender(float deltaTime){
 
     UI::Begin(uiCamera);
     
-    //UI::DrawPanel(panelSprite, {0, 0}, {300, 150});
-
     UIContext cy;
     cy.baseTex = panelSprite;
     cy.baseFont = font;
@@ -595,6 +635,15 @@ void UISample::OnRender(float deltaTime){
             cy.OpenElement()
                 .Size({FixedSize(50), FixedSize(50)})
                 .Color({1, 1, 0, 1});
+
+                cy.OpenElement().Pos({-2, 0}).AnchorPivot({1.0f, 0.5f}).Size({FixedSize(10), FixedSize(10)}).Color({0, 0, 0, 1});
+                cy.CloseElement();
+                cy.OpenElement().Pos({2, 0}).AnchorPivot({0.0f, 0.5f}).Size({FixedSize(10), FixedSize(10)}).Color({0, 0, 0, 1});
+                cy.CloseElement();
+                cy.OpenElement().Pos({0, -2}).AnchorPivot({0.5f, 1.0f}).Size({FixedSize(10), FixedSize(10)}).Color({0, 0, 0, 1});
+                cy.CloseElement();
+                cy.OpenElement().Pos({0, 2}).AnchorPivot({0.5f, 0.0f}).Size({FixedSize(10), FixedSize(10)}).Color({0, 0, 0, 1});
+                cy.CloseElement();
             cy.CloseElement();
 
             cy.OpenElement()
@@ -615,8 +664,8 @@ void UISample::OnRender(float deltaTime){
     cy.CloseElement();
 
     cy.OpenElement()
-        .Pos({100, 500})
-        //.AnchorPivot({1.0f, 0.5f})
+        //.Pos({100, 500})
+        .Pos({-100, 0}).AnchorPivot({1.0f, 0.5f})
         .Size({FixedSize(300), FixedSize(100)})
         .Text("Lolo", 75, {1.0f, 1.0f})
         .PaddingAll(5)
@@ -626,6 +675,8 @@ void UISample::OnRender(float deltaTime){
     //cy.Traverse(0);
     //cy.TraverseIterative(0);
     cy.TraverseAll();
+    cy.UpdateHover();
+    cy.DrawAll();
     
     UI::End();
 
