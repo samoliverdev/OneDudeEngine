@@ -97,8 +97,8 @@ struct UIElement{
     // Data
     uint32_t id = 0;
 
-    Vector4 textColor;
-    Vector4 backgroundColor;
+    Vector4 textColor = {1, 1, 1, 1};
+    Vector4 backgroundColor = {0, 0, 1, 1};
     Vector4 padding = {0, 0, 0, 0};
     Vector2 pos = {0, 0};
     Sizing size;
@@ -117,8 +117,9 @@ struct UIElement{
     Vector2 childOffset = {0, 0};
     Vector2 finalPos;
     Vector2 finalTextPos;
-    Vector2 finalSize;
+    Vector2 finalSize;  
 
+    UIElement& Clip(ClipElementConfig _clip){ clip = _clip; return *this; }
     UIElement& Pos(Vector2 p){ pos = p; return *this; }
     UIElement& Size(Sizing s){ size = s; return *this; }
     UIElement& Anchor(Vector2 a){ anchor = a; return *this; }
@@ -130,14 +131,32 @@ struct UIElement{
     UIElement& PaddingAll(uint16_t v){ layout.padding = {v, v, v, v}; return *this; }
     UIElement& Align(Vector2 a){ layout.childAlignment = a; return *this; }
     UIElement& Text(const std::string& _text, float size, Vector2 align = {0, 0}){ text = _text; fontSize = size; textAlign = align; return *this; }
+    UIElement& TextColor(Vector4 color){ textColor = color; return *this; }
 };
 
 #define FixedSize(x) UIElement::SizingAxis{UIElement::SizingType::Fixed, x}
 #define PercentSize(x) UIElement::SizingAxis{UIElement::SizingType::Percent, x}
 
+enum class UICommandType{
+    ScissorBegin,
+    ScissorEnd,
+    Panel,
+    Text
+};
+
+struct UICommand{
+    UICommandType type;
+    int element = -1;
+};
+
 struct UIContext{
     enum class Scaling{
         None, ScreenMatch
+    };
+
+    struct TraverseItem{
+        int index;
+        bool exit;
     };
 
     Scaling scaling = Scaling::None;
@@ -150,6 +169,9 @@ struct UIContext{
 
     std::vector<int> _stack;
     std::vector<int> _children;
+
+    std::vector<TraverseItem> _stack2;
+    std::vector<UICommand> commands;
 
     UIElement* last = nullptr;
     int _last = 0;
@@ -217,9 +239,17 @@ struct UIContext{
     }
 
     void Begin(){
+        commands.clear();
+        //drawOrder.clear();
+        hoveredElement = -1;
+
         elements.clear();
         stack.clear();
         last = nullptr;
+    }
+
+    bool HasClip(const UIElement& el){
+        return el.clip.horizontal || el.clip.vertical;
     }
 
     int AddElement(){
@@ -420,6 +450,8 @@ struct UIContext{
 
             el.childOffset = contentPos + freeSpace * el.layout.childAlignment;
         }
+
+        el.childOffset += UIScale(el.clip.childOffset);
     }
 
     void DrawElement(int index){
@@ -590,6 +622,135 @@ struct UIContext{
         }
         drawOrder.clear();
     }
+
+    //////////////////
+    void BuildCommands(int root){
+        _stack2.clear();
+        _stack2.push_back({root, false});
+
+        while(!_stack2.empty()){
+            TraverseItem item = _stack2.back();
+            _stack2.pop_back();
+
+            int index = item.index;
+            UIElement& el = elements[index];
+
+            if(item.exit){
+                if(HasClip(el)) commands.push_back({UICommandType::ScissorEnd, index});
+                continue;
+            }
+            
+            ComputeElementLayout(index);
+            
+            //------Building Cmds------
+            if(HasClip(el))
+                commands.push_back({UICommandType::ScissorBegin, index});
+
+            commands.push_back({UICommandType::Panel, index});
+
+            if(!el.text.empty())
+                commands.push_back({UICommandType::Text, index});
+            //-------------------
+
+            // exit after children
+            _stack2.push_back({index, true});
+
+            _children.clear();
+
+            int child = el.firstChild;
+            while(child != -1){
+                _children.push_back(child);
+                child = elements[child].nextSibling;
+            }
+
+            for(int i = (int)_children.size() - 1; i >= 0; --i)
+                _stack2.push_back({_children[i], false});
+        }
+    }
+
+    void BuildAllCommands(){
+        commands.clear();
+
+        for(int i = 0; i < (int)elements.size(); ++i){
+            if(elements[i].parent == -1){
+                BuildCommands(i);
+            }
+        }
+    }
+
+    void UpdateHover2(){
+        hoveredElement = -1;
+
+        double mx, my;
+        Input::GetMousePosition(&mx, &my);
+        Vector2 mouse = {(float)mx, (float)my};
+
+        for(UICommand& cmd : commands){
+            if(cmd.type != UICommandType::Panel)
+                continue;
+
+            UIElement& el = elements[cmd.element];
+
+            if(PointInElement(mouse, el))
+                hoveredElement = cmd.element;
+        }
+
+        if(Input::IsMouseButtonDown(MouseButton::Left))
+            pressedElement = hoveredElement;
+    }
+
+    void DrawCommands(){
+        for(UICommand& cmd: commands){
+            UIElement& el = elements[cmd.element];
+
+            switch(cmd.type){
+                case UICommandType::ScissorBegin:{
+                    Graphics::EnableScissor();
+
+                    int x = (int)roundf(el.finalPos.x);
+                    int y = (int)roundf(el.finalPos.y);
+                    int w = (int)roundf(el.finalSize.x);
+                    int h = (int)roundf(el.finalSize.y);
+
+                    // OpenGL bottom-left scissor
+                    int correctedY = (int)currentResolution.y - (y + h);
+
+                    Graphics::Scissor(x, correctedY, w, h);
+                    break;
+                }
+
+                case UICommandType::ScissorEnd:{
+                    Graphics::DisableScissor();
+                    break;
+                }
+
+                case UICommandType::Panel:{
+                    Renderer2D::DrawPanel(
+                        el.tex,
+                        el.finalPos,
+                        el.finalSize,
+                        {0, 0},
+                        cmd.element == hoveredElement
+                            ? el.backgroundColor + 0.25f
+                            : el.backgroundColor
+                    );
+                    break;
+                }
+
+                case UICommandType::Text:{
+                    Renderer2D::DrawText(
+                        el.text.c_str(),
+                        baseFont,
+                        el.finalTextPos,
+                        UIScale(el.fontSize),
+                        {0, 0},
+                        el.textColor
+                    );
+                    break;
+                }
+            }
+        }
+    }
 };
 
 void UISample::OnInit(){
@@ -631,7 +792,7 @@ void UISample::OnRender(float deltaTime){
     UIContext cy;
     cy.baseTex = panelSprite;
     cy.baseFont = font;
-    cy.scaling = UIContext::Scaling::ScreenMatch;
+    //cy.scaling = UIContext::Scaling::ScreenMatch;
     cy.currentResolution = {uiCamera.width, uiCamera.height};
     cy.Begin();
     cy.OpenElement()
@@ -639,6 +800,7 @@ void UISample::OnRender(float deltaTime){
         .Size({FixedSize(300), FixedSize(300)})
         .Color({0, 0, 1, 1});
         cy.OpenElement()
+            .Clip({true, true, {0, -50}})
             .Pos({-10, 10}).Size({FixedSize(100), FixedSize(200)}).AnchorPivot({1, 0})
             .Vertical(10).PaddingAll(10).Align({0, 0})
             .Color({1, 0, 1, 1});
@@ -665,6 +827,13 @@ void UISample::OnRender(float deltaTime){
                 .Size({FixedSize(50), FixedSize(50)})
                 .Color({1, 1, 0, 1});
             cy.CloseElement();
+
+            for(int i = 0; i < 2; i++){
+                cy.OpenElement()
+                    .Size({FixedSize(50), FixedSize(50)})
+                    .Color({1, 1, 0, 1});
+                cy.CloseElement();
+            }
         cy.CloseElement();
 
         cy.OpenElement()
@@ -678,16 +847,22 @@ void UISample::OnRender(float deltaTime){
         .Pos({-100, 0}).AnchorPivot({1.0f, 0.5f})
         .Size({FixedSize(300), FixedSize(100)})
         .Text("Lolo", 75, {1.0f, 1.0f})
+        .TextColor({1, 1, 0, 1})
         .PaddingAll(5)
         .Color({1, 0, 0, 1});
     cy.CloseElement();
 
     //cy.Traverse(0);
     //cy.TraverseIterative(0);
-    cy.TraverseAll();
+
+    /*cy.TraverseAll();
     cy.UpdateHover();
-    cy.DrawAll();
-    
+    cy.DrawAll();*/
+
+    cy.BuildAllCommands();
+    cy.UpdateHover2();
+    cy.DrawCommands();
+
     Renderer2D::End();
 
     //----------------------
