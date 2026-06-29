@@ -2,7 +2,8 @@
 #include "UI.h"
 #include "LoadScene.h"
 #include "Standard/Module.h"
-#include "Standard/UI/CoreUI.h"
+//#include "Standard/UI/CoreUI.h"
+#include "Standard/2D/Renderer2D.h"
 #include <OD/Core/Application.h>
 #include <OD/Core/Input.h>
 #include <OD/Graphics/Graphics.h>
@@ -78,6 +79,14 @@ struct UIElement{
         Horizontal,
         Vertical
     };
+
+    struct ClipElementConfig{
+        bool horizontal; // Clip overflowing elements on the X axis.
+        bool vertical; // Clip overflowing elements on the Y axis.
+        Vector2 childOffset; // Offsets the x,y positions of all child elements. Used primarily for scrolling containers.
+    };
+
+    ClipElementConfig clip;
 
     int parent = -1;
     int firstChild = -1;
@@ -188,13 +197,13 @@ struct UIContext{
         //float scale = std::max(sx, sy); Use the bigger value (preserve readability)
     }
 
-    float UIScale(float x) const { 
-        return roundf(x*ComputeScale()); 
+    inline float UIScale(float x) const {
+        return scaling == Scaling::None ? x : roundf(x*ComputeScale()); 
     } 
 
-    Vector2 UIScale(Vector2 p) const { 
+    inline Vector2 UIScale(Vector2 p) const { 
         float s = ComputeScale();
-        return { roundf(p.x * s), roundf(p.y * s) };
+        return scaling == Scaling::None ? p : Vector2(roundf(p.x * s), roundf(p.y * s));
     } 
 
     Vector2 GetCanvasSize() const {
@@ -283,8 +292,8 @@ struct UIContext{
     }
 
     Vector2 GetSize(UIElement::Sizing size, Vector2 parentSize){
-        float x = size.width.value;
-        float y = size.height.value;
+        float x = UIScale(size.width.value);
+        float y = UIScale(size.height.value);
 
         if(size.width.type == UIElement::SizingType::Percent){
             x = parentSize.x * size.width.value;
@@ -349,35 +358,35 @@ struct UIContext{
 
                 Vector2 anchorPoint = parent.finalPos + parent.finalSize * el.anchor;
                 Vector2 pivotOffset = el.finalSize * el.pivot;
-                el.finalPos = anchorPoint + el.pos - pivotOffset;
+                el.finalPos = anchorPoint + UIScale(el.pos) - pivotOffset;
             } else {
                 el.finalPos = parent.finalPos + parent.childOffset;
 
                 if(parent.layoutMode == UIElement::LayoutMode::Horizontal){
-                    parent.childOffset.x += el.finalSize.x + parent.layout.childGap;
+                    parent.childOffset.x += el.finalSize.x + UIScale(parent.layout.childGap);
                 }
                 if(parent.layoutMode == UIElement::LayoutMode::Vertical){
-                    parent.childOffset.y += el.finalSize.y + parent.layout.childGap;
+                    parent.childOffset.y += el.finalSize.y + UIScale(parent.layout.childGap);
                 }
             }
         } else {
-            el.finalPos = el.pos;
+            el.finalPos = UIScale(el.pos);
 
             //INFO: This is not working, for now root dont support anchor and pivot for now
             Vector2 anchorPoint = GetCanvasSize() * el.anchor;
             Vector2 pivotOffset = el.finalSize * el.pivot;
-            el.finalPos = anchorPoint + el.pos - pivotOffset;
+            el.finalPos = anchorPoint + UIScale(el.pos) - pivotOffset;
         }
 
         if(!el.text.empty()){
-            Vector2 textSize = baseFont->CalculateTextMetrics(el.text.c_str()).size * el.fontSize;
+            Vector2 textSize = baseFont->CalculateTextMetrics(el.text.c_str()).size * UIScale(el.fontSize);
             //Vector2 textSize = UI::MeasureText(el.text.c_str(), baseFont, el.fontSize);
 
             el.finalTextPos = el.finalPos + (el.finalSize - textSize) * el.textAlign;
 
             UIElement::Padding& p = el.layout.padding;
-            Vector2 contentPos = el.finalPos + Vector2((float)p.left,(float)p.top);
-            Vector2 contentSize = el.finalSize - Vector2((float)(p.left + p.right), (float)(p.top + p.bottom));
+            Vector2 contentPos = el.finalPos + Vector2((float)UIScale(p.left),(float)UIScale(p.top));
+            Vector2 contentSize = el.finalSize - Vector2((float)UIScale(p.left + p.right), (float)UIScale(p.top + p.bottom));
 
             Vector2 freeSpace = contentSize - textSize;
 
@@ -393,13 +402,13 @@ struct UIContext{
             UIElement::Padding& p = el.layout.padding;
 
             Vector2 contentPos = {
-                (float)p.left,
-                (float)p.top
+                (float)UIScale(p.left),
+                (float)UIScale(p.top)
             };
 
             Vector2 contentSize = {
-                el.finalSize.x - (float)(p.left + p.right),
-                el.finalSize.y - (float)(p.top + p.bottom)
+                el.finalSize.x - (float)(UIScale(p.left) + UIScale(p.right)),
+                el.finalSize.y - (float)(UIScale(p.top) + UIScale(p.bottom))
             };
 
             Vector2 childrenSize = MeasureLayoutChildren(index);
@@ -426,8 +435,10 @@ struct UIContext{
         //LogWarning("Mouse x: %f y:%f", mouseX, mouseY);
 
         //TODO: I think call UIScale on here is not the fully right way, becose percent and canvas size will not work well
-        Vector2 pos = scaling == Scaling::ScreenMatch ? UIScale(el.finalPos) : el.finalPos;
-        Vector2 size = scaling == Scaling::ScreenMatch ? UIScale(el.finalSize) : el.finalSize;
+        Vector2 pos = el.finalPos; //scaling == Scaling::ScreenMatch ? UIScale(el.finalPos) : el.finalPos;
+        Vector2 size = el.finalSize; //scaling == Scaling::ScreenMatch ? UIScale(el.finalSize) : el.finalSize;
+        Vector2 textPos = el.finalTextPos; //scaling == Scaling::ScreenMatch ? UIScale(el.finalTextPos) : el.finalTextPos,
+        float fontSize = scaling == Scaling::ScreenMatch ? UIScale(el.fontSize) : el.fontSize;
 
         // Hit test: simple AABB
         bool hovered = index == hoveredElement; // mouseX >= pos.x && mouseX <= (pos.x + size.x) && mouseY >= pos.y && mouseY <= (pos.y + size.y);
@@ -437,15 +448,14 @@ struct UIContext{
             LogInfo("Clicked on: {}", index);
         }
             
-        UI::DrawPanel(
-            el.tex, pos, size, 0, 0, 
+        Renderer2D::DrawPanel(
+            el.tex, pos, size, {0, 0}, 
             hovered ? (el.backgroundColor + 0.25f) : el.backgroundColor
         );
         if(el.text.empty() == false){
-            UI::DrawText(
+            Renderer2D::DrawText(
                 el.text.c_str(), baseFont, 
-                scaling == Scaling::ScreenMatch ? UIScale(el.finalTextPos) : el.finalTextPos,
-                scaling == Scaling::ScreenMatch ? UIScale(el.fontSize) : el.fontSize
+                textPos, fontSize
             );
         }
     }
@@ -598,7 +608,7 @@ void UISample::OnInit(){
     fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
     fontMat->SetFloat("pxRange", font->MsdfPxRange());
 
-    UI::Init();
+    Renderer2D::Init();
 }
 
 void UISample::OnUpdate(float deltaTime){}   
@@ -616,12 +626,12 @@ void UISample::OnRender(float deltaTime){
     uiCamera.width = Application::ScreenWidth();
     uiCamera.height = Application::ScreenHeight();
 
-    UI::Begin(uiCamera);
+    Renderer2D::Begin(uiCamera);
     
     UIContext cy;
     cy.baseTex = panelSprite;
     cy.baseFont = font;
-    //cy.scaling = Scaling::ScreenMatch;
+    cy.scaling = UIContext::Scaling::ScreenMatch;
     cy.currentResolution = {uiCamera.width, uiCamera.height};
     cy.Begin();
     cy.OpenElement()
@@ -678,7 +688,7 @@ void UISample::OnRender(float deltaTime){
     cy.UpdateHover();
     cy.DrawAll();
     
-    UI::End();
+    Renderer2D::End();
 
     //----------------------
     Graphics::EndRenderToScreen();
@@ -686,7 +696,7 @@ void UISample::OnRender(float deltaTime){
 }
 
 void UISample::OnExit(){
-    UI::Shotdown();
+    Renderer2D::Shotdown();
 }
 
 void UISample::OnGUI(){}
