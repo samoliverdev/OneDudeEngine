@@ -56,7 +56,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     onGround = groundRaysCount > 0;
     
     if(isNotOnGroundTimer > 0){
-        isNotOnGroundTimer -= Time::DeltaTime();
+        isNotOnGroundTimer -= Time::FixedDelta();// Time::DeltaTime();
         onGround = false;
     }
     

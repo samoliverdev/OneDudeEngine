@@ -172,6 +172,7 @@ void SceneManager::RegisterCoreComponent(const std::string& name, const std::str
     funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
+    funcs.resetComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e) = T{}; };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
     funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
         target.GetRegistry().emplace_or_replace<T>(other, source.GetComponent<T>(e)); 
@@ -261,6 +262,7 @@ void SceneManager::RegisterTagComponent(const std::string& name, const std::stri
     funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.GetRegistry().emplace<T>(e); };
+    funcs.resetComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e) = T{}; };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
     funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
         target.GetRegistry().emplace_or_replace<T>(other, T()); 
@@ -306,6 +308,7 @@ void SceneManager::RegisterComponent(const std::string& name, const std::string&
     funcs.displayName = name.substr(name.find_last_of('/') + 1);
     funcs.hasComponent = [](Entity& e, Scene& scene){ return scene.HasComponent<T>(e); };
     funcs.addComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e); };
+    funcs.resetComponent = [](Entity& e, Scene& scene){ scene.AddOrGetComponent<T>(e) = T{}; };
     funcs.removeComponent = [](Entity& e, Scene& scene){ scene.RemoveComponent<T>(e); };
     funcs.copyComponent = [](Entity& e, Entity& other, Scene& source, Scene& target){ 
         target.GetRegistry().emplace_or_replace<T>(other, source.GetComponent<T>(e)); 

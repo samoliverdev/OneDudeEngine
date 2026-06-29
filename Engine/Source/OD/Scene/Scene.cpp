@@ -1167,7 +1167,8 @@ void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>
 
 void Scene::Save(const char* path, Entity root){
     std::ofstream os(path);
-    ODOutputArchive archive(os);
+    //os << std::setprecision(std::numeric_limits<float>::max_digits10);
+    ODOutputArchive archive(os, cereal::JSONOutputArchive::Options(9));
 
     std::vector<Entity> entities;
     std::vector<Entity> entitiesAll;

@@ -109,6 +109,10 @@ void DrawComponent(Entity e, Scene& scene, const char* name, UIFunction function
 
 void InspectorPanel::ComponentOptionsMenu(Entity e, SceneManager::SerializeFuncs &f, bool& removeComponent){
     if(ImGui::BeginPopupContextItem()){
+        if(ImGui::MenuItem("Reset Component")){
+            f.resetComponent(e, *scene);
+        }
+
         if(ImGui::MenuItem("Remove Component")){
             removeComponent = true;
         }

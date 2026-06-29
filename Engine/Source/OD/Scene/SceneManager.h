@@ -60,10 +60,11 @@ private:
     struct SerializeFuncs{
         std::string groupName;
         std::string displayName;
-
+        
         std::function<bool(Entity&,Scene&)> hasComponent;
         std::function<void(Entity&,Scene&)> addComponent;
         std::function<void(Entity&,Scene&)> removeComponent;
+        std::function<void(Entity&,Scene&)> resetComponent;
         std::function<void(Entity&, Entity&,Scene&,Scene&)> copyComponent;
         std::function<void(Entity&,Scene&)> onGui;
         std::function<void(entt::registry& dst, entt::registry& src)> copy;
