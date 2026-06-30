@@ -1,6 +1,7 @@
 #pragma once
 #include <OD/Core/Module.h>
 #include <OD/Base.h>
+#include "Standard/UI/UI.h"
 
 namespace OD{
     class Texture2D;
@@ -8,10 +9,14 @@ namespace OD{
     class Font;
 };
 
+using namespace Standard;
+
 struct UISample: public OD::Module {
     OD::Ref<OD::Texture2D> panelSprite;
     OD::Ref<OD::Font> font;
     OD::Ref<OD::Material> fontMat;
+
+    UI::UIContext context;
 
     UISample(){ name = "UISample"; }
     void OnInit() override;

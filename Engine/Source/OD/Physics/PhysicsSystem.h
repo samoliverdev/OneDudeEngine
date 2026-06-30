@@ -754,6 +754,8 @@ struct OD_API Collision{
     Vector3 relativeContactPointOn2;
     Entity e1;
     Entity e2;
+    int e1SubBodyIndex = -1;
+    int e2SubBodyIndex = -1;
     float penetrationDepth;
     bool body1IsSensor;
     bool body2IsSensor;

@@ -15,6 +15,7 @@
 using namespace OD;
 using namespace Standard;
 
+/*
 struct UIElement{
     enum class SizingType{
         Fixed, Percent
@@ -296,16 +297,16 @@ struct UIContext{
 
         UIElement& parent = elements[element.parent];
 
-        /*Vector2 size = element.size;
-        size.x += parent.padding.x + parent.padding.z;
-        size.y += parent.padding.y + parent.padding.w;
-        if(parent.layoutDirection == LayoutDirection::LeftToRight){
-            parent.size.x += size.x;
-            parent.size.y = math::max(size.y, parent.size.y);
-        } else {
-            parent.size.x = math::max(size.x, parent.size.x);
-            parent.size.y += size.y;
-        }*/
+        //Vector2 size = element.size;
+        //size.x += parent.padding.x + parent.padding.z;
+        //size.y += parent.padding.y + parent.padding.w;
+        //if(parent.layoutDirection == LayoutDirection::LeftToRight){
+        //    parent.size.x += size.x;
+        //    parent.size.y = math::max(size.y, parent.size.y);
+        //} else {
+        //    parent.size.x = math::max(size.x, parent.size.x);
+        //    parent.size.y += size.y;
+        //}
 
         if(!stack.empty()) stack.pop_back();
     }
@@ -349,11 +350,11 @@ struct UIContext{
             Vector2 size = GetSize(c.size, parent.finalSize);
 
             if(parent.layoutMode == UIElement::LayoutMode::Vertical){
-                totalMain += /*c.*/size.x;
-                maxCross = std::max(maxCross, /*c.*/size.y);
+                totalMain += size.x;
+                maxCross = std::max(maxCross, size.y);
             } else {
-                totalMain += /*c.*/size.y;
-                maxCross = std::max(maxCross, /*c.*/size.x);
+                totalMain += size.y;
+                maxCross = std::max(maxCross, size.x);
             }
 
             count++;
@@ -526,80 +527,6 @@ struct UIContext{
     void Traverse(int index){
         UIElement& el = elements[index];
 
-        /*auto toSize = [](Sizing size, Vector2 parentSize){
-            float x = size.width.value;
-            float y = size.height.value;
-
-            if(size.width.type == SizingType::Percent){
-                x = parentSize.x * size.width.value;
-            }
-
-            if(size.height.type == SizingType::Percent){
-                y = parentSize.y * size.height.value;
-            }
-
-            return Vector2(x, y);
-        };
-
-        if(el.parent != -1){
-            UIElement& parent = elements[el.parent];
-            el.finalSize = toSize(el.sizing, parent.finalSize);
-        } else {
-            el.finalSize = el.size;
-        }
-
-        if(el.parent != -1){
-            UIElement& parent = elements[el.parent];
-
-            if(parent.layoutMode == LayoutMode::Absolute){
-                //Vector2 anchorPoint = ComputeAnchorPoint(parent.finalSize, el.anchor);
-                //el.finalPos = parent.finalPos + anchorPoint + el.pos;
-
-                Vector2 anchorPoint = parent.finalPos + parent.finalSize * el.anchor;
-                Vector2 pivotOffset = el.finalSize * el.pivot;
-                el.finalPos = anchorPoint + el.pos - pivotOffset;
-            } else {
-                el.finalPos = parent.finalPos + parent.childOffset;
-
-                if(parent.layoutMode == LayoutMode::Horizontal){
-                    parent.childOffset.x += el.finalSize.x + parent.layout.childGap;
-                }
-                if(parent.layoutMode == LayoutMode::Vertical){
-                    parent.childOffset.y += el.finalSize.y + parent.layout.childGap;
-                }
-            }
-        } else {
-            el.finalPos = el.pos;
-        }
-
-        el.childOffset = {0, 0};
-
-        if(el.layoutMode != LayoutMode::Absolute){
-            Padding& p = el.layout.padding;
-
-            Vector2 contentPos = {
-                (float)p.left,
-                (float)p.top
-            };
-
-            Vector2 contentSize = {
-                el.finalSize.x - (float)(p.left + p.right),
-                el.finalSize.y - (float)(p.top + p.bottom)
-            };
-
-            Vector2 childrenSize = MeasureLayoutChildren(index);
-
-            Vector2 freeSpace = contentSize - childrenSize;
-
-            freeSpace.x = std::max(0.0f, freeSpace.x);
-            freeSpace.y = std::max(0.0f, freeSpace.y);
-
-            el.childOffset = contentPos + freeSpace * el.layout.childAlignment;
-        }
-
-        // Process element here (layout, draw, etc.)
-        UI::DrawPanel(el.tex, el.finalPos, el.finalSize, 0, 0, el.backgroundColor);*/
-
         ComputeElementLayout(index);
         DrawElement(index);
 
@@ -752,6 +679,7 @@ struct UIContext{
         }
     }
 };
+*/
 
 void UISample::OnInit(){
     LogInfo("Game Init");
@@ -775,6 +703,8 @@ void UISample::OnInit(){
 void UISample::OnUpdate(float deltaTime){}   
 
 void UISample::OnRender(float deltaTime){
+    using namespace UI;
+
     Graphics::Begin();
     Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     Graphics::BeginRenderToScreen({0.0f, 0.0f, 0.0f, 0.0f});
@@ -789,7 +719,8 @@ void UISample::OnRender(float deltaTime){
 
     Renderer2D::Begin(uiCamera);
     
-    UIContext cy;
+    UI::UIContext& cy = context;
+
     cy.baseTex = panelSprite;
     cy.baseFont = font;
     //cy.scaling = UIContext::Scaling::ScreenMatch;
@@ -860,7 +791,7 @@ void UISample::OnRender(float deltaTime){
     cy.DrawAll();*/
 
     cy.BuildAllCommands();
-    cy.UpdateHover2();
+    cy.UpdateHover();
     cy.DrawCommands();
 
     Renderer2D::End();

@@ -835,9 +835,19 @@ public:
 		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
 		Vec3 v2 = inBody2.GetLinearVelocity() + inBody2.GetAngularVelocity().Cross(contactPoint - inBody2.GetCenterOfMassPosition());*/
 
+		uint32_t _entity1;
+		int32_t _index1;
+		DecodeUserData(inBody1.GetUserData(), _entity1, _index1);
+
+		uint32_t _entity2;
+		int32_t _index2;
+		DecodeUserData(inBody2.GetUserData(), _entity2, _index2);
+
 		Collision collision;
-		collision.e1 = static_cast<Entity>(inBody1.GetUserData());
-		collision.e2 = static_cast<Entity>(inBody2.GetUserData());
+		collision.e1 = static_cast<Entity>(_entity1);// static_cast<Entity>(inBody1.GetUserData());
+		collision.e2 = static_cast<Entity>(_entity2);//static_cast<Entity>(inBody2.GetUserData());
+		collision.e1SubBodyIndex = _index1;
+		collision.e2SubBodyIndex = _index2;
 		collision.normal = FromJolt(inManifold.mWorldSpaceNormal);
 		collision.penetrationDepth = inManifold.mPenetrationDepth;
 		//collision.relativeVelocity = FromJolt(v2 - v1);
