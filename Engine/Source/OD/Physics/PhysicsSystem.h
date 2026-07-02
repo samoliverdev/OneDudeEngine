@@ -512,6 +512,8 @@ struct OD_API JointComponent{
     static void OnGui(Entity& e, Scene& scene);
 
     void SetTargets(Entity bodyA, int bodyASubIndex, Entity bodyB, int bodyBSubIndex);
+    inline Entity GetBodyA(){ return bodyA; }
+    inline Entity GetBodyB(){ return bodyB; }
 
     JointSpace GetJointSpace();
     void SetJointSpace(JointSpace injointSpace);
