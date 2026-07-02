@@ -2874,19 +2874,24 @@ void PhysicsSystem::RemoveJoint(Entity entity, JointComponent& joint){
 	}
 
 	delete joint.data;
+	joint.data = nullptr;
 }
 
+//TODO: Maybe rename this, becose now is remove joint
 void PhysicsSystem::SetJointsAsDirtyIfBodyIsDirty(Entity e){
 	auto jointView = scene->GetRegistry().view<JointComponent>();
 	for(auto [entity, joint]: jointView.each()){
-		if(joint.bodyA == e){
+		if(joint.bodyA == e) RemoveJoint(entity, joint);
+		if(joint.bodyB == e) RemoveJoint(entity, joint);
+
+		/*if(joint.bodyA == e){
 			joint.isDirty = true;
 			break;
 		}
 		if(joint.bodyB == e){
 			joint.isDirty = true;
 			break;
-		}
+		}*/
 	}
 }
 
@@ -4428,6 +4433,9 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 	auto jointView = scene->GetRegistry().view<JointComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, joint, trans, info]: jointView.each()){
 		if(joint.isDirty){
+			//TODO: Review this later, i dont know is the best way to avoid create invalid joint
+			if(!scene->IsValid(joint.bodyA) || !scene->IsValid(joint.bodyB)) continue;
+
 			joint.isDirty = false;
 			RemoveJoint(entity, joint);
 			AddJoint(scene, entity, joint, trans, info);
