@@ -16,6 +16,7 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
+#include "OD/RenderPipeline/Text3DRendererComponent.h"
 #include "OD/RenderPipeline/StaticRendererClusterComponent.h"
 #include "OD/RenderPipeline/DecalRendererComponent.h"
 #include "OD/Animation/Animator.h"
@@ -57,7 +58,8 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<CanvasComponent>("CanvasComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<RectTransformComponent>("RectTransformComponent", "UI");
     SceneManager::Get().RegisterCoreComponent<UIImageComponent>("UIImageComponent", "UI");
-    SceneManager::Get().RegisterCoreComponent<UITextComponent>("UIImageComponent", "UI");
+    SceneManager::Get().RegisterCoreComponent<UITextComponent>("UITextComponent", "UI");
+    SceneManager::Get().RegisterCoreComponent<Text3DRendererComponent>("Text3DRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<GizmosDrawComponent>("GizmosDrawComponent", "Renderer");
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
     //SceneManager::Get().AddGlobalSystem<StandRenderPipeline>();
@@ -501,8 +503,9 @@ CameraRenderer::CameraRenderer(){
     spriteMaterial->SetVector4("color", Vector4(1));
     spriteMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
 
-    font = Asset::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
-    fontMaterial = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    font = AssetManager::Get().LoadAsset<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// Asset::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
+    fontMaterial = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
+    fontMaterial->SetFloat("pxRange", font->MsdfPxRange());
 
     gamaCorrectionPP = new GamaCorrectionPP();
 
@@ -902,6 +905,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         //context->RenderSkyboxLater();
         if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
+        Draw3DText();
         context->DrawGizmos(); 
         context->EndForwardPass();
     }
@@ -1014,6 +1018,17 @@ void CameraRenderer::RenderSprites(){
         _mat->GetShader()->SetMatrix4("model", m);
         Graphics::DrawMeshRaw(*spriteMesh);
     }*/
+}
+
+void CameraRenderer::Draw3DText(){
+    for(auto [entity, text, trans]: context->GetScene()->GetRegistry().view<Text3DRendererComponent, TransformComponent>().each()){
+        Ref<Font> _font = text.font ? text.font : font;
+        Ref<Material> _mat = text.material ? text.material : fontMaterial;
+        Matrix4 textModel = trans.GlobalModelMatrix();
+
+        _mat->SetColor4("color", text.color);
+        Graphics::DrawText(*_font, *_mat, text.text, textModel, true, {});
+    }
 }
 
 void RenderUIRecursive(

@@ -290,6 +290,7 @@ private:
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
     void RenderSprites();
     void RenderUI();
+    void Draw3DText();
     
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
