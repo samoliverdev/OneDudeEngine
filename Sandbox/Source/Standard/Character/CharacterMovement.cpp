@@ -27,6 +27,8 @@ float CharacterMovement::GetAxisVertical(){
 void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, RigidbodyComponent& rb){
     if(enable == false) return; 
 
+    PhysicsSystem* physics = scene.GetSystem<PhysicsSystem>();
+
     /*RayResult hit;
     if(scene.GetSystem<PhysicsSystem>()->Raycast(rb.Position() + Vector3Up * 0.1f, Vector3Down * 0.25f, hit)){
         //LogInfo("Hitting: %s", scene.GetComponent<InfoComponent>(hit.entity).name.c_str());
@@ -40,7 +42,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     int groundRaysCount = 0;
     auto CastGroundRay = [&](Vector3 pos, Vector3 dir){
         RayResult hit;
-        if(scene.GetSystem<PhysicsSystem>()->Raycast(pos, dir, hit)){
+        if(physics->Raycast(pos, dir, hit)){
             groundRaysCount += 1;
             groundNormal = hit.hitNormal;
         }
@@ -170,9 +172,9 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
         rb.Velocity(Vector3Zero);
     }*/
 
-    float extraGravity = 20.0f; // tweak (20–60 usually feels good)
+    auto extraGravity = physics->GetGravity() * 2.0f; //20.0f; // tweak (20–60 usually feels good)
     if(!onGround){
-        rb.ApplyForce(Vector3Down * extraGravity * rb.Mass());
+        rb.ApplyForce(/*Vector3Down **/ extraGravity * rb.Mass());
     }
 
     if(moveType == MoveType::Free){

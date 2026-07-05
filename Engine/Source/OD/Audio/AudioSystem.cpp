@@ -455,6 +455,9 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
 
     if(!oneShotClip || !oneShotClip->loaded) return;
 
+    const int maxShots = 10;
+    if(oneShots.size() >= maxShots) return;
+
     //ma_sound temp;
     ma_sound* temp = new ma_sound;
     if(ma_sound_init_copy(&engine, &oneShotClip->sound, 0, nullptr, temp) != MA_SUCCESS) return;

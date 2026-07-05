@@ -3152,6 +3152,16 @@ PhysicsSystem::PhysicsSystem(){
 	name = "PhysicsSystem";
 }
 
+Vector3 PhysicsSystem::GetGravity(){
+	if(physicsWorld == nullptr) return Vector3Zero;
+	return FromJolt(physicsWorld->physicsSystem.GetGravity());
+}
+
+void PhysicsSystem::SetGravity(Vector3 gravity){
+	if(physicsWorld == nullptr) return;
+	physicsWorld->physicsSystem.SetGravity(ToJolt(gravity));
+}
+
 void PhysicsSystem::OnInit(Scene& inScene){
 	scene = &inScene;
 	currentSettings = &GlobalSettings::Get().Get<PhysicsSettings>();

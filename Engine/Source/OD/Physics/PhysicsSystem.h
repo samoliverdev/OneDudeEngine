@@ -830,6 +830,9 @@ struct OD_API PhysicsSystem: public System{
 
     void UpdateRigidbodyInternalData(Entity e);
 
+    Vector3 GetGravity();
+    void SetGravity(Vector3 gravity);
+
 private:
     void CheckForCollisionEvents();
 
