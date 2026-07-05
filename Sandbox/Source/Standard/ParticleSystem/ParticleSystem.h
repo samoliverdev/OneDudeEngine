@@ -196,6 +196,31 @@ public:
     void OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData) override;
 };
 
+class LimitVelocityOverLifetimeModule : public IParticleUpdateModule {
+public:
+    bool enable = false;
+
+    // Unity-like modes
+    bool separateAxes = false;
+
+    float speed = 1.0f;          // max magnitude
+    Vector3 speedXYZ = {1,1,1};  // max per-axis
+
+    float dampen = 0.0f;         // 0 = hard clamp, 1 = smooth damping
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, enable);
+        ArchiveDumpNVP(ar, separateAxes);
+        ArchiveDumpNVP(ar, speed);
+        ArchiveDumpNVP(ar, speedXYZ);
+        ArchiveDumpNVP(ar, dampen);
+    }
+
+    void OnGui() override;
+    void OnParticleUpdate(ParticleData& particle, ParticleRunningData& runningData) override;
+};
+
 class CollisionPhysicModule: public IParticleUpdateModule{
 public:
     bool enable = false;
@@ -319,6 +344,7 @@ public:
         ArchiveDumpNVP(ar, updaterModule);
         ArchiveDumpNVP(ar, sizeOverLifetimeModule);
         ArchiveDumpNVP(ar, colorOverLifetimeModule);
+        ArchiveDumpNVP(ar, limitVelocityOverLifetimeModule);
         ArchiveDumpNVP(ar, collisionPhysicModule);
 
         ArchiveDumpNVP(ar, rendererModule);
@@ -345,6 +371,7 @@ public:
         COPY_OR_MOVE(updaterModule);
         COPY_OR_MOVE(sizeOverLifetimeModule);
         COPY_OR_MOVE(colorOverLifetimeModule);
+        COPY_OR_MOVE(limitVelocityOverLifetimeModule);
         COPY_OR_MOVE(collisionPhysicModule);
 
         COPY_OR_MOVE(rendererModule);
@@ -383,6 +410,7 @@ private:
     UpdaterModule updaterModule;
     SizeOverLifetimeModule sizeOverLifetimeModule;
     ColorOverLifetimeModule colorOverLifetimeModule;
+    LimitVelocityOverLifetimeModule limitVelocityOverLifetimeModule;
     CollisionPhysicModule collisionPhysicModule;
 
     RendererModule rendererModule;

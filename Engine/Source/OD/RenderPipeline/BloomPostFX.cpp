@@ -91,7 +91,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContex
     for(; i < maxIterations; i++){
         spec.width /= 2;
         spec.height /= 2;
-        if(spec.height < 2){
+        if(spec.width < 2 || spec.height < 2){
             break;
         }
 

@@ -227,6 +227,8 @@ void RenderContext::BeginDrawToScreen(){
         LogError("Current: %d Next: %d", finalColor->Width(), width);
     }*/
 
+    if(width <= 0 || height <= 0) return;
+
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
     forwardOutColor->Resize(width, height);

@@ -105,8 +105,6 @@ void InitialSizeModule::OnInitParticle(ParticleData& particle){
     }
 }
 
-
-
 void InitialColorModule::OnGui(){
     if(ImGui::CollapsingHeader("InitialColor")){
         ImGui::ColorEdit4("color", &color.r, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
@@ -207,6 +205,53 @@ void ColorOverLifetimeModule::OnParticleUpdate(ParticleData& p, ParticleRunningD
     p.color = Color(color[0], color[1], color[2], color[3]);//TODO: Revise this "color[3] * 255.0f" quick fix
 }
 
+void LimitVelocityOverLifetimeModule::OnGui(){
+    if(ImGui::CollapsingHeader("LimitVelocityOverLifetimeModule")){
+        ImGui::Checkbox("enable", &enable);
+        ImGui::Checkbox("separateAxes", &separateAxes);
+        ImGui::DragFloat("speed", &speed);
+        ImGui::DragFloat3("speedXYZ", &speedXYZ.x);
+        ImGui::DragFloat("dampen", &dampen);
+    }
+}
+
+void LimitVelocityOverLifetimeModule::OnParticleUpdate(
+    ParticleData& particle,
+    ParticleRunningData& runningData
+){
+    if(!enable) return;
+
+    if(separateAxes){
+        Vector3 targetVel = particle.vel;
+
+        targetVel.x = glm::clamp(targetVel.x, -speedXYZ.x, speedXYZ.x);
+        targetVel.y = glm::clamp(targetVel.y, -speedXYZ.y, speedXYZ.y);
+        targetVel.z = glm::clamp(targetVel.z, -speedXYZ.z, speedXYZ.z);
+
+        if(dampen <= 0.0f){
+            particle.vel = targetVel;
+        } else {
+            float t = glm::clamp(dampen * runningData.delta * 10.0f, 0.0f, 1.0f);
+            particle.vel = glm::mix(particle.vel, targetVel, t);
+        }
+
+        return;
+    }
+
+    float len = glm::length(particle.vel);
+
+    if(len > speed && len > 0.00001f){
+        Vector3 targetVel = particle.vel / len * speed;
+
+        if(dampen <= 0.0f){
+            particle.vel = targetVel;
+        } else {
+            float t = glm::clamp(dampen * runningData.delta * 10.0f, 0.0f, 1.0f);
+            particle.vel = glm::mix(particle.vel, targetVel, t);
+        }
+    }
+}
+
 void CollisionPhysicModule::OnGui(){
     if(ImGui::CollapsingHeader("CollisionPhysicModule")){
         ImGui::Checkbox("enable", &enable);
@@ -287,6 +332,7 @@ void ParticleEmiter::OnGui(){
     updaterModule.OnGui();
     sizeOverLifetimeModule.OnGui();
     colorOverLifetimeModule.OnGui();
+    limitVelocityOverLifetimeModule.OnGui();
     collisionPhysicModule.OnGui();
     
     rendererModule.OnGui();
@@ -318,9 +364,11 @@ void ParticleEmiter::BindModules(){
     initParticleModules.push_back(&initialSizeModule);
     initParticleModules.push_back(&initialColorModule);
 
+    updateModules.push_back(&limitVelocityOverLifetimeModule);
     updateModules.push_back(&updaterModule);
     updateModules.push_back(&sizeOverLifetimeModule);
     updateModules.push_back(&colorOverLifetimeModule);
+    //updateModules.push_back(&limitVelocityOverLifetimeModule);
     updateModules.push_back(&collisionPhysicModule);
 }
 
