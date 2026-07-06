@@ -470,7 +470,7 @@ struct OD_API JointComponent{
         Distance,	// point constraint within specified distance
         //Hinge,		// rotation around a point on the UP axis of the contraint transform
         //Cone,		// constrain to a cone shape specified by the cone angle (cone axis: UP)
-        //SixDOF,		// manual specification of axes movement and rotation limits
+        SixDOF,		// manual specification of axes movement and rotation limits
         //SwingTwist,	// cone (UP axis) + rotational limits
         //Slider,		// constrain on the RIGHT axis between limits
     };
@@ -509,6 +509,67 @@ struct OD_API JointComponent{
         }
     };
 
+    struct SixDOFSettings{
+        Vector3 point1 = Vector3Zero;
+        Vector3 point2 = Vector3Zero;
+
+        // Joint basis.
+        // Z is usually the main slider/spike axis.
+        Vector3 axisY = Vector3Up;
+        Vector3 axisZ = Vector3Forward;
+
+        Vector3 linearLower = Vector3Zero;
+        Vector3 linearUpper = Vector3Zero;
+
+        // Degrees in engine API.
+        Vector3 angularLower = Vector3Zero;
+        Vector3 angularUpper = Vector3Zero;
+
+        // Optional Jolt max friction per axis.
+        Vector3 linearMaxFriction = Vector3Zero;
+        Vector3 angularMaxFriction = Vector3Zero;
+
+        bool enableLinearMotorX = false;
+        bool enableLinearMotorY = false;
+        bool enableLinearMotorZ = false;
+
+        bool enableAngularMotorX = false;
+        bool enableAngularMotorY = false;
+        bool enableAngularMotorZ = false;
+
+        Vector3 linearMotorTargetVelocity = Vector3Zero;
+        Vector3 angularMotorTargetVelocity = Vector3Zero;
+
+        template <class Archive>
+        void serialize(Archive& ar){
+            ArchiveDumpNVP(ar, point1);
+            ArchiveDumpNVP(ar, point2);
+
+            ArchiveDumpNVP(ar, axisY);
+            ArchiveDumpNVP(ar, axisZ);
+
+            ArchiveDumpNVP(ar, linearLower);
+            ArchiveDumpNVP(ar, linearUpper);
+
+            ArchiveDumpNVP(ar, angularLower);
+            ArchiveDumpNVP(ar, angularUpper);
+
+            ArchiveDumpNVP(ar, linearMaxFriction);
+            ArchiveDumpNVP(ar, angularMaxFriction);
+
+            ArchiveDumpNVP(ar, enableLinearMotorX);
+            ArchiveDumpNVP(ar, enableLinearMotorY);
+            ArchiveDumpNVP(ar, enableLinearMotorZ);
+
+            ArchiveDumpNVP(ar, enableAngularMotorX);
+            ArchiveDumpNVP(ar, enableAngularMotorY);
+            ArchiveDumpNVP(ar, enableAngularMotorZ);
+
+            ArchiveDumpNVP(ar, linearMotorTargetVelocity);
+            ArchiveDumpNVP(ar, angularMotorTargetVelocity);
+        }
+    };
+
     static void OnGui(Entity& e, Scene& scene);
 
     void SetTargets(Entity bodyA, int bodyASubIndex, Entity bodyB, int bodyBSubIndex);
@@ -520,6 +581,7 @@ struct OD_API JointComponent{
 
     void CreateFixed(const FixedSettings& settings);
     void CreateDistance(const DistanceSettings& settings);
+    void CreateSixDOF(const SixDOFSettings& settings);
 
     void SetDistance(float min, float max);
 
@@ -542,6 +604,7 @@ struct OD_API JointComponent{
 
         ArchiveDumpNVP(ar, fixedSettings);
         ArchiveDumpNVP(ar, distanceSettings);
+        ArchiveDumpNVP(ar, sixDOFSettings);
 
         /*ArchiveDumpNVP(ar, pivot);
         ArchiveDumpNVP(ar, connectedPivot);
@@ -589,6 +652,7 @@ private:
 
     FixedSettings fixedSettings;
     DistanceSettings distanceSettings;
+    SixDOFSettings sixDOFSettings;
     
     //bool autoConfigConnectedPivot = true;
     //bool disableSelfCollision = true;

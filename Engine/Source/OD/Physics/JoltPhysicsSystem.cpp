@@ -53,6 +53,7 @@
 #include <Jolt/Physics/Constraints/HingeConstraint.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 #include <Jolt/Physics/Constraints/DistanceConstraint.h>
+#include <Jolt/Physics/Constraints/SixDOFConstraint.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -860,6 +861,13 @@ public:
 		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
 		Vec3 v2 = inBody2.GetLinearVelocity() + inBody2.GetAngularVelocity().Cross(contactPoint - inBody2.GetCenterOfMassPosition());
 		collision.relativeVelocity = FromJolt(v2 - v1);*/
+
+		Vec3 p1 = inManifold.GetWorldSpaceContactPointOn1(0);
+		Vec3 p2 = inManifold.GetWorldSpaceContactPointOn2(0);
+		Vec3 contactPoint = 0.5f * (p1 + p2); // Usually using one shared contact point is fine too:
+		Vec3 v1 = inBody1.GetLinearVelocity() + inBody1.GetAngularVelocity().Cross(contactPoint - inBody1.GetCenterOfMassPosition());
+		Vec3 v2 = inBody2.GetLinearVelocity() + inBody2.GetAngularVelocity().Cross(contactPoint - inBody2.GetCenterOfMassPosition());
+		collision.relativeVelocity = FromJolt(v2 - v1);
 
 		collision.body1IsSensor = inBody1.IsSensor();
 		collision.body2IsSensor = inBody2.IsSensor();
@@ -2333,6 +2341,7 @@ void PhysicsSystem::OnRemoveRigidbody(entt::registry& r, entt::entity e){
 	rb.isDirt = true;
 }
 
+/*
 void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
 	if(rb.type == RigidbodyComponent::Type::Disable){
 		//rb.isDirt = false;
@@ -2354,94 +2363,6 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
 	if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
 	if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
-
-	//-----------Old-----------
-    /*JPH::Ref<Shape> shape = nullptr;
-    if(rb.shape.type == CollisionShape::Type::Box){
-		BoxShapeSettings shapeSettings(ToJolt(rb.shape.size * 0.5f));
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Sphere){
-		SphereShapeSettings shapeSettings(rb.shape.radius);
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Capsule){
-		float halfHeight = (rb.shape.height - 2.0f * rb.shape.radius) * 0.5f;
-		if (halfHeight < 0.0f) {
-			std::cerr << "Invalid capsule dimensions: height must be at least 2 * radius\n";
-			Assert(false);
-		}
-		CapsuleShapeSettings shapeSettings(halfHeight, rb.shape.radius);
-		//shapeSettings.SetDensity(rb.mass);
-		shape = shapeSettings.Create().Get();
-	} else if(rb.shape.type == CollisionShape::Type::Mesh || rb.shape.type == CollisionShape::Type::Model){
-		//JPH::MeshShapeSettings shapeSettings(rb.shape.mesh->joltVertices, rb.shape.mesh->joltTriangles);
-		//shapeSettings.SetDensity(rb.mass);
-		//shape = shapeSettings.Create().Get();
-		//shape = rb.shape.mesh->meshShape;// shapeSettings.Create().Get();
-
-		if(rb.shape.type == CollisionShape::Type::Model && rb.shape.meshData == nullptr){
-			Assert(rb.shape.modelSource != nullptr);
-			Assert(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size());
-			//Assert(rb.shape.modelSourceMeshIndex >= 0);
-			//rb.shape.mesh = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
-			if(rb.shape.modelSourceMeshIndex < 0){
-				rb.shape.meshData = CreateMeshShapeData(*rb.shape.modelSource);
-			} else if(rb.shape.modelSourceMeshIndex < rb.shape.modelSource->meshs.size()){
-				rb.shape.meshData = CreateMeshShapeData(*rb.shape.modelSource->meshs[rb.shape.modelSourceMeshIndex]);
-			} else {
-				Assert(false);
-			}
-		}
-
-		if(rb.shape.meshData == nullptr) return;
-		if(rb.shape.meshData->joltVertices.size() <= 0) return;
-		if(rb.shape.meshData->joltTriangles.size() <= 0) return;
-		if(rb.shape.meshData->convexPoints.size() <= 0) return;
-
-		Assert(rb.shape.meshData != nullptr);
-		Assert(rb.shape.meshData->joltVertices.size() > 0);
-		Assert(rb.shape.meshData->joltTriangles.size() > 0);
-		Assert(rb.shape.meshData->convexPoints.size() > 0);
-
-		if(rb.type == RigidbodyComponent::Type::Dynamic){
-			// Use Convex Hull for dynamic
-			JPH::ConvexHullShapeSettings shapeSettings(rb.shape.meshData->convexPoints);//, 0.02f);
-			//shapeSettings.SetDensity(rb.mass);
-
-			auto result = shapeSettings.Create();
-			if(!result.HasError()){
-				shape = result.Get();
-			} else {
-				std::cerr << "ConvexHullShape creation error: " << result.GetError() << std::endl;
-				return;
-			}
-		} else {
-			// Use MeshShape for static or kinematic
-			JPH::MeshShapeSettings shapeSettings(rb.shape.meshData->joltVertices, rb.shape.meshData->joltTriangles);
-			shapeSettings.SetEmbedded();
-			auto result = shapeSettings.Create();
-			if(!result.HasError()){
-				shape = result.Get();
-			} else {
-				std::cerr << "MeshShape creation error: " << result.GetError() << std::endl;
-				return;
-			}
-		}
-	} 
-
-	Assert(shape != nullptr);
-	//RefConst<Shape> finalShape = new OffsetCenterOfMassShape(shape, ToJolt(rb.shape.center));
-
-	RotatedTranslatedShapeSettings offsetShapeSettings(ToJolt(rb.shape.center), Quat::sIdentity(), shape);
-	//RefConst<Shape> finalShape = offsetShapeSettings.Create().Get();
-
-	auto offsetResult = offsetShapeSettings.Create();
-	if (offsetResult.HasError()) {
-        LogError("OffsetShape creation error for entity {}: {}", info.name, offsetResult.GetError());
-        return;
-    }
-    RefConst<Shape> finalShape = offsetResult.Get();*/
 
 	//-----------New-----------
 	struct temp{
@@ -2549,7 +2470,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	// Extra shapes
 	for(auto& extra : rb.extraShapes){
 		auto shape = BuildShape(extra, false); //TODO: update to use compad on here: BuildShape(extra, true);
-		if(shape) subShapes.emplace_back(shape);
+		if(shape != nullptr) subShapes.emplace_back(shape);
 	}
 	Assert(subShapes.size() >= 1);
 
@@ -2608,11 +2529,6 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	settings.mAngularDamping = rb.angularDamping;
 	settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
 	settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);// static_cast<uint64>(entity); // safe cast
-	/*settings.mCollisionGroup = JPH::CollisionGroup(//Deprecated
-		physicsWorld->groupFilter,
-        info.layer,
-        rb.mask.mask // stored in subgroup ID
-    );*/
 	settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
 	//settings.mMotionQuality = EMotionQuality::LinearCast;
 	
@@ -2636,6 +2552,359 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     }
 
 	rb.SetAngularFactor(rb.angularFactor);
+}*/
+
+void PhysicsSystem::AddRigidbody(
+    Entity entity,
+    RigidbodyComponent& rb,
+    TransformComponent& transform,
+    InfoComponent& info
+){
+	#undef min
+	#undef max
+
+    if(rb.type == RigidbodyComponent::Type::Disable){
+        return;
+    }
+
+    rb.data = new PhysicObject();
+    Assert(rb.data != nullptr);
+
+    rb.data->world = physicsWorld;
+    rb.isDirt = false;
+
+    SetJointsAsDirtyIfBodyIsDirty(entity);
+
+    BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
+
+    EMotionType type = EMotionType::Dynamic;
+
+    if(rb.type == RigidbodyComponent::Type::Static)
+        type = EMotionType::Static;
+
+    if(rb.type == RigidbodyComponent::Type::Kinematic)
+        type = EMotionType::Kinematic;
+
+    if(rb.type == RigidbodyComponent::Type::Trigger)
+        type = EMotionType::Kinematic;
+
+    struct SubShapeData{
+        RefConst<Shape> shape;
+        Vec3 position;
+        Quat rotation;
+    };
+
+    auto BuildBaseShape = [&](CollisionShape& s) -> RefConst<Shape>{
+        RefConst<Shape> shape = nullptr;
+
+        if(s.type == CollisionShape::Type::Box){
+            //BoxShapeSettings settings(ToJolt(s.size * 0.5f));
+
+			Vec3 halfExtent = ToJolt(s.size * 0.5f);
+			float minHalfExtent = std::min(
+				halfExtent.GetX(),
+				std::min(halfExtent.GetY(), halfExtent.GetZ())
+			);
+			float convexRadius = std::min(0.05f, minHalfExtent * 0.5f);
+			BoxShapeSettings settings(halfExtent, convexRadius);
+
+            auto result = settings.Create();
+            if(result.HasError()){
+                LogError("BoxShape error on {}: {}", info.name, result.GetError().c_str());
+                return nullptr;
+            }
+
+            shape = result.Get();
+        }
+        else if(s.type == CollisionShape::Type::Sphere){
+            SphereShapeSettings settings(s.radius);
+
+            auto result = settings.Create();
+            if(result.HasError()){
+                LogError("SphereShape error on {}: {}", info.name, result.GetError().c_str());
+                return nullptr;
+            }
+
+            shape = result.Get();
+        }
+        else if(s.type == CollisionShape::Type::Capsule){
+            float halfHeight = (s.height - 2.0f * s.radius) * 0.5f;
+
+            if(halfHeight < 0.0f){
+                LogError("Invalid capsule on {}: height must be >= radius * 2", info.name);
+                return nullptr;
+            }
+
+            CapsuleShapeSettings settings(halfHeight, s.radius);
+
+            auto result = settings.Create();
+            if(result.HasError()){
+                LogError("CapsuleShape error on {}: {}", info.name, result.GetError().c_str());
+                return nullptr;
+            }
+
+            shape = result.Get();
+        }
+        else if(s.type == CollisionShape::Type::Mesh || s.type == CollisionShape::Type::Model){
+            if(s.type == CollisionShape::Type::Model && s.meshData == nullptr){
+                Assert(s.modelSource != nullptr);
+
+                if(s.modelSourceMeshIndex < 0){
+                    s.meshData = CreateMeshShapeData(*s.modelSource);
+                }
+                else if(s.modelSourceMeshIndex < s.modelSource->meshs.size()){
+                    s.meshData = CreateMeshShapeData(*s.modelSource->meshs[s.modelSourceMeshIndex]);
+                }
+                else{
+                    LogError("Invalid modelSourceMeshIndex on {}", info.name);
+                    return nullptr;
+                }
+            }
+
+            if(s.meshData == nullptr){
+                LogError("Missing meshData on {}", info.name);
+                return nullptr;
+            }
+
+            if(s.meshData->joltVertices.empty()){
+                LogError("Mesh shape has no joltVertices on {}", info.name);
+                return nullptr;
+            }
+
+            if(s.meshData->joltTriangles.empty()){
+                LogError("Mesh shape has no joltTriangles on {}", info.name);
+                return nullptr;
+            }
+
+            if(s.meshData->convexPoints.empty()){
+                LogError("Mesh shape has no convexPoints on {}", info.name);
+                return nullptr;
+            }
+
+            if(rb.type == RigidbodyComponent::Type::Dynamic){
+                ConvexHullShapeSettings settings(s.meshData->convexPoints);
+
+                auto result = settings.Create();
+                if(result.HasError()){
+                    LogError("ConvexHullShape error on {}: {}", info.name, result.GetError().c_str());
+                    return nullptr;
+                }
+
+                shape = result.Get();
+            }
+            else{
+                MeshShapeSettings settings(s.meshData->joltVertices, s.meshData->joltTriangles);
+                settings.SetEmbedded();
+
+                auto result = settings.Create();
+                if(result.HasError()){
+                    LogError("MeshShape error on {}: {}", info.name, result.GetError().c_str());
+                    return nullptr;
+                }
+
+                shape = result.Get();
+            }
+        }
+
+        return shape;
+    };
+
+    std::vector<SubShapeData> subShapes;
+
+    auto AddColliderShape = [&](CollisionShape& s) -> bool{
+        RefConst<Shape> shape = BuildBaseShape(s);
+        if(shape == nullptr)
+            return false;
+
+        Quaternion rot = s.rot;
+
+        if(glm::length2(rot) <= 0.000001f)
+            rot = QuaternionIdentity;
+        else
+            rot = glm::normalize(rot);
+
+        subShapes.push_back({
+            shape,
+            ToJolt(s.center),
+            ToJolt(rot)
+        });
+
+        return true;
+    };
+
+    if(!AddColliderShape(rb.shape)){
+        delete rb.data;
+        rb.data = nullptr;
+        return;
+    }
+
+    for(auto& extra : rb.extraShapes){
+        AddColliderShape(extra);
+    }
+
+    if(subShapes.empty()){
+        delete rb.data;
+        rb.data = nullptr;
+        return;
+    }
+
+    RefConst<Shape> finalShape = nullptr;
+
+    if(subShapes.size() == 1){
+        const SubShapeData& child = subShapes[0];
+
+        bool hasOffset =
+            !child.position.IsClose(Vec3::sZero()) ||
+            !child.rotation.IsClose(Quat::sIdentity());
+
+        if(hasOffset){
+            RotatedTranslatedShapeSettings offsetSettings(
+                child.position,
+                child.rotation,
+                child.shape
+            );
+
+            auto result = offsetSettings.Create();
+            if(result.HasError()){
+                LogError("RotatedTranslatedShape error on {}: {}", info.name, result.GetError().c_str());
+                delete rb.data;
+                rb.data = nullptr;
+                return;
+            }
+
+            finalShape = result.Get();
+        }
+        else{
+            finalShape = child.shape;
+        }
+    }
+    else{
+        if(type == EMotionType::Dynamic){
+            MutableCompoundShapeSettings settings;
+
+            for(const SubShapeData& child : subShapes){
+                settings.AddShape(
+                    child.position,
+                    child.rotation,
+                    child.shape
+                );
+            }
+
+            auto result = settings.Create();
+            if(result.HasError()){
+                LogError("MutableCompoundShape error on {}: {}", info.name, result.GetError().c_str());
+                delete rb.data;
+                rb.data = nullptr;
+                return;
+            }
+
+            finalShape = result.Get();
+        }
+        else{
+            StaticCompoundShapeSettings settings;
+
+            for(const SubShapeData& child : subShapes){
+                settings.AddShape(
+                    child.position,
+                    child.rotation,
+                    child.shape
+                );
+            }
+
+            auto result = settings.Create();
+            if(result.HasError()){
+                LogError("StaticCompoundShape error on {}: {}", info.name, result.GetError().c_str());
+                delete rb.data;
+                rb.data = nullptr;
+                return;
+            }
+
+            finalShape = result.Get();
+        }
+    }
+
+    if(finalShape == nullptr){
+        delete rb.data;
+        rb.data = nullptr;
+        return;
+    }
+
+    Vec3 scale = ToJolt(transform.Scale());
+
+    if(!scale.IsClose(Vec3::sReplicate(1.0f))){
+        auto result = ScaledShapeSettings(finalShape, scale).Create();
+
+        if(result.HasError()){
+            LogError("ScaledShape error on {}: {}", info.name, result.GetError().c_str());
+            delete rb.data;
+            rb.data = nullptr;
+            return;
+        }
+
+        finalShape = result.Get();
+    }
+
+    if(rb.overrideCenterOfMass){
+        Vec3 offset =
+            (Vec3::sZero() - finalShape->GetCenterOfMass()) +
+            ToJolt(rb.centerOfMass);
+
+        finalShape = new OffsetCenterOfMassShape(finalShape, offset);
+
+        Vec3 cm = finalShape->GetCenterOfMass();
+        LogInfo(
+            "CenterOfMass on {}: ({}, {}, {})",
+            info.name,
+            cm.GetX(),
+            cm.GetY(),
+            cm.GetZ()
+        );
+    }
+
+    BodyCreationSettings settings(
+        finalShape,
+        ToJolt(transform.Position()),
+        ToJolt(transform.Rotation()),
+        type,
+        info.layer
+    );
+
+    settings.mLinearDamping = rb.linearDamping;
+    settings.mAngularDamping = rb.angularDamping;
+    settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
+    settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);
+
+    settings.mMotionQuality =
+        rb.motionQuality == PhysicMotionQuality::LinearCast
+        ? EMotionQuality::LinearCast
+        : EMotionQuality::Discrete;
+
+    settings.mFriction = rb.friction;
+    settings.mIsSensor = rb.type == RigidbodyComponent::Type::Trigger;
+
+    if(rb.type == RigidbodyComponent::Type::Dynamic){
+        settings.mOverrideMassProperties =
+            JPH::EOverrideMassProperties::CalculateInertia;
+
+        settings.mMassPropertiesOverride.mMass = rb.mass;
+    }
+
+    EActivation activation =
+        rb.type == RigidbodyComponent::Type::Dynamic
+        ? EActivation::Activate
+        : EActivation::DontActivate;
+
+    rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, activation);
+
+    if(!bodyInterface.IsAdded(rb.data->bodyID)){
+        LogError("Failed to add body for entity {}", info.name);
+
+        delete rb.data;
+        rb.data = nullptr;
+        return;
+    }
+
+    rb.SetAngularFactor(rb.angularFactor);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
@@ -2695,6 +2964,33 @@ void JointComponent::OnGui(Entity& e, Scene& scene){
 		if(ImGui::DragFloat("springFequency", &c.distanceSettings.springFequency)) c.CreateDistance(c.distanceSettings);
 		if(ImGui::DragFloat("springDamping", &c.distanceSettings.springDamping)) c.CreateDistance(c.distanceSettings);
 	}
+
+	if(c.type == JointComponent::Type::SixDOF){
+		if(ImGui::DragFloat3("point1", &c.sixDOFSettings.point1.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("point2", &c.sixDOFSettings.point2.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("axisY", &c.sixDOFSettings.axisY.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("axisZ", &c.sixDOFSettings.axisZ.x)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::DragFloat3("linearLower", &c.sixDOFSettings.linearLower.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("linearUpper", &c.sixDOFSettings.linearUpper.x)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::DragFloat3("angularLower", &c.sixDOFSettings.angularLower.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("angularUpper", &c.sixDOFSettings.angularUpper.x)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::DragFloat3("linearMaxFriction", &c.sixDOFSettings.linearMaxFriction.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("angularMaxFriction", &c.sixDOFSettings.angularMaxFriction.x)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::Checkbox("enableLinearMotorX", &c.sixDOFSettings.enableLinearMotorX)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::Checkbox("enableLinearMotorY", &c.sixDOFSettings.enableLinearMotorY)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::Checkbox("enableLinearMotorZ", &c.sixDOFSettings.enableLinearMotorZ)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::Checkbox("enableAngularMotorX", &c.sixDOFSettings.enableAngularMotorX)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::Checkbox("enableAngularMotorY", &c.sixDOFSettings.enableAngularMotorY)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::Checkbox("enableAngularMotorZ", &c.sixDOFSettings.enableAngularMotorZ)) c.CreateSixDOF(c.sixDOFSettings);
+
+		if(ImGui::DragFloat3("linearMotorTargetVelocity", &c.sixDOFSettings.linearMotorTargetVelocity.x)) c.CreateSixDOF(c.sixDOFSettings);
+		if(ImGui::DragFloat3("angularMotorTargetVelocity", &c.sixDOFSettings.angularMotorTargetVelocity.x)) c.CreateSixDOF(c.sixDOFSettings);
+	}
 }
 
 void JointComponent::SetTargets(Entity inbodyA, int inbodyASubIndex, Entity inbodyB, int inbodyBSubIndex){
@@ -2737,6 +3033,12 @@ void JointComponent::SetDistance(float min, float max){
 	c->SetDistance(min, max);
 }
 
+void JointComponent::CreateSixDOF(const SixDOFSettings& settings){
+	sixDOFSettings = settings;
+    type = Type::SixDOF;
+    isDirty = true;
+}
+
 Vector3 JointComponent::GetWorldSpacePoint1Pos(){
 	if(type != JointComponent::Type::Distance) return Vector3Zero;
 	if(data == nullptr) return Vector3Zero;
@@ -2769,6 +3071,20 @@ void PhysicsSystem::OnRemoveJoint(entt::registry& r, entt::entity e){
 
     PhysicsSystem* physicsSystem = r.ctx().get<PhysicsSystem*>();
     physicsSystem->RemoveJoint(e, c);
+}
+
+static void BuildAxes(
+    const Vector3& axisYIn,
+    const Vector3& axisZIn,
+    Vec3& axisX,
+    Vec3& axisY,
+    Vec3& axisZ
+){
+    axisZ = ToJolt(axisZIn).Normalized();
+    axisY = ToJolt(axisYIn).Normalized();
+
+    axisX = axisY.Cross(axisZ).Normalized();
+    axisY = axisZ.Cross(axisX).Normalized();
 }
 
 void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint, TransformComponent& trans, InfoComponent& info){
@@ -2859,6 +3175,123 @@ void PhysicsSystem::AddJoint(Scene* scene, Entity entity, JointComponent& joint,
 		distanceSettings.mMaxDistance = dist;*/
 
 		DistanceConstraint* c = new DistanceConstraint(body1, body2, distanceSettings);
+		joint.data->constraint = c;
+	}
+
+	if(joint.type == JointComponent::Type::SixDOF){
+		SixDOFConstraintSettings settings;
+
+		const auto& s = joint.sixDOFSettings;
+
+		if(joint.jointSpace == JointSpace::WorldSpace){
+			Vec3 axisX;
+			Vec3 axisY;
+			Vec3 axisZ;
+
+			BuildAxes(s.axisY, s.axisZ, axisX, axisY, axisZ);
+
+			settings.mPosition1 = ToJolt(s.point1);
+			settings.mPosition2 = ToJolt(s.point2);
+
+			settings.mAxisX1 = axisX;
+			settings.mAxisY1 = axisY;
+
+			settings.mAxisX2 = axisX;
+			settings.mAxisY2 = axisY;
+
+			settings.mSpace = EConstraintSpace::WorldSpace;
+		} else {
+			Vec3 worldP1 = ToJolt(trans.TransformPoint(s.point1));
+			Vec3 worldP2 = ToJolt(trans.TransformPoint(s.point2));
+
+			Vector3 worldAxisYOD = trans.TransformDirection(s.axisY);
+			Vector3 worldAxisZOD = trans.TransformDirection(s.axisZ);
+
+			Vec3 worldAxisX;
+			Vec3 worldAxisY;
+			Vec3 worldAxisZ;
+
+			BuildAxes(worldAxisYOD, worldAxisZOD, worldAxisX, worldAxisY, worldAxisZ);
+
+			Mat44 invCom1 = body1.GetInverseCenterOfMassTransform();
+			Mat44 invCom2 = body2.GetInverseCenterOfMassTransform();
+
+			settings.mPosition1 = invCom1 * worldP1;
+			settings.mPosition2 = invCom2 * worldP2;
+
+			settings.mAxisX1 = invCom1.Multiply3x3(worldAxisX).Normalized();
+			settings.mAxisY1 = invCom1.Multiply3x3(worldAxisY).Normalized();
+
+			settings.mAxisX2 = invCom2.Multiply3x3(worldAxisX).Normalized();
+			settings.mAxisY2 = invCom2.Multiply3x3(worldAxisY).Normalized();
+
+			settings.mSpace = EConstraintSpace::LocalToBodyCOM;
+		}
+
+		auto SetupAxis = [&](SixDOFConstraintSettings::EAxis axis, float lower, float upper){
+			if(lower == 0.0f && upper == 0.0f){
+				settings.MakeFixedAxis(axis);
+			} else {
+				settings.SetLimitedAxis(axis, lower, upper);
+			}
+		};
+
+		SetupAxis(SixDOFConstraintSettings::EAxis::TranslationX, s.linearLower.x, s.linearUpper.x);
+		SetupAxis(SixDOFConstraintSettings::EAxis::TranslationY, s.linearLower.y, s.linearUpper.y);
+		SetupAxis(SixDOFConstraintSettings::EAxis::TranslationZ, s.linearLower.z, s.linearUpper.z);
+
+		SetupAxis(SixDOFConstraintSettings::EAxis::RotationX, math::radians(s.angularLower.x), math::radians(s.angularUpper.x));
+		SetupAxis(SixDOFConstraintSettings::EAxis::RotationY, math::radians(s.angularLower.y), math::radians(s.angularUpper.y));
+		SetupAxis(SixDOFConstraintSettings::EAxis::RotationZ, math::radians(s.angularLower.z), math::radians(s.angularUpper.z));
+
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::TranslationX] = s.linearMaxFriction.x;
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::TranslationY] = s.linearMaxFriction.y;
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::TranslationZ] = s.linearMaxFriction.z;
+
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::RotationX] = s.angularMaxFriction.x;
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::RotationY] = s.angularMaxFriction.y;
+		settings.mMaxFriction[(int)SixDOFConstraintSettings::EAxis::RotationZ] = s.angularMaxFriction.z;
+
+		SixDOFConstraint* c = new SixDOFConstraint(body1, body2, settings);
+
+		if(s.enableLinearMotorX || s.enableLinearMotorY || s.enableLinearMotorZ){
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::TranslationX,
+				s.enableLinearMotorX ? EMotorState::Velocity : EMotorState::Off);
+
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::TranslationY,
+				s.enableLinearMotorY ? EMotorState::Velocity : EMotorState::Off);
+
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::TranslationZ,
+				s.enableLinearMotorZ ? EMotorState::Velocity : EMotorState::Off);
+		}
+
+		if(s.enableAngularMotorX || s.enableAngularMotorY || s.enableAngularMotorZ){
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::RotationX,
+				s.enableAngularMotorX ? EMotorState::Velocity : EMotorState::Off);
+
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::RotationY,
+				s.enableAngularMotorY ? EMotorState::Velocity : EMotorState::Off);
+
+			c->SetMotorState(SixDOFConstraintSettings::EAxis::RotationZ,
+				s.enableAngularMotorZ ? EMotorState::Velocity : EMotorState::Off);
+		}
+
+		c->SetTargetVelocityCS(
+			Vec3(
+				s.linearMotorTargetVelocity.x,
+				s.linearMotorTargetVelocity.y,
+				s.linearMotorTargetVelocity.z
+			)
+		);
+
+		c->SetTargetAngularVelocityCS(
+			Vec3(
+				math::radians(s.angularMotorTargetVelocity.x),
+				math::radians(s.angularMotorTargetVelocity.y),
+				math::radians(s.angularMotorTargetVelocity.z)
+			)
+		);
+
 		joint.data->constraint = c;
 	}
 
