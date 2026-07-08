@@ -19,7 +19,7 @@
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
     MultiCompile Forward Deferred
 
-    CullFace BACK
+    CullFace NONE
     DepthTest LESS
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask False    

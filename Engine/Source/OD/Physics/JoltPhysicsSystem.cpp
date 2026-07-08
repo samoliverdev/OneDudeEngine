@@ -1698,6 +1698,8 @@ void PhysicsSystem::AddRagdoll(Entity entity, RagdollComponent& ragdoll, Transfo
 void PhysicsSystem::RemoveRagdoll(Entity entity, RagdollComponent& ragdoll){
 	if(ragdoll.data == nullptr) return;
 
+	SetJointsAsDirtyIfBodyIsDirty(entity);
+
 	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
 	//ragdoll.data->ragdoll = nullptr;
 	delete ragdoll.data;
@@ -2554,15 +2556,10 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
 	rb.SetAngularFactor(rb.angularFactor);
 }*/
 
-void PhysicsSystem::AddRigidbody(
-    Entity entity,
-    RigidbodyComponent& rb,
-    TransformComponent& transform,
-    InfoComponent& info
-){
-	#undef min
-	#undef max
+#undef min
+#undef max
 
+void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, TransformComponent& transform, InfoComponent& info){
     if(rb.type == RigidbodyComponent::Type::Disable){
         return;
     }
@@ -2578,15 +2575,9 @@ void PhysicsSystem::AddRigidbody(
     BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterface();
 
     EMotionType type = EMotionType::Dynamic;
-
-    if(rb.type == RigidbodyComponent::Type::Static)
-        type = EMotionType::Static;
-
-    if(rb.type == RigidbodyComponent::Type::Kinematic)
-        type = EMotionType::Kinematic;
-
-    if(rb.type == RigidbodyComponent::Type::Trigger)
-        type = EMotionType::Kinematic;
+    if(rb.type == RigidbodyComponent::Type::Static) type = EMotionType::Static;
+    if(rb.type == RigidbodyComponent::Type::Kinematic) type = EMotionType::Kinematic;
+    if(rb.type == RigidbodyComponent::Type::Trigger) type = EMotionType::Kinematic;
 
     struct SubShapeData{
         RefConst<Shape> shape;
@@ -2615,8 +2606,7 @@ void PhysicsSystem::AddRigidbody(
             }
 
             shape = result.Get();
-        }
-        else if(s.type == CollisionShape::Type::Sphere){
+        } else if(s.type == CollisionShape::Type::Sphere){
             SphereShapeSettings settings(s.radius);
 
             auto result = settings.Create();
@@ -2626,8 +2616,7 @@ void PhysicsSystem::AddRigidbody(
             }
 
             shape = result.Get();
-        }
-        else if(s.type == CollisionShape::Type::Capsule){
+        } else if(s.type == CollisionShape::Type::Capsule){
             float halfHeight = (s.height - 2.0f * s.radius) * 0.5f;
 
             if(halfHeight < 0.0f){
@@ -2644,18 +2633,15 @@ void PhysicsSystem::AddRigidbody(
             }
 
             shape = result.Get();
-        }
-        else if(s.type == CollisionShape::Type::Mesh || s.type == CollisionShape::Type::Model){
+        } else if(s.type == CollisionShape::Type::Mesh || s.type == CollisionShape::Type::Model){
             if(s.type == CollisionShape::Type::Model && s.meshData == nullptr){
                 Assert(s.modelSource != nullptr);
 
                 if(s.modelSourceMeshIndex < 0){
                     s.meshData = CreateMeshShapeData(*s.modelSource);
-                }
-                else if(s.modelSourceMeshIndex < s.modelSource->meshs.size()){
+                } else if(s.modelSourceMeshIndex < s.modelSource->meshs.size()){
                     s.meshData = CreateMeshShapeData(*s.modelSource->meshs[s.modelSourceMeshIndex]);
-                }
-                else{
+                } else {
                     LogError("Invalid modelSourceMeshIndex on {}", info.name);
                     return nullptr;
                 }
@@ -2691,8 +2677,7 @@ void PhysicsSystem::AddRigidbody(
                 }
 
                 shape = result.Get();
-            }
-            else{
+            } else {
                 MeshShapeSettings settings(s.meshData->joltVertices, s.meshData->joltTriangles);
                 settings.SetEmbedded();
 
@@ -2753,9 +2738,7 @@ void PhysicsSystem::AddRigidbody(
     if(subShapes.size() == 1){
         const SubShapeData& child = subShapes[0];
 
-        bool hasOffset =
-            !child.position.IsClose(Vec3::sZero()) ||
-            !child.rotation.IsClose(Quat::sIdentity());
+        bool hasOffset = !child.position.IsClose(Vec3::sZero()) || !child.rotation.IsClose(Quat::sIdentity());
 
         if(hasOffset){
             RotatedTranslatedShapeSettings offsetSettings(
@@ -2874,25 +2857,17 @@ void PhysicsSystem::AddRigidbody(
     settings.mAllowedDOFs = static_cast<EAllowedDOFs>(rb.constraints);
     settings.mUserData = EncodeUserData(static_cast<uint32_t>(entity), -1);
 
-    settings.mMotionQuality =
-        rb.motionQuality == PhysicMotionQuality::LinearCast
-        ? EMotionQuality::LinearCast
-        : EMotionQuality::Discrete;
+    settings.mMotionQuality = rb.motionQuality == PhysicMotionQuality::LinearCast ? EMotionQuality::LinearCast : EMotionQuality::Discrete;
 
     settings.mFriction = rb.friction;
     settings.mIsSensor = rb.type == RigidbodyComponent::Type::Trigger;
 
     if(rb.type == RigidbodyComponent::Type::Dynamic){
-        settings.mOverrideMassProperties =
-            JPH::EOverrideMassProperties::CalculateInertia;
-
+        settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
         settings.mMassPropertiesOverride.mMass = rb.mass;
     }
 
-    EActivation activation =
-        rb.type == RigidbodyComponent::Type::Dynamic
-        ? EActivation::Activate
-        : EActivation::DontActivate;
+    EActivation activation = rb.type == RigidbodyComponent::Type::Dynamic ? EActivation::Activate : EActivation::DontActivate;
 
     rb.data->bodyID = bodyInterface.CreateAndAddBody(settings, activation);
 
