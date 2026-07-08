@@ -239,6 +239,7 @@ struct OD_API RigidbodyComponent{
     //For now just dont allow physic run on edit mode
     /*DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED(RigidbodyComponent, {
         COPY_OR_MOVE(shape);
+        COPY_OR_MOVE(extraShapes);
         COPY_OR_MOVE(type);
         COPY_OR_MOVE(interpolate);
         COPY_OR_MOVE(angularFactor);
@@ -896,6 +897,8 @@ struct OD_API PhysicsSystem: public System{
 
     Vector3 GetGravity();
     void SetGravity(Vector3 gravity);
+
+    bool skipUpdate = false;
 
 private:
     void CheckForCollisionEvents();

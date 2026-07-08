@@ -101,6 +101,8 @@ void SceneManager::OnUpdate(float deltaTime){
         }
     }
 
+    //if(isLoading) return;
+
     if(GetActiveScene() == nullptr) return;
     GetActiveScene()->Update();
 }

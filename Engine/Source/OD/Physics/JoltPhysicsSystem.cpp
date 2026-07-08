@@ -3907,6 +3907,8 @@ int PhysicsSystem::ExecutionSortPriority(SystemType type){
 void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 	OD_PROFILE_SCOPE("PhysicsSystem::PrePhysicsUpdate");
 
+	if(skipUpdate) return;
+
 	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock(); //physicsWorld->physicsSystem.GetBodyInterface();
 
 	if constexpr(EnableFixedPostPhysicUpdate == true) return;
@@ -3927,6 +3929,8 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 
 void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 	//OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
+
+	if(skipUpdate) return;
 
 	Assert(&GlobalSettings::Get().Get<PhysicsSettings>() == currentSettings);
 	if(scene->Running() == false) return;
@@ -4470,6 +4474,8 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 
 void PhysicsSystem::PostPhysicsUpdate(Scene& inScene){
 	OD_PROFILE_SCOPE("PhysicsSystem::PostPhysicsUpdate");
+
+	if(skipUpdate) return;
 
 	if constexpr (EnableFixedPostPhysicUpdate){
 		_PostPhysicsUpdate(true, true);
