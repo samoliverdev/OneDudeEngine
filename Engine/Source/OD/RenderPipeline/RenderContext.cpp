@@ -189,6 +189,9 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
+
+
+    SetCustomFinalColor(nullptr);
 }
 
 RenderContext::~RenderContext(){
@@ -232,7 +235,20 @@ void RenderContext::BeginDrawToScreen(){
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
     forwardOutColor->Resize(width, height);
-    finalColor->Resize(width, height);
+    curFinalColor->Resize(width, height);
+    postFx1->Resize(width, height);
+    postFx2->Resize(width, height);
+}
+
+void RenderContext::BeginDrawToScreenNew(){
+    int width = cam.width;
+    int height = cam.height;
+    if(width <= 0 || height <= 0) return;
+
+    entityIdOutColor->Resize(width, height);
+    deferredOutColor->Resize(width, height);
+    forwardOutColor->Resize(width, height);
+    curFinalColor->Resize(width, height);
     postFx1->Resize(width, height);
     postFx2->Resize(width, height);
 }
@@ -532,21 +548,21 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Graphics::BeginFramebuffer(*finalColor, true, cam.cleanColor);
+    Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
     Graphics::EndFramebuffer();
 
     if(overrideFramebuffer != nullptr){
         Graphics::BeginFramebuffer(*overrideFramebuffer, true, cam.cleanColor);
-        blitShader->SetTexture("mainTex", finalColor, 0);
+        blitShader->SetTexture("mainTex", curFinalColor, 0);
         Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
         Graphics::EndFramebuffer();
         Graphics::BeginRenderToScreen();
         Graphics::EndRenderToScreen();
     } else {
         Graphics::BeginRenderToScreen();
-        blitShader->SetTexture("mainTex", finalColor, 0);
+        blitShader->SetTexture("mainTex", curFinalColor, 0);
         Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
         Graphics::EndRenderToScreen();
     }
@@ -578,17 +594,59 @@ void RenderContext::EndDrawToScreen(){
     //Graphics::EndFramebuffer();
     //return;
 
-    Graphics::BlitFramebuffer(forwardOutColor, finalColor);
-    Graphics::DrawQuadPostProcessing(forwardOutColor, finalColor, *blitShader);
+    Graphics::BlitFramebuffer(forwardOutColor, curFinalColor);
+    Graphics::DrawQuadPostProcessing(forwardOutColor, curFinalColor, *blitShader);
 
     if(overrideFramebuffer != nullptr){
-        Graphics::DrawQuadPostProcessing(finalColor, overrideFramebuffer, *blitShader);
+        Graphics::DrawQuadPostProcessing(curFinalColor, overrideFramebuffer, *blitShader);
     } else {
-        Graphics::DrawQuadPostProcessing(finalColor, nullptr, *blitShader);
+        Graphics::DrawQuadPostProcessing(curFinalColor, nullptr, *blitShader);
     }
 
     //Framebuffer::Unbind(); 
     Graphics::EndFramebuffer();
+}
+
+void RenderContext::EndDrawToScreenNew(){
+    Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor);
+    blitShader->SetTexture("mainTex", forwardOutColor, 0);
+    Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+    Graphics::EndFramebuffer();
+}
+
+void RenderContext::DrawCompose(std::vector<CameraRenderPass>& passes, int width, int height){
+    auto Draw = [&](){
+        for(auto& pass: passes){
+            if(pass.isReflectionProbePass) continue;
+
+            int viewportX = int(pass.camera.viewportRect.x * width);
+            int viewportY = int(pass.camera.viewportRect.y * height);
+            int viewportW = int(pass.camera.viewportRect.z * width);
+            int viewportH = int(pass.camera.viewportRect.w * height);
+            Graphics::SetViewport(
+                viewportX,
+                viewportY,
+                viewportW,
+                viewportH
+            );
+            blitShader->SetTexture("mainTex", pass.target.get(), 0);
+            Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
+        }
+    };
+
+    if(overrideFramebuffer != nullptr){
+        overrideFramebuffer->Resize(width, height);
+
+        Graphics::BeginFramebuffer(*overrideFramebuffer, true, cam.cleanColor);
+        Draw();
+        Graphics::EndFramebuffer();
+        Graphics::BeginRenderToScreen();
+        Graphics::EndRenderToScreen();
+    } else {
+        Graphics::BeginRenderToScreen();
+        Draw();
+        Graphics::EndRenderToScreen();
+    }
 }
 
 Framebuffer* finalFramebuffer;
@@ -679,6 +737,17 @@ void RenderContext::SetupCameraProperties(Camera inCam){
         cam.width, 
         cam.height
     );
+
+    /*int viewportX = int(cam.viewportRect.x * cam.width);
+    int viewportY = int(cam.viewportRect.y * cam.height);
+    int viewportW = int(cam.viewportRect.z * cam.width);
+    int viewportH = int(cam.viewportRect.w * cam.height);
+    Graphics::SetViewport(
+        viewportX,
+        viewportY,
+        viewportW,
+        viewportH
+    );*/
 
     Material::SetGlobalMatrix4("view", cam.view);
     Material::SetGlobalMatrix4("projection", cam.projection);
@@ -2683,7 +2752,7 @@ void RenderContext::DrawGizmos(){
         auto& c = cameraView.get<CameraComponent>(e);
         auto& t = cameraView.get<TransformComponent>(e);
 
-        c.UpdateCameraData(t, finalColor->Width(), finalColor->Height());
+        c.UpdateCameraData(t, curFinalColor->Width(), curFinalColor->Height());
         cm = c.GetCamera(); //Camera cm = c.GetCamera();
         //_DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));
         Gizmos::DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,1,1));

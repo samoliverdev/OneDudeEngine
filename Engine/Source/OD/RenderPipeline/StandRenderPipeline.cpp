@@ -542,6 +542,32 @@ CameraRenderer::~CameraRenderer(){
     delete gamaCorrectionPP;
 }
 
+void CameraRenderer::RenderPassNew(CameraRenderPass& pass, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings){
+    OD_PROFILE_SCOPE("CameraRenderer::Render");
+
+    pass.camera.width = pass.camera.viewportRect.z * pass.camera.width;
+    pass.camera.height = pass.camera.viewportRect.w * pass.camera.height; 
+
+    // ----------- Setup ----------- 
+    camera = pass.camera;
+    renderingPath = pass.renderingPath;
+    context = renderContext;
+    context->isDeferred = renderingPath == RenderingPath::Deferred;
+    shadows.Setup(context, shadowSettings, camera);
+    lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
+
+    RunRenderDataLoop();
+
+    if(pass.target == nullptr){
+        pass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
+    }
+    
+    shadows.Render();
+    lighting.UpdateGlobalShaders();
+    renderContext->SetCustomFinalColor(pass.target.get());
+    RenderVisibleGeometryNew(environmentSettings);
+}
+
 void CameraRenderer::Render(Camera inCam, RenderContext* inRenderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings, RenderingPath inRenderingPath){
     OD_PROFILE_SCOPE("CameraRenderer::Render");
     // ----------- Setup ----------- 
@@ -715,6 +741,142 @@ glm::mat4 captureViews[] = {
     float NearDepthValue;
     float InvDepthTextureSize[2];
 };*/
+
+void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSettings){
+    OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
+    //OD_GPU_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
+
+    if(environmentSettings.skyCubemap != nullptr && environmentSettings.skyIrradianceMap == nullptr){
+        environmentSettings.skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(environmentSettings.skyCubemap);
+    }
+    if(environmentSettings.skyCubemap != nullptr && environmentSettings.skyPrefilterMap == nullptr){
+        environmentSettings.skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(environmentSettings.skyCubemap);
+    }
+
+    context->SetupCameraProperties(camera);
+    context->BeginDrawToScreenNew();
+
+    Ref<Material> targetSkyMaterial = nullptr;
+    if(environmentSettings.environmentSky == EnvironmentSky::Cubemap){
+        cubemapSkyMaterial->SetCubemap("mainTex", environmentSettings.skyCubemap);
+        targetSkyMaterial = cubemapSkyMaterial;
+    }
+    if(environmentSettings.environmentSky == EnvironmentSky::CustomMaterial){
+        targetSkyMaterial = environmentSettings.skyCustomMaterial;
+    }
+    context->skyMaterial = targetSkyMaterial;
+
+    context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
+
+    if(environmentSettings.environmentLight == EnvironmentLight::Color){
+        Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
+        context->pipelineData._SkyLightIntensity = 0;
+        context->pipelineData._IrradianceMapScale = Vector4Zero;
+    }
+    if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
+        Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
+        Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+        Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
+        context->pipelineData._AmbientLight = Vector4Zero;
+        context->pipelineData._SkyLightIntensity = environmentSettings.skyLightIntensity;
+    }
+
+    context->pipelineDataBuffer->SetData(&context->pipelineData, sizeof(PipelineData), 0);
+    Material::SetGlobalUniformBuffer("PipelineData", context->pipelineDataBuffer, 0);
+
+    if(renderingPath == RenderingPath::Forward){
+        context->CleanSSS();
+        context->BeginForwardPass();
+        
+        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        
+        context->DrawRenderersBuffer(opaqueDrawTarget, true);//TODO: Maybe remove sort on here
+        context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);//TODO: Maybe remove sort on here
+        
+        if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        
+        //context->DrawRenderersBuffer(blendDrawTarget, true);
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        context->DrawRenderersBuffer(blendDrawTarget, true);
+        context->DrawGizmos();  
+        
+        context->EndForwardPass();
+    } else {
+        context->BeginDeferredPass();
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        context->DrawRenderersBuffer(opaqueDrawTarget, true, true);//TODO: Maybe remove sort on here
+        //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
+
+        //context->EndDeferredPass();
+        #if 0
+        context->EndDeferredPassAndCopyToForwardPass();
+        #else
+        context->EndDeferredPass();
+
+        Framebuffer* deferred = context->GetDeferredFramebuffer();
+
+        context->CleanSSS();
+        if(environmentSettings.enableSSS && camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
+            SSS_Settings settings = {
+                environmentSettings.sssSurfaceThickness, 
+                environmentSettings.sssBilinearThreshold, 
+                environmentSettings.sssShadowContrast
+            };
+            context->DrawSSS(lighting.mainDirectionalLightDir, settings);
+        }
+ 
+        context->BeginForwardPass();
+        Graphics::Clean(0, 0, 0, 1);
+
+        if(lighting.curDirLightsCount <= 0){
+            context->DrawDeferredLight(-1);
+        } else {
+            for(int i = 0; i < lighting.curDirLightsCount; i++){
+                context->DrawDeferredLight(i, i == 0);
+            }
+        }
+        
+        for(int i = 0; i < lighting.curOtherLightsCount; i++){
+            float radiusRecovered = glm::inversesqrt(glm::max(lighting.otherLightPositions[i].w, 1e-6f));
+            context->DrawDeferredLightOther(
+                i, 
+                lighting.otherLightPositions[i], 
+                lighting.otherLightDirections[i], 
+                radiusRecovered,
+                lighting.otherLightDirections[i] != Vector4Zero
+            );
+        }
+
+        context->DeferredCopyToForwardPass();
+
+        #endif
+        //context->BeginForwardPass();
+
+        context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
+
+        //context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        context->DrawRenderersBuffer(blendDrawTarget, true);
+        Draw3DText();
+        context->DrawGizmos(); 
+        context->EndForwardPass();
+    }
+
+    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    context->DrawPostFXs(postFXs);
+
+    context->BeginUIPass();
+    RenderUI();
+    for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
+        i->OnRender(*context->scene, camera);
+    }
+    context->EndUIPass();
+
+    context->EndDrawToScreenNew();
+}
 
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
     OD_PROFILE_SCOPE("CameraRenderer::RenderVisibleGeometry");
@@ -1482,8 +1644,113 @@ void StandRenderPipeline::LateUpdate(Scene& scene){
     }
 }
 
+void StandRenderPipeline::RenderNew(Scene& scene){
+    //----------Setup Envroment Settings-------------
+    ///*
+    //environmentSettings = defaultEnvironmentSettings;
+    EnvironmentSettings* environmentSettings = &defaultEnvironmentSettings;
+
+    auto enviView = scene.GetRegistry().view<EnvironmentComponent>();
+    for(auto entity: enviView){
+        EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);
+        environmentSettings = &environmentComponent.settings;
+        break;
+    }
+
+    //----------Scene Render-------------
+    renderContext->Begin();
+
+    shadow.directional.shadowBias = environmentSettings->shadowBias;
+    shadow.maxDistance = environmentSettings->shadowDistance;
+    shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->directionalshadowQuality];
+    shadow.other.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->othershadowQuality];
+
+    shadow.directional.cascadeRatio1 = environmentSettings->directinalShadowCascade[0];
+    shadow.directional.cascadeRatio2 = environmentSettings->directinalShadowCascade[1];
+    shadow.directional.cascadeRatio3 = environmentSettings->directinalShadowCascade[2];
+    shadow.directional.cascadeRatio4 = environmentSettings->directinalShadowCascade[3];
+
+    cameraRenderer.renderStagePasses = &renderStagePasses;
+
+    camPasses.clear();
+
+    int _width = 800;
+    int _height = 600;
+
+    if(overrideCamera != nullptr){
+        Entity mainCamera = scene.GetMainCamera();
+        auto targetRenderPath = RenderingPath::Forward;
+        if(scene.IsValid(mainCamera)){
+            auto& cam = scene.GetComponent<CameraComponent>(mainCamera);
+            targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+        }
+
+        CameraRenderPass pass;
+        pass.camera = *overrideCamera;
+        pass.renderingPath = targetRenderPath;
+        camPasses.push_back(pass);
+        _width = pass.camera.width;
+        _height = pass.camera.height;
+
+        /*cameraRenderer.Render(
+            *overrideCamera, 
+            renderContext, shadow, 
+            *environmentSettings,
+            targetRenderPath
+        );*/
+    } else {
+        auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>(entt::exclude<SelfDisable>);
+        for(auto entity: camView){
+            CameraComponent& cam = camView.get<CameraComponent>(entity);
+            TransformComponent& trans = camView.get<TransformComponent>(entity);
+            InfoComponent& info = camView.get<InfoComponent>(entity);
+
+            int width = Application::ScreenWidth();
+            int height = Application::ScreenHeight();
+            if(renderContext->overrideFramebuffer != nullptr){
+                width = renderContext->overrideFramebuffer->Width();
+                height = renderContext->overrideFramebuffer->Height();
+            }
+
+            if(width > 0 && height > 0)cam.UpdateCameraData(trans, width, height);
+            //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
+            /*cameraRenderer.Render(
+                cam.GetCamera(), 
+                renderContext, 
+                shadow, 
+                *environmentSettings, 
+                cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward
+            );*/
+            
+
+            CameraRenderPass pass;
+            pass.camera = cam.GetCamera();
+            pass.renderingPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+            camPasses.push_back(pass);
+            _width = pass.camera.width;
+            _height = pass.camera.height;
+        }
+    }
+
+    std::sort(camPasses.begin(), camPasses.end(), [](const auto& a, const auto& b){
+        return a.renderOrder < b.renderOrder;
+    });
+
+    for(auto& pass: camPasses){
+        cameraRenderer.RenderPassNew(pass, renderContext, shadow, *environmentSettings);
+    }
+
+    //cameraRenderer.RenderComposeNew(camPasses);
+    renderContext->DrawCompose(camPasses, _width, _height);
+
+    renderContext->End();
+}
+
 void StandRenderPipeline::Render(Scene& scene){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
+
+    //RenderNew(scene);
+    //return;
 
     //----------Setup Envroment Settings-------------
     ///*
@@ -1565,10 +1832,10 @@ void StandRenderPipeline::Render(Scene& scene){
 
     if(overrideCamera != nullptr){
         Entity mainCamera = scene.GetMainCamera();
-        auto targetRenderPath = CameraRenderer::RenderingPath::Forward;
+        auto targetRenderPath = RenderingPath::Forward;
         if(scene.IsValid(mainCamera)){
             auto& cam = scene.GetComponent<CameraComponent>(mainCamera);
-            targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? CameraRenderer::RenderingPath::Deferred : CameraRenderer::RenderingPath::Forward;
+            targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
         }
 
         cameraRenderer.Render(
@@ -1598,7 +1865,7 @@ void StandRenderPipeline::Render(Scene& scene){
                 renderContext, 
                 shadow, 
                 *environmentSettings, 
-                cam.renderingPath == CameraComponent::RenderingPath::Deferred ? CameraRenderer::RenderingPath::Deferred : CameraRenderer::RenderingPath::Forward
+                cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward
             );
             //LogInfo("Camera Name: %s", info.name.c_str());
             break;

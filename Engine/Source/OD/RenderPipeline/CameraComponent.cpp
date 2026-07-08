@@ -151,6 +151,8 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
         }
     );
 
+    IMGUI_GlobalTableRow("viewportRect", ImGui::DragFloat4("##viewportRect", &cam.viewportRect.x));
+
     IMGUI_GlobalTableRow("cleanColor", {
         ImGui::ColorEdit4("##cleanColor", &cam.cleanColor.x);
     });

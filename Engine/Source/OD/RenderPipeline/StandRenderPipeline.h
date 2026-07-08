@@ -232,11 +232,6 @@ private:
 
 class OD_API CameraRenderer{
 public:
-    enum class RenderingPath{
-        Forward,
-        Deferred
-    };
-
     Camera camera;
     RenderStagePasses* renderStagePasses;
     RenderContext* context;
@@ -249,6 +244,8 @@ public:
     inline Shadows& GetShadows(){ return shadows; }
 
     void RenderEntityIds(Camera cam, RenderContext* renderContext);
+
+    void RenderPassNew(CameraRenderPass& pass, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings);
 
 private:
     Shadows shadows;
@@ -288,6 +285,7 @@ private:
     void RunRenderDataLoop();
     void AddRenderData(RenderData& data);
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
+    void RenderVisibleGeometryNew(EnvironmentSettings& environmentSettings);
     void RenderSprites();
     void RenderUI();
     void Draw3DText();
@@ -314,6 +312,7 @@ public:
     void Update(Scene& scene) override;
     void LateUpdate(Scene& scene) override;
     void Render(Scene& scene) override;
+    void RenderNew(Scene& scene);
 
     void OnDrawGizmos(Scene& scene, Camera& cam) override;
     void OnDrawGizmosSelected(Scene& scene, Camera& cam, Entity entity) override;
@@ -340,6 +339,8 @@ private:
     Transform overrideCameraTrans;
 
     RenderStagePasses renderStagePasses;
+
+    std::vector<CameraRenderPass> camPasses;
 };
 
 void StandRenderPipelineModuleInit();

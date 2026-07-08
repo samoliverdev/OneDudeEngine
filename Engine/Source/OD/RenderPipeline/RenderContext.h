@@ -17,6 +17,23 @@ class InstancingBuffer;
 class RendererFeature;
 class ComputeShader;
 
+enum class RenderingPath{
+    Forward,
+    Deferred
+};
+
+struct OD_API CameraRenderPass {
+    Camera camera;
+    Ref<Framebuffer> target = nullptr;           // nullptr = default backbuffer
+    int targetFace = 0;                      // for cubemaps
+    RenderingPath renderingPath;
+    uint32_t cullingMask = ~0u;
+    int renderOrder = 0;
+    bool isReflectionProbePass = false;
+    // Optional: custom environment settings, quality preset, etc.
+};
+
+
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
 
@@ -240,6 +257,15 @@ public:
     void BeginDrawToScreen();
     void EndDrawToScreen();
 
+    void BeginDrawToScreenNew();
+    void EndDrawToScreenNew();
+
+    void DrawCompose(std::vector<CameraRenderPass>& passes, int width, int height);
+
+    inline void SetCustomFinalColor(Framebuffer* f){
+        curFinalColor = f == nullptr ? finalColor : f; 
+    }
+
     void BeginForwardPass();
     void EndForwardPass();
 
@@ -274,6 +300,7 @@ public:
 
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
+    inline Framebuffer* GetCurFinalColor(){ return curFinalColor; }
     inline Camera GetCamera(){ return cam; }
 
     static RenderContextSettings& GetSettings();
@@ -322,6 +349,8 @@ private:
     Framebuffer* finalColor;
     Framebuffer* postFx1;
     Framebuffer* postFx2;
+
+    Framebuffer* curFinalColor;
 
     Ref<Material> entityIdShader;
 
