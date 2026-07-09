@@ -88,7 +88,7 @@ Vector2 UIContext::GetDefaultPivotFromAnchor(Vector2 anchor){
     return anchor;
 }
 
-Vector2 UIContext::GetSize(UIElement::Sizing size, Vector2 parentSize){
+Vector2 UIContext::_GetSize(UIElement::Sizing size, Vector2 parentSize){
     float x = UIScale(size.width.value);
     float y = UIScale(size.height.value);
 
@@ -103,6 +103,40 @@ Vector2 UIContext::GetSize(UIElement::Sizing size, Vector2 parentSize){
     return Vector2(x, y);
 };
 
+Vector2 UIContext::GetSize(int index, Vector2 parentSize){
+    UIElement& el = elements[index];
+
+    float x = UIScale(el.size.width.value);
+    float y = UIScale(el.size.height.value);
+
+    if(el.size.width.type == UIElement::SizingType::Percent){
+        x = parentSize.x * el.size.width.value;
+    }
+
+    if(el.size.height.type == UIElement::SizingType::Percent){
+        y = parentSize.y * el.size.height.value;
+    }
+
+    if(el.size.width.type == UIElement::SizingType::FitText){
+        x = (baseFont->CalculateTextMetrics(el.text.c_str()).size * UIScale(el.fontSize)).x;
+    }
+
+    if(el.size.height.type == UIElement::SizingType::FitText){
+        y = (baseFont->CalculateTextMetrics(el.text.c_str()).size * UIScale(el.fontSize)).y;
+    }
+
+    if(el.size.width.type == UIElement::SizingType::FitLayout){
+        x = GetChildrenContentSize(index).x;
+    }
+
+    if(el.size.height.type == UIElement::SizingType::FitLayout){
+        y = GetChildrenContentSize(index).y;
+    }
+
+    return Vector2(x, y);
+}
+
+/*
 Vector2 UIContext::MeasureLayoutChildren(int parentIndex){
     UIElement& parent = elements[parentIndex];
 
@@ -116,11 +150,11 @@ Vector2 UIContext::MeasureLayoutChildren(int parentIndex){
         Vector2 size = GetSize(c.size, parent.finalSize);
 
         if(parent.layoutMode == UIElement::LayoutMode::Vertical){
-            totalMain += /*c.*/size.x;
-            maxCross = std::max(maxCross, /*c.*/size.y);
+            totalMain += size.x;
+            maxCross = std::max(maxCross, size.y);
         } else {
-            totalMain += /*c.*/size.y;
-            maxCross = std::max(maxCross, /*c.*/size.x);
+            totalMain += size.y;
+            maxCross = std::max(maxCross, size.x);
         }
 
         count++;
@@ -135,15 +169,61 @@ Vector2 UIContext::MeasureLayoutChildren(int parentIndex){
 
     return { maxCross, totalMain };
 }
+*/
+Vector2 UIContext::MeasureLayoutChildren(int parentIndex){
+    UIElement& parent = elements[parentIndex];
+
+    float totalMain = 0;
+    float maxCross = 0;
+    int count = 0;
+
+    int child = parent.firstChild;
+    while(child != -1){
+        UIElement& c = elements[child];
+        Vector2 size = GetSize(child, parent.finalSize); //GetSize(c.size, parent.finalSize);
+
+        if(parent.layoutMode == UIElement::LayoutMode::Vertical){
+            totalMain += size.y;                 // vertical = sum height
+            maxCross = std::max(maxCross, size.x); // cross = max width
+        } else if(parent.layoutMode == UIElement::LayoutMode::Horizontal){
+            totalMain += size.x;                 // horizontal = sum width
+            maxCross = std::max(maxCross, size.y); // cross = max height
+        }
+
+        count++;
+        child = c.nextSibling;
+    }
+
+    if(count > 1)
+        totalMain += (count - 1) * UIScale(parent.layout.childGap);
+
+    if(parent.layoutMode == UIElement::LayoutMode::Vertical)
+        return { maxCross, totalMain };
+
+    return { totalMain, maxCross };
+}
+
+Vector2 UIContext::GetChildrenContentSize(int parentIndex){
+    UIElement& parent = elements[parentIndex];
+
+    Vector2 childrenSize = MeasureLayoutChildren(parentIndex);
+
+    UIElement::Padding& p = parent.layout.padding;
+
+    childrenSize.x += UIScale(p.left + p.right);
+    childrenSize.y += UIScale(p.top + p.bottom);
+
+    return childrenSize;
+}
 
 void UIContext::ComputeElementLayout(int index){
     UIElement& el = elements[index];
 
     if(el.parent != -1){
         UIElement& parent = elements[el.parent];
-        el.finalSize = GetSize(el.size, parent.finalSize);
+        el.finalSize = GetSize(index, parent.finalSize); //GetSize(el.size, parent.finalSize);
     } else {
-        el.finalSize = GetSize(el.size, GetCanvasSize());
+        el.finalSize = GetSize(index, GetCanvasSize()); //GetSize(el.size, GetCanvasSize());
     }
 
     if(el.parent != -1){
@@ -157,12 +237,30 @@ void UIContext::ComputeElementLayout(int index){
             Vector2 pivotOffset = el.finalSize * el.pivot;
             el.finalPos = anchorPoint + UIScale(el.pos) - pivotOffset;
         } else {
-            el.finalPos = parent.finalPos + parent.childOffset;
+            /*el.finalPos = parent.finalPos + parent.childOffset;
 
             if(parent.layoutMode == UIElement::LayoutMode::Horizontal){
                 parent.childOffset.x += el.finalSize.x + UIScale(parent.layout.childGap);
             }
             if(parent.layoutMode == UIElement::LayoutMode::Vertical){
+                parent.childOffset.y += el.finalSize.y + UIScale(parent.layout.childGap);
+            }*/
+
+            UIElement::Padding& p = parent.layout.padding;
+            Vector2 contentSize = {
+                parent.finalSize.x - (UIScale(p.left) + UIScale(p.right)),
+                parent.finalSize.y - (UIScale(p.top) + UIScale(p.bottom))
+            };
+
+            if(parent.layoutMode == UIElement::LayoutMode::Horizontal){
+                el.finalPos.x = parent.finalPos.x + parent.childOffset.x;
+                el.finalPos.y = parent.finalPos.y + UIScale(p.top) + (contentSize.y - el.finalSize.y) * parent.layout.childAlignment.y;
+                parent.childOffset.x += el.finalSize.x + UIScale(parent.layout.childGap);
+            }
+
+            if(parent.layoutMode == UIElement::LayoutMode::Vertical){
+                el.finalPos.x = parent.finalPos.x + UIScale(p.left) + (contentSize.x - el.finalSize.x) * parent.layout.childAlignment.x;
+                el.finalPos.y = parent.finalPos.y + parent.childOffset.y;
                 parent.childOffset.y += el.finalSize.y + UIScale(parent.layout.childGap);
             }
         }
@@ -328,9 +426,7 @@ void UIContext::DrawCommands(){
                     el.finalPos,
                     el.finalSize,
                     {0, 0},
-                    cmd.element == hoveredElement
-                        ? el.backgroundColor + 0.25f
-                        : el.backgroundColor
+                    el.backgroundColor //cmd.element == hoveredElement ? el.backgroundColor + 0.25f : el.backgroundColor
                 );
                 break;
             }

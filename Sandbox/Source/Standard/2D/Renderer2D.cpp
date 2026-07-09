@@ -66,7 +66,7 @@ void Init(){
 
 }
 
-void Shotdown(){
+void Shutdown(){
     fontMat = nullptr;
     spriteMesh = nullptr;
     spriteMat = nullptr;

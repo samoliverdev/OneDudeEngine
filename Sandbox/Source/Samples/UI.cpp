@@ -733,7 +733,7 @@ void UISample::OnRender(float deltaTime){
         cy.OpenElement()
             .Clip({true, true, {0, -50}})
             .Pos({-10, 10}).Size({FixedSize(100), FixedSize(200)}).AnchorPivot({1, 0})
-            .Vertical(10).PaddingAll(10).Align({0, 0})
+            .Vertical(10).PaddingAll(10).ChildAlign({0, 0})
             .Color({1, 0, 1, 1});
             cy.OpenElement()
                 .Size({FixedSize(50), FixedSize(50)})
@@ -755,8 +755,15 @@ void UISample::OnRender(float deltaTime){
             cy.CloseElement();
 
             cy.OpenElement()
-                .Size({FixedSize(50), FixedSize(50)})
-                .Color({1, 1, 0, 1});
+                .Size({FitLayoutSize(), FixedSize(50)})
+                .Color({1, 1, 0, 1})
+                .Vertical(2).PaddingAll(2).ChildAlign({0, 0});
+
+                for(int i = 0; i < 4; i++){
+                    cy.OpenElement().Size({FixedSize(10), FixedSize(10)}).Color({0, 0, 0, 1});
+                    cy.CloseElement();
+                }
+
             cy.CloseElement();
 
             for(int i = 0; i < 2; i++){
@@ -777,7 +784,7 @@ void UISample::OnRender(float deltaTime){
         //.Pos({100, 500})
         .Pos({-100, 0}).AnchorPivot({1.0f, 0.5f})
         .Size({FixedSize(300), FixedSize(100)})
-        .Text("Lolo", 75, {1.0f, 1.0f})
+        .Text("Lolo", 75, {1.f, 1.0f})
         .TextColor({1, 1, 0, 1})
         .PaddingAll(5)
         .Color({1, 0, 0, 1});
@@ -802,7 +809,7 @@ void UISample::OnRender(float deltaTime){
 }
 
 void UISample::OnExit(){
-    Renderer2D::Shotdown();
+    Renderer2D::Shutdown();
 }
 
 void UISample::OnGUI(){}

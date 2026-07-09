@@ -13,7 +13,7 @@ namespace UI{
 
 struct UIElement{
     enum class SizingType{
-        Fixed, Percent
+        Fixed, Percent, FitText, FitLayout
     };
 
     struct SizingAxis{
@@ -125,13 +125,15 @@ struct UIElement{
     UIElement& Vertical(float gap = 0){ layoutMode = LayoutMode::Vertical; layout.childGap = gap; return *this; }
     UIElement& Horizontal(float gap = 0){ layoutMode = LayoutMode::Horizontal; layout.childGap = gap; return *this; }
     UIElement& PaddingAll(uint16_t v){ layout.padding = {v, v, v, v}; return *this; }
-    UIElement& Align(Vector2 a){ layout.childAlignment = a; return *this; }
+    UIElement& ChildAlign(Vector2 a){ layout.childAlignment = a; return *this; }
     UIElement& Text(const std::string& _text, float size, Vector2 align = {0, 0}){ text = _text; fontSize = size; textAlign = align; return *this; }
     UIElement& TextColor(Vector4 color){ textColor = color; return *this; }
 };
 
 inline auto FixedSize(float x){ return UIElement::SizingAxis{UIElement::SizingType::Fixed, x}; }
 inline auto PercentSize(float x){ return UIElement::SizingAxis{UIElement::SizingType::Percent, x}; }
+inline auto FitTextSize(){ return UIElement::SizingAxis{UIElement::SizingType::FitText}; }
+inline auto FitLayoutSize(){ return UIElement::SizingAxis{UIElement::SizingType::FitLayout}; }
 
 struct UIContext{
     enum class Scaling{
@@ -227,9 +229,11 @@ struct UIContext{
 
     Vector2 GetDefaultPivotFromAnchor(Vector2 anchor);
 
-    Vector2 GetSize(UIElement::Sizing size, Vector2 parentSize);
+    Vector2 _GetSize(UIElement::Sizing size, Vector2 parentSize);
+    Vector2 GetSize(int index, Vector2 parentSize);
 
     Vector2 MeasureLayoutChildren(int parentIndex);
+    Vector2 GetChildrenContentSize(int parentIndex);
 
     void ComputeElementLayout(int index);
 

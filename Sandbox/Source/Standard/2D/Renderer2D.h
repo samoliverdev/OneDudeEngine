@@ -11,7 +11,7 @@ namespace Standard{
 namespace Renderer2D{
     
 void Init();
-void Shotdown();
+void Shutdown();
 
 void Begin(Camera& camera);
 void End();
