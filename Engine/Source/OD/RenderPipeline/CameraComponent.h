@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
+#include "RenderingPath.h"
 #include "PassRenderSettings.h"
 
 namespace sol{ class state; }
@@ -11,11 +12,6 @@ namespace OD{
 struct OD_API CameraComponent{
     enum class Type{
         Perspective, Orthographic 
-    };
-
-    enum class RenderingPath{
-        Forward,
-        Deferred
     };
 
     Type type = Type::Perspective;
@@ -32,6 +28,7 @@ struct OD_API CameraComponent{
     RenderingPath renderingPath = RenderingPath::Forward;
 
     PassRenderSettings passRenderSettings = {true, true, true, true};
+    PassCollectSettings collectSettings = {};
 
     //TODO: Implement Later
     /*
@@ -60,6 +57,7 @@ struct OD_API CameraComponent{
         ArchiveDump(ar, CEREAL_NVP(cleanColor));
         ArchiveDump(ar, CEREAL_NVP(renderingPath));
         ArchiveDump(ar, CEREAL_NVP(passRenderSettings));
+        ArchiveDump(ar, CEREAL_NVP(collectSettings));
     }
 
 private:

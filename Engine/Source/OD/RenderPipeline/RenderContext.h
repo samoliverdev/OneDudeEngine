@@ -7,6 +7,7 @@
 #include "LightComponent.h"
 #include "PostFX.h"
 #include "RendererFeature.h"
+#include "RenderingPath.h"
 #include <vector>
 #include <functional>
 
@@ -18,11 +19,6 @@ class InstancingBuffer;
 class RendererFeature;
 class ComputeShader;
 
-enum class RenderingPath{
-    Forward,
-    Deferred
-};
-
 struct OD_API CameraRenderPass {
     Camera camera;
     Ref<Framebuffer> target = nullptr;           // nullptr = default backbuffer
@@ -30,11 +26,11 @@ struct OD_API CameraRenderPass {
     RenderingPath renderingPath;
     uint32_t cullingMask = ~0u;
     int renderOrder = 0;
-    PassRenderSettings settings;
+    PassRenderSettings settings = {};
+    PassCollectSettings collectSettings = {}; 
     bool isReflectionProbePass = false;
     // Optional: custom environment settings, quality preset, etc.
 };
-
 
 enum class SortType{None, CommonOpaque, CommonTransparent};
 enum class RenderQueueRange{All, Opaue, Transparent};
@@ -83,7 +79,16 @@ struct OD_API alignas(16) RenderData{
         AlwaysDraw        = 1 << 0,
         RenderShadow      = 1 << 1,
         IsDecal           = 1 << 2,
-        IsValid           = 1 << 3
+        IsValid           = 1 << 3,
+
+        IsStatic = 1 << 4,
+        IsParticle = 1 << 5,
+        
+        FromModel         = 1 << 6,
+        FromMesh          = 1 << 7,
+        FromSkinnedModel         = 1 << 8,
+        FromSkinnedMesh          = 1 << 9,
+        FromCluster          = 1 << 10,
     };
 
     Matrix4 targetMatrix;
@@ -264,8 +269,9 @@ public:
 
     void DrawCompose(std::vector<CameraRenderPass>& passes, int width, int height);
 
-    inline void SetCustomFinalColor(Framebuffer* f){
-        curFinalColor = f == nullptr ? finalColor : f; 
+    inline void SetCustomFinalColor(Framebuffer* f, int slice){
+        customFinalColor = f;
+        customFinalColorIndex = slice; 
     }
 
     void BeginForwardPass();
@@ -302,7 +308,6 @@ public:
 
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
-    inline Framebuffer* GetCurFinalColor(){ return curFinalColor; }
     inline Camera GetCamera(){ return cam; }
 
     static RenderContextSettings& GetSettings();
@@ -352,7 +357,8 @@ private:
     Framebuffer* postFx1;
     Framebuffer* postFx2;
 
-    Framebuffer* curFinalColor;
+    Framebuffer* customFinalColor;
+    int customFinalColorIndex;
 
     Ref<Material> entityIdShader;
 

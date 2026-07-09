@@ -19,6 +19,7 @@
 #include "OD/RenderPipeline/Text3DRendererComponent.h"
 #include "OD/RenderPipeline/StaticRendererClusterComponent.h"
 #include "OD/RenderPipeline/DecalRendererComponent.h"
+#include "OD/RenderPipeline/EnvironmentProbeComponent.h"
 #include "OD/Animation/Animator.h"
 #include "TextRendererComponent.h"
 #include "MeshRendererComponent.h"
@@ -52,6 +53,7 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<ModelRendererComponent>("ModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SkinnedModelRendererComponent>("SkinnedModelRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<DecalRendererComponent>("DecalRendererComponent", "Renderer");
+    SceneManager::Get().RegisterCoreComponent<EnvironmentProbeComponent>("EnvironmentProbeComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<TextRendererComponent>("TextRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<SpriteRendererComponent>("SpriteRendererComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<StaticRendererClusterComponent>("StaticRendererClusterComponent", "Renderer");
@@ -553,16 +555,22 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     inpass.camera.width = inpass.camera.viewportRect.z * inpass.camera.width;
     inpass.camera.height = inpass.camera.viewportRect.w * inpass.camera.height; 
 
+    if(inpass.target == nullptr){
+        inpass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
+    }
+
     // ----------- Setup ----------- 
-    camera = inpass.camera;
-    renderingPath = inpass.renderingPath;
+    pass = inpass;
+    pass.collectSettings.BuildMask();
+    camera = pass.camera;
+    renderingPath = pass.renderingPath;
 
     context = renderContext;
     context->isDeferred = renderingPath == RenderingPath::Deferred;
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
     
-    if(inpass.settings.drawShadow == false){
+    if(pass.settings.drawShadow == false){
         shadows.Clear();   
     }
 
@@ -607,6 +615,26 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         decalDrawTarget.sortType = RendererList::SortType::None;
 
         context->RenderDataLoopNew([&](RenderData& data){
+            /*if(pass.collectSettings.collectStatic == false && data.HasFlag(RenderData::Flag::IsStatic) == true) return; 
+            if(pass.collectSettings.collectDynamic == false && data.HasFlag(RenderData::Flag::IsStatic) == false) return; 
+            
+            if(pass.collectSettings.collectMesh == false && data.HasFlag(RenderData::Flag::FromMesh) == true) return;
+            if(pass.collectSettings.collectModel == false && data.HasFlag(RenderData::Flag::FromModel) == true) return; 
+            if(pass.collectSettings.collectSkinnedMesh == false && data.HasFlag(RenderData::Flag::FromSkinnedMesh) == true) return;
+            if(pass.collectSettings.collectSkinnedModel == false && data.HasFlag(RenderData::Flag::FromSkinnedModel) == true) return; 
+
+            if(pass.collectSettings.collectCluster == false && data.HasFlag(RenderData::Flag::FromCluster) == true) return; 
+            if(pass.collectSettings.collectParticle == false && data.HasFlag(RenderData::Flag::IsParticle) == true) return; 
+            if(pass.collectSettings.collectDecal == false && data.HasFlag(RenderData::Flag::IsDecal) == true) return;*/ 
+
+            const uint32_t f = data.flags;
+            // static/dynamic special case
+            const bool isStatic = (f & RenderData::Flag::IsStatic) != 0;
+            if(!pass.collectSettings.collectStatic  && isStatic)  return;
+            if(!pass.collectSettings.collectDynamic && !isStatic) return;
+            // all other filters in one test
+            if((f & pass.collectSettings.rejectIfAny) != 0) return;
+
             AddRenderData(data); 
             //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
                 shadows.AddRenderData(data);
@@ -614,15 +642,9 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         });
     }
 
-    if(inpass.target == nullptr){
-        inpass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
-    }
-
-    pass = inpass;
-    
     shadows.Render();
     lighting.UpdateGlobalShaders();
-    renderContext->SetCustomFinalColor(inpass.target.get());
+    renderContext->SetCustomFinalColor(pass.target.get(), pass.targetFace);
     RenderVisibleGeometryNew(environmentSettings);
 }
 
@@ -924,16 +946,21 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     }
 
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    if(pass.settings.drawPostProcessing == false){
+        postFXs.clear();
+        postFXs.push_back(gamaCorrectionPP);
+    }
+
     context->DrawPostFXs(postFXs);
 
+    context->BeginUIPass();
     if(pass.settings.drawUI){
-        context->BeginUIPass();
         RenderUI();
         for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
             i->OnRender(*context->scene, camera);
         }
-        context->EndUIPass();
     }
+    context->EndUIPass();
 
     context->EndDrawToScreenNew();
 }
@@ -1536,16 +1563,14 @@ void CameraRenderer::RenderUI(){
 std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environmentSettings){
     std::vector<PostFX*> out;
 
-    ///*
-    if(pass.settings.drawPostProcessing){
+    //
     for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
     if( environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
     if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
-    }
-    //*/
+    //
     out.push_back(gamaCorrectionPP);
 
     return out;
@@ -1738,31 +1763,80 @@ void StandRenderPipeline::RenderNew(Scene& scene){
 
     camPasses.clear();
 
-    int _width = 800;
-    int _height = 600;
+    //-----------EnvironmentProbeComponent-----------
+    auto envProbeView = scene.GetRegistry().view<EnvironmentProbeComponent, TransformComponent>();
+    for(auto entity : envProbeView){
+        auto& probe = envProbeView.get<EnvironmentProbeComponent>(entity);
+        auto& trans = envProbeView.get<TransformComponent>(entity);
+
+        //if(!probe.ShouldUpdate(time)) continue;
+
+        Camera probeCam;
+        probeCam.width = probe.resolution;
+        probeCam.height = probe.resolution;
+        probeCam.nearClip = 0.1f;
+        probeCam.farClip = probe.radius * 2.0f;
+        probeCam.viewPos = trans.Position();
+        probeCam.projection = glm::perspective(glm::radians(90.0f), 1.0f, probeCam.nearClip, probeCam.farClip);
+        //probeCam.view = math::inverse(trans.GlobalModelMatrix());
+  
+        if(probe.framebuffer == nullptr){
+            FrameBufferSpecification framebufferSpecification = {probe.resolution, probe.resolution};
+            framebufferSpecification.colorAttachments = renderContext->GetFinalColor()->Specification().colorAttachments;
+            framebufferSpecification.depthAttachment = renderContext->GetFinalColor()->Specification().depthAttachment;
+            framebufferSpecification.type = FramebufferAttachmentType::CUBEMAP; //TEXTURE_2D_MULTISAMPLE
+            framebufferSpecification.sample = 1;
+            probe.framebuffer = CreateRef<Framebuffer>(framebufferSpecification);
+        }
+
+        if(probe.resolution > 0) probe.framebuffer->Resize(probe.resolution, probe.resolution);
+
+        for(int face = 0; face < 6; ++face){
+            //probeCam.view = captureViews[face];  //INFO: this not include transform
+            glm::mat4 viewMatrix = captureViews[face];
+            viewMatrix = glm::translate(viewMatrix, -probeCam.viewPos);   // or better: inverse(translation * rotation)
+            probeCam.view = viewMatrix;
+            probeCam.frustum = CreateFrustumFromMatrix(probeCam.projection * probeCam.view);
+
+            CameraRenderPass pass = {};
+            pass.camera = probeCam;
+            pass.target = probe.framebuffer;
+            pass.targetFace = face;
+            pass.renderingPath = RenderingPath::Forward;   // usually forward for probes
+            pass.isReflectionProbePass = true;
+            pass.settings = probe.drawSettings;
+            pass.renderingPath = probe.renderingPath;
+            pass.collectSettings = probe.collectSettings;
+            //pass.cullingMask = probe.cullingMask;
+
+            //cameraRenderer.RenderPass(pass, renderContext, shadow, *environmentSettings);
+            camPasses.push_back(pass);
+        }
+
+        //probe.cubemap->GenerateMipmaps();
+        //probe.lastUpdateTime = time;
+    }
+
+    //-----------CameraComponent-----------
+    int width = Application::ScreenWidth();
+    int height = Application::ScreenHeight();
 
     if(overrideCamera != nullptr){
         Entity mainCamera = scene.GetMainCamera();
         auto targetRenderPath = RenderingPath::Forward;
         if(scene.IsValid(mainCamera)){
             auto& cam = scene.GetComponent<CameraComponent>(mainCamera);
-            targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+            targetRenderPath = cam.renderingPath;
         }
 
-        CameraRenderPass pass;
+        width = overrideCamera->width;// renderContext->overrideFramebuffer->Width();
+        height = overrideCamera->height;// renderContext->overrideFramebuffer->Height();
+
+        CameraRenderPass pass = {};
         pass.camera = *overrideCamera;
         pass.renderingPath = targetRenderPath;
         pass.settings = {true, true, true, true};
         camPasses.push_back(pass);
-        _width = pass.camera.width;
-        _height = pass.camera.height;
-
-        /*cameraRenderer.Render(
-            *overrideCamera, 
-            renderContext, shadow, 
-            *environmentSettings,
-            targetRenderPath
-        );*/
     } else {
         auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>(entt::exclude<SelfDisable>);
         for(auto entity: camView){
@@ -1770,31 +1844,19 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             TransformComponent& trans = camView.get<TransformComponent>(entity);
             InfoComponent& info = camView.get<InfoComponent>(entity);
 
-            int width = Application::ScreenWidth();
-            int height = Application::ScreenHeight();
             if(renderContext->overrideFramebuffer != nullptr){
                 width = renderContext->overrideFramebuffer->Width();
                 height = renderContext->overrideFramebuffer->Height();
             }
 
-            if(width > 0 && height > 0)cam.UpdateCameraData(trans, width, height);
-            //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
-            /*cameraRenderer.Render(
-                cam.GetCamera(), 
-                renderContext, 
-                shadow, 
-                *environmentSettings, 
-                cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward
-            );*/
-            
+            if(width > 0 && height > 0) cam.UpdateCameraData(trans, width, height);
 
-            CameraRenderPass pass;
+            CameraRenderPass pass = {};
             pass.camera = cam.GetCamera();
-            pass.renderingPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+            pass.renderingPath = cam.renderingPath;
             pass.settings = cam.passRenderSettings;
+            pass.collectSettings = cam.collectSettings;
             camPasses.push_back(pass);
-            _width = pass.camera.width;
-            _height = pass.camera.height;
         }
     }
 
@@ -1807,7 +1869,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     }
 
     //cameraRenderer.RenderComposeNew(camPasses);
-    renderContext->DrawCompose(camPasses, _width, _height);
+    renderContext->DrawCompose(camPasses, width, height);
 
     renderContext->End();
 }
@@ -1901,7 +1963,7 @@ void StandRenderPipeline::Render(Scene& scene){
         auto targetRenderPath = RenderingPath::Forward;
         if(scene.IsValid(mainCamera)){
             auto& cam = scene.GetComponent<CameraComponent>(mainCamera);
-            targetRenderPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+            targetRenderPath = cam.renderingPath;
         }
 
         cameraRenderer.Render(
@@ -1931,7 +1993,7 @@ void StandRenderPipeline::Render(Scene& scene){
                 renderContext, 
                 shadow, 
                 *environmentSettings, 
-                cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward
+                cam.renderingPath
             );
             //LogInfo("Camera Name: %s", info.name.c_str());
             break;

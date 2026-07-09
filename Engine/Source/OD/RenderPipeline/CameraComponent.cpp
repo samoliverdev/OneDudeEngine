@@ -4,6 +4,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Lua.h"
+#include "OD/Serialization/CerealImGui.h"
 #include <imgui/imgui_internal.h>
 
 namespace OD{
@@ -137,7 +138,7 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
 
     IMGUI_GlobalTableRow("projection", ImGui::DrawEnumCombo<CameraComponent::Type>("##projection", &cam.type));
     IMGUI_GlobalTableRow("IsMain", ImGui::Checkbox("#IsMain", &cam.isMain));
-    IMGUI_GlobalTableRow("renderingPath", ImGui::DrawEnumCombo<CameraComponent::RenderingPath>("##renderingPath", &cam.renderingPath));
+    IMGUI_GlobalTableRow("renderingPath", ImGui::DrawEnumCombo<RenderingPath>("##renderingPath", &cam.renderingPath));
     if(cam.type == CameraComponent::Type::Orthographic){
         IMGUI_GlobalTableRow("size", ImGui::DragFloat("##size", &cam.orthographicSize));
     }
@@ -157,12 +158,24 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
         ImGui::ColorEdit4("##cleanColor", &cam.cleanColor.x);
     });
 
-    IMGUI_GlobalTableRow("drawShadow", ImGui::Checkbox("##drawShadow", &cam.passRenderSettings.drawShadow));
+    /*IMGUI_GlobalTableRow("drawShadow", ImGui::Checkbox("##drawShadow", &cam.passRenderSettings.drawShadow));
     IMGUI_GlobalTableRow("drawPostProcessing", ImGui::Checkbox("##drawPostProcessing", &cam.passRenderSettings.drawPostProcessing));
     IMGUI_GlobalTableRow("drawUI", ImGui::Checkbox("##drawUI", &cam.passRenderSettings.drawUI));
-    IMGUI_GlobalTableRow("drawGizmos", ImGui::Checkbox("##drawGizmos", &cam.passRenderSettings.drawGizmos));
+    IMGUI_GlobalTableRow("drawGizmos", ImGui::Checkbox("##drawGizmos", &cam.passRenderSettings.drawGizmos));*/
 
     IMGUI_EndGlobalTable();
+
+    cereal::ImGuiArchive ar;
+
+    if(ImGui::TreeNode("passRenderSettings")){
+        ar(cam.passRenderSettings);
+        ImGui::TreePop();
+    }
+
+    if(ImGui::TreeNode("collectSettings")){
+        ar(cam.collectSettings);
+        ImGui::TreePop();
+    }
 }
 
 void CameraComponent::CreateLuaBind(sol::state& lua){

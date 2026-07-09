@@ -189,9 +189,6 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
-
-
-    SetCustomFinalColor(nullptr);
 }
 
 RenderContext::~RenderContext(){
@@ -226,6 +223,8 @@ void RenderContext::BeginDrawToScreen(){
         height = overrideFramebuffer->Height();
     }
 
+    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+
     /*if(finalColor->Width() != width){
         LogError("Current: %d Next: %d", finalColor->Width(), width);
     }*/
@@ -244,6 +243,8 @@ void RenderContext::BeginDrawToScreenNew(){
     int width = cam.width;
     int height = cam.height;
     if(width <= 0 || height <= 0) return;
+
+    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
 
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
@@ -548,6 +549,8 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
+    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+
     Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
@@ -608,7 +611,10 @@ void RenderContext::EndDrawToScreen(){
 }
 
 void RenderContext::EndDrawToScreenNew(){
-    Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor);
+    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    int curIndex = customFinalColor != nullptr ? customFinalColorIndex : 0;
+
+    Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor, curIndex);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
     Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
     Graphics::EndFramebuffer();
@@ -2037,6 +2043,9 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.vector4_0[0] = c.customData;
         }
 
+        data.SetFlag(RenderData::Flag::IsStatic, false);
+        data.SetFlag(RenderData::Flag::FromMesh, true);
+
         Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
         SetPerInstanceData(data.targetMatrix, perInstanceData);
 
@@ -2102,6 +2111,9 @@ void RenderContext::UpdateRenderData(){
                 data.perDrawData.vector4_0[0] = c.customData;
             }
             
+            data.SetFlag(RenderData::Flag::IsStatic, false);
+            data.SetFlag(RenderData::Flag::FromModel, true);
+
             Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
             SetPerInstanceData(data.targetMatrix, perInstanceData);
 
@@ -2152,6 +2164,8 @@ void RenderContext::UpdateRenderData(){
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
         data.perDrawData.int_0[1] = info.layer;
+
+        data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
 
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -2226,6 +2240,8 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
             data.perDrawData.int_0[1] = info.layer;
+
+            data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
 
             data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
 
@@ -2349,6 +2365,9 @@ void RenderContext::UpdateRenderData(){
         data.perDrawData.int_0[0] = ((int)e) + 1;
         data.perDrawData.int_0[1] = info.layer;
 
+        data.SetFlag(RenderData::Flag::IsStatic, true);
+        data.SetFlag(RenderData::Flag::FromMesh, true);
+
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
@@ -2411,6 +2430,9 @@ void RenderContext::UpdateRenderData(){
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
             data.perDrawData.int_0[1] = info.layer;
+
+            data.SetFlag(RenderData::Flag::IsStatic, true);
+            data.SetFlag(RenderData::Flag::FromModel, true);
 
             if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
@@ -2499,6 +2521,9 @@ void RenderContext::UpdateRenderData(){
                     data.aabb = subchunk.renderBounds;
                     //data.perDrawData.int_0_Count = 0; //.clear();
                     data.instancingBuffer = cmd.buffer.get();
+
+                    data.SetFlag(RenderData::Flag::IsStatic, true);
+                    data.SetFlag(RenderData::Flag::FromCluster, true);
                 });
             }
         }
@@ -2719,6 +2744,7 @@ void RenderContext::DrawGizmos(){
     //Renderer::SetCamera(cam);
     
     Camera cm = cam;
+    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
     
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
