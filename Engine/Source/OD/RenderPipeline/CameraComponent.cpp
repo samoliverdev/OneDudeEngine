@@ -157,6 +157,11 @@ void CameraComponent::OnGui(Entity& e, Scene& scene){
         ImGui::ColorEdit4("##cleanColor", &cam.cleanColor.x);
     });
 
+    IMGUI_GlobalTableRow("drawShadow", ImGui::Checkbox("##drawShadow", &cam.passRenderSettings.drawShadow));
+    IMGUI_GlobalTableRow("drawPostProcessing", ImGui::Checkbox("##drawPostProcessing", &cam.passRenderSettings.drawPostProcessing));
+    IMGUI_GlobalTableRow("drawUI", ImGui::Checkbox("##drawUI", &cam.passRenderSettings.drawUI));
+    IMGUI_GlobalTableRow("drawGizmos", ImGui::Checkbox("##drawGizmos", &cam.passRenderSettings.drawGizmos));
+
     IMGUI_EndGlobalTable();
 }
 

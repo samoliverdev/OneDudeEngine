@@ -129,6 +129,8 @@ public:
 
     void DrawCascadeFrustums();
 
+    void Clear();
+
 private:
     void RenderDirectionalShadows();
     void RenderOtherShadows();
@@ -233,6 +235,7 @@ private:
 class OD_API CameraRenderer{
 public:
     Camera camera;
+    CameraRenderPass pass;
     RenderStagePasses* renderStagePasses;
     RenderContext* context;
     RenderingPath renderingPath;

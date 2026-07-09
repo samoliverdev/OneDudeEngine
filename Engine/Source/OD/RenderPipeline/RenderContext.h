@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "PassRenderSettings.h"
 #include "RendererList.h"
 #include "LightComponent.h"
 #include "PostFX.h"
@@ -29,6 +30,7 @@ struct OD_API CameraRenderPass {
     RenderingPath renderingPath;
     uint32_t cullingMask = ~0u;
     int renderOrder = 0;
+    PassRenderSettings settings;
     bool isReflectionProbePass = false;
     // Optional: custom environment settings, quality preset, etc.
 };

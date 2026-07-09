@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
+#include "PassRenderSettings.h"
 
 namespace sol{ class state; }
 
@@ -30,6 +31,8 @@ struct OD_API CameraComponent{
 
     RenderingPath renderingPath = RenderingPath::Forward;
 
+    PassRenderSettings passRenderSettings = {true, true, true, true};
+
     //TODO: Implement Later
     /*
     std::vector<Ref<RenderPass>> passes;
@@ -56,6 +59,7 @@ struct OD_API CameraComponent{
         ArchiveDump(ar, CEREAL_NVP(farClipPlane));
         ArchiveDump(ar, CEREAL_NVP(cleanColor));
         ArchiveDump(ar, CEREAL_NVP(renderingPath));
+        ArchiveDump(ar, CEREAL_NVP(passRenderSettings));
     }
 
 private:

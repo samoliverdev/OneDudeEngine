@@ -364,6 +364,11 @@ void Shadows::DrawCascadeFrustums(){
     }
 }
 
+void Shadows::Clear(){
+    shadowedDirectionalLightCount = 0;
+    shadowedOtherLightCount = 0;
+}
+
 #pragma endregion
 
 #pragma region Lighting
@@ -542,29 +547,82 @@ CameraRenderer::~CameraRenderer(){
     delete gamaCorrectionPP;
 }
 
-void CameraRenderer::RenderPassNew(CameraRenderPass& pass, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings){
+void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* renderContext, ShadowSettings shadowSettings, EnvironmentSettings& environmentSettings){
     OD_PROFILE_SCOPE("CameraRenderer::Render");
 
-    pass.camera.width = pass.camera.viewportRect.z * pass.camera.width;
-    pass.camera.height = pass.camera.viewportRect.w * pass.camera.height; 
+    inpass.camera.width = inpass.camera.viewportRect.z * inpass.camera.width;
+    inpass.camera.height = inpass.camera.viewportRect.w * inpass.camera.height; 
 
     // ----------- Setup ----------- 
-    camera = pass.camera;
-    renderingPath = pass.renderingPath;
+    camera = inpass.camera;
+    renderingPath = inpass.renderingPath;
+
     context = renderContext;
     context->isDeferred = renderingPath == RenderingPath::Deferred;
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
-
-    RunRenderDataLoop();
-
-    if(pass.target == nullptr){
-        pass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
+    
+    if(inpass.settings.drawShadow == false){
+        shadows.Clear();   
     }
+
+    //RunRenderDataLoop();
+    {
+        OD_PROFILE_SCOPE("CameraRenderer::RunRenderDataLoop");
+
+        opaqueDrawTarget.Clean();
+        opaqueForwardOnlyDrawTarget.Clean();
+        blendDrawTarget.Clean();
+        decalDrawTarget.Clean();
+        entityIdDrawTarget.Clean();
+
+        entityIdDrawSettings.enableIntancing = false;
+        entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
+        entityIdDrawSettings.sortType = SortType::None;
+        entityIdDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
+
+        //----------Opaque Settings-----------
+        opaqueDrawSettings.enableIntancing = true;
+        opaqueDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
+        opaqueDrawSettings.sortType = SortType::CommonOpaque;
+        opaqueDrawSettings.excludedTags.push_back(Hash::StringToHash("ForwardOnly"));
+        opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
+        
+        opaqueForwardOnlyDrawSettings.enableIntancing = true;
+        opaqueForwardOnlyDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
+        opaqueForwardOnlyDrawSettings.sortType = SortType::CommonOpaque;
+        opaqueForwardOnlyDrawSettings.requiredTags.push_back(Hash::StringToHash("ForwardOnly"));
+        opaqueForwardOnlyDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
+
+        //----------Transparent Settings-----------
+        blendDrawSettings.enableIntancing = true; //true; //false;
+        blendDrawSettings.renderQueueRange = RenderQueueRange::Transparent;
+        blendDrawSettings.sortType = SortType::CommonTransparent;
+        blendDrawTarget.sortType = RendererList::SortType::CommonTransparent;
+
+        decalDrawSettings.enableIntancing = true;
+        decalDrawSettings.renderQueueRange = RenderQueueRange::All;
+        decalDrawSettings.sortType = SortType::None;
+        decalDrawSettings.decalTarget = true;
+        decalDrawTarget.sortType = RendererList::SortType::None;
+
+        context->RenderDataLoopNew([&](RenderData& data){
+            AddRenderData(data); 
+            //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
+                shadows.AddRenderData(data);
+            //} 
+        });
+    }
+
+    if(inpass.target == nullptr){
+        inpass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
+    }
+
+    pass = inpass;
     
     shadows.Render();
     lighting.UpdateGlobalShaders();
-    renderContext->SetCustomFinalColor(pass.target.get());
+    renderContext->SetCustomFinalColor(inpass.target.get());
     RenderVisibleGeometryNew(environmentSettings);
 }
 
@@ -861,19 +919,21 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
         context->DrawRenderersBuffer(blendDrawTarget, true);
         Draw3DText();
-        context->DrawGizmos(); 
+        if(pass.settings.drawGizmos) context->DrawGizmos(); 
         context->EndForwardPass();
     }
 
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
 
-    context->BeginUIPass();
-    RenderUI();
-    for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
-        i->OnRender(*context->scene, camera);
+    if(pass.settings.drawUI){
+        context->BeginUIPass();
+        RenderUI();
+        for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
+            i->OnRender(*context->scene, camera);
+        }
+        context->EndUIPass();
     }
-    context->EndUIPass();
 
     context->EndDrawToScreenNew();
 }
@@ -1477,12 +1537,14 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     std::vector<PostFX*> out;
 
     ///*
+    if(pass.settings.drawPostProcessing){
     for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
-    if(environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
+    if( environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
     if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
     if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
     if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
     if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+    }
     //*/
     out.push_back(gamaCorrectionPP);
 
@@ -1657,9 +1719,11 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         break;
     }
 
+    renderContext->UpdateRenderData();
+
     //----------Scene Render-------------
     renderContext->Begin();
-
+    
     shadow.directional.shadowBias = environmentSettings->shadowBias;
     shadow.maxDistance = environmentSettings->shadowDistance;
     shadow.directional.altasSize = ShadowQualityToShadowTextureSizeLookup[(int)environmentSettings->directionalshadowQuality];
@@ -1688,6 +1752,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         CameraRenderPass pass;
         pass.camera = *overrideCamera;
         pass.renderingPath = targetRenderPath;
+        pass.settings = {true, true, true, true};
         camPasses.push_back(pass);
         _width = pass.camera.width;
         _height = pass.camera.height;
@@ -1726,6 +1791,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             CameraRenderPass pass;
             pass.camera = cam.GetCamera();
             pass.renderingPath = cam.renderingPath == CameraComponent::RenderingPath::Deferred ? RenderingPath::Deferred : RenderingPath::Forward;
+            pass.settings = cam.passRenderSettings;
             camPasses.push_back(pass);
             _width = pass.camera.width;
             _height = pass.camera.height;
@@ -1749,8 +1815,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
 void StandRenderPipeline::Render(Scene& scene){
     OD_PROFILE_SCOPE("StandRenderPipeline2::Update");
 
-    //RenderNew(scene);
-    //return;
+    RenderNew(scene);
+    return;
 
     //----------Setup Envroment Settings-------------
     ///*
