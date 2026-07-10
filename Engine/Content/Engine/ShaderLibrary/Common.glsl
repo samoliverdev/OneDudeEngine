@@ -1,25 +1,19 @@
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
-float Square(float v){
-	return v * v;
-}
+float lerp(float a, float b, float t){ return mix(a, b, t); }
+vec2 lerp(vec2 a, vec2 b, float t){ return mix(a, b, t); }
+vec3 lerp(vec3 a, vec3 b, float t){ return mix(a, b, t); }
+vec4 lerp(vec4 a, vec4 b, float t){ return mix(a, b, t); }
 
-vec3 SafeNormalize(vec3 v){
-    return normalize(v);
-}
+float Square(float v){ return v * v; }
 
-vec3 saturate(vec3 v){
-    return clamp(v, 0.0, 1.0);
-}
+vec3 SafeNormalize(vec3 v){ return normalize(v); }
 
-float saturate(float v){
-    return clamp(v, 0.0, 1.0);
-}
+vec3 saturate(vec3 v){ return clamp(v, 0.0, 1.0); }
+float saturate(float v){ return clamp(v, 0.0, 1.0); }
 
-float Pow4(float x){
-    return (x * x) * (x * x);
-}
+float Pow4(float x){ return (x * x) * (x * x); }
 
 /*
 

@@ -91,6 +91,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
 
 void TerrainComponent::SetHeightmap(Ref<Heightmap> inHeightmap){
     heightmap = inHeightmap;
+    isDirt = true;
     heightMapIsDirt = true;
     //isDirt = true;
     ///SubmitHeightmap();

@@ -118,5 +118,11 @@
     },
     "Lua.diagnostics.disable": [
         "undefined-global"
+    ],
+    "cSpell.words": [
+        "aabb",
+        "blit",
+        "Blit",
+        "brdf"
     ]
 }
