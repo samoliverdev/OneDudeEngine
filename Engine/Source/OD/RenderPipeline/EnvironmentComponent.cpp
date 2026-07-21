@@ -127,6 +127,57 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         }
         ImGui::TreePop();
     }
+
+    //////////////////////////////////
+    const ImGuiTreeNodeFlags treeNodeFlags = 
+        ImGuiTreeNodeFlags_DefaultOpen 
+        | ImGuiTreeNodeFlags_Framed 
+        | ImGuiTreeNodeFlags_AllowItemOverlap
+        | ImGuiTreeNodeFlags_SpanAvailWidth
+        | ImGuiTreeNodeFlags_FramePadding;
+
+    
+    std::hash<std::string> hasher;
+    //ScriptComponent& script = scene.GetComponent<ScriptComponent>(e);
+
+    bool removeScript = false;
+
+    for(auto i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
+        if(i.second.has(environment.features) == false) continue;
+
+        bool open = ImGui::TreeNodeEx((void*)hasher(i.first.c_str()), treeNodeFlags, i.first.c_str());
+
+        if(ImGui::BeginPopupContextItem()){
+            if(ImGui::MenuItem("Remove Component")){
+                removeScript = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        if(open){
+            i.second.onGui(environment.features);
+            ImGui::TreePop();
+        }
+
+        if(removeScript){
+            i.second.remove(environment.features);
+            break;
+        }
+    }
+
+    if(ImGui::Button("Add Script")){
+        ImGui::OpenPopup("AddScript");
+    }
+
+    if(ImGui::BeginPopup("AddScript")){
+        for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
+            if(ImGui::MenuItem(i.first.c_str())){
+                i.second.add(environment.features);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
 }
 
 }

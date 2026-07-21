@@ -34,7 +34,7 @@ void AssetPackingSample::OnInit(){
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
     cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
-    cam.renderingPath = CameraComponent::RenderingPath::Deferred;
+    cam.renderingPath = RenderingPath::Deferred;
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(7, 2.5, 0));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-8, 90, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 10;

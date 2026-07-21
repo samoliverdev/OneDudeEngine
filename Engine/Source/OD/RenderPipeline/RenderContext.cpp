@@ -175,9 +175,9 @@ RenderContext::RenderContext(Scene* inScene){
 
     renderData = ChunkedVector<RenderData>(4);
 
-    for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
-        rendererFeatures.push_back(i());
-    }
+    //for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
+    //    rendererFeatures.push_back(i());
+    //}
 
     //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
     screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
@@ -195,8 +195,8 @@ RenderContext::~RenderContext(){
     for(auto& i: renderFeatures) delete i;
     renderFeatures.clear();
 
-    for(auto& i: rendererFeatures) delete i;
-    rendererFeatures.clear();
+    //for(auto& i: rendererFeatures) delete i;
+    //rendererFeatures.clear();
 
     delete entityIdOutColor;
     delete deferredOutColor;
@@ -657,19 +657,19 @@ void RenderContext::DrawCompose(std::vector<CameraRenderPass>& passes, int width
 
 Framebuffer* finalFramebuffer;
 
-void RenderContext::_Renderer::AddPass(RenderPass* pass){
+/*void RenderContext::_Renderer::AddPass(RenderPass* pass){
     if(pass->event == RenderPassEvent::PostProcess){
         postFxPasses.push_back(pass);
     }
-}
+}*/
 
 void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     //Graphics::SetDepthMask(false);
 
     //TODO: Move this to other place later, this is just for test
-    for(auto* i: rendererFeatures){
+    /*for(auto* i: rendererFeatures){
         i->AddRenderPasses(_renderer, *this);
-    }
+    }*/
 
     step = false;
     /*Framebuffer**/ finalFramebuffer = postFx1;
@@ -700,18 +700,50 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
         step = !step;
     }
 
-    for(auto* pass: _renderer.postFxPasses){
-        pass->Setup(*this);
-        pass->Execute(*this);
-        step = !step;
-    }
-    _renderer.postFxPasses.clear();
-
     //Graphics::DrawQuadPostProcessing(finalFramebuffer, forwardOutColor, *blitShader);
     /*Graphics::BeginFramebuffer(*forwardOutColor);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
     Graphics::EndFramebuffer();*/
+}
+
+void RenderContext::DrawPostFXs(RenderFrameData& data){
+    std::vector<RenderPass*>& passes = renderPasses[(int)RenderPassEvent::PostProcess];
+    //Graphics::SetDepthMask(false);
+
+    step = false;
+    /*Framebuffer**/ finalFramebuffer = postFx1;
+    Graphics::BlitFramebuffer(forwardOutColor, postFx1);
+    //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
+
+    for(auto i: passes){
+        finalFramebuffer = step == false ? postFx2 : postFx1;
+
+        if(true /*i->enable*/){
+            data.src = step == false ? postFx1 : postFx2;
+            data.dst = step == false ? postFx2 : postFx1;
+
+            i->Setup(*this);
+            i->Execute(*this, data);
+            /*i->OnRenderImage(
+                step == false ? postFx1 : postFx2, 
+                step == false ? postFx2 : postFx1,
+                this
+            );*/
+        } else {
+            Graphics::BlitFramebuffer(
+                step == false ? postFx1 : postFx2,
+                step == false ? postFx2 : postFx1
+            );
+            /*Graphics::BlitQuadPostProcessing(
+                step == false ? postFx1 : postFx2, 
+                step == false ? postFx2 : postFx1,
+                *blitShader
+            );*/
+        }
+
+        step = !step;
+    }
 }
 
 void RenderContext::BeginUIPass(){

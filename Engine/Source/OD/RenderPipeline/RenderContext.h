@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "RendererFeature.h"
 #include "PassRenderSettings.h"
 #include "RendererList.h"
 #include "LightComponent.h"
@@ -296,6 +297,8 @@ public:
     void DrawGizmos();
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
+    void DrawPostFXs(RenderFrameData& data);
+
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
     void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
@@ -338,17 +341,23 @@ public:
 
     inline const std::vector<RenderFeature*>& RenderFeatures(){ return renderFeatures; }
 
+    std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count> renderPasses;
+
+    inline void ClearRenderPasses(){
+        for(auto& i: renderPasses) i.clear();
+    }
+
 private:
     static std::vector<std::function<void(RenderContext&)>>& _AddRenderFeatures();
     std::vector<RenderFeature*> renderFeatures;
 
-    std::vector<RendererFeature*> rendererFeatures;
+    /*std::vector<RendererFeature*> rendererFeatures;
 
     struct OD_API _Renderer: public IRenderer{
         std::vector<RenderPass*> postFxPasses;
         void AddPass(RenderPass* pass) override;
     };
-    _Renderer _renderer;
+    _Renderer _renderer;*/
 
     Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;

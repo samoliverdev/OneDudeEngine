@@ -15,6 +15,7 @@
 #include "EnvironmentComponent.h"
 #include "RendererList.h"
 #include "RenderContext.h"
+#include "RendererFeature.h"
 
 #define UseAsGlobal 1
 
@@ -296,7 +297,7 @@ private:
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
 
-class OD_API StandRenderPipeline: public BaseRenderPipeline{
+class OD_API StandRenderPipeline: public BaseRenderPipeline, IRenderer{
 public:
     StandRenderPipeline(){ name = "StandRenderPipeline"; }
 
@@ -328,6 +329,14 @@ public:
     void SaveScreenshot(const std::string& filename);
 
     int ExecutionSortPriority(SystemType type) override; 
+    
+    inline void AddPass(RenderPass* pass) override {
+        renderContext->renderPasses[(int)pass->event].push_back(pass);
+    }
+
+    inline void AddFeature(RendererFeature* f){
+        localFeatures.push_back(f);
+    }
 
 private:
     ShadowSettings shadow;
@@ -342,8 +351,12 @@ private:
     Transform overrideCameraTrans;
 
     RenderStagePasses renderStagePasses;
+    //std::vector<Ref<IRenderFeature>> renderFeatures;
 
     std::vector<CameraRenderPass> camPasses;
+    std::vector<RendererFeature*> localFeatures;
+
+    void SetupFeatures(EnvironmentComponent& env);
 };
 
 void StandRenderPipelineModuleInit();

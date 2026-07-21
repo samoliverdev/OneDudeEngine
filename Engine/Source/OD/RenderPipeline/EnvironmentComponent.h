@@ -7,6 +7,7 @@
 #include "BloomPostFX.h"
 #include "SSAOPostFX.h"
 #include "SSGIPostFX.h"
+#include "RendererFeature.h"
 
 namespace OD{
 
@@ -101,12 +102,14 @@ struct OD_API EnvironmentComponent{
     friend class StandRenderPipeline;
 
     EnvironmentSettings settings;
+    RendererFeatures features;
 
     static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
     void serialize(Archive & ar){
         ArchiveDumpNVP(ar, settings);
+        ArchiveDumpNVP(ar, features);
     }
 
     EnvironmentComponent(){

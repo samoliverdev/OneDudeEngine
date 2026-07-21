@@ -42,6 +42,31 @@ ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
     ShadowTextureSize::_8192  // Ultra
 };
 
+
+class RendererFeatureTest: public RendererFeature, RenderPass{
+public:
+    template <class Archive>
+    void serialize(Archive & ar){
+        
+    }
+
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override {
+        renderer.AddPass(this);
+    }
+
+    void OnGui() override {
+
+    }
+
+    void Setup(RenderContext& context) override {
+
+    }
+
+    void Execute(RenderContext& context, RenderFrameData& data) override {
+
+    }
+};
+
 void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent", "Renderer");
@@ -68,6 +93,8 @@ void StandRenderPipelineModuleInit(){
 
     LuaBindsDB::Get().RegisterLuaBind<CameraComponent>();
     LuaBindsDB::Get().RegisterLuaBind<LightComponent>();
+
+    RendererFeatureGlobal::Get().RegisterRendererFeature<RendererFeatureTest>("RendererFeatureTest");
 }
 
 #pragma region Shadows
@@ -952,6 +979,8 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     }
 
     context->DrawPostFXs(postFXs);
+    RenderFrameData data;
+    context->DrawPostFXs(data);
 
     context->BeginUIPass();
     if(pass.settings.drawUI){
@@ -1231,6 +1260,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
+    RenderFrameData data;
+    context->DrawPostFXs(data);
+
     //context->DrawGizmos();
     //for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
     //RenderUI();
@@ -1731,6 +1763,20 @@ void StandRenderPipeline::LateUpdate(Scene& scene){
     }
 }
 
+void StandRenderPipeline::SetupFeatures(EnvironmentComponent& env){
+    //TODO: Update this to run by camera and implement lik unity "public abstract void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)" stage data RenderingData renderingData
+
+    renderContext->ClearRenderPasses();
+    env.features.ForEachFeature([&](Ref<RendererFeature> feature){
+        if(feature->enable == false) return;
+        feature->AddRenderPasses(*this, *renderContext);
+    });
+    for(auto i: localFeatures){
+        if(i->enable == false) continue;
+        i->AddRenderPasses(*this, *renderContext);
+    }
+}
+
 void StandRenderPipeline::RenderNew(Scene& scene){
     //----------Setup Envroment Settings-------------
     ///*
@@ -1741,6 +1787,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     for(auto entity: enviView){
         EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);
         environmentSettings = &environmentComponent.settings;
+
+        SetupFeatures(environmentComponent);
         break;
     }
 
@@ -1889,6 +1937,8 @@ void StandRenderPipeline::Render(Scene& scene){
     for(auto entity: enviView){
         EnvironmentComponent& environmentComponent = enviView.get<EnvironmentComponent>(entity);
         environmentSettings = &environmentComponent.settings;
+
+        SetupFeatures(environmentComponent);
         break;
     }
 
