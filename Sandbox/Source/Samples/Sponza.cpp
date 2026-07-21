@@ -34,10 +34,10 @@ void SponzaSample::OnInit(){
     //envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::ACES;
 
     envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
-    envComp.settings.toneMappingPostFX->enable = true;
-    envComp.settings.toneMappingPostFX->mode = ToneMappingPostFX::Mode::Neutral;
-    envComp.settings.colorGradingPostFX->enable = true;
-    envComp.settings.colorGradingPostFX->contrast = 18;
+    envComp.settings.toneMapping->enable = true;
+    envComp.settings.toneMapping->mode = ToneMappingFeature::Mode::Neutral;
+    envComp.settings.colorGrading->enable = true;
+    envComp.settings.colorGrading->contrast = 18;
     envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
 

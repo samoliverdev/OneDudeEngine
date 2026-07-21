@@ -1,5 +1,5 @@
 #pragma once
-#include "PostFX.h"
+#include "RendererFeature.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace OD{
@@ -7,7 +7,7 @@ namespace OD{
 class Material;
 class Framebuffer;
 
-class OD_API BloomPostFX: public PostFX{
+class OD_API BloomFeature: public RendererFeature, RenderPass{
 public:
     int maxIterations = 3;
     int downscaleLimit = 3;
@@ -17,9 +17,9 @@ public:
     float intensity = 1.0f;
     bool debug = false;
 
-    BloomPostFX();
-    void OnSetup() override;
-    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
+    BloomFeature();
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
+    void Execute(RenderContext& context, RenderFrameData& data) override;
     void OnGui() override;
 
     template <class Archive>

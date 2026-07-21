@@ -60,6 +60,25 @@ private:
     Ref<Material> gamaCorrection = nullptr;
 };
 
+class OD_API GamaCorrectionPass: public RenderPass{
+public:
+    GamaCorrectionPass(){
+        gamaCorrection = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
+    }
+
+    void Execute(RenderContext& context, RenderFrameData& data) override{
+        //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
+
+        Graphics::BeginFramebuffer(*data.dst);
+        gamaCorrection->SetTexture("mainTex", data.src, 0);
+        Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
+        Graphics::EndFramebuffer();
+    }
+
+private:
+    Ref<Material> gamaCorrection = nullptr;
+};
+
 enum class ShadowTextureSize{
     _256 = 256, _512 = 512, _1024 = 1024,
     _2048 = 2048, _4096 = 4096, _8192 = 8192
@@ -96,7 +115,7 @@ struct OD_API ShadowSettings{
     Other other{ShadowTextureSize::_2048};
 };
 
-class OD_API IRenderPass{
+/*class OD_API IRenderPass{
 public:
     virtual ~IRenderPass(){}
     virtual void OnRender(Scene& scene, const Camera& cam){}
@@ -109,7 +128,7 @@ enum class RenderStage{
 
 struct OD_API RenderStagePasses{
     std::vector<IRenderPass*> renderPass[(int)RenderStage::Count];
-};
+};*/
 
 class OD_API Shadows{
     friend class Lighting;
@@ -237,7 +256,7 @@ class OD_API CameraRenderer{
 public:
     Camera camera;
     CameraRenderPass pass;
-    RenderStagePasses* renderStagePasses;
+    //RenderStagePasses* renderStagePasses;
     RenderContext* context;
     RenderingPath renderingPath;
     
@@ -285,6 +304,7 @@ private:
     Ref<Material> fontMaterial = nullptr;
     
     GamaCorrectionPP* gamaCorrectionPP = nullptr;
+    GamaCorrectionPass gamaCorrectionPass;
 
     void RunRenderDataLoop();
     void AddRenderData(RenderData& data);
@@ -297,7 +317,7 @@ private:
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
 
-class OD_API StandRenderPipeline: public BaseRenderPipeline, IRenderer{
+class OD_API StandRenderPipeline: public BaseRenderPipeline{
 public:
     StandRenderPipeline(){ name = "StandRenderPipeline"; }
 
@@ -324,16 +344,12 @@ public:
     int ReadEntityId(int x, int y) override;
 
     inline CameraRenderer& GetCameraRenderer(){ return cameraRenderer; }
-    inline RenderStagePasses& GetRenderStagePasses(){ return renderStagePasses; }
+    //inline RenderStagePasses& GetRenderStagePasses(){ return renderStagePasses; }
 
     void SaveScreenshot(const std::string& filename);
 
     int ExecutionSortPriority(SystemType type) override; 
     
-    inline void AddPass(RenderPass* pass) override {
-        renderContext->renderPasses[(int)pass->event].push_back(pass);
-    }
-
     inline void AddFeature(RendererFeature* f){
         localFeatures.push_back(f);
     }
@@ -350,11 +366,12 @@ private:
     Camera* overrideCamera = nullptr;
     Transform overrideCameraTrans;
 
-    RenderStagePasses renderStagePasses;
+    //RenderStagePasses renderStagePasses;
     //std::vector<Ref<IRenderFeature>> renderFeatures;
 
     std::vector<CameraRenderPass> camPasses;
     std::vector<RendererFeature*> localFeatures;
+    std::vector<RendererFeature*> cachedFeatures;
 
     void SetupFeatures(EnvironmentComponent& env);
 };

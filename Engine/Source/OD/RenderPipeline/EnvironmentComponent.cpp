@@ -86,47 +86,47 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
 
     //ImGui::DrawEnumCombo<ColorCorrection>("colorCorrection", &environment.settings.colorCorrection);
 
-    if(environment.settings.toneMappingPostFX != nullptr){
-        if(ImGui::TreeNode("ToneMappingPostFX")){
-            environment.settings.toneMappingPostFX->OnGui();
+    if(environment.settings.toneMapping != nullptr){
+        if(ImGui::TreeNode("ToneMapping")){
+            environment.settings.toneMapping->OnGui();
             ImGui::TreePop();
         }
     }
 
-    if(environment.settings.colorGradingPostFX != nullptr){
-        if(ImGui::TreeNode("ColorGradingPostFX")){
-            environment.settings.colorGradingPostFX->OnGui();
+    if(environment.settings.colorGrading != nullptr){
+        if(ImGui::TreeNode("ColorGrading")){
+            environment.settings.colorGrading->OnGui();
             ImGui::TreePop();
         }
     }
 
-    if(environment.settings.bloomPostFX != nullptr){
-        if(ImGui::TreeNode("BloomPostFX")){
-            environment.settings.bloomPostFX->OnGui();
+    if(environment.settings.bloom != nullptr){
+        if(ImGui::TreeNode("Bloom")){
+            environment.settings.bloom->OnGui();
             ImGui::TreePop();
         }
     }
 
-    if(environment.settings.ssaoPostFX != nullptr){
-        if(ImGui::TreeNode("SSAOPostFX")){
-            environment.settings.ssaoPostFX->OnGui();
+    if(environment.settings.ssao != nullptr){
+        if(ImGui::TreeNode("SSAO")){
+            environment.settings.ssao->OnGui();
             ImGui::TreePop();
         }
     }
 
-    if(environment.settings.ssgiPostFX != nullptr){
-        if(ImGui::TreeNode("SSGIPostFX")){
-            environment.settings.ssgiPostFX->OnGui();
+    if(environment.settings.ssgi != nullptr){
+        if(ImGui::TreeNode("SSGI")){
+            environment.settings.ssgi->OnGui();
             ImGui::TreePop();
         }
     }
 
-    if(ImGui::TreeNode("CustomPostFX")){
+    /*if(ImGui::TreeNode("CustomPostFX")){
         for(auto& i: environment.settings.customPostPrecessings){
             i->OnGui();
         }
         ImGui::TreePop();
-    }
+    }*/
 
     //////////////////////////////////
     const ImGuiTreeNodeFlags treeNodeFlags = 
@@ -148,7 +148,7 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         bool open = ImGui::TreeNodeEx((void*)hasher(i.first.c_str()), treeNodeFlags, i.first.c_str());
 
         if(ImGui::BeginPopupContextItem()){
-            if(ImGui::MenuItem("Remove Component")){
+            if(ImGui::MenuItem("Remove Feature")){
                 removeScript = true;
             }
             ImGui::EndPopup();
@@ -165,11 +165,11 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         }
     }
 
-    if(ImGui::Button("Add Script")){
-        ImGui::OpenPopup("AddScript");
+    if(ImGui::Button("Add Feature")){
+        ImGui::OpenPopup("AddFeature");
     }
 
-    if(ImGui::BeginPopup("AddScript")){
+    if(ImGui::BeginPopup("AddFeature")){
         for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
             if(ImGui::MenuItem(i.first.c_str())){
                 i.second.add(environment.features);

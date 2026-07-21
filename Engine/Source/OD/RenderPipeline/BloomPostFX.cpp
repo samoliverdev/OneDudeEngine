@@ -11,13 +11,14 @@
 
 namespace OD{
 
-void BloomPostFX::OnGui(){
+void BloomFeature::OnGui(){
     cereal::ImGuiArchive colorGradring;
     colorGradring(*this);
 }
 
-BloomPostFX::BloomPostFX(){
+BloomFeature::BloomFeature(){
     enable = false;
+    event = RenderPassEvent::PostProcess;
     blitShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     bloomMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPostFX.glsl"));
 
@@ -25,10 +26,6 @@ BloomPostFX::BloomPostFX(){
     bloomVerticalPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
     bloomCombinePassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl"));
     bloomPrefilterPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl"));
-}
-
-void BloomPostFX::OnSetup(){
-
 }
 
 inline float LinearToGammaSpaceExact(float value){
@@ -47,9 +44,13 @@ inline float GammaToLinearSpace(float v){
     return math::pow(v, 2.2f); 
 }
 
-void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
-    Framebuffer* deferred = context->GetDeferredFramebuffer();
-    auto spec = src->Specification();
+void BloomFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
+    renderer.AddPass(this);
+}
+
+void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
+    Framebuffer* deferred = context.GetDeferredFramebuffer();
+    auto spec = data.src->Specification();
 
     auto Blit = [](Framebuffer* _src, Framebuffer* _dst, Ref<Material> blitMat, int pass = 0){
         Graphics::BeginFramebuffer(*_dst, false);
@@ -83,7 +84,7 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContex
     std::vector<Framebuffer*> releaseTemporary;
 
     Framebuffer* currentDestination = textures[0] = new Framebuffer(spec);
-    Blit(src, currentDestination, bloomMat, BoxDownPrefilterPass);
+    Blit(data.src, currentDestination, bloomMat, BoxDownPrefilterPass);
 
     Framebuffer* currentSource = currentDestination;
 
@@ -116,10 +117,10 @@ void BloomPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContex
     //Blit(currentSource, dst, bloomMat, BoxUpPass);
 
     if(debug){
-        Blit(currentSource, dst, bloomMat, DebugBloomPass);
+        Blit(currentSource, data.dst, bloomMat, DebugBloomPass);
     } else {
-        bloomMat->SetTexture("sourceTex", src, 0);
-	    Blit(currentSource, dst, bloomMat, ApplyBloomPass);
+        bloomMat->SetTexture("sourceTex", data.src, 0);
+	    Blit(currentSource, data.dst, bloomMat, ApplyBloomPass);
     }
     releaseTemporary.push_back(currentSource);
 

@@ -4,6 +4,7 @@
 #include <OD/Core/Action.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/InstancingBuffer.h>
+#include <OD/RenderPipeline/RendererFeature.h>
 #include <OD/RenderPipeline/RenderContext.h>
 #include <OD/Serialization/ImGuiArchive.h>
 #include <OD/Physics/PhysicsSystem.h>
@@ -458,10 +459,10 @@ struct ParticleComponent{
     }
 };
 
-class ParticleRendererFeature: public RenderFeature{
+class ParticleRendererFeature: public RendererFeature{
 public:
     ParticleRendererFeature();
-    void OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData) override;
+    void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData) override;
 private:
     Ref<Material> material = nullptr;
     Ref<Model> mesh = nullptr;

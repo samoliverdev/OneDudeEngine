@@ -1,5 +1,5 @@
 #pragma once
-#include "PostFX.h"
+#include "RendererFeature.h"
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 
@@ -7,15 +7,16 @@ namespace OD{
 
 class Material;
 
-class OD_API ToneMappingPostFX: public PostFX{
+class OD_API ToneMappingFeature: public RendererFeature, RenderPass{
 public:
     enum class Mode{ None = -1, ACES, Neutral, Reinhard };
 
     Mode mode = Mode::None;
     float exposure = 1;
 
-    ToneMappingPostFX();
-    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
+    ToneMappingFeature();
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
+    void Execute(RenderContext& context, RenderFrameData& data) override;
     void OnGui() override;
 
     template <class Archive>

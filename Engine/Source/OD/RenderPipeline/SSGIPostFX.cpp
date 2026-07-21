@@ -10,13 +10,14 @@
 
 namespace OD{
 
-void SSGIPostFX::OnGui(){
+void SSGIFeature::OnGui(){
     cereal::ImGuiArchive gui;
     gui(*this);
 }
 
-SSGIPostFX::SSGIPostFX(){
+SSGIFeature::SSGIFeature(){
     enable = false;
+    event = RenderPassEvent::PostProcess;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX4.glsl"));
@@ -26,13 +27,17 @@ SSGIPostFX::SSGIPostFX(){
     blueNoise = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/LDR_RG01_47.png");
 }
 
-SSGIPostFX::~SSGIPostFX(){
+SSGIFeature::~SSGIFeature(){
     if(lastIndirect != nullptr) delete lastIndirect;
 }
 
-void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
-    if(context->isDeferred == false){
-        Graphics::BlitFramebuffer(src, dst);
+void SSGIFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
+    renderer.AddPass(this);
+}
+
+void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
+    if(context.isDeferred == false){
+        Graphics::BlitFramebuffer(data.src, data.dst);
         return;
     }
 
@@ -46,8 +51,8 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     };
 
     ///*
-    Framebuffer* deferred = context->GetDeferredFramebuffer();
-    auto spec = src->Specification();
+    Framebuffer* deferred = context.GetDeferredFramebuffer();
+    auto spec = data.src->Specification();
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
 
     auto halfSpec = spec;
@@ -59,14 +64,14 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     std::array<Framebuffer*, 16> textures;
     std::vector<Framebuffer*> releaseTemporary;
 
-    Camera cam = context->GetCamera();
+    Camera cam = context.GetCamera();
     float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
     //float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
     float halfProjScale = spec.height / (2.0f *  math::tan(cam.fov * 0.5f * Deg2Rad));
 
     Graphics::BeginFramebuffer(*gi);
     Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
-    giPass->SetTexture("mainTex", src, 0); //giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", src, 0);
+    giPass->SetTexture("mainTex", data.src, 0); //giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", src, 0);
     giPass->SetTexture("gNormal", deferred, 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("gDepth", deferred, -1);
     giPass->SetTexture("gAlbedoSpec", deferred, 1);
@@ -128,9 +133,9 @@ void SSGIPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     giComposePass->SetPass(debug ? 1 : 0);
     giComposePass->SetVector2("giSize", {deferred->Specification().width, deferred->Specification().height});
     giComposePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
-    Graphics::BeginFramebuffer(*dst);
+    Graphics::BeginFramebuffer(*data.dst);
     Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
-    giComposePass->SetTexture("mainTex", src, 0);
+    giComposePass->SetTexture("mainTex", data.src, 0);
     giComposePass->SetTexture("gAlbedoSpec", deferred, 1);
     giComposePass->SetTexture("giAO", gi, 0);
     Graphics::DrawFullScreenQuad(*giComposePass, Matrix4Identity);

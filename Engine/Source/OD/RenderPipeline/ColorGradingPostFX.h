@@ -1,5 +1,5 @@
 #pragma once
-#include "PostFX.h"
+#include "RendererFeature.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Serialization/CerealImGui.h"
 #include <type_traits>
@@ -8,7 +8,7 @@ namespace OD{
 
 class Material;
 
-class OD_API ColorGradingPostFX: public PostFX{
+class OD_API ColorGradingFeature: public RendererFeature, RenderPass{
 public:
 
     float postExposure = 0;
@@ -17,8 +17,9 @@ public:
     float hueShift = 0;
     float saturation = 0;
 
-    ColorGradingPostFX();
-    void OnRenderImage(class Framebuffer* src, class Framebuffer* dst, class RenderContext* context) override;
+    ColorGradingFeature();
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
+    void Execute(RenderContext& context, RenderFrameData& data) override;
 
     inline void OnGui() override {
         cereal::ImGuiArchive colorGradring;

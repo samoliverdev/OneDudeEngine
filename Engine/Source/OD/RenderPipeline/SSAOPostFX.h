@@ -1,5 +1,5 @@
 #pragma once
-#include "PostFX.h"
+#include "RendererFeature.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace OD{
@@ -9,14 +9,15 @@ class Material;
 class Texture2D;
 
 //TODO: Add blur
-class OD_API SSAOPostFX: public PostFX{
+class OD_API SSAOFeature: public RendererFeature, RenderPass{
 public:
     float intensity = 0.5f;
     float radius = 0.5f;
     float bias = 0.025f;
 
-    SSAOPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
+    SSAOFeature();
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
+    void Execute(RenderContext& context, RenderFrameData& data) override;
 
     void OnGui() override;
 

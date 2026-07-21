@@ -591,9 +591,15 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     pass.collectSettings.BuildMask();
     camera = pass.camera;
     renderingPath = pass.renderingPath;
-
     context = renderContext;
     context->isDeferred = renderingPath == RenderingPath::Deferred;
+
+    context->ClearRenderPasses();
+    context->FeaturesRunAddRenderPasses();
+    if(inpass.settings.drawPostProcessing == false) context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].clear();
+    if(inpass.settings.drawUI == false) context->GetRenderPasses()[(int)RenderPassEvent::UI].clear();
+    context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].push_back(&gamaCorrectionPass);
+
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
     
@@ -972,21 +978,25 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         context->EndForwardPass();
     }
 
-    std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
+    /*std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     if(pass.settings.drawPostProcessing == false){
         postFXs.clear();
         postFXs.push_back(gamaCorrectionPP);
     }
-
-    context->DrawPostFXs(postFXs);
+    context->DrawPostFXs(postFXs);*/
+    
     RenderFrameData data;
     context->DrawPostFXs(data);
 
     context->BeginUIPass();
     if(pass.settings.drawUI){
         RenderUI();
-        for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
+        /*for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
             i->OnRender(*context->scene, camera);
+        }*/
+        RenderFrameData data;
+        for(auto& i: context->GetRenderPasses()[(int)RenderPassEvent::UI]){
+            i->Execute(*context, data);
         }
     }
     context->EndUIPass();
@@ -1269,8 +1279,12 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
 
     context->BeginUIPass();
     RenderUI();
-    for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
+    /*for(auto& i: renderStagePasses->renderPass[(int)RenderStage::UI]){
         i->OnRender(*context->scene, camera);
+    }*/
+    //RenderFrameData data;
+    for(auto& i: context->GetRenderPasses()[(int)RenderPassEvent::UI]){
+        i->Execute(*context, data);
     }
     context->EndUIPass();
 
@@ -1596,12 +1610,12 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
     std::vector<PostFX*> out;
 
     //
-    for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
-    if( environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
-    if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
-    if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
-    if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
-    if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
+    //for(auto& i: environmentSettings.customPostPrecessings) out.push_back(i.get());
+    //if( environmentSettings.ssaoPostFX != nullptr) out.push_back(environmentSettings.ssaoPostFX.get());
+    //if(environmentSettings.ssgiPostFX != nullptr) out.push_back(environmentSettings.ssgiPostFX.get());
+    //if(environmentSettings.bloomPostFX != nullptr) out.push_back(environmentSettings.bloomPostFX.get());
+    //if(environmentSettings.toneMappingPostFX != nullptr) out.push_back(environmentSettings.toneMappingPostFX.get());
+    //if(environmentSettings.colorGradingPostFX != nullptr) out.push_back(environmentSettings.colorGradingPostFX.get());
     //
     out.push_back(gamaCorrectionPP);
 
@@ -1764,17 +1778,22 @@ void StandRenderPipeline::LateUpdate(Scene& scene){
 }
 
 void StandRenderPipeline::SetupFeatures(EnvironmentComponent& env){
-    //TODO: Update this to run by camera and implement lik unity "public abstract void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)" stage data RenderingData renderingData
+    cachedFeatures.clear();
 
-    renderContext->ClearRenderPasses();
+    cachedFeatures.push_back(env.settings.ssao.get());
+    cachedFeatures.push_back(env.settings.ssgi.get());
+    cachedFeatures.push_back(env.settings.bloom.get());
+    cachedFeatures.push_back(env.settings.toneMapping.get());
+    cachedFeatures.push_back(env.settings.colorGrading.get());
+    
     env.features.ForEachFeature([&](Ref<RendererFeature> feature){
-        if(feature->enable == false) return;
-        feature->AddRenderPasses(*this, *renderContext);
+        cachedFeatures.push_back(feature.get());
     });
     for(auto i: localFeatures){
-        if(i->enable == false) continue;
-        i->AddRenderPasses(*this, *renderContext);
+        cachedFeatures.push_back(i);
     }
+
+    renderContext->SetupFeatures(cachedFeatures);
 }
 
 void StandRenderPipeline::RenderNew(Scene& scene){
@@ -1807,7 +1826,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     shadow.directional.cascadeRatio3 = environmentSettings->directinalShadowCascade[2];
     shadow.directional.cascadeRatio4 = environmentSettings->directinalShadowCascade[3];
 
-    cameraRenderer.renderStagePasses = &renderStagePasses;
+    //cameraRenderer.renderStagePasses = &renderStagePasses;
 
     camPasses.clear();
 
@@ -2006,7 +2025,7 @@ void StandRenderPipeline::Render(Scene& scene){
     shadow.directional.cascadeRatio3 = environmentSettings->directinalShadowCascade[2];
     shadow.directional.cascadeRatio4 = environmentSettings->directinalShadowCascade[3];
 
-    cameraRenderer.renderStagePasses = &renderStagePasses;
+    //cameraRenderer.renderStagePasses = &renderStagePasses;
 
     if(overrideCamera != nullptr){
         Entity mainCamera = scene.GetMainCamera();

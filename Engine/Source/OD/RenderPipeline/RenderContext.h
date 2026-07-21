@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "RenderData.h"
 #include "RendererFeature.h"
 #include "PassRenderSettings.h"
 #include "RendererList.h"
@@ -73,52 +74,6 @@ struct OD_API CommandBaseData{
     Ref<Mesh> targetMesh;
     AlignedVector<Matrix4>* posePalette = nullptr;
     float distance;
-};
-
-struct OD_API alignas(16) RenderData{
-    enum Flag : uint32_t {
-        AlwaysDraw        = 1 << 0,
-        RenderShadow      = 1 << 1,
-        IsDecal           = 1 << 2,
-        IsValid           = 1 << 3,
-
-        IsStatic = 1 << 4,
-        IsParticle = 1 << 5,
-        
-        FromModel         = 1 << 6,
-        FromMesh          = 1 << 7,
-        FromSkinnedModel         = 1 << 8,
-        FromSkinnedMesh          = 1 << 9,
-        FromCluster          = 1 << 10,
-    };
-
-    Matrix4 targetMatrix;
-    PerDrawData perDrawData;
-    AABB aabb;
-    AlignedVector<Matrix4>* posePalette = nullptr;
-    UniformBuffer* skinnedBuffer = nullptr;
-    Material* targetMaterial;
-    Material* customShadowPass = nullptr;
-    InstancingBuffer* instancingBuffer = nullptr;
-    Mesh* targetMesh;
-    float distance;
-    uint32_t flags = Flag::RenderShadow | Flag::IsValid;//  0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
-    /*bool awalsDraw = false;
-    bool renderShadow = true;
-    bool isDecal = false;
-    bool isValid = true;*/
-
-    inline void SetFlag(RenderData::Flag flag, bool enabled){
-        if(enabled){
-            flags |= flag;
-        } else {
-            flags &= ~flag;
-        }
-    }
-
-    inline bool HasFlag(RenderData::Flag flag) const {
-        return (flags & flag) != 0;
-    }
 };
 
 struct OD_API RenderContextSettings{
@@ -204,13 +159,13 @@ struct alignas(16) ShadowData{
 };
 
 //TODO: Move this to new RendererFeature
-class OD_API RenderFeature{
+/*class OD_API RenderFeature{
 public:
     virtual ~RenderFeature() = default;
     Scene* scene = nullptr;
     virtual void OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData){}
     virtual void OnRenderUI(const Camera& cam){}
-};
+};*/
 
 struct OD_API SSS_Settings{
     float surfaceThickness = 0.005f;
@@ -218,7 +173,7 @@ struct OD_API SSS_Settings{
     float shadowContrast = 4;
 };
 
-class OD_API RenderContext{
+class OD_API RenderContext: public IRenderer{
 public:
     friend class CameraRenderer;
 
@@ -297,7 +252,7 @@ public:
     void DrawGizmos();
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
-    void DrawPostFXs(RenderFrameData& data);
+    void DrawPostFXs(RenderFrameData& data, RenderPass* last = nullptr);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
@@ -335,29 +290,33 @@ public:
     template<typename T>
     static void RegisterRenderFeature(){
         _AddRenderFeatures().push_back([&](RenderContext& r){
-            r.renderFeatures.push_back(new T());
+            r.localRenderFeatures.push_back(new T());
         });
     }
 
-    inline const std::vector<RenderFeature*>& RenderFeatures(){ return renderFeatures; }
-
-    std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count> renderPasses;
+    inline const std::vector<RendererFeature*>& RenderFeatures(){ return localRenderFeatures; }
 
     inline void ClearRenderPasses(){
         for(auto& i: renderPasses) i.clear();
     }
 
+    inline void AddPass(RenderPass* pass) override {
+        renderPasses[(int)pass->event].push_back(pass);
+    }
+
+    void SetupFeatures(std::vector<RendererFeature*>& features);
+    void FeaturesRunAddRenderPasses();
+
+    inline std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count>& GetRenderPasses(){ return renderPasses; }
+
 private:
+    std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count> renderPasses;
+
     static std::vector<std::function<void(RenderContext&)>>& _AddRenderFeatures();
-    std::vector<RenderFeature*> renderFeatures;
+    std::vector<RendererFeature*> localRenderFeatures;
 
-    /*std::vector<RendererFeature*> rendererFeatures;
+    std::vector<RendererFeature*> cachedRenderFeatures;
 
-    struct OD_API _Renderer: public IRenderer{
-        std::vector<RenderPass*> postFxPasses;
-        void AddPass(RenderPass* pass) override;
-    };
-    _Renderer _renderer;*/
 
     Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;

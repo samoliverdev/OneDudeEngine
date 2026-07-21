@@ -808,7 +808,10 @@ ParticleRendererFeature::ParticleRendererFeature(){
     mesh = Asset::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); //Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
 }
 
-void ParticleRendererFeature::OnCollectRenderData(const Camera& cam, std::vector<RenderData>& outRenderData){
+void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){
+    Scene* scene = context.GetScene();
+    auto cam = context.GetCamera();
+
     auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
 

@@ -7,13 +7,18 @@
 
 namespace OD{
 
-ColorGradingPostFX::ColorGradingPostFX(){
+ColorGradingFeature::ColorGradingFeature(){
     enable = false;
+    event = RenderPassEvent::PostProcess;
     colorGradingPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl"));
     Assert(colorGradingPass != nullptr);
 }
 
-void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
+void ColorGradingFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
+    renderer.AddPass(this);
+}
+
+void ColorGradingFeature::Execute(RenderContext& context, RenderFrameData& data){
     colorGradingPass->SetVector4("_ColorAdjustments", Vector4(
         math::pow(2.0f, postExposure),
         contrast * 0.01f + 1.0f,
@@ -23,8 +28,8 @@ void ColorGradingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, Rende
     colorGradingPass->SetVector4("_ColorFilter", colorFilter);
 
     //Graphics::DrawQuadPostProcessing(src, dst, *colorGradingPass);
-    Graphics::BeginFramebuffer(*dst);
-    colorGradingPass->SetTexture("mainTex", src, 0);
+    Graphics::BeginFramebuffer(*data.dst);
+    colorGradingPass->SetTexture("mainTex", data.src, 0);
     Graphics::DrawFullScreenQuad(*colorGradingPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 }

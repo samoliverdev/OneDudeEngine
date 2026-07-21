@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Serialization/SerializationFull.h"
+#include "RenderData.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -29,10 +30,17 @@ struct OD_API RenderFrameData{
     Framebuffer* dst = nullptr;
 };
 
+enum PassPriority{
+    PassPriorityPre = -100,
+    PassPriorityDefault = 0,
+    PassPriorityPost = 100
+};
+
 class OD_API RenderPass{
 public:
-    std::string name;
+    std::string passName;
     RenderPassEvent event = RenderPassEvent::None;
+    int priority = PassPriorityDefault; 
 
     virtual ~RenderPass(){}
     virtual void Setup(RenderContext& context){}
@@ -76,6 +84,7 @@ public:
 
     virtual ~RendererFeature(){}
     virtual void AddRenderPasses(IRenderer& renderer, RenderContext& context){}
+    virtual void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){}
     virtual void OnGui(){}
 };
 

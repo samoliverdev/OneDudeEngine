@@ -58,13 +58,13 @@ struct OD_API EnvironmentSettings{
     float sssBilinearThreshold = 0.02f;
     float sssShadowContrast = 4;
 
-    Ref<ToneMappingPostFX> toneMappingPostFX = CreateRef<ToneMappingPostFX>();
-    Ref<ColorGradingPostFX> colorGradingPostFX = CreateRef<ColorGradingPostFX>();;
-    Ref<BloomPostFX> bloomPostFX = CreateRef<BloomPostFX>();
-    Ref<SSAOPostFX> ssaoPostFX = CreateRef<SSAOPostFX>();
-    Ref<SSGIPostFX> ssgiPostFX = CreateRef<SSGIPostFX>();
+    Ref<ToneMappingFeature> toneMapping = CreateRef<ToneMappingFeature>();
+    Ref<ColorGradingFeature> colorGrading = CreateRef<ColorGradingFeature>();
+    Ref<BloomFeature> bloom = CreateRef<BloomFeature>();
+    Ref<SSAOFeature> ssao = CreateRef<SSAOFeature>();
+    Ref<SSGIFeature> ssgi = CreateRef<SSGIFeature>();
 
-    std::vector<Ref<PostFX>> customPostPrecessings;
+    //std::vector<Ref<PostFX>> customPostPrecessings;
     
     template <class Archive>
     void serialize(Archive& ar){
@@ -83,11 +83,12 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, sssBilinearThreshold);
         ArchiveDumpNVP(ar, sssShadowContrast);
 
-        ArchiveDumpNVP(ar, toneMappingPostFX);
-        ArchiveDumpNVP(ar, colorGradingPostFX);
-        ArchiveDumpNVP(ar, bloomPostFX);
-        ArchiveDumpNVP(ar, ssaoPostFX);
-        ArchiveDumpNVP(ar, ssgiPostFX);
+        ArchiveDumpNVP(ar, toneMapping);
+        ArchiveDumpNVP(ar, colorGrading);
+        ArchiveDumpNVP(ar, bloom);
+        ArchiveDumpNVP(ar, ssao);
+        ArchiveDumpNVP(ar, ssgi);
+
 
         AssetRefSerialize<Cubemap> skyCubemap_(skyCubemap);
         ArchiveDumpNamed(ar, "skyCubemap", skyCubemap_);
@@ -107,7 +108,7 @@ struct OD_API EnvironmentComponent{
     static void OnGui(Entity& e, Scene& scene);
 
     template <class Archive>
-    void serialize(Archive & ar){
+    void serialize(Archive& ar){
         ArchiveDumpNVP(ar, settings);
         ArchiveDumpNVP(ar, features);
     }

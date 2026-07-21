@@ -8,20 +8,20 @@
 
 namespace OD{
 
-void ToneMappingPostFX::OnGui() {
-    cereal::ImGuiArchive colorGradring;
-    colorGradring(*this);
-}
-
-ToneMappingPostFX::ToneMappingPostFX(){
+ToneMappingFeature::ToneMappingFeature(){
     enable = false;
+    event = RenderPassEvent::PostProcess;
     copyPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     toneMappingReinhardPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingReinhardPostFX.glsl"));
     toneMappingNeutralPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingNeutralPostFX.glsl"));
     toneMappingACESPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingACESPostFX.glsl"));
 }
 
-void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
+void ToneMappingFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
+    renderer.AddPass(this);
+}
+
+void ToneMappingFeature::Execute(RenderContext& context, RenderFrameData& data){
     Ref<Material> pass = copyPass;
     if(mode == Mode::Neutral) pass = toneMappingNeutralPass;
     if(mode == Mode::Reinhard) pass = toneMappingReinhardPass;
@@ -32,10 +32,15 @@ void ToneMappingPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, Render
     }
 
     //Graphics::DrawQuadPostProcessing(src, dst, *pass);
-    Graphics::BeginFramebuffer(*dst);
-    pass->SetTexture("mainTex", src, 0);
+    Graphics::BeginFramebuffer(*data.dst);
+    pass->SetTexture("mainTex", data.src, 0);
     Graphics::DrawFullScreenQuad(*pass, Matrix4Identity);
     Graphics::EndFramebuffer();
+}
+
+void ToneMappingFeature::OnGui(){
+    cereal::ImGuiArchive ar;
+    ar(*this);
 }
 
 }

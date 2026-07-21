@@ -192,8 +192,8 @@ RenderContext::RenderContext(Scene* inScene){
 }
 
 RenderContext::~RenderContext(){
-    for(auto& i: renderFeatures) delete i;
-    renderFeatures.clear();
+    for(auto& i: localRenderFeatures) delete i;
+    localRenderFeatures.clear();
 
     //for(auto& i: rendererFeatures) delete i;
     //rendererFeatures.clear();
@@ -707,7 +707,7 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     Graphics::EndFramebuffer();*/
 }
 
-void RenderContext::DrawPostFXs(RenderFrameData& data){
+void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last){
     std::vector<RenderPass*>& passes = renderPasses[(int)RenderPassEvent::PostProcess];
     //Graphics::SetDepthMask(false);
 
@@ -722,8 +722,6 @@ void RenderContext::DrawPostFXs(RenderFrameData& data){
         if(true /*i->enable*/){
             data.src = step == false ? postFx1 : postFx2;
             data.dst = step == false ? postFx2 : postFx1;
-
-            i->Setup(*this);
             i->Execute(*this, data);
             /*i->OnRenderImage(
                 step == false ? postFx1 : postFx2, 
@@ -743,6 +741,13 @@ void RenderContext::DrawPostFXs(RenderFrameData& data){
         }
 
         step = !step;
+    }
+
+    if(last != nullptr){
+        finalFramebuffer = step == false ? postFx2 : postFx1;
+        data.src = step == false ? postFx1 : postFx2;
+        data.dst = step == false ? postFx2 : postFx1;
+        last->Execute(*this, data);
     }
 }
 
@@ -1418,17 +1423,17 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
-    {
+    /*{
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-2");
     std::vector<RenderData> outRenderData;  
     for(auto& i: renderFeatures){
-        i->scene = scene;
+        //i->scene = scene;
         i->OnCollectRenderData(cam, outRenderData);
     }
     for(auto& i: outRenderData){
         onReciveRenderData(i);
     }
-    }
+    }*/
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-1");
@@ -2034,9 +2039,8 @@ void RenderContext::UpdateRenderData(){
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
     std::vector<RenderData>& outRenderData = renderData[0];  
-    for(auto& i: renderFeatures){
-        i->scene = scene;
-        i->OnCollectRenderData(cam, outRenderData);
+    for(auto& i: cachedRenderFeatures){
+        i->OnCollectRenderData(*this, outRenderData);
     }
     }
 
@@ -2569,6 +2573,30 @@ void RenderContext::RenderDataLoopNew(std::function<void(RenderData&)> onReciveR
         for(auto& renderData: renderData[i]){
             onReciveRenderData(renderData);
         }
+    }
+}
+
+void RenderContext::SetupFeatures(std::vector<RendererFeature*>& features){
+    cachedRenderFeatures.clear();
+    
+    for(auto i: localRenderFeatures){
+        if(i->enable == false) continue;
+        cachedRenderFeatures.push_back(i);
+    }
+    for(auto i: features){
+        if(i->enable == false) continue;
+        cachedRenderFeatures.push_back(i);
+    }
+}
+
+void RenderContext::FeaturesRunAddRenderPasses(){    
+    for(auto i: cachedRenderFeatures){
+        i->AddRenderPasses(*this, *this);
+    }
+    for(auto& i: renderPasses){
+        std::stable_sort(i.begin(), i.end(), [](RenderPass* a, RenderPass* b){
+            return a->priority < b->priority;
+        });
     }
 }
 

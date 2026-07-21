@@ -1,5 +1,5 @@
 #pragma once
-#include "PostFX.h"
+#include "RendererFeature.h"
 #include "OD/Serialization/Serialization.h"
 
 namespace OD{
@@ -8,11 +8,13 @@ class Material;
 class Framebuffer;
 class Texture2D;
 
-class OD_API SSGIPostFX: public PostFX{
+class OD_API SSGIFeature: public RendererFeature, RenderPass{
 public:
-    SSGIPostFX();
-    ~SSGIPostFX();
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override;
+    SSGIFeature();
+    ~SSGIFeature();
+
+    void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
+    void Execute(RenderContext& context, RenderFrameData& data) override;
 
     void OnGui() override;
 

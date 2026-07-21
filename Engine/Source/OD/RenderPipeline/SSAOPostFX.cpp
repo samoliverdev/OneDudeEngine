@@ -10,13 +10,14 @@
 
 namespace OD{
 
-void SSAOPostFX::OnGui() {
+void SSAOFeature::OnGui() {
     cereal::ImGuiArchive gui;
     gui(*this);
 }
 
-SSAOPostFX::SSAOPostFX(){
+SSAOFeature::SSAOFeature(){
     enable = false;
+    event = RenderPassEvent::PostProcess;
     aoPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSAOPostFX.glsl"));
     Assert(aoPass != nullptr);
 
@@ -60,13 +61,17 @@ SSAOPostFX::SSAOPostFX(){
     Assert(noise != nullptr);
 }
 
-void SSAOPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context){
-    if(context->isDeferred == false){
-        Graphics::BlitFramebuffer(src, dst);
+void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
+    renderer.AddPass(this);
+}
+
+void SSAOFeature::Execute(RenderContext& context, RenderFrameData& data){
+    if(context.isDeferred == false){
+        Graphics::BlitFramebuffer(data.src, data.dst);
         return;
     }
 
-    Framebuffer* deferred = context->GetDeferredFramebuffer();
+    Framebuffer* deferred = context.GetDeferredFramebuffer();
 
     aoPass->SetVector4("samples", ssaoKernel.data(), 64);
     aoPass->SetTexture("texNoise", noise);
@@ -76,7 +81,7 @@ void SSAOPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     aoPass->SetFloat("bias", bias);
     aoPass->SetVector2("noiseScale", 
         //{Application::ScreenWidth() / 4.0f, Application::ScreenHeight() / 4.0f}
-        {context->GetCamera().width / 2.0f, context->GetCamera().height / 2.0f}
+        {context.GetCamera().width / 2.0f, context.GetCamera().height / 2.0f}
     );
 
     //aoPass->SetTexture("gPosition", deferred, 0);
@@ -86,8 +91,8 @@ void SSAOPostFX::OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext
     //aoPass->SetTexture("gOther", deferred, 4);
     aoPass->SetTexture("gDepth", deferred, -1);
 
-    Graphics::BeginFramebuffer(*dst);
-    aoPass->SetTexture("mainTex", src, 0);
+    Graphics::BeginFramebuffer(*data.dst);
+    aoPass->SetTexture("mainTex", data.src, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 }
