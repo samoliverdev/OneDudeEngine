@@ -7,9 +7,9 @@
 
 using namespace OD;
 
-namespace cereal {
+namespace cereal{
     template<class Archive>
-    void serialize(Archive& archive, ImVec2& vec) {
+    void serialize(Archive& archive, ImVec2& vec){
         archive(cereal::make_nvp("x", vec.x), cereal::make_nvp("y", vec.y));
     }
 }
@@ -17,14 +17,15 @@ namespace cereal {
 namespace Standard{
 
 // Enum for curve types
-enum class CurveType {
+enum class CurveType{
     Linear,
     Constant,
-    Smooth
+    Smooth,
+    AutoSmooth 
 };
 
 // Keyframe structure with tangents and curve type
-struct Keyframe {
+struct Keyframe{
     float time;      // X-axis (time)
     float value;     // Y-axis (value)
     ImVec2 in_tangent; // 2D position of incoming tangent (relative to keyframe) //TODO: Change this to Vector2
@@ -36,7 +37,7 @@ struct Keyframe {
 
     // Cereal serialization
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive& ar){
         ArchiveDumpNVP(ar, time);
         ArchiveDumpNVP(ar, value);
         ArchiveDumpNVP(ar, in_tangent);
@@ -46,7 +47,7 @@ struct Keyframe {
 };
 
 // Animation curve class
-class AnimationCurve {
+class AnimationCurve{
     friend void DrawCurvePreview(AnimationCurve& curve, ImVec2 size, bool* open_editor);
     friend void DrawAnimationCurveEditor(AnimationCurve& curve, ImVec2 size);
 public:
@@ -68,7 +69,7 @@ public:
 
     // Cereal serialization
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive& ar){
         ArchiveDumpNVP(ar, keyframes);
         ArchiveDumpNVP(ar, minMaxValue);
         ArchiveDumpNVP(ar, minMaxTime);
@@ -78,6 +79,13 @@ public:
     void OnGui(cereal::ImGuiArchive& ar);
 private:
     bool show_curve_editor = false;
+
+    int gui_selected_keyframe = -1;
+    bool gui_editing_in_tangent = false;
+    bool gui_editing_out_tangent = false;
+
+    bool autoUpdateMinMax = false;
+
     Vector2 minMaxValue = {-1.0f, 1.0f};
     Vector2 minMaxTime = {-0.0f, 1.0f};
 };
