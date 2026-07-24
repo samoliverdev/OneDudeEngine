@@ -3346,6 +3346,8 @@ void OpenGLGraphicsDevice::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, i
         glCheckError();
     } else {
         glReadBuffer(GL_COLOR_ATTACHMENT0 + srcPass); 
+        glDrawBuffer(GL_COLOR_ATTACHMENT0 + srcPass);
+        
         glCheckError();
         glBlitFramebuffer(0, 0, src->Width(), src->Height(), 0, 0, src->Width(), src->Height(), GL_COLOR_BUFFER_BIT, GL_NEAREST); 
         glCheckError();

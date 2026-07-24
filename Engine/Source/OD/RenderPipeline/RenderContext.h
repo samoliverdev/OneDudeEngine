@@ -233,7 +233,7 @@ public:
     void BeginForwardPass();
     void EndForwardPass();
 
-    void BeginDeferredPass();
+    void BeginDeferredPass(bool clean = true);
     void EndDeferredPass();
 
     void DeferredCopyToForwardPass();
@@ -264,6 +264,8 @@ public:
     void AddDrawShadow(RenderData& renderData, ShadowDrawingSettings& settings, RendererList& target);
     void DrawShadows(RendererList& targets, ShadowSplitData& splitData, Ref<Material>& shadowPass);
 
+    void CopyDeffered();
+
     inline Scene* GetScene(){ return scene; }
     inline Framebuffer* GetFinalColor(){ return finalColor; }
     inline Camera GetCamera(){ return cam; }
@@ -283,6 +285,7 @@ public:
 
     inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
     inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
+    inline Framebuffer* GetDeferredCopyFramebuffer(){ return deferredOutColorCopy; }
 
     inline Framebuffer* GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
     inline Framebuffer* GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
@@ -320,6 +323,7 @@ private:
 
     Framebuffer* entityIdOutColor;
     Framebuffer* deferredOutColor;
+    Framebuffer* deferredOutColorCopy;
     Framebuffer* forwardOutColor;
     Framebuffer* finalColor;
     Framebuffer* postFx1;

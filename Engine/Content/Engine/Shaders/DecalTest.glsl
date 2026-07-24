@@ -17,7 +17,7 @@
 
     CullFace NONE
     DepthMask False
-    DepthTest ALWAYS
+    DepthTest LESS_EQUAL
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
 #pragma EndPassDef
 

@@ -128,6 +128,10 @@ RenderContext::RenderContext(Scene* inScene){
     //deferredOutColor->ColorAttachmentId(3);
     //deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
+    framebufferSpecification.createDepth = false;
+    deferredOutColorCopy = new Framebuffer(framebufferSpecification);
+    deferredOutColorCopy->name = "deferredOutColorCopy";
+
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
         {FramebufferTextureFormat::RGBA16F} //{FramebufferTextureFormat::RGB11B10F}
@@ -202,10 +206,18 @@ RenderContext::~RenderContext(){
 
     delete entityIdOutColor;
     delete deferredOutColor;
+    delete deferredOutColorCopy;
     delete forwardOutColor;
     delete finalColor;
     delete postFx1;
     delete postFx2;
+}
+
+void RenderContext::CopyDeffered(){
+    deferredOutColorCopy->Resize(deferredOutColor->Width(), deferredOutColor->Height());
+    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 0);
+    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 1);
+    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 2);
 }
 
 void RenderContext::Begin(){
@@ -300,10 +312,10 @@ void RenderContext::EndForwardPass(){
     Graphics::EndFramebuffer();
 }
 
-void RenderContext::BeginDeferredPass(){
+void RenderContext::BeginDeferredPass(bool clean){
     //Assert(false);
     //Framebuffer::Bind(*deferredOutColor);
-    Graphics::BeginFramebuffer(*deferredOutColor, true, cam.cleanColor);
+    Graphics::BeginFramebuffer(*deferredOutColor, clean, cam.cleanColor);
     //ScreenClean();
 }
 
@@ -2216,6 +2228,9 @@ inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, Stat
     data.SetFlag(RenderData::Flag::IsStatic, true);
     data.SetFlag(RenderData::Flag::FromModel, true);
 
+    Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    SetPerInstanceData(data.targetMatrix, perInstanceData);
+
     if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
@@ -2792,11 +2807,12 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
 
         if(isDecal){
             Framebuffer* deferred = deferredOutColor;
+            Framebuffer* deferredCopy = deferredOutColorCopy;
             //decal.material->SetMatrix4("decalWorldToLocal", math::inverse(trans.GlobalModelMatrix()));
             //material.SetTexture("gPosition", deferred, 0);
-            material.SetTexture("gNormal", deferred, 0);
-            material.SetTexture("gAlbedoSpec", deferred, 1);
-            material.SetTexture("gOther", deferred, 2);
+            material.SetTexture("gNormal", deferredCopy, 0);
+            material.SetTexture("gAlbedoSpec", deferredCopy, 1);
+            material.SetTexture("gOther", deferredCopy, 2);
             material.SetTexture("gDepth", deferred, -1);
         }
 

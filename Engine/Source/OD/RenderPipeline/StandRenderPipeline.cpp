@@ -943,7 +943,10 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         context->DrawRenderersBuffer(opaqueDrawTarget, true, true);//TODO: Maybe remove sort on here
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        context->EndDeferredPass();
 
+        context->CopyDeffered();
+        context->BeginDeferredPass(false);
         context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
 
         //context->EndDeferredPass();
