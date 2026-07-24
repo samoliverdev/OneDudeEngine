@@ -42,7 +42,6 @@ ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
     ShadowTextureSize::_8192  // Ultra
 };
 
-
 class RendererFeatureTest: public RendererFeature, RenderPass{
 public:
     template <class Archive>
@@ -185,11 +184,30 @@ void Shadows::AddRunComputeRenderList(){
     } 
 }
 
+inline bool HasNaN(const Plane& p){
+    return glm::any(glm::isnan(p.n));
+}
+
+inline bool HasNaN(const Frustum& f){
+    return HasNaN(f.topFace)    ||
+           HasNaN(f.bottomFace) ||
+           HasNaN(f.rightFace)  ||
+           HasNaN(f.leftFace)   ||
+           HasNaN(f.farFace)    ||
+           HasNaN(f.nearFace);
+}
+
+inline bool HasNaN(const AABB& f){
+    return glm::any(glm::isnan(f.center)) || glm::any(glm::isnan(f.extents));
+}
+
 void Shadows::AddRenderData(RenderData& data){
     if(data.HasFlag(RenderData::Flag::RenderShadow) == false) return;
     //TODO: Check Split data Culling
 
-    ShadowDrawingSettings s;
+    ShadowDrawingSettings s = {};
+    s.renderQueueRange = RenderQueueRange::All;
+    s.sortType = SortType::None;
 
     if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass.get();
 
@@ -197,6 +215,11 @@ void Shadows::AddRenderData(RenderData& data){
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
+
+            //Assert(index >= 0 && index < (maxShadowedDirectionalLightCount * maxCascades));
+            //Assert(HasNaN(shadowDirectionalLightsSplits[index].frustum) == false);
+            //Assert(HasNaN(data.aabb) == false);
+
             if(data.aabb.isOnFrustum(shadowDirectionalLightsSplits[index].frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) continue;
             context->AddDrawShadow(data, s, shadowDirectionalLightsBuffers[index]);
         }
@@ -669,9 +692,9 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
             if((f & pass.collectSettings.rejectIfAny) != 0) return;
 
             AddRenderData(data); 
-            //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
+            if(pass.settings.drawShadow){
                 shadows.AddRenderData(data);
-            //} 
+            } 
         });
     }
 
@@ -1833,6 +1856,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     //-----------EnvironmentProbeComponent-----------
     auto envProbeView = scene.GetRegistry().view<EnvironmentProbeComponent, TransformComponent>();
     for(auto entity : envProbeView){
+        //if(scene.Running() == false) continue;
+
         auto& probe = envProbeView.get<EnvironmentProbeComponent>(entity);
         auto& trans = envProbeView.get<TransformComponent>(entity);
 
@@ -1844,6 +1869,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         probeCam.nearClip = 0.1f;
         probeCam.farClip = probe.radius * 2.0f;
         probeCam.viewPos = trans.Position();
+        probeCam.fov = Mathf::Deg2Rad(90);
         probeCam.projection = glm::perspective(glm::radians(90.0f), 1.0f, probeCam.nearClip, probeCam.farClip);
         //probeCam.view = math::inverse(trans.GlobalModelMatrix());
   
@@ -1864,7 +1890,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             viewMatrix = glm::translate(viewMatrix, -probeCam.viewPos);   // or better: inverse(translation * rotation)
             probeCam.view = viewMatrix;
             probeCam.frustum = CreateFrustumFromMatrix(probeCam.projection * probeCam.view);
-
+            
             CameraRenderPass pass = {};
             pass.camera = probeCam;
             pass.target = probe.framebuffer;

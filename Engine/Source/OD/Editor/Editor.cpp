@@ -365,11 +365,11 @@ void Editor::OnUpdate(float deltaTime){
         editorCam.cam.SetPerspective(45, 0.1f, 20000.0f, width, height);
         editorCam.cam.viewPos = editorCam.transform.Position();
         editorCam.cam.view = math::inverse(editorCam.transform.GetModelMatrix());
-        Vector3 pos = editorCam.transform.Position();
+        /*Vector3 pos = editorCam.transform.Position();
         Quaternion rot = glm::normalize(editorCam.transform.Rotation());
         Matrix4 R = mat4_cast(rot);
         glm::mat4 view = glm::transpose(R) * glm::translate(glm::mat4(1.0f), -pos);
-        editorCam.cam.view  = view;
+        editorCam.cam.view  = view;*/
         //editorCam.cam.frustum = CreateFrustumFromCamera(editorCam.transform, width / height, Mathf::Deg2Rad(45), 0.1f, 2000.0f);
         //editorCam.cam.frustum = CreateFrustumFromMatrix2(math::transpose( editorCam.cam.projection * editorCam.cam.view ));
         editorCam.cam.frustum = CreateFrustumFromMatrix(editorCam.cam.projection * editorCam.cam.view);

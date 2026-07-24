@@ -189,6 +189,8 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
+
+    screenSpaceShadow2 = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
 }
 
 RenderContext::~RenderContext(){
@@ -376,6 +378,19 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     Graphics::DrawMesh(isCone ? *coneMesh->meshs[0] : *sphereMesh->meshs[0], *deferredLightDirSingleOtherPass, worldMatrix);
 }
 
+glm::vec4 GetInvDeviceZToWorldZTransform(const glm::mat4& projection){
+    float A = projection[2][2];
+    float B = projection[3][2];
+
+    glm::vec4 result;
+
+    // z / (deviceDepth - w)
+    result.z = B * 0.5f;
+    result.w = A * 0.5f + 0.5f;
+
+    return result;
+}
+
 void RenderContext::CleanSSS(){
     auto camera = GetCamera();
     screenSpaceShadowOutput->Resize(camera.width, camera.height);
@@ -385,6 +400,22 @@ void RenderContext::CleanSSS(){
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
+    auto cam = GetCamera();
+    
+    Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);
+    screenSpaceShadow2->SetTexture("gDepth", GetDeferredFramebuffer(), -1);
+    screenSpaceShadow2->SetTexture("gNormal", GetDeferredFramebuffer(), 0);
+
+    screenSpaceShadow2->SetMatrix4("View_WorldToClip", cam.projection * cam.view);
+    screenSpaceShadow2->SetVector4("View_InvDeviceZToWorldZTransform", GetInvDeviceZToWorldZTransform(cam.projection));
+    screenSpaceShadow2->SetVector3("lightDirection", glm::normalize(_lightDir));
+    screenSpaceShadow2->SetVector3("View_WorldCameraOrigin", cam.viewPos);
+    screenSpaceShadow2->SetVector2("g_resolution", {cam.width, cam.height});
+    screenSpaceShadow2->SetFloat("nearPlane", cam.nearClip);
+    screenSpaceShadow2->SetFloat("farPlane", cam.farClip);
+    Graphics::DrawFullScreenQuad(*screenSpaceShadow2, Matrix4Identity);
+    Graphics::EndFramebuffer();
+
     return;
     #if 1
     auto camera = GetCamera();
@@ -2026,6 +2057,277 @@ void tf_for_each3(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
     }
 }
 
+//////////////////////////////////////////
+inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = c.material.get();
+    data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+    data.targetMesh = c.mesh.get();
+    data.targetMatrix = t.GlobalModelMatrix();
+    data.posePalette = nullptr;
+    //data.aabb = c.GetGlobalAABB(t);
+    data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+
+    data.SetFlag(RenderData::Flag::IsStatic, false);
+    data.SetFlag(RenderData::Flag::FromMesh, true);
+
+    Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    SetPerInstanceData(data.targetMatrix, perInstanceData);
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+}
+
+inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = c.material.get();
+    data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
+    data.targetMesh = c.mesh.get();
+    data.targetMatrix =  s.staticDatas[0].m;
+    data.posePalette = nullptr;
+    //data.aabb = c.GetGlobalAABB(t);
+    data.aabb = s.staticDatas[0].aabb;
+    
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    data.SetFlag(RenderData::Flag::IsStatic, true);
+    data.SetFlag(RenderData::Flag::FromMesh, true);
+
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+}
+
+inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, SkinnedMeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = c.material.get();
+    data.targetMesh = c.mesh.get();
+    data.targetMatrix =  t.GlobalModelMatrix();
+    //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+    
+    //INFO: Try optimize
+    if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+        c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose());
+    } 
+    data.posePalette = &c.posePalette;
+    
+    //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+    data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
+
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+
+    Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    SetPerInstanceData(data.targetMatrix, perInstanceData);
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+}
+
+inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = model->materials[target.materialIndex].get();
+    data.targetMesh = model->meshs[target.meshIndex].get();
+    //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+    data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));// model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
+    data.posePalette = nullptr;
+    //data.aabb = c.GetGlobalAABB(t);
+    data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()); //data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
+    //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+    //data.aabb.Expand2(Vector3(5.5f));
+    if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+    }
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+    
+    data.SetFlag(RenderData::Flag::IsStatic, false);
+    data.SetFlag(RenderData::Flag::FromModel, true);
+
+    Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    SetPerInstanceData(data.targetMatrix, perInstanceData);
+
+    data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
+    
+    if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+}
+
+inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target, int index){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = model->materials[target.materialIndex].get();
+    data.targetMesh = model->meshs[target.meshIndex].get();
+    data.targetMatrix =  s.staticDatas[index].m;
+    data.aabb = s.staticDatas[index].aabb;
+    data.posePalette = nullptr;
+    if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+    }
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    data.SetFlag(RenderData::Flag::IsStatic, true);
+    data.SetFlag(RenderData::Flag::FromModel, true);
+
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+}
+
+inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, SkinnedModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.targetMaterial = model->materials[target.materialIndex].get();
+    data.targetMesh = model->meshs[target.meshIndex].get();
+
+    auto m1 = t.GlobalModelMatrix();
+    auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex);
+
+    //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
+    //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+    //data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+    data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex)); //TODO: Maybe use final pose on here
+    //data.transform = Transform(data.targetMatrix); //t.ToTransform();
+    
+    //INFO: Try optimize
+    if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
+        c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
+    }
+    data.posePalette = &c.posePalette;
+    data.skinnedBuffer = c.useSkinnedData == false ? nullptr : c.skinnedData.get(); //c.skinnedData == nullptr ? nullptr : (c.useSkinnedData ? c.skinnedData.get() : nullptr);
+    
+    //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
+    data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
+    //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
+
+    if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+    }
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)e) + 1;
+    data.perDrawData.int_0[1] = info.layer;
+
+    data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
+
+    data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
+
+    //TODO: Refactory perDrawData to avoid memory alocation
+    if(c.useCustomData){
+        data.perDrawData.Vector4_0_SetMask(0, true);
+        data.perDrawData.vector4_0[0] = c.customData;
+    }
+
+    Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    SetPerInstanceData(data.targetMatrix, perInstanceData);
+
+    #if EnableExperimentalPerDrawCustomData
+    data.useCustomData = c.useCustomData;
+    data.customData = c.customData;
+    #endif
+
+    if(c.updateWhenOffscreen) data.SetFlag(RenderData::Flag::AlwaysDraw, true);// .awalsDraw = true;
+    if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
+}
+
+inline void UpdateSkinnedData(SkinnedModelRendererComponent& skinned){
+    if(skinned.skinnedData == nullptr){
+        skinned.skinnedData = CreateRef<UniformBuffer>(sizeof(Matrix4) * MAX_BONES); //120);
+    }
+    //if(skinned.posePalette.size() == 0) continue;
+    skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());
+}
+
+inline void FillDecalRenderData(RenderContext& ctx, RenderData& data, DecalRendererComponent& decal, InfoComponent& info, TransformComponent& trans, Model* decalMesh, entt::entity entity){
+    data.distance = math::distance2(ctx.GetCamera().viewPos, trans.Position());
+    data.targetMaterial = decal.material.get();
+    data.customShadowPass = nullptr;
+    data.targetMesh = decalMesh->meshs[0].get();
+
+    data.perDrawData.Int_0_SetMask(0, true);
+    data.perDrawData.Int_0_SetMask(1, true);
+    data.perDrawData.int_0[0] = ((int)entity) + 1;
+    data.perDrawData.int_0[1] = decal.customLayerIndex;
+    
+    if(decal.useCustomOffsetAndSize == false){
+        data.targetMatrix = trans.GlobalModelMatrix();
+        data.aabb = transform_aabb_optimized_abs_center_extents(
+            AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
+        );
+    } else {
+        Transform offsetTrans;
+        offsetTrans.Position(decal.offset);
+        offsetTrans.Scale(decal.size);
+        data.targetMatrix = trans.GlobalModelMatrix() * offsetTrans.GetModelMatrix();
+        /*data.aabb = transform_aabb_optimized_abs_center_extents(
+            AABB(offsetTrans.Position(), offsetTrans.Scale().x/2, offsetTrans.Scale().y/2, offsetTrans.Scale().z/2), trans.GlobalModelMatrix()
+        );*/
+        data.aabb = transform_aabb_optimized_abs_center_extents(
+            AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
+        );
+    }
+
+    decal.perInstanceData.w = float(decal.customLayerIndex);
+    SetPerInstanceData(data.targetMatrix, decal.perInstanceData);
+
+    data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;
+    data.SetFlag(RenderData::Flag::RenderShadow, false);// .renderShadow = false;
+}
+/////////////////////////////////////////
+
 void RenderContext::UpdateRenderData(){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData");
 
@@ -2050,45 +2352,11 @@ void RenderContext::UpdateRenderData(){
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     tf_for_each3(scene->GetTaskflow(), meshView.begin(), meshView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto e: meshView){
-        auto& info = meshView.get<InfoComponent>(e);
-        if(info.enable == false) return; //continue;
-
-        auto& c = meshView.get<MeshRendererComponent>(e);
-        auto& t = meshView.get<TransformComponent>(e);
-        if(c.mesh == nullptr) return; //continue;
-        if(c.material == nullptr) return; //continue;
+        auto [c, t, info] = meshView.get<MeshRendererComponent,TransformComponent,InfoComponent>(e);
+        if(!info.enable || !c.mesh || !c.material) return;
 
         RenderData& data = renderData.GetNew(taskIndex);
-        data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
-        data.targetMatrix = t.GlobalModelMatrix();
-        data.posePalette = nullptr;
-        //data.aabb = c.GetGlobalAABB(t);
-        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
-
-        data.perDrawData.Int_0_SetMask(0, true);
-        data.perDrawData.Int_0_SetMask(1, true);
-        data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = info.layer;
-
-        if(c.useCustomData){
-            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
-            data.perDrawData.vector4_0[0] = c.customData;
-        }
-
-        data.SetFlag(RenderData::Flag::IsStatic, false);
-        data.SetFlag(RenderData::Flag::FromMesh, true);
-
-        Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
-        SetPerInstanceData(data.targetMatrix, perInstanceData);
-
-        #if EnableExperimentalPerDrawCustomData
-        data.useCustomData = c.useCustomData;
-        data.customData = c.customData;
-        #endif
+        FillMeshRenderData(*this, data, c, t, info, e);
     });
     scene->RunAllTaskAndSync();
     }
@@ -2099,68 +2367,20 @@ void RenderContext::UpdateRenderData(){
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     tf_for_each3(scene->GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto e: meshRenderView){
-        auto& info = meshRenderView.get<InfoComponent>(e);
-        if(info.enable == false) return;// continue;
-
-        auto& c = meshRenderView.get<ModelRendererComponent>(e);
-        if(c.draw == false) return;// continue;
-
-        auto& t = meshRenderView.get<TransformComponent>(e);
+        auto [c, t, info] = meshRenderView.get<ModelRendererComponent,TransformComponent,InfoComponent>(e);
+        if(info.enable == false || c.draw == false || c.model == nullptr) return;
 
         Ref<Model> model = c.GetModel();
-        if(model == nullptr) return; //continue;
-
         if(c.finalPose.Size() != model->skeleton.GetBindPose().Size()) c.finalPose = model->skeleton.GetBindPose();
 
-        //if(c.renderData.size() != model->renderTargets.size()) continue;
-
         Assert(c.GetRenderTargetVisibility().size() == model->renderTargets.size());
-
         for(int i = 0; i < model->renderTargets.size(); i++){  //for(auto i: model->renderTargets){
             auto& target = model->renderTargets[i];
             if(c.GetRenderTargetVisibility()[i] == false) continue;
             //if(i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[i] == false) continue;
 
             RenderData& data = renderData.GetNew(taskIndex); 
-            data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[target.materialIndex].get();
-            data.targetMesh = model->meshs[target.meshIndex].get();
-            //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));// model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
-            data.posePalette = nullptr;
-            //data.aabb = c.GetGlobalAABB(t);
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix()); //data.targetMatrix); //Isto pode esta errado pq o aabb é do model interior, nao por mesh
-            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
-            //data.aabb.Expand2(Vector3(5.5f));
-            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
-            }
-
-            data.perDrawData.Int_0_SetMask(0, true);
-            data.perDrawData.Int_0_SetMask(1, true);
-            data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
-
-            if(c.useCustomData){
-                data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
-                data.perDrawData.vector4_0[0] = c.customData;
-            }
-            
-            data.SetFlag(RenderData::Flag::IsStatic, false);
-            data.SetFlag(RenderData::Flag::FromModel, true);
-
-            Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
-            SetPerInstanceData(data.targetMatrix, perInstanceData);
-
-            data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
-            
-            if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
-
-            #if EnableExperimentalPerDrawCustomData
-            data.useCustomData = c.useCustomData;
-            data.customData = c.customData;
-            #endif
+            FillModelRenderData(*this, data, c, t, info, e, model.get(), target);
         }
     });
     scene->RunAllTaskAndSync();
@@ -2170,51 +2390,11 @@ void RenderContext::UpdateRenderData(){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedMesh");
     auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     tf_for_each3(scene->GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto e: skinnedMeshView){
-        auto& info = skinnedMeshView.get<InfoComponent>(e);
-        if(info.enable == false) return; //continue;
-
-        auto& c = skinnedMeshView.get<SkinnedMeshRendererComponent>(e);
-        auto& t = skinnedMeshView.get<TransformComponent>(e);
-
-        if(c.mesh == nullptr) return; //continue;
-        if(c.material == nullptr) return; //continue;
+        auto [c, t, info] = skinnedMeshView.get<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(e);
+        if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
         RenderData& data = renderData.GetNew(taskIndex);
-        data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = c.mesh.get();
-        data.targetMatrix =  t.GlobalModelMatrix();
-        //data.transform = Transform(data.targetMatrix); //t.ToTransform();
-        
-        //INFO: Try optimize
-        if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
-            c.finalPose.GetMatrixPalette(c.posePalette, c.skeleton.GetInvBindPose());
-        } 
-        data.posePalette = &c.posePalette;
-        
-        //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
-        data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
-
-        data.perDrawData.Int_0_SetMask(0, true);
-        data.perDrawData.Int_0_SetMask(1, true);
-        data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = info.layer;
-
-        data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
-
-        if(c.useCustomData){
-            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
-            data.perDrawData.vector4_0[0] = c.customData;
-        }
-
-        Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
-        SetPerInstanceData(data.targetMatrix, perInstanceData);
-
-        #if EnableExperimentalPerDrawCustomData
-        data.useCustomData = c.useCustomData;
-        data.customData = c.customData;
-        #endif
+        FillSkinnedMeshRenderData(*this, data, c, t, info, e);
     });
     scene->RunAllTaskAndSync();
     }
@@ -2223,14 +2403,8 @@ void RenderContext::UpdateRenderData(){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedModel");
     auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     tf_for_each3(scene->GetTaskflow(), skinnedView.begin(), skinnedView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto [e, c, t, info]: skinnedView.each()){
-        auto& info = skinnedView.get<InfoComponent>(e);
-        if(info.enable == false) return; //continue;
-
-        auto& c = skinnedView.get<SkinnedModelRendererComponent>(e);
-        if(c.draw == false) return; //continue;
-
-        auto& t = skinnedView.get<TransformComponent>(e);
+        auto [c, t, info] = skinnedView.get<SkinnedModelRendererComponent,TransformComponent,InfoComponent>(e);
+        if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
         Ref<Model> model = c.GetModel();
         if(model == nullptr) return; //continue;
@@ -2244,59 +2418,7 @@ void RenderContext::UpdateRenderData(){
             //if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             
             RenderData& data = renderData.GetNew(taskIndex);
-            data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[target.materialIndex].get();
-            data.targetMesh = model->meshs[target.meshIndex].get();
-
-            auto m1 = t.GlobalModelMatrix();
-            auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex);
-
-            //TODO: Finish this optimization, maybe add option to enable GetGlobalMatrix(i.bindPoseIndex)
-            //data.targetMatrix =  t.GlobalModelMatrix()/** c.localTransform.GetModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            //data.targetMatrix = t.GlobalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
-            data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex)); //TODO: Maybe use final pose on here
-            //data.transform = Transform(data.targetMatrix); //t.ToTransform();
-            
-            //INFO: Try optimize
-            if(c.finalPose.Size() > 0 && c.postUpdatePosePalette){
-                c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
-            }
-            data.posePalette = &c.posePalette;
-            data.skinnedBuffer = c.useSkinnedData == false ? nullptr : c.skinnedData.get(); //c.skinnedData == nullptr ? nullptr : (c.useSkinnedData ? c.skinnedData.get() : nullptr);
-            
-            //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
-            data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
-            //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
-
-            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
-            }
-
-            data.perDrawData.Int_0_SetMask(0, true);
-            data.perDrawData.Int_0_SetMask(1, true);
-            data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
-
-            data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
-
-            data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
-
-            //TODO: Refactory perDrawData to avoid memory alocation
-            if(c.useCustomData){
-                data.perDrawData.Vector4_0_SetMask(0, true);
-                data.perDrawData.vector4_0[0] = c.customData;
-            }
-
-            Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
-            SetPerInstanceData(data.targetMatrix, perInstanceData);
-
-            #if EnableExperimentalPerDrawCustomData
-            data.useCustomData = c.useCustomData;
-            data.customData = c.customData;
-            #endif
-
-            if(c.updateWhenOffscreen) data.SetFlag(RenderData::Flag::AlwaysDraw, true);// .awalsDraw = true;
-            if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
+            FillSkinnedModelRenderData(*this, data, c, t, info, e, model.get(), target);
         }
     });
     scene->RunAllTaskAndSync();
@@ -2304,12 +2426,13 @@ void RenderContext::UpdateRenderData(){
     auto skinnedView2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto [entity, skinned]: skinnedView2.each()){
         if(skinned.useSkinnedData == false) continue;
-
-        if(skinned.skinnedData == nullptr){
+        UpdateSkinnedData(skinned);
+        
+        /*if(skinned.skinnedData == nullptr){
             skinned.skinnedData = CreateRef<UniformBuffer>(sizeof(Matrix4) * MAX_BONES); //120);
         }
         //if(skinned.posePalette.size() == 0) continue;
-        skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());
+        skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());*/
     }
     }
 
@@ -2319,46 +2442,10 @@ void RenderContext::UpdateRenderData(){
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
     tf_for_each3(scene->GetTaskflow(), decalView.begin(), decalView.end(), 4, [&](auto entity, int taskIndex){
-    //for(auto [entity, decal, trans, info]: decalView.each()){
-
-        auto& decal = decalView.get<DecalRendererComponent>(entity);
-        auto& info = decalView.get<InfoComponent>(entity);
-        auto& trans = decalView.get<TransformComponent>(entity);
+        auto [decal, trans, info] = decalView.get<DecalRendererComponent, TransformComponent, InfoComponent>(entity);
 
         RenderData& data = renderData.GetNew(taskIndex);
-        data.distance = math::distance2(cam.viewPos, trans.Position());
-        data.targetMaterial = decal.material.get();
-        data.customShadowPass = nullptr;
-        data.targetMesh = decalMesh->meshs[0].get();
-
-        data.perDrawData.Int_0_SetMask(0, true);
-        data.perDrawData.Int_0_SetMask(1, true);
-        data.perDrawData.int_0[0] = ((int)entity) + 1;
-        data.perDrawData.int_0[1] = decal.customLayerIndex;
-        
-        if(decal.useCustomOffsetAndSize == false){
-            data.targetMatrix = trans.GlobalModelMatrix();
-            data.aabb = transform_aabb_optimized_abs_center_extents(
-                AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
-            );
-        } else {
-            Transform offsetTrans;
-            offsetTrans.Position(decal.offset);
-            offsetTrans.Scale(decal.size);
-            data.targetMatrix = trans.GlobalModelMatrix() * offsetTrans.GetModelMatrix();
-            /*data.aabb = transform_aabb_optimized_abs_center_extents(
-                AABB(offsetTrans.Position(), offsetTrans.Scale().x/2, offsetTrans.Scale().y/2, offsetTrans.Scale().z/2), trans.GlobalModelMatrix()
-            );*/
-            data.aabb = transform_aabb_optimized_abs_center_extents(
-                AABB(Vector3Zero, 0.5f, 0.5f, 0.5f), data.targetMatrix
-            );
-        }
-
-        decal.perInstanceData.w = float(decal.customLayerIndex);
-        SetPerInstanceData(data.targetMatrix, decal.perInstanceData);
-
-        data.SetFlag(RenderData::Flag::IsDecal, true);// .isDecal = true;
-        data.SetFlag(RenderData::Flag::RenderShadow, false);// .renderShadow = false;
+        FillDecalRenderData(*this, data, decal, info, trans, decalMesh.get(), entity);
     });
     scene->RunAllTaskAndSync();
     }
@@ -2369,15 +2456,8 @@ void RenderContext::UpdateRenderData(){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticMesh");
     auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     tf_for_each3(scene->GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto e: staticMeshView){
-        auto& info = staticMeshView.get<InfoComponent>(e);
-        if(info.enable == false) return; //continue;
-
-        auto& c = staticMeshView.get<MeshRendererComponent>(e);
-        auto& t = staticMeshView.get<TransformComponent>(e);
-        auto& s = staticMeshView.get<StaticRendererComponent>(e);
-        if(c.mesh == nullptr) return; //continue;
-        if(c.material == nullptr) return; //continue;
+        auto [c, t, s, info] = staticMeshView.get<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
+        if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
         if(s.staticDatas.size() != 1) s.staticDatas.resize(1);
         if(s.staticDatas[0].isDirt){
@@ -2387,33 +2467,7 @@ void RenderContext::UpdateRenderData(){
         }
 
         RenderData& data = renderData.GetNew(taskIndex);
-        data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
-        data.targetMatrix =  s.staticDatas[0].m;
-        data.posePalette = nullptr;
-        //data.aabb = c.GetGlobalAABB(t);
-        data.aabb = s.staticDatas[0].aabb;
-        
-        data.perDrawData.Int_0_SetMask(0, true);
-        data.perDrawData.Int_0_SetMask(1, true);
-        data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = info.layer;
-
-        data.SetFlag(RenderData::Flag::IsStatic, true);
-        data.SetFlag(RenderData::Flag::FromMesh, true);
-
-        if(c.useCustomData){
-            data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
-            data.perDrawData.vector4_0[0] = c.customData;
-            
-        }
-
-        #if EnableExperimentalPerDrawCustomData
-        data.useCustomData = c.useCustomData;
-        data.customData = c.customData;
-        #endif
+        FillStaticMeshRenderData(*this, data, s, c, t, info, e);
     });
     scene->RunAllTaskAndSync();
     }
@@ -2422,18 +2476,10 @@ void RenderContext::UpdateRenderData(){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticModel");
     auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     tf_for_each3(scene->GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), 4, [&](auto e, int taskIndex){
-    //for(auto e: meshStaticRenderView){
-        auto& info = meshStaticRenderView.get<InfoComponent>(e);
-        if(info.enable == false) return; //continue;
+        auto [c, t, s, info] = meshStaticRenderView.get<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
+        if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
-        auto& c = meshStaticRenderView.get<ModelRendererComponent>(e);
-        if(c.draw == false) return; //continue;
-
-        auto& t = meshStaticRenderView.get<TransformComponent>(e);
-        auto& s = meshStaticRenderView.get<StaticRendererComponent>(e);
-    
         Ref<Model> model = c.GetModel();
-        if(model == nullptr) return; //continue;
 
         if(s.staticDatas.size() != model->renderTargets.size()){
             s.staticDatas.resize(model->renderTargets.size());
@@ -2447,38 +2493,12 @@ void RenderContext::UpdateRenderData(){
 
             if(s.staticDatas[_i].isDirt){
                 s.staticDatas[_i].isDirt = false;
-                s.staticDatas[_i].m = t.GlobalModelMatrix();
+                s.staticDatas[_i].m = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex)); //t.GlobalModelMatrix();
                 s.staticDatas[_i].aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), s.staticDatas[_i].m);
             }
 
             RenderData& data = renderData.GetNew(taskIndex);
-            data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[target.materialIndex].get();
-            data.targetMesh = model->meshs[target.meshIndex].get();
-            data.targetMatrix =  s.staticDatas[_i].m;
-            data.aabb = s.staticDatas[_i].aabb;
-            data.posePalette = nullptr;
-            if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
-            }
-
-            data.perDrawData.Int_0_SetMask(0, true);
-            data.perDrawData.Int_0_SetMask(1, true);
-            data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
-
-            data.SetFlag(RenderData::Flag::IsStatic, true);
-            data.SetFlag(RenderData::Flag::FromModel, true);
-
-            if(c.useCustomData){
-                data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
-                data.perDrawData.vector4_0[0] = c.customData;
-            }
-
-            #if EnableExperimentalPerDrawCustomData
-            data.useCustomData = c.useCustomData;
-            data.customData = c.customData;
-            #endif
+            FillStaticModelRenderData(*this, data, s, c, t, info, e, model.get(), target, _i);
             _i += 1;
         }
     });
@@ -2488,6 +2508,7 @@ void RenderContext::UpdateRenderData(){
     /////////////////////////////////////////////
 
     {
+    //TODO: Update this to use FillxxxRenderData function
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticRendererCluster");
     auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>

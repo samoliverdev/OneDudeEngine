@@ -178,7 +178,7 @@ Frustum CreateFrustumFromMatrix(const glm::mat4& m, bool normalizePlanes){
     return out;
 }
 
-bool BoundingVolume::isOnFrustum(Frustum& camFrustum) const{
+bool BoundingVolume::isOnFrustum(const Frustum& camFrustum) const{
     return (isOnOrForwardPlane(camFrustum.leftFace) &&
         isOnOrForwardPlane(camFrustum.rightFace) &&
         isOnOrForwardPlane(camFrustum.topFace) &&
@@ -187,11 +187,11 @@ bool BoundingVolume::isOnFrustum(Frustum& camFrustum) const{
         isOnOrForwardPlane(camFrustum.farFace));
 };
 
-bool Sphere::isOnOrForwardPlane(Plane& plane) const{
+bool Sphere::isOnOrForwardPlane(const Plane& plane) const{
     return plane.getSignedDistanceToPlane(center) > -radius;
 }
 
-bool Sphere::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
+bool Sphere::isOnFrustum(const Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
     Vector3 globalScale = transform.Scale();
 
@@ -213,13 +213,13 @@ bool Sphere::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
         globalSphere.isOnOrForwardPlane(camFrustum.bottomFace));
 };
 
-bool SquareAABB::isOnOrForwardPlane(Plane& plane) const{
+bool SquareAABB::isOnOrForwardPlane(const Plane& plane) const{
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
     const float r = extent * (plane.absN.x + plane.absN.y + plane.absN.z);// (math::abs(plane.normal.x) + math::abs(plane.normal.y) + math::abs(plane.normal.z));
     return r <= plane.getSignedDistanceToPlane(center);
 }
 
-bool SquareAABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
+bool SquareAABB::isOnFrustum(const Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
     const Vector3 globalCenter{ transform.GetModelMatrix() * glm::vec4(center, 1.f) };
 
@@ -288,7 +288,7 @@ std::array<Vector3, 8> AABB::getVertice() const{
 #include <immintrin.h> // for _mm_dp_ps if available
 
 //see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
-bool AABB::isOnOrForwardPlane(Plane& plane) const{
+bool AABB::isOnOrForwardPlane(const Plane& plane) const{
     // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
     /*const float r = extents.x * math::abs(plane.normal.x) + 
                     extents.y * math::abs(plane.normal.y) +
@@ -307,7 +307,7 @@ bool AABB::isOnOrForwardPlane(Plane& plane) const{
     return d >= -r;
 }
 
-bool AABB::isOnFrustum(Frustum& camFrustum){
+bool AABB::isOnFrustum(const Frustum& camFrustum){
     return (isOnOrForwardPlane(camFrustum.leftFace) &&
         isOnOrForwardPlane(camFrustum.rightFace) &&
         isOnOrForwardPlane(camFrustum.topFace) &&
@@ -316,7 +316,7 @@ bool AABB::isOnFrustum(Frustum& camFrustum){
         isOnOrForwardPlane(camFrustum.farFace));
 }
 
-bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
+bool AABB::isOnFrustum(const Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
     const Vector3 globalCenter{ transform.GetModelMatrix() * Vector4(center, 1.f) };
 
@@ -353,7 +353,7 @@ bool AABB::isOnFrustum(Frustum& camFrustum, Transform& transform) const{
 #include <immintrin.h>  // AVX if available
 #endif
 
-bool AABB::isOnAABB(AABB& other){
+bool AABB::isOnAABB(const AABB& other){
 //TODO: Revisar Later
 /*#if defined(__AVX__)
     // AVX version: compara separadamente aMin vs bMax e aMax vs bMin

@@ -340,6 +340,8 @@ private:
     Ref<Mesh> spriteMesh;
     Ref<Mesh> fullScreenQuad;
 
+    Ref<Material> screenSpaceShadow2 = nullptr;
+
     Ref<Model> decalMesh;
 
     Ref<Model> sphereMesh;

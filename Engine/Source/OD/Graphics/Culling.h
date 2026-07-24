@@ -78,10 +78,10 @@ Frustum CreateFrustumFromMatrix(const Matrix4& mat, bool normalizePlanes = true)
 Frustum CreateFrustumFromMatrix2(const Matrix4& mat, bool normalizePlanes = true);
 
 struct OD_API BoundingVolume{
-    virtual bool isOnFrustum(Frustum& camFrustum, Transform& transform) const = 0;
-	virtual bool isOnOrForwardPlane(Plane& plane) const = 0;
+    virtual bool isOnFrustum(const Frustum& camFrustum, Transform& transform) const = 0;
+	virtual bool isOnOrForwardPlane(const Plane& plane) const = 0;
 
-	bool isOnFrustum(Frustum& camFrustum) const;
+	bool isOnFrustum(const Frustum& camFrustum) const;
 };
 
 struct OD_API Sphere: public BoundingVolume{
@@ -93,8 +93,8 @@ struct OD_API Sphere: public BoundingVolume{
 	Sphere(Vector3& inCenter, float inRadius): 
         BoundingVolume{}, center{ inCenter }, radius{ inRadius }{}
 
-	bool isOnOrForwardPlane(Plane& plane) const override;
-	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
+	bool isOnOrForwardPlane(const Plane& plane) const override;
+	bool isOnFrustum(const Frustum& camFrustum, Transform& transform) const override;
 };
 
 struct OD_API SquareAABB: public BoundingVolume{
@@ -104,8 +104,8 @@ struct OD_API SquareAABB: public BoundingVolume{
 	SquareAABB(const Vector3& inCenter, float inExtent): 
 		BoundingVolume{}, center{ inCenter }, extent{ inExtent }{}
 
-	bool isOnOrForwardPlane(Plane& plane) const override;
-	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
+	bool isOnOrForwardPlane(const Plane& plane) const override;
+	bool isOnFrustum(const Frustum& camFrustum, Transform& transform) const override;
 };
 
 struct OD_API alignas(16) AABB: public BoundingVolume{
@@ -198,10 +198,10 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 	std::array<Vector3, 8> getVertice() const;
 
 	//see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
-	bool isOnOrForwardPlane(Plane& plane) const override;
-	bool isOnFrustum(Frustum& camFrustum, Transform& transform) const override;
-	bool isOnFrustum(Frustum& camFrustum);
-	bool isOnAABB(AABB& other);
+	bool isOnOrForwardPlane(const Plane& plane) const override;
+	bool isOnFrustum(const Frustum& camFrustum, Transform& transform) const override;
+	bool isOnFrustum(const Frustum& camFrustum);
+	bool isOnAABB(const AABB& other);
 
 	//bool isOnFrustum(Frustum& camFrustum);
 
