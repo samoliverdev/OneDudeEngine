@@ -11,6 +11,10 @@ struct Surface{
 	float occlusion;
     float metallic;
 	float smoothness;
+	float roughness;
+	float clearCoat;
+	float clearCoatRoughness;
+	float clearCoatIOR;          // 1.0 - 3.0
 };
 
 #endif

@@ -35,7 +35,6 @@ BeginUniform(0, 0, Main)
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
     Uniform vec4 emissionColor;
-    Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform float emissionIntensity;
     Uniform float occlusion;
@@ -98,9 +97,7 @@ uniform int perDrawInt_1;
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
 
     In(0) vec3 outPos;
     In(1) vec3 outNormal;
@@ -187,9 +184,11 @@ uniform int perDrawInt_1;
         
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
 
+        vec3 viewPos = invView[3].xyz;
+
         Surface surface;
         surface.position = outWorldPos;
-        surface.normal = outWorldNormal;// _normal;
+        surface.normal = normalize(outWorldNormal); //outWorldNormal;// _normal;
         surface.viewDirection = normalize(viewPos - outWorldPos);
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
@@ -197,6 +196,7 @@ uniform int perDrawInt_1;
         surface.occlusion = GetOcclusion(uv);
         surface.metallic = GetMetallic(uv);
         surface.smoothness = GetSmoothness(uv);
+        surface.roughness = clamp(1.0 - smoothness, 0.05, 1);
 
         #ifdef Deferred
         
@@ -221,12 +221,13 @@ uniform int perDrawInt_1;
 
         //fragColor = vec4(surface.normal, 1);
         //return;
-
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);// + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
+        
+        vec3 color = GetFinalColor(surface);
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
+
+        //fragColor = vec4(outWorldPos, 1);
+        //return;
 
         //fragColor = vec4(gi.specular, surface.alpha);
         

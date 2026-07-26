@@ -41,9 +41,8 @@ Texture2D(0, 10, sss, sssSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    
+    #include Engine/ShaderLibrary/PBR.glsl
 
     void main(){
         vec2 screenUV = gl_FragCoord.xy / vec2(screenWidth, screenHeight);
@@ -70,8 +69,8 @@ Texture2D(0, 10, sss, sssSampler)
         surface.metallic = Metallic;
         surface.smoothness = Specular;
 
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
+        //BRDF brdf = GetBRDF(surface);
+        //GI gi = GetGI(surface, brdf);
 
         ShadowData shadowData = GetShadowData(surface);
         Light light = GetOtherLight(lightIndex, surface, shadowData);
@@ -79,7 +78,7 @@ Texture2D(0, 10, sss, sssSampler)
         float sss = texture(sss, screenUV).r;
         //light.attenuation = min(light.attenuation, sss);
         
-        vec3 color = GetLighting(surface, brdf, light);
+        vec3 color = IncomingLight(surface, light);
         //color += Emission;
         FragColor = vec4(color, surface.alpha);
 

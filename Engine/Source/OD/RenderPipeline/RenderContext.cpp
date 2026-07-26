@@ -78,6 +78,43 @@ struct alignas(16) SSSParameters2{
     float _pad3; 
 };
 
+struct alignas(16) SSSParameters3 
+{
+    // Base alignment: 4 bytes each. 4 x 4 = 16 bytes. (Perfect vec4 alignment)
+    float SurfaceThickness;
+    float BilinearThreshold;
+    float ShadowContrast;
+    uint32_t IgnoreEdgePixels = 1;
+
+    // Base alignment: 4 bytes each. 4 x 4 = 16 bytes. (Perfect vec4 alignment)
+    uint32_t UsePrecisionOffset = 0;
+    uint32_t BilinearSamplingOffsetMode = 0;
+    uint32_t DebugOutputEdgeMask = 0;
+    uint32_t DebugOutputThreadIndex = 0;
+
+    // Base alignment: 4 bytes each. 2 x 4 = 8 bytes.
+    uint32_t DebugOutputWaveIndex;
+    uint32_t UseEarlyOut;
+    // vec2 requires 8-byte alignment. Since we are at offset 8, it fits perfectly.
+    glm::vec2 DepthBounds; // Total: 8 + 8 = 16 bytes.
+
+    // vec4 requires 16-byte alignment.
+    glm::vec4 LightCoordinate; // 16 bytes.
+
+    // ivec2 requires 8-byte alignment.
+    glm::ivec2 WaveOffset; // 8 bytes.
+    // float requires 4-byte alignment. 
+    float FarDepthValue;   // 4 bytes.
+    float NearDepthValue;  // 4 bytes. Total for this chunk: 8 + 4 + 4 = 16 bytes.
+
+    // vec2 requires 8-byte alignment. 
+    glm::vec2 InvDepthTextureSize; // 8 bytes.
+    
+    // PADDING: std140 structures must be padded to a multiple of 16 bytes (size of a vec4).
+    // Current total size is 88 bytes. Next multiple of 16 is 96. We need 8 bytes of padding.
+    float padding[2]; 
+};
+
 inline void SetPerInstanceData(Matrix4& matrix, Vector4& data){
     matrix[0][3] = data.x;
     matrix[1][3] = data.y;
@@ -375,7 +412,7 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightDirSingleOtherPass->SetTexture("gOther", deferredOutColor, 2);
     deferredLightDirSingleOtherPass->SetTexture("gDepth", deferredOutColor, -1);
-    deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
+    deferredLightDirSingleOtherPass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
     deferredLightDirSingleOtherPass->SetInt("lightIndex", index);
     deferredLightDirSingleOtherPass->SetFloat("screenWidth", cam.width);
     deferredLightDirSingleOtherPass->SetFloat("screenHeight", cam.height);
@@ -412,7 +449,7 @@ void RenderContext::CleanSSS(){
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
-    auto cam = GetCamera();
+    /*auto cam = GetCamera();
     
     Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);
     screenSpaceShadow2->SetTexture("gDepth", GetDeferredFramebuffer(), -1);
@@ -427,8 +464,8 @@ void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
     screenSpaceShadow2->SetFloat("farPlane", cam.farClip);
     Graphics::DrawFullScreenQuad(*screenSpaceShadow2, Matrix4Identity);
     Graphics::EndFramebuffer();
+    return;*/
 
-    return;
     #if 1
     auto camera = GetCamera();
 
@@ -837,7 +874,7 @@ void RenderContext::SetupCameraProperties(Camera inCam){
 
     Material::SetGlobalMatrix4("view", cam.view);
     Material::SetGlobalMatrix4("projection", cam.projection);
-    Material::SetGlobalVector3("viewPos", cam.viewPos);
+    Material::SetGlobalVector3("viewPos", cam.viewPos); //TODO: this "viewPos" look like is not realtime update in the shader what make pbr bug, so check later if the SetGlobalxxx is bug
 }
 
 void RenderContext::ScreenClean(){
@@ -2777,9 +2814,22 @@ void RenderContext::RenderSkyboxLater(){
     skyMaterial->GetShader()->SetMatrix4("view", skyboxView);
     Graphics::DrawMeshRaw(*skyboxMesh);*/
 
+    Vector3 lightDir = {1, 1, 1};
+    Vector4 lightColor = {1, 1, 1, 1};
+
+    auto view = scene->GetRegistry().view<TransformComponent, LightComponent>();
+    for(auto [entity, trans, light]: view.each()){
+        if(light.type != LightComponent::Type::Directional) continue;
+        lightDir = trans.Forward();
+        lightColor = light.color;
+        break;
+    }
+
     //skyMaterial->SetMatrix4("projection", cam.projection);
     Matrix4 skyboxView = Matrix4(glm::mat4(glm::mat3(cam.view)));
     skyMaterial->SetMatrix4("skyboxView", skyboxView);
+    skyMaterial->SetVector3("lightDir", -lightDir);
+    skyMaterial->SetColor3("lightColor", lightColor);
     Graphics::DrawMesh(*skyboxMesh, *skyMaterial, Matrix4Identity);
 
     //Graphics::SetDepthTest(DepthTest::LESS);

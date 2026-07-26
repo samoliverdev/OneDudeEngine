@@ -89,6 +89,8 @@ bool Shader::LoadFromFile(const std::string& path){
         return (dotPos != std::string::npos) ? path.substr(dotPos + 1) : "";
     };
 
+    LogInfo("Load Shader: {}", path);
+
     std::string fileType = getExtension(path);
     if(fileType == "shaderbin"){
         Destroy();
@@ -273,6 +275,7 @@ bool Shader::InitPass(int pass){
     std::vector<std::string> combinations;
 
     std::set<DrawType> drawTypes = { Shader::DrawType::DefaultDraw};
+    
 
     for(auto i: shaderSourceData.passes[pass].properties /*baseShader->Pragmas()*/){
         if(i.size() < 2) continue;

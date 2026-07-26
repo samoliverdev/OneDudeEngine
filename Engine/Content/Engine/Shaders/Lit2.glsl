@@ -33,7 +33,6 @@
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
@@ -183,6 +182,8 @@ uniform int perDrawInt_1;
         
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
 
+        vec3 viewPos = invView[3].xyz;
+
         Surface surface;
         surface.position = outWorldPos;
         surface.normal = outWorldNormal;// _normal;
@@ -193,6 +194,7 @@ uniform int perDrawInt_1;
         surface.occlusion = GetOcclusion(uv);
         surface.metallic = GetMetallic(uv);
         surface.smoothness = GetSmoothness(uv);
+        surface.roughness = 1.0 - GetSmoothness(uv);
 
         #ifdef Deferred
         
@@ -207,7 +209,6 @@ uniform int perDrawInt_1;
         
         #else
 
-        surface.smoothness = clamp(1.0 - smoothness, 0.05, 1);
         vec3 color = GetFinalColor(surface);
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
