@@ -416,10 +416,17 @@ if(OD_BUILD_SANDBOX)
     target_include_directories(Sandbox PRIVATE Sandbox/Source/)
     target_link_libraries(Sandbox Engine)
     target_compile_definitions(Sandbox PRIVATE RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
-    add_custom_command(
-        TARGET Sandbox POST_BUILD
+    #add_custom_command(
+    #    TARGET Sandbox POST_BUILD
+    #    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
+    #)
+
+    add_custom_target(CopyEngineContent ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Sandbox/Content
+        COMMENT "Copying Engine Content"
     )
+    add_dependencies(Sandbox CopyEngineContent)
+
     if(EMSCRIPTEN)
         set_target_properties(Sandbox PROPERTIES SUFFIX ".html")
         target_compile_definitions(Sandbox PRIVATE -DEMSCRIPTEN=1)

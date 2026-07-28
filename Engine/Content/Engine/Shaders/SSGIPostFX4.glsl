@@ -65,12 +65,12 @@ const float TWO_PI  = 6.28318530718;
 //const vec4 _Resolution = vec4(800,600, 0, 0); // xy = size, zw = 1/size
 
 const float _Radius = 12;
-const float _GIIntensity = 10;
+const float _GIIntensity = 50;
 const float _AOIntensity = 1;
 const float _Thickness = 1;
 const float _ExpFactor = 2;
 const float _BackfaceLighting = 0;
-const int _StepCount = 8;
+const int _StepCount = 4;
 const int _SliceCount = 2;
 
 const float _TemporalDirection = 1;
@@ -224,6 +224,7 @@ vec3 HorizonSampling(
 
         if(hits > 0){
             vec3 light = SampleColor(suv);
+            light = light / (1.0 + light);
 
             if(dot(light, vec3(1.0)) > 0.001){
                 float ndl = saturate(dot(normal, dir));
@@ -269,6 +270,10 @@ float blueNoise(vec2 uv){
     //return texture(noise, uv * screenSize / 64.0).r - 0.5;
 }
 
+float Luminance(vec3 c){
+    return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
 //======================================================
 // MAIN GI
 //======================================================
@@ -283,8 +288,8 @@ vec4 ComputeSSGI(vec2 uv){
     //float noise = fract(sin(dot(uv * _Resolution.xy, vec2(12.9898,78.233))) * 43758.5453);
     //float initialStep = fract(noise + _TemporalOffset);
 
-    //vec2 pixel = uv * _Resolution.xy;// _ScreenParams.xy;
-    vec2 pixel = floor(uv * _Resolution.xy);
+    vec2 pixel = uv * _Resolution.xy;// _ScreenParams.xy;
+    //vec2 pixel = floor(uv * _Resolution.xy);
     //float2 pixel = floor(uv * _ScreenParams.xy);
 
     //float noiseOffset = fract(0.25 * mod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
@@ -293,7 +298,9 @@ vec4 ComputeSSGI(vec2 uv){
     float temporalOffset = _TemporalOffset;// 1.0; // temporal (if disabled, set to 1)
     float temporalDirection = _TemporalDirection;// 1.0;
     float noiseJitterIdx = temporalDirection * 0.02; // jitter index (optional but in your code)
-    float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0); // initial ray step (THIS IS VERY IMPORTANT)
+    //float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0); // initial ray step (THIS IS VERY IMPORTANT)
+    // ===================== INITIAL STEP FIX =====================
+    float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0) * 1;
 
     vec3 color = vec3(0);
     float ao = 0;
@@ -335,14 +342,30 @@ vec4 ComputeSSGI(vec2 uv){
     ao /= _SliceCount;
     ao = saturate( pow(1 - saturate(ao), _AOIntensity) );
 
-    color /= _SliceCount;
+    /*color /= _SliceCount;
     color *= _GIIntensity;
+    */
+
+    color /= float(_SliceCount);
+    color *= _GIIntensity;
+
+    // ----------------------------------
+    // HDR FIRE-FLY / ENERGY CLAMP (CRITICAL)
+    // ----------------------------------
+    /*float maxLuminance = 7.0; // SAME as three.js
+    float lum = Luminance(color);
+
+    if(lum > maxLuminance){
+        color *= (maxLuminance / lum);
+    }*/
+    // ----------------------------------
 
     return vec4(color, ao);
 }
 
 void main(){
-    FragColor = ComputeSSGI(vUV);
+    vec2 uv = (floor(vUV * _Resolution.xy) + 0.5) * _Resolution.zw;
+    FragColor = ComputeSSGI(uv);
 }
 
 #endif

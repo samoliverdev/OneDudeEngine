@@ -234,6 +234,7 @@ void main(){
                     float falloff = 1.0 / (1.0 + dist * dist * 0.1);
 
                     vec3 Li = texture(mainTex, uv).rgb;
+                    Li = Li / (1.0 + Li);
 
                     giAccum += (float(visCount) / float(SECTOR_COUNT)) * Li * ndl * ldn * falloff;
                 }
@@ -254,8 +255,8 @@ void main(){
     vec3 GI = giAccum / sliceCount;
 
     // HDR clamp
-    float lum = dot(GI, vec3(0.2126, 0.7152, 0.0722));
-    if(lum > GI_CLAMP) GI *= GI_CLAMP / lum;
+    //float lum = dot(GI, vec3(0.2126, 0.7152, 0.0722));
+    //if(lum > GI_CLAMP) GI *= GI_CLAMP / lum;
 
     /*vec3 currGI = GI;
     vec3 prevGI = texture(lastIndirect, texCoord).rgb;

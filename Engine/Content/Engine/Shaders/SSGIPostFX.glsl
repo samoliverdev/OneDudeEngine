@@ -143,6 +143,7 @@ EndUniform()
                 vec3 samplePosition = GetWorldPos(sampleUV); samplePosition = (view * vec4(samplePosition, 1)).xyz;
                 vec3 sampleNormal = normalize(GetWorldNormal(sampleUV)); sampleNormal = normalize(mat3(view) * sampleNormal);
                 vec3 sampleLight = texture(mainTex, sampleUV).rgb;
+                sampleLight = sampleLight / (1.0 + sampleLight);
                 vec3 sampleDistance = samplePosition - position;
                 float sampleLength = max(length(sampleDistance), 0.0001); // Avoid division by zero length(sampleDistance);
                 vec3 sampleHorizon = sampleDistance / sampleLength;

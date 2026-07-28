@@ -20,8 +20,8 @@ SSGIFeature::SSGIFeature(){
     event = RenderPassEvent::PostProcess;
     
     blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX4.glsl"));
-    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX2.glsl"));
+    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
+    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX3.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
     blueNoise = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/LDR_RG01_47.png");
@@ -56,8 +56,8 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
 
     auto halfSpec = spec;
-    //halfSpec.width /= 2;
-    //halfSpec.height /= 2;
+    halfSpec.width /= 2;
+    halfSpec.height /= 2;
 
     auto gi = new Framebuffer(halfSpec);
 
@@ -67,7 +67,7 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     Camera cam = context.GetCamera();
     float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
     //float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
-    float halfProjScale = spec.height / (2.0f *  math::tan(cam.fov * 0.5f * Deg2Rad));
+    float halfProjScale = spec.height / (2.0f *  math::tan(math::degrees(cam.fov) * 0.5f * Deg2Rad));
 
     Graphics::BeginFramebuffer(*gi);
     Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
@@ -91,48 +91,63 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     giPass->SetFloat("cameraFar", cam.farClip);
     giPass->SetFloat("halfProjScale", halfProjScale);
     giPass->SetFloat("_HalfProjScale", halfProjScale);
-    giPass->SetVector4("_Resolution", {spec.width, spec.height, 0, 0});
+    giPass->SetVector4("_Resolution", {spec.width, spec.height, 1.0f / spec.width, 1.0f / spec.height});
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    //Blur Pass
-    Framebuffer* currentDestination = textures[0] = new Framebuffer(spec);
-    Blit(gi, currentDestination, giBlurPass, 0);
+    giBlurPass->SetTexture("gDepth", deferred, -1);
+    giBlurPass->SetTexture("gNormal", deferred, 0);
+    giBlurPass->SetFloat("cameraNear", cam.nearClip);
+    giBlurPass->SetFloat("cameraFar", cam.farClip);
+    giBlurPass->SetFloat("depthPhi", 100.0f*1);
+    giBlurPass->SetFloat("normalPhi", 32.0f*1);
 
-    Framebuffer* currentSource = currentDestination;
+    if(denoiseMaxIterations > 0){
+        //Blur Pass
+        Framebuffer* currentDestination = textures[0] = new Framebuffer(spec);
+        
 
-    int i = 1;
-    for(; i < denoiseMaxIterations; i++){
-        spec.width /= 2;
-        spec.height /= 2;
-        if(spec.height < 2){
-            break;
+        giBlurPass->SetVector2("giTexelSize", {1.0f / spec.width, 1.0f / spec.height});
+        Blit(gi, currentDestination, giBlurPass, 0);
+
+        Framebuffer* currentSource = currentDestination;
+
+        int i = 1;
+        for(; i < denoiseMaxIterations; i++){
+            spec.width /= 2;
+            spec.height /= 2;
+            if(spec.height < 2){
+                break;
+            }
+
+            currentDestination = textures[i] = new Framebuffer(spec);
+
+            giBlurPass->SetVector2("giTexelSize", {1.0f / spec.width, 1.0f / spec.height});
+            Blit(currentSource, currentDestination, giBlurPass, 0);
+            //releaseTemporary.push_back(currentSource);
+            
+            currentSource = currentDestination;
+        }
+        for(i -= 2; i >= 0; i--){
+            currentDestination = textures[i];
+            textures[i] = nullptr;
+
+            giBlurPass->SetVector2("giTexelSize", {1.0f / currentDestination->Specification().width, 1.0f / currentDestination->Specification().height});
+            Blit(currentSource, currentDestination, giBlurPass, 1);
+            releaseTemporary.push_back(currentSource);
+            
+            currentSource = currentDestination;
         }
 
-        currentDestination = textures[i] = new Framebuffer(spec);
-        
-        Blit(currentSource, currentDestination, giBlurPass, 0);
-        //releaseTemporary.push_back(currentSource);
-        
-        currentSource = currentDestination;
-    }
-    for(i -= 2; i >= 0; i--){
-        currentDestination = textures[i];
-        textures[i] = nullptr;
-        
-        Blit(currentSource, currentDestination, giBlurPass, 1);
+        giBlurPass->SetVector2("giTexelSize", {1.0f / deferred->Specification().width, 1.0f / deferred->Specification().height});
+        Blit(currentSource, gi, giBlurPass, 1);
         releaseTemporary.push_back(currentSource);
-        
-        currentSource = currentDestination;
+        //
     }
-
-    Blit(currentSource, gi, giBlurPass, 1);
-    releaseTemporary.push_back(currentSource);
-    //
 
     giComposePass->SetPass(debug ? 1 : 0);
-    giComposePass->SetVector2("giSize", {deferred->Specification().width, deferred->Specification().height});
-    giComposePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
+    giComposePass->SetVector2("giSize", {(float)deferred->Specification().width, (float)deferred->Specification().height});
+    giComposePass->SetVector2("screenSize", {(float)deferred->Specification().width, (float)deferred->Specification().height});
     Graphics::BeginFramebuffer(*data.dst);
     Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
     giComposePass->SetTexture("mainTex", data.src, 0);

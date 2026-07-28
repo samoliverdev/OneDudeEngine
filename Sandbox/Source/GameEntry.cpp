@@ -40,10 +40,11 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = -1; //35;
+    int i = 34; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();
+    
     if(i == 0) return new BaseMeshSample();
     if(i == 1) return new LoadModelSample();
     if(i == 2) return new LightSample();

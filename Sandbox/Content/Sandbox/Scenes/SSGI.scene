@@ -151,10 +151,10 @@
                 "v.z": 0.0
             },
             "localRotation": {
-                "q.x": -0.7071067690849304,
+                "q.x": -0.707106769,
                 "q.y": -0.0,
                 "q.z": 0.0,
-                "q.w": 0.7071067690849304
+                "q.w": 0.707106769
             },
             "localScale": {
                 "v.x": 10.0,
@@ -190,15 +190,15 @@
         },
         {
             "localPosition": {
-                "v.x": -5.000000953674316,
+                "v.x": -5.000000953,
                 "v.y": 5.0,
-                "v.z": -9.535579010844231e-7
+                "v.z": -9.536452125757933e-7
             },
             "localRotation": {
                 "q.x": 0.0,
-                "q.y": 0.7069846987724304,
+                "q.y": 0.706984698,
                 "q.z": 0.0,
-                "q.w": 0.7072288393974304
+                "q.w": 0.707228839
             },
             "localScale": {
                 "v.x": 10.0,
@@ -212,15 +212,15 @@
         },
         {
             "localPosition": {
-                "v.x": 4.9524245262146,
+                "v.x": 4.952424526,
                 "v.y": 5.0,
-                "v.z": -0.0000015468854144273792
+                "v.z": -0.000001546
             },
             "localRotation": {
                 "q.x": 0.0,
-                "q.y": -0.7069846987724304,
+                "q.y": -0.706984698,
                 "q.z": 0.0,
-                "q.w": 0.7072288393974304
+                "q.w": 0.707228839
             },
             "localScale": {
                 "v.x": 10.0,
@@ -239,10 +239,10 @@
                 "v.z": 5.960465045973251e-7
             },
             "localRotation": {
-                "q.x": 0.7071067690849304,
+                "q.x": 0.707106769,
                 "q.y": 0.0,
                 "q.z": 0.0,
-                "q.w": 0.7071067690849304
+                "q.w": 0.707106769
             },
             "localScale": {
                 "v.x": 10.0,
@@ -279,8 +279,8 @@
         {
             "localPosition": {
                 "v.x": 0.0,
-                "v.y": 5.599410533905029,
-                "v.z": 15.11330795288086
+                "v.y": 4.0,
+                "v.z": 15.113307952
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -301,7 +301,7 @@
         {
             "localPosition": {
                 "v.x": 0.0,
-                "v.y": 7.188505172729492,
+                "v.y": 7.188505172,
                 "v.z": 0.0
             },
             "localRotation": {
@@ -322,9 +322,9 @@
         },
         {
             "localPosition": {
-                "v.x": 2.193859100341797,
+                "v.x": 2.1938591,
                 "v.y": 1.0,
-                "v.z": 2.5148377418518068
+                "v.z": 3.25741887
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -344,15 +344,15 @@
         },
         {
             "localPosition": {
-                "v.x": -1.539124846458435,
+                "v.x": -1.539124846,
                 "v.y": 1.5,
-                "v.z": -1.0613086223602296
+                "v.z": -1.530654311
             },
             "localRotation": {
                 "q.x": 0.0,
-                "q.y": 0.16504760086536408,
+                "q.y": 0.1650476,
                 "q.z": 0.0,
-                "q.w": 0.9862856268882752
+                "q.w": 0.746571421
             },
             "localScale": {
                 "v.x": 3.0,
@@ -391,25 +391,25 @@
                 },
                 "cleanColor": {
                     "r": 0.5,
-                    "g": 0.10000000149011612,
-                    "b": 0.800000011920929,
+                    "g": 0.112499997,
+                    "b": 0.800000011,
                     "a": 1.0
                 },
                 "directionalshadowQuality": 3,
                 "othershadowQuality": 2,
                 "directinalShadowCascade": {
-                    "value0": 0.10000000149011612,
+                    "value0": 0.112499997,
                     "value1": 0.25,
                     "value2": 0.5,
                     "value3": 1.0
                 },
                 "shadowDistance": 150.0,
-                "shadowBias": 0.000009999999747378752,
+                "shadowBias": 0.000012628,
                 "enableSSS": true,
-                "sssSurfaceThickness": 0.004999999888241291,
-                "sssBilinearThreshold": 0.019999999552965165,
+                "sssSurfaceThickness": 0.004999998,
+                "sssBilinearThreshold": 0.025624999,
                 "sssShadowContrast": 4.0,
-                "toneMappingPostFX": {
+                "toneMapping": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483649,
@@ -420,7 +420,7 @@
                         }
                     }
                 },
-                "colorGradingPostFX": {
+                "colorGrading": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483650,
@@ -439,7 +439,7 @@
                         }
                     }
                 },
-                "bloomPostFX": {
+                "bloom": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483651,
@@ -455,7 +455,7 @@
                         }
                     }
                 },
-                "ssaoPostFX": {
+                "ssao": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483652,
@@ -463,26 +463,26 @@
                             "enable": false,
                             "intensity": 0.5,
                             "radius": 0.5,
-                            "bias": 0.02500000037252903
+                            "bias": 0.025
                         }
                     }
                 },
-                "ssgiPostFX": {
+                "ssgi": {
                     "polymorphic_id": 1073741824,
                     "ptr_wrapper": {
                         "id": 2147483653,
                         "data": {
                             "enable": true,
-                            "sampleRadius": 12.0,
+                            "sampleRadius": 2.0,
                             "hitThickness": 1.0,
-                            "sampleCount": 12.0,
-                            "sliceCount": 12.0,
+                            "sampleCount": 4.0,
+                            "sliceCount": 4.0,
                             "backfaceLighting": 0.0,
-                            "giIntensity": 10.0,
+                            "giIntensity": 50.0,
                             "aoIntensity": 1.0,
-                            "useScreenSpaceSampling": false,
-                            "denoiseMaxIterations": 0,
-                            "debug": true
+                            "useScreenSpaceSampling": true,
+                            "denoiseMaxIterations": 5,
+                            "debug": false
                         }
                     }
                 },
@@ -490,6 +490,9 @@
                     "isNull": false,
                     "path": "#Memory"
                 }
+            },
+            "features": {
+                "typeIds": []
             }
         }
     ],
@@ -502,7 +505,7 @@
             "isMain": true,
             "orthographicSize": 5.0,
             "fieldOfView": 45.0,
-            "nearClipPlane": 0.10000000149011612,
+            "nearClipPlane": 0.112499997,
             "farClipPlane": 100.0,
             "cleanColor": {
                 "v.x": 0.0,
@@ -510,7 +513,24 @@
                 "v.z": 0.0,
                 "v.w": 1.0
             },
-            "renderingPath": 1
+            "renderingPath": 1,
+            "passRenderSettings": {
+                "drawShadow": true,
+                "drawPostProcessing": true,
+                "drawUI": true,
+                "drawGizmos": true
+            },
+            "collectSettings": {
+                "collectStatic": true,
+                "collectDynamic": true,
+                "collectModel": true,
+                "collectMesh": true,
+                "collectSkinnedModel": true,
+                "collectSkinnedMesh": true,
+                "collectCluster": true,
+                "collectDecal": true,
+                "collectParticle": true
+            }
         }
     ],
     "CameraComponentEntities": [
@@ -564,17 +584,18 @@
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 },
                 "extents": {
                     "v.x": 0.5,
                     "v.y": 0.5,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 }
             },
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/plane.obj"
@@ -586,6 +607,10 @@
                 "path": [
                     "Sandbox/Materials/Gray.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -612,17 +637,18 @@
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 },
                 "extents": {
                     "v.x": 0.5,
                     "v.y": 0.5,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 }
             },
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/plane.obj"
@@ -634,6 +660,10 @@
                 "path": [
                     "Sandbox/Materials/Gray.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -660,17 +690,18 @@
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 },
                 "extents": {
                     "v.x": 0.5,
                     "v.y": 0.5,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 }
             },
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/plane.obj"
@@ -682,6 +713,10 @@
                 "path": [
                     "Sandbox/Materials/Red.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -708,17 +743,18 @@
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 },
                 "extents": {
                     "v.x": 0.5,
                     "v.y": 0.5,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 }
             },
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/plane.obj"
@@ -730,6 +766,10 @@
                 "path": [
                     "Sandbox/Materials/Green.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -756,17 +796,18 @@
                 "center": {
                     "v.x": 0.0,
                     "v.y": 0.0,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 },
                 "extents": {
                     "v.x": 0.5,
                     "v.y": 0.5,
-                    "v.z": 5.877471754111438e-39
+                    "v.z": 0.0
                 }
             },
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/plane.obj"
@@ -778,6 +819,10 @@
                 "path": [
                     "Sandbox/Materials/Gray.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -815,6 +860,7 @@
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/Cube.obj"
@@ -826,6 +872,10 @@
                 "path": [
                     "Sandbox/Materials/Gray.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         },
         {
@@ -863,6 +913,7 @@
             "renderTargetVisibility": [
                 true
             ],
+            "castShadow": true,
             "modelRef": {
                 "isNull": false,
                 "path": "Engine/Models/Cube.obj"
@@ -874,6 +925,10 @@
                 "path": [
                     "Sandbox/Materials/Gray.material"
                 ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
             }
         }
     ],
