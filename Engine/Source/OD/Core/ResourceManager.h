@@ -3,7 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Utils/Allocators.h"
-#include "Asset.h"
+#include "Resource.h"
 #include "ResourceAllocator.h"
 #include "Package.h"
 //#include <entt/entt.hpp>
@@ -16,18 +16,18 @@ namespace OD{
 #define USE_EXPERIMENTAL_ALLOCATOR
 #define USE_WEAK_PTR
 
-class OD_API AssetTypesDB{
+class OD_API ResourceTypesDB{
 public:
-    struct AssetFuncs{
-        std::function<Ref<Asset>()> Create;
-        std::function<Ref<Asset>(const std::string&)> CreateFromFile;
+    struct ResourceFuncs{
+        std::function<Ref<Resource>()> Create;
+        std::function<Ref<Resource>(const std::string&)> CreateFromFile;
     };
 
     template<typename T>
     void RegisterAssetType(std::string fileExtension){
         Assert(assetFuncs.find(fileExtension) == assetFuncs.end());
 
-        AssetFuncs funcs;
+        ResourceFuncs funcs;
 
         funcs.Create = [](){
             return CreateRef<T>();
@@ -42,10 +42,10 @@ public:
     }
 
     template<typename T>
-    void RegisterAssetType(std::string fileExtension, std::function<Ref<Asset>(const std::string&)> createFromFile){
+    void RegisterAssetType(std::string fileExtension, std::function<Ref<Resource>(const std::string&)> createFromFile){
         Assert(assetFuncs.find(fileExtension) == assetFuncs.end());
 
-        AssetFuncs funcs;
+        ResourceFuncs funcs;
         funcs.CreateFromFile = createFromFile;
         funcs.Create = [](){
             return CreateRef<T>();
@@ -57,30 +57,30 @@ public:
 
     bool HasAssetByExtension(std::string fileExtension);
 
-    static AssetTypesDB& Get();
+    static ResourceTypesDB& Get();
 
-    std::unordered_map<std::string, AssetFuncs> assetFuncs;
-    std::unordered_map<Type, AssetFuncs> assetFuncsTypes;
+    std::unordered_map<std::string, ResourceFuncs> assetFuncs;
+    std::unordered_map<Type, ResourceFuncs> assetFuncsTypes;
 
 private:
-    AssetTypesDB(){}
+    ResourceTypesDB(){}
 };
 
-class AssetManagerFileUpdateListener;
+class ResourceManagerFileUpdateListener;
 
-class OD_API AssetManager{
-    friend class AssetManagerFileUpdateListener;
+class OD_API ResourceManager{
+    friend class ResourceManagerFileUpdateListener;
 public:
-    template<class T, typename ... Args> Ref<T> LoadAsset(const std::string& path, Args&& ... args);
+    template<class T, typename ... Args> Ref<T> LoadByPath(const std::string& path, Args&& ... args);
     //TODO: Deprectate this later
-    template<class T, typename ... Args> void AddAsset(const std::string& path, Ref<T> asset);
-    template<class T> bool HasAsset(const std::string& path) const;
+    template<class T, typename ... Args> void AddByPath(const std::string& path, Ref<T> asset);
+    template<class T> bool HasByPath(const std::string& path) const;
 
-    template<class T, typename ... Args> Ref<T> CreateAsset(Args&& ... args);
+    template<class T, typename ... Args> Ref<T> Create(Args&& ... args);
     template<typename T> IResourceView<T>* GetAllocatorView();
 
     void UnloadAll();
-    static AssetManager& Get();
+    static ResourceManager& Get();
 
     void StartHotReload();
     void StopHotReload();
@@ -95,7 +95,7 @@ private:
     //std::unordered_map<std::type_index, std::unordered_map<std::string, Ref<Asset>>> data;
     //std::unordered_map<entt::id_type, std::unordered_map<std::string, Ref<Asset>>> data;
     #ifdef USE_WEAK_PTR
-    std::unordered_map<Type, std::unordered_map<std::string, WeakRef<Asset>>> data;
+    std::unordered_map<Type, std::unordered_map<std::string, WeakRef<Resource>>> data;
     #else
     std::unordered_map<Type, std::unordered_map<std::string, Ref<Asset>>> data;
     #endif
@@ -105,25 +105,25 @@ private:
     #endif
 
     #ifdef USE_WEAK_PTR
-    std::unordered_map<std::string, WeakRef<Asset>>& GetDB(Type id);
+    std::unordered_map<std::string, WeakRef<Resource>>& GetDB(Type id);
     #else
     std::unordered_map<std::string, Ref<Asset>>& GetDB(Type id);
     #endif
 
     efsw::FileWatcher* fileWatcher;
-    AssetManagerFileUpdateListener* listener;
-    std::unordered_set<Ref<Asset>> toApplyHotReload;
+    ResourceManagerFileUpdateListener* listener;
+    std::unordered_set<Ref<Resource>> toApplyHotReload;
     std::mutex toApplyHotReloadMutex;
 
     std::vector<Package*> packages;
 };
 
 template<class T>
-struct OD_API AssetRefSerialize{
+struct OD_API ResourceRefSerialize{
     Ref<T>& asset;
     bool dontTryLoadFromMemory = true;
 
-    AssetRefSerialize(Ref<T>& inAsset):asset(inAsset){}
+    ResourceRefSerialize(Ref<T>& inAsset):asset(inAsset){}
 
     template<class Archive>
     void save(Archive& ar) const{
@@ -156,15 +156,15 @@ struct OD_API AssetRefSerialize{
             return;
         }*/
 
-        asset = AssetManager::Get().LoadAsset<T>(path); 
+        asset = ResourceManager::Get().LoadByPath<T>(path); 
     }
 };
 
 template<class T>
-struct OD_API AssetVectorRefSerialize{
+struct OD_API ResourceVectorRefSerialize{
     std::vector<Ref<T>>& assets;
 
-    AssetVectorRefSerialize(std::vector<Ref<T>>&  inAssets):assets(inAssets){}
+    ResourceVectorRefSerialize(std::vector<Ref<T>>&  inAssets):assets(inAssets){}
 
     template<class Archive>
     void save(Archive& ar) const{
@@ -191,7 +191,7 @@ struct OD_API AssetVectorRefSerialize{
         ArchiveDumpNVP(ar, path);
 
         for(int i = 0; i < isNull.size(); i++){
-            assets.push_back(isNull[i] ? nullptr : AssetManager::Get().LoadAsset<T>(path[i])); 
+            assets.push_back(isNull[i] ? nullptr : ResourceManager::Get().LoadByPath<T>(path[i])); 
         }
     }
 };
@@ -201,7 +201,7 @@ struct OD_API AssetVectorRefSerialize{
 namespace OD{
 
 template<typename T>
-IResourceView<T>* AssetManager::GetAllocatorView(){
+IResourceView<T>* ResourceManager::GetAllocatorView(){
     /*auto it = allocator.find(GetType<T>());
     if(it == allocator.end()) return nullptr;
     return reinterpret_cast<IResourceView<T>*>(it->second);*/
@@ -219,8 +219,8 @@ IResourceView<T>* AssetManager::GetAllocatorView(){
 }
 
 template<class T, typename ... Args>
-Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
-    static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
+Ref<T> ResourceManager::LoadByPath(const std::string& path, Args&& ... args){
+    static_assert(std::is_base_of_v<Resource, T>, "T must be derived from Asset");
 
     std::string resolvedPath = path;
 
@@ -325,7 +325,7 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
     }
     
     #ifdef USE_WEAK_PTR
-    db[resolvedPath] = std::static_pointer_cast<Asset>(asset); //asset;
+    db[resolvedPath] = std::static_pointer_cast<Resource>(asset); //asset;
     #else
     db[resolvedPath] = asset;
     #endif
@@ -336,8 +336,10 @@ Ref<T> AssetManager::LoadAsset(const std::string& path, Args&& ... args){
 }
 
 template<class T, typename ... Args>
-Ref<T> AssetManager::CreateAsset(Args&& ... args){
-    static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
+Ref<T> ResourceManager::Create(Args&& ... args){
+    static_assert(std::is_base_of_v<Resource, T>, "T must be derived from Asset");
+
+    return nullptr;
 
     Type type = GetType<T>();
     auto& db = GetDB(type);
@@ -376,8 +378,8 @@ Ref<T> AssetManager::CreateAsset(Args&& ... args){
 }
 
 template<class T, typename ... Args>
-void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
-    static_assert(std::is_base_of_v<Asset, T>, "T must be derived from Asset");
+void ResourceManager::AddByPath(const std::string& path, Ref<T> asset){
+    static_assert(std::is_base_of_v<Resource, T>, "T must be derived from Asset");
 
     //auto& db = data[std::type_index(typeid(T))];
     //auto& db = data[entt::type_hash<T>::value()];
@@ -386,17 +388,18 @@ void AssetManager::AddAsset(const std::string& path, Ref<T> asset){
 
     LogInfo("AddAsset: {}", path);
     #ifdef USE_WEAK_PTR
-    db[path] = std::static_pointer_cast<Asset>(asset); //asset;
+    db[path] = std::static_pointer_cast<Resource>(asset); //asset;
     #else
     db[path] = asset;
     #endif
 }
 
 template<class T>
-bool AssetManager::HasAsset(const std::string& path) const {
-    static_assert(std::is_base_of_v<Asset, T>, "T must derive from Asset");
+bool ResourceManager::HasByPath(const std::string& path) const {
+    static_assert(std::is_base_of_v<Resource, T>, "T must derive from Asset");
 
     Type type = GetType<T>();
+    auto& dbs = GetDB(type); 
 
     auto itDB = dbs.find(type);
     if(itDB == dbs.end()) return false;

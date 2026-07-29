@@ -201,8 +201,8 @@ void ProceduralTerrain2::OnInit(){
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.glb");
+    cubeModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity cube = scene->AddEntity("Cube");
     TransformComponent& cubeTrans = scene->GetComponent<TransformComponent>(cube);
@@ -239,12 +239,12 @@ void ProceduralTerrain2::OnInit(){
         heighmap
     );
     }
-    terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
-    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.splatmap = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
+    terrainComponent.layer0 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer1 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer2 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer3 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer4 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
     /*terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (31).png");
     terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (37).png");
     terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Free Vegetation Textures 31-60/Vegetation (58).png");
@@ -255,7 +255,7 @@ void ProceduralTerrain2::OnInit(){
     objectsBucks["Rocks"] = {
         "Rock",
         std::vector<Ref<Model>>{
-            AssetManager::Get().LoadAsset<Model>("Sandbox/Models/low-poly-tree-pack/Models/Tree Type1 05.dae"),
+            ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/low-poly-tree-pack/Models/Tree Type1 05.dae"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingA.glb"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingB.glb"),
             //AssetManager::Get().LoadAsset<Model>("Game/TempModels/kenney_city-kit/Models/GLTF format/large_buildingC.glb"),
@@ -265,17 +265,17 @@ void ProceduralTerrain2::OnInit(){
     };
     for(auto& i: objectsBucks["Rocks"].models){
         for(auto& j: i->materials){
-            j->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+            j->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
             j->SetEnableInstancing(true);
-            j->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Models/low-poly-tree-pack/Textures/Colorsheet Tree Normal.png"));
+            j->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Models/low-poly-tree-pack/Textures/Colorsheet Tree Normal.png"));
         }
     }
 
     Entity water = scene->AddEntity("Water");
     auto& waterModel = scene->AddComponent<ModelRendererComponent>(water);
-    waterModel.SetModel(AssetManager::Get().LoadAsset<Model>("Sandbox/Models/TerrainPlane.glb"));
-    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
-    waterModel.GetMaterialsOverride()[0]->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/water.png"));
+    waterModel.SetModel(ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/TerrainPlane.glb"));
+    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    waterModel.GetMaterialsOverride()[0]->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/water.png"));
     auto& waterTrans = scene->GetComponent<TransformComponent>(water);
     waterTrans.LocalScale(Vector3One * 5000.0f);
     waterTrans.LocalPosition(Vector3Up * 10.0f);

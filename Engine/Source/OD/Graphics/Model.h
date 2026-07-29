@@ -1,7 +1,7 @@
 #pragma once
 //#include "OD/Defines.h"
-#include "OD/Core/Asset.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Resource.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Core/Math.h"
 #include "OD/Animation/Skeleton.h"
 #include "OD/Animation/Clip.h"
@@ -39,7 +39,7 @@ struct OD_API ModelLoadSettings{
         ArchiveDumpNVP(ar, useOnlySkinnedBones);
         ArchiveDumpNVP(ar, generateColliderData);
 
-        AssetRefSerialize<Shader> shaderRef(customShader);
+        ResourceRefSerialize<Shader> shaderRef(customShader);
         ArchiveDumpNVP(ar, shaderRef);
 
         ArchiveDumpNVP(ar, clipsHasRootMotion);
@@ -48,7 +48,7 @@ struct OD_API ModelLoadSettings{
     }
 };
 
-class OD_API Model: public Asset{
+class OD_API Model: public Resource{
 public:
     struct OD_API MaterialTarget{
         struct Tex{

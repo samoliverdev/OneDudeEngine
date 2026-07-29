@@ -37,8 +37,8 @@ void NavmeshSample::OnInit(){
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.glb");
 
     /*Entity floorEntity = scene->AddEntity("Floor");
     ModelRendererComponent& floorRenderer = floorEntity.AddComponent<ModelRendererComponent>();
@@ -60,7 +60,7 @@ void NavmeshSample::OnInit(){
     Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
     _meshRenderer2.GetMaterialsOverride()[0] = LoadFloorMaterial();*/
     
-    Ref<Model> enviromentModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/NavmeshEnviromentTest.blend");
+    Ref<Model> enviromentModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/NavmeshEnviromentTest.blend");
     for(int i = 0; i < enviromentModel->materials.size(); i++){
         enviromentModel->materials[i] = LoadFloorMaterial();
     }

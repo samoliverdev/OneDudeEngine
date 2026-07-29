@@ -255,17 +255,17 @@ Ref<Model> Model::CreateFromPackage(const std::string& path, Package& package, M
 }*/
 
 bool Model::Save(const std::string& outPath, SaveType type){
-	if(type == Asset::SaveType::SettingOnly) return false;
+	if(type == Resource::SaveType::SettingOnly) return false;
 
     std::ofstream os(outPath, std::ios::binary);
     Assert(os.is_open());
 
-    if(type == Asset::SaveType::AssetBinary){
+    if(type == Resource::SaveType::AssetBinary){
 		Assert(false);
         /*cereal::PortableBinaryOutputArchive ar(os);
         ar(*this);*/
     }
-    if(type == Asset::SaveType::FinalBinary){
+    if(type == Resource::SaveType::FinalBinary){
         cereal::BinaryOutputArchive ar(os);
 		SaveTo(ar);
     }
@@ -276,7 +276,7 @@ bool Model::Save(const std::string& outPath, SaveType type){
 void Model::CreateMaterialsFromTargets(){
 	materials.resize(materialTargets.size());
 	for(int i = 0; i < materialTargets.size(); i++){
-		Ref<Shader> s = settings.customShader != nullptr ? settings.customShader : AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl");
+		Ref<Shader> s = settings.customShader != nullptr ? settings.customShader : ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl");
 		Ref<Material> m = CreateRef<Material>(s);
 
 		for(int j = 0; j < materialTargets[i].argNames.size(); j++){
@@ -288,7 +288,7 @@ void Model::CreateMaterialsFromTargets(){
 			} else {
 				m->SetTexture(
 					materialTargets[i].argNames[j].c_str(),
-					AssetManager::Get().LoadAsset<Texture2D>(materialTargets[i].texs[j].extPath)
+					ResourceManager::Get().LoadByPath<Texture2D>(materialTargets[i].texs[j].extPath)
 				);
 			}
 		}

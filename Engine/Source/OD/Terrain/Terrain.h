@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Scene/Scene.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 
 struct OD_API MeshBorders{
     bool left = false;
@@ -97,23 +97,23 @@ struct OD_API TerrainComponent{
         ArchiveDumpNVP(ar, chunkWidthCount);
         ArchiveDumpNVP(ar, mapChunkSize);
 
-        AssetRefSerialize<Heightmap> _heightmap(heightmap);
+        ResourceRefSerialize<Heightmap> _heightmap(heightmap);
         ArchiveDump(ar, CEREAL_NVP(_heightmap));
 
-        AssetRefSerialize<Texture2D> _splatmap(splatmap);
+        ResourceRefSerialize<Texture2D> _splatmap(splatmap);
         ArchiveDump(ar, CEREAL_NVP(_splatmap));
 
-        AssetRefSerialize<Texture2D> _layer0(layer0);
+        ResourceRefSerialize<Texture2D> _layer0(layer0);
         ArchiveDump(ar, CEREAL_NVP(_layer0));
-        AssetRefSerialize<Texture2D> _layer0Normal(layer0Normal);
+        ResourceRefSerialize<Texture2D> _layer0Normal(layer0Normal);
         ArchiveDump(ar, CEREAL_NVP(_layer0Normal));
-        AssetRefSerialize<Texture2D> _layer1(layer1);
+        ResourceRefSerialize<Texture2D> _layer1(layer1);
         ArchiveDump(ar, CEREAL_NVP(_layer1));
-        AssetRefSerialize<Texture2D> _layer2(layer2);
+        ResourceRefSerialize<Texture2D> _layer2(layer2);
         ArchiveDump(ar, CEREAL_NVP(_layer2));
-        AssetRefSerialize<Texture2D> _layer3(layer3);
+        ResourceRefSerialize<Texture2D> _layer3(layer3);
         ArchiveDump(ar, CEREAL_NVP(_layer3));
-        AssetRefSerialize<Texture2D> _layer4(layer4);
+        ResourceRefSerialize<Texture2D> _layer4(layer4);
         ArchiveDump(ar, CEREAL_NVP(_layer4));
     }
 private:

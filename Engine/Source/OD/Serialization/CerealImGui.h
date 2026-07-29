@@ -4,7 +4,7 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Color.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 //#include <entt/entt.hpp>
 #include <map>
 #include <string>
@@ -162,13 +162,13 @@ private:
     }
 
     template<class T>
-    void DrawUI(const char* name, OD::AssetRefSerialize<T>& value, Options opt = Options()){
+    void DrawUI(const char* name, OD::ResourceRefSerialize<T>& value, Options opt = Options()){
         std::string s(name);
         ImGui::DrawAsset<T>(s, value.asset);
     }
 
     template<class T>
-    void DrawUI(const char* name, OD::AssetVectorRefSerialize<T>& value, Options opt = Options()){
+    void DrawUI(const char* name, OD::ResourceVectorRefSerialize<T>& value, Options opt = Options()){
         if(ImGui::TreeNodeEx(name)){
             int index = 0;
             for(auto& asset: value.assets){
@@ -194,12 +194,12 @@ private:
         }
     }
 
-    template<class T, std::enable_if_t<std::is_base_of<OD::Asset, T>{}> * = nullptr>
+    template<class T, std::enable_if_t<std::is_base_of<OD::Resource, T>{}> * = nullptr>
     void DrawUI(const char* name, OD::Ref<T>& value, Options opt = Options()){
         ImGui::DrawAsset<T>(std::string(name), value);
     }
 
-    template<class T, std::enable_if_t<!std::is_base_of<OD::Asset, T>{}> * = nullptr>
+    template<class T, std::enable_if_t<!std::is_base_of<OD::Resource, T>{}> * = nullptr>
     void DrawUI(const char* name, OD::Ref<T>& value, Options opt = Options()){
         if(value == nullptr){
             ImGui::Text("Null");

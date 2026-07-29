@@ -31,8 +31,8 @@ void ModuleInit(){
 
 StandardAssetSystem::StandardAssetSystem(){
     name = "StandardAssetSystem";
-    defaultMaterial = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
-    defaultMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Standard/Textures/GreyboxTextures/greybox_grey_solid_2.png"));
+    defaultMaterial = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    defaultMaterial->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Standard/Textures/GreyboxTextures/greybox_grey_solid_2.png"));
 }
 
 StandardAssetSystem::~StandardAssetSystem(){

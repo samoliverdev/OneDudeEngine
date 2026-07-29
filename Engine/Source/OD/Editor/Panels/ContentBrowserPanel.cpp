@@ -304,7 +304,7 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     if (ImGui::MenuItem("Create Material")) {
         std::string path = Platform::SaveFile("*.material");
         if (!path.empty()) {
-            Ref<Material> mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+            Ref<Material> mat = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
             mat->Save(path);
             UpdateFileCache(std::filesystem::path(path).parent_path());
             UpdateFilteredFiles();
@@ -490,9 +490,9 @@ void ContentBrowserPanel::DrawMatchingFiles(const std::filesystem::path& rootPat
                 std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
                 auto ext = _selectedFile.extension().string();
-                if (AssetTypesDB::Get().HasAssetByExtension(ext)) {
+                if (ResourceTypesDB::Get().HasAssetByExtension(ext)) {
                     editor->SetSelectionAsset(
-                        AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
+                        ResourceTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
                     );
                 }
             } else if (ImGui::IsItemClicked()) {
@@ -619,9 +619,9 @@ void ContentBrowserPanel::DrawDir(const std::filesystem::path& path, const std::
                 std::replace(pathString.begin(), pathString.end(), '\\', '/');
 
                 auto ext = _selectedFile.extension().string();
-                if (AssetTypesDB::Get().HasAssetByExtension(ext)) {
+                if (ResourceTypesDB::Get().HasAssetByExtension(ext)) {
                     editor->SetSelectionAsset(
-                        AssetTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
+                        ResourceTypesDB::Get().assetFuncs[ext].CreateFromFile(pathString)
                     );
                 }
             } else if (ImGui::IsItemClicked()) {

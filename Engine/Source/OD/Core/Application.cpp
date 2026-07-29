@@ -10,7 +10,7 @@
 #include "JobSystem.h"
 #include "Lua.h"
 #include "PhysFSPackage.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Core/GlobalSettings.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
@@ -124,7 +124,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     //OD::AssetManager::Get().StartHotReload();
     if(project->defaultPackagePath.empty() == false && PathExists(project->defaultPackagePath)){
         PhysFS::Mount(project->defaultPackagePath.c_str());
-        AssetManager::Get().Mount(PhysFS::GetPackage());
+        ResourceManager::Get().Mount(PhysFS::GetPackage());
     }
 
     if(callbacks.onInit != nullptr) callbacks.onInit();
@@ -178,7 +178,7 @@ void Application::Loop(){
     //Graphics::_Begin();
     Input::Update();
 
-    OD::AssetManager::Get().ApplyHotReload();
+    OD::ResourceManager::Get().ApplyHotReload();
 
     for(auto i: modulesToAdd) _AddModule(i);
     modulesToAdd.clear();
@@ -317,8 +317,8 @@ void Application::OnExit(){
 
     onFrameEnd.Clean();
 
-    AssetTypesDB::Get().assetFuncs.clear();
-    AssetManager::Get().UnloadAll();
+    ResourceTypesDB::Get().assetFuncs.clear();
+    ResourceManager::Get().UnloadAll();
     //AssetTypesDB::Get().assetFuncs.clear();
 
     PhysFS::Shutdown();

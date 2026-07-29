@@ -21,11 +21,11 @@ void JointSample::OnInit(){
 
     OD::Scene& scene = *SceneManager::Get().NewScene();
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.obj");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.obj");
+    floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.obj");
+    cubeModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene.AddEntity("Env");
     scene.AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
@@ -101,7 +101,7 @@ void JointSample::OnInit(){
 
     Entity ragdoll = scene.AddEntity("Ragdoll");
     SkinnedModelRendererComponent& skinnedRagdoll = scene.AddComponent<SkinnedModelRendererComponent>(ragdoll);
-    skinnedRagdoll.SetModel(AssetManager::Get().LoadAsset<Model>("Sandbox/Models/RagdollTest.glb"));
+    skinnedRagdoll.SetModel(ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/RagdollTest.glb"));
     for(auto& i: skinnedRagdoll.GetMaterialsOverride()) i = LoadRockMaterial();
     RagdollComponent& ragdollComp = scene.AddComponent<RagdollComponent>(ragdoll);
     ragdollComp.parts.resize(3);

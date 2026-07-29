@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include <unordered_map>
 
@@ -10,7 +10,7 @@ class Framebuffer;
 class UniformBuffer;
 class ComputeBuffer;
 
-class OD_API ComputeShader : public Asset {
+class OD_API ComputeShader : public Resource {
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:

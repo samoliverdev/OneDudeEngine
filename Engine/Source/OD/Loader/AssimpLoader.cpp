@@ -2,7 +2,7 @@
 #ifdef USE_ASSIMP
 #include "OD/pch.h"
 #include "AssimpLoader.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Graphics/SubShader.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Texture.h"
@@ -401,9 +401,9 @@ std::vector<Ref<Texture2D>> loadMaterialTextures(LoadData& loadData, aiMaterial 
             std::string filename = loadData.directory + '/' + ss;// std::string(str.C_Str());
             //LogWarningExtra("AssimpTexture: %s", filename.c_str());
             if(FileExists(filename)){
-                texture = AssetManager::Get().LoadAsset<Texture2D>(filename.c_str());
+                texture = ResourceManager::Get().LoadByPath<Texture2D>(filename.c_str());
             } else {
-                texture = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+                texture = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg");
             }
             
             textures.push_back(texture);
@@ -555,7 +555,7 @@ Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, ModelLoadSettin
     Ref<Material> out = CreateRef<Material>();
 
     if(loadSettings.customShader == nullptr){
-        out->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Model.glsl"));
+        out->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Model.glsl"));
     } else {
         out->SetShader(loadSettings.customShader);
     }

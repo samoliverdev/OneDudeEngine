@@ -22,9 +22,9 @@ void LoadModelSample::OnInit(){
     buffer = InstancingBuffer::Create();
     buffer2 = InstancingBuffer::Create();
 
-    model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/cube.gltf");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Unlit.glsl"));
-    auto dd = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
+    model = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/cube.gltf");
+    model->materials[0]->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
+    auto dd = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/Rock.jpg");
     model->materials[0]->SetTexture("mainTex", dd);
     model->materials[0]->SetVector4("color", {1,1,1,1});
 

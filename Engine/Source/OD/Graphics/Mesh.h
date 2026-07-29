@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Math.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
@@ -23,7 +23,7 @@ enum class MeshDrawMode{
     TRIANGLES_STRIP
 };
 
-class OD_API Mesh: public Asset{
+class OD_API Mesh: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;

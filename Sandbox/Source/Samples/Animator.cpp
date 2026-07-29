@@ -543,8 +543,8 @@ void AnimatorSample::OnInit(){
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
     cam.farClipPlane = 1000;
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.glb");
 
     Entity floorEntity = scene->AddEntity("Floor");
     TransformComponent& floorTransform = scene->GetComponent<TransformComponent>(floorEntity);
@@ -559,13 +559,13 @@ void AnimatorSample::OnInit(){
     floorEntityP.NeverSleep(true);
     //floorEntityP->entity()->transform().localEulerAngles({0,0,-25});
 
-    Ref<Model> charModel = AssetManager::Get().LoadAsset<Model>(
+    Ref<Model> charModel = ResourceManager::Get().LoadByPath<Model>(
         //"res/Game/Animations/Walking.dae"
         "Sandbox/Animations/RumbaDancing3.glb"
         //"res/Game/Animations/SillyDancing.fbx"
         //"res/Game/Animations/UnarmedWalkForward.dae"
     );
-    charModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    charModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     
     /*OD::BoneMap bm = OD::RearrangeSkeleton(charModel->skeleton);

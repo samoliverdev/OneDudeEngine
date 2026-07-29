@@ -4,7 +4,7 @@
 
 namespace ImGui{
 
-void _SelectionAsset(OD::Ref<OD::Asset> asset){
+void _SelectionAsset(OD::Ref<OD::Resource> asset){
     if(OD::Editor::Get() != nullptr){
         OD::Editor::Get()->SetSelectionAsset(asset);
     }

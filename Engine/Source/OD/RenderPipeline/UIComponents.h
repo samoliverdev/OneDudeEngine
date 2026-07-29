@@ -3,7 +3,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 
 namespace OD{
 
@@ -91,9 +91,9 @@ struct OD_API UIImageComponent{
     void serialize(Archive& ar){
         ArchiveDump(ar, CEREAL_NVP(color));
 
-        AssetRefSerialize<Texture2D> texRef(sourceImage);
+        ResourceRefSerialize<Texture2D> texRef(sourceImage);
         ArchiveDump(ar, CEREAL_NVP(texRef));
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };
@@ -112,9 +112,9 @@ struct OD_API UITextComponent{
         ArchiveDump(ar, CEREAL_NVP(scale));
         ArchiveDump(ar, CEREAL_NVP(color));
 
-        AssetRefSerialize<Font> fontRef(font);
+        ResourceRefSerialize<Font> fontRef(font);
         ArchiveDump(ar, CEREAL_NVP(fontRef));
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };

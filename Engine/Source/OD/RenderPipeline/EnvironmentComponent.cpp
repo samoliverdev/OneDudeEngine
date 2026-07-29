@@ -17,7 +17,7 @@ EnvironmentSettings::EnvironmentSettings(){
         "Engine/Textures/Skybox/front.jpg",
         "Engine/Textures/Skybox/back.jpg"
     );*/
-    skyCubemap = AssetManager::Get().LoadAsset<Cubemap>("DefaultSkyboxCubemap");
+    skyCubemap = ResourceManager::Get().LoadByPath<Cubemap>("DefaultSkyboxCubemap");
     
     //skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
     //skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
@@ -25,7 +25,7 @@ EnvironmentSettings::EnvironmentSettings(){
     Assert(skyCubemap != nullptr);
 
     skyCustomMaterial = CreateRef<Material>();
-    skyCustomMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    skyCustomMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
     skyCustomMaterial->SetCubemap("mainTex", skyCubemap);
 }

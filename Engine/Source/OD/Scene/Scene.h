@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Transform.h"
 #include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
 #include "OD/Graphics/Camera.h"
@@ -293,7 +293,7 @@ protected:
     std::string name;
 };
 
-class OD_API Scene: public Asset {
+class OD_API Scene: public Resource {
 public:
     friend struct EntityHandle;
     friend struct Prefab;

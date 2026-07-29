@@ -31,7 +31,7 @@ void NavmeshModuleInit(){
 	SceneManager::Get().RegisterCoreComponent<NavmeshAgentComponent>("NavmeshAgentComponent", "AI");
 	SceneManager::Get().RegisterSystem<NavmeshSystem>("NavmeshSystem");
 
-	AssetTypesDB::Get().RegisterAssetType<Navmesh>(".navmesh", [](const std::string& path){ return AssetManager::Get().LoadAsset<Navmesh>(path); });
+	ResourceTypesDB::Get().RegisterAssetType<Navmesh>(".navmesh", [](const std::string& path){ return ResourceManager::Get().LoadByPath<Navmesh>(path); });
 }
 
 void NavmeshComponent::QuickBake(Scene& scene, Entity& e){
@@ -74,7 +74,7 @@ void NavmeshComponent::OnGui(Entity& e, Scene& scene){
 			);
 			if(scene.PathIsValid() && scene.Running() == false){
 				std::string savePath = scene.Path() + "_Navmesh_" + std::to_string((size_t)e) + ".navmesh";
-				navmeshComponent.navmesh->Save(savePath, Asset::SaveType::AssetBinary);
+				navmeshComponent.navmesh->Save(savePath, Resource::SaveType::AssetBinary);
 			}
 		}
 	}

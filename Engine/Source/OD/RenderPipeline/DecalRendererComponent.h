@@ -4,7 +4,7 @@
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 
 namespace OD{
 
@@ -12,7 +12,7 @@ struct OD_API DecalRendererComponent{
     Vector4 perInstanceData = Vector4Zero;
     Vector3 offset;
     Vector3 size = {1, 1, 1};
-    Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DecalTest.glsl"));// nullptr;
+    Ref<Material> material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DecalTest.glsl"));// nullptr;
     int customLayerIndex = -1;
     bool useCustomOffsetAndSize = false;
 
@@ -27,7 +27,7 @@ struct OD_API DecalRendererComponent{
         ArchiveDumpNVP(ar, offset);
         ArchiveDumpNVP(ar, size);
 
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDumpNVP(ar, materialRef);
 
         ArchiveDumpNVP(ar, customLayerIndex);

@@ -2,7 +2,7 @@
 #include "AudioSystem.h"
 #include "AudioClip.h"
 #include "OD/Scene/SceneManager.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/GlobalSettings.h"
@@ -372,8 +372,8 @@ inline bool IsMainThread(){
 }
 
 void AudioModuleInit(){
-    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
-    AssetTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return AssetManager::Get().LoadAsset<AudioClip>(path); });
+    ResourceTypesDB::Get().RegisterAssetType<AudioClip>(".mp3", [](const std::string& path){ return ResourceManager::Get().LoadByPath<AudioClip>(path); });
+    ResourceTypesDB::Get().RegisterAssetType<AudioClip>(".wav", [](const std::string& path){ return ResourceManager::Get().LoadByPath<AudioClip>(path); });
 
     SceneManager::Get().RegisterCoreComponent<AudioSourceComponent>("AudioSourceComponent", "Audio");
     SceneManager::Get().RegisterSystem<AudioSystem>("AudioSystem");

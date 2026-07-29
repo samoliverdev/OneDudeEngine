@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Core/Color.h"
-#include "OD/Core/Asset.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Resource.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Platform/Platform.h"
@@ -12,7 +12,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 namespace ImGui{
-    void OD_API _SelectionAsset(OD::Ref<OD::Asset> asset);
+    void OD_API _SelectionAsset(OD::Ref<OD::Resource> asset);
 
     void OD_API AcceptFileMovePayload(std::function<void(std::filesystem::path*)> func);
     void OD_API ColorEdit3(const char* name, OD::Color* color, ImGuiColorEditFlags flags = 0);
@@ -132,7 +132,7 @@ namespace ImGui{
                     std::string path2 = relativePath2.string();
                     std::replace(path2.begin(), path2.end(), '\\', '/'); // replace all 'x' to 'y'
 
-                    asset = OD::AssetManager::Get().LoadAsset<T>(path2);
+                    asset = OD::ResourceManager::Get().LoadByPath<T>(path2);
                     changed = true;
                 }
             }
@@ -154,7 +154,7 @@ namespace ImGui{
 
             T tempT;
             if(_path.empty() == false && tempT.HasFileExtension(path->extension().string()) == true){
-                asset = OD::AssetManager::Get().LoadAsset<T>(_path);
+                asset = OD::ResourceManager::Get().LoadByPath<T>(_path);
                 changed = true;
             }
         });

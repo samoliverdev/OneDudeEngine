@@ -10,7 +10,7 @@
 #include "BendSssCpu.h"
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Defines.h"
 #include "OD/Physics/PhysicsSystem.h"
@@ -186,23 +186,23 @@ RenderContext::RenderContext(Scene* inScene){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
-    entityIdShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/EntityId.glsl"));
+    entityIdShader = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/EntityId.glsl"));
 
-    blitShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Blit.glsl"));
+    blitShader = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
     //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
-    deferredLightPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    deferredLightPass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
-    deferredLightDirSinglePass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassSingleLit.glsl"));
-    deferredLightDirSingleOtherPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassSingleOtherLit.glsl"));
+    deferredLightDirSinglePass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleLit.glsl"));
+    deferredLightDirSingleOtherPass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleOtherLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
     fullScreenQuad = Mesh::FullScreenQuad();
 
-    sphereMesh = Asset::CreateFromFile<Model>("Engine/Models/Sphere.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Sphere.obj", {nullptr, 1, false});
-    coneMesh = Asset::CreateFromFile<Model>("Engine/Models/Cone.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cone.obj", {nullptr, 1, false});
-    decalMesh = Asset::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
+    sphereMesh = Resource::CreateFromFile<Model>("Engine/Models/Sphere.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Sphere.obj", {nullptr, 1, false});
+    coneMesh = Resource::CreateFromFile<Model>("Engine/Models/Cone.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cone.obj", {nullptr, 1, false});
+    decalMesh = Resource::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); // Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
     
     pipelineDataBuffer = UniformBuffer::Create(sizeof(PipelineData));
     shadowDataBuffer = UniformBuffer::Create(sizeof(ShadowData));
@@ -221,7 +221,7 @@ RenderContext::RenderContext(Scene* inScene){
     //}
 
     //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
-    screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
+    screenSpaceShadow = ResourceManager::Get().LoadByPath<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
     screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
 
     FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
@@ -231,7 +231,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
 
-    screenSpaceShadow2 = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
+    screenSpaceShadow2 = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
 }
 
 RenderContext::~RenderContext(){

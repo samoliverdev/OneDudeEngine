@@ -23,8 +23,8 @@ void AnimationSample::OnInit(){
     camMove.transform = & camTransform;
     camMove.OnStart();
 
-    texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Models/gltf/Woman.png");
-    shader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkinnedModel.glsl");
+    texture = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Models/gltf/Woman.png");
+    shader = ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkinnedModel.glsl");
     mat = CreateRef<Material>(shader);
     
     cgltf_data* char1 = OD::LoadGLTFFile("Sandbox/Models/gltf/Woman.gltf");

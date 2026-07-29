@@ -24,8 +24,8 @@ void SponzaSample::OnInit(){
     //scene->RemoveSystem<StandRenderPipeline>();
     //scene->AddSystem<DeferredRenderPipeline>();
 
-    Ref<Model> sponzaModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Sponza/sponza.glb");
-    sponzaModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+    Ref<Model> sponzaModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Sponza/sponza.glb");
+    sponzaModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
@@ -49,8 +49,8 @@ void SponzaSample::OnInit(){
     Entity e = scene->Instantiate(sponzaModel);
     //scene->GetComponent<TransformComponent>(e).LocalScale(Vector3(0.01f));
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.glb");
+    cubeModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
 
     /*Entity cube = scene->AddEntity("CubeRef");
     ModelRendererComponent& _meshRenderer2 = cube.AddComponent<ModelRendererComponent>();

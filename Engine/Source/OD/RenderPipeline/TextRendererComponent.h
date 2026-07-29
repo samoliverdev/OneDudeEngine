@@ -3,7 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 
 namespace sol{ class state; }
 
@@ -30,9 +30,9 @@ struct OD_API TextRendererComponent{
         ArchiveDump(ar, CEREAL_NVP(color));
         ArchiveDump(ar, CEREAL_NVP(is3d));
 
-        AssetRefSerialize<Font> fontRef(font);
+        ResourceRefSerialize<Font> fontRef(font);
         ArchiveDump(ar, CEREAL_NVP(fontRef));
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };

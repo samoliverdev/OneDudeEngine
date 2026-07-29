@@ -30,7 +30,7 @@ void ComputeShaderSample::OnInit(){
     for(int i = 0; i < 1024; i++) data[i] = i;
     computeBuffer->SetData(data, sizeof(data));
 
-    tex = Asset::CreateFromFile<Texture2D>("Sandbox/image.png");
+    tex = Resource::CreateFromFile<Texture2D>("Sandbox/image.png");
 
     BlurParams params;
     params.blurRadius = 25;
@@ -63,7 +63,7 @@ void ComputeShaderSample::OnInit(){
     mesh->indices.push_back(2);
     mesh->Submit();
 
-    mat = CreateRef<Material>(Asset::CreateFromFile<Shader>("Engine/Shaders/Unlit.glsl"));
+    mat = CreateRef<Material>(Resource::CreateFromFile<Shader>("Engine/Shaders/Unlit.glsl"));
 
     Graphics::BeginGPUTime();
     computeShader->SetTexture("inputTex", tex);

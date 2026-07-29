@@ -692,8 +692,8 @@ void UISample::OnInit(){
     //Application::AddModule<Editor>();
     scene->Start();*/
 
-    panelSprite = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
-    font =  AssetManager::Get().LoadAsset<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// OD::Font::CreateFromFile("SandboxGame/Fonts/Coolvetica/Coolvetica Rg Cond.otf", {8*3, FontType::MSDF});
+    panelSprite = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg");
+    font =  ResourceManager::Get().LoadByPath<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// OD::Font::CreateFromFile("SandboxGame/Fonts/Coolvetica/Coolvetica Rg Cond.otf", {8*3, FontType::MSDF});
     fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
     fontMat->SetFloat("pxRange", font->MsdfPxRange());
 

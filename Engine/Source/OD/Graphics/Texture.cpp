@@ -357,7 +357,7 @@ std::vector<std::string> Texture2D::GetFileAssociations(){
 }
 
 Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
-    return AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+    return ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg");
 }
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
@@ -522,7 +522,7 @@ void Texture2D::Reload(){
 }
 
 bool Texture2D::Save(const std::string& outPath, SaveType type){
-    if(type == Asset::SaveType::SettingOnly){
+    if(type == Resource::SaveType::SettingOnly){
         std::ofstream os(path + ".meta");
         if(os.is_open() == false) return false;
         
@@ -530,7 +530,7 @@ bool Texture2D::Save(const std::string& outPath, SaveType type){
         archive(CEREAL_NVP(settings));
     }
 
-    if(type == Asset::SaveType::FinalBinary){
+    if(type == Resource::SaveType::FinalBinary){
         std::ofstream os(outPath, std::ios::binary);
         if(os.is_open() == false) return false;
 
@@ -677,7 +677,7 @@ void Texture2D::LoadFrom(cereal::BinaryInputArchive& ar){
 
 void Texture2D::CreateLuaBind(sol::state& lua){
     lua.new_usertype<Texture2DSetting>(
-        sol::base_classes, sol::bases<Asset>(),
+        sol::base_classes, sol::bases<Resource>(),
         "Texture2DSetting",
         sol::call_constructor,
         sol::constructors<void()>(),

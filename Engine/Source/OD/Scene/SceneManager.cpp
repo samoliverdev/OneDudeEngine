@@ -25,8 +25,8 @@ void SceneManagerModuleInit(){
     SceneManager::Get().RegisterComponent<DontSave>("DontSave");
     SceneManager::Get().RegisterComponent<HideInEditor>("HideInEditor");
 
-    AssetTypesDB::Get().RegisterAssetType<Prefab>(".prefab", 
-        [](const std::string& path){ return AssetManager::Get().LoadAsset<Prefab>(path); }
+    ResourceTypesDB::Get().RegisterAssetType<Prefab>(".prefab", 
+        [](const std::string& path){ return ResourceManager::Get().LoadByPath<Prefab>(path); }
     );
 
     GlobalSettings::Get().Register<GlobalSceneData>("Layers");

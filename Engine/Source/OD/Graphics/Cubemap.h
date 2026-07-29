@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 
 namespace sol{ class state; }
@@ -8,7 +8,7 @@ namespace OD{
 
 class Graphics;
 
-class OD_API Cubemap: public Asset{
+class OD_API Cubemap: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:

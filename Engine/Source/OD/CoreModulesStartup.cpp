@@ -2,7 +2,7 @@
 #include "CoreModulesStartup.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"

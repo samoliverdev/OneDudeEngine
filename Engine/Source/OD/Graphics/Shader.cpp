@@ -200,7 +200,7 @@ std::vector<std::string> Shader::GetFileAssociations(){
 }
 
 bool Shader::Save(const std::string& outPath, SaveType type){
-    if(type == Asset::SaveType::AssetBinary){
+    if(type == Resource::SaveType::AssetBinary){
 		Assert(false);
     }
 

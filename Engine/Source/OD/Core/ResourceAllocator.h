@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <functional>
-#include "Asset.h"
+#include "Resource.h"
 
 namespace OD {
 
@@ -17,7 +17,7 @@ public:
 
 template<typename T>
 class ResourceAllocator: public IResourceView<T> {
-    static_assert(std::is_base_of<Asset, T>::value, "T must derive from Asset");
+    static_assert(std::is_base_of<Resource, T>::value, "T must derive from Asset");
 public:
     static std::shared_ptr<ResourceAllocator<T>> Create(int _chunkCapacity){
         auto allocator = std::make_shared<ResourceAllocator<T>>();

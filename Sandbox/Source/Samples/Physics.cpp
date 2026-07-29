@@ -28,7 +28,7 @@ void PhysicsCubeS::OnStart(){
     
     Assert(scene->IsValid(entity) == true);
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.obj");
     //cubeModel->SetShader(AssetManager::GetGlobal()->LoadShaderFromFile("res/Builtins/Shaders/Unlit.glsl"));
     //cubeModel->materials[0].SetTexture("mainTex", AssetManager::GetGlobal()->LoadTexture2D("res/textures/rock.jpg", false, OD::TextureFilter::Linear, false));
     //cubeModel->materials[0].SetVector4("color", Vector4(1, 1, 1, 1));
@@ -154,8 +154,8 @@ void PhysicsSample::OnInit(){
     //camMove.OnInit();
     cam.farClipPlane = 1000;
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.obj");
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.obj");
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.obj");
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.obj");
 
     Entity floorEntity = scene->AddEntity("Floor");
     ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);

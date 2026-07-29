@@ -115,7 +115,7 @@ Shadows::Shadows(){
     otherShadowAtlas->name = "otherShadowAtlas";
 
     shadowPass = CreateRef<Material>("DefaultShadowMap");
-    shadowPass->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/ShadowMap.glsl"));
+    shadowPass->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
 Shadows::~Shadows(){
@@ -521,12 +521,12 @@ void Lighting::UpdateGlobalShaders(){
 CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
     cubemapSkyMaterial = CreateRef<Material>();
-    cubemapSkyMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    cubemapSkyMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
 
-    Ref<Texture2D> _brdfLUT = AssetManager::Get().LoadAsset<Texture2D>("brdfLUT");
+    Ref<Texture2D> _brdfLUT = ResourceManager::Get().LoadByPath<Texture2D>("brdfLUT");
     if(_brdfLUT == nullptr){
         _brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
-        AssetManager::Get().AddAsset<Texture2D>("brdfLUT", _brdfLUT);
+        ResourceManager::Get().AddByPath<Texture2D>("brdfLUT", _brdfLUT);
     }
 
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D(); //_brdfLUT; 
@@ -555,12 +555,12 @@ CameraRenderer::CameraRenderer(){
     spriteMesh->Submit();
 
     spriteMaterial = CreateRef<Material>();
-    spriteMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Sprite.glsl"));
+    spriteMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Sprite.glsl"));
 
     spriteMaterial->SetVector4("color", Vector4(1));
-    spriteMaterial->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
+    spriteMaterial->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg"));
 
-    font = AssetManager::Get().LoadAsset<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// Asset::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
+    font = ResourceManager::Get().LoadByPath<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// Asset::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
     fontMaterial = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
     fontMaterial->SetFloat("pxRange", font->MsdfPxRange());
 

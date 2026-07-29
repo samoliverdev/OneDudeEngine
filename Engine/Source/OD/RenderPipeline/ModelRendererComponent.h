@@ -76,13 +76,13 @@ struct OD_API ModelRendererComponent{
 
         ArchiveDumpNVP(ar, castShadow);
 
-        AssetRefSerialize<Model> modelRef(model);
+        ResourceRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
 
-        AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
+        ResourceVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
 
-        AssetRefSerialize<Material> _customShadowPass(customShadowPass);
+        ResourceRefSerialize<Material> _customShadowPass(customShadowPass);
         ArchiveDumpNamed(ar, "customShadowPass", _customShadowPass);
 
         if(GetRenderTargetVisibility().size() != model->renderTargets.size()){
@@ -144,13 +144,13 @@ struct OD_API SkinnedModelRendererComponent: public ModelRendererComponent{
         ArchiveDumpNVP(ar, updateWhenOffscreen);
         ArchiveDumpNVP(ar, useSkinnedData);
 
-        AssetRefSerialize<Model> modelRef(model);
+        ResourceRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
 
-        AssetVectorRefSerialize<Material> materialVectorRef(materialsOverride);
+        ResourceVectorRefSerialize<Material> materialVectorRef(materialsOverride);
         ArchiveDumpNVP(ar, materialVectorRef);
 
-        AssetRefSerialize<Material> _customShadowPass(customShadowPass);
+        ResourceRefSerialize<Material> _customShadowPass(customShadowPass);
         ArchiveDumpNamed(ar, "customShadowPass", _customShadowPass);
     }
 };

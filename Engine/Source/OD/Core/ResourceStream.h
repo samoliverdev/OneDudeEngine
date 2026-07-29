@@ -1,17 +1,17 @@
 #pragma once
 #include <fstream>
 #include <memory>
-#include "Asset.h"
+#include "Resource.h"
 
 namespace OD{
 
-class AssetStream{
+class ResourceStream{
 public:
-    AssetStream(const std::string& path, const std::vector<Package*>& packages){
+    ResourceStream(const std::string& path, const std::vector<Package*>& packages){
         Open(path, packages);
     }
 
-    ~AssetStream(){
+    ~ResourceStream(){
         if(package && data) package->FreeFileData(data);
     }
 

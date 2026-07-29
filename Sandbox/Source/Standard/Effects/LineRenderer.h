@@ -31,7 +31,7 @@ struct LineRenderer{
         ArchiveDumpNVP(ar, cameraFacing);
         ArchiveDumpNVP(ar, worldUpVector);
 
-        AssetRefSerialize<Material> _material(material);
+        ResourceRefSerialize<Material> _material(material);
         ArchiveDumpNamed(ar, "material", _material);
     }
 };

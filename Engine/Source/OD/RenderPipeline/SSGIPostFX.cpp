@@ -24,7 +24,7 @@ SSGIFeature::SSGIFeature(){
     giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX3.glsl"));
     giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
     giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
-    blueNoise = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/LDR_RG01_47.png");
+    blueNoise = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/LDR_RG01_47.png");
 }
 
 SSGIFeature::~SSGIFeature(){

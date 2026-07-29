@@ -41,7 +41,7 @@ inline Matrix4 MakeUITransform(Vector2 pos, Vector2 size, Vector2 pivot){
 
 void Init(){
     //font = OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", {8*1, FontType::MSDF});
-    font =  AssetManager::Get().LoadAsset<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// OD::Font::CreateFromFile("SandboxGame/Fonts/Coolvetica/Coolvetica Rg Cond.otf", {8*3, FontType::MSDF});
+    font =  ResourceManager::Get().LoadByPath<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// OD::Font::CreateFromFile("SandboxGame/Fonts/Coolvetica/Coolvetica Rg Cond.otf", {8*3, FontType::MSDF});
     fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
     fontMat->SetFloat("pxRange", font->MsdfPxRange());
     

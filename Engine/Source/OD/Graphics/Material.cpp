@@ -6,7 +6,7 @@
 #include "Texture.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Serialization/SerializationFull.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Lua.h"
 
@@ -17,7 +17,7 @@ extern GraphicsDevice* graphicsDevice;
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
-        if(type == MaterialMap::Type::Texture) texture = AssetManager::Get().LoadAsset<Texture2D>(texPath);
+        if(type == MaterialMap::Type::Texture) texture = ResourceManager::Get().LoadByPath<Texture2D>(texPath);
     }
 }
 
@@ -582,7 +582,7 @@ void Material::OnGui(){
                     //LogInfo("Dragdrop Path: {}", path->generic_string());
                     //TODO: Maybe check if AssetManager::Get().LoadAsset<Texture2D> is valid
                     keepAlive = map.texture; // Avoid opengl crach on imgui becose text was deleted
-                    map.texture = AssetManager::Get().LoadAsset<Texture2D>(path->generic_string());
+                    map.texture = ResourceManager::Get().LoadByPath<Texture2D>(path->generic_string());
                     toSave = true;
                     isDirty = isDirtyUniformData = true;
                 }
@@ -746,17 +746,17 @@ void Material::UpdateMaps(){
 
         if(!maps.count(i[1].c_str()) && i[0] == "Texture2D"){
             if(i[2] == "White"){
-                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg");
+                Ref<Texture2D> tex = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg");
                 Assert(tex != nullptr);
                 Assert(tex->IsValid());
                 SetTexture(i[1].c_str(), tex);
             } else if(i[2] == "Black"){
-                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Black.jpg");
+                Ref<Texture2D> tex = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/Black.jpg");
                 Assert(tex != nullptr);
                 Assert(tex->IsValid());
                 SetTexture(i[1].c_str(), tex );
             } else if(i[2] == "Normal"){
-                Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/Normal.jpg");
+                Ref<Texture2D> tex = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/Normal.jpg");
                 Assert(tex != nullptr);
                 Assert(tex->IsValid());
                 SetTexture(i[1].c_str(), tex );

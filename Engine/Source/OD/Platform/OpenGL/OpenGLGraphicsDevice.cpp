@@ -43,31 +43,46 @@ struct VRAMTracker{
     size_t totalFreedBytes     = 0;
 
     // Optional: per-category tracking
-    size_t texturesBytes       = 0;
-    size_t meshBytes       = 0;
-    size_t framebuffersBytes   = 0;
-    size_t buffersBytes        = 0;     // VBO, EBO, UBO, instancing
-    size_t shadersBytes        = 0;     // very rough
+    size_t texturesBytes = 0;
+    size_t meshBytes = 0;
+    size_t framebuffersBytes = 0;
+    size_t buffersBytes = 0;     // VBO, EBO, UBO, instancing
+    size_t shadersBytes = 0;     // very rough
 
     void Add(size_t bytes, Category category = Category::Other){
-        totalAllocatedBytes += bytes;
-        if (category == Category::Texture)      texturesBytes     += bytes;
-        else if (category == Category::Mesh) meshBytes += bytes;
-        else if (category == Category::Framebuffer) framebuffersBytes += bytes;
-        else if (category == Category::Buffer)      buffersBytes      += bytes;
-        else if (category == Category::Shader)      shadersBytes      += bytes;
+        Assert(bytes < 1000_MB);
 
+        totalAllocatedBytes += bytes;
+        if(category == Category::Texture){
+            texturesBytes += bytes;
+        } else if(category == Category::Mesh){
+            meshBytes += bytes;
+        } else if(category == Category::Framebuffer){
+            framebuffersBytes += bytes;
+        } else if(category == Category::Buffer){
+            buffersBytes += bytes;
+        } else if(category == Category::Shader){
+            shadersBytes += bytes;
+        }
+
+        //is trigger and is get in debugger 18446743811720762931
         Assert(texturesBytes < 2000_MB);
         Assert(meshBytes < 2000_MB);
     }
 
     void Free(size_t bytes, Category category = Category::Other){
         totalFreedBytes += bytes;
-        if (category == Category::Texture)      texturesBytes     -= bytes;
-        else if (category == Category::Mesh) meshBytes -= bytes;
-        else if (category == Category::Framebuffer) framebuffersBytes -= bytes;
-        else if (category == Category::Buffer)      buffersBytes      -= bytes;
-        else if (category == Category::Shader)      shadersBytes      -= bytes;
+        if(category == Category::Texture){
+            texturesBytes -= bytes;
+        } else if(category == Category::Mesh){
+            meshBytes -= bytes;
+        } else if(category == Category::Framebuffer){
+            framebuffersBytes -= bytes;
+        } else if(category == Category::Buffer){
+            buffersBytes -= bytes;
+        } else if(category == Category::Shader){
+            shadersBytes -= bytes;
+        }
     }
 
     size_t CurrentUsage() const {
@@ -424,7 +439,7 @@ void OpenGLGraphicsDevice::Initialize(){
         "Engine/Textures/Skybox/front.jpg",
         "Engine/Textures/Skybox/back.jpg"
     );
-    AssetManager::Get().AddAsset("DefaultSkyboxCubemap", defaultSkybox);
+    ResourceManager::Get().AddByPath("DefaultSkyboxCubemap", defaultSkybox);
 
     fullScreenQuad = Mesh::FullScreenQuad();
    

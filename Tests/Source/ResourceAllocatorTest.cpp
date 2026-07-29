@@ -4,7 +4,7 @@
 
 using namespace OD;
 
-class TestAsset: public Asset{
+class TestAsset: public Resource{
 public:
     int value = 0;
 
@@ -187,7 +187,7 @@ TEST(ResourceAllocator, MultipleFreeReuseOrder){
     EXPECT_TRUE(e == a || e == b);
 }
 
-class ComplexAsset: public Asset{
+class ComplexAsset: public Resource{
 public:
     std::string name;
     int x;

@@ -9,7 +9,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
-#include "OD/Core/AssetStream.h"
+#include "OD/Core/ResourceStream.h"
 //#include "OD/Serialization/SerializationFull.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Graphics.h"
@@ -1257,7 +1257,7 @@ void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::ent
 }
 
 void Scene::Load(const char* path){
-    AssetStream as(path, AssetManager::Get().GetPackages());
+    ResourceStream as(path, ResourceManager::Get().GetPackages());
     ODInputArchive archive(as.GetStream());
 
     //std::ifstream is(path);
@@ -1305,7 +1305,7 @@ void Scene::_Load(const char* path, entt::entity prefab){
     LogWarning("LoadingPrefab: {}", path);
     //Assert(false);
 
-    AssetStream as(path, AssetManager::Get().GetPackages());
+    ResourceStream as(path, ResourceManager::Get().GetPackages());
     ODInputArchive archive(as.GetStream());
 
     //std::ifstream is(path);

@@ -23,8 +23,8 @@ void LightSample::OnInit(){
     camTransform.Position(Vector3(0, 2, 4));
     camTransform.EulerAngles(Vector3(-25, 0, 0));
 
-    model = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/suzane.obj");
-    model->materials[0]->SetShader(AssetManager::Get().LoadAsset<Shader>("Sandbox/Shaders/light.glsl"));
+    model = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/suzane.obj");
+    model->materials[0]->SetShader(ResourceManager::Get().LoadByPath<Shader>("Sandbox/Shaders/light.glsl"));
     //model->materials[0]->SetTexture("texture1", AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg"));
     model->materials[0]->SetVector3("color", Vector3(1.0f, 0.5f, 0.31f));
     model->materials[0]->SetVector3("lightColor", Vector3(1.0f, 1.0f, 1.0f));

@@ -50,12 +50,12 @@ void PackageSample::OnInit(){
 
     //PhysFS::Init();
     PhysFS::Mount("Sandbox/PackageTest.zip");
-    AssetManager::Get().Mount(PhysFS::GetPackage());
+    ResourceManager::Get().Mount(PhysFS::GetPackage());
     
     //Ref<Texture2D> tex = Texture2D::CreateFromPackage("image.png", *PhysFS::GetPackage(), {});
     //Ref<Model> model = Model::CreateFromPackage("Cube.glb", *PhysFS::GetPackage(), {});
-    Ref<Texture2D> tex = AssetManager::Get().LoadAsset<Texture2D>("image.png");
-    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Cube.glb");
+    Ref<Texture2D> tex = ResourceManager::Get().LoadByPath<Texture2D>("image.png");
+    Ref<Model> model = ResourceManager::Get().LoadByPath<Model>("Cube.glb");
 
     //PhysFSPackage::Unmount("Sandbox/PackageTest.zip");
     //AssetManager::Get().UnMount(PhysFS::GetPackage());
@@ -66,7 +66,7 @@ void PackageSample::OnInit(){
     Entity meshEntity = scene->AddEntity("Mesh");
     MeshRendererComponent& meshRenderer = scene->AddComponent<MeshRendererComponent>(meshEntity);
     meshRenderer.mesh = model->meshs[0];
-    meshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+    meshRenderer.material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
     meshRenderer.material->SetTexture("mainTex", tex);
 
     Application::AddModule<Editor>();

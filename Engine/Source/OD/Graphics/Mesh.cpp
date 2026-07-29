@@ -522,16 +522,16 @@ bool Mesh::LoadFromFile(const std::string& inpath){
 }
 
 bool Mesh::Save(const std::string& outPath, SaveType type){
-    if(type == Asset::SaveType::SettingOnly) return false;
+    if(type == Resource::SaveType::SettingOnly) return false;
 
     std::ofstream os(outPath, std::ios::binary);
     Assert(os.is_open());
 
-    if(type == Asset::SaveType::AssetBinary){
+    if(type == Resource::SaveType::AssetBinary){
         cereal::PortableBinaryOutputArchive ar(os);
         ar(*this);
     }
-    if(type == Asset::SaveType::FinalBinary){
+    if(type == Resource::SaveType::FinalBinary){
         cereal::BinaryOutputArchive ar(os);
         ar(*this);
     }

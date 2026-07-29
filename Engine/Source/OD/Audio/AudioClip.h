@@ -1,11 +1,11 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "AudioDef.h"
 
 namespace OD{
 
-class OD_API AudioClip: public Asset{
+class OD_API AudioClip: public Resource{
     friend struct AudioSourceComponent;
     friend class AudioSystem;
 public:

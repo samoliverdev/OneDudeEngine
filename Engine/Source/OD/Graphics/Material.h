@@ -1,6 +1,6 @@
 #pragma once
-#include "OD/Core/Asset.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/Resource.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Platform/OpenGL/GL.h"
@@ -97,7 +97,7 @@ private:
     void OnLoad(std::string& texPath);
 };
 
-class OD_API Material: public Asset{
+class OD_API Material: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
@@ -315,7 +315,7 @@ void Material::load(Archive& ar){
     );
 
     if(shaderPath.empty() == false){
-        SetShader(AssetManager::Get().LoadAsset<Shader>(shaderPath));
+        SetShader(ResourceManager::Get().LoadByPath<Shader>(shaderPath));
     }
 }
 

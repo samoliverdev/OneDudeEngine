@@ -7,7 +7,7 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Instrumentor.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <filesystem>

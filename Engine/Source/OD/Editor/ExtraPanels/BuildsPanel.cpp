@@ -278,13 +278,13 @@ bool BuildAsset(
     fs::create_directories(absoluteSavePath.parent_path());
 
     // 6 Load and save
-    Ref<T> asset = AssetManager::Get().LoadAsset<T>(relativeSrc);
+    Ref<T> asset = ResourceManager::Get().LoadByPath<T>(relativeSrc);
     if(asset == nullptr){
         LogError("Erro to load {}", relativeSrc);
         return false;
     }
 
-    asset->Save(absoluteSavePath.string(), Asset::SaveType::FinalBinary);
+    asset->Save(absoluteSavePath.string(), Resource::SaveType::FinalBinary);
 
     return false; // prevent original file copy
 };

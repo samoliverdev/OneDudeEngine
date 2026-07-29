@@ -28,7 +28,7 @@ void AssetPackingSample::OnInit(){
     //scene->AddSystem<DeferredRenderPipeline>();
 
     {
-        AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/water.png");
+        ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/water.png");
     }
 
     Entity camera = scene->AddEntity("Camera");
@@ -86,16 +86,16 @@ void AssetPackingSample::OnInit(){
     //Ref<Shader> shader = AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl");
     //shader->Save("Sandbox/lit.shaderbin", Asset::SaveType::FinalBinary);
 
-    Ref<Shader> shader2 = AssetManager::Get().LoadAsset<Shader>("Sandbox/Lit");
+    Ref<Shader> shader2 = ResourceManager::Get().LoadByPath<Shader>("Sandbox/Lit");
 
-    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj");
+    Ref<Model> model = ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj");
 
     //Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.png");
     //texture->Save("Sandbox/image.texturebin", Asset::SaveType::FinalBinary);
 
     Ref<Material> mat = CreateRef<Material>(shader2);
 
-    Ref<Texture2D> textureBin = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/image.texturebin");
+    Ref<Texture2D> textureBin = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/image.texturebin");
     Assert(textureBin != nullptr);
 
     //mat->SetTexture("mainTex", texture);

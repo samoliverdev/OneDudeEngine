@@ -79,7 +79,7 @@ struct OD_API CollisionShape{
         ArchiveDump(ar, CEREAL_NVP(radius));
         ArchiveDump(ar, CEREAL_NVP(height));
 
-        AssetRefSerialize<Model> modelSourceRef(modelSource);
+        ResourceRefSerialize<Model> modelSourceRef(modelSource);
         ArchiveDumpNVP(ar, modelSourceRef);
         ArchiveDumpNVP(ar, modelSourceMeshIndex);
     }

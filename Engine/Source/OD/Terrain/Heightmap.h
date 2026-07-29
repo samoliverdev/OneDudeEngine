@@ -1,10 +1,10 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include <vector>
 
 namespace OD{
 
-struct OD_API Heightmap: public Asset{
+struct OD_API Heightmap: public Resource{
     Heightmap(){
         width = 128;
         height = 128;

@@ -2,7 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Core/AssetManager.h"
+#include "OD/Core/ResourceManager.h"
 #include "AudioClip.h"
 #include "AudioDef.h"
 //#include <soloud.h>
@@ -45,7 +45,7 @@ struct OD_API AudioSourceComponent{
 
     template <class Archive>
     void serialize(Archive& ar){
-        AssetRefSerialize<AudioClip> assetRef(clip);
+        ResourceRefSerialize<AudioClip> assetRef(clip);
         ArchiveDumpNVP(ar, assetRef);
 
         ArchiveDumpNVP(ar, minDistance);

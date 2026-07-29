@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Math.h"
 #include <map>
 #include <msdf-atlas-gen.h>
@@ -46,7 +46,7 @@ struct OD_API FontSettings{
     }
 };
 
-class OD_API Font: public Asset{
+class OD_API Font: public Resource{
     friend class OpenGLGraphicsDevice;
 public:
     //Fixme opengl texture memory leak

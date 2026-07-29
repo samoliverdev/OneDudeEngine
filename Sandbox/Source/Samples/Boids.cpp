@@ -445,19 +445,19 @@ void BoidsSample::OnInit(){
     OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
     Ref<Material> floorMaterial = CreateRef<Material>();
-    floorMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    floorMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
     floorMaterial->SetVector4("color", Vector4(0.8f, 0.8f, 0.8f, 1));
 
     Ref<Material> boidMaterial = CreateRef<Material>();
-    boidMaterial->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
     boidMaterial->SetEnableInstancing(true);
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
+    floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
-    Ref<Model> boidModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Boid.glb");
-    boidModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> boidModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Boid.glb");
+    boidModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& _env = scene->AddComponent<EnvironmentComponent>(env);

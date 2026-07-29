@@ -212,7 +212,7 @@ void ViewportPanel::OnGui(){
 
             Model m;
             if(m.HasFileExtension(getExtension(*path))){
-                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(path->generic_string());
+                Ref<Model> model = ResourceManager::Get().LoadByPath<Model>(path->generic_string());
                 Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
                 ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
                 mRenderer.SetModel(model);

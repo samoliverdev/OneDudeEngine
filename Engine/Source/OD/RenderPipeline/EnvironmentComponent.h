@@ -90,7 +90,7 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, ssgi);
 
 
-        AssetRefSerialize<Cubemap> skyCubemap_(skyCubemap);
+        ResourceRefSerialize<Cubemap> skyCubemap_(skyCubemap);
         ArchiveDumpNamed(ar, "skyCubemap", skyCubemap_);
     }
 

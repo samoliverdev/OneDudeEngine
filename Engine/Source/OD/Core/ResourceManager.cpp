@@ -1,24 +1,24 @@
 #include "OD/pch.h"
-#include "AssetManager.h"
+#include "ResourceManager.h"
 #include <execution>
 #include <filesystem>
 
 namespace OD{
 
-AssetManager globalAssetManager;
+ResourceManager globalAssetManager;
 
-bool AssetTypesDB::HasAssetByExtension(std::string fileExtension){
+bool ResourceTypesDB::HasAssetByExtension(std::string fileExtension){
     return assetFuncs.find(fileExtension) != assetFuncs.end();
 }
 
 
-AssetTypesDB& AssetTypesDB::Get(){
-    static AssetTypesDB global;
+ResourceTypesDB& ResourceTypesDB::Get(){
+    static ResourceTypesDB global;
     return global;
 }
 
 #ifdef USE_WEAK_PTR
-std::unordered_map<std::string, WeakRef<Asset>>& AssetManager::GetDB(Type id){
+std::unordered_map<std::string, WeakRef<Resource>>& ResourceManager::GetDB(Type id){
     return data[id];
 }
 #else
@@ -27,16 +27,16 @@ std::unordered_map<std::string, Ref<Asset>>& AssetManager::GetDB(Type id){
 }
 #endif
 
-void AssetManager::Mount(Package* p){
+void ResourceManager::Mount(Package* p){
     packages.push_back(p);
 }
 
-void AssetManager::UnMount(Package* p){
+void ResourceManager::UnMount(Package* p){
     if(!p) return;
     packages.erase(std::remove(packages.begin(), packages.end(), p), packages.end());
 }
 
-void AssetManager::UnloadAll(){
+void ResourceManager::UnloadAll(){
     //for(auto& [type, db]: data){
         /*for(auto& [path, asset]: db){
             LogWarning("Unload Asset: %s %d", asset->Path().c_str(), asset.use_count());
@@ -50,13 +50,13 @@ void AssetManager::UnloadAll(){
     data.clear(); //Fixme: Crach in Debug Mode and using Engine.dll
 }
 
-AssetManager& AssetManager::Get(){
+ResourceManager& ResourceManager::Get(){
     return globalAssetManager;
 }
 
-class AssetManagerFileUpdateListener : public efsw::FileWatchListener {
+class ResourceManagerFileUpdateListener : public efsw::FileWatchListener {
 public:
-    AssetManager* assetManager = nullptr;
+    ResourceManager* assetManager = nullptr;
 
     void handleFileAction(
         efsw::WatchID watchid, const std::string& dir,
@@ -116,21 +116,21 @@ public:
     }
 };
 
-void AssetManager::StartHotReload(){
+void ResourceManager::StartHotReload(){
     efsw::FileWatcher* fileWatcher = new efsw::FileWatcher();
-    AssetManagerFileUpdateListener* listener = new AssetManagerFileUpdateListener();
+    ResourceManagerFileUpdateListener* listener = new ResourceManagerFileUpdateListener();
     listener->assetManager = this;
     LogInfo("Start Filewatch on: {}", std::filesystem::current_path().string());
     efsw::WatchID watchID = fileWatcher->addWatch(std::filesystem::current_path().string(), listener, true);
     fileWatcher->watch();
 }
 
-void AssetManager::StopHotReload(){
+void ResourceManager::StopHotReload(){
     delete listener;
     delete fileWatcher;
 }
 
-void AssetManager::ApplyHotReload(){
+void ResourceManager::ApplyHotReload(){
     std::lock_guard<std::mutex> lock(toApplyHotReloadMutex);
     for(auto& i: toApplyHotReload){
         LogInfo("Apply HotReload: {}", i->Path());

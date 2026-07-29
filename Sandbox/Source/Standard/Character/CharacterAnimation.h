@@ -32,7 +32,7 @@ public:
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, enable);
 
-        AssetRefSerialize<Model> baseModelRef(baseModel);
+        ResourceRefSerialize<Model> baseModelRef(baseModel);
         ArchiveDumpNVP(ar, baseModelRef);
     }
 };

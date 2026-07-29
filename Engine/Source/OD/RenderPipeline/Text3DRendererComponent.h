@@ -25,9 +25,9 @@ struct OD_API Text3DRendererComponent{
         //ArchiveDump(ar, CEREAL_NVP(scale));
         ArchiveDump(ar, CEREAL_NVP(color));
 
-        AssetRefSerialize<Font> fontRef(font);
+        ResourceRefSerialize<Font> fontRef(font);
         ArchiveDump(ar, CEREAL_NVP(fontRef));
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };

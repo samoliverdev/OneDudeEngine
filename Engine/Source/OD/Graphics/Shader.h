@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "SubShader.h"
 #include <set>
@@ -9,7 +9,7 @@
 namespace OD{
 
 // Handler Mult Shader Variants
-class OD_API Shader: public Asset{
+class OD_API Shader: public Resource{
     friend class Material;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;

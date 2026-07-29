@@ -16,7 +16,7 @@
 
 namespace OD{
 
-class Asset;
+class Resource;
 class Framebuffer;
 
 class OD_API Editor: public Module{
@@ -46,7 +46,7 @@ public:
     inline Entity GetSelectionEntity(){ return selectionEntity; }
     inline const std::unordered_set<Entity>& GetSelectedEntities() const { return _selectedEntities; }
 
-    inline void SetSelectionAsset(Ref<Asset> asset){
+    inline void SetSelectionAsset(Ref<Resource> asset){
         //selectionAsset = asset;
         selectionQueue.Push(asset);
         selectionOnAsset = true;
@@ -109,8 +109,8 @@ private:
     std::unordered_set<Entity> _selectedEntities;
 
     //Ref<Asset> selectionAsset;
-    inline Ref<Asset> GetSelectionAsset(){ return selectionQueue.Back(); }
-    FixedQueue<Ref<Asset>> selectionQueue{3};//Used to Keep asset alive/loaded for more time and avoid some crachs
+    inline Ref<Resource> GetSelectionAsset(){ return selectionQueue.Back(); }
+    FixedQueue<Ref<Resource>> selectionQueue{3};//Used to Keep asset alive/loaded for more time and avoid some crachs
     bool selectionOnAsset;
 
     //bool showSceneHierarchy = true;

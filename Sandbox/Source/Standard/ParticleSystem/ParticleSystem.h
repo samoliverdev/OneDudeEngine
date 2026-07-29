@@ -251,8 +251,8 @@ public:
 };
 
 struct RendererModule{
-    Ref<Material> material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
-    Ref<Model> model = AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
+    Ref<Material> material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
+    Ref<Model> model = ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
 
     enum class Orientation{ World, Velocity, View, ViewPlusVelocity};
 
@@ -260,10 +260,10 @@ struct RendererModule{
 
     template <class Archive>
     void serialize(Archive& ar){
-        AssetRefSerialize<Material> matRef(material);
+        ResourceRefSerialize<Material> matRef(material);
         ArchiveDumpNVP(ar, matRef);
 
-        AssetRefSerialize<Model> modelRef(model);
+        ResourceRefSerialize<Model> modelRef(model);
         ArchiveDumpNVP(ar, modelRef);
 
         ArchiveDumpNVP(ar, orientation);

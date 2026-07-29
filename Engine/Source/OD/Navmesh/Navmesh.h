@@ -1,7 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Serialization/Serialization.h"
@@ -152,7 +152,7 @@ struct OD_API NavMeshPath{
 	NavMeshPathStatus status = NavMeshPathStatus::PathInvalid;
 };
 
-class OD_API Navmesh: public Asset{
+class OD_API Navmesh: public Resource{
 	friend class NavmeshSystem;
 public:
 	DrawMode m_drawMode = DRAWMODE_NAVMESH;
@@ -390,7 +390,7 @@ struct OD_API NavmeshComponent{
 		ArchiveDumpNVP(ar, mask);
 		//ArchiveDumpNVP(ar, navmesh);
 
-		AssetRefSerialize<Navmesh> _navmesh(navmesh);
+		ResourceRefSerialize<Navmesh> _navmesh(navmesh);
         ArchiveDump(ar, CEREAL_NVP(_navmesh));
 	}
 };

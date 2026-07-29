@@ -25,9 +25,9 @@ struct OD_API SpriteRendererComponent{
         ArchiveDump(ar, CEREAL_NVP(flipY));
         ArchiveDump(ar, CEREAL_NVP(pixelUnitSize));
 
-        AssetRefSerialize<Texture2D> texRef(sprite);
+        ResourceRefSerialize<Texture2D> texRef(sprite);
         ArchiveDump(ar, CEREAL_NVP(texRef));
-        AssetRefSerialize<Material> materialRef(material);
+        ResourceRefSerialize<Material> materialRef(material);
         ArchiveDump(ar, CEREAL_NVP(materialRef));
     }
 };

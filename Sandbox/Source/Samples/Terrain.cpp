@@ -92,8 +92,8 @@ void TerrainSample::OnInit(){
     cam.farClipPlane = 10000;
     cam.fieldOfView = 60;
 
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube.glb");
-    cubeModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube.glb");
+    cubeModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity cube = scene->AddEntity("Cube");
     TransformComponent& cubeTrans = scene->GetComponent<TransformComponent>(cube);
@@ -111,13 +111,13 @@ void TerrainSample::OnInit(){
     terrainComponent.SetHeightmap(
         GenerateHeightmap(heightmapSize, heightmapSize, 50, 0.25f/(4*1), 4, 0.5f, 2.0f, Vector2(0, 0))
     );
-    terrainComponent.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap", Asset::SaveType::AssetBinary);
-    terrainComponent.splatmap = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
-    terrainComponent.layer0 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
-    terrainComponent.layer1 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/brickwall.jpg");
-    terrainComponent.layer2 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/floor.jpg");
-    terrainComponent.layer3 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/Rock.jpg");
-    terrainComponent.layer4 = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/block.png");
+    terrainComponent.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap", Resource::SaveType::AssetBinary);
+    terrainComponent.splatmap = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/rgb-splat-map.png");
+    terrainComponent.layer0 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/block.png");
+    terrainComponent.layer1 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/brickwall.jpg");
+    terrainComponent.layer2 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor.jpg");
+    terrainComponent.layer3 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/Rock.jpg");
+    terrainComponent.layer4 = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/block.png");
 
     /*Entity navmesh = scene->AddEntity("Navmesh");
     auto& nav = scene->AddComponent<NavmeshComponent>(navmesh);
@@ -149,7 +149,7 @@ void TerrainSample::OnUpdate(float deltaTime){
     if(Input::IsKeyDown(KeyCode::T)){
         Entity terrain = scene->FindEntityByName("Terrain");
         TerrainComponent& terr = scene->GetComponent<TerrainComponent>(terrain);
-        terr.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap",  Asset::SaveType::AssetBinary);
+        terr.GetHeightmap()->Save("Sandbox/Datas/Terrain.heightmap",  Resource::SaveType::AssetBinary);
     }
 
     if(Input::IsKeyDown(KeyCode::Y)){

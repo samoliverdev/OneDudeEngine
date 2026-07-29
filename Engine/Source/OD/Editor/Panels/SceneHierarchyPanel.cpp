@@ -143,7 +143,7 @@ void SceneHierarchyPanel::OnGui(){
                         auto _path = path->generic_string();
                         //std::replace(_path.begin(), _path.end(), '\\', '/');
 
-                        Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
+                        Ref<Model> model = ResourceManager::Get().LoadByPath<Model>(_path);
                         Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
                         ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
                         mRenderer.SetModel(model);
@@ -256,7 +256,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity, bool root){
                 auto _path = path->generic_string();
                 //std::replace(_path.begin(), _path.end(), '\\', '/');
 
-                Ref<Model> model = AssetManager::Get().LoadAsset<Model>(_path);
+                Ref<Model> model = ResourceManager::Get().LoadByPath<Model>(_path);
                 Entity mEntity = scene->AddEntity(getFileNameWithoutExtension(*path));
                 ModelRendererComponent& mRenderer = scene->AddComponent<ModelRendererComponent>(mEntity);
                 mRenderer.SetModel(model);

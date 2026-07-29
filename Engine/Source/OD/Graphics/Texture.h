@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 
@@ -74,7 +74,7 @@ struct OD_API Texture2DSetting{
     }
 };
 
-class OD_API Texture2D: public Asset{
+class OD_API Texture2D: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
@@ -131,8 +131,8 @@ public:
 private:
     unsigned int width = 0;
     unsigned int height = 0;
-    size_t ramUsage;
-    size_t vramUsage;
+    size_t ramUsage = 0;
+    size_t vramUsage = 0;
     bool mipmap = false;
     Texture2DSetting loadSettings{};
     Texture2DSetting settings{};
@@ -144,7 +144,7 @@ private:
     void LoadFrom(cereal::BinaryInputArchive& ar);
 };
 
-class OD_API Texture2DArray: public Asset{
+class OD_API Texture2DArray: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:

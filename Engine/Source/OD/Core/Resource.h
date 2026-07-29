@@ -12,7 +12,7 @@ namespace OD{
 constexpr uint32_t INVALID_RESOURCE_ID = UINT32_MAX;
 
 //TODO: Maybe rename to Resource
-class OD_API Asset{
+class OD_API Resource{
     template<typename T> friend class ResourceAllocator;
 public:
     enum class SaveType{ 
@@ -21,7 +21,7 @@ public:
         FinalBinary //Final binary to use for final assets packing data
     };
 
-    virtual ~Asset() = default; //virtual ~Asset(){}
+    virtual ~Resource() = default; //virtual ~Asset(){}
     virtual std::string& Path();
     bool PathIsValid();
     virtual void OnGui();
@@ -38,7 +38,7 @@ public:
 
     template<typename T, typename... Args>
     static Ref<T> CreateFromFile(const std::string& path, Args&&... args){
-        static_assert(std::is_base_of_v<Asset, T>, "T must derive from Asset");
+        static_assert(std::is_base_of_v<Resource, T>, "T must derive from Asset");
         Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
         if(!asset->LoadFromFile(path)) return nullptr;
         return asset;
@@ -46,7 +46,7 @@ public:
 
     template<typename T, typename... Args>
     static Ref<T> CreateFromPackage(const std::string& path, Package& package, Args&&... args){
-        static_assert(std::is_base_of_v<Asset, T>, "T must derive from Asset");
+        static_assert(std::is_base_of_v<Resource, T>, "T must derive from Asset");
         Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
         if(!asset->LoadFromPackage(path)) return nullptr;
         return asset;

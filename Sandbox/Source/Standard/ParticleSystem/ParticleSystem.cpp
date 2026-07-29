@@ -802,10 +802,10 @@ void ParticleSystem::Update(Scene& scene, Entity e, TransformComponent& trans, V
 }
 
 ParticleRendererFeature::ParticleRendererFeature(){
-    material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"));
+    material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"));
     material->SetEnableInstancing(true);
     material->SetFloat("smoothness", 0);
-    mesh = Asset::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); //Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
+    mesh = Resource::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); //Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
 }
 
 void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){

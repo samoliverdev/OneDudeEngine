@@ -100,7 +100,7 @@ struct PlayerController: public ScriptBase<PlayerController>{
         Assert(idleAnimation != nullptr);
         Assert(runningAnimation != nullptr);
 
-        shootClip = AssetManager::Get().LoadAsset<AudioClip>("Sandbox/Sounds/633250__aesterial-arts__arcade-shoot.wav");
+        shootClip = ResourceManager::Get().LoadByPath<AudioClip>("Sandbox/Sounds/633250__aesterial-arts__arcade-shoot.wav");
         AudioSourceComponent& audioSource = GetScene()->AddComponent<AudioSourceComponent>(GetEntity());
         audioSource.clip = shootClip;
     }
@@ -182,8 +182,8 @@ void CharacterControllerSample::OnInit(){
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
-    Ref<Model> floorModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/plane");
-    Ref<Model> cubeModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/Cube");
+    Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane");
+    Ref<Model> cubeModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Cube");
 
     Entity floorEntity = scene->AddEntity("Floor");
     ModelRendererComponent& floorRenderer = scene->AddComponent<ModelRendererComponent>(floorEntity);
@@ -214,9 +214,9 @@ void CharacterControllerSample::OnInit(){
     Assert(_meshRenderer2.GetMaterialsOverride().size() > 0);
     _meshRenderer3.GetMaterialsOverride()[0] = LoadFloorMaterial();
 
-    Ref<Model> charIdleModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Animations/Idle");
-    Ref<Model> charRunningModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Animations/Running");
-    charIdleModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    Ref<Model> charIdleModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Animations/Idle");
+    Ref<Model> charRunningModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Animations/Running");
+    charIdleModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity playerEntity = scene->AddEntity("PlayerController");
     TransformComponent& charTrans = scene->GetComponent<TransformComponent>(playerEntity);

@@ -15,7 +15,7 @@ void TerrainModuleInit(){
     SceneManager::Get().RegisterCoreComponent<TerrainComponent>("TerrainComponent", "Terrain");
     SceneManager::Get().RegisterSystem<TerrainSystem>("TerrainSystem");
     
-    AssetTypesDB::Get().RegisterAssetType<Heightmap>(".heightmap", [](const std::string& path){ return AssetManager::Get().LoadAsset<Heightmap>(path); });
+    ResourceTypesDB::Get().RegisterAssetType<Heightmap>(".heightmap", [](const std::string& path){ return ResourceManager::Get().LoadByPath<Heightmap>(path); });
 }
 
 int ManhattanDistance(IVector2 a, IVector2 b){
@@ -49,7 +49,7 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
         if(ImGui::Button("Create Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
             terrain.heightmap = CreateRef<Heightmap>(width, height);
-            terrain.heightmap->Save(savePath, Asset::SaveType::AssetBinary);
+            terrain.heightmap->Save(savePath, Resource::SaveType::AssetBinary);
         }
 
         return;
@@ -70,12 +70,12 @@ void TerrainComponent::OnGui(Entity e, Scene& scene){
 
     if(terrain.heightmap->PathIsValid() == true){
         if(ImGui::Button("Save Data")){
-            terrain.heightmap->Save(terrain.heightmap->Path(), Asset::SaveType::AssetBinary);
+            terrain.heightmap->Save(terrain.heightmap->Path(), Resource::SaveType::AssetBinary);
         }
     } else if(scene.PathIsValid() == true){
         if(ImGui::Button("Save Data")){
             std::string savePath = scene.Path() + "_TerrainData_" + std::to_string((size_t)e) + ".heightmap";
-            terrain.heightmap->Save(savePath, Asset::SaveType::AssetBinary);
+            terrain.heightmap->Save(savePath, Resource::SaveType::AssetBinary);
         }
     }
 
@@ -995,8 +995,8 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
 
     #if 1 //EnableExperimentalPerDrawCustomData
     if(terrain.mat == nullptr){
-        terrain.mat = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
-        terrain.mat->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
+        terrain.mat = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Terrain.glsl"));
+        terrain.mat->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg"));
         terrain.mat->SetTexture("splatmap", terrain.splatmap);
         terrain.mat->SetTexture("tex0", terrain.layer0);
         if(terrain.layer0Normal != nullptr) terrain.mat->SetTexture("normalMap", terrain.layer0Normal);
@@ -1010,7 +1010,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
         terrain.mat->SetVector2("texTilling", terrain.texTilling);
         terrain.mat->SetFloat("heightScale", terrain.terrainHeight);
 
-        terrain.matShadow = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
+        terrain.matShadow = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/TerrainShadow.glsl"));
         terrain.matShadow->SetTexture("heightMap", terrain.heightmapTex);
         terrain.matShadow->SetVector2("heightmapTilling", Vector2(offset, offset));
         terrain.matShadow->SetFloat("heightScale", terrain.terrainHeight);

@@ -1,6 +1,6 @@
 #include "OD/pch.h"
 #include "Editor.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Undo.h"
 #include "OD/Core/Input.h"
 #include "OD/Core/Application.h"
@@ -224,7 +224,7 @@ void Editor::OnInit(){
 
     assetPreviewEntity = assetPreviewScene->AddEntity("ModelPreview");
     ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(assetPreviewEntity);
-    model.SetModel(AssetManager::Get().LoadAsset<Model>("Engine/Models/Cube.obj"));
+    model.SetModel(ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj"));
 
     //OD::AlignToViewAABB(assetPrevieweCam.transform, model.GetAABB(), 45.0f, 16.0f/9.0f);
     OD::AlignCameraToAABB_Isometric(
@@ -252,7 +252,7 @@ void Editor::SetModelAssetPreview(Ref<Model> m){
 }
 
 void Editor::SetModelAssetPreview(const std::string& path){
-    auto m = AssetManager::Get().LoadAsset<Model>(path);
+    auto m = ResourceManager::Get().LoadByPath<Model>(path);
 
     if(lastModelAssetPreview != m){
         if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
@@ -275,7 +275,7 @@ void Editor::SetPrefabAssetPreview(Ref<Prefab> prefab){
 }
 
 void Editor::SetPrefabAssetPreview(const std::string& path){
-    Ref<Prefab> prefab = AssetManager::Get().LoadAsset<Prefab>(path);
+    Ref<Prefab> prefab = ResourceManager::Get().LoadByPath<Prefab>(path);
 
     if(lastPrefabAssetPreview != prefab){
         if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);

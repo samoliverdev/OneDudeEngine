@@ -56,10 +56,10 @@ void SynthCitySample::OnInit(){
 
     //Ref<Model> cityModel = AssetManager::Get().LoadAsset<Model>("Sandbox/Models/PolygonCity/City.fbx");
 
-    Ref<Model> cityModel = Asset::CreateFromFile<Model>("C:/Users/sam/Desktop/City.fbx", ModelLoadSettings{nullptr, 1, false});  //Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
+    Ref<Model> cityModel = Resource::CreateFromFile<Model>("C:/Users/sam/Desktop/City.fbx", ModelLoadSettings{nullptr, 1, false});  //Model::CreateFromFile("C:/Users/sam/Desktop/Apocalipse.fbx", {nullptr, 1, false});
     
 
-    cityModel->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit2.glsl"));
+    cityModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
     for(auto& i: cityModel->materials) i->SetEnableInstancing(true);
 
     /*Entity floorEntity = scene->AddEntity("City");
