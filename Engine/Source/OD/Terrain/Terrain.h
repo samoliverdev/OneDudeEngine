@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Scene/Scene.h"
+#include "OD/Core/AssetManager.h"
 
 struct OD_API MeshBorders{
     bool left = false;

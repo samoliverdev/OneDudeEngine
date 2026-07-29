@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Base.h"
 #include <vector>
 #include <string>
 

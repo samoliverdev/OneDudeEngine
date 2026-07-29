@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Base.h"
 #include "Action.h"
 #include <string>
 #include <vector>
@@ -24,8 +25,8 @@ struct ApplicationConfig{
 };
 
 struct ApplicationCallbacks{
-    std::function<void()> onInit;
-    std::function<void()> onShutdown;
+    std::function<void()> onInit = nullptr;
+    std::function<void()> onShutdown = nullptr;
 };
 
 class OD_API Application{

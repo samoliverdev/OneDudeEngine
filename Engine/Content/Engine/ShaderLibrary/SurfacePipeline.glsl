@@ -44,13 +44,14 @@ SurfaceInput BuildInput(){
     IN.uv = outUV;
     IN.worldPos = outWorldPos;
     IN.worldNormal = normalize(outWorldNormal);
-    IN.viewDir = normalize(viewPos - outWorldPos);
+    IN.viewDir = normalize(viewPos - outWorldPos); //TODO: The User need #define viewPos, Make a better way to Handle This
     IN.TBN = mat3(normalize(outT), normalize(outB), normalize(outN));
 
     return IN;
 }
 
 SurfaceOutput SurfaceFunction(SurfaceInput IN);
+vec3 SurfaceLigthing(Surface surface);
 
 void main(){
     SurfaceInput IN = BuildInput();
@@ -63,10 +64,10 @@ void main(){
         gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perInstanceDataOut.w); // float(perDrawInt_1));
         gEmission = surf.emission;
     #else
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
+        //BRDF brdf = GetBRDF(surface);
+        //GI gi = GetGI(surface, brdf);
 
-        vec3 color = GetLighting(surface, brdf, gi);
+        vec3 color = SurfaceLigthing(surface);// GetLighting(surface, brdf, gi);
         color += surf.emission;
 
         fragColor = vec4(color, surface.alpha);

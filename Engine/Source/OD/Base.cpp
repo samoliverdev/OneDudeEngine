@@ -25,4 +25,21 @@ uuid64 GenerateUUID(){
     return uuid;
 }
 
+TypeV TypeRegistry::Generate(){
+    static std::atomic<TypeV> counter = 0;
+    return counter++;
+}
+
+TypeV TypeRegistry::Register(const char* name){
+    static std::unordered_map<std::string, TypeV> map;
+    static TypeV counter = 0;
+
+    auto it = map.find(name);
+    if(it != map.end()) return it->second;
+
+    TypeV id = counter++;
+    map[name] = id;
+    return id;
+}
+
 }

@@ -15,7 +15,7 @@ EndUniform()
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
+    Uniform vec3 _viewPos;
 EndUniform()
 
 Texture2D(0, 6, gPosition, gPositionSampler)
@@ -57,7 +57,6 @@ Texture2D(0, 10, gDepth, gDepthSampler)
     uniform sampler2D gAlbedoSpec;
     uniform sampler2D gEmission;
     uniform sampler2D gOther;
-    uniform vec3 viewPos;
     uniform mat4 view;*/
 
     In(0) vec3 pos;
@@ -69,9 +68,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
     #include Engine/ShaderLibrary/Fog.glsl
 
     void main(){
@@ -89,6 +86,8 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         float Metallic = texture(gOther, texCoord).g;
         float AO = texture(gOther, texCoord).b;
 
+        vec3 viewPos = invView[3].xyz;
+
         Surface surface;
         surface.position = FragPos;
         surface.normal = Normal;
@@ -103,9 +102,9 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         //FragColor = vec4(Normal, 1);
         //return;
 
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);
+        //BRDF brdf = GetBRDF(surface);
+        //GI gi = GetGI(surface, brdf);
+        vec3 color = GetFinalColor(surface); //GetLighting(surface, brdf, gi);
         color += Emission;
         FragColor = vec4(color, surface.alpha);
 

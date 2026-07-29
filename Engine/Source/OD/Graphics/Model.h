@@ -1,6 +1,7 @@
 #pragma once
 //#include "OD/Defines.h"
 #include "OD/Core/Asset.h"
+#include "OD/Core/AssetManager.h"
 #include "OD/Core/Math.h"
 #include "OD/Animation/Skeleton.h"
 #include "OD/Animation/Clip.h"

@@ -10,12 +10,15 @@
 #include "JobSystem.h"
 #include "Lua.h"
 #include "PhysFSPackage.h"
+#include "OD/Core/AssetManager.h"
 #include "OD/Core/GlobalSettings.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/CoreModulesStartup.h"
 #include "OD/Serialization/SerializationFull.h"
+
+#include "OD/Graphics/Texture.h"
 
 namespace OD{
 
@@ -49,6 +52,10 @@ const std::vector<Module*> Application::Modules(){
 //INFO: Maybe register a Shutdown callback and maybe a init call back too
 bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, const char* projectPath, ApplicationCallbacks incallbacks, Ref<Project> customProj){
     Log::Init();
+
+    LogInfo("Engine Texture2D TypeId: {}", GetType<Texture2D>());
+    //LogInfo("Engine ApplicationConfig EnttTypeId: {}", entt::type_id<ApplicationConfig>().index());
+    //LogInfo("Engine Texture2D EnttTypeId: {}", entt::type_id<Texture2D>().index());
 
     Ref<Project> project = nullptr;
 
@@ -120,7 +127,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
         AssetManager::Get().Mount(PhysFS::GetPackage());
     }
 
-    callbacks.onInit();
+    if(callbacks.onInit != nullptr) callbacks.onInit();
 
     return true;
 }
@@ -288,7 +295,7 @@ bool Application::Run(){
 }
 
 void Application::OnExit(){
-    callbacks.onShutdown();
+    if(callbacks.onShutdown != nullptr) callbacks.onShutdown();
 
     GlobalSettings::Get().Save("../GlobalSettings");
 

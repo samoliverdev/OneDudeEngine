@@ -24,7 +24,7 @@ Ref<Material> LoadFloorMaterial();
 Ref<Material> LoadRockMaterial();
 Ref<Material> LoadMaterial1();
 
-struct RotateScript: public Script{
+struct RotateScript: public ScriptBase<RotateScript>{
    float speed = 40;
 
    inline void OnUpdate() override {

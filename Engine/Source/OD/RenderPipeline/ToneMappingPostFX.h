@@ -7,7 +7,7 @@ namespace OD{
 
 class Material;
 
-class OD_API ToneMappingFeature: public RendererFeature, RenderPass{
+class OD_API ToneMappingFeature: public RendererFeatureBase<ToneMappingFeature>, RenderPass{
 public:
     enum class Mode{ None = -1, ACES, Neutral, Reinhard };
 

@@ -2,6 +2,7 @@
 #include "AudioSystem.h"
 #include "AudioClip.h"
 #include "OD/Scene/SceneManager.h"
+#include "OD/Core/AssetManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/GlobalSettings.h"

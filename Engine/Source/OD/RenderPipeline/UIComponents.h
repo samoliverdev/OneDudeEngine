@@ -3,6 +3,7 @@
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Core/AssetManager.h"
 
 namespace OD{
 

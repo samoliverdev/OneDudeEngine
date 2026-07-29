@@ -7,7 +7,7 @@ namespace OD{
 class Material;
 class Framebuffer;
 
-class OD_API BloomFeature: public RendererFeature, RenderPass{
+class OD_API BloomFeature: public RendererFeatureBase<BloomFeature>, RenderPass{
 public:
     int maxIterations = 3;
     int downscaleLimit = 3;

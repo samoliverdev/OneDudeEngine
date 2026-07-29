@@ -3,7 +3,7 @@
 #include "OD/Base.h"
 #include "OD/Serialization/Serialization.h"
 #include "OD/Core/Color.h"
-#include "OD/Core/Asset.h"
+#include "OD/Core/AssetManager.h"
 
 namespace sol{ class state; }
 

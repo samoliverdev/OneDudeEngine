@@ -8,7 +8,7 @@ class Material;
 class Framebuffer;
 class Texture2D;
 
-class OD_API SSGIFeature: public RendererFeature, RenderPass{
+class OD_API SSGIFeature: public RendererFeatureBase<SSGIFeature>, RenderPass{
 public:
     SSGIFeature();
     ~SSGIFeature();

@@ -49,11 +49,13 @@ Texture2D(0, 6, mainTex, mainTexSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
     
     #include Engine/ShaderLibrary/SurfacePipeline.glsl
+
+    vec3 SurfaceLigthing(Surface surface){
+        return GetFinalColor(surface);
+    }
 
     SurfaceOutput SurfaceFunction(SurfaceInput IN){
         SurfaceOutput s = DefaultSurface();

@@ -1,5 +1,6 @@
 #pragma once
 #include <OD/Base.h>
+#include <OD/Core/Math.h>
 
 namespace OD{
     class Texture2D;

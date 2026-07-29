@@ -42,7 +42,6 @@
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
@@ -173,9 +172,7 @@ Texture2D(0, 9, maskMap, maskMapSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
 
     In(0) vec3 outPos;
     In(1) vec3 outNormal;
@@ -247,8 +244,8 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         if(base.a < cutoff) discard;
         base = base * /*color **/ outColor;
         
-    
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+        vec3 viewPos = invView[3].xyz;
 
         Surface surface;
         surface.position = outWorldPos;
@@ -287,9 +284,9 @@ Texture2D(0, 9, maskMap, maskMapSampler)
         //fragColor = vec4(surface.normal, 1);
         //return;
 
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);// + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
+        //BRDF brdf = GetBRDF(surface);
+        //GI gi = GetGI(surface, brdf);
+        vec3 color = GetFinalColor(surface); //GetLighting(surface, brdf, gi);// + vec3(Dither(gl_FragCoord.xy)); //Fixme: Reduce the Color Banding, Temp fixed
         color += GetEmission(uv);
         fragColor = vec4(color, surface.alpha);
 

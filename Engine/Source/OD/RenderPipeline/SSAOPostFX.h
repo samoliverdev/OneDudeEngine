@@ -9,7 +9,7 @@ class Material;
 class Texture2D;
 
 //TODO: Add blur
-class OD_API SSAOFeature: public RendererFeature, RenderPass{
+class OD_API SSAOFeature: public RendererFeatureBase<SSAOFeature>, RenderPass{
 public:
     float intensity = 0.5f;
     float radius = 0.5f;

@@ -459,7 +459,7 @@ struct ParticleComponent{
     }
 };
 
-class ParticleRendererFeature: public RendererFeature{
+class ParticleRendererFeature: public RendererFeatureBase<ParticleRendererFeature>{
 public:
     ParticleRendererFeature();
     void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData) override;

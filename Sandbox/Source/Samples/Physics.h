@@ -4,7 +4,7 @@
 
 using namespace OD;
 
-struct PhysicsCubeS: public Script{
+struct PhysicsCubeS: public ScriptBase<PhysicsCubeS>{
     float t;
     float timeToDestroy = 5;
 

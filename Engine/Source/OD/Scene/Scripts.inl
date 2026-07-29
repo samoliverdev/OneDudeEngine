@@ -29,7 +29,7 @@ void ScriptComponent::serialize(Archive& ar){
 
         for(auto& i: instances){
             for(auto& j: SceneManager::Get().scriptsSerializer){
-                if(j.second.getType() == std::type_index(typeid(*i.second.instance))){
+                if(j.second.getType() == i.second.instance->GetTypeId() /*std::type_index(typeid(*i.second.instance))*/){
                     typeIds.push_back(j.first);
                     _instances.push_back(i.second.instance);
                     break;

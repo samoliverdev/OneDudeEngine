@@ -1,11 +1,13 @@
 #pragma once
 #include "Scene.h"
-#include <typeinfo>
+//#include <typeinfo>
 
 namespace OD{
 
 struct OD_API Script{
     friend struct ScriptComponent;
+
+    virtual Type GetTypeId() const = 0;
 
     virtual ~Script(){}
     virtual void OnStart(){}
@@ -25,6 +27,12 @@ protected:
 
 private:
     bool hasStarted = false;
+};
+
+template<typename T>
+class ScriptBase: public Script{
+public:
+    Type GetTypeId() const override { return GetType<T>(); }
 };
 
 //TODO: Make Serializable

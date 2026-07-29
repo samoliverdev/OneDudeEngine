@@ -32,7 +32,7 @@
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
+    //Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
@@ -217,6 +217,7 @@ uniform int perDrawInt_1;
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+        vec3 viewPos = invView[3].xyz;
 
         Surface surface;
         surface.position = outWorldPos;

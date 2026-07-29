@@ -86,6 +86,14 @@ public:
     virtual void AddRenderPasses(IRenderer& renderer, RenderContext& context){}
     virtual void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){}
     virtual void OnGui(){}
+
+    virtual Type GetTypeId() const = 0;
+};
+
+template<typename T>
+class RendererFeatureBase: public RendererFeature{
+public:
+    Type GetTypeId() const override { return GetType<T>(); }
 };
 
 class RendererFeatureGlobal;
@@ -153,7 +161,7 @@ public:
 
             for(auto& i: instances){
                 for(auto& j: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
-                    if(j.second.getType() == std::type_index(typeid(*i.second.instance))){
+                    if(j.second.getType() == i.second.instance->GetTypeId()){
                         typeIds.push_back(j.first);
                         _instances.push_back(i.second.instance);
                         break;

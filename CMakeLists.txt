@@ -455,3 +455,34 @@ if(OD_BUILD_DYNAMIC_MODULE)
     #target_compile_definitions(DynamicModule PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
     #set_target_properties(DynamicModule PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
+
+# Enable Disable Tests
+if(On) 
+    enable_testing()
+    project(Tests)
+
+    add_subdirectory(Tests/googletest EXCLUDE_FROM_ALL)
+    add_library(GTest::GTest INTERFACE IMPORTED)
+    target_link_libraries(GTest::GTest INTERFACE gtest_main)
+
+    file(GLOB_RECURSE TESTS_SOURCE_FILES Tests/Source/*.cpp)
+    add_executable(Tests ${TESTS_SOURCE_FILES})
+
+    target_precompile_headers(Tests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/pch.h>)
+    target_include_directories(Tests PRIVATE Engine/Source/)
+    target_link_libraries(Tests Engine)
+    target_compile_definitions(Tests PRIVATE RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+
+    #target_include_directories(Tests PUBLIC Engine/Source/)
+    target_link_libraries(Tests GTest::GTest Engine)
+
+    #add_test(tests_gtests Tests)
+    include(GoogleTest)
+    gtest_discover_tests(Tests)
+
+    add_custom_target(CopyEngineContentToTest ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_SOURCE_DIR}/Tests/Content
+        COMMENT "Copying Engine Content"
+    )
+    add_dependencies(Tests CopyEngineContentToTest)
+endif()

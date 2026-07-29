@@ -11,6 +11,9 @@ void LoadSceneSample::OnInit(){
 
     Standard::ModuleInit();
 
+    LogInfo("Game Texture2D TypeId: {}", GetType<Texture2D>());
+    //LogInfo("Game Texture2D EnttTypeId: {}", entt::type_id<Texture2D>().index());
+
     auto& SceneManager = SceneManager::Get();
     OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 

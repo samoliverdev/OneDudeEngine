@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Core/Color.h"
 #include "OD/Core/Asset.h"
+#include "OD/Core/AssetManager.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Platform/Platform.h"

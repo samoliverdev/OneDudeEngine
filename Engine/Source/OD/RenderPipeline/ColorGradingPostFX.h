@@ -8,7 +8,7 @@ namespace OD{
 
 class Material;
 
-class OD_API ColorGradingFeature: public RendererFeature, RenderPass{
+class OD_API ColorGradingFeature: public RendererFeatureBase<ColorGradingFeature>, RenderPass{
 public:
 
     float postExposure = 0;

@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Core/Asset.h"
+#include "OD/Core/AssetManager.h"
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Platform/OpenGL/GL.h"

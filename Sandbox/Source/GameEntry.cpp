@@ -30,6 +30,8 @@
 #include "Samples/SSGI.h"
 #include "Samples/UI.h"
 
+#include <OD/Graphics/Texture.h>
+
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
         0, 0,
@@ -40,7 +42,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 34; //35;
+    int i = -1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     if(i == -1) return new LoadSceneSample();

@@ -20,7 +20,7 @@ public:
     Transform* transform;
 };
 
-class CameraMovementScript: public Script{
+class CameraMovementScript: public ScriptBase<CameraMovementScript>{
 public:
     float moveSpeed = 10;
     float rotSpeed = 50;

@@ -183,7 +183,6 @@ uniform int perDrawInt_1;
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
-
         vec3 viewPos = invView[3].xyz;
 
         Surface surface;

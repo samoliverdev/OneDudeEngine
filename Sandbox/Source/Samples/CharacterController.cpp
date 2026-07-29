@@ -17,7 +17,7 @@
 #include <assert.h>
 //#include <entt/entt.hpp>
 
-struct CameraController: public Script{
+struct CameraController: public ScriptBase<CameraController>{
     bool autoHiddenCursor = true;
 
     float upOffset = 1.4f;
@@ -87,7 +87,7 @@ struct CameraController: public Script{
     }
 };
 
-struct PlayerController: public Script{
+struct PlayerController: public ScriptBase<PlayerController>{
     float moveSpeed = 600;
     float turnSpeed = 20;
 

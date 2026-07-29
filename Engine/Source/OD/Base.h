@@ -236,6 +236,22 @@ inline const uint32_t Typeid(){
     return type;
 }
 
+using TypeV = uint64_t;
+class OD_API TypeRegistry{
+public:
+    static TypeV Generate();
+    static TypeV Register(const char* name);
+};
+
+
+constexpr uint64_t _Hash_(const char* str){
+    uint64_t hash = 1469598103934665603ULL;
+    while(*str){
+        hash ^= (uint64_t)(*str++);
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
 
 #if 0
 
@@ -244,6 +260,16 @@ template<typename T>
 inline Type GetType(){
     static Type type = GetUniquiTypeid();
     return type;
+}
+#elif 1
+
+using Type = TypeV;
+template<typename T>
+Type GetType(){
+    //static Type id = TypeRegistry::Generate();
+    //static Type id = TypeRegistry::Register(typeid(T).name());
+    static Type id = _Hash_(typeid(T).name());
+    return id;
 }
 
 #else

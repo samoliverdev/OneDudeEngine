@@ -42,7 +42,7 @@ ShadowTextureSize ShadowQualityToShadowTextureSizeLookup[] = {
     ShadowTextureSize::_8192  // Ultra
 };
 
-class RendererFeatureTest: public RendererFeature, RenderPass{
+class RendererFeatureTest: public RendererFeatureBase<RendererFeatureTest>, RenderPass{
 public:
     template <class Archive>
     void serialize(Archive & ar){
@@ -529,7 +529,7 @@ CameraRenderer::CameraRenderer(){
         AssetManager::Get().AddAsset<Texture2D>("brdfLUT", _brdfLUT);
     }
 
-    brdfLUT = _brdfLUT; 
+    brdfLUT = Texture2D::CreateBrdfLUTTexture2D(); //_brdfLUT; 
     
     //spriteMesh = Mesh::CenterQuad(false);
     spriteMesh = CreateRef<Mesh>();
