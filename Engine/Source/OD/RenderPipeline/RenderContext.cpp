@@ -186,15 +186,15 @@ RenderContext::RenderContext(Scene* inScene){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
-    entityIdShader = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/EntityId.glsl"));
+    entityIdShader = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/EntityId.glsl"));
 
-    blitShader = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Blit.glsl"));
+    blitShader = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Blit.glsl"));
     //deferredGBufferShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredGBuffer.glsl"));
     //deferredLightPassShader = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
-    deferredLightPass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
+    deferredLightPass = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassLit.glsl"));
 
-    deferredLightDirSinglePass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleLit.glsl"));
-    deferredLightDirSingleOtherPass = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleOtherLit.glsl"));
+    deferredLightDirSinglePass = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleLit.glsl"));
+    deferredLightDirSingleOtherPass = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DeferredLightPassSingleOtherLit.glsl"));
 
     skyboxMesh = Mesh::SkyboxCube();
     spriteMesh = Mesh::CenterQuad(false);
@@ -231,7 +231,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
 
-    screenSpaceShadow2 = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
+    screenSpaceShadow2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
 }
 
 RenderContext::~RenderContext(){

@@ -339,7 +339,7 @@ template<class T, typename ... Args>
 Ref<T> ResourceManager::Create(Args&& ... args){
     static_assert(std::is_base_of_v<Resource, T>, "T must be derived from Asset");
 
-    return nullptr;
+    //return nullptr;
 
     Type type = GetType<T>();
     auto& db = GetDB(type);
@@ -363,7 +363,7 @@ Ref<T> ResourceManager::Create(Args&& ... args){
     #endif
 
     // Mark as memory-only asset
-    asset->SetPath("#Memory"); // or "" if you prefer
+    //asset->SetPath("#Memory"); // or "" if you prefer
 
     // Optional: store with unique key (avoid collisions)
     /*std::string key = "#Memory_" + std::to_string(reinterpret_cast<uintptr_t>(asset.get()));
@@ -374,6 +374,7 @@ Ref<T> ResourceManager::Create(Args&& ... args){
     db[key] = asset;
     #endif*/
 
+    Assert(asset != nullptr);
     return asset;
 }
 

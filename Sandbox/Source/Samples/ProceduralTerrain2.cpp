@@ -274,7 +274,7 @@ void ProceduralTerrain2::OnInit(){
     Entity water = scene->AddEntity("Water");
     auto& waterModel = scene->AddComponent<ModelRendererComponent>(water);
     waterModel.SetModel(ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/TerrainPlane.glb"));
-    waterModel.GetMaterialsOverride()[0] = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    waterModel.GetMaterialsOverride()[0] = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
     waterModel.GetMaterialsOverride()[0]->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/water.png"));
     auto& waterTrans = scene->GetComponent<TransformComponent>(water);
     waterTrans.LocalScale(Vector3One * 5000.0f);

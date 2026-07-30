@@ -26,7 +26,7 @@ class ComputeShader;
 class OD_API PostFXTest: public PostFX{
 public:
     PostFXTest(int option):_option(option){
-        _ppShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl"));
+        _ppShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl"));
 
         Assert(_ppShader != nullptr);
     }
@@ -44,7 +44,7 @@ private:
 class OD_API GamaCorrectionPP: public PostFX{
 public:
     GamaCorrectionPP(){
-        gamaCorrection = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
+        gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
     }
 
     void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override{
@@ -63,7 +63,7 @@ private:
 class OD_API GamaCorrectionPass: public RenderPass{
 public:
     GamaCorrectionPass(){
-        gamaCorrection = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
+        gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
     }
 
     void Execute(RenderContext& context, RenderFrameData& data) override{

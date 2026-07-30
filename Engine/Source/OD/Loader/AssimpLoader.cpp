@@ -552,7 +552,7 @@ Model::MaterialTarget LoadMaterialTargets(LoadData& data, aiMaterial* material, 
 }
 
 Ref<Material> LoadMaterial(LoadData& data, aiMaterial* material, ModelLoadSettings& loadSettings){
-    Ref<Material> out = CreateRef<Material>();
+    Ref<Material> out = ResourceManager::Get().Create<Material>();
 
     if(loadSettings.customShader == nullptr){
         out->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Model.glsl"));

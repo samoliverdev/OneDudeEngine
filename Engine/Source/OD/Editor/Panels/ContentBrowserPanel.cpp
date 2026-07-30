@@ -304,7 +304,7 @@ void ContentBrowserPanel::HandleContextMenu(const std::filesystem::path& path, b
     if (ImGui::MenuItem("Create Material")) {
         std::string path = Platform::SaveFile("*.material");
         if (!path.empty()) {
-            Ref<Material> mat = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
+            Ref<Material> mat = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
             mat->Save(path);
             UpdateFileCache(std::filesystem::path(path).parent_path());
             UpdateFilteredFiles();

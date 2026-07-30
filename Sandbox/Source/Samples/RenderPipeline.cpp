@@ -100,7 +100,7 @@ void RenderPipelineSample::OnInit(){
     ///*
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("Plane", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> m = CreateRef<Material>();
+        Ref<Material> m = ResourceManager::Get().Create<Material>();
         m->SetShader(ResourceManager::Get().LoadByPath<Shader>(defaultShaderPath));
         m->SetVector4("color", Vector4(1, 1, 1, 1));
         m->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/brickwall.jpg"));
@@ -123,7 +123,7 @@ void RenderPipelineSample::OnInit(){
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereLighting", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> material = CreateRef<Material>();
+        Ref<Material> material = ResourceManager::Get().Create<Material>();
         *material = *LoadFloorMaterial();
         material->SetTexture("emissionMap", ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg"));
         material->SetVector4("emissionColor", Vector4(2,2,2,2));
@@ -137,7 +137,7 @@ void RenderPipelineSample::OnInit(){
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereComplexMaterial", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> material = CreateRef<Material>(
+        Ref<Material> material = ResourceManager::Get().Create<Material>(
             ResourceManager::Get().LoadByPath<Shader>(defaultShaderPath)
         );
         material->SetTexture(
@@ -164,7 +164,7 @@ void RenderPipelineSample::OnInit(){
     });
 
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetalic", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> material = CreateRef<Material>(
+        Ref<Material> material = ResourceManager::Get().Create<Material>(
             ResourceManager::Get().LoadByPath<Shader>(defaultShaderPath)
         );
         //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));
@@ -177,7 +177,7 @@ void RenderPipelineSample::OnInit(){
         meshRenderer.GetMaterialsOverride()[0] = material;
     });
     scene->AddEntityWith<TransformComponent, ModelRendererComponent>("SphereMetali2", [&](auto& transform, auto& meshRenderer){
-        Ref<Material> material = CreateRef<Material>(
+        Ref<Material> material = ResourceManager::Get().Create<Material>(
             ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl")
         );
         //material->SetVector4("color", Vector4(0.52f, 0.82f, 0.56f, 1));

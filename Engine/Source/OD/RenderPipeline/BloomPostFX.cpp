@@ -19,13 +19,13 @@ void BloomFeature::OnGui(){
 BloomFeature::BloomFeature(){
     enable = false;
     event = RenderPassEvent::PostProcess;
-    blitShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    bloomMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPostFX.glsl"));
+    blitShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    bloomMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPostFX.glsl"));
 
-    bloomHorizontalPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl"));
-    bloomVerticalPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
-    bloomCombinePassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl"));
-    bloomPrefilterPassShader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl"));
+    bloomHorizontalPassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomHorizontalPostFX.glsl"));
+    bloomVerticalPassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
+    bloomCombinePassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl"));
+    bloomPrefilterPassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl"));
 }
 
 inline float LinearToGammaSpaceExact(float value){

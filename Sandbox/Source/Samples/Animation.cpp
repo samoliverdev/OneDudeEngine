@@ -25,7 +25,7 @@ void AnimationSample::OnInit(){
 
     texture = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Models/gltf/Woman.png");
     shader = ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkinnedModel.glsl");
-    mat = CreateRef<Material>(shader);
+    mat = ResourceManager::Get().Create<Material>(shader);
     
     cgltf_data* char1 = OD::LoadGLTFFile("Sandbox/Models/gltf/Woman.gltf");
     //cgltf_data* woman = OD::LoadGLTFFile("res/models/Soldier.glb");

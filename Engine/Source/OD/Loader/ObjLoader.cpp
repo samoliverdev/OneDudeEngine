@@ -126,7 +126,7 @@ bool ObjLoadModel(
         }
     }
     if(model.materials.empty()){
-        model.materials.push_back(CreateRef<Material>());
+        model.materials.push_back(ResourceManager::Get().Create<Material>());
         for(auto& rt : model.renderTargets) rt.materialIndex = 0;
     }
 

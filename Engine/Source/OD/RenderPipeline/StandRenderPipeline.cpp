@@ -114,7 +114,7 @@ Shadows::Shadows(){
     otherShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
     otherShadowAtlas->name = "otherShadowAtlas";
 
-    shadowPass = CreateRef<Material>("DefaultShadowMap");
+    shadowPass = ResourceManager::Get().Create<Material>("DefaultShadowMap");
     shadowPass->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ShadowMap.glsl"));
 }
 
@@ -520,7 +520,7 @@ void Lighting::UpdateGlobalShaders(){
 
 CameraRenderer::CameraRenderer(){
     //postFXTest = new PostFXTest(2);
-    cubemapSkyMaterial = CreateRef<Material>();
+    cubemapSkyMaterial = ResourceManager::Get().Create<Material>();
     cubemapSkyMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
 
     Ref<Texture2D> _brdfLUT = ResourceManager::Get().LoadByPath<Texture2D>("brdfLUT");
@@ -554,7 +554,7 @@ CameraRenderer::CameraRenderer(){
     spriteMesh->drawMode = MeshDrawMode::TRIANGLES_STRIP;
     spriteMesh->Submit();
 
-    spriteMaterial = CreateRef<Material>();
+    spriteMaterial = ResourceManager::Get().Create<Material>();
     spriteMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Sprite.glsl"));
 
     spriteMaterial->SetVector4("color", Vector4(1));
@@ -591,7 +591,7 @@ CameraRenderer::CameraRenderer(){
     };
     cubeMesh->Submit();
 
-    blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    blitPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
 }
 
 CameraRenderer::~CameraRenderer(){

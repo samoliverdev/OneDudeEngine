@@ -19,11 +19,11 @@ SSGIFeature::SSGIFeature(){
     enable = false;
     event = RenderPassEvent::PostProcess;
     
-    blitPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    giPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
-    giBlurPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX3.glsl"));
-    giComposePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
-    giUpsamplePass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
+    blitPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    giPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIPostFX3.glsl"));
+    giBlurPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlurPostFX3.glsl"));
+    giComposePass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIComposePostFX.glsl"));
+    giUpsamplePass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIUpsample.glsl"));
     blueNoise = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/LDR_RG01_47.png");
 }
 

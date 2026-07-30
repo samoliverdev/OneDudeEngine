@@ -26,7 +26,7 @@ public:
     }
 
     void Init(int _chunkCapacity){
-        if (_chunkCapacity <= 0)
+        if(_chunkCapacity <= 0)
             throw std::invalid_argument("Chunk capacity must be positive");
 
         chunkCapacity = _chunkCapacity;
@@ -39,25 +39,27 @@ public:
     // =========================
     template<typename... Args>
     T* Alloc(Args&&... args){
-        uint32_t id = GenerateId();
-
         Chunk* chunk;
         int index;
+        uint32_t chunkIndex;
 
         // reuse free slot
-        if (!freeSlots.empty()) {
+        if(!freeSlots.empty()){
             auto slot = freeSlots.back();
             freeSlots.pop_back();
 
-            chunk = &chunks[slot.chunkIndex];
+            chunkIndex = slot.chunkIndex;
             index = slot.index;
+            chunk = &chunks[chunkIndex];
         } else {
-            chunk = &chunks[curChunk];
+            chunkIndex = curChunk;
+            chunk = &chunks[chunkIndex];
 
-            if (chunk->curIndex >= chunkCapacity) {
+            if(chunk->curIndex >= chunkCapacity){
                 AddNewChunk();
                 curChunk = chunks.size() - 1;
-                chunk = &chunks[curChunk];
+                chunkIndex = curChunk;
+                chunk = &chunks[chunkIndex];
             }
 
             index = chunk->curIndex++;
@@ -68,10 +70,8 @@ public:
         T* ptr = reinterpret_cast<T*>(chunk->data) + index;
         new(ptr) T(std::forward<Args>(args)...);
 
-        // assign ID to asset
+        uint32_t id = EncodeId(chunkIndex, index);
         ptr->resourceId = id;
-
-        idToLocation[id] = { (int)curChunk, index };
 
         return ptr;
     }
@@ -82,22 +82,36 @@ public:
         return std::shared_ptr<T>(ptr, [this](T* p){ this->Free(p->GetId()); });
     }
 
+    bool IsValid(uint32_t id) const {
+        if(id == INVALID_RESOURCE_ID) return false;
+
+        uint32_t chunkIndex, index;
+        DecodeId(id, chunkIndex, index);
+
+        if(chunkIndex >= chunks.size()) return false;
+
+        const Chunk& chunk = chunks[chunkIndex];
+
+        if(index >= chunk.used.size()) return false;
+
+        return chunk.used[index];
+    }
+
     // =========================
     // GET BY ID
     // =========================
     T* Get(uint32_t id) override {
-        if (id == INVALID_RESOURCE_ID)
-            return nullptr;
+        if(id == INVALID_RESOURCE_ID) return nullptr;
 
-        auto it = idToLocation.find(id);
-        if (it == idToLocation.end())
-            return nullptr;
+        uint32_t chunkIndex, index;
+        DecodeId(id, chunkIndex, index);
 
-        auto [chunkIndex, index] = it->second;
+        if(chunkIndex >= chunks.size()) return nullptr;
+
         Chunk& chunk = chunks[chunkIndex];
 
-        if (!chunk.used[index])
-            return nullptr;
+        if(index >= chunk.used.size()) return nullptr;
+        if(!chunk.used[index]) return nullptr;
 
         return reinterpret_cast<T*>(chunk.data) + index;
     }
@@ -106,27 +120,26 @@ public:
     // FREE BY ID
     // =========================
     void Free(uint32_t id){
-        auto it = idToLocation.find(id);
-        if (it == idToLocation.end())
+        uint32_t chunkIndex, index;
+        DecodeId(id, chunkIndex, index);
+
+        if(chunkIndex >= chunks.size())
             throw std::runtime_error("Invalid resource ID");
 
-        auto [chunkIndex, index] = it->second;
         Chunk& chunk = chunks[chunkIndex];
 
-        if (!chunk.used[index])
+        if(index >= chunk.used.size() || !chunk.used[index])
             throw std::runtime_error("Double free or invalid ID");
 
         T* ptr = reinterpret_cast<T*>(chunk.data) + index;
 
-        ptr->~T();
+        ptr->~T(); //printf("~T()\n");
         ptr->resourceId = INVALID_RESOURCE_ID;
 
         chunk.used[index] = false;
         freeSlots.push_back({ chunkIndex, index });
 
-        idToLocation.erase(it);
-
-        if ((size_t)chunkIndex < curChunk)
+        if((size_t)chunkIndex < curChunk)
             curChunk = chunkIndex;
     }
 
@@ -153,7 +166,7 @@ public:
             for(size_t i = 0; i < chunk.used.size(); ++i){
                 if (chunk.used[i]) {
                     T* ptr = reinterpret_cast<T*>(chunk.data) + i;
-                    ptr->~T();
+                    ptr->~T(); //printf("~T()\n");
                 }
             }
             chunk.curIndex = 0;
@@ -161,9 +174,7 @@ public:
         }
 
         freeSlots.clear();
-        idToLocation.clear();
         curChunk = 0;
-        nextId = 1;
     }
 
     ~ResourceAllocator(){
@@ -171,7 +182,7 @@ public:
             for(size_t i = 0; i < chunk.used.size(); ++i){
                 if(chunk.used[i]){
                     T* ptr = reinterpret_cast<T*>(chunk.data) + i;
-                    ptr->~T();
+                    ptr->~T(); //printf("~T()\n");
                 }
             }
             free(chunk.data);
@@ -186,12 +197,22 @@ private:
     };
 
     struct Slot{
-        int chunkIndex;
-        int index;
+        uint32_t chunkIndex;
+        uint32_t index;
     };
 
-    uint32_t GenerateId(){
-        return nextId++; // simple monotonic (can improve later)
+    //max chunks = 65535
+    //max elements per chunk = 65535
+    static constexpr uint32_t INDEX_BITS = 16;
+    static constexpr uint32_t INDEX_MASK = (1u << INDEX_BITS) - 1;
+
+    uint32_t EncodeId(uint32_t chunkIndex, uint32_t index) const {
+        return (chunkIndex << INDEX_BITS) | index;
+    }
+
+    void DecodeId(uint32_t id, uint32_t& chunkIndex, uint32_t& index) const {
+        chunkIndex = id >> INDEX_BITS;
+        index = id & INDEX_MASK;
     }
 
     void AddNewChunk(){
@@ -210,12 +231,8 @@ private:
     std::vector<Chunk> chunks;
     std::vector<Slot> freeSlots;
 
-    std::unordered_map<uint32_t, Slot> idToLocation;
-
     size_t chunkCapacity = 0;
     size_t curChunk = 0;
-
-    uint32_t nextId = 1;
 };
 
 }

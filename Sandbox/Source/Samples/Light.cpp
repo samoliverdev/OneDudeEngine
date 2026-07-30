@@ -39,7 +39,7 @@ void LightSample::OnInit(){
     model->materials[0]->SetVector3("light_specular", Vector3(1.0f, 1.0f, 1.0f)); 
 
     framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
-    blitMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    blitMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     fullScreenQuad = Mesh::FullScreenQuad();
 }
 

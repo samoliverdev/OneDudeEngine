@@ -63,7 +63,7 @@ void ComputeShaderSample::OnInit(){
     mesh->indices.push_back(2);
     mesh->Submit();
 
-    mat = CreateRef<Material>(Resource::CreateFromFile<Shader>("Engine/Shaders/Unlit.glsl"));
+    mat = ResourceManager::Get().Create<Material>(Resource::CreateFromFile<Shader>("Engine/Shaders/Unlit.glsl"));
 
     Graphics::BeginGPUTime();
     computeShader->SetTexture("inputTex", tex);

@@ -251,7 +251,7 @@ public:
 };
 
 struct RendererModule{
-    Ref<Material> material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
+    Ref<Material> material = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Standard/Shaders/UnlitParticleBlend.glsl"), true);
     Ref<Model> model = ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj"); //Model::CreateFromFile(*mesh, "Engine/Models/Cube.obj", {nullptr, 1, false});
 
     enum class Orientation{ World, Velocity, View, ViewPlusVelocity};

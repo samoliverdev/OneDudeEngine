@@ -356,7 +356,7 @@ bool GltfLoadModel(
 
     model.materials.resize(gltfModel.materials.size());
     for(size_t i = 0; i < gltfModel.materials.size(); ++i){
-        auto mat = CreateRef<Material>();
+        auto mat = ResourceManager::Get().Create<Material>();
         auto& gltfMat = gltfModel.materials[i];
         
         if(gltfMat.pbrMetallicRoughness.baseColorTexture.index >= 0){
@@ -391,7 +391,7 @@ bool GltfLoadModel(
         model.materials[i] = mat;
     }
     if(model.materials.empty()){
-        model.materials.push_back(CreateRef<Material>());
+        model.materials.push_back(ResourceManager::Get().Create<Material>());
         for(auto& rt : model.renderTargets) rt.materialIndex = 0;
     }
 

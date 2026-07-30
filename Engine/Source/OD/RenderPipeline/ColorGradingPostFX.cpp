@@ -10,7 +10,7 @@ namespace OD{
 ColorGradingFeature::ColorGradingFeature(){
     enable = false;
     event = RenderPassEvent::PostProcess;
-    colorGradingPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl"));
+    colorGradingPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/ColorGradingPostFX.glsl"));
     Assert(colorGradingPass != nullptr);
 }
 

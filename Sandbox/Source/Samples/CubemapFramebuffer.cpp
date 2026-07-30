@@ -22,11 +22,11 @@ void CubemapFramebufferSample::OnInit(){
     camTransform.EulerAngles(Vector3(0, 0, 0));
     camMove.transform = &camTransform;
 
-    mat1 = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
+    mat1 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
     mat1->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/Rock.jpg"));
     mat1->SetVector4("color", {1,1,1,1});
 
-    mat2 = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Sandbox/Shaders/CubemapFramebufferSample.glsl"));
+    mat2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Sandbox/Shaders/CubemapFramebufferSample.glsl"));
 
     model = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/cube.gltf");
     model2 = ResourceManager::Get().LoadByPath<Model>("Engine/Models/Sphere.obj");
@@ -52,11 +52,11 @@ void CubemapFramebufferSample::OnInit(){
     cubeFB = CreateRef<Framebuffer>(sp);
 
     skyMesh = Mesh::SkyboxCube();
-    skyMat = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
+    skyMat = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     skyMat->SetCubemap("mainTex", ResourceManager::Get().LoadByPath<Cubemap>("DefaultSkyboxCubemap"));
 
     fullscreenQuadMesh = Mesh::FullScreenQuad();
-    screenPassMat = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/GamaCorrectionPP.glsl"));
+    screenPassMat = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/GamaCorrectionPP.glsl"));
 }
 
 void CubemapFramebufferSample::OnUpdate(float deltaTime){

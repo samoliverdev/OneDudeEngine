@@ -93,7 +93,7 @@ void AssetPackingSample::OnInit(){
     //Ref<Texture2D> texture = AssetManager::Get().LoadAsset<Texture2D>("Sandbox/Textures/image.png");
     //texture->Save("Sandbox/image.texturebin", Asset::SaveType::FinalBinary);
 
-    Ref<Material> mat = CreateRef<Material>(shader2);
+    Ref<Material> mat = ResourceManager::Get().Create<Material>(shader2);
 
     Ref<Texture2D> textureBin = ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/image.texturebin");
     Assert(textureBin != nullptr);

@@ -18,7 +18,7 @@ void SSAOFeature::OnGui() {
 SSAOFeature::SSAOFeature(){
     enable = false;
     event = RenderPassEvent::PostProcess;
-    aoPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/SSAOPostFX.glsl"));
+    aoPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSAOPostFX.glsl"));
     Assert(aoPass != nullptr);
 
     

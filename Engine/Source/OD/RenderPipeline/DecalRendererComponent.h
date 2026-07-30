@@ -12,7 +12,7 @@ struct OD_API DecalRendererComponent{
     Vector4 perInstanceData = Vector4Zero;
     Vector3 offset;
     Vector3 size = {1, 1, 1};
-    Ref<Material> material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DecalTest.glsl"));// nullptr;
+    Ref<Material> material = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/DecalTest.glsl"));// nullptr;
     int customLayerIndex = -1;
     bool useCustomOffsetAndSize = false;
 

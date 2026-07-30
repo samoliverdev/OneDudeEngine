@@ -24,7 +24,7 @@ EnvironmentSettings::EnvironmentSettings(){
 
     Assert(skyCubemap != nullptr);
 
-    skyCustomMaterial = CreateRef<Material>();
+    skyCustomMaterial = ResourceManager::Get().Create<Material>();
     skyCustomMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
     //settings.sky->SetShader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/SkyboxGradient.glsl"));
     skyCustomMaterial->SetCubemap("mainTex", skyCubemap);

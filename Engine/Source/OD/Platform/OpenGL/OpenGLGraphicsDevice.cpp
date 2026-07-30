@@ -446,7 +446,7 @@ void OpenGLGraphicsDevice::Initialize(){
     /*gismoShader = SubShader::CreateFromFile("Engine/Shaders/Gizmos.glsl");
     Assert(gismoShader != nullptr);*/
 
-    gismoMaterial = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
+    gismoMaterial = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Gizmos.glsl"));
 
     // TODO: Maybe delete this opengl data
     CreateLineVAO(&lineVAO, &lineVBO, 2);
@@ -522,10 +522,10 @@ void OpenGLGraphicsDevice::Initialize(){
     };
     _cubeMesh->Submit();
 
-    irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
-    prefilterMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
-    brdfMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/brdf.glsl"));
-    equirectangularToCubemapMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl"));
+    irradianceMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
+    prefilterMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
+    brdfMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/brdf.glsl"));
+    equirectangularToCubemapMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl"));
 
     glGenBuffers(1, &globalMat4VBO);
     glBindBuffer(GL_ARRAY_BUFFER, globalMat4VBO);

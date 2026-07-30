@@ -66,7 +66,7 @@ void PackageSample::OnInit(){
     Entity meshEntity = scene->AddEntity("Mesh");
     MeshRendererComponent& meshRenderer = scene->AddComponent<MeshRendererComponent>(meshEntity);
     meshRenderer.mesh = model->meshs[0];
-    meshRenderer.material = CreateRef<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
+    meshRenderer.material = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit2.glsl"));
     meshRenderer.material->SetTexture("mainTex", tex);
 
     Application::AddModule<Editor>();

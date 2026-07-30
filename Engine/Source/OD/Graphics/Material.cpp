@@ -50,6 +50,7 @@ Material::Material(const Material& other){
 }
 
 Material::~Material(){
+    //printf("~Material\n");
     Assert(graphicsDevice != nullptr);
     graphicsDevice->MaterialDestroy(*this);
     materialIdPool.Push(id);

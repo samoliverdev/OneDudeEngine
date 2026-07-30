@@ -11,10 +11,10 @@ namespace OD{
 ToneMappingFeature::ToneMappingFeature(){
     enable = false;
     event = RenderPassEvent::PostProcess;
-    copyPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
-    toneMappingReinhardPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingReinhardPostFX.glsl"));
-    toneMappingNeutralPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingNeutralPostFX.glsl"));
-    toneMappingACESPass = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingACESPostFX.glsl"));
+    copyPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
+    toneMappingReinhardPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingReinhardPostFX.glsl"));
+    toneMappingNeutralPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingNeutralPostFX.glsl"));
+    toneMappingACESPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/ToneMappingACESPostFX.glsl"));
 }
 
 void ToneMappingFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){

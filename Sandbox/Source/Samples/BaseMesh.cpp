@@ -79,11 +79,11 @@ void BaseMeshSample::OnInit(){
     mesh.indices.push_back(2);
     mesh.Submit();
 
-    meshMat = CreateRef<Material>(Resource::CreateFromFile<Shader>("Sandbox/Shaders/test.glsl")); //CreateRef<Material>(Shader::CreateFromFile("Sandbox/Shaders/test.glsl"));
+    meshMat = ResourceManager::Get().Create<Material>(Resource::CreateFromFile<Shader>("Sandbox/Shaders/test.glsl")); //CreateRef<Material>(Shader::CreateFromFile("Sandbox/Shaders/test.glsl"));
 
     font = Resource::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf", FontSettings{32, FontType::Raster});
     Assert(font != nullptr);
-    fontMat = CreateRef<OD::Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    fontMat = ResourceManager::Get().Create<OD::Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){

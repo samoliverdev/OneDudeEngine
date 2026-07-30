@@ -444,11 +444,11 @@ void BoidsSample::OnInit(){
     SceneManager.RegisterSystem<BoidSystem>("BoidSystem");
     OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
-    Ref<Material> floorMaterial = CreateRef<Material>();
+    Ref<Material> floorMaterial = ResourceManager::Get().Create<Material>();
     floorMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
     floorMaterial->SetVector4("color", Vector4(0.8f, 0.8f, 0.8f, 1));
 
-    Ref<Material> boidMaterial = CreateRef<Material>();
+    Ref<Material> boidMaterial = ResourceManager::Get().Create<Material>();
     boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
     boidMaterial->SetEnableInstancing(true);

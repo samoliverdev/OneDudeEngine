@@ -92,8 +92,8 @@ public:
 	duDebugDrawPrimitives currentMode;
 
     DebugDrawGL(){
-        shader = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Navmesh.glsl"));
-        mesh = CreateRef<Mesh>();
+        shader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Navmesh.glsl"));
+        mesh = ResourceManager::Get().Create<Mesh>();
     }
 
 	virtual void depthMask(bool state){

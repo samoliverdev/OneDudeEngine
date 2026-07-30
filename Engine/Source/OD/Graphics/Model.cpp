@@ -277,7 +277,7 @@ void Model::CreateMaterialsFromTargets(){
 	materials.resize(materialTargets.size());
 	for(int i = 0; i < materialTargets.size(); i++){
 		Ref<Shader> s = settings.customShader != nullptr ? settings.customShader : ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl");
-		Ref<Material> m = CreateRef<Material>(s);
+		Ref<Material> m = ResourceManager::Get().Create<Material>(s);
 
 		for(int j = 0; j < materialTargets[i].argNames.size(); j++){
 			if(materialTargets[i].texs[j].isFromTexturesArray){
