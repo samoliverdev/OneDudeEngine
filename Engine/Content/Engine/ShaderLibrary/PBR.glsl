@@ -344,4 +344,103 @@ vec3 GetFinalColor(Surface surfaceWS){
 	return color;
 }
 
+//////////////New///////////
+
+struct LightingResult{
+    vec3 diffuse;
+    vec3 specular;
+};
+
+LightingResult IncomingLightNew(Surface surface, Light light){
+    LightingResult r;
+
+    vec3 albedo = surface.color;
+    float metallic = surface.metallic;
+    float roughness = surface.roughness;
+
+    vec3 N = surface.normal;
+    vec3 V = surface.viewDirection;
+    vec3 L = light.direction;
+    vec3 H = normalize(V + L);
+
+    vec3 radiance = light.color * light.attenuation;
+
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+
+    vec3 spec = (NDF * G * F) /
+        (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
+
+    vec3 kS = F;
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    r.diffuse  = kD * albedo / PI * radiance * NdotL;
+    r.specular = spec * radiance * NdotL;
+
+    return r;
+}
+
+LightingResult AmbientLightNew(Surface s){
+    LightingResult r;
+
+    vec3 F0 = mix(vec3(0.04), s.color, s.metallic);
+    vec3 F = fresnelSchlickRoughness(
+        max(dot(s.normal, s.viewDirection), 0.0),
+        F0, s.roughness
+    );
+
+    vec3 kS = F;
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - s.metallic);
+
+    vec3 irradiance = SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, s.normal).rgb;
+    vec3 diffuse = irradiance * s.color;
+
+    float mip = s.roughness * MAX_REFLECTION_LOD;
+    vec3 R = reflect(-s.viewDirection, s.normal);
+    vec3 prefiltered = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb;
+
+    vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler,
+        vec2(max(dot(s.normal, s.viewDirection), 0.0), s.roughness)).rg;
+
+    vec3 specular = prefiltered * (F * brdf.x + brdf.y);
+
+    r.diffuse  = kD * diffuse * s.occlusion;
+    r.specular = specular * s.occlusion;
+
+    return r;
+}
+
+LightingResult GetFinalLighting(Surface surfaceWS){
+    ShadowData shadowData = GetShadowData(surfaceWS);
+
+    LightingResult total;
+    total.diffuse = vec3(0.0);
+    total.specular = vec3(0.0);
+
+    LightingResult amb = AmbientLightNew(surfaceWS);
+    total.diffuse  += amb.diffuse;
+    total.specular += amb.specular;
+
+    for(int i = 0; i < GetDirectionalLightCount(); i++){
+        Light light = GetDirectionalLight(i, surfaceWS, shadowData);
+        LightingResult r = IncomingLightNew(surfaceWS, light);
+        total.diffuse  += r.diffuse;
+        total.specular += r.specular;
+    }
+
+    for(int j = 0; j < GetOtherLightCount(); j++){
+        Light light = GetOtherLight(j, surfaceWS, shadowData);
+        LightingResult r = IncomingLightNew(surfaceWS, light);
+        total.diffuse  += r.diffuse;
+        total.specular += r.specular;
+    }
+
+    return total;
+}
+
 #endif

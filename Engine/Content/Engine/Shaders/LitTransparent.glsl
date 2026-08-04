@@ -19,9 +19,9 @@
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
     MultiCompile Forward Deferred
 
-    CullFace NONE
-    DepthTest LESS
-    Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+    CullFace BACK
+    DepthTest LEQUAL
+    Blend ONE ONE_MINUS_SRC_ALPHA
     DepthMask False    
 #pragma EndPassDef
 
@@ -32,7 +32,6 @@
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
     Uniform float normalStrength;
     Uniform vec4 color;
     Uniform vec4 sizeOffset;
@@ -166,18 +165,20 @@ uniform int perDrawInt_1;
         //vec4 sizeOffset = vec4(1.0, 1.0, 0.0, 0.0);
         vec2 uv = outTexCoord * sizeOffset.xy + sizeOffset.zw;
         vec4 base = ToLinear(SampleTexture2D(mainTex, mainTexSampler, uv)); //textureSRGB(mainTex, uv);
-        if(base.a < cutoff) discard;
+        //if(base.a < cutoff) discard;
         base = base * color;
+        //base.rgb *= base.a;
         
         /*vec3 normalMap = exture(normal, uv).rgb);
         vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
         vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+        vec3 viewPos = invView[3].xyz;
 
         Surface surface;
         surface.position = outWorldPos;
-        surface.normal = _normal; //outWorldNormal;// _normal;
+        surface.normal = outWorldNormal; //_normal; //outWorldNormal;// _normal;
         surface.viewDirection = normalize(viewPos - outWorldPos);
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
@@ -185,6 +186,7 @@ uniform int perDrawInt_1;
         surface.occlusion = GetOcclusion(uv);
         surface.metallic = GetMetallic(uv);
         surface.smoothness = GetSmoothness(uv);
+        surface.roughness = clamp(1.0 - smoothness, 0.05, 1);
 
         #ifdef Deferred
         
@@ -202,11 +204,14 @@ uniform int perDrawInt_1;
         );
         
         #else
-
-        surface.smoothness = clamp(1.0 - smoothness, 0.05, 1);
-        vec3 color = GetFinalColor(surface);
+        
+        /*vec3 color = GetFinalColor(surface);
         color += GetEmission(uv);
-        fragColor = vec4(color, surface.alpha);
+        fragColor = vec4(color, surface.alpha);*/
+
+        LightingResult lighting = GetFinalLighting(surface);
+        vec3 finalColor = lighting.diffuse * surface.alpha + lighting.specular;
+        fragColor = vec4(finalColor, surface.alpha);
         
         #endif
     }

@@ -532,7 +532,7 @@ void AnimatorSample::OnInit(){
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
-    lightComponent.renderShadow = false;
+    lightComponent.renderShadow = true;
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
 
@@ -599,6 +599,7 @@ void AnimatorSample::OnInit(){
             charTrans.LocalScale(Vector3(1));
             
             SkinnedModelRendererComponent& charRenderer = scene->AddComponent<SkinnedModelRendererComponent>(charEntity);
+            charRenderer.useSkinnedData = true;
             charRenderer.SetModel(charModel);
             //charRenderer.SetAABB(Vector3(0,0.01f,0), Vector3(0.01f/2, 0.01f, 0.01f/4));
             charRenderer.UpdatePosePalette();

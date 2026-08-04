@@ -62,15 +62,52 @@ void GlobalSettings::Load(const std::string& path){
 }
 
 void GlobalSettings::OnImGuiRender(){
-    if(ImGui::Begin("Global Settings")){
+    /*if(ImGui::Begin("Global Settings")){
         for(auto& [name, section] : sections){
-            if(ImGui::CollapsingHeader(name.c_str()/*, ImGuiTreeNodeFlags_DefaultOpen*/)){
+            if(ImGui::CollapsingHeader(name.c_str())){
                 if(section.drawer)
                     section.drawer();
             }
         }
     }
-    ImGui::End();
+    ImGui::End();*/
+
+    static std::string selected = "";
+
+    if(ImGui::Begin("Global Settings")){
+        if(ImGui::BeginTable("SettingsTable", 2, ImGuiTableFlags_Resizable)){
+            ImGui::TableSetupColumn("Left", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+            ImGui::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthStretch);
+
+            ImGui::TableNextRow();
+
+            // LEFT
+            ImGui::TableSetColumnIndex(0);
+            ImGui::BeginChild("##left_panel", ImVec2(0,0), true);
+            for(auto& [name, section] : sections){
+                if(ImGui::Selectable(name.c_str(), selected == name)){
+                    selected = name;
+                }
+            }
+            ImGui::EndChild();
+
+            // RIGHT
+            ImGui::TableSetColumnIndex(1);
+            ImGui::BeginChild("##right_panel", ImVec2(0,0), true);
+
+            if(!selected.empty()){
+                auto it = sections.find(selected);
+                if(it != sections.end() && it->second.drawer){
+                    it->second.drawer();
+                }
+            }
+
+            ImGui::EndChild();
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();   
 }
 
 } // namespace OD
