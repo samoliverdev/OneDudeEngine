@@ -4,7 +4,14 @@
 #include <Windows.h>
 #endif
 
+#include <filesystem>
+
 namespace OD{
+
+
+inline bool FileExists(const std::string& path){
+    return std::filesystem::exists(path);
+}
 
 //Source: https://gist.github.com/Jacob-Tate/7b326a086cf3f9d46e32315841101109
 

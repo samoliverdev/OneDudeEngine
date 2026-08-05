@@ -158,7 +158,8 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
 
     
     namespace fs = std::filesystem;
-
+    
+    if(fs::exists(inpath) == false) return false;
     if(inpath.empty()) return false;
 
     fs::path p(inpath);

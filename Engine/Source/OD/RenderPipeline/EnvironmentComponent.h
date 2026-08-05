@@ -89,6 +89,8 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, ssao);
         ArchiveDumpNVP(ar, ssgi);
 
+        ResourceRefSerialize<Material> skyCustomMaterial_(skyCustomMaterial);
+        ArchiveDumpNamed(ar, "skyCustomMaterial", skyCustomMaterial_);
 
         ResourceRefSerialize<Cubemap> skyCubemap_(skyCubemap);
         ArchiveDumpNamed(ar, "skyCubemap", skyCubemap_);
