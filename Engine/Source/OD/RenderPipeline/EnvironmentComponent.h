@@ -58,11 +58,11 @@ struct OD_API EnvironmentSettings{
     float sssBilinearThreshold = 0.02f;
     float sssShadowContrast = 4;
 
-    Ref<ToneMappingFeature> toneMapping = CreateRef<ToneMappingFeature>();
-    Ref<ColorGradingFeature> colorGrading = CreateRef<ColorGradingFeature>();
-    Ref<BloomFeature> bloom = CreateRef<BloomFeature>();
-    Ref<SSAOFeature> ssao = CreateRef<SSAOFeature>();
-    Ref<SSGIFeature> ssgi = CreateRef<SSGIFeature>();
+    ToneMappingFeature toneMapping = {}; //CreateRef<ToneMappingFeature>();
+    ColorGradingFeature colorGrading = {}; //CreateRef<ColorGradingFeature>();
+    BloomFeature bloom = {}; //CreateRef<BloomFeature>();
+    SSAOFeature ssao = {}; //CreateRef<SSAOFeature>();
+    SSGIFeature ssgi = {}; //CreateRef<SSGIFeature>();
 
     //std::vector<Ref<PostFX>> customPostPrecessings;
     

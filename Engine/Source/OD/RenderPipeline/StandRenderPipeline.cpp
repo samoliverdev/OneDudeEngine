@@ -1806,11 +1806,11 @@ void StandRenderPipeline::LateUpdate(Scene& scene){
 void StandRenderPipeline::SetupFeatures(EnvironmentComponent& env){
     cachedFeatures.clear();
 
-    cachedFeatures.push_back(env.settings.ssao.get());
-    cachedFeatures.push_back(env.settings.ssgi.get());
-    cachedFeatures.push_back(env.settings.bloom.get());
-    cachedFeatures.push_back(env.settings.toneMapping.get());
-    cachedFeatures.push_back(env.settings.colorGrading.get());
+    cachedFeatures.push_back(&env.settings.ssao);
+    cachedFeatures.push_back(&env.settings.ssgi);
+    cachedFeatures.push_back(&env.settings.bloom);
+    cachedFeatures.push_back(&env.settings.toneMapping);
+    cachedFeatures.push_back(&env.settings.colorGrading);
     
     env.features.ForEachFeature([&](Ref<RendererFeature> feature){
         cachedFeatures.push_back(feature.get());

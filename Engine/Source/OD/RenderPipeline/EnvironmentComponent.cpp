@@ -86,40 +86,40 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
 
     //ImGui::DrawEnumCombo<ColorCorrection>("colorCorrection", &environment.settings.colorCorrection);
 
-    if(environment.settings.toneMapping != nullptr){
+    //if(environment.settings.toneMapping != nullptr){
         if(ImGui::TreeNode("ToneMapping")){
-            environment.settings.toneMapping->OnGui();
+            environment.settings.toneMapping.OnGui();
             ImGui::TreePop();
         }
-    }
+    //}
 
-    if(environment.settings.colorGrading != nullptr){
+    //if(environment.settings.colorGrading != nullptr){
         if(ImGui::TreeNode("ColorGrading")){
-            environment.settings.colorGrading->OnGui();
+            environment.settings.colorGrading.OnGui();
             ImGui::TreePop();
         }
-    }
+    //}
 
-    if(environment.settings.bloom != nullptr){
+    //if(environment.settings.bloom != nullptr){
         if(ImGui::TreeNode("Bloom")){
-            environment.settings.bloom->OnGui();
+            environment.settings.bloom.OnGui();
             ImGui::TreePop();
         }
-    }
+    //}
 
-    if(environment.settings.ssao != nullptr){
+    //if(environment.settings.ssao != nullptr){
         if(ImGui::TreeNode("SSAO")){
-            environment.settings.ssao->OnGui();
+            environment.settings.ssao.OnGui();
             ImGui::TreePop();
         }
-    }
+    //}
 
-    if(environment.settings.ssgi != nullptr){
+    //if(environment.settings.ssgi != nullptr){
         if(ImGui::TreeNode("SSGI")){
-            environment.settings.ssgi->OnGui();
+            environment.settings.ssgi.OnGui();
             ImGui::TreePop();
         }
-    }
+    //}
 
     /*if(ImGui::TreeNode("CustomPostFX")){
         for(auto& i: environment.settings.customPostPrecessings){
