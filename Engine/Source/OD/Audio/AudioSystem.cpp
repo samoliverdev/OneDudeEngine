@@ -396,6 +396,10 @@ void AudioModuleInit(){
 
 bool AudioSourceComponent::IsPlaying() const{
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+
+    //if(loop) return clipHasInited; // looping never "finishes"
+    //return ma_sound_at_end(&sourceSound) == false;
+
     if(clipHasInited == false) return false;
     return ma_sound_is_playing(&sourceSound);
 }
@@ -404,9 +408,14 @@ void AudioSourceComponent::Stop(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
     if(clipHasInited == false) return;
     
-    if(ma_sound_is_playing(&sourceSound)){
+    /*if(ma_sound_is_playing(&sourceSound)){
         ma_sound_stop(&sourceSound);
     }
+    ma_sound_uninit(&sourceSound);
+    ma_audio_buffer_ref_uninit(&sourceBufferRef);
+    clipHasInited = false;*/
+
+    ma_sound_stop(&sourceSound);
     ma_sound_uninit(&sourceSound);
     ma_audio_buffer_ref_uninit(&sourceBufferRef);
     clipHasInited = false;
@@ -423,11 +432,14 @@ void AudioSourceComponent::Play(){
     Stop();
 
     if(clip->LoadType() == AudioClipLoadType::DecompressOnLoad){
+        ma_uint32 bytesPerSample = ma_get_bytes_per_sample(clip->data1.format);
+        ma_uint64 frameCount = clip->data1.pcm.size() / (clip->data1.channels * bytesPerSample);
+
         ma_audio_buffer_ref_init(
             clip->data1.format,
             clip->data1.channels,
             clip->data1.pcm.data(),
-            clip->data1.pcm.size() / clip->data1.channels,
+            frameCount, //clip->data1.pcm.size() / clip->data1.channels,
             &sourceBufferRef
         );
 
@@ -455,10 +467,7 @@ void AudioSourceComponent::Play(){
     }
 
     auto result2 = ma_sound_start(&sourceSound);
-
-    if(result2 != MA_SUCCESS){
-        Assert(false);
-    }
+    Assert(result2 == MA_SUCCESS);
 
     clipHasInited = true;
 }
@@ -475,11 +484,14 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     ma_audio_buffer_ref* bufferRef = new ma_audio_buffer_ref;
 
     if(oneShotClip->LoadType() == AudioClipLoadType::DecompressOnLoad){
+        ma_uint32 bytesPerSample = ma_get_bytes_per_sample(oneShotClip->data1.format);
+        ma_uint64 frameCount = oneShotClip->data1.pcm.size() / (oneShotClip->data1.channels * bytesPerSample);
+        
         ma_audio_buffer_ref_init(
             oneShotClip->data1.format,
             oneShotClip->data1.channels,
             oneShotClip->data1.pcm.data(),
-            oneShotClip->data1.pcm.size() / oneShotClip->data1.channels,
+            frameCount, //oneShotClip->data1.pcm.size() / oneShotClip->data1.channels,
             bufferRef
         );
 
@@ -506,9 +518,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     }
 
     auto result = ma_sound_start(temp);
-    if(result != MA_SUCCESS){
-        Assert(false);
-    }
+    Assert(result == MA_SUCCESS);
 
     oneShots1.push_back({temp, bufferRef});
 }
@@ -518,7 +528,7 @@ void AudioSourceComponent::SetPosition(const Vector3& pos){
 
     position = pos;
     if(clipHasInited == false) return;
-    if(ma_sound_is_playing(&sourceSound) && mode == AudioSourceMode::Mode3D){
+    if(/*ma_sound_is_playing(&sourceSound) &&*/ mode == AudioSourceMode::Mode3D){
         ma_sound_set_position(&sourceSound, pos.x, pos.y, pos.z);
     }
 }
@@ -653,7 +663,7 @@ void AudioSystem::Update(Scene& scene){
             Vector3 pos = trans.Position();
             audio.position = pos;
 
-            if(audio.clipHasInited && ma_sound_is_playing(&audio.sourceSound)){
+            if(audio.clipHasInited /*&& ma_sound_is_playing(&audio.sourceSound)*/){
                 ma_sound_set_position(&audio.sourceSound, pos.x, pos.y, pos.z);
             }
         }
