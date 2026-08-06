@@ -5,6 +5,11 @@
 
 namespace OD{
 
+enum class AudioClipLoadType {
+    DecompressOnLoad,     // SFX
+    Streaming             // music
+};
+
 class OD_API AudioClip: public Resource{
     friend struct AudioSourceComponent;
     friend class AudioSystem;
@@ -17,7 +22,10 @@ public:
     bool LoadFromPackage(const std::string& path, Package& package) override;
     std::vector<std::string> GetFileAssociations() override;
 
+    inline AudioClipLoadType LoadType(){ return loadType; }
+
 private:
+    AudioClipLoadType loadType = AudioClipLoadType::DecompressOnLoad;
     AUDIO_CLIP_DATA
     bool loaded = false;
 };

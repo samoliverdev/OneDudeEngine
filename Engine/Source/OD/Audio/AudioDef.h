@@ -13,8 +13,27 @@
 
 #ifdef AUDIO_BACKEND_MINIAUDIO
 #include <miniaudio.h>
-#define AUDIO_CLIP_DATA ma_sound sound; ma_audio_buffer buffer; std::vector<float> pcmData;
-#define AUDIO_COMP_DATA ma_sound sourceSound{}; bool clipHasInited = false; std::vector<ma_sound*> oneShots; // Per-instance sound
+
+struct AudioClipDecompressData{
+    ma_audio_buffer buffer;
+    ma_format format;
+    ma_uint32 channels;
+    ma_uint32 sampleRate;
+    std::vector<float> pcm; // owned decoded data
+};
+
+struct OneShotDecompressData{
+    ma_sound* sound;
+    ma_audio_buffer_ref* ref;
+};
+
+struct OneShotStreamingData{
+    ma_sound* sound;
+    ma_decoder* decoder;
+};
+
+#define AUDIO_CLIP_DATA /*ma_sound sound; ma_audio_buffer buffer; std::vector<float> pcmData; ma_decoder decoder; std::vector<uint8_t> m_memory;*/ AudioClipDecompressData data1;
+#define AUDIO_COMP_DATA ma_sound sourceSound{}; ma_audio_buffer_ref sourceBufferRef{}; bool clipHasInited = false; std::vector<OneShotDecompressData> oneShots1; std::vector<OneShotStreamingData> oneShots2; // Per-instance sound
 #endif
 
 #ifdef AUDIO_BACKEND_NONE

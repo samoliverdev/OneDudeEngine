@@ -400,6 +400,18 @@ bool AudioSourceComponent::IsPlaying() const{
     return ma_sound_is_playing(&sourceSound);
 }
 
+void AudioSourceComponent::Stop(){
+    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
+    if(clipHasInited == false) return;
+    
+    if(ma_sound_is_playing(&sourceSound)){
+        ma_sound_stop(&sourceSound);
+    }
+    ma_sound_uninit(&sourceSound);
+    ma_audio_buffer_ref_uninit(&sourceBufferRef);
+    clipHasInited = false;
+}
+
 void AudioSourceComponent::Play(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
     
@@ -410,12 +422,23 @@ void AudioSourceComponent::Play(){
 
     Stop();
 
-    // Clone the sound (lightweight)
-    ma_result result = ma_sound_init_copy(&engine, &clip->sound, 0, nullptr, &sourceSound);
-    if(result != MA_SUCCESS) return;
+    if(clip->LoadType() == AudioClipLoadType::DecompressOnLoad){
+        ma_audio_buffer_ref_init(
+            clip->data1.format,
+            clip->data1.channels,
+            clip->data1.pcm.data(),
+            clip->data1.pcm.size() / clip->data1.channels,
+            &sourceBufferRef
+        );
 
-    //ma_result result = ma_sound_init_from_data_source(&engine, &clip->buffer, 0, nullptr, &sourceSound);
-    //if(result != MA_SUCCESS) return;
+        if(ma_sound_init_from_data_source(&engine, &sourceBufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &sourceSound) != MA_SUCCESS){
+            return;
+        }
+    }
+
+    if(clip->LoadType() == AudioClipLoadType::Streaming){
+        Assert(false);
+    }
 
     ma_sound_set_looping(&sourceSound, loop);
     ma_sound_set_volume(&sourceSound, volume);
@@ -440,28 +463,36 @@ void AudioSourceComponent::Play(){
     clipHasInited = true;
 }
 
-void AudioSourceComponent::Stop(){
-    Assert(IsMainThread() && "update3dAudio must be called from main thread!");
-    if(clipHasInited == false) return;
-    
-    if(ma_sound_is_playing(&sourceSound)){
-        ma_sound_stop(&sourceSound);
-    }
-    ma_sound_uninit(&sourceSound);
-    clipHasInited = false;
-}
-
 void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     if(!oneShotClip || !oneShotClip->loaded) return;
 
     const int maxShots = 10;
-    if(oneShots.size() >= maxShots) return;
+    if(oneShots1.size() >= maxShots) return;
 
-    //ma_sound temp;
     ma_sound* temp = new ma_sound;
-    if(ma_sound_init_copy(&engine, &oneShotClip->sound, 0, nullptr, temp) != MA_SUCCESS) return;
+    ma_audio_buffer_ref* bufferRef = new ma_audio_buffer_ref;
+
+    if(oneShotClip->LoadType() == AudioClipLoadType::DecompressOnLoad){
+        ma_audio_buffer_ref_init(
+            oneShotClip->data1.format,
+            oneShotClip->data1.channels,
+            oneShotClip->data1.pcm.data(),
+            oneShotClip->data1.pcm.size() / oneShotClip->data1.channels,
+            bufferRef
+        );
+
+        if(ma_sound_init_from_data_source(&engine, bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, temp) != MA_SUCCESS){
+            delete bufferRef;
+            delete temp;
+            return;
+        }
+    }
+
+    if(oneShotClip->LoadType() == AudioClipLoadType::Streaming){
+        Assert(false);
+    }
 
     ma_sound_set_looping(temp, false);
     ma_sound_set_volume(temp, volume);
@@ -479,7 +510,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
         Assert(false);
     }
 
-    oneShots.push_back(temp);
+    oneShots1.push_back({temp, bufferRef});
 }
 
 void AudioSourceComponent::SetPosition(const Vector3& pos){
@@ -565,13 +596,17 @@ void AudioSystem::OnStop(Scene& scene){
             ma_sound_uninit(&audio.sourceSound);
         }
 
-        for(size_t i = 0; i < audio.oneShots.size(); i++){
-            ma_sound* s = audio.oneShots[i];
+        for(size_t i = 0; i < audio.oneShots1.size(); i++){
+            ma_sound* s = audio.oneShots1[i].sound;
+            ma_audio_buffer_ref* ref = audio.oneShots1[i].ref;
+
             //if(ma_sound_is_playing(s)) ma_sound_stop(s);
             ma_sound_uninit(s);
+            ma_audio_buffer_ref_uninit(ref);
             delete s;
+            delete ref;
         }
-        audio.oneShots.clear();
+        audio.oneShots1.clear();
     }
 }
 
@@ -624,16 +659,19 @@ void AudioSystem::Update(Scene& scene){
         }
 
         // CLEANUP one-shots
-        for(size_t i = 0; i < audio.oneShots.size();){
-            ma_sound* s = audio.oneShots[i];
+        for(size_t i = 0; i < audio.oneShots1.size();){
+            ma_sound* s = audio.oneShots1[i].sound;
+            ma_audio_buffer_ref* ref = audio.oneShots1[i].ref;
 
             // if finished playing
             if(!ma_sound_is_playing(s)){
                 ma_sound_uninit(s);
+                ma_audio_buffer_ref_uninit(ref);
                 delete s;
+                delete ref;
 
-                audio.oneShots[i] = audio.oneShots.back();
-                audio.oneShots.pop_back();
+                audio.oneShots1[i] = audio.oneShots1.back();
+                audio.oneShots1.pop_back();
             } else {
                 ++i;
             }

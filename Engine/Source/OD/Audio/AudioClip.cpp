@@ -13,7 +13,12 @@ AudioClip::AudioClip(const std::string& filePath){
 
 AudioClip::~AudioClip(){
     #ifdef AUDIO_BACKEND_MINIAUDIO
-    if(loaded) ma_sound_uninit(&sound);
+    if(loaded){
+        //ma_sound_uninit(&sound);
+        //ma_decoder_uninit(&decoder);
+
+        ma_audio_buffer_uninit(&data1.buffer);
+    }
     #endif 
     //LogInfo("DESTROYED: {}", path);
 }
@@ -32,73 +37,60 @@ bool AudioClip::LoadFromFile(const std::string& path){
     #endif
 
     #ifdef AUDIO_BACKEND_MINIAUDIO
-    ma_result result = ma_sound_init_from_file(
-        &engine,                    // We'll use global engine later
-        path.c_str(),
-        MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_NO_SPATIALIZATION, // decode once
-        nullptr,                    // pDataSource
-        nullptr,                    // pDoneNotification
-        &sound
-    );
+    if(loadType == AudioClipLoadType::DecompressOnLoad){
+        ma_decoder decoder;
+        ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
+        if(ma_decoder_init_file(path.c_str(), &config, &decoder) != MA_SUCCESS) return false;
 
-    if(result != MA_SUCCESS){
-        LogError("Failed to load audio file: {}", path);
-        return false;
+        ma_uint64 totalFrames = 0;
+        if(ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames) != MA_SUCCESS){
+            ma_decoder_uninit(&decoder);
+            return false;
+        }
+
+        //data1.pcm.resize((size_t)(totalFrames * decoder.outputChannels));
+
+        size_t sampleSize = ma_get_bytes_per_sample(decoder.outputFormat);
+        data1.pcm.resize((size_t)(totalFrames * decoder.outputChannels * sampleSize));
+
+        ma_decoder_read_pcm_frames(
+            &decoder,
+            data1.pcm.data(),
+            totalFrames,
+            nullptr
+        );
+
+        data1.format = decoder.outputFormat;
+        data1.channels = decoder.outputChannels;
+        data1.sampleRate = decoder.outputSampleRate;
+
+        ma_audio_buffer_config bufferConfig = ma_audio_buffer_config_init(data1.format, data1.channels, totalFrames, data1.pcm.data(), nullptr);
+        if(ma_audio_buffer_init(&bufferConfig, &data1.buffer) != MA_SUCCESS){
+            ma_audio_buffer_uninit(&data1.buffer);
+            ma_decoder_uninit(&decoder);
+            return false;
+        }
+
+        ma_decoder_uninit(&decoder);
+
+        Assert(data1.pcm.size() > 0);
+        Assert(totalFrames > 0);
+
+        loaded = true;
+        return true;
     }
 
-    /*ma_decoder_config dconfig = ma_decoder_config_init(
-        ma_format_f32,  // FORCE FLOAT
-        0,              // keep original channels
-        0               // keep original sample rate
-    );
+    if(loadType == AudioClipLoadType::Streaming){
+        Assert(false);
+    }
 
-    ma_decoder decoder;
-    auto result2 = ma_decoder_init_file(path.c_str(), &dconfig, &decoder);
-    Assert(result2 == MA_SUCCESS);
-
-    //ma_decoder decoder;
-    //auto result2 = ma_decoder_init_file(path.c_str(), nullptr, &decoder);
-    //Assert(result2 == MA_SUCCESS);
-    
-    ma_uint64 frameCount;
-    result2 = ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
-    Assert(result2 == MA_SUCCESS);
-    //std::vector<float> pcm(frameCount * decoder.outputChannels);
-    pcmData.resize(frameCount * decoder.outputChannels);
-    result2 = ma_decoder_read_pcm_frames(&decoder, pcmData.data(), frameCount, nullptr);
-    Assert(result2 == MA_SUCCESS);
-    ma_audio_buffer_config config = ma_audio_buffer_config_init(
-        ma_format_f32,
-        decoder.outputChannels,
-        frameCount,
-        pcmData.data(),
-        nullptr
-    );
-    result2 = ma_audio_buffer_init(&config, &buffer);
-    Assert(result2 == MA_SUCCESS);
-
-    LogInfo("Channels: {}", decoder.outputChannels);
-    LogInfo("FrameCount: {}", frameCount);
-    LogInfo("First sample: {}", pcmData[0]);
-
-    result2 = ma_decoder_uninit(&decoder);
-    Assert(result2 == MA_SUCCESS);
-
-    if(result2 != MA_SUCCESS){
-        LogError("Failed to load audio file: {}", path);
-        return false;
-    }*/
-
-    this->path = path;
-    this->loaded = true;
-    return true;
     #endif
 
     return true;
 }
 
 bool AudioClip::LoadFromPackage(const std::string& path, Package& package){
-    return false;
+    //return false;
 
     void* data = nullptr;
     size_t size;
@@ -121,35 +113,46 @@ bool AudioClip::LoadFromPackage(const std::string& path, Package& package){
     return result == SoLoud::SO_NO_ERROR;
     #endif
 
-    /*#ifdef AUDIO_BACKEND_MINIAUDIO
-    // Create a memory data source
-    ma_sound tmpSound{};
-    ma_result result = ma_sound_init_from_memory(
-        nullptr,                    // engine (set later)
-        data,
-        size,
-        MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_NO_SPATIALIZATION,
-        nullptr,
-        nullptr,
-        &tmpSound
-    );
+    #ifdef AUDIO_BACKEND_MINIAUDIO
+    if(loadType == AudioClipLoadType::DecompressOnLoad){
+        ma_decoder decoder;
+        ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
 
-    if(result != MA_SUCCESS){
-        LogError("Failed to load audio from memory: {}", path);
-        package.FreeFileData(data);
-        return false;
+        if(ma_decoder_init_memory(data, size, &config, &decoder) != MA_SUCCESS) return false;
+
+        ma_uint64 totalFrames;
+        if(ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames) != MA_SUCCESS){
+            ma_decoder_uninit(&decoder);
+            return false;
+        }
+
+        data1.pcm.resize((size_t)(totalFrames * decoder.outputChannels));
+
+        ma_decoder_read_pcm_frames(
+            &decoder,
+            data1.pcm.data(),
+            totalFrames,
+            nullptr
+        );
+
+        data1.format = decoder.outputFormat;
+        data1.channels = decoder.outputChannels;
+        data1.sampleRate = decoder.outputSampleRate;
+
+        ma_audio_buffer_config bufferConfig = ma_audio_buffer_config_init(data1.format, data1.channels, totalFrames, data1.pcm.data(), nullptr);
+
+        if(ma_audio_buffer_init(&bufferConfig, &data1.buffer) != MA_SUCCESS){
+            ma_audio_buffer_uninit(&data1.buffer);
+            ma_decoder_uninit(&decoder);
+            return false;
+        }
+
+        ma_decoder_uninit(&decoder);
+
+        loaded = true;
+        return true;
     }
-
-    // Move to our sound
-    ma_sound_uninit(&sample);
-    sample = tmpSound;
-
-    this->path = path;
-    this->loaded = true;
-
-    package.FreeFileData(data);
-    return true;
-    #endif*/
+    #endif
 
     return true;
 }
