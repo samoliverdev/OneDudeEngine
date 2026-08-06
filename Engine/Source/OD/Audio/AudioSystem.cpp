@@ -408,16 +408,10 @@ void AudioSourceComponent::Stop(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
     if(clipHasInited == false) return;
     
-    /*if(ma_sound_is_playing(&sourceSound)){
-        ma_sound_stop(&sourceSound);
-    }
-    ma_sound_uninit(&sourceSound);
-    ma_audio_buffer_ref_uninit(&sourceBufferRef);
-    clipHasInited = false;*/
-
     ma_sound_stop(&sourceSound);
     ma_sound_uninit(&sourceSound);
     ma_audio_buffer_ref_uninit(&sourceBufferRef);
+    ma_decoder_uninit(&decoder);
     clipHasInited = false;
 }
 
@@ -449,7 +443,19 @@ void AudioSourceComponent::Play(){
     }
 
     if(clip->LoadType() == AudioClipLoadType::Streaming){
-        Assert(false);
+        ma_decoder_config config = ma_decoder_config_init_default();
+
+        if(clip->data2.memory.size() > 0){
+            auto r = ma_decoder_init_memory(clip->data2.memory.data(), clip->data2.memory.size(), &config, &decoder);
+            Assert(r == MA_SUCCESS);
+        } else {
+            auto r = ma_decoder_init_file(clip->path.c_str(), &config, &decoder);
+            Assert(r == MA_SUCCESS);
+        }
+
+        if(ma_sound_init_from_data_source(&engine, &decoder, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &sourceSound) != MA_SUCCESS){
+            return;
+        }
     }
 
     ma_sound_set_looping(&sourceSound, loop);
@@ -482,6 +488,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
 
     ma_sound* temp = new ma_sound;
     ma_audio_buffer_ref* bufferRef = new ma_audio_buffer_ref;
+    ma_decoder* tempDecoder = new ma_decoder;
 
     if(oneShotClip->LoadType() == AudioClipLoadType::DecompressOnLoad){
         ma_uint32 bytesPerSample = ma_get_bytes_per_sample(oneShotClip->data1.format);
@@ -498,12 +505,28 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
         if(ma_sound_init_from_data_source(&engine, bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, temp) != MA_SUCCESS){
             delete bufferRef;
             delete temp;
+            delete tempDecoder;
             return;
         }
     }
 
     if(oneShotClip->LoadType() == AudioClipLoadType::Streaming){
-        Assert(false);
+        ma_decoder_config config = ma_decoder_config_init_default();
+
+        if(oneShotClip->data2.memory.size() > 0){
+            auto r = ma_decoder_init_memory(oneShotClip->data2.memory.data(), oneShotClip->data2.memory.size(), &config, tempDecoder);
+            Assert(r == MA_SUCCESS);
+        } else {
+            auto r = ma_decoder_init_file(oneShotClip->path.c_str(), &config, tempDecoder);
+            Assert(r == MA_SUCCESS);
+        }
+
+        if(ma_sound_init_from_data_source(&engine, tempDecoder, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, temp) != MA_SUCCESS){
+            delete bufferRef;
+            delete temp;
+            delete tempDecoder;
+            return;
+        }
     }
 
     ma_sound_set_looping(temp, false);
@@ -520,7 +543,7 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     auto result = ma_sound_start(temp);
     Assert(result == MA_SUCCESS);
 
-    oneShots1.push_back({temp, bufferRef});
+    oneShots1.push_back({temp, bufferRef, tempDecoder});
 }
 
 void AudioSourceComponent::SetPosition(const Vector3& pos){
@@ -609,12 +632,15 @@ void AudioSystem::OnStop(Scene& scene){
         for(size_t i = 0; i < audio.oneShots1.size(); i++){
             ma_sound* s = audio.oneShots1[i].sound;
             ma_audio_buffer_ref* ref = audio.oneShots1[i].ref;
+            ma_decoder* dec = audio.oneShots1[i].decoder;
 
             //if(ma_sound_is_playing(s)) ma_sound_stop(s);
             ma_sound_uninit(s);
             ma_audio_buffer_ref_uninit(ref);
+            ma_decoder_uninit(dec);
             delete s;
             delete ref;
+            delete dec;
         }
         audio.oneShots1.clear();
     }
@@ -672,13 +698,16 @@ void AudioSystem::Update(Scene& scene){
         for(size_t i = 0; i < audio.oneShots1.size();){
             ma_sound* s = audio.oneShots1[i].sound;
             ma_audio_buffer_ref* ref = audio.oneShots1[i].ref;
+            ma_decoder* dec = audio.oneShots1[i].decoder;
 
             // if finished playing
             if(!ma_sound_is_playing(s)){
                 ma_sound_uninit(s);
                 ma_audio_buffer_ref_uninit(ref);
+                ma_decoder_uninit(dec);
                 delete s;
                 delete ref;
+                delete dec;
 
                 audio.oneShots1[i] = audio.oneShots1.back();
                 audio.oneShots1.pop_back();

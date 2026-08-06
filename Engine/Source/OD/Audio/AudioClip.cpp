@@ -76,12 +76,17 @@ bool AudioClip::LoadFromFile(const std::string& path){
         Assert(data1.pcm.size() > 0);
         Assert(totalFrames > 0);
 
+        this->path = path;
         loaded = true;
         return true;
     }
 
     if(loadType == AudioClipLoadType::Streaming){
-        Assert(false);
+        //Assert(false);
+
+        this->path = path;
+        loaded = true;
+        return true;
     }
 
     #endif
@@ -149,9 +154,21 @@ bool AudioClip::LoadFromPackage(const std::string& path, Package& package){
 
         ma_decoder_uninit(&decoder);
 
+        this->path = path;
         loaded = true;
         return true;
     }
+
+    if(loadType == AudioClipLoadType::Streaming){
+        data2.memory.resize(size);
+        memcpy(data2.memory.data(), data, size);
+        package.FreeFileData(data);
+
+        this->path = path;
+        loaded = true;
+        return true;
+    }
+
     #endif
 
     return true;

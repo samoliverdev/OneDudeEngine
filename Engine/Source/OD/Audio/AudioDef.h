@@ -22,18 +22,18 @@ struct AudioClipDecompressData{
     std::vector<float> pcm; // owned decoded data
 };
 
-struct OneShotDecompressData{
+struct AudioClipStreamingData{
+    std::vector<uint8_t> memory; // for package
+};
+
+struct OneShotData{
     ma_sound* sound;
     ma_audio_buffer_ref* ref;
+    ma_decoder* decoder = nullptr;
 };
 
-struct OneShotStreamingData{
-    ma_sound* sound;
-    ma_decoder* decoder;
-};
-
-#define AUDIO_CLIP_DATA AudioClipDecompressData data1;
-#define AUDIO_COMP_DATA ma_sound sourceSound{}; ma_audio_buffer_ref sourceBufferRef{}; bool clipHasInited = false; std::vector<OneShotDecompressData> oneShots1; std::vector<OneShotStreamingData> oneShots2; // Per-instance sound
+#define AUDIO_CLIP_DATA AudioClipDecompressData data1; AudioClipStreamingData data2;
+#define AUDIO_COMP_DATA ma_sound sourceSound{}; ma_audio_buffer_ref sourceBufferRef{}; ma_decoder decoder{}; bool clipHasInited = false; std::vector<OneShotData> oneShots1;
 #endif
 
 #ifdef AUDIO_BACKEND_NONE

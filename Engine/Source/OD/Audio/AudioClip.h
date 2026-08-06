@@ -25,7 +25,7 @@ public:
     inline AudioClipLoadType LoadType(){ return loadType; }
 
 private:
-    AudioClipLoadType loadType = AudioClipLoadType::DecompressOnLoad;
+    AudioClipLoadType loadType = AudioClipLoadType::Streaming;// AudioClipLoadType::DecompressOnLoad;
     AUDIO_CLIP_DATA
     bool loaded = false;
 };
