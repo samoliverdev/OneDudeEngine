@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "ChunkedVector.h"
 #include "RenderData.h"
 #include "RendererFeature.h"
 #include "PassRenderSettings.h"
@@ -87,42 +88,6 @@ struct OD_API RenderContextSettings{
 #define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
-
-template<typename T>
-class ChunkedVector {
-public:
-    using Chunk = std::vector<T>;
-
-    ChunkedVector():m_chunks(1){}
-
-    ChunkedVector(size_t chunkCount)
-        : m_chunks(chunkCount)
-    {}
-    
-    // Access chunk by index
-    Chunk& operator[](size_t chunkIndex) {
-        assert(chunkIndex < m_chunks.size());
-        return m_chunks[chunkIndex];
-    }
-
-    const Chunk& operator[](size_t chunkIndex) const {
-        assert(chunkIndex < m_chunks.size());
-        return m_chunks[chunkIndex];
-    }
-
-    T& GetNew(int chunkIndex){
-        m_chunks[chunkIndex].emplace_back();
-        return m_chunks[chunkIndex][m_chunks[chunkIndex].size()-1];
-    }
-
-    // Number of chunks
-    size_t chunk_count() const {
-        return m_chunks.size();
-    }
-
-private:
-    std::vector<Chunk> m_chunks;
-};
 
 struct alignas(16) PipelineData{
     Matrix4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];

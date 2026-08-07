@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "RenderData.h"
+#include "ChunkedVector.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -85,6 +86,7 @@ public:
     virtual ~RendererFeature(){}
     virtual void AddRenderPasses(IRenderer& renderer, RenderContext& context){}
     virtual void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){}
+    virtual void OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data){}
     virtual void OnGui(){}
 
     virtual Type GetTypeId() const = 0;

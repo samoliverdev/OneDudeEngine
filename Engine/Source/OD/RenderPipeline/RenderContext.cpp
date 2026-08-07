@@ -214,7 +214,7 @@ RenderContext::RenderContext(Scene* inScene){
         i(*this);
     }
 
-    renderData = ChunkedVector<RenderData>(4);
+    renderData = ChunkedVector<RenderData>(std::thread::hardware_concurrency());// 4);
 
     //for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
     //    rendererFeatures.push_back(i());
@@ -2390,11 +2390,18 @@ void RenderContext::UpdateRenderData(){
 
     auto& taskflow = scene->GetTaskflow();
 
-    {
+    /*{
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
     std::vector<RenderData>& outRenderData = renderData[0];  
     for(auto& i: cachedRenderFeatures){
         i->OnCollectRenderData(*this, outRenderData);
+    }
+    }*/
+
+    {
+    OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
+    for(auto& i: cachedRenderFeatures){
+        i->OnCollectRenderData(*this, renderData);
     }
     }
 
@@ -2403,7 +2410,7 @@ void RenderContext::UpdateRenderData(){
     auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), meshView.begin(), meshView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), meshView.begin(), meshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshView.get<MeshRendererComponent,TransformComponent,InfoComponent>(e);
         if(!info.enable || !c.mesh || !c.material) return;
 
@@ -2418,7 +2425,7 @@ void RenderContext::UpdateRenderData(){
     auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshRenderView.get<ModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return;
 
@@ -2441,7 +2448,7 @@ void RenderContext::UpdateRenderData(){
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedMesh");
     auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedMeshView.get<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
@@ -2454,7 +2461,7 @@ void RenderContext::UpdateRenderData(){
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedModel");
     auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), skinnedView.begin(), skinnedView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), skinnedView.begin(), skinnedView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedView.get<SkinnedModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
@@ -2493,7 +2500,7 @@ void RenderContext::UpdateRenderData(){
     auto decalView = scene->GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), decalView.begin(), decalView.end(), 4, [&](auto entity, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), decalView.begin(), decalView.end(), renderData.chunk_count(), [&](auto entity, int taskIndex){
         auto [decal, trans, info] = decalView.get<DecalRendererComponent, TransformComponent, InfoComponent>(entity);
 
         RenderData& data = renderData.GetNew(taskIndex);
@@ -2507,7 +2514,7 @@ void RenderContext::UpdateRenderData(){
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticMesh");
     auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = staticMeshView.get<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
@@ -2527,7 +2534,7 @@ void RenderContext::UpdateRenderData(){
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticModel");
     auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), 4, [&](auto e, int taskIndex){
+    tf_for_each3(scene->GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = meshStaticRenderView.get<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 

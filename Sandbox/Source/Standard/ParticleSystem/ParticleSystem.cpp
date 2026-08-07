@@ -840,6 +840,94 @@ void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::v
     }
 }
 
+template<typename Iter, typename Func>
+void tf_for_each4(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks = 0, Func func = {}){
+    using traits = std::iterator_traits<Iter>;
+    using diff_t = typename traits::difference_type;
+
+    diff_t total_diff = std::distance(begin, end);
+    if(total_diff <= 0) return;
+
+    const size_t total = static_cast<size_t>(total_diff);
+
+    // determine num_tasks
+    if(num_tasks == 0) {
+        num_tasks = std::thread::hardware_concurrency();
+        if(num_tasks == 0) num_tasks = 1;
+    }
+
+    // clamp tasks to not exceed total items
+    if(num_tasks > total) num_tasks = total;
+
+    const size_t chunk_size = (total + num_tasks - 1) / num_tasks; // ceil
+
+    // helper: advance iterator by an offset (works for random-access and forward iterators)
+    auto advance_iter = [](Iter it, size_t offset) -> Iter {
+        if constexpr (
+            std::is_same_v<typename traits::iterator_category, std::random_access_iterator_tag> ||
+            std::is_base_of_v<std::random_access_iterator_tag, typename traits::iterator_category>
+        ) {
+            return it + static_cast<diff_t>(offset);
+        } else {
+            return std::next(it, static_cast<diff_t>(offset));
+        }
+    };
+
+    // create tasks: each task gets its start/end iterators and its index
+    for(size_t t = 0; t < num_tasks; ++t){
+        const size_t start_off = t * chunk_size;
+        if(start_off >= total) break;
+
+        const size_t end_off = std::min(total, start_off + chunk_size);
+
+        Iter chunk_begin = advance_iter(begin, start_off);
+        Iter chunk_end   = advance_iter(begin, end_off);
+
+        // capture chunk iterators and task index by value; capture func by value to avoid dangling
+        taskflow.emplace([chunk_begin, chunk_end, t, func]() mutable {
+            for (Iter it = chunk_begin; it != chunk_end; ++it) {
+                func(*it, t); // <-- user lambda receives (element, taskIndex)
+            }
+        });
+    }
+}
+
+
+void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data){
+    Scene* scene = context.GetScene();
+    auto cam = context.GetCamera();
+
+    auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
+    
+    tf_for_each4(scene->GetTaskflow(), view.begin(), view.end(), data.chunk_count(), [&](auto e, int taskIndex){
+
+        auto [trans, particle] = view.get<TransformComponent, ParticleComponent>(e);
+
+        for(int i = 0; i < particle.particleSystem.emiters.size(); i++){
+            auto& emiter = particle.particleSystem.emiters[i];
+            //if(emiter.state != ParticleEmiter::State::Running) continue;
+
+            emiter.SubmitDrawData(*emiter.dataBuffer, trans.GlobalModelMatrix(), &cam);
+            if(emiter.dataBuffer->Count() == 0) continue;
+
+            Assert(emiter.rendererModule.material != nullptr);
+
+            RenderData& renderData = data.GetNew(taskIndex);
+            renderData.distance = math::distance(trans.Position(), cam.viewPos);
+            renderData.distance -= i * 0.01f; 
+            renderData.targetMatrix = trans.GlobalModelMatrix();
+            renderData.aabb = transform_aabb_optimized_abs_center_extents(AABB({0, 0, 0}, 10, 10, 10), renderData.targetMatrix);
+            renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
+            renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
+            renderData.instancingBuffer = emiter.dataBuffer.get();
+            renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
+            renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
+        }
+    });
+
+    scene->RunAllTaskAndSync();
+}
+
 void ParticleComponent::OnGui(Entity e, Scene& scene){
     ParticleComponent& p = scene.GetComponent<ParticleComponent>(e);
     p.particleSystem.OnGui();

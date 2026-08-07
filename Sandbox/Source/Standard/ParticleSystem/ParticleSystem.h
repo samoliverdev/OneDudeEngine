@@ -463,6 +463,7 @@ class ParticleRendererFeature: public RendererFeatureBase<ParticleRendererFeatur
 public:
     ParticleRendererFeature();
     void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData) override;
+    void OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data) override;
 private:
     Ref<Material> material = nullptr;
     Ref<Model> mesh = nullptr;
