@@ -39,7 +39,7 @@ bool AudioClip::LoadFromFile(const std::string& path){
     #ifdef AUDIO_BACKEND_MINIAUDIO
     if(loadType == AudioClipLoadType::DecompressOnLoad){
         ma_decoder decoder;
-        ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
+        ma_decoder_config config = DEFAULT_DECODE_CONFIG_INIT(); //ma_decoder_config_init(ma_format_f32, 0, 0);
         if(ma_decoder_init_file(path.c_str(), &config, &decoder) != MA_SUCCESS) return false;
 
         ma_uint64 totalFrames = 0;
@@ -121,7 +121,7 @@ bool AudioClip::LoadFromPackage(const std::string& path, Package& package){
     #ifdef AUDIO_BACKEND_MINIAUDIO
     if(loadType == AudioClipLoadType::DecompressOnLoad){
         ma_decoder decoder;
-        ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
+        ma_decoder_config config = DEFAULT_DECODE_CONFIG_INIT();//ma_decoder_config_init(ma_format_f32, 2, 44100);
 
         if(ma_decoder_init_memory(data, size, &config, &decoder) != MA_SUCCESS) return false;
 

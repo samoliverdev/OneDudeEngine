@@ -443,7 +443,7 @@ void AudioSourceComponent::Play(){
     }
 
     if(clip->LoadType() == AudioClipLoadType::Streaming){
-        ma_decoder_config config = ma_decoder_config_init_default();
+        ma_decoder_config config = DEFAULT_DECODE_CONFIG_INIT(); //ma_decoder_config_init(ma_format_f32, 2, 44100); //ma_decoder_config_init_default();
 
         if(clip->data2.memory.size() > 0){
             auto r = ma_decoder_init_memory(clip->data2.memory.data(), clip->data2.memory.size(), &config, &decoder);
@@ -487,10 +487,12 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
     if(oneShots1.size() >= maxShots) return;
 
     ma_sound* temp = new ma_sound;
-    ma_audio_buffer_ref* bufferRef = new ma_audio_buffer_ref;
-    ma_decoder* tempDecoder = new ma_decoder;
+    ma_audio_buffer_ref* bufferRef = nullptr;// = new ma_audio_buffer_ref;
+    ma_decoder* tempDecoder = nullptr; //new ma_decoder;
 
     if(oneShotClip->LoadType() == AudioClipLoadType::DecompressOnLoad){
+        bufferRef = new ma_audio_buffer_ref;
+
         ma_uint32 bytesPerSample = ma_get_bytes_per_sample(oneShotClip->data1.format);
         ma_uint64 frameCount = oneShotClip->data1.pcm.size() / (oneShotClip->data1.channels * bytesPerSample);
         
@@ -505,13 +507,14 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
         if(ma_sound_init_from_data_source(&engine, bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, temp) != MA_SUCCESS){
             delete bufferRef;
             delete temp;
-            delete tempDecoder;
             return;
         }
     }
 
     if(oneShotClip->LoadType() == AudioClipLoadType::Streaming){
-        ma_decoder_config config = ma_decoder_config_init_default();
+        tempDecoder = new ma_decoder;
+
+        ma_decoder_config config = DEFAULT_DECODE_CONFIG_INIT(); //ma_decoder_config_init(ma_format_f32, 2, 44100); //ma_decoder_config_init_default();
 
         if(oneShotClip->data2.memory.size() > 0){
             auto r = ma_decoder_init_memory(oneShotClip->data2.memory.data(), oneShotClip->data2.memory.size(), &config, tempDecoder);
@@ -522,7 +525,6 @@ void AudioSourceComponent::PlayOneShot(Ref<AudioClip> oneShotClip){
         }
 
         if(ma_sound_init_from_data_source(&engine, tempDecoder, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, temp) != MA_SUCCESS){
-            delete bufferRef;
             delete temp;
             delete tempDecoder;
             return;
@@ -636,11 +638,11 @@ void AudioSystem::OnStop(Scene& scene){
 
             //if(ma_sound_is_playing(s)) ma_sound_stop(s);
             ma_sound_uninit(s);
-            ma_audio_buffer_ref_uninit(ref);
-            ma_decoder_uninit(dec);
+            if(ref != nullptr) ma_audio_buffer_ref_uninit(ref);
+            if(dec != nullptr) ma_decoder_uninit(dec);
             delete s;
-            delete ref;
-            delete dec;
+            if(ref != nullptr) delete ref;
+            if(dec != nullptr) delete dec;
         }
         audio.oneShots1.clear();
     }
@@ -703,11 +705,11 @@ void AudioSystem::Update(Scene& scene){
             // if finished playing
             if(!ma_sound_is_playing(s)){
                 ma_sound_uninit(s);
-                ma_audio_buffer_ref_uninit(ref);
-                ma_decoder_uninit(dec);
+                if(ref != nullptr) ma_audio_buffer_ref_uninit(ref);
+                if(dec != nullptr) ma_decoder_uninit(dec);
                 delete s;
-                delete ref;
-                delete dec;
+                if(ref != nullptr) delete ref;
+                if(dec != nullptr) delete dec;
 
                 audio.oneShots1[i] = audio.oneShots1.back();
                 audio.oneShots1.pop_back();

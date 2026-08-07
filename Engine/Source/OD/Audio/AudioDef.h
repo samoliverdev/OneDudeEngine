@@ -28,9 +28,11 @@ struct AudioClipStreamingData{
 
 struct OneShotData{
     ma_sound* sound;
-    ma_audio_buffer_ref* ref;
+    ma_audio_buffer_ref* ref = nullptr;
     ma_decoder* decoder = nullptr;
 };
+
+#define DEFAULT_DECODE_CONFIG_INIT() ma_decoder_config_init(ma_format_f32, 2, 44100)
 
 #define AUDIO_CLIP_DATA AudioClipDecompressData data1; AudioClipStreamingData data2;
 #define AUDIO_COMP_DATA ma_sound sourceSound{}; ma_audio_buffer_ref sourceBufferRef{}; ma_decoder decoder{}; bool clipHasInited = false; std::vector<OneShotData> oneShots1;
