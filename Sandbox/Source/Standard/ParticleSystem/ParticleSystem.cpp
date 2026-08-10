@@ -814,20 +814,22 @@ void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::v
 
     auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
+        auto modelMatrix = trans.GlobalModelMatrix();
+        auto pos = trans.PositionReadSafe();// .Position();
 
         for(int i = 0; i < particle.particleSystem.emiters.size(); i++){
             auto& emiter = particle.particleSystem.emiters[i];
             //if(emiter.state != ParticleEmiter::State::Running) continue;
 
-            emiter.SubmitDrawData(*emiter.dataBuffer, trans.GlobalModelMatrix(), &cam);
+            emiter.SubmitDrawData(*emiter.dataBuffer, modelMatrix, &cam);
             if(emiter.dataBuffer->Count() == 0) continue;
 
             Assert(emiter.rendererModule.material != nullptr);
 
             RenderData renderData;
-            renderData.distance = math::distance(trans.Position(), cam.viewPos);
+            renderData.distance = math::distance(pos, cam.viewPos);
             renderData.distance -= i * 0.01f; 
-            renderData.targetMatrix = trans.GlobalModelMatrix();
+            renderData.targetMatrix = modelMatrix; //trans.GlobalModelMatrix();
             renderData.aabb = transform_aabb_optimized_abs_center_extents(AABB({0, 0, 0}, 10, 10, 10), renderData.targetMatrix);
             renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
             renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
@@ -835,7 +837,6 @@ void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::v
             renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
             renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
             outRenderData.push_back(renderData);
-            
         }
     }
 }
@@ -892,15 +893,12 @@ void tf_for_each4(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
     }
 }
 
-
 void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data){
     Scene* scene = context.GetScene();
     auto cam = context.GetCamera();
 
     auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
-    
     tf_for_each4(scene->GetTaskflow(), view.begin(), view.end(), data.chunk_count(), [&](auto e, int taskIndex){
-
         auto [trans, particle] = view.get<TransformComponent, ParticleComponent>(e);
 
         for(int i = 0; i < particle.particleSystem.emiters.size(); i++){

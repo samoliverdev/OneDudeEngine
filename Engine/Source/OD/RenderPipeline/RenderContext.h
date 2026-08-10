@@ -166,10 +166,11 @@ public:
     void RenderDataLoopNew(std::function<void(RenderData&)> onReciveRenderData);
 
     template<typename Func>
-    void RenderDataLoopNew2(Func onReciveRenderData){
+    void RenderDataLoopNew2(Func&& func){
         for(int i = 0; i < renderData.chunk_count(); i++){
-            for(auto& renderData: renderData[i]){
-                onReciveRenderData(renderData);
+            for(auto& rd: renderData[i]){
+                //func(rd);
+                std::forward<Func>(func)(rd);
             }
         }
     }

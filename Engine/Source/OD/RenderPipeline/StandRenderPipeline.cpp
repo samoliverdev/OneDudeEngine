@@ -670,7 +670,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         decalDrawSettings.decalTarget = true;
         decalDrawTarget.sortType = RendererList::SortType::None;
 
-        context->RenderDataLoopNew([&](RenderData& data){
+        context->RenderDataLoopNew2([&](RenderData& data){
             /*if(pass.collectSettings.collectStatic == false && data.HasFlag(RenderData::Flag::IsStatic) == true) return; 
             if(pass.collectSettings.collectDynamic == false && data.HasFlag(RenderData::Flag::IsStatic) == false) return; 
             

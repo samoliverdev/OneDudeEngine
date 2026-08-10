@@ -299,8 +299,25 @@ void Model::CreateMaterialsFromTargets(){
 
 void Model::SaveTo(cereal::BinaryOutputArchive& ar){
     ar(renderTargets);
-    ar(meshs);
-	ar(textures);
+    
+	//ar(meshs);
+	size_t count = meshs.size();
+	ar(count);
+	for(size_t i = 0; i < count; i++){
+		bool has = (meshs[i] != nullptr);
+		ar(has);
+		if(has) ar(*meshs[i]);
+	}
+
+	//ar(textures);
+	size_t count2 = textures.size();
+	ar(count2);
+	for(size_t i = 0; i < count2; i++){
+		bool has2 = (textures[i] != nullptr);
+		ar(has2);
+		if(has2) ar(*textures[i]);
+	}
+
 	//ar(materials);
 	ar(materialTargets);
     ar(matrixs);
@@ -342,8 +359,39 @@ void Model::SaveTo(cereal::BinaryOutputArchive& ar){
 
 void Model::LoadFrom(cereal::BinaryInputArchive& ar){
     ar(renderTargets);
-    ar(meshs);
-	ar(textures);
+    
+	//ar(meshs);
+	size_t count;
+	ar(count);
+	meshs.resize(count);
+	for(size_t i = 0; i < count; i++){
+		bool has;
+		ar(has);
+
+		if(has){
+			meshs[i] = CreateRef<Mesh>();
+			ar(*meshs[i]);
+		} else {
+			meshs[i] = nullptr;
+		}
+	}
+
+	//ar(textures);
+	size_t count2;
+	ar(count2);
+	textures.resize(count2);
+	for(size_t i = 0; i < count2; i++){
+		bool has2;
+		ar(has2);
+
+		if(has2){
+			textures[i] = CreateRef<Texture2D>();
+			ar(*textures[i]);
+		} else {
+			textures[i] = nullptr;
+		}
+	}
+
     //ar(materials);
 	ar(materialTargets);
     ar(matrixs);

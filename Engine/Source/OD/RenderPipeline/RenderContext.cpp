@@ -2206,7 +2206,7 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
 }
 
 inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
-    data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
+    data.distance = math::distance2(ctx.GetCamera().viewPos, t.PositionReadSafe());// t.Position());
     data.targetMaterial = model->materials[target.materialIndex].get();
     data.targetMesh = model->meshs[target.meshIndex].get();
     //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
@@ -2390,20 +2390,20 @@ void RenderContext::UpdateRenderData(){
 
     auto& taskflow = scene->GetTaskflow();
 
-    /*{
+    {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
     std::vector<RenderData>& outRenderData = renderData[0];  
     for(auto& i: cachedRenderFeatures){
         i->OnCollectRenderData(*this, outRenderData);
     }
-    }*/
+    }
 
-    {
+    /*{
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
     for(auto& i: cachedRenderFeatures){
         i->OnCollectRenderData(*this, renderData);
     }
-    }
+    }*/
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::Mesh");
