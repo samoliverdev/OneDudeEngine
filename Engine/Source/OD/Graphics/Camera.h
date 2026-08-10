@@ -12,14 +12,14 @@ struct OD_API Camera {
 
     Matrix4 view = Matrix4Identity;
     Matrix4 projection = Matrix4Identity;
-    float nearClip;
-    float farClip;
-    float fov;
-    int width;
-    int height;
+    float nearClip = 0;
+    float farClip = 0;
+    float fov = 0;
+    int width = 0;
+    int height = 0;
     Vector4 cleanColor = {0, 0, 0, 1};
-    Vector3 viewPos;
-    Frustum frustum;
+    Vector3 viewPos = {0, 0, 0};
+    Frustum frustum = {};
     Vector4 viewportRect = Vector4(0, 0, 1, 1);
     Type type = Type::Stand;
 

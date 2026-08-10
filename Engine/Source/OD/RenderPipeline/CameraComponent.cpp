@@ -62,6 +62,8 @@ void CameraComponent::UpdateCameraData(TransformComponent& transform, int width,
 
     //camera.frustum = CreateFrustumFromMatrix2(math::transpose( camera.projection * camera.view ));
     camera.frustum = CreateFrustumFromMatrix(camera.projection * camera.view);
+
+    //Assert(Mathf::HasNaN(camera.view) == false);
 }
 
 void CameraComponent::OnGui(Entity& e, Scene& scene){

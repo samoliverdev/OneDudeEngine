@@ -10,8 +10,13 @@ inline vec3 projectOnPlane(vec3 vector, vec3 planeNormal){
 }
 
 inline vec3 normalizeSafe(vec3 v){
-    if(v == vec3(0, 0, 0)) return v;
-    return normalize(v);
+    //if(v == vec3(0, 0, 0)) return v;
+    //return normalize(v);
+
+    //More Safe
+    float len2 = dot(v, v);
+    if(len2 <= 1e-12f) return vec3(0.0f);
+    return v * inversesqrt(len2);
 }
 
 inline quat fromTo(const vec3& from, const vec3& to){
@@ -122,10 +127,30 @@ namespace Mathf{
         );
     }
 
-    inline static bool IsNan(const Vector3& v){
+    inline static bool HasNaN(const Vector3& v){
         if(isnan(v.x)) return true;
         if(isnan(v.y)) return true;
         if(isnan(v.z)) return true;
+        return false;
+    }
+
+    template<typename T, glm::length_t C, glm::length_t R, glm::qualifier Q>
+    inline bool HasNaN(const glm::mat<C, R, T, Q>& m){
+        for(glm::length_t i = 0; i < C; ++i){
+            if(glm::any(glm::isnan(m[i])))
+                return true;
+        }
+
+        return false;
+    }
+
+    template<typename T, glm::length_t C, glm::length_t R, glm::qualifier Q>
+    inline bool HasInvalid(const glm::mat<C, R, T, Q>& m){
+        for(glm::length_t i = 0; i < C; ++i){
+            if(glm::any(glm::isnan(m[i])) || glm::any(glm::isinf(m[i]))){
+                return true;
+            }
+        }
         return false;
     }
 }

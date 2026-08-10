@@ -21,6 +21,7 @@ enum class RenderPassEvent{
     GBuffer,
     Transparent,
     PostProcess,
+    PostProcessBeforeForward,
     UI,
     AfterRendering,
     Count

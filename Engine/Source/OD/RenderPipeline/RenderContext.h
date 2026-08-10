@@ -196,7 +196,7 @@ public:
         customFinalColorIndex = slice; 
     }
 
-    void BeginForwardPass();
+    void BeginForwardPass(bool clean = true);
     void EndForwardPass();
 
     void BeginDeferredPass(bool clean = true);
@@ -218,7 +218,7 @@ public:
     void DrawGizmos();
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
-    void DrawPostFXs(RenderFrameData& data, RenderPass* last = nullptr);
+    void DrawPostFXs(RenderFrameData& data, RenderPass* last = nullptr, RenderPassEvent pass = RenderPassEvent::PostProcess);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);

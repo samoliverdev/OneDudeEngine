@@ -562,6 +562,7 @@ CameraRenderer::CameraRenderer(){
 
     font = ResourceManager::Get().LoadByPath<Font>("Engine/Fonts/OpenSans/static/OpenSans-Regular.ttf", FontSettings{8*3, FontType::MSDF});// Asset::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");//  OD::Font::CreateFromFile("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf");
     fontMaterial = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
+    fontMaterial->SetPass(1);
     fontMaterial->SetFloat("pxRange", font->MsdfPxRange());
 
     gamaCorrectionPP = new GamaCorrectionPP();
@@ -619,6 +620,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
 
     context->ClearRenderPasses();
     context->FeaturesRunAddRenderPasses();
+    if(inpass.settings.drawPostProcessing == false) context->GetRenderPasses()[(int)RenderPassEvent::PostProcessBeforeForward].clear();
     if(inpass.settings.drawPostProcessing == false) context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].clear();
     if(inpass.settings.drawUI == false) context->GetRenderPasses()[(int)RenderPassEvent::UI].clear();
     context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].push_back(&gamaCorrectionPass);
@@ -841,6 +843,9 @@ void CameraRenderer::RunRenderDataLoop(){
 }
 
 void CameraRenderer::AddRenderData(RenderData& data){
+    //Assert(Mathf::HasNaN(camera.view) == false);
+    //Assert(HasNaN(camera.frustum) == false);
+
     if(data.aabb.isOnFrustum(camera.frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) return;
     context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
     context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
@@ -968,7 +973,6 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         }
  
         context->BeginForwardPass();
-        Graphics::Clean(0, 0, 0, 1);
 
         if(lighting.curDirLightsCount <= 0){
             context->DrawDeferredLight(-1);
@@ -988,16 +992,18 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
                 lighting.otherLightDirections[i] != Vector4Zero
             );
         }
-
         context->DeferredCopyToForwardPass();
 
         #endif
-        //context->BeginForwardPass();
-
         context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
-
-        //context->RenderSkyboxLater();
         if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+
+        //TODO: Make this work later, current the blit or post shader depth write/test setting is bug something 
+        /*context->EndForwardPass();
+        RenderFrameData data;
+        context->DrawPostFXs(data, nullptr, RenderPassEvent::PostProcessBeforeForward);
+        context->BeginForwardPass(false);*/
+
         context->DrawRenderersBuffer(blendDrawTarget, true);
         Draw3DText();
         if(pass.settings.drawGizmos) context->DrawGizmos(); 
@@ -1939,6 +1945,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             CameraComponent& cam = camView.get<CameraComponent>(entity);
             TransformComponent& trans = camView.get<TransformComponent>(entity);
             InfoComponent& info = camView.get<InfoComponent>(entity);
+
+            //Assert(Mathf::HasNaN(trans.GlobalModelMatrix()) == false);
 
             if(renderContext->overrideFramebuffer != nullptr){
                 width = renderContext->overrideFramebuffer->Width();

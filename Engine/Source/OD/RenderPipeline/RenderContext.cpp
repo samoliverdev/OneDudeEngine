@@ -340,8 +340,8 @@ int RenderContext::ReadPixeIntFromEntityIdsFramebuffer(int x, int y){
     return entityIdOutColor->ReadPixel(0, x, y);
 }
 
-void RenderContext::BeginForwardPass(){
-    Graphics::BeginFramebuffer(*forwardOutColor, true, cam.cleanColor);
+void RenderContext::BeginForwardPass(bool clean){
+    Graphics::BeginFramebuffer(*forwardOutColor, clean, cam.cleanColor);
     //ScreenClean();
 }
 
@@ -787,8 +787,8 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     Graphics::EndFramebuffer();*/
 }
 
-void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last){
-    std::vector<RenderPass*>& passes = renderPasses[(int)RenderPassEvent::PostProcess];
+void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderPassEvent pass){
+    std::vector<RenderPass*>& passes = renderPasses[(int)pass];
     //Graphics::SetDepthMask(false);
 
     step = false;
@@ -829,12 +829,17 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last){
         data.dst = step == false ? postFx2 : postFx1;
         last->Execute(*this, data);
     }
+
+    Graphics::BeginFramebuffer(*forwardOutColor, false);
+    blitShader->SetTexture("mainTex", finalFramebuffer, 0);
+    Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
+    Graphics::EndFramebuffer();
 }
 
 void RenderContext::BeginUIPass(){
-    Graphics::BeginFramebuffer(*forwardOutColor, true, cam.cleanColor);
-    blitShader->SetTexture("mainTex", finalFramebuffer, 0);
-    Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
+    Graphics::BeginFramebuffer(*forwardOutColor, false, cam.cleanColor);
+    //blitShader->SetTexture("mainTex", finalFramebuffer, 0);
+    //Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
 
     /*auto uiCamera = Camera{
         OD::Matrix4Identity, 

@@ -2218,7 +2218,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 						Vector3 pos = transform.Position();
 						Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
 						if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
-						Assert(Mathf::IsNan(dir) == false);
+						Assert(Mathf::HasNaN(dir) == false);
 
 						float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
 
@@ -2496,7 +2496,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 			Vector3 pos = transform.Position();
 			Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
 			if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
-        	Assert(Mathf::IsNan(dir) == false);
+        	Assert(Mathf::HasNaN(dir) == false);
 
 			float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
 

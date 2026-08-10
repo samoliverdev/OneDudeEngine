@@ -61,14 +61,14 @@ struct OD_API alignas(16) Plane{
 };
 
 struct OD_API alignas(16) Frustum{
-    Plane topFace;
-    Plane bottomFace;
+    Plane topFace = {};
+    Plane bottomFace = {};
 
-    Plane rightFace;
-    Plane leftFace;
+    Plane rightFace = {};
+    Plane leftFace = {};
 
-    Plane farFace;
-    Plane nearFace;
+    Plane farFace = {};
+    Plane nearFace = {};
 };
 
 /*Frustum CreateFrustumFromCamera(Transform& cam, float aspect, float fovY, float zNear, float zFar);
