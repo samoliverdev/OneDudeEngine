@@ -830,10 +830,12 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
         last->Execute(*this, data);
     }
 
-    Graphics::BeginFramebuffer(*forwardOutColor, false);
+    Graphics::BlitFramebuffer(finalFramebuffer, forwardOutColor);
+
+    /*Graphics::BeginFramebuffer(*forwardOutColor, false);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
     Graphics::DrawFullScreenQuad(*blitShader, Matrix4Identity);
-    Graphics::EndFramebuffer();
+    Graphics::EndFramebuffer();*/
 }
 
 void RenderContext::BeginUIPass(){

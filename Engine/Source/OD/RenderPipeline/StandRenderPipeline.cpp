@@ -992,17 +992,19 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
                 lighting.otherLightDirections[i] != Vector4Zero
             );
         }
+
+        //TODO: Make this work later, current the blit or post shader depth write/test setting is bug something 
+        context->EndForwardPass();
+        RenderFrameData data;
+        context->DrawPostFXs(data, nullptr, RenderPassEvent::PostProcessBeforeForward);
+        
         context->DeferredCopyToForwardPass();
 
         #endif
+        context->BeginForwardPass(false);
+
         context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
         if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
-
-        //TODO: Make this work later, current the blit or post shader depth write/test setting is bug something 
-        /*context->EndForwardPass();
-        RenderFrameData data;
-        context->DrawPostFXs(data, nullptr, RenderPassEvent::PostProcessBeforeForward);
-        context->BeginForwardPass(false);*/
 
         context->DrawRenderersBuffer(blendDrawTarget, true);
         Draw3DText();

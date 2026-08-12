@@ -647,7 +647,8 @@ void Material::Save(const std::string& path){
     LogInfo("Saving: {}", path);
 
     std::ofstream os(path);
-    cereal::JSONOutputArchive archive{os};
+    //cereal::JSONOutputArchive archive{os};
+    cereal::JSONOutputArchive archive(os, cereal::JSONOutputArchive::Options(9));
     //archive(CEREAL_NVP(*this));
     archive(cereal::make_nvp("Material",*this));
 }
