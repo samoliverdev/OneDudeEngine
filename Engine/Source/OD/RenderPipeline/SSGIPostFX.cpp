@@ -62,14 +62,14 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
     spec.createDepth = false;
 
-    bool useTemporalDenoise = true;
-    bool useSpatialDenoise = true;
-    bool useDownSample = true;
+    //bool useTemporalDenoise = true;
+    //bool useSpatialDenoise = true;
+    bool useDownSample = resolutionMode != ResolutionMode::Full;
 
     auto halfSpec = spec;
     if(useDownSample){
-        halfSpec.width /= 4;
-        halfSpec.height /= 4;
+        halfSpec.width /= resolutionMode == ResolutionMode::Half ? 2 : 4;
+        halfSpec.height /= resolutionMode == ResolutionMode::Half ? 2 : 4;
     }
     
     if(giFinal == nullptr) giFinal = CreateRef<Framebuffer>(spec);
@@ -137,7 +137,7 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     giPass->SetFloat("_BackfaceLighting", backfaceLighting);
     giPass->SetInt("_StepCount", sampleCount);
     giPass->SetInt("_SliceCount", sliceCount);
-    giPass->SetFloat("_UseLinearThickness", 0);
+    giPass->SetFloat("_UseLinearThickness", useLinearThickness ? 1.0f : 0.0f);
     giPass->SetFloat("_UseScreenSpaceSampling", useScreenSpaceSampling ? 1.0f : 0.0f);
 
     if(useTemporalDenoise){
@@ -253,16 +253,19 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
         RenderAtrous(GetCurGIA(), GetCurGIB(), 1);
         RenderAtrous(GetCurGIB(), GetCurGIA(), 2);
 
-        //RenderAtrous(tempA.get(), gi.get(), 4);
-
-        RenderAtrous(GetCurGIA(), GetCurGIB(), 4);
-        RenderAtrous(GetCurGIB(), GetCurGIA(), 8);
+        if(denoiseMaxIterations == 2){
+            RenderAtrous(GetCurGIA(), GetCurGIB(), 4);
+            giStep = !giStep;
+        } else if(denoiseMaxIterations > 2){
+            RenderAtrous(GetCurGIA(), GetCurGIB(), 4);
+            RenderAtrous(GetCurGIB(), GetCurGIA(), 8);
+        }
     }
 
     if(useDownSample){
         Graphics::BeginFramebuffer(*giFinal);
         Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
-        giUpsamplePass->SetPass(2);
+        giUpsamplePass->SetPass(1);
         giUpsamplePass->SetTexture("giLow", GetCurGIA(), 0);
         giUpsamplePass->SetTexture("giSurface", lowNormalDepth.get(), 0);
         giUpsamplePass->SetFloat("spatialSigma", 1.0f);

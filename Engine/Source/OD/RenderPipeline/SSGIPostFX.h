@@ -10,6 +10,8 @@ class Texture2D;
 
 class OD_API SSGIFeature: public RendererFeatureBase<SSGIFeature>, RenderPass{
 public:
+    enum class ResolutionMode{Full, Half, Quarter};
+
     SSGIFeature();
     ~SSGIFeature();
 
@@ -30,11 +32,21 @@ public:
         ArchiveDump(ar, CEREAL_NVP(giIntensity));
         ArchiveDump(ar, CEREAL_NVP(aoIntensity));
         ArchiveDump(ar, CEREAL_NVP(useScreenSpaceSampling));
-        ArchiveDump(ar, CEREAL_NVP(denoiseMaxIterations));
+        ArchiveDump(ar, CEREAL_NVP(useLinearThickness));
         ArchiveDump(ar, CEREAL_NVP(debug));
+
+        ArchiveDump(ar, CEREAL_NVP(resolutionMode));
+        ArchiveDump(ar, CEREAL_NVP(useTemporalDenoise));
+
+        ArchiveDump(ar, CEREAL_NVP(useSpatialDenoise));
+        ArchiveDump(ar, CEREAL_NVP(denoiseMaxIterations));
     }
 
 private:
+    ResolutionMode resolutionMode = ResolutionMode::Half;
+    bool useTemporalDenoise = true;
+    bool useSpatialDenoise = false;
+
     Ref<Material> giPass;
     Ref<Material> giBlurPass;
     Ref<Material> giBlurPass2;
@@ -68,6 +80,7 @@ private:
     float giIntensity = 1;
     float aoIntensity = 1;
     bool useScreenSpaceSampling = true; 
+    bool useLinearThickness = false;
 
     int denoiseMaxIterations = 4;
     bool debug = false;
