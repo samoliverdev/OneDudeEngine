@@ -755,6 +755,7 @@ void OpenGLGraphicsDevice::SetBlend(bool b){
     glCheckError();
 }
 
+//TODO: Change to table value
 int OpenGLGraphicsDevice::BlendModeToGL(BlendMode blendMode){
     if(blendMode == BlendMode::ZERO) return GL_ZERO;
     if(blendMode == BlendMode::ONE) return GL_ONE;
@@ -772,6 +773,18 @@ int OpenGLGraphicsDevice::BlendModeToGL(BlendMode blendMode){
     if(blendMode == BlendMode::ONE_MINUS_CONSTANT_ALPHA) return GL_ONE_MINUS_CONSTANT_ALPHA;
 
     glCheckError();
+    Assert(false);
+    return 0;
+}
+
+//TODO: Change to table value
+int BlendOpToGL(BlendOp op){
+    if(op == BlendOp::FUNC_ADD) return GL_FUNC_ADD;
+    if(op == BlendOp::FUNC_SUBTRACT) return GL_FUNC_SUBTRACT;
+    if(op == BlendOp::FUNC_REVERSE_SUBTRACT) return GL_FUNC_REVERSE_SUBTRACT;
+    if(op == BlendOp::MIN) return GL_MIN;
+    if(op == BlendOp::MAX) return GL_MAX;
+
     Assert(false);
     return 0;
 }
@@ -5547,7 +5560,20 @@ void OpenGLGraphicsDevice::SubShaderBind(SubShader& shader){
     SetDepthMask(shader.IsDepthMask());
     if(shader.IsBlend()){
         SetBlend(true);
-        SetBlendFunc(shader.GetSrcBlend(), shader.GetDstBlend());
+
+        if(shader.GetSrcBlend() != shader.GetSrcAlphaBlend() || shader.GetDstBlend() != shader.GetDstAlphaBlend()){
+            glBlendFuncSeparate(
+                BlendModeToGL(shader.GetSrcBlend()), 
+                BlendModeToGL(shader.GetDstBlend()), 
+                BlendModeToGL(shader.GetSrcAlphaBlend()), 
+                BlendModeToGL(shader.GetDstAlphaBlend())
+            );
+            glCheckError();
+        } else {
+            SetBlendFunc(shader.GetSrcBlend(), shader.GetDstBlend());
+        }
+
+        glBlendEquation(BlendOpToGL(shader.pipeline.opBlend));
     } else {
         SetBlend(false);
     }

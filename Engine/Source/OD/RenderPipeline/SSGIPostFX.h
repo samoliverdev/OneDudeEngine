@@ -43,7 +43,17 @@ private:
     Ref<Material> giUpsamplePass;
     Ref<Texture2D> blueNoise;
 
+    Ref<Material> giBlitPass;
+    Ref<Material> giTemporalFilterPass;
+
     class Framebuffer* lastIndirect = nullptr;
+    class Framebuffer* giHistory = nullptr;
+    class Framebuffer* depthHistory = nullptr;
+
+    Matrix4 lastView = Matrix4Identity;
+    Matrix4 lastProj = Matrix4Identity;
+    Matrix4 lastInvView = Matrix4Identity;
+    Matrix4 lastInvProj = Matrix4Identity;
 
     float sampleRadius = 1;
     float hitThickness = 0.5f;
@@ -56,7 +66,8 @@ private:
 
     int denoiseMaxIterations = 4;
     bool debug = false;
-    
+
+    int frameIndex = 0;
 };
 
 };

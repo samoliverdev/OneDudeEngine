@@ -31,6 +31,9 @@ BeginUniform(0, 0, Main)
 
     Uniform float _HalfProjScale;
     Uniform vec4 _Resolution;
+
+    Uniform float _TemporalDirection;
+    Uniform float _TemporalOffset;
 EndUniform()
 
 // ============================================================
@@ -70,11 +73,11 @@ const float _AOIntensity = 1;
 const float _Thickness = 1;
 const float _ExpFactor = 2;
 const float _BackfaceLighting = 0;
-const int _StepCount = 4;
+const int _StepCount = 4*2;
 const int _SliceCount = 2;
 
-const float _TemporalDirection = 1;
-const float _TemporalOffset = 1;
+//const float _TemporalDirection = 1;
+//const float _TemporalOffset = 1;
 
 //const float _HalfProjScale = 0;
 
@@ -278,6 +281,8 @@ float Luminance(vec3 c){
 // MAIN GI
 //======================================================
 vec4 ComputeSSGI(vec2 uv){
+    //return vec4(uv, 0, 1);
+
     float depth = SampleDepth(uv);
     //if(depth >= 1.0) discard;
 
@@ -294,6 +299,7 @@ vec4 ComputeSSGI(vec2 uv){
 
     //float noiseOffset = fract(0.25 * mod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
     float noiseOffset = SpatialOffset(pixel);
+
     float noiseDirection = InterleavedGradientNoise(pixel); // interleaved gradient noise
     float temporalOffset = _TemporalOffset;// 1.0; // temporal (if disabled, set to 1)
     float temporalDirection = _TemporalDirection;// 1.0;

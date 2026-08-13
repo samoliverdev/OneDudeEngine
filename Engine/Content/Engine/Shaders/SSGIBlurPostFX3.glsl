@@ -13,6 +13,7 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Common.glsl
 
 Texture2D(0, 0, mainTex, mainTexSampler)
 Texture2D(0, 1, gNormal, gNormalSampler)
@@ -58,22 +59,23 @@ float GetDepth(vec2 uv){
 }
 
 vec3 GetNormal(vec2 uv){
-    return normalize(texture(gNormal, uv).xyz * 2.0 - 1.0);
+    //return normalize(texture(gNormal, uv).xyz * 2.0 - 1.0);
+    return normalize(unpack_normal_octahedron(texture(gNormal, uv).rg));
 }
 
-vec3 SampleGI(vec2 uv){
-    return texture(mainTex, uv).rgb;
+vec4 SampleGI(vec2 uv){
+    return texture(mainTex, uv);
 }
 
 // --- bilateral blur core ---
 
-vec3 Blur(vec2 uv, vec2 direction){
+vec4 Blur(vec2 uv, vec2 direction){
 
-    vec3 centerColor = SampleGI(uv);
+    vec4 centerColor = SampleGI(uv);
     float centerDepth = GetDepth(uv);
     vec3 centerNormal = GetNormal(uv);
 
-    vec3 result = vec3(0.0);
+    vec4 result = vec4(0.0);
     float totalWeight = 0.0;
 
     const int KERNEL = 2;
@@ -83,7 +85,7 @@ vec3 Blur(vec2 uv, vec2 direction){
         vec2 offset = direction * float(i) * giTexelSize;
         vec2 sampleUV = uv + offset;
 
-        vec3 sampleColor = SampleGI(sampleUV);
+        vec4 sampleColor = SampleGI(sampleUV);
         float sampleDepth = GetDepth(sampleUV);
         vec3 sampleNormal = GetNormal(sampleUV);
 
@@ -111,7 +113,7 @@ vec3 Blur(vec2 uv, vec2 direction){
 void main(){
     // horizontal
     vec2 dir = vec2(1.0, 0.0);
-    fragColor = vec4(Blur(texCoord, dir), 1.0);
+    fragColor = Blur(texCoord, dir);
 }
 #endif
 
@@ -119,7 +121,7 @@ void main(){
 void main(){
     // vertical
     vec2 dir = vec2(0.0, 1.0);
-    fragColor = vec4(Blur(texCoord, dir), 1.0);
+    fragColor = Blur(texCoord, dir);
 }
 #endif
 

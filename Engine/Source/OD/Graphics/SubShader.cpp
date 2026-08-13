@@ -14,13 +14,32 @@ void ShaderPassData::UpdateProperties(){
         }
 
         if(line.size() > 1 && line[0] == "Blend" && line[1] != "Off"){
-            Assert(line.size() == 3);
+            Assert(line.size() >= 3);
             auto value1 = magic_enum::enum_cast<BlendMode>(line[1]);
             auto value2 = magic_enum::enum_cast<BlendMode>(line[2]);
             if(value1.has_value() && value2.has_value()){
                 pipeline.blend = true;
                 pipeline.srcBlend = value1.value();
                 pipeline.dstBlend = value2.value();
+                pipeline.srcAlphaBlend = value1.value();
+                pipeline.dstAlphaBlend = value2.value();
+            }
+
+            if(line.size() == 5){
+                auto value1 = magic_enum::enum_cast<BlendMode>(line[3]);
+                auto value2 = magic_enum::enum_cast<BlendMode>(line[4]);
+                if(value1.has_value() && value2.has_value()){
+                    pipeline.srcAlphaBlend = value1.value();
+                    pipeline.dstAlphaBlend = value2.value();
+                }
+            }
+        }
+
+        if(line.size() > 1 && line[0] == "BlendOp"){
+            Assert(line.size() >= 2);
+            auto value1 = magic_enum::enum_cast<BlendOp>(line[1]);
+            if(value1.has_value()){
+                pipeline.opBlend = value1.value();
             }
         }
 

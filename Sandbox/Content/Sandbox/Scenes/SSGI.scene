@@ -192,7 +192,7 @@
             "localPosition": {
                 "v.x": -5.000000953,
                 "v.y": 5.0,
-                "v.z": -9.536452125757933e-7
+                "v.z": -9.536597644910216e-7
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -410,81 +410,55 @@
                 "sssBilinearThreshold": 0.025624999,
                 "sssShadowContrast": 4.0,
                 "toneMapping": {
-                    "polymorphic_id": 1073741824,
-                    "ptr_wrapper": {
-                        "id": 2147483649,
-                        "data": {
-                            "enable": false,
-                            "mode": -1,
-                            "exposure": 1.0
-                        }
-                    }
+                    "enable": false,
+                    "mode": -1,
+                    "exposure": 1.0
                 },
                 "colorGrading": {
-                    "polymorphic_id": 1073741824,
-                    "ptr_wrapper": {
-                        "id": 2147483650,
-                        "data": {
-                            "enable": false,
-                            "postExposure": 0.0,
-                            "contrast": 0.0,
-                            "colorFilter": {
-                                "v.x": 1.0,
-                                "v.y": 1.0,
-                                "v.z": 1.0,
-                                "v.w": 1.0
-                            },
-                            "hueShift": 0.0,
-                            "saturation": 0.0
-                        }
-                    }
+                    "enable": false,
+                    "postExposure": 0.0,
+                    "contrast": 0.0,
+                    "colorFilter": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "hueShift": 0.0,
+                    "saturation": 0.0
                 },
                 "bloom": {
-                    "polymorphic_id": 1073741824,
-                    "ptr_wrapper": {
-                        "id": 2147483651,
-                        "data": {
-                            "enable": false,
-                            "maxIterations": 3,
-                            "downscaleLimit": 3,
-                            "bicubicUpsampling": true,
-                            "threshold": 0.5,
-                            "thresholdKnee": 1.0,
-                            "intensity": 1.0,
-                            "debug": false
-                        }
-                    }
+                    "enable": false,
+                    "maxIterations": 3,
+                    "downscaleLimit": 3,
+                    "bicubicUpsampling": true,
+                    "threshold": 0.5,
+                    "thresholdKnee": 1.0,
+                    "intensity": 1.0,
+                    "debug": false
                 },
                 "ssao": {
-                    "polymorphic_id": 1073741824,
-                    "ptr_wrapper": {
-                        "id": 2147483652,
-                        "data": {
-                            "enable": false,
-                            "intensity": 0.5,
-                            "radius": 0.5,
-                            "bias": 0.025
-                        }
-                    }
+                    "enable": false,
+                    "intensity": 0.5,
+                    "radius": 0.5,
+                    "bias": 0.025
                 },
                 "ssgi": {
-                    "polymorphic_id": 1073741824,
-                    "ptr_wrapper": {
-                        "id": 2147483653,
-                        "data": {
-                            "enable": true,
-                            "sampleRadius": 2.0,
-                            "hitThickness": 1.0,
-                            "sampleCount": 4.0,
-                            "sliceCount": 4.0,
-                            "backfaceLighting": 0.0,
-                            "giIntensity": 50.0,
-                            "aoIntensity": 1.0,
-                            "useScreenSpaceSampling": true,
-                            "denoiseMaxIterations": 5,
-                            "debug": false
-                        }
-                    }
+                    "enable": true,
+                    "sampleRadius": 1.0,
+                    "hitThickness": 0.5,
+                    "sampleCount": 4.0,
+                    "sliceCount": 4.0,
+                    "backfaceLighting": 0.0,
+                    "giIntensity": 1.0,
+                    "aoIntensity": 1.0,
+                    "useScreenSpaceSampling": true,
+                    "denoiseMaxIterations": 4,
+                    "debug": false
+                },
+                "skyCustomMaterial": {
+                    "isNull": false,
+                    "path": "#Memory"
                 },
                 "skyCubemap": {
                     "isNull": false,

@@ -133,7 +133,7 @@ struct PlayerController: public ScriptBase<PlayerController>{
         moveDir.y = 0.0f;
         if(math::length(moveDir) > 1) moveDir = math::normalize(moveDir);
 
-        Assert(Mathf::IsNan(moveDir) == false);
+        Assert(Mathf::HasNaN(moveDir) == false);
 
         rb.Velocity(moveDir * moveSpeed * Application::DeltaTime());
         if(moveDir != Vector3Zero){

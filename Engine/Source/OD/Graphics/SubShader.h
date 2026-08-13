@@ -44,6 +44,14 @@ enum class OD_API_IMPORT BlendMode{
     ONE_MINUS_CONSTANT_ALPHA	
 };
 
+enum class OD_API_IMPORT BlendOp{
+    FUNC_ADD,
+    FUNC_SUBTRACT,
+    FUNC_REVERSE_SUBTRACT,
+    MIN,
+    MAX
+};  
+
 struct OD_API ShaderPipeline{
     CullFace cullFace = CullFace::BACK;
     DepthTest depthTest = DepthTest::LESS;
@@ -52,6 +60,10 @@ struct OD_API ShaderPipeline{
     bool blend = false;
     BlendMode srcBlend;
     BlendMode dstBlend;
+    BlendMode srcAlphaBlend;
+    BlendMode dstAlphaBlend;
+    BlendOp opBlend = BlendOp::FUNC_ADD;
+
     bool supportInstancing;
 
     template <class Archive>
@@ -63,6 +75,9 @@ struct OD_API ShaderPipeline{
         ArchiveDumpNVP(ar, blend);
         ArchiveDumpNVP(ar, srcBlend);
         ArchiveDumpNVP(ar, dstBlend);
+        ArchiveDumpNVP(ar, srcAlphaBlend);
+        ArchiveDumpNVP(ar, dstAlphaBlend);
+        ArchiveDumpNVP(ar, opBlend);
         ArchiveDumpNVP(ar, supportInstancing);
     }
 };
@@ -115,8 +130,11 @@ struct OD_API SubShader{
     inline DepthTest GetDepthTest(){ return pipeline.depthTest; }
     inline bool IsDepthMask(){ return pipeline.depthMask; }
     inline bool IsBlend(){ return pipeline.blend; }
+
     inline BlendMode GetSrcBlend(){ return pipeline.srcBlend; }
     inline BlendMode GetDstBlend(){ return pipeline.dstBlend; }
+    inline BlendMode GetSrcAlphaBlend(){ return pipeline.srcAlphaBlend; }
+    inline BlendMode GetDstAlphaBlend(){ return pipeline.dstAlphaBlend; }
 
     //inline bool ContainUniformName(const std::string& name){ return std::find(_uniforms.begin(), _uniforms.end(), name) != _uniforms.end(); }
     //inline std::vector<std::vector<std::string>>& Pragmas(){ return pragmas; }
