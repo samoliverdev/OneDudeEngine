@@ -47,12 +47,11 @@ private:
     Ref<Material> giTemporalFilterPass;
 
     Ref<Framebuffer> giFinal = nullptr;
-    Ref<Framebuffer> gi = nullptr;
-    Ref<Framebuffer> giTAA = nullptr;
-    Ref<Framebuffer> tempA = nullptr;
-    Ref<Framebuffer> tempB = nullptr;
+    Ref<Framebuffer> giA = nullptr;
+    Ref<Framebuffer> giB = nullptr;
+    Ref<Framebuffer> lowNormalDepth = nullptr;
+    bool giStep = false;
 
-    Ref<Framebuffer> lastIndirect = nullptr;
     Ref<Framebuffer> giHistory = nullptr;
     Ref<Framebuffer> depthHistory = nullptr;
 
