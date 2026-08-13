@@ -192,7 +192,7 @@
             "localPosition": {
                 "v.x": -5.000000953,
                 "v.y": 5.0,
-                "v.z": -9.536597644910216e-7
+                "v.z": -9.536670404486358e-7
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -445,13 +445,13 @@
                 },
                 "ssgi": {
                     "enable": true,
-                    "sampleRadius": 1.0,
-                    "hitThickness": 0.5,
+                    "sampleRadius": 12.0,
+                    "hitThickness": 1.0,
                     "sampleCount": 4.0,
-                    "sliceCount": 4.0,
+                    "sliceCount": 2.0,
                     "backfaceLighting": 0.0,
-                    "giIntensity": 1.0,
-                    "aoIntensity": 1.0,
+                    "giIntensity": 50.0,
+                    "aoIntensity": 2.0,
                     "useScreenSpaceSampling": true,
                     "denoiseMaxIterations": 4,
                     "debug": false

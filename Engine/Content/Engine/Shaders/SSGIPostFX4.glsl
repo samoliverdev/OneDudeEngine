@@ -34,6 +34,17 @@ BeginUniform(0, 0, Main)
 
     Uniform float _TemporalDirection;
     Uniform float _TemporalOffset;
+
+    Uniform float _Radius;
+    Uniform float _GIIntensity;
+    Uniform float _AOIntensity;
+    Uniform float _Thickness;
+    Uniform float _ExpFactor;
+    Uniform float _BackfaceLighting;
+    Uniform int _StepCount;
+    Uniform int _SliceCount;
+    Uniform float _UseLinearThickness;      // 0 or 1
+    Uniform float _UseScreenSpaceSampling;  // 0 or 1
 EndUniform()
 
 // ============================================================
@@ -67,13 +78,13 @@ const float TWO_PI  = 6.28318530718;
 
 //const vec4 _Resolution = vec4(800,600, 0, 0); // xy = size, zw = 1/size
 
-const float _Radius = 12;
+/*const float _Radius = 12;
 const float _GIIntensity = 50;
 const float _AOIntensity = 1;
 const float _Thickness = 1;
 const float _ExpFactor = 2;
 const float _BackfaceLighting = 0;
-const int _StepCount = 4*2;
+const int _StepCount = 4*1;
 const int _SliceCount = 2;
 
 //const float _TemporalDirection = 1;
@@ -83,7 +94,7 @@ const int _SliceCount = 2;
 
 //const float _CameraFar = 100;
 const float _UseLinearThickness = 0;      // 0 or 1
-const float _UseScreenSpaceSampling = 1;  // 0 or 1
+const float _UseScreenSpaceSampling = 1;  // 0 or 1*/
 
 #define saturate(x) clamp(x, 0.0, 1.0)
 
@@ -132,6 +143,34 @@ float SpatialOffset(vec2 pixel){
     int x = int(pixel.x);
     int y = int(pixel.y);
     return 0.25 * float((y - x) & 3);
+}
+
+float InterleavedGradientNoise(vec2 pixel){
+    // pixel = integer pixel coords (VERY important)
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pixel, magic.xy)));
+}
+
+float Rand(vec2 co){
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
+float randf(int x, int y) {
+    return mod(52.9829189 * mod(0.06711056 * float(x) + 0.00583715 * float(y), 1.0), 1.0);
+}
+
+float randf(vec2 st) {
+    return mod(52.9829189 * mod(0.06711056 * float(st.x) + 0.00583715 * float(st.y), 1.0), 1.0);
+}
+
+float blueNoise(vec2 uv){
+    return randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
+    //return texture(noise, uv * screenSize / 64.0).r - 0.5;
+}
+
+float Luminance(vec3 c){
+    return dot(c, vec3(0.2126, 0.7152, 0.0722));
 }
 
 #define Test
@@ -229,6 +268,10 @@ vec3 HorizonSampling(
             vec3 light = SampleColor(suv);
             light = light / (1.0 + light);
 
+            float maxLuminance = 0.25; // SAME as three.js
+            float lum = Luminance(light);
+            if(lum > maxLuminance) light *= (maxLuminance / lum);
+
             if(dot(light, vec3(1.0)) > 0.001){
                 float ndl = saturate(dot(normal, dir));
 
@@ -247,34 +290,6 @@ vec3 HorizonSampling(
     }
 
     return color;
-}
-
-float InterleavedGradientNoise(vec2 pixel){
-    // pixel = integer pixel coords (VERY important)
-    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
-    return fract(magic.z * fract(dot(pixel, magic.xy)));
-}
-
-float Rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
-}
-
-// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
-float randf(int x, int y) {
-    return mod(52.9829189 * mod(0.06711056 * float(x) + 0.00583715 * float(y), 1.0), 1.0);
-}
-
-float randf(vec2 st) {
-    return mod(52.9829189 * mod(0.06711056 * float(st.x) + 0.00583715 * float(st.y), 1.0), 1.0);
-}
-
-float blueNoise(vec2 uv){
-    return randf(int(gl_FragCoord.x), int(gl_FragCoord.y)) - 0.5;
-    //return texture(noise, uv * screenSize / 64.0).r - 0.5;
-}
-
-float Luminance(vec3 c){
-    return dot(c, vec3(0.2126, 0.7152, 0.0722));
 }
 
 //======================================================
@@ -358,9 +373,8 @@ vec4 ComputeSSGI(vec2 uv){
     // ----------------------------------
     // HDR FIRE-FLY / ENERGY CLAMP (CRITICAL)
     // ----------------------------------
-    /*float maxLuminance = 7.0; // SAME as three.js
+    /*float maxLuminance = 0.25; // SAME as three.js
     float lum = Luminance(color);
-
     if(lum > maxLuminance){
         color *= (maxLuminance / lum);
     }*/

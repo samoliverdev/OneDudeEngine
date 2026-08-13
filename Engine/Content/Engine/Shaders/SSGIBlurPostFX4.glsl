@@ -15,7 +15,6 @@
 BeginUniform(0, 0, Main) 
     Uniform vec4 color; 
     Uniform vec2 giSize; 
-    Uniform vec2 screenSize;
     // 1, 2, 4, 8
     Uniform float atrousStep;
 EndUniform() 

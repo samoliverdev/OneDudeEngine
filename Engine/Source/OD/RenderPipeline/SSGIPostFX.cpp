@@ -31,7 +31,7 @@ SSGIFeature::SSGIFeature(){
 }
 
 SSGIFeature::~SSGIFeature(){
-    if(lastIndirect != nullptr) delete lastIndirect;
+    //if(lastIndirect != nullptr) delete lastIndirect;
 
     //if(giHistory != nullptr) delete giHistory;
     //if(depthHistory != nullptr) delete depthHistory;
@@ -61,25 +61,38 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     auto spec = data.src->Specification();
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
 
+    bool useTemporalDenoise = false;
+    bool useSpatialDenoise = false;
+    bool useDownSample = false;
+
     auto halfSpec = spec;
-    //halfSpec.width /= 2;
-    //halfSpec.height /= 2;
 
-    auto gi = new Framebuffer(halfSpec);
+    if(useDownSample){
+        halfSpec.width /= 2;
+        halfSpec.height /= 2;
+    }
+    
+    if(giFinal == nullptr) giFinal = CreateRef<Framebuffer>(spec);
+    giFinal->Resize(spec.width, spec.height);
 
-    bool useTemporalDenoise = true;
-    bool useSpatialDenoise = true;
+    //auto gi = new Framebuffer(halfSpec);
+    if(gi == nullptr) gi = CreateRef<Framebuffer>(halfSpec);
+    if(giTAA == nullptr) giTAA = CreateRef<Framebuffer>(halfSpec);
+    if(tempA == nullptr) tempA = CreateRef<Framebuffer>(halfSpec);
+    if(tempB == nullptr) tempB = CreateRef<Framebuffer>(halfSpec);
+
+    gi->Resize(halfSpec.width, halfSpec.height);
+    giTAA->Resize(halfSpec.width, halfSpec.height);
+    tempA->Resize(halfSpec.width, halfSpec.height);
+    tempB->Resize(halfSpec.width, halfSpec.height);
 
     if(useTemporalDenoise){
-        if(giHistory == nullptr) giHistory = new Framebuffer(halfSpec);
-        if(depthHistory == nullptr) depthHistory = new Framebuffer(spec);
+        if(giHistory == nullptr) giHistory = CreateRef<Framebuffer>(halfSpec);
+        if(depthHistory == nullptr) depthHistory = CreateRef<Framebuffer>(spec);
 
         giHistory->Resize(halfSpec.width, halfSpec.height);
         depthHistory->Resize(spec.width, spec.height);
     }
-
-    std::array<Framebuffer*, 16> textures;
-    std::vector<Framebuffer*> releaseTemporary;
 
     Camera cam = context.GetCamera();
     float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
@@ -92,7 +105,7 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     giPass->SetTexture("gNormal", deferred, 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("gDepth", deferred, -1);
     giPass->SetTexture("gAlbedoSpec", deferred, 1);
-    giPass->SetTexture("lastIndirect", lastIndirect, 0); //giPass->SetTexture("gNormal", deferred, 1);
+    //giPass->SetTexture("lastIndirect", lastIndirect.get(), 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("noise", blueNoise);
     giPass->SetFloat("sampleCount", sampleCount);
     giPass->SetFloat("sampleRadius", sampleRadius);
@@ -115,6 +128,17 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     float temporalDirection = rotations[frameIndex % 6] / 360.0f;
     float temporalOffset = offsets[frameIndex % 4];
 
+    giPass->SetFloat("_Radius", sampleRadius);
+    giPass->SetFloat("_GIIntensity", giIntensity);
+    giPass->SetFloat("_AOIntensity", aoIntensity);
+    giPass->SetFloat("_Thickness", hitThickness);
+    giPass->SetFloat("_ExpFactor", 2);
+    giPass->SetFloat("_BackfaceLighting", backfaceLighting);
+    giPass->SetInt("_StepCount", sampleCount);
+    giPass->SetInt("_SliceCount", sliceCount);
+    giPass->SetFloat("_UseLinearThickness", 0);
+    giPass->SetFloat("_UseScreenSpaceSampling", useScreenSpaceSampling ? 1.0f : 0.0f);
+
     if(useTemporalDenoise){
         giPass->SetFloat("_TemporalDirection", temporalDirection);
         giPass->SetFloat("_TemporalOffset", temporalOffset);
@@ -126,26 +150,23 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     Graphics::DrawFullScreenQuad(*giPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    Framebuffer* giTAA = nullptr;
-
     if(useTemporalDenoise){
-        giTAA = new Framebuffer(halfSpec);
-        releaseTemporary.push_back(giTAA);
-
         giTemporalFilterPass->SetTexture("gDepth", deferred, -1);
-        giTemporalFilterPass->SetTexture("giAO", gi, 0);
-        giTemporalFilterPass->SetTexture("gDepthHistory", depthHistory, 0);
-        giTemporalFilterPass->SetTexture("giAOHistory", giHistory, 0);
+        giTemporalFilterPass->SetTexture("giAO", gi.get(), 0);
+        giTemporalFilterPass->SetTexture("gDepthHistory", depthHistory.get(), 0);
+        giTemporalFilterPass->SetTexture("giAOHistory", giHistory.get(), 0);
         giTemporalFilterPass->SetMatrix4("lastProj", lastProj);
         giTemporalFilterPass->SetMatrix4("lastView", lastView);
         giTemporalFilterPass->SetMatrix4("lastInvProj", lastInvProj);
         giTemporalFilterPass->SetMatrix4("lastInvView", lastInvView);
-        Blit(gi, giTAA, giTemporalFilterPass, 0);
+        Blit(gi.get(), giTAA.get(), giTemporalFilterPass, 0);
 
         giBlitPass->SetTexture("gDepth", deferred, -1);
-        giBlitPass->SetTexture("giAO", giTAA, 0);
-        Blit(data.src, giHistory, giBlitPass, 0);
-        Blit(data.src, depthHistory, giBlitPass, 1);
+        giBlitPass->SetTexture("giAO", giTAA.get(), 0);
+        Blit(data.src, giHistory.get(), giBlitPass, 0);
+        Blit(data.src, depthHistory.get(), giBlitPass, 1);
+
+        Blit(giTAA.get(), gi.get(), blitPass, 0);
     }
     
     giBlurPass->SetTexture("gDepth", deferred, -1);
@@ -208,19 +229,28 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
         Blit(_src, _dst, giBlurPass, 0);
     };
 
-    textures[0] = new Framebuffer(spec);
-    textures[1] = new Framebuffer(spec);
-    releaseTemporary.push_back(textures[0]);
-    releaseTemporary.push_back(textures[1]);
-
     if(useSpatialDenoise){
-        RenderAtrous(gi, textures[0], 1);
-        RenderAtrous(textures[0], textures[1], 2);
+        RenderAtrous(gi.get(), tempA.get(), 1);
+        RenderAtrous(tempA.get(), tempB.get(), 2);
 
-        RenderAtrous(textures[1], gi, 4);
+        //RenderAtrous(tempA.get(), gi.get(), 4);
 
-        //RenderAtrous(textures[1], textures[0], 4);
-        //RenderAtrous(textures[0], gi, 8);
+        RenderAtrous(tempB.get(), tempA.get(), 4);
+        RenderAtrous(tempA.get(), gi.get(), 8);
+    }
+
+    if(useDownSample){
+        Graphics::BeginFramebuffer(*giFinal);
+        Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
+        giUpsamplePass->SetTexture("giLow", gi.get(), 0);
+        giUpsamplePass->SetTexture("gDepth", deferred, -1);
+        giUpsamplePass->SetTexture("gNormal", deferred, 0);
+        giUpsamplePass->SetFloat("farPlane", context.GetCamera().farClip);
+        giUpsamplePass->SetFloat("nearPlane", context.GetCamera().nearClip);
+        giUpsamplePass->SetVector2("giTexelSize", {1.0f / float(halfSpec.width), 1.0f / float(halfSpec.height)});
+        giUpsamplePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
+        Graphics::DrawFullScreenQuad(*giUpsamplePass, Matrix4Identity);
+        Graphics::EndFramebuffer();
     }
     
     giComposePass->SetPass(debug ? 1 : 0);
@@ -230,13 +260,13 @@ void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
     Graphics::SetViewport(0, 0, deferred->Specification().width, deferred->Specification().height);
     giComposePass->SetTexture("mainTex", data.src, 0);
     giComposePass->SetTexture("gAlbedoSpec", deferred, 1);
-    giComposePass->SetTexture("giAO", useSpatialDenoise ? giTAA : gi, 0);
+    giComposePass->SetTexture("giAO", useDownSample ? giFinal.get() : gi.get(), 0);
     Graphics::DrawFullScreenQuad(*giComposePass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    for(Framebuffer* cur: releaseTemporary) delete cur;
+    //for(Framebuffer* cur: releaseTemporary) delete cur;
 
-    delete gi;
+    //delete gi;
 
     lastProj = context.GetCamera().projection;
     lastView = context.GetCamera().view;

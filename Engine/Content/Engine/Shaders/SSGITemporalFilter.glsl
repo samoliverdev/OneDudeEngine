@@ -92,6 +92,23 @@ Texture2D(0, 2, giAOHistory, giAOSampler)
         vec4 current = texture(giAO, uv);
         vec4 history = texture(giAOHistory, previousUV);
 
+
+        vec2 texelSize = 1.0 / vec2(textureSize(giAO, 0));
+        vec4 minAO = current;
+        vec4 maxAO = current;
+        for(int y = -1; y <= 1; ++y){
+            for(int x = -1; x <= 1; ++x){
+                vec2 p = uv + vec2(x, y) * texelSize;
+
+                vec4 ao = texture(giAO, p);
+
+                minAO = min(minAO, ao);
+                maxAO = max(maxAO, ao);
+            }
+        }
+
+        history = clamp(history, minAO, maxAO);
+
         // History depth
         float previousDepth = GetPreviousDepth(previousUV);
 
@@ -103,7 +120,7 @@ Texture2D(0, 2, giAOHistory, giAOSampler)
         if(depthDifference > 0.002) valid = 0.0;
 
         // Temporal blend
-        float historyWeight = 0.9 * valid;
+        float historyWeight = 0.85 * valid;
         fragColor = mix(current, history, historyWeight);
     }
     #endif

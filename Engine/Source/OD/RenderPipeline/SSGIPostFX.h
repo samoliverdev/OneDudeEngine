@@ -46,9 +46,15 @@ private:
     Ref<Material> giBlitPass;
     Ref<Material> giTemporalFilterPass;
 
-    class Framebuffer* lastIndirect = nullptr;
-    class Framebuffer* giHistory = nullptr;
-    class Framebuffer* depthHistory = nullptr;
+    Ref<Framebuffer> giFinal = nullptr;
+    Ref<Framebuffer> gi = nullptr;
+    Ref<Framebuffer> giTAA = nullptr;
+    Ref<Framebuffer> tempA = nullptr;
+    Ref<Framebuffer> tempB = nullptr;
+
+    Ref<Framebuffer> lastIndirect = nullptr;
+    Ref<Framebuffer> giHistory = nullptr;
+    Ref<Framebuffer> depthHistory = nullptr;
 
     Matrix4 lastView = Matrix4Identity;
     Matrix4 lastProj = Matrix4Identity;
