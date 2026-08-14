@@ -203,7 +203,7 @@ void Material::SetTexture(const char* name, Ref<Texture2DArray> tex){
     isDirty = true;
 }
 
-void Material::SetTexture(const char* name, Framebuffer* tex, int attachment){
+void Material::SetTexture(const char* name, Ref<Framebuffer> tex, int attachment){
     MaterialMap& map = maps[name];
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;
@@ -298,7 +298,7 @@ void Material::SetGlobalTexture(const char* name, Ref<Texture2D> tex){
     map.texture = tex;
 }
 
-void Material::SetGlobalTexture(const char* name, Framebuffer* tex, int attachment){
+void Material::SetGlobalTexture(const char* name, Ref<Framebuffer> tex, int attachment){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Framebuffer;
     map.framebuffer = tex;

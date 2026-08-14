@@ -66,17 +66,17 @@ void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 
 void SSAOFeature::Execute(RenderContext& context, RenderFrameData& data){
     if(context.isDeferred == false){
-        Graphics::BlitFramebuffer(data.src, data.dst);
+        Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;
     }
     auto spec = data.src->Specification();
     spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
     spec.createDepth = false;
     
-    auto ao1 = new Framebuffer(spec);
-    auto ao2 = new Framebuffer(spec);
+    auto ao1 = ResourceManager::Get().Create<Framebuffer>(spec);
+    auto ao2 = ResourceManager::Get().Create<Framebuffer>(spec);
 
-    Framebuffer* deferred = context.GetDeferredFramebuffer();
+    Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
 
     aoPass->SetVector4("samples", ssaoKernel.data(), 64);
     aoPass->SetTexture("texNoise", noise);
@@ -117,9 +117,6 @@ void SSAOFeature::Execute(RenderContext& context, RenderFrameData& data){
     aoPass->SetTexture("ssaoTexture", ao1, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();
-
-    delete ao1;
-    delete ao2;
 
     /*if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src, data.dst);

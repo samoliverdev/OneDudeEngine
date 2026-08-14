@@ -38,10 +38,10 @@ void CubemapFramebufferSample::OnInit(){
     tempSp.colorAttachments = {{FramebufferTextureFormat::RGBA8}};
     tempSp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     tempSp.sample = 8;
-    tempFBMultsample = CreateRef<Framebuffer>(tempSp);
+    tempFBMultsample = ResourceManager::Get().Create<Framebuffer>(tempSp);
     tempSp.type = FramebufferAttachmentType::TEXTURE_2D;
     tempSp.createDepth = false;
-    tempFB = CreateRef<Framebuffer>(tempSp);
+    tempFB = ResourceManager::Get().Create<Framebuffer>(tempSp);
     
     FrameBufferSpecification sp;
     sp.width = 256*1;
@@ -49,7 +49,7 @@ void CubemapFramebufferSample::OnInit(){
     sp.type = FramebufferAttachmentType::CUBEMAP;
     sp.colorAttachments = {{FramebufferTextureFormat::RGBA8, true, CalculateMipCount(sp.width, sp.height)}};
     sp.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
-    cubeFB = CreateRef<Framebuffer>(sp);
+    cubeFB = ResourceManager::Get().Create<Framebuffer>(sp);
 
     skyMesh = Mesh::SkyboxCube();
     skyMat = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
@@ -79,7 +79,7 @@ void CubemapFramebufferSample::OnRender(float deltaTime){
     };
 
     auto DrawScene2 = [&](){
-        mat2->SetTexture("mainTex", cubeFB.get(), 0);
+        mat2->SetTexture("mainTex", cubeFB, 0);
         mat2->SetFloat("roughness", roughness);
         mat2->SetFloat("metalness", metalness);
         mat2->SetFloat("levels", cubeFB->Specification().colorAttachments[0].mipLevels);
@@ -156,7 +156,7 @@ void CubemapFramebufferSample::OnRender(float deltaTime){
         Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
         Graphics::Clean(0.1f, 0.1f, 0.1f, 1);   
 
-        screenPassMat->SetTexture("mainTex", tempFB.get(), 0);
+        screenPassMat->SetTexture("mainTex", tempFB, 0);
         Graphics::DrawMesh(*fullscreenQuadMesh, *screenPassMat, Matrix4Identity);
 
         Graphics::EndRenderToScreen();

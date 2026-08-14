@@ -31,9 +31,9 @@ public:
         Assert(_ppShader != nullptr);
     }
 
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override {
+    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override {
         _ppShader->SetFloat("option", _option);
-        Graphics::DrawQuadPostProcessing(src, dst, *_ppShader);
+        Graphics::DrawQuadPostProcessing(src.get(), dst.get(), *_ppShader);
     }
 
 private:
@@ -47,7 +47,7 @@ public:
         gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
     }
 
-    void OnRenderImage(Framebuffer* src, Framebuffer* dst, RenderContext* context) override{
+    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override{
         //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
 
         Graphics::BeginFramebuffer(*dst);
@@ -144,8 +144,8 @@ public:
     Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
     Vector4 ReserveOtherShadows(LightComponent light, Transform trans);
     
-    inline Framebuffer* GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
-    inline Framebuffer* GetOtherShadowAtlas(){ return otherShadowAtlas; };
+    inline Ref<Framebuffer> GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
+    inline Ref<Framebuffer> GetOtherShadowAtlas(){ return otherShadowAtlas; };
 
     void DrawCascadeFrustums();
 
@@ -171,8 +171,8 @@ private:
     int shadowedDirectionalLightCount;
     int shadowedOtherLightCount;
 
-    Framebuffer* directionalShadowAtlas;
-    Framebuffer* otherShadowAtlas;
+    Ref<Framebuffer> directionalShadowAtlas;
+    Ref<Framebuffer> otherShadowAtlas;
     Ref<Material> shadowPass;
 
     RendererList shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
@@ -326,9 +326,9 @@ public:
     //~StandRenderPipeline(){}
     //System* Clone(Scene* inScene) const override;
 
-    void SetOverrideFrameBuffer(Framebuffer* out) override;
+    void SetOverrideFrameBuffer(Ref<Framebuffer> out) override;
     void SetOverrideCamera(Camera* cam, Transform trans) override;
-    Framebuffer* FinalColor() override;
+    Ref<Framebuffer> FinalColor() override;
 
     inline bool ExecuteAlways() override { return true; }
 

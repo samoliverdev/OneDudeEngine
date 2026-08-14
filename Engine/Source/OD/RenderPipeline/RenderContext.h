@@ -191,7 +191,7 @@ public:
 
     void DrawCompose(std::vector<CameraRenderPass>& passes, int width, int height);
 
-    inline void SetCustomFinalColor(Framebuffer* f, int slice){
+    inline void SetCustomFinalColor(Ref<Framebuffer> f, int slice){
         customFinalColor = f;
         customFinalColorIndex = slice; 
     }
@@ -224,8 +224,8 @@ public:
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
     void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
 
-    void CleanShadow(Framebuffer* shadowMap, int layer = 0);
-    void BeginDrawShadow(Framebuffer* shadowMap, int layer = 0);
+    void CleanShadow(Ref<Framebuffer>& shadowMap, int layer = 0);
+    void BeginDrawShadow(Ref<Framebuffer>& shadowMap, int layer = 0);
     void EndDrawShadow();
     void AddDrawShadow(RenderData& renderData, ShadowDrawingSettings& settings, RendererList& target);
     void DrawShadows(RendererList& targets, ShadowSplitData& splitData, Ref<Material>& shadowPass);
@@ -233,14 +233,14 @@ public:
     void CopyDeffered();
 
     inline Scene* GetScene(){ return scene; }
-    inline Framebuffer* GetFinalColor(){ return finalColor; }
+    inline Ref<Framebuffer> GetFinalColor(){ return finalColor; }
     inline Camera GetCamera(){ return cam; }
 
     static RenderContextSettings& GetSettings();
 
     //-------Settings---------
     Ref<Material> skyMaterial = nullptr;
-    Framebuffer* overrideFramebuffer = nullptr;
+    Ref<Framebuffer> overrideFramebuffer = nullptr;
     bool isDeferred = false;    
 
     PipelineData pipelineData;
@@ -249,12 +249,12 @@ public:
     ShadowData shadowData;
     Ref<UniformBuffer> shadowDataBuffer;
 
-    inline Framebuffer* GetForwardFramebuffer(){ return forwardOutColor; }
-    inline Framebuffer* GetDeferredFramebuffer(){ return deferredOutColor; }
-    inline Framebuffer* GetDeferredCopyFramebuffer(){ return deferredOutColorCopy; }
+    inline Ref<Framebuffer> GetForwardFramebuffer(){ return forwardOutColor; }
+    inline Ref<Framebuffer> GetDeferredFramebuffer(){ return deferredOutColor; }
+    inline Ref<Framebuffer> GetDeferredCopyFramebuffer(){ return deferredOutColorCopy; }
 
-    inline Framebuffer* GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
-    inline Framebuffer* GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
+    inline Ref<Framebuffer> GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
+    inline Ref<Framebuffer> GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
 
     template<typename T>
     static void RegisterRenderFeature(){
@@ -286,16 +286,15 @@ private:
 
     std::vector<RendererFeature*> cachedRenderFeatures;
 
+    Ref<Framebuffer> entityIdOutColor;
+    Ref<Framebuffer> deferredOutColor;
+    Ref<Framebuffer> deferredOutColorCopy;
+    Ref<Framebuffer> forwardOutColor;
+    Ref<Framebuffer> finalColor;
+    Ref<Framebuffer> postFx1;
+    Ref<Framebuffer> postFx2;
 
-    Framebuffer* entityIdOutColor;
-    Framebuffer* deferredOutColor;
-    Framebuffer* deferredOutColorCopy;
-    Framebuffer* forwardOutColor;
-    Framebuffer* finalColor;
-    Framebuffer* postFx1;
-    Framebuffer* postFx2;
-
-    Framebuffer* customFinalColor;
+    Ref<Framebuffer> customFinalColor;
     int customFinalColorIndex;
 
     Ref<Material> entityIdShader;
@@ -325,6 +324,8 @@ private:
     Ref<ComputeShader> screenSpaceShadow = nullptr;
     Ref<UniformBuffer> screenSpaceShadowData = nullptr;
     Ref<Framebuffer> screenSpaceShadowOutput = nullptr;
+
+    Ref<Framebuffer> finalFramebuffer = nullptr;
 
     bool step = false;
 

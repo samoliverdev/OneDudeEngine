@@ -192,7 +192,7 @@
             "localPosition": {
                 "v.x": -5.000000953,
                 "v.y": 5.0,
-                "v.z": -9.536724974168465e-7
+                "v.z": -9.536734069115482e-7
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -453,8 +453,12 @@
                     "giIntensity": 50.0,
                     "aoIntensity": 2.0,
                     "useScreenSpaceSampling": true,
-                    "denoiseMaxIterations": 4,
-                    "debug": false
+                    "useLinearThickness": false,
+                    "debug": false,
+                    "resolutionMode": 0,
+                    "useTemporalDenoise": false,
+                    "useSpatialDenoise": false,
+                    "denoiseMaxIterations": 4
                 },
                 "skyCustomMaterial": {
                     "isNull": false,

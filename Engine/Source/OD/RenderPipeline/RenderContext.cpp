@@ -133,7 +133,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
-    entityIdOutColor = new Framebuffer(framebufferSpecification);
+    entityIdOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     entityIdOutColor->name = "entityIdOutColor";
 
     framebufferSpecification.colorAttachments = {
@@ -144,7 +144,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
-    forwardOutColor = new Framebuffer(framebufferSpecification);
+    forwardOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     forwardOutColor->name = "forwardOutColor";
     //forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
@@ -160,13 +160,13 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
-    deferredOutColor = new Framebuffer(framebufferSpecification);
+    deferredOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     deferredOutColor->name = "deferredOutColor";
     //deferredOutColor->ColorAttachmentId(3);
     //deferredOutColor = new Framebuffer(FramebufferType::Deffered, Application::ScreenWidth(), Application::ScreenHeight());
 
     framebufferSpecification.createDepth = false;
-    deferredOutColorCopy = new Framebuffer(framebufferSpecification);
+    deferredOutColorCopy = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     deferredOutColorCopy->name = "deferredOutColorCopy";
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
@@ -176,11 +176,11 @@ RenderContext::RenderContext(Scene* inScene){
     };
     framebufferSpecification.createDepth = false;
     framebufferSpecification.sample = 1;
-    finalColor = new Framebuffer(framebufferSpecification);
+    finalColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     finalColor->name = "finalColor";
-    postFx1 = new Framebuffer(framebufferSpecification);
+    postFx1 = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     postFx1->name = "postFx1";
-    postFx2 = new Framebuffer(framebufferSpecification);
+    postFx2 = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     postFx2->name = "postFx2";
     //finalColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
@@ -229,7 +229,7 @@ RenderContext::RenderContext(Scene* inScene){
     framebufferSpecification2.createDepth = false;
     framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification2.sample = 1;
-    screenSpaceShadowOutput = CreateRef<Framebuffer>(framebufferSpecification2);
+    screenSpaceShadowOutput = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification2);
 
     screenSpaceShadow2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
 }
@@ -240,21 +240,13 @@ RenderContext::~RenderContext(){
 
     //for(auto& i: rendererFeatures) delete i;
     //rendererFeatures.clear();
-
-    delete entityIdOutColor;
-    delete deferredOutColor;
-    delete deferredOutColorCopy;
-    delete forwardOutColor;
-    delete finalColor;
-    delete postFx1;
-    delete postFx2;
 }
 
 void RenderContext::CopyDeffered(){
     deferredOutColorCopy->Resize(deferredOutColor->Width(), deferredOutColor->Height());
-    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 0);
-    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 1);
-    Graphics::BlitFramebuffer(deferredOutColor, deferredOutColorCopy, 2);
+    Graphics::BlitFramebuffer(deferredOutColor.get(), deferredOutColorCopy.get(), 0);
+    Graphics::BlitFramebuffer(deferredOutColor.get(), deferredOutColorCopy.get(), 1);
+    Graphics::BlitFramebuffer(deferredOutColor.get(), deferredOutColorCopy.get(), 2);
 }
 
 void RenderContext::Begin(){
@@ -274,7 +266,7 @@ void RenderContext::BeginDrawToScreen(){
         height = overrideFramebuffer->Height();
     }
 
-    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    Ref<Framebuffer> curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
 
     /*if(finalColor->Width() != width){
         LogError("Current: %d Next: %d", finalColor->Width(), width);
@@ -295,7 +287,7 @@ void RenderContext::BeginDrawToScreenNew(){
     int height = cam.height;
     if(width <= 0 || height <= 0) return;
 
-    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    Ref<Framebuffer> curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
 
     entityIdOutColor->Resize(width, height);
     deferredOutColor->Resize(width, height);
@@ -361,7 +353,7 @@ void RenderContext::EndDeferredPass(){
 }
 
 void RenderContext::DeferredCopyToForwardPass(){
-    Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
+    Graphics::BlitFramebuffer(deferredOutColor.get(), forwardOutColor.get(), -1);
 }
 
 void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
@@ -382,7 +374,7 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
-        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
+        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput, 0);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     } else {
         if(combinedIndirect){
@@ -397,7 +389,7 @@ void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
         deferredLightDirSinglePass->SetTexture("gOther", deferredOutColor, 2);
         deferredLightDirSinglePass->SetTexture("gEmission", deferredOutColor, 3);
         deferredLightDirSinglePass->SetTexture("gDepth", deferredOutColor, -1);
-        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
+        deferredLightDirSinglePass->SetTexture("sss", screenSpaceShadowOutput, 0);
         deferredLightDirSinglePass->SetInt("lightIndex", index);
         Graphics::DrawMesh(*fullScreenQuad, *deferredLightDirSinglePass, Matrix4Identity);
     }
@@ -412,7 +404,7 @@ void RenderContext::DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, 
     deferredLightDirSingleOtherPass->SetTexture("gEmission", deferredOutColor, 3);
     deferredLightDirSingleOtherPass->SetTexture("gOther", deferredOutColor, 2);
     deferredLightDirSingleOtherPass->SetTexture("gDepth", deferredOutColor, -1);
-    deferredLightDirSingleOtherPass->SetTexture("sss", screenSpaceShadowOutput.get(), 0);
+    deferredLightDirSingleOtherPass->SetTexture("sss", screenSpaceShadowOutput, 0);
     deferredLightDirSingleOtherPass->SetInt("lightIndex", index);
     deferredLightDirSingleOtherPass->SetFloat("screenWidth", cam.width);
     deferredLightDirSingleOtherPass->SetFloat("screenHeight", cam.height);
@@ -530,7 +522,7 @@ void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
         screenSpaceShadowData->SetData(&params, sizeof(SSSParameters2));
 
         screenSpaceShadow->SetTexture("DepthTexture", GetDeferredFramebuffer(), -1);
-        screenSpaceShadow->SetTexture("OutputTexture", screenSpaceShadowOutput.get(), 0);
+        screenSpaceShadow->SetTexture("OutputTexture", screenSpaceShadowOutput, 0);
         screenSpaceShadow->SetUniformBuffer("Params", screenSpaceShadowData, 2);
         screenSpaceShadow->Dispatch(d.WaveCount[0], d.WaveCount[1], d.WaveCount[2]);
     }
@@ -605,7 +597,7 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 
     Graphics::DrawMesh(*fullScreenQuad, *deferredLightPass, Matrix4Identity);
     
-    Graphics::BlitFramebuffer(deferredOutColor, forwardOutColor, -1);
+    Graphics::BlitFramebuffer(deferredOutColor.get(), forwardOutColor.get(), -1);
     //Framebuffer::Bind(*forwardOutColor);
     
     //Graphics::BeginFramebuffer(*forwardOutColor);
@@ -629,7 +621,7 @@ void RenderContext::EndDeferredPassAndCopyToForwardPass(){
 }
 
 void RenderContext::EndDrawToScreen(){
-    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    Ref<Framebuffer> curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
 
     Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor);
     blitShader->SetTexture("mainTex", forwardOutColor, 0);
@@ -677,13 +669,13 @@ void RenderContext::EndDrawToScreen(){
     //Graphics::EndFramebuffer();
     //return;
 
-    Graphics::BlitFramebuffer(forwardOutColor, curFinalColor);
-    Graphics::DrawQuadPostProcessing(forwardOutColor, curFinalColor, *blitShader);
+    Graphics::BlitFramebuffer(forwardOutColor.get(), curFinalColor.get());
+    Graphics::DrawQuadPostProcessing(forwardOutColor.get(), curFinalColor.get(), *blitShader);
 
     if(overrideFramebuffer != nullptr){
-        Graphics::DrawQuadPostProcessing(curFinalColor, overrideFramebuffer, *blitShader);
+        Graphics::DrawQuadPostProcessing(curFinalColor.get(), overrideFramebuffer.get(), *blitShader);
     } else {
-        Graphics::DrawQuadPostProcessing(curFinalColor, nullptr, *blitShader);
+        Graphics::DrawQuadPostProcessing(curFinalColor.get(), nullptr, *blitShader);
     }
 
     //Framebuffer::Unbind(); 
@@ -691,7 +683,7 @@ void RenderContext::EndDrawToScreen(){
 }
 
 void RenderContext::EndDrawToScreenNew(){
-    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    Ref<Framebuffer> curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
     int curIndex = customFinalColor != nullptr ? customFinalColorIndex : 0;
 
     Graphics::BeginFramebuffer(*curFinalColor, true, cam.cleanColor, curIndex);
@@ -715,7 +707,7 @@ void RenderContext::DrawCompose(std::vector<CameraRenderPass>& passes, int width
                 viewportW,
                 viewportH
             );
-            blitShader->SetTexture("mainTex", pass.target.get(), 0);
+            blitShader->SetTexture("mainTex", pass.target, 0);
             Graphics::DrawMesh(*fullScreenQuad, *blitShader, Matrix4Identity);
         }
     };
@@ -735,8 +727,6 @@ void RenderContext::DrawCompose(std::vector<CameraRenderPass>& passes, int width
     }
 }
 
-Framebuffer* finalFramebuffer;
-
 /*void RenderContext::_Renderer::AddPass(RenderPass* pass){
     if(pass->event == RenderPassEvent::PostProcess){
         postFxPasses.push_back(pass);
@@ -753,7 +743,7 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
 
     step = false;
     /*Framebuffer**/ finalFramebuffer = postFx1;
-    Graphics::BlitFramebuffer(forwardOutColor, postFx1);
+    Graphics::BlitFramebuffer(forwardOutColor.get(), postFx1.get());
     //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
 
     for(auto i: postFXs){
@@ -763,12 +753,12 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
             i->OnRenderImage(
                 step == false ? postFx1 : postFx2, 
                 step == false ? postFx2 : postFx1,
-                this
+                *this
             );
         } else {
             Graphics::BlitFramebuffer(
-                step == false ? postFx1 : postFx2,
-                step == false ? postFx2 : postFx1
+                step == false ? postFx1.get() : postFx2.get(),
+                step == false ? postFx2.get() : postFx1.get()
             );
             /*Graphics::BlitQuadPostProcessing(
                 step == false ? postFx1 : postFx2, 
@@ -793,7 +783,7 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
 
     step = false;
     /*Framebuffer**/ finalFramebuffer = postFx1;
-    Graphics::BlitFramebuffer(forwardOutColor, postFx1);
+    Graphics::BlitFramebuffer(forwardOutColor.get(), postFx1.get());
     //Graphics::BlitQuadPostProcessing(outColor, postFx1, *blitShader);
 
     for(auto i: passes){
@@ -810,8 +800,8 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
             );*/
         } else {
             Graphics::BlitFramebuffer(
-                step == false ? postFx1 : postFx2,
-                step == false ? postFx2 : postFx1
+                step == false ? postFx1.get() : postFx2.get(),
+                step == false ? postFx2.get() : postFx1.get()
             );
             /*Graphics::BlitQuadPostProcessing(
                 step == false ? postFx1 : postFx2, 
@@ -830,7 +820,7 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
         last->Execute(*this, data);
     }
 
-    Graphics::BlitFramebuffer(finalFramebuffer, forwardOutColor);
+    Graphics::BlitFramebuffer(finalFramebuffer.get(), forwardOutColor.get());
 
     /*Graphics::BeginFramebuffer(*forwardOutColor, false);
     blitShader->SetTexture("mainTex", finalFramebuffer, 0);
@@ -2870,8 +2860,8 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
         }
 
         if(isDecal){
-            Framebuffer* deferred = deferredOutColor;
-            Framebuffer* deferredCopy = deferredOutColorCopy;
+            Ref<Framebuffer> deferred = deferredOutColor;
+            Ref<Framebuffer> deferredCopy = deferredOutColorCopy;
             //decal.material->SetMatrix4("decalWorldToLocal", math::inverse(trans.GlobalModelMatrix()));
             //material.SetTexture("gPosition", deferred, 0);
             material.SetTexture("gNormal", deferredCopy, 0);
@@ -2905,7 +2895,7 @@ void RenderContext::DrawGizmos(){
     //Renderer::SetCamera(cam);
     
     Camera cm = cam;
-    Framebuffer* curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
+    Ref<Framebuffer> curFinalColor = customFinalColor != nullptr ? customFinalColor : finalColor;
     
     //scene->GetSystem<PhysicsSystem>()->ShowDebugGizmos();
 
@@ -3040,7 +3030,7 @@ void RenderContext::DrawGizmos(){
     }*/
 }
 
-void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
+void RenderContext::CleanShadow(Ref<Framebuffer>& shadowMap, int layer){
     Assert(shadowMap != nullptr);
     //Framebuffer::Bind(*shadowMap, layer);
     Graphics::BeginFramebuffer(*shadowMap, true, Vector4(0, 0, 0, 1), layer);
@@ -3050,7 +3040,7 @@ void RenderContext::CleanShadow(Framebuffer* shadowMap, int layer){
     Graphics::EndFramebuffer();
 }
 
-void RenderContext::BeginDrawShadow(Framebuffer* shadowMap, int layer){
+void RenderContext::BeginDrawShadow(Ref<Framebuffer>& shadowMap, int layer){
     Assert(shadowMap != nullptr);
 
     //Framebuffer::Bind(*shadowMap, layer);

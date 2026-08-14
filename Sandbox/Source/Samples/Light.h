@@ -25,7 +25,7 @@ struct LightSample: OD::Module {
     Ref<Model> lightModel;
     Transform lightTransform;
 
-    Framebuffer* framebuffer;
+    Ref<Framebuffer> framebuffer;
     Ref<Material> blitMat;
     Ref<Mesh> fullScreenQuad;
 

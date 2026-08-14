@@ -43,7 +43,7 @@ void ComputeShaderSample::OnInit(){
     spec.height = tex->Height();
     spec.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
     spec.createDepth = false;
-    framebuffer = CreateRef<Framebuffer>(spec);
+    framebuffer = ResourceManager::Get().Create<Framebuffer>(spec);
 
     mesh = CreateRef<Mesh>();// Mesh::CenterQuad(true);
     mesh->vertices.push_back(OD::Vector3(0.5f, 0.5f, 0));
@@ -67,7 +67,7 @@ void ComputeShaderSample::OnInit(){
 
     Graphics::BeginGPUTime();
     computeShader->SetTexture("inputTex", tex);
-    computeShader->SetTexture("outputTex", framebuffer.get(), 0);
+    computeShader->SetTexture("outputTex", framebuffer, 0);
     computeShader->SetUniformBuffer("BlurParams", buffer, 2);
     computeShader->Dispatch(framebuffer->Width() / 8, framebuffer->Height() / 8, 1);
     double ms = Graphics::EndGPUTime();
@@ -84,7 +84,7 @@ void ComputeShaderSample::OnInit(){
     computeBuffer->GetData(result, 1024);
     Assert(result[256] == 256*2);
 
-    mat->SetTexture("mainTex", framebuffer.get(), 0);
+    mat->SetTexture("mainTex", framebuffer, 0);
     //mat->SetVector4("color", {1, 0, 0, 1});
 }
 

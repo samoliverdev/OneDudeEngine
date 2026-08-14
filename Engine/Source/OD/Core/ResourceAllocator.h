@@ -12,6 +12,8 @@ template<typename T>
 class IResourceView {
 public:
     virtual T* Get(uint32_t id) = 0;
+    virtual void ForEach(std::function<void(T*)> func) = 0;
+
     virtual ~IResourceView() = default;
 };
 
@@ -65,10 +67,10 @@ public:
             index = chunk->curIndex++;
         }
 
-        chunk->used[index] = true;
-
         T* ptr = reinterpret_cast<T*>(chunk->data) + index;
         new(ptr) T(std::forward<Args>(args)...);
+
+        chunk->used[index] = true;
 
         uint32_t id = EncodeId(chunkIndex, index);
         ptr->resourceId = id;
@@ -133,8 +135,8 @@ public:
 
         T* ptr = reinterpret_cast<T*>(chunk.data) + index;
 
-        ptr->~T(); //printf("~T()\n");
         ptr->resourceId = INVALID_RESOURCE_ID;
+        ptr->~T(); //printf("~T()\n");
 
         chunk.used[index] = false;
         freeSlots.push_back({ chunkIndex, index });
@@ -146,7 +148,7 @@ public:
     // =========================
     // ITERATION
     // =========================
-    void ForEach(std::function<void(T*)> func){
+    void ForEach(std::function<void(T*)> func) override{
         for (size_t i = 0; i < chunks.size(); ++i) {
             Chunk& chunk = chunks[i];
             for (size_t j = 0; j < chunk.used.size(); ++j) {

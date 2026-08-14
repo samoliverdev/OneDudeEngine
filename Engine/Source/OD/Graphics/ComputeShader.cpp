@@ -42,8 +42,8 @@ void ComputeShader::SetTexture(const char* name, Ref<Texture2D> tex){
     graphicsDevice->ComputeShaderSetTexture(*this, name, tex);
 }
 
-void ComputeShader::SetTexture(const char* name, Framebuffer* tex, int attachment){
-    graphicsDevice->ComputeShaderSetTexture(*this, name, tex, attachment);
+void ComputeShader::SetTexture(const char* name, Ref<Framebuffer> tex, int attachment){
+    graphicsDevice->ComputeShaderSetTexture(*this, name, tex.get(), attachment);
 }
 
 void ComputeShader::SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind){

@@ -66,7 +66,7 @@ public:
         mainWorkspace.AddPanel(panel);
     }
 
-    inline Framebuffer* AssetPreviewFramebuffer(){ return assetPreviewFramebuffer; }
+    inline Ref<Framebuffer> AssetPreviewFramebuffer(){ return assetPreviewFramebuffer; }
 
     void SetModelAssetPreview(Ref<Model> model);
     void SetModelAssetPreview(const std::string& path);
@@ -135,7 +135,7 @@ private:
 
     Vector2 viewportSize;
     GizmosType gizmoType;
-    Framebuffer* framebuffer;
+    Ref<Framebuffer> framebuffer;
     std::string curScenePath;
     EditorCamera editorCam;
 
@@ -144,7 +144,7 @@ private:
     Ref<Scene> lastScene;
     Ref<Scene> assetPreviewScene;
     AssetPreviewCamera assetPrevieweCam;
-    Framebuffer* assetPreviewFramebuffer;
+    Ref<Framebuffer> assetPreviewFramebuffer;
     Entity assetPreviewEntity = EntityNull;
     Ref<Model> lastModelAssetPreview;
     Ref<Prefab> lastPrefabAssetPreview;

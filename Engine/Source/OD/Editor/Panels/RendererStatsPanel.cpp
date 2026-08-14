@@ -54,6 +54,26 @@ void RendererStatsPanel::OnGui() {
             ImGui::EndTabItem();
         }
 
+        if(ImGui::BeginTabItem("Test")){
+            auto* view = ResourceManager::Get().GetAllocatorView<Framebuffer>();
+
+            size_t total = 0;
+            view->ForEach([&](Framebuffer* f){
+                total += f->VRamUsage();
+                ImGui::Text("Framebuffer: %s, Size: %.2f MB", f->name.c_str(), f->VRamUsage() / (1024.0f * 1024.0f));
+                /*ImGui::Text(
+                    "%p  name='%s'  len=%zu",
+                    (void*)f,
+                    f->name.c_str(),
+                    f->name.size()
+                );*/
+            });
+            ImGui::Text("Framebuffer Total Size: %.2f MB",  total / (1024.0f * 1024.0f));
+
+            ImGui::EndTabItem();
+        }
+
+
         /*
         if(ImGui::BeginTabItem("Debug")){
             auto& debug = Graphics::GetGraphicsDebug(); // your global or frame debug
@@ -191,7 +211,7 @@ void RendererStatsPanel::OnGui() {
                                 currentShader = cmd.bindSubShader;
 
                                 std::string label = "Shader: ";
-                                label += currentShader ? currentShader->name.c_str() : "null",
+                                label += currentShader ? currentShader->name.c_str() : "null";
 
                                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
                                 ImGui::TreeNodeEx(

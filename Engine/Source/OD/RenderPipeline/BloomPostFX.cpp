@@ -49,10 +49,10 @@ void BloomFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 }
 
 void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
-    Framebuffer* deferred = context.GetDeferredFramebuffer();
+    Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
     auto spec = data.src->Specification();
 
-    auto Blit = [](Framebuffer* _src, Framebuffer* _dst, Ref<Material> blitMat, int pass = 0){
+    auto Blit = [](Ref<Framebuffer>& _src, Ref<Framebuffer>& _dst, Ref<Material> blitMat, int pass = 0){
         Graphics::BeginFramebuffer(*_dst, false);
         Graphics::SetViewport(0, 0, _dst->Specification().width, _dst->Specification().height);
         blitMat->SetPass(pass);
@@ -80,13 +80,13 @@ void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
     const int ApplyBloomPass = 3;
     const int DebugBloomPass = 4;
 
-    std::array<Framebuffer*, 16> textures;
-    std::vector<Framebuffer*> releaseTemporary;
+    std::array<Ref<Framebuffer>, 16> textures{};
+    //std::vector<Framebuffer*> releaseTemporary;
 
-    Framebuffer* currentDestination = textures[0] = new Framebuffer(spec);
+    Ref<Framebuffer> currentDestination = textures[0] = ResourceManager::Get().Create<Framebuffer>(spec);
     Blit(data.src, currentDestination, bloomMat, BoxDownPrefilterPass);
 
-    Framebuffer* currentSource = currentDestination;
+    Ref<Framebuffer> currentSource = currentDestination;
 
     int i = 1;
     for(; i < maxIterations; i++){
@@ -96,7 +96,7 @@ void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
             break;
         }
 
-        currentDestination = textures[i] = new Framebuffer(spec);
+        currentDestination = textures[i] = ResourceManager::Get().Create<Framebuffer>(spec);
         
         Blit(currentSource, currentDestination, bloomMat, BoxDownPass);
         //releaseTemporary.push_back(currentSource);
@@ -109,7 +109,7 @@ void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
         textures[i] = nullptr;
         
         Blit(currentSource, currentDestination, bloomMat, BoxUpPass);
-        releaseTemporary.push_back(currentSource);
+        //releaseTemporary.push_back(currentSource);
         
         currentSource = currentDestination;
     }
@@ -122,9 +122,9 @@ void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
         bloomMat->SetTexture("sourceTex", data.src, 0);
 	    Blit(currentSource, data.dst, bloomMat, ApplyBloomPass);
     }
-    releaseTemporary.push_back(currentSource);
+    //releaseTemporary.push_back(currentSource);
 
-    for(Framebuffer* cur: releaseTemporary) delete cur;
+    //for(Framebuffer* cur: releaseTemporary) delete cur;
 
     /*auto temp1 = new Framebuffer(halfSpec);
     auto temp2 = new Framebuffer(halfSpec);

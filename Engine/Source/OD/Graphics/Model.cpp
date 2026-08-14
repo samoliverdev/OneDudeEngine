@@ -82,7 +82,7 @@ void Model::OnGui(){
 
 	if(PathIsValid()){
 		auto* editor = Application::GetModuleByType<Editor>();
-		auto* framebuffer = editor->AssetPreviewFramebuffer();
+		Ref<Framebuffer> framebuffer = editor->AssetPreviewFramebuffer();
 		editor->SetModelAssetPreview(path);
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();

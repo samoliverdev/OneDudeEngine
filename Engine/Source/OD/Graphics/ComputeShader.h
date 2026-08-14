@@ -25,7 +25,7 @@ public:
     void Dispatch(uint32_t x, uint32_t y, uint32_t z);
 
     void SetTexture(const char* name, Ref<Texture2D> tex);
-    void SetTexture(const char* name, Framebuffer* tex, int attachment);
+    void SetTexture(const char* name, Ref<Framebuffer> tex, int attachment);
 
     void SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
     void SetComputeBuffer(const char* name, Ref<ComputeBuffer> buffer, int bind);

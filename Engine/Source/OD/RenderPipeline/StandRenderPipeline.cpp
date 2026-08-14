@@ -109,9 +109,9 @@ Shadows::Shadows(){
     specification.sample = Shadows::maxShadowedOtherLightCount;
     otherShadowAtlas = new Framebuffer(specification);*/
 
-    directionalShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
+    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
     directionalShadowAtlas->name = "directionalShadowAtlas";
-    otherShadowAtlas = new Framebuffer(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
+    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
     otherShadowAtlas->name = "otherShadowAtlas";
 
     shadowPass = ResourceManager::Get().Create<Material>("DefaultShadowMap");
@@ -119,8 +119,6 @@ Shadows::Shadows(){
 }
 
 Shadows::~Shadows(){
-    delete directionalShadowAtlas;
-    delete otherShadowAtlas;
 }
 
 void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera inCam){
@@ -607,7 +605,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     inpass.camera.height = inpass.camera.viewportRect.w * inpass.camera.height; 
 
     if(inpass.target == nullptr){
-        inpass.target = CreateRef<Framebuffer>(renderContext->GetFinalColor()->Specification());
+        inpass.target = ResourceManager::Get().Create<Framebuffer>(renderContext->GetFinalColor()->Specification());
     }
 
     // ----------- Setup ----------- 
@@ -702,7 +700,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
 
     shadows.Render();
     lighting.UpdateGlobalShaders();
-    renderContext->SetCustomFinalColor(pass.target.get(), pass.targetFace);
+    renderContext->SetCustomFinalColor(pass.target, pass.targetFace);
     RenderVisibleGeometryNew(environmentSettings);
 }
 
@@ -960,7 +958,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         #else
         context->EndDeferredPass();
 
-        Framebuffer* deferred = context->GetDeferredFramebuffer();
+        Ref<Framebuffer> deferred = context->GetDeferredFramebuffer();
 
         context->CleanSSS();
         if(environmentSettings.enableSSS && camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
@@ -1049,7 +1047,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         specification.type = FramebufferAttachmentType::CUBEMAP;
         specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
         specification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
-        environmentSettings.skyIrradianceMapF = CreateRef<Framebuffer>(specification);
+        environmentSettings.skyIrradianceMapF = ResourceManager::Get().Create<Framebuffer>(specification);
         //environmentSettings.skyIrradianceMapF->Invalidate();
 
         Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
@@ -1074,7 +1072,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         specification.type = FramebufferAttachmentType::CUBEMAP;
         specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
         specification.colorAttachments = {{FramebufferTextureFormat::RGB16F, true}};
-        environmentSettings.skyPrefilterMapF = CreateRef<Framebuffer>(specification);
+        environmentSettings.skyPrefilterMapF = ResourceManager::Get().Create<Framebuffer>(specification);
         //environmentSettings.skyIrradianceMapF->Invalidate();
 
         Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
@@ -1175,7 +1173,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         #else
         context->EndDeferredPass();
 
-        Framebuffer* deferred = context->GetDeferredFramebuffer();
+        Ref<Framebuffer> deferred = context->GetDeferredFramebuffer();
 
         context->CleanSSS();
         if(environmentSettings.enableSSS && camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
@@ -1676,7 +1674,7 @@ void StandRenderPipeline::OnEnd(Scene& scene){
     delete renderContext;
 }
 
-void StandRenderPipeline::SetOverrideFrameBuffer(Framebuffer* out){
+void StandRenderPipeline::SetOverrideFrameBuffer(Ref<Framebuffer> out){
     renderContext->overrideFramebuffer = out; 
 }
 
@@ -1685,7 +1683,7 @@ void StandRenderPipeline::SetOverrideCamera(Camera* cam, Transform trans){
     overrideCameraTrans = trans; 
 }
 
-Framebuffer* StandRenderPipeline::FinalColor(){
+Ref<Framebuffer> StandRenderPipeline::FinalColor(){
     return renderContext->GetFinalColor();
 }
 
@@ -1890,7 +1888,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             framebufferSpecification.depthAttachment = renderContext->GetFinalColor()->Specification().depthAttachment;
             framebufferSpecification.type = FramebufferAttachmentType::CUBEMAP; //TEXTURE_2D_MULTISAMPLE
             framebufferSpecification.sample = 1;
-            probe.framebuffer = CreateRef<Framebuffer>(framebufferSpecification);
+            probe.framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
         }
 
         if(probe.resolution > 0) probe.framebuffer->Resize(probe.resolution, probe.resolution);

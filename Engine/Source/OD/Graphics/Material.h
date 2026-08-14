@@ -29,6 +29,9 @@ struct OD_API MaterialMap{
     Ref<Cubemap> cubemap = nullptr;
     Ref<UniformBuffer> buffer = nullptr;
 
+    Ref<Framebuffer> framebuffer = nullptr;
+    int framebufferAttachment;
+
     struct Vec{
         Vector4 vector;
         bool vectorIsColor;
@@ -49,10 +52,10 @@ struct OD_API MaterialMap{
 
         int uniformBufferBind;
         
-        struct{
+        /*struct{
             Framebuffer* framebuffer;
             int framebufferAttachment;
-        };
+        };*/
         
         int valueInt;
 
@@ -131,7 +134,7 @@ public:
     void SetMatrix4(const char* name, Matrix4* value, int count);
     void SetTexture(const char* name, Ref<Texture2D> tex);
     void SetTexture(const char* name, Ref<Texture2DArray> tex);
-    void SetTexture(const char* name, Framebuffer* tex, int attachment);
+    void SetTexture(const char* name, Ref<Framebuffer> tex, int attachment);
     void SetCubemap(const char* name, Ref<Cubemap> tex);
     void SetUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 
@@ -148,7 +151,7 @@ public:
     static void SetGlobalMatrix4(const char* name, Matrix4 value);
     static void SetGlobalMatrix4(const char* name, Matrix4* value, int count);
     static void SetGlobalTexture(const char* name, Ref<Texture2D> tex);
-    static void SetGlobalTexture(const char* name, Framebuffer* tex, int attachment);
+    static void SetGlobalTexture(const char* name, Ref<Framebuffer> tex, int attachment);
     static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
     static void SetGlobalUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 

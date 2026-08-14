@@ -18,7 +18,7 @@ Prefab::~Prefab(){
 void Prefab::OnGui(){
     if(path.empty() == false || path != "Memory"){
 		auto* editor = Application::GetModuleByType<Editor>();
-		auto* framebuffer = editor->AssetPreviewFramebuffer();
+		Ref<Framebuffer> framebuffer = editor->AssetPreviewFramebuffer();
 		editor->SetPrefabAssetPreview(path);
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();

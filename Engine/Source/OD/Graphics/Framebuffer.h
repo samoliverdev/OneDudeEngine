@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
+#include "OD/Core/Resource.h"
 #include <vector>
 
 namespace sol{ class state; }
@@ -47,7 +48,7 @@ enum class OD_API_IMPORT FramebufferType{
     Dynamic
 };
 
-class OD_API Framebuffer{
+class OD_API Framebuffer: public Resource{
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
 public:

@@ -28,8 +28,8 @@ enum class RenderPassEvent{
 };
 
 struct OD_API RenderFrameData{
-    Framebuffer* src = nullptr; 
-    Framebuffer* dst = nullptr;
+    Ref<Framebuffer> src = nullptr; 
+    Ref<Framebuffer> dst = nullptr;
 };
 
 enum PassPriority{
