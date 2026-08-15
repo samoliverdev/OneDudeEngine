@@ -17,7 +17,7 @@ public:
 
     SSAOFeature();
     void AddRenderPasses(IRenderer& renderer, RenderContext& context) override;
-    void Execute(RenderContext& context, RenderFrameData& data) override;
+    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) override;
 
     void OnGui() override;
 

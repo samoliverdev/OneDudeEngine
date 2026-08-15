@@ -133,6 +133,8 @@ private:
 
     //bool isOnManipulationGizmos = false;
 
+    bool enableAssetPreview = false;
+
     Vector2 viewportSize;
     GizmosType gizmoType;
     Ref<Framebuffer> framebuffer;

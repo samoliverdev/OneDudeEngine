@@ -21,6 +21,7 @@ class UniformBuffer;
 class InstancingBuffer;
 class RendererFeature;
 class ComputeShader;
+class RenderContext;
 
 struct OD_API CameraRenderPass {
     Camera camera;
@@ -138,11 +139,43 @@ struct OD_API SSS_Settings{
     float shadowContrast = 4;
 };
 
-class OD_API RenderContext: public IRenderer{
+struct OD_API RendererFeatureContext: public IRenderer{
+    RendererFeatureContext();
+    virtual ~RendererFeatureContext();
+
+    template<typename T>
+    static void RegisterRenderFeature(){
+        _AddRenderFeatures().push_back([&](RendererFeatureContext& c){
+            c.localRenderFeatures.push_back(new T());
+        });
+    }
+
+    inline const std::vector<RendererFeature*>& RenderFeatures(){ return localRenderFeatures; }
+
+    inline void ClearRenderPasses(){
+        for(auto& i: renderPasses) i.clear();
+    }
+
+    inline void AddPass(RenderPass* pass) override {
+        renderPasses[(int)pass->event].push_back(pass);
+    }
+
+    void SetupFeatures(std::vector<RendererFeature*>& features);
+    void FeaturesRunAddRenderPasses(RenderContext& context);
+
+    inline std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count>& GetRenderPasses(){ return renderPasses; }
+
+    std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count> renderPasses;
+    static std::vector<std::function<void(RendererFeatureContext&)>>& _AddRenderFeatures();
+    std::vector<RendererFeature*> localRenderFeatures;
+    std::vector<RendererFeature*> cachedRenderFeatures;
+};
+
+class OD_API RenderContext{
 public:
     friend class CameraRenderer;
 
-    RenderContext(Scene* scene);
+    RenderContext();
     ~RenderContext();
     RenderContext(const RenderContext& other) = delete;
     RenderContext& operator=(const RenderContext& other) = delete;
@@ -159,10 +192,10 @@ public:
 
     //void SetupRenderers(const std::vector<DrawingTarget*>& targets, const std::vector<ShadowDrawingTarget*>& shadowTargets);
     void SetupCameraProperties(Camera cam);
-    void RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData);
-    void RenderDataLoop2(std::function<void(RenderData&)> onReciveRenderData);
+    void RenderDataLoop(Scene& scene, std::function<void(RenderData&)> onReciveRenderData);
+    void RenderDataLoop2(Scene& scene, std::function<void(RenderData&)> onReciveRenderData);
 
-    void UpdateRenderData();
+    void UpdateRenderData(Scene& scene, RendererFeatureContext& passCtx);
     void RenderDataLoopNew(std::function<void(RenderData&)> onReciveRenderData);
 
     template<typename Func>
@@ -213,12 +246,12 @@ public:
     
     void ScreenClean();
 
-    void RenderSkyboxLater();
+    void RenderSkyboxLater(Scene& scene);
     //void DrawRenderers(const std::vector<DrawingTarget*>& targets);
-    void DrawGizmos();
+    void DrawGizmos(Scene& scene);
     void DrawPostFXs(std::vector<PostFX*>& postFXs);
 
-    void DrawPostFXs(RenderFrameData& data, RenderPass* last = nullptr, RenderPassEvent pass = RenderPassEvent::PostProcess);
+    void DrawPostFXs(Scene& scene, RendererFeatureContext& passCtx, RenderFrameData& data, RenderPass* last = nullptr, RenderPassEvent pass = RenderPassEvent::PostProcess);
 
     void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
@@ -232,7 +265,7 @@ public:
 
     void CopyDeffered();
 
-    inline Scene* GetScene(){ return scene; }
+    //inline Scene* GetScene(){ return scene; }
     inline Ref<Framebuffer> GetFinalColor(){ return finalColor; }
     inline Camera GetCamera(){ return cam; }
 
@@ -256,36 +289,7 @@ public:
     inline Ref<Framebuffer> GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
     inline Ref<Framebuffer> GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
 
-    template<typename T>
-    static void RegisterRenderFeature(){
-        _AddRenderFeatures().push_back([&](RenderContext& r){
-            r.localRenderFeatures.push_back(new T());
-        });
-    }
-
-    inline const std::vector<RendererFeature*>& RenderFeatures(){ return localRenderFeatures; }
-
-    inline void ClearRenderPasses(){
-        for(auto& i: renderPasses) i.clear();
-    }
-
-    inline void AddPass(RenderPass* pass) override {
-        renderPasses[(int)pass->event].push_back(pass);
-    }
-
-    void SetupFeatures(std::vector<RendererFeature*>& features);
-    void FeaturesRunAddRenderPasses();
-
-    inline std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count>& GetRenderPasses(){ return renderPasses; }
-
 private:
-    std::array<std::vector<RenderPass*>, (int)RenderPassEvent::Count> renderPasses;
-
-    static std::vector<std::function<void(RenderContext&)>>& _AddRenderFeatures();
-    std::vector<RendererFeature*> localRenderFeatures;
-
-    std::vector<RendererFeature*> cachedRenderFeatures;
-
     Ref<Framebuffer> entityIdOutColor;
     Ref<Framebuffer> deferredOutColor;
     Ref<Framebuffer> deferredOutColorCopy;
@@ -317,7 +321,7 @@ private:
     Ref<Model> coneMesh;
     
     Camera cam;
-    Scene* scene;
+    //Scene* scene;
 
     ChunkedVector<RenderData> renderData;
 

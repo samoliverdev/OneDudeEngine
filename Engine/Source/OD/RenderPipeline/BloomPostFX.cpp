@@ -48,7 +48,7 @@ void BloomFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
     renderer.AddPass(this);
 }
 
-void BloomFeature::Execute(RenderContext& context, RenderFrameData& data){
+void BloomFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
     Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
     auto spec = data.src->Specification();
 

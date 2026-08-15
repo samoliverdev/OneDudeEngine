@@ -18,7 +18,7 @@ void ColorGradingFeature::AddRenderPasses(IRenderer& renderer, RenderContext& co
     renderer.AddPass(this);
 }
 
-void ColorGradingFeature::Execute(RenderContext& context, RenderFrameData& data){
+void ColorGradingFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
     colorGradingPass->SetVector4("_ColorAdjustments", Vector4(
         math::pow(2.0f, postExposure),
         contrast * 0.01f + 1.0f,

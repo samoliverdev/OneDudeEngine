@@ -41,7 +41,7 @@ void SSGIFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
     renderer.AddPass(this);
 }
 
-void SSGIFeature::Execute(RenderContext& context, RenderFrameData& data){
+void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
     if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;

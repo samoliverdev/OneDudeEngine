@@ -462,8 +462,8 @@ struct ParticleComponent{
 class ParticleRendererFeature: public RendererFeatureBase<ParticleRendererFeature>{
 public:
     ParticleRendererFeature();
-    void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData) override;
-    void OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data) override;
+    void OnCollectRenderData(Scene& scene, RenderContext& context, std::vector<RenderData>& outRenderData) override;
+    void OnCollectRenderData(Scene& scene, RenderContext& context, ChunkedVector<RenderData>& data) override;
 private:
     Ref<Material> material = nullptr;
     Ref<Model> mesh = nullptr;

@@ -45,8 +45,8 @@ public:
     int priority = PassPriorityDefault; 
 
     virtual ~RenderPass(){}
-    virtual void Setup(RenderContext& context){}
-    virtual void Execute(RenderContext& context, RenderFrameData& data) = 0;
+    virtual void Setup(Scene& scene, RenderContext& context){}
+    virtual void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) = 0;
 };
 
 class OD_API IRenderer{
@@ -63,7 +63,7 @@ public:
         passes.push_back(pass);
     }
 
-    void Execute(RenderContext& context, RenderFrameData& data){
+    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
         std::sort(
             passes.begin(), passes.end(),
             [](RenderPass* a, RenderPass* b){
@@ -72,8 +72,8 @@ public:
         );
 
         for(RenderPass* pass: passes){
-            pass->Setup(context);
-            pass->Execute(context, data);
+            pass->Setup(scene, context);
+            pass->Execute(scene, context, data);
         }
 
         passes.clear();
@@ -86,8 +86,8 @@ public:
 
     virtual ~RendererFeature(){}
     virtual void AddRenderPasses(IRenderer& renderer, RenderContext& context){}
-    virtual void OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){}
-    virtual void OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data){}
+    virtual void OnCollectRenderData(Scene& scene, RenderContext& context, std::vector<RenderData>& outRenderData){}
+    virtual void OnCollectRenderData(Scene& scene, RenderContext& context, ChunkedVector<RenderData>& data){}
     virtual void OnGui(){}
 
     virtual Type GetTypeId() const = 0;

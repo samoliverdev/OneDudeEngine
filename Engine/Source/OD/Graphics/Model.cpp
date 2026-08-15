@@ -83,12 +83,15 @@ void Model::OnGui(){
 	if(PathIsValid()){
 		auto* editor = Application::GetModuleByType<Editor>();
 		Ref<Framebuffer> framebuffer = editor->AssetPreviewFramebuffer();
-		editor->SetModelAssetPreview(path);
 
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		if(framebuffer != nullptr){
+			editor->SetModelAssetPreview(path);
 
-		float aspect = framebuffer->Width() / framebuffer->Height();
-		ImGui::Image(framebuffer->ColorAttachmentId(0), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+			float aspect = framebuffer->Width() / framebuffer->Height();
+			ImGui::Image(framebuffer->ColorAttachmentId(0), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+		}
 	} else {
 		ImGui::Text("Can not preview this model!!!");
 	}

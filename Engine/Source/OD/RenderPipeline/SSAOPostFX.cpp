@@ -64,7 +64,7 @@ void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
     renderer.AddPass(this);
 }
 
-void SSAOFeature::Execute(RenderContext& context, RenderFrameData& data){
+void SSAOFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
     if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;

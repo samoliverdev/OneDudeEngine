@@ -181,9 +181,6 @@ void Editor::OnInit(){
     //framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     framebuffer->Invalidate();
 
-    assetPreviewFramebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
-    assetPreviewFramebuffer->Invalidate();
-
     viewportSize.x = framebuffer->Width();
     viewportSize.y = framebuffer->Height();
 
@@ -214,27 +211,36 @@ void Editor::OnInit(){
         archive(cereal::make_nvp("Editor", *this));
     }
 
-    assetPreviewScene = CreateRef<Scene>();// new Scene();
-    BaseRenderPipeline* renderP = assetPreviewScene->GetSystemDynamic<BaseRenderPipeline>();
-    renderP->SetOverrideCamera(&assetPrevieweCam.cam, assetPrevieweCam.transform);
-    renderP->SetOverrideFrameBuffer(assetPreviewFramebuffer);
-    assetPreviewFramebuffer->Resize(400, 400);
+    if(enableAssetPreview){
+        assetPreviewFramebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+        assetPreviewFramebuffer->Invalidate();
 
-    assetPrevieweCam.transform.Position({0, 1, 5});
+        assetPreviewScene = CreateRef<Scene>();// new Scene();
+        BaseRenderPipeline* renderP = assetPreviewScene->GetSystemDynamic<BaseRenderPipeline>();
+        renderP->SetOverrideCamera(&assetPrevieweCam.cam, assetPrevieweCam.transform);
+        renderP->SetOverrideFrameBuffer(assetPreviewFramebuffer);
+        assetPreviewFramebuffer->Resize(400, 400);
 
-    assetPreviewEntity = assetPreviewScene->AddEntity("ModelPreview");
-    ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(assetPreviewEntity);
-    model.SetModel(ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj"));
+        assetPrevieweCam.transform.Position({0, 1, 5});
 
-    //OD::AlignToViewAABB(assetPrevieweCam.transform, model.GetAABB(), 45.0f, 16.0f/9.0f);
-    OD::AlignCameraToAABB_Isometric(
-        assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f
-    );
-    assetPrevieweCam.target = model.GetAABB().center;
-    assetPrevieweCam.OnStart();
+        assetPreviewScene->GetSystem<StandRenderPipeline>()->SetNewContext(CreateRef<RenderContext>());
+
+        assetPreviewEntity = assetPreviewScene->AddEntity("ModelPreview");
+        ModelRendererComponent& model = assetPreviewScene->AddComponent<ModelRendererComponent>(assetPreviewEntity);
+        model.SetModel(ResourceManager::Get().LoadByPath<Model>("Engine/Models/Cube.obj"));
+
+        //OD::AlignToViewAABB(assetPrevieweCam.transform, model.GetAABB(), 45.0f, 16.0f/9.0f);
+        OD::AlignCameraToAABB_Isometric(
+            assetPrevieweCam.transform, model.GetAABB(), 60.0f, 16.0f / 9.0f, 1.5f
+        );
+        assetPrevieweCam.target = model.GetAABB().center;
+        assetPrevieweCam.OnStart();
+    }
 }
 
 void Editor::SetModelAssetPreview(Ref<Model> m){
+    if(enableAssetPreview == false) return;
+
     if(lastModelAssetPreview != m){
         if(assetPreviewEntity != EntityNull) assetPreviewScene->DestroyEntity(assetPreviewEntity);
 
@@ -252,6 +258,8 @@ void Editor::SetModelAssetPreview(Ref<Model> m){
 }
 
 void Editor::SetModelAssetPreview(const std::string& path){
+    if(enableAssetPreview == false) return;
+
     auto m = ResourceManager::Get().LoadByPath<Model>(path);
 
     if(lastModelAssetPreview != m){
@@ -275,6 +283,8 @@ void Editor::SetPrefabAssetPreview(Ref<Prefab> prefab){
 }
 
 void Editor::SetPrefabAssetPreview(const std::string& path){
+    if(enableAssetPreview == false) return;
+
     Ref<Prefab> prefab = ResourceManager::Get().LoadByPath<Prefab>(path);
 
     if(lastPrefabAssetPreview != prefab){
@@ -404,16 +414,18 @@ void Editor::OnUpdate(float deltaTime){
 
     HandleShotcuts();
 
-    assetPrevieweCam.OnUpdate();
-    assetPrevieweCam.cam.type = Camera::Type::Preview;
-    assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
-    assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.Position();
-    assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetModelMatrix());
-    assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix(
-        assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view
-    );
-    assetPreviewScene->Update();
-    assetPreviewScene->Draw();
+    if(enableAssetPreview){
+        assetPrevieweCam.OnUpdate();
+        assetPrevieweCam.cam.type = Camera::Type::Preview;
+        assetPrevieweCam.cam.SetPerspective(45, 0.1f, 20000.0f, 400, 400);
+        assetPrevieweCam.cam.viewPos = assetPrevieweCam.transform.Position();
+        assetPrevieweCam.cam.view = math::inverse(assetPrevieweCam.transform.GetModelMatrix());
+        assetPrevieweCam.cam.frustum = CreateFrustumFromMatrix(
+            assetPrevieweCam.cam.projection * assetPrevieweCam.cam.view
+        );
+        assetPreviewScene->Update();
+        assetPreviewScene->Draw();
+    }
 }
 
 void Editor::OnRender(float deltaTime){

@@ -66,7 +66,7 @@ public:
         gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
     }
 
-    void Execute(RenderContext& context, RenderFrameData& data) override{
+    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) override{
         //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
 
         Graphics::BeginFramebuffer(*data.dst);
@@ -133,6 +133,9 @@ struct OD_API RenderStagePasses{
 class OD_API Shadows{
     friend class Lighting;
 public:
+    Scene* scene;
+    RendererFeatureContext* passCtx;
+
     Shadows();
     ~Shadows();
 
@@ -210,6 +213,9 @@ private:
 class OD_API Lighting{
     friend class CameraRenderer;
 public:
+    Scene* scene;
+    RendererFeatureContext* passCtx;
+
     void Setup(RenderContext* context, Shadows* shadow, ShadowSettings shadowSettings, EnvironmentSettings inEnvironmentSettings);
 	void SetupDirectionalLight();
     void UpdateGlobalShaders();
@@ -254,6 +260,9 @@ private:
 
 class OD_API CameraRenderer{
 public:
+    Scene* scene;
+    RendererFeatureContext* passCtx;
+
     Camera camera;
     CameraRenderPass pass;
     //RenderStagePasses* renderStagePasses;
@@ -317,6 +326,11 @@ private:
     std::vector<PostFX*> GetPostFXs(EnvironmentSettings& environmentSettings);
 };
 
+class OD_API StandRenderPipelineGlobalData: public System{
+public:
+    Ref<RenderContext> context = CreateRef<RenderContext>();
+};
+
 class OD_API StandRenderPipeline: public BaseRenderPipeline{
 public:
     StandRenderPipeline(){ name = "StandRenderPipeline"; }
@@ -354,11 +368,14 @@ public:
         localFeatures.push_back(f);
     }
 
+    inline void SetNewContext(Ref<RenderContext> ctx){ renderContext = ctx; }
+
 private:
     ShadowSettings shadow;
 
-    RenderContext* renderContext;
+    Ref<RenderContext> renderContext = nullptr;
     CameraRenderer cameraRenderer;
+    RendererFeatureContext passCtx;
     //EnvironmentSettings environmentSettings;
 
     EnvironmentSettings defaultEnvironmentSettings;

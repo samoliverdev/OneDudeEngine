@@ -50,7 +50,7 @@ struct VRAMTracker{
     size_t shadersBytes = 0;     // very rough
 
     void Add(size_t bytes, Category category = Category::Other){
-        Assert(bytes < 1000_MB);
+        //Assert(bytes < 1000_MB);
 
         totalAllocatedBytes += bytes;
         if(category == Category::Texture){
@@ -3645,6 +3645,7 @@ bool OpenGLGraphicsDevice::FramebufferCreate(Framebuffer& fb){
         fb.specification.sample = 1;
     }
     if(fb.type == FramebufferType::Shadowmap){
+        fb.specification.colorAttachments.clear();
         fb.specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
         fb.specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
     }

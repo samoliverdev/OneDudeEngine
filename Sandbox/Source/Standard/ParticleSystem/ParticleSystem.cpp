@@ -808,11 +808,11 @@ ParticleRendererFeature::ParticleRendererFeature(){
     mesh = Resource::CreateFromFile<Model>("Engine/Models/Cube.obj", ModelLoadSettings{nullptr, 1, false}); //Model::CreateFromFile("Engine/Models/Cube.obj", {nullptr, 1, false});
 }
 
-void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, std::vector<RenderData>& outRenderData){
-    Scene* scene = context.GetScene();
+void ParticleRendererFeature::OnCollectRenderData(Scene& scene, RenderContext& context, std::vector<RenderData>& outRenderData){
+    //Scene* scene = context.GetScene();
     auto cam = context.GetCamera();
 
-    auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
+    auto view = scene.GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
         auto modelMatrix = trans.GlobalModelMatrix();
         auto pos = trans.PositionReadSafe();// .Position();
@@ -893,12 +893,12 @@ void tf_for_each4(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
     }
 }
 
-void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, ChunkedVector<RenderData>& data){
-    Scene* scene = context.GetScene();
+void ParticleRendererFeature::OnCollectRenderData(Scene& scene, RenderContext& context, ChunkedVector<RenderData>& data){
+    //Scene* scene = context.GetScene();
     auto cam = context.GetCamera();
 
-    auto view = scene->GetRegistry().view<TransformComponent, ParticleComponent>();
-    tf_for_each4(scene->GetTaskflow(), view.begin(), view.end(), data.chunk_count(), [&](auto e, int taskIndex){
+    auto view = scene.GetRegistry().view<TransformComponent, ParticleComponent>();
+    tf_for_each4(scene.GetTaskflow(), view.begin(), view.end(), data.chunk_count(), [&](auto e, int taskIndex){
         auto [trans, particle] = view.get<TransformComponent, ParticleComponent>(e);
 
         for(int i = 0; i < particle.particleSystem.emiters.size(); i++){
@@ -923,7 +923,7 @@ void ParticleRendererFeature::OnCollectRenderData(RenderContext& context, Chunke
         }
     });
 
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
 }
 
 void ParticleComponent::OnGui(Entity e, Scene& scene){

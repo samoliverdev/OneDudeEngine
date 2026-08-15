@@ -57,11 +57,11 @@ public:
 
     }
 
-    void Setup(RenderContext& context) override {
+    void Setup(Scene& scene, RenderContext& context) override {
 
     }
 
-    void Execute(RenderContext& context, RenderFrameData& data) override {
+    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) override {
 
     }
 };
@@ -90,6 +90,8 @@ void StandRenderPipelineModuleInit(){
     SceneManager::Get().RegisterSystem<StandRenderPipeline>("StandRenderPipeline");
     //SceneManager::Get().AddGlobalSystem<StandRenderPipeline>();
 
+    SceneManager::Get().AddGlobalSystem<StandRenderPipelineGlobalData>();
+
     LuaBindsDB::Get().RegisterLuaBind<CameraComponent>();
     LuaBindsDB::Get().RegisterLuaBind<LightComponent>();
 
@@ -98,21 +100,25 @@ void StandRenderPipelineModuleInit(){
 
 #pragma region Shadows
 Shadows::Shadows(){
-    /*FrameBufferSpecification specification;
+    FrameBufferSpecification specification = {};
     specification.width = 1024 * 1;
     specification.height = 1024 * 1;
     specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+
     specification.sample = Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades;
-    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT};
-    directionalShadowAtlas = new Framebuffer(specification);
+    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    directionalShadowAtlas->name = "directionalShadowAtlas";
 
     specification.sample = Shadows::maxShadowedOtherLightCount;
-    otherShadowAtlas = new Framebuffer(specification);*/
+    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    otherShadowAtlas->name = "otherShadowAtlas";
 
-    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
+
+    /*directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
     directionalShadowAtlas->name = "directionalShadowAtlas";
     otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedOtherLightCount);
-    otherShadowAtlas->name = "otherShadowAtlas";
+    otherShadowAtlas->name = "otherShadowAtlas";*/
 
     shadowPass = ResourceManager::Get().Create<Material>("DefaultShadowMap");
     shadowPass->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ShadowMap.glsl"));
@@ -156,7 +162,7 @@ void Shadows::AddRunComputeRenderList(){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
             index += 1;
 
-            context->GetScene()->GetTaskflow().emplace([&, index](){
+            scene->GetTaskflow().emplace([&, index](){
                 context->RunComputeRenderListShadow(
                     {shadowDirectionalLightsSplits[index].frustum, true}, 
                     s,
@@ -171,7 +177,7 @@ void Shadows::AddRunComputeRenderList(){
     for(int i = 0; i < shadowedOtherLightCount; i++){
         index += 1;
 
-        context->GetScene()->GetTaskflow().emplace([&, index](){
+        scene->GetTaskflow().emplace([&, index](){
             context->RunComputeRenderListShadow(
                 {shadowOtherLightsSplits[index].frustum, true}, 
                 s,
@@ -436,7 +442,7 @@ void Lighting::Setup(RenderContext* inContext, Shadows* inShadows, ShadowSetting
 }
 
 void Lighting::SetupDirectionalLight(){
-    auto lightView = context->GetScene()->GetRegistry().view<LightComponent, TransformComponent>();
+    auto lightView = scene->GetRegistry().view<LightComponent, TransformComponent>();
     
     curDirLightsCount = 0;
     curOtherLightsCount = 0;
@@ -616,12 +622,12 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     context = renderContext;
     context->isDeferred = renderingPath == RenderingPath::Deferred;
 
-    context->ClearRenderPasses();
-    context->FeaturesRunAddRenderPasses();
-    if(inpass.settings.drawPostProcessing == false) context->GetRenderPasses()[(int)RenderPassEvent::PostProcessBeforeForward].clear();
-    if(inpass.settings.drawPostProcessing == false) context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].clear();
-    if(inpass.settings.drawUI == false) context->GetRenderPasses()[(int)RenderPassEvent::UI].clear();
-    context->GetRenderPasses()[(int)RenderPassEvent::PostProcess].push_back(&gamaCorrectionPass);
+    passCtx->ClearRenderPasses();
+    passCtx->FeaturesRunAddRenderPasses(*context);
+    if(inpass.settings.drawPostProcessing == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcessBeforeForward].clear();
+    if(inpass.settings.drawPostProcessing == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcess].clear();
+    if(inpass.settings.drawUI == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::UI].clear();
+    passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcess].push_back(&gamaCorrectionPass);
 
     shadows.Setup(context, shadowSettings, camera);
     lighting.Setup(context, &shadows, shadowSettings, environmentSettings);
@@ -811,7 +817,7 @@ void CameraRenderer::RunRenderDataLoop(){
         if(data.HasFlag(RenderData::Flag::RenderShadow) == true) shadows.AddRenderData(data); 
     });*/
 
-    context->UpdateRenderData();
+    context->UpdateRenderData(*scene, *passCtx);
     context->RenderDataLoopNew([&](RenderData& data){
         AddRenderData(data); 
         //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
@@ -936,9 +942,9 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         //context->DrawRenderersBuffer(blendDrawTarget, true);
-        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater(*scene);
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        context->DrawGizmos();  
+        context->DrawGizmos(*scene);  
         
         context->EndForwardPass();
     } else {
@@ -994,7 +1000,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         //TODO: Make this work later, current the blit or post shader depth write/test setting is bug something 
         context->EndForwardPass();
         RenderFrameData data;
-        context->DrawPostFXs(data, nullptr, RenderPassEvent::PostProcessBeforeForward);
+        context->DrawPostFXs(*scene, *passCtx, data, nullptr, RenderPassEvent::PostProcessBeforeForward);
         
         context->DeferredCopyToForwardPass();
 
@@ -1002,11 +1008,11 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         context->BeginForwardPass(false);
 
         context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
-        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater(*scene);
 
         context->DrawRenderersBuffer(blendDrawTarget, true);
         Draw3DText();
-        if(pass.settings.drawGizmos) context->DrawGizmos(); 
+        if(pass.settings.drawGizmos) context->DrawGizmos(*scene); 
         context->EndForwardPass();
     }
 
@@ -1018,7 +1024,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     context->DrawPostFXs(postFXs);*/
     
     RenderFrameData data;
-    context->DrawPostFXs(data);
+    context->DrawPostFXs(*scene, *passCtx, data);
 
     context->BeginUIPass();
     if(pass.settings.drawUI){
@@ -1027,8 +1033,8 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
             i->OnRender(*context->scene, camera);
         }*/
         RenderFrameData data;
-        for(auto& i: context->GetRenderPasses()[(int)RenderPassEvent::UI]){
-            i->Execute(*context, data);
+        for(auto& i: passCtx->GetRenderPasses()[(int)RenderPassEvent::UI]){
+            i->Execute(*scene, *context, data);
         }
     }
     context->EndUIPass();
@@ -1154,9 +1160,9 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         //context->DrawRenderersBuffer(blendDrawTarget, true);
-        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater(*scene);
         context->DrawRenderersBuffer(blendDrawTarget, true);
-        context->DrawGizmos();  
+        context->DrawGizmos(*scene);  
         
         context->EndForwardPass();
     } else {
@@ -1223,10 +1229,10 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);
 
         //context->RenderSkyboxLater();
-        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater();
+        if(environmentSettings.environmentSky != EnvironmentSky::None) context->RenderSkyboxLater(*scene);
         context->DrawRenderersBuffer(blendDrawTarget, true);
         Draw3DText();
-        context->DrawGizmos(); 
+        context->DrawGizmos(*scene); 
         context->EndForwardPass();
     }
 
@@ -1303,7 +1309,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     std::vector<PostFX*> postFXs = GetPostFXs(environmentSettings);
     context->DrawPostFXs(postFXs);
     RenderFrameData data;
-    context->DrawPostFXs(data);
+    context->DrawPostFXs(*scene, *passCtx, data);
 
     //context->DrawGizmos();
     //for(System* s: context->GetScene()->GetStandSystems()) s->OnRender();
@@ -1315,8 +1321,8 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         i->OnRender(*context->scene, camera);
     }*/
     //RenderFrameData data;
-    for(auto& i: context->GetRenderPasses()[(int)RenderPassEvent::UI]){
-        i->Execute(*context, data);
+    for(auto& i: passCtx->GetRenderPasses()[(int)RenderPassEvent::UI]){
+        i->Execute(*scene, *context, data);
     }
     context->EndUIPass();
 
@@ -1348,7 +1354,7 @@ void CameraRenderer::RenderSprites(){
 }
 
 void CameraRenderer::Draw3DText(){
-    for(auto [entity, text, trans]: context->GetScene()->GetRegistry().view<Text3DRendererComponent, TransformComponent>().each()){
+    for(auto [entity, text, trans]: scene->GetRegistry().view<Text3DRendererComponent, TransformComponent>().each()){
         Ref<Font> _font = text.font ? text.font : font;
         Ref<Material> _mat = text.material ? text.material : fontMaterial;
         Matrix4 textModel = trans.GlobalModelMatrix();
@@ -1465,7 +1471,7 @@ void CameraRenderer::RenderUI(){
     uiCamera.height = camera.height;
     Graphics::SetCamera(uiCamera);
 
-    RecalculateUI(*context->GetScene(), uiCamera);
+    RecalculateUI(*scene, uiCamera);
 
     /*auto view = context->GetScene()->GetRegistry().view<RectTransformComponent, UIImageComponent, TransformComponent>();
     for(auto entity : view){
@@ -1477,11 +1483,11 @@ void CameraRenderer::RenderUI(){
         Graphics::DrawMesh(*spriteMesh, *spriteMaterial, model);
     }*/
 
-    auto canvasView = context->GetScene()->GetRegistry().view<CanvasComponent, TransformComponent>(entt::exclude<SelfDisable>);
+    auto canvasView = scene->GetRegistry().view<CanvasComponent, TransformComponent>(entt::exclude<SelfDisable>);
     for(auto canvasEntity : canvasView){
-        auto& transform = context->GetScene()->GetComponent<TransformComponent>(canvasEntity);
+        auto& transform = scene->GetComponent<TransformComponent>(canvasEntity);
         for(Entity child : transform.Children()){
-            RenderUIRecursive(*context->GetScene(), child, spriteMesh, spriteMaterial, font, fontMaterial);
+            RenderUIRecursive(*scene, child, spriteMesh, spriteMaterial, font, fontMaterial);
         }
     }
 
@@ -1667,11 +1673,22 @@ void CameraRenderer::RenderEntityIds(Camera cam, RenderContext* renderContext){
 
 #pragma region StandRenderPipeline
 void StandRenderPipeline::OnInit(Scene& scene){
-    renderContext = new RenderContext(&scene);
+    auto* globalData = SceneManager::Get().GetGlobalSystem<StandRenderPipelineGlobalData>();
+
+    renderContext = globalData->context;// CreateRef<RenderContext>();
+
+    cameraRenderer.scene = &scene;
+    cameraRenderer.passCtx = &passCtx;
+
+    cameraRenderer.GetShadows().scene = &scene;
+    cameraRenderer.GetShadows().passCtx = &passCtx;
+
+    cameraRenderer.GetLighting().scene = &scene;
+    cameraRenderer.GetLighting().passCtx = &passCtx;
 }
 
 void StandRenderPipeline::OnEnd(Scene& scene){
-    delete renderContext;
+    //delete renderContext;
 }
 
 void StandRenderPipeline::SetOverrideFrameBuffer(Ref<Framebuffer> out){
@@ -1689,7 +1706,7 @@ Ref<Framebuffer> StandRenderPipeline::FinalColor(){
 
 int StandRenderPipeline::ReadEntityId(int x, int y){
     if(overrideCamera != nullptr){
-        cameraRenderer.RenderEntityIds(*overrideCamera, renderContext);
+        cameraRenderer.RenderEntityIds(*overrideCamera, renderContext.get());
     }
 
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
@@ -1825,7 +1842,7 @@ void StandRenderPipeline::SetupFeatures(EnvironmentComponent& env){
         cachedFeatures.push_back(i);
     }
 
-    renderContext->SetupFeatures(cachedFeatures);
+    passCtx.SetupFeatures(cachedFeatures);
 }
 
 void StandRenderPipeline::RenderNew(Scene& scene){
@@ -1843,7 +1860,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         break;
     }
 
-    renderContext->UpdateRenderData();
+    renderContext->UpdateRenderData(scene, passCtx);
 
     //----------Scene Render-------------
     renderContext->Begin();
@@ -1969,7 +1986,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     });
 
     for(auto& pass: camPasses){
-        cameraRenderer.RenderPassNew(pass, renderContext, shadow, *environmentSettings);
+        cameraRenderer.RenderPassNew(pass, renderContext.get(), shadow, *environmentSettings);
     }
 
     //cameraRenderer.RenderComposeNew(camPasses);
@@ -2074,7 +2091,7 @@ void StandRenderPipeline::Render(Scene& scene){
 
         cameraRenderer.Render(
             *overrideCamera, 
-            renderContext, shadow, 
+            renderContext.get(), shadow, 
             *environmentSettings,
             targetRenderPath
         );
@@ -2096,7 +2113,7 @@ void StandRenderPipeline::Render(Scene& scene){
             //LogInfo("Width: %d Height: %d", renderContext->GetFinalColor()->Width(), renderContext->GetFinalColor()->Height());
             cameraRenderer.Render(
                 cam.GetCamera(), 
-                renderContext, 
+                renderContext.get(), 
                 shadow, 
                 *environmentSettings, 
                 cam.renderingPath

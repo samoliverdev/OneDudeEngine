@@ -22,7 +22,7 @@ void ModuleInit(){
     SceneManager::Get().RegisterComponent<HeightmapGenerator>("Standard/HeightmapGenerator", "Standard");
     SceneManager::Get().RegisterSystem<StandardAssetSystem>("Standard/StandardAssetSystem");
 
-    RenderContext::RegisterRenderFeature<ParticleRendererFeature>();
+    RendererFeatureContext::RegisterRenderFeature<ParticleRendererFeature>();
     SceneManager::Get().RegisterComponent<ParticleComponent>("Standard/ParticleComponent", "Standard");
     SceneManager::Get().RegisterSystem<ParticleManageSystem>("Standard/ParticleManageSystem");
 

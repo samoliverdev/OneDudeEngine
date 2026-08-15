@@ -30,14 +30,19 @@ namespace OD{
 
 RenderContextSettings settings;
 
-std::vector<std::function<void(RenderContext&)>> addRenderFeatures;
+std::vector<std::function<void(RendererFeatureContext&)>> addRenderFeatures;
 
-std::vector<std::function<void(RenderContext&)>>& RenderContext::_AddRenderFeatures(){
+std::vector<std::function<void(RendererFeatureContext&)>>& RendererFeatureContext::_AddRenderFeatures(){
     return addRenderFeatures;
 }
 
 RenderContextSettings& RenderContext::GetSettings(){
     return settings;
+}
+
+RendererFeatureContext::~RendererFeatureContext(){
+    for(auto& i: localRenderFeatures) delete i;
+    localRenderFeatures.clear();
 }
 
 struct alignas(16) DispatchParametersGPU{
@@ -122,9 +127,13 @@ inline void SetPerInstanceData(Matrix4& matrix, Vector4& data){
     matrix[3][3] = data.w;
 }
 
-RenderContext::RenderContext(Scene* inScene){
-    scene = inScene;
+RendererFeatureContext::RendererFeatureContext(){
+    for(auto& i: addRenderFeatures){
+        i(*this);
+    }
+}
 
+RenderContext::RenderContext(){
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
 
     framebufferSpecification.colorAttachments = {
@@ -210,10 +219,6 @@ RenderContext::RenderContext(Scene* inScene){
     //meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent>();
     //meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent>();
 
-    for(auto& i: addRenderFeatures){
-        i(*this);
-    }
-
     renderData = ChunkedVector<RenderData>(std::thread::hardware_concurrency());// 4);
 
     //for(auto& i: RendererFeatureGlobal::Get().GetNewRendererFeatureFuncs()){
@@ -235,8 +240,7 @@ RenderContext::RenderContext(Scene* inScene){
 }
 
 RenderContext::~RenderContext(){
-    for(auto& i: localRenderFeatures) delete i;
-    localRenderFeatures.clear();
+    
 
     //for(auto& i: rendererFeatures) delete i;
     //rendererFeatures.clear();
@@ -777,8 +781,8 @@ void RenderContext::DrawPostFXs(std::vector<PostFX*>& postFXs){
     Graphics::EndFramebuffer();*/
 }
 
-void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderPassEvent pass){
-    std::vector<RenderPass*>& passes = renderPasses[(int)pass];
+void RenderContext::DrawPostFXs(Scene& scene, RendererFeatureContext& passCtx, RenderFrameData& data, RenderPass* last, RenderPassEvent pass){
+    std::vector<RenderPass*>& passes = passCtx.renderPasses[(int)pass];
     //Graphics::SetDepthMask(false);
 
     step = false;
@@ -792,7 +796,7 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
         if(true /*i->enable*/){
             data.src = step == false ? postFx1 : postFx2;
             data.dst = step == false ? postFx2 : postFx1;
-            i->Execute(*this, data);
+            i->Execute(scene, *this, data);
             /*i->OnRenderImage(
                 step == false ? postFx1 : postFx2, 
                 step == false ? postFx2 : postFx1,
@@ -817,7 +821,7 @@ void RenderContext::DrawPostFXs(RenderFrameData& data, RenderPass* last, RenderP
         finalFramebuffer = step == false ? postFx2 : postFx1;
         data.src = step == false ? postFx1 : postFx2;
         data.dst = step == false ? postFx2 : postFx1;
-        last->Execute(*this, data);
+        last->Execute(scene, *this, data);
     }
 
     Graphics::BlitFramebuffer(finalFramebuffer.get(), forwardOutColor.get());
@@ -1142,7 +1146,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
     }*/
 }
 
-void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRenderData){
+void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&)> onReciveRenderData){
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
     //{
@@ -1238,7 +1242,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //////////////////////////////////////////////////////////
 
-    auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
+    auto staticRendererClusterView = scene.GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
@@ -1290,7 +1294,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
-    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+    auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshView){
@@ -1328,7 +1332,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshRenderView){
@@ -1376,7 +1380,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
-    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto skinnedMeshView = scene.GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         const auto& info = skinnedMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1414,7 +1418,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 
     //{
     //OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto skinnedView = scene.GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         const auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1497,7 +1501,7 @@ void RenderContext::RenderDataLoop2(std::function<void(RenderData&)> onReciveRen
 }
 
 //Deprecated
-void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRenderData){
+void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)> onReciveRenderData){
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop");
 
     /*{
@@ -1514,7 +1518,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::-1");
-    auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
+    auto staticRendererClusterView = scene.GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
@@ -1594,7 +1598,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::0");
-    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto staticMeshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: staticMeshView){
         auto& info = staticMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1644,7 +1648,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::1");
-    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto meshStaticRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: meshStaticRenderView){
         auto& info = meshStaticRenderView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1709,7 +1713,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::2");
-    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+    auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshView){
@@ -1752,7 +1756,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::3");
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto e: meshRenderView){
@@ -1811,7 +1815,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::4");
-    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto skinnedMeshView = scene.GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto e: skinnedMeshView){
         auto& info = skinnedMeshView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1859,7 +1863,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::5");
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto skinnedView = scene.GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto [e, c, t, info]: skinnedView.each()){
         //auto& info = skinnedView.get<InfoComponent>(e);
         if(info.enable == false) continue;
@@ -1939,7 +1943,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::6");
-    auto spriteView = GetScene()->GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto spriteView = scene.GetRegistry().view<TransformComponent, SpriteRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto entity: spriteView){
         auto& info = spriteView.get<InfoComponent>(entity);
         if(info.enable == false) continue;
@@ -1971,7 +1975,7 @@ void RenderContext::RenderDataLoop(std::function<void(RenderData&)> onReciveRend
 
     {
     OD_PROFILE_SCOPE("RenderContext::RenderDataLoop::Decal");
-    auto decalView = scene->GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
+    auto decalView = scene.GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto [entity, decal, trans, info]: decalView.each()){
@@ -2377,7 +2381,7 @@ inline void FillDecalRenderData(RenderContext& ctx, RenderData& data, DecalRende
 }
 /////////////////////////////////////////
 
-void RenderContext::UpdateRenderData(){
+void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passCtx){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData");
 
     for(int i = 0; i < renderData.chunk_count(); i++){
@@ -2385,13 +2389,13 @@ void RenderContext::UpdateRenderData(){
         renderData[i].clear();
     }
 
-    auto& taskflow = scene->GetTaskflow();
+    auto& taskflow = scene.GetTaskflow();
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::OnCollectRenderData");
     std::vector<RenderData>& outRenderData = renderData[0];  
-    for(auto& i: cachedRenderFeatures){
-        i->OnCollectRenderData(*this, outRenderData);
+    for(auto& i: passCtx.cachedRenderFeatures){
+        i->OnCollectRenderData(scene, *this, outRenderData);
     }
     }
 
@@ -2404,25 +2408,25 @@ void RenderContext::UpdateRenderData(){
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::Mesh");
-    auto meshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
+    auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), meshView.begin(), meshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each3(scene.GetTaskflow(), meshView.begin(), meshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshView.get<MeshRendererComponent,TransformComponent,InfoComponent>(e);
         if(!info.enable || !c.mesh || !c.material) return;
 
         RenderData& data = renderData.GetNew(taskIndex);
         FillMeshRenderData(*this, data, c, t, info, e);
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::Model");
-    auto meshRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
+    auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each3(scene.GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshRenderView.get<ModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return;
 
@@ -2439,26 +2443,26 @@ void RenderContext::UpdateRenderData(){
             FillModelRenderData(*this, data, c, t, info, e, model.get(), target);
         }
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedMesh");
-    auto skinnedMeshView = GetScene()->GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    auto skinnedMeshView = scene.GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    tf_for_each3(scene.GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedMeshView.get<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
         RenderData& data = renderData.GetNew(taskIndex);
         FillSkinnedMeshRenderData(*this, data, c, t, info, e);
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedModel");
-    auto skinnedView = GetScene()->GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), skinnedView.begin(), skinnedView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    auto skinnedView = scene.GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    tf_for_each3(scene.GetTaskflow(), skinnedView.begin(), skinnedView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedView.get<SkinnedModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
@@ -2477,9 +2481,9 @@ void RenderContext::UpdateRenderData(){
             FillSkinnedModelRenderData(*this, data, c, t, info, e, model.get(), target);
         }
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
 
-    auto skinnedView2 = GetScene()->GetRegistry().view<SkinnedModelRendererComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    auto skinnedView2 = scene.GetRegistry().view<SkinnedModelRendererComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
     for(auto [entity, skinned]: skinnedView2.each()){
         if(skinned.useSkinnedData == false) continue;
         UpdateSkinnedData(skinned);
@@ -2494,24 +2498,24 @@ void RenderContext::UpdateRenderData(){
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::Decal");
-    auto decalView = scene->GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
+    auto decalView = scene.GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene->GetTaskflow(), decalView.begin(), decalView.end(), renderData.chunk_count(), [&](auto entity, int taskIndex){
+    tf_for_each3(scene.GetTaskflow(), decalView.begin(), decalView.end(), renderData.chunk_count(), [&](auto entity, int taskIndex){
         auto [decal, trans, info] = decalView.get<DecalRendererComponent, TransformComponent, InfoComponent>(entity);
 
         RenderData& data = renderData.GetNew(taskIndex);
         FillDecalRenderData(*this, data, decal, info, trans, decalMesh.get(), entity);
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     ///////////////////////////////////////////////
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticMesh");
-    auto staticMeshView = scene->GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    auto staticMeshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    tf_for_each3(scene.GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = staticMeshView.get<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
@@ -2525,13 +2529,13 @@ void RenderContext::UpdateRenderData(){
         RenderData& data = renderData.GetNew(taskIndex);
         FillStaticMeshRenderData(*this, data, s, c, t, info, e);
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticModel");
-    auto meshStaticRenderView = scene->GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene->GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    auto meshStaticRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
+    tf_for_each3(scene.GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = meshStaticRenderView.get<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
@@ -2558,7 +2562,7 @@ void RenderContext::UpdateRenderData(){
             _i += 1;
         }
     });
-    scene->RunAllTaskAndSync();
+    scene.RunAllTaskAndSync();
     }
 
     /////////////////////////////////////////////
@@ -2566,7 +2570,7 @@ void RenderContext::UpdateRenderData(){
     {
     //TODO: Update this to use FillxxxRenderData function
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticRendererCluster");
-    auto staticRendererClusterView = scene->GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
+    auto staticRendererClusterView = scene.GetRegistry().view<StaticRendererClusterComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
@@ -2653,7 +2657,7 @@ void RenderContext::RenderDataLoopNew(std::function<void(RenderData&)> onReciveR
     }
 }
 
-void RenderContext::SetupFeatures(std::vector<RendererFeature*>& features){
+void RendererFeatureContext::SetupFeatures(std::vector<RendererFeature*>& features){
     cachedRenderFeatures.clear();
     
     for(auto i: localRenderFeatures){
@@ -2666,9 +2670,9 @@ void RenderContext::SetupFeatures(std::vector<RendererFeature*>& features){
     }
 }
 
-void RenderContext::FeaturesRunAddRenderPasses(){    
+void RendererFeatureContext::FeaturesRunAddRenderPasses(RenderContext& context){    
     for(auto i: cachedRenderFeatures){
-        i->AddRenderPasses(*this, *this);
+        i->AddRenderPasses(*this, context);
     }
     for(auto& i: renderPasses){
         std::stable_sort(i.begin(), i.end(), [](RenderPass* a, RenderPass* b){
@@ -2797,7 +2801,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     } 
 }
 
-void RenderContext::RenderSkyboxLater(){
+void RenderContext::RenderSkyboxLater(Scene& scene){
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     if(skyMaterial == nullptr) return;
     
@@ -2821,7 +2825,7 @@ void RenderContext::RenderSkyboxLater(){
     Vector3 lightDir = {1, 1, 1};
     Vector4 lightColor = {1, 1, 1, 1};
 
-    auto view = scene->GetRegistry().view<TransformComponent, LightComponent>();
+    auto view = scene.GetRegistry().view<TransformComponent, LightComponent>();
     for(auto [entity, trans, light]: view.each()){
         if(light.type != LightComponent::Type::Directional) continue;
         lightDir = trans.Forward();
@@ -2885,7 +2889,7 @@ void RenderContext::DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bo
 
 //void _DrawFrustum(Frustum frustum, Matrix4 model, Vector3 color);
 
-void RenderContext::DrawGizmos(){
+void RenderContext::DrawGizmos(Scene& scene){
     OD_PROFILE_SCOPE("RenderContext::DrawGizmos"); 
 
     if(SceneManager::Get().GetActiveScene() == nullptr) return;
@@ -2904,7 +2908,7 @@ void RenderContext::DrawGizmos(){
     for(System* s: scene->GetStandSystems()) s->OnDrawGizmos(cm);
     for(System* s: scene->GetLateSystems()) s->OnDrawGizmos(cm);
     for(System* s: scene->GetRendererSystems()) s->OnDrawGizmos(cm);*/
-    for(auto& s: scene->GetSystems()) s.second->OnDrawGizmos(*scene, cm);
+    for(auto& s: scene.GetSystems()) s.second->OnDrawGizmos(scene, cm);
 
     Editor* editor = Application::GetModuleByType<Editor>();
     if(editor != nullptr){
@@ -2917,14 +2921,14 @@ void RenderContext::DrawGizmos(){
         //}
 
         for(auto& i: editor->GetSelectedEntities()){
-            if(scene->IsValid(i) == false) continue;
-            for(auto& s: scene->GetSystems()) s.second->OnDrawGizmosSelected(*scene, cm, i);
+            if(scene.IsValid(i) == false) continue;
+            for(auto& s: scene.GetSystems()) s.second->OnDrawGizmosSelected(scene, cm, i);
         }
     }
 
     //_DrawFrustum(cm.frustum, Matrix4Identity, Vector3(1,0,0));
 
-    auto cameraView = scene->GetRegistry().view<CameraComponent, TransformComponent>();
+    auto cameraView = scene.GetRegistry().view<CameraComponent, TransformComponent>();
     for(auto e: cameraView){
         auto& c = cameraView.get<CameraComponent>(e);
         auto& t = cameraView.get<TransformComponent>(e);

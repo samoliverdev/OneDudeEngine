@@ -21,7 +21,7 @@ void ToneMappingFeature::AddRenderPasses(IRenderer& renderer, RenderContext& con
     renderer.AddPass(this);
 }
 
-void ToneMappingFeature::Execute(RenderContext& context, RenderFrameData& data){
+void ToneMappingFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
     Ref<Material> pass = copyPass;
     if(mode == Mode::Neutral) pass = toneMappingNeutralPass;
     if(mode == Mode::Reinhard) pass = toneMappingReinhardPass;
