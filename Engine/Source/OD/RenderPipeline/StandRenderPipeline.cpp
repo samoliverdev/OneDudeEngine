@@ -100,7 +100,7 @@ void StandRenderPipelineModuleInit(){
 
 #pragma region Shadows
 Shadows::Shadows(){
-    FrameBufferSpecification specification = {};
+    /*FrameBufferSpecification specification = {};
     specification.width = 1024 * 1;
     specification.height = 1024 * 1;
     specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
@@ -112,7 +112,7 @@ Shadows::Shadows(){
 
     specification.sample = Shadows::maxShadowedOtherLightCount;
     otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
-    otherShadowAtlas->name = "otherShadowAtlas";
+    otherShadowAtlas->name = "otherShadowAtlas";*/
 
 
     /*directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Shadowmap, 1024 * 1, 1024 * 1, Shadows::maxShadowedDirectionalLightCount * Shadows::maxCascades);
@@ -141,8 +141,8 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
     
     shadowedDirectionalLightCount = 0; 
     shadowedOtherLightCount = 0;
-    directionalShadowAtlas->Resize((int)settings.directional.altasSize, (int)settings.directional.altasSize);
-    otherShadowAtlas->Resize((int)settings.other.altasSize, (int)settings.other.altasSize);
+    context->GetDirectionalShadowAtlas()->Resize((int)settings.directional.altasSize, (int)settings.directional.altasSize);
+    context->GetOtherShadowAtlas()->Resize((int)settings.other.altasSize, (int)settings.other.altasSize);
 
     for(auto& i: shadowDirectionalLightsBuffers){
         i.Clean();
@@ -283,7 +283,7 @@ void Shadows::RenderDirectionalShadows(){
     index = 0;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
         for(int j = 0; j < settings.directional.cascadeCount; j++){
-            context->BeginDrawShadow(directionalShadowAtlas, index);
+            context->BeginDrawShadow(*context->GetDirectionalShadowAtlas(), index);
             context->DrawShadows(shadowDirectionalLightsBuffers[index], shadowDirectionalLightsSplits[index], shadowPass);
             context->EndDrawShadow();
 
@@ -294,9 +294,9 @@ void Shadows::RenderDirectionalShadows(){
     //Material::SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
     //Material::SetGlobalMatrix4(dirShadowMatricesId, dirShadowMatrices, maxShadowedDirectionalLightCount * maxCascades); //FIXME: Revise this 8 propety calculate shadowData size
     //Material::SetGlobalFloat(cascadeCullingSpheresId, cascadeCullingSpheres, settings.directional.cascadeCount); //FIXME: Revise this 8 propety calculate shadowData size
-    Material::SetGlobalTexture(dirShadowAtlasId, directionalShadowAtlas, -1);
+    Material::SetGlobalTexture(dirShadowAtlasId, context->GetDirectionalShadowAtlas(), -1);
     context->pipelineData._CascadeCount = settings.directional.cascadeCount;
-    std::memcpy(context->pipelineData._DirectionalShadowMatrices, dirShadowMatrices, (maxShadowedDirectionalLightCount * maxCascades) * sizeof(Matrix4)); //FIXME: Revise this 8 propety calculate shadowData size
+    std::memcpy(context->pipelineData._DirectionalShadowMatrices, dirShadowMatrices, (MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT) * sizeof(Matrix4)); //FIXME: Revise this 8 propety calculate shadowData size
     for(int i = 0; i < settings.directional.cascadeCount; i++){
         context->pipelineData._CascadeCullingSpheres[i] = Vector4(cascadeCullingSpheres[i]);//FIXME: Revise this 8 propety calculate shadowData size
     };
@@ -325,13 +325,13 @@ void Shadows::RenderOtherShadows(){
         }
     }
 
-    Material::SetGlobalTexture(otherShadowAltasId, otherShadowAtlas, -1);
-    std::memcpy(context->pipelineData._OtherShadowMatrices, otherShadowMatrices, Shadows::maxShadowedOtherLightCount * sizeof(Matrix4));
+    Material::SetGlobalTexture(otherShadowAltasId, context->GetOtherShadowAtlas(), -1);
+    std::memcpy(context->pipelineData._OtherShadowMatrices, otherShadowMatrices, MAX_SHADOWED_OTHER_LIGHT_COUNT * sizeof(Matrix4));
 }
 
 void Shadows::RenderSpotShadows(int index, int split, int tileSize){
     ShadowedOtherLight light = shadowedOtherLights[index];
-    context->BeginDrawShadow(otherShadowAtlas, index);
+    context->BeginDrawShadow(*context->GetOtherShadowAtlas(), index);
     context->DrawShadows(shadowOtherLightsBuffers[index], shadowOtherLightsSplits[index], shadowPass);
     context->EndDrawShadow();
 }
@@ -340,14 +340,14 @@ void Shadows::RenderPointShadows(int index, int split, int tileSize){
     ShadowedOtherLight light = shadowedOtherLights[index];
     
     for(int i = 0; i < 6; i++){
-        context->BeginDrawShadow(otherShadowAtlas, index+i);
+        context->BeginDrawShadow(*context->GetOtherShadowAtlas(), index+i);
         context->DrawShadows(shadowOtherLightsBuffers[index+i], shadowOtherLightsSplits[index+i], shadowPass);
         context->EndDrawShadow();
     }
 }
 
 Vector2 Shadows::ReserveDirectionalShadows(LightComponent light, Transform trans){
-    if(shadowedDirectionalLightCount < maxShadowedDirectionalLightCount && light.renderShadow){
+    if(shadowedDirectionalLightCount < MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT && light.renderShadow){
         ShadowSplitData::SetupCascade(
             &shadowDirectionalLightsSplits[shadowedDirectionalLightCount*settings.directional.cascadeCount],
             settings.directional.cascadeCount, 
@@ -368,7 +368,7 @@ Vector4 Shadows::ReserveOtherShadows(LightComponent light, Transform trans){
     bool isPoint = light.type == LightComponent::Type::Point;
     int newLightCount = shadowedOtherLightCount + (isPoint ? 6 : 1);
     
-    if(newLightCount > maxShadowedOtherLightCount || light.renderShadow == false){
+    if(newLightCount > MAX_SHADOWED_OTHER_LIGHT_COUNT || light.renderShadow == false){
         return Vector4Zero; 
         //return Vector4(-1, 0, 0, 0);
     }
@@ -612,6 +612,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
 
     if(inpass.target == nullptr){
         inpass.target = ResourceManager::Get().Create<Framebuffer>(renderContext->GetFinalColor()->Specification());
+        inpass.target->name = "CameraRenderPass";
     }
 
     // ----------- Setup ----------- 
@@ -1906,6 +1907,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             framebufferSpecification.type = FramebufferAttachmentType::CUBEMAP; //TEXTURE_2D_MULTISAMPLE
             framebufferSpecification.sample = 1;
             probe.framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+            probe.framebuffer->name = "Probe";
         }
 
         if(probe.resolution > 0) probe.framebuffer->Resize(probe.resolution, probe.resolution);

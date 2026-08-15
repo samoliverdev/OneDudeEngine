@@ -147,8 +147,8 @@ public:
     Vector2 ReserveDirectionalShadows(LightComponent light, Transform trans);
     Vector4 ReserveOtherShadows(LightComponent light, Transform trans);
     
-    inline Ref<Framebuffer> GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
-    inline Ref<Framebuffer> GetOtherShadowAtlas(){ return otherShadowAtlas; };
+    //inline Ref<Framebuffer> GetDirectionalShadowAtlas(){ return directionalShadowAtlas; };
+    //inline Ref<Framebuffer> GetOtherShadowAtlas(){ return otherShadowAtlas; };
 
     void DrawCascadeFrustums();
 
@@ -167,22 +167,21 @@ private:
     Camera cam;
     ShadowDrawingSettings drawSettings;
 
-    inline static const int maxShadowedDirectionalLightCount = 1; //2;
-    inline static const int maxShadowedOtherLightCount = 6*3;
-    inline static const int maxCascades = 4;
+    //inline static const int maxShadowedDirectionalLightCount = 1; //2;
+    //inline static const int maxShadowedOtherLightCount = 6*3;
+    //inline static const int maxCascades = 4;
     
     int shadowedDirectionalLightCount;
     int shadowedOtherLightCount;
 
-    Ref<Framebuffer> directionalShadowAtlas;
-    Ref<Framebuffer> otherShadowAtlas;
+    
     Ref<Material> shadowPass;
 
-    RendererList shadowDirectionalLightsBuffers[maxShadowedDirectionalLightCount * maxCascades];
-    ShadowSplitData shadowDirectionalLightsSplits[maxShadowedDirectionalLightCount * maxCascades];
+    RendererList shadowDirectionalLightsBuffers[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+    ShadowSplitData shadowDirectionalLightsSplits[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
 
-    RendererList shadowOtherLightsBuffers[maxShadowedOtherLightCount];
-    ShadowSplitData shadowOtherLightsSplits[maxShadowedOtherLightCount];
+    RendererList shadowOtherLightsBuffers[MAX_SHADOWED_OTHER_LIGHT_COUNT];
+    ShadowSplitData shadowOtherLightsSplits[MAX_SHADOWED_OTHER_LIGHT_COUNT];
 
     inline static const char* dirShadowAtlasId = "_DirectionalShadowAtlas";
     inline static const char* dirShadowMatricesId = "_DirectionalShadowMatrices";
@@ -192,13 +191,13 @@ private:
     inline static const char* shadowAtlasSizeId = "_ShadowAtlasSize";
     inline static const char* shadowDistanceFadeId = "_ShadowDistanceFade";
 
-	inline static Matrix4 dirShadowMatrices[maxShadowedDirectionalLightCount * maxCascades];
-    inline static float cascadeCullingSpheres[maxCascades];
+	inline static Matrix4 dirShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+    inline static float cascadeCullingSpheres[MAX_CASCADE_COUNT];
 
     inline static const char* otherShadowAltasId = "_OtherShadowAtlas";
     inline static const char* otherShadowMatricesId = "_OtherShadowMatrices";
 
-    inline static Matrix4 otherShadowMatrices[maxShadowedOtherLightCount];
+    inline static Matrix4 otherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
 
     struct ShadowedOtherLight{
         int visibleLightIndex;
@@ -207,7 +206,7 @@ private:
         bool isPoint;
     };
 
-    inline static ShadowedOtherLight shadowedOtherLights[maxShadowedOtherLightCount]; 
+    inline static ShadowedOtherLight shadowedOtherLights[MAX_SHADOWED_OTHER_LIGHT_COUNT]; 
 };
 
 class OD_API Lighting{

@@ -192,7 +192,7 @@
             "localPosition": {
                 "v.x": -5.000000953,
                 "v.y": 5.0,
-                "v.z": -9.536734069115482e-7
+                "v.z": -9.536738616588991e-7
             },
             "localRotation": {
                 "q.x": 0.0,
@@ -444,7 +444,7 @@
                     "bias": 0.025
                 },
                 "ssgi": {
-                    "enable": true,
+                    "enable": false,
                     "sampleRadius": 12.0,
                     "hitThickness": 1.0,
                     "sampleCount": 4.0,

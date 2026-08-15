@@ -178,6 +178,7 @@ void Editor::OnInit(){
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
     framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+    framebuffer->name = "Editor";
     //framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     framebuffer->Invalidate();
 
@@ -213,6 +214,7 @@ void Editor::OnInit(){
 
     if(enableAssetPreview){
         assetPreviewFramebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+        assetPreviewFramebuffer->name = "assetPreviewFramebuffer";
         assetPreviewFramebuffer->Invalidate();
 
         assetPreviewScene = CreateRef<Scene>();// new Scene();

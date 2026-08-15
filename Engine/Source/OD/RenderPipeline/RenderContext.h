@@ -84,9 +84,10 @@ struct OD_API RenderContextSettings{
     bool enableWireframe = false;
 };
 
+//INFO: Need sync with UniformsDef.glsl
 #define MAX_DIRECTIONAL_LIGHT_COUNT 4
 #define MAX_OTHER_LIGHT_COUNT 16
-#define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
+#define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 1
 #define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
 
@@ -257,8 +258,8 @@ public:
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
     void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
 
-    void CleanShadow(Ref<Framebuffer>& shadowMap, int layer = 0);
-    void BeginDrawShadow(Ref<Framebuffer>& shadowMap, int layer = 0);
+    void CleanShadow(Framebuffer& shadowMap, int layer = 0);
+    void BeginDrawShadow(Framebuffer& shadowMap, int layer = 0);
     void EndDrawShadow();
     void AddDrawShadow(RenderData& renderData, ShadowDrawingSettings& settings, RendererList& target);
     void DrawShadows(RendererList& targets, ShadowSplitData& splitData, Ref<Material>& shadowPass);
@@ -289,6 +290,9 @@ public:
     inline Ref<Framebuffer> GetPostFXSrc(){ return step == false ? postFx1 : postFx2; }
     inline Ref<Framebuffer> GetPostFXDest(){ return step == false ? postFx2 : postFx1; }
 
+    inline Ref<Framebuffer>& GetDirectionalShadowAtlas(){ return directionalShadowAtlas; }
+    inline Ref<Framebuffer>& GetOtherShadowAtlas(){ return otherShadowAtlas; }
+
 private:
     Ref<Framebuffer> entityIdOutColor;
     Ref<Framebuffer> deferredOutColor;
@@ -297,6 +301,9 @@ private:
     Ref<Framebuffer> finalColor;
     Ref<Framebuffer> postFx1;
     Ref<Framebuffer> postFx2;
+
+    Ref<Framebuffer> directionalShadowAtlas;
+    Ref<Framebuffer> otherShadowAtlas;
 
     Ref<Framebuffer> customFinalColor;
     int customFinalColorIndex;

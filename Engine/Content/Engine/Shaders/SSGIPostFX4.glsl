@@ -366,8 +366,8 @@ vec4 ComputeSSGI(vec2 uv){
     //float2 pixel = floor(uv * _ScreenParams.xy);
 
     //float noiseOffset = fract(0.25 * mod(pixel.y - pixel.x, 4.0)); // spatial offset (GTAO style)
-    //float noiseOffset = SpatialOffset(pixel);
-    float noiseOffset = Bayer4x4(pixel);
+    float noiseOffset = SpatialOffset(pixel);
+    //float noiseOffset = Bayer4x4(pixel);
 
     float noiseDirection = InterleavedGradientNoise(pixel); // interleaved gradient noise
     //float noiseDirection = Bayer8x8(pixel); //Bayer4x4(pixel);

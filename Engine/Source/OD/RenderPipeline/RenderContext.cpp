@@ -142,6 +142,7 @@ RenderContext::RenderContext(){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
+    framebufferSpecification.createDepth = false;
     entityIdOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     entityIdOutColor->name = "entityIdOutColor";
 
@@ -153,6 +154,7 @@ RenderContext::RenderContext(){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
+    framebufferSpecification.createDepth = true;
     forwardOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     forwardOutColor->name = "forwardOutColor";
     //forwardOutColor = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
@@ -169,6 +171,7 @@ RenderContext::RenderContext(){
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
+    framebufferSpecification.createDepth = true;
     deferredOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     deferredOutColor->name = "deferredOutColor";
     //deferredOutColor->ColorAttachmentId(3);
@@ -180,7 +183,7 @@ RenderContext::RenderContext(){
 
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification.colorAttachments = {
-        {FramebufferTextureFormat::RGBA16F} //{FramebufferTextureFormat::RGB11B10F}
+        {FramebufferTextureFormat::RGB11B10F} //{FramebufferTextureFormat::RGB11B10F}
         //{FramebufferTextureFormat::RGBA8}
     };
     framebufferSpecification.createDepth = false;
@@ -230,13 +233,29 @@ RenderContext::RenderContext(){
     screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
 
     FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
-    framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} };
+    framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} }; //TODO: Optimaze this size
     framebufferSpecification2.createDepth = false;
     framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
     framebufferSpecification2.sample = 1;
     screenSpaceShadowOutput = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification2);
+    screenSpaceShadowOutput->name = "screenSpaceShadowOutput";
 
     screenSpaceShadow2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
+
+    FrameBufferSpecification specification = {};
+    specification.width = 1024 * 1;
+    specification.height = 1024 * 1;
+    specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    specification.createDepth = true;
+
+    specification.sample = MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
+    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    directionalShadowAtlas->name = "directionalShadowAtlas";
+
+    specification.sample = MAX_SHADOWED_OTHER_LIGHT_COUNT;
+    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    otherShadowAtlas->name = "otherShadowAtlas";
 }
 
 RenderContext::~RenderContext(){
@@ -3034,22 +3053,19 @@ void RenderContext::DrawGizmos(Scene& scene){
     }*/
 }
 
-void RenderContext::CleanShadow(Ref<Framebuffer>& shadowMap, int layer){
-    Assert(shadowMap != nullptr);
+void RenderContext::CleanShadow(Framebuffer& shadowMap, int layer){
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, true, Vector4(0, 0, 0, 1), layer);
-    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::BeginFramebuffer(shadowMap, true, Vector4(0, 0, 0, 1), layer);
+    Graphics::SetViewport(0, 0, shadowMap.Width(), shadowMap.Height());
     Graphics::Clean(1, 1, 1, 1);
     //Framebuffer::Unbind();
     Graphics::EndFramebuffer();
 }
 
-void RenderContext::BeginDrawShadow(Ref<Framebuffer>& shadowMap, int layer){
-    Assert(shadowMap != nullptr);
-
+void RenderContext::BeginDrawShadow(Framebuffer& shadowMap, int layer){
     //Framebuffer::Bind(*shadowMap, layer);
-    Graphics::BeginFramebuffer(*shadowMap, true, Vector4(0, 0, 0, 1), layer);
-    Graphics::SetViewport(0, 0, shadowMap->Width(), shadowMap->Height());
+    Graphics::BeginFramebuffer(shadowMap, true, Vector4(0, 0, 0, 1), layer);
+    Graphics::SetViewport(0, 0, shadowMap.Width(), shadowMap.Height());
     Graphics::Clean(1, 1, 1, 1);
 }
 
