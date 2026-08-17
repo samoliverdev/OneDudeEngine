@@ -11,6 +11,7 @@
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
 #include "OD/Graphics/Gizmos.h"
+#include "OD/Graphics/Ultis.h"
 #include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
@@ -690,6 +691,8 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
             if(pass.collectSettings.collectParticle == false && data.HasFlag(RenderData::Flag::IsParticle) == true) return; 
             if(pass.collectSettings.collectDecal == false && data.HasFlag(RenderData::Flag::IsDecal) == true) return;*/ 
 
+            if((pass.cullingMask & LayerToMask(data.layer)) == 0) return;
+
             const uint32_t f = data.flags;
             // static/dynamic special case
             const bool isStatic = (f & RenderData::Flag::IsStatic) != 0;
@@ -923,6 +926,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
         Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+        if(environmentSettings.skyPrefilterMapF != nullptr) Material::SetGlobalTexture("_PrefilterMap", environmentSettings.skyPrefilterMapF, 0);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         context->pipelineData._AmbientLight = Vector4Zero;
         context->pipelineData._SkyLightIntensity = environmentSettings.skyLightIntensity;
@@ -1131,6 +1135,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
         Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
+        if(environmentSettings.skyPrefilterMapF != nullptr) Material::SetGlobalTexture("_PrefilterMap", environmentSettings.skyPrefilterMapF, 0);
         Material::SetGlobalTexture("_BrdfLUT", brdfLUT);
         context->pipelineData._AmbientLight = Vector4Zero;
         context->pipelineData._SkyLightIntensity = environmentSettings.skyLightIntensity;
@@ -1899,11 +1904,16 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         probeCam.fov = Mathf::Deg2Rad(90);
         probeCam.projection = glm::perspective(glm::radians(90.0f), 1.0f, probeCam.nearClip, probeCam.farClip);
         //probeCam.view = math::inverse(trans.GlobalModelMatrix());
+
+        bool isDirt = false;
+        if(probe.framebuffer != nullptr && probe.genMipmap != probe.framebuffer->Specification().colorAttachments[0].genMip){
+            isDirt = true;
+        }
   
-        if(probe.framebuffer == nullptr){
+        if(probe.framebuffer == nullptr || isDirt){
             FrameBufferSpecification framebufferSpecification = {probe.resolution, probe.resolution};
-            framebufferSpecification.colorAttachments = renderContext->GetFinalColor()->Specification().colorAttachments;
-            framebufferSpecification.depthAttachment = renderContext->GetFinalColor()->Specification().depthAttachment;
+            framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGBA16F, probe.genMipmap, CalculateMipCount(probe.resolution, probe.resolution)}}; //renderContext->GetFinalColor()->Specification().colorAttachments;
+            framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16}; //renderContext->GetFinalColor()->Specification().depthAttachment;
             framebufferSpecification.type = FramebufferAttachmentType::CUBEMAP; //TEXTURE_2D_MULTISAMPLE
             framebufferSpecification.sample = 1;
             probe.framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
@@ -1928,7 +1938,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             pass.settings = probe.drawSettings;
             pass.renderingPath = probe.renderingPath;
             pass.collectSettings = probe.collectSettings;
-            //pass.cullingMask = probe.cullingMask;
+            pass.cullingMask = probe.cullingMask.mask;
 
             //cameraRenderer.RenderPass(pass, renderContext, shadow, *environmentSettings);
             camPasses.push_back(pass);
@@ -1957,6 +1967,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
         pass.camera = *overrideCamera;
         pass.renderingPath = targetRenderPath;
         pass.settings = {true, true, true, true};
+        pass.cullingMask = AllLayersMask;
         camPasses.push_back(pass);
     } else {
         auto camView = scene.GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>(entt::exclude<SelfDisable>);
@@ -1979,6 +1990,7 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             pass.renderingPath = cam.renderingPath;
             pass.settings = cam.passRenderSettings;
             pass.collectSettings = cam.collectSettings;
+            pass.cullingMask = AllLayersMask;
             camPasses.push_back(pass);
         }
     }
@@ -1989,6 +2001,12 @@ void StandRenderPipeline::RenderNew(Scene& scene){
 
     for(auto& pass: camPasses){
         cameraRenderer.RenderPassNew(pass, renderContext.get(), shadow, *environmentSettings);
+    }
+
+    for(auto entity : envProbeView){
+        //if(scene.Running() == false) continue;
+        auto& probe = envProbeView.get<EnvironmentProbeComponent>(entity);
+        if(probe.genMipmap) probe.framebuffer->GenMipmap();
     }
 
     //cameraRenderer.RenderComposeNew(camPasses);

@@ -39,6 +39,7 @@ struct OD_API alignas(16) RenderData{
     Mesh* targetMesh;
     float distance;
     uint32_t flags = Flag::RenderShadow | Flag::IsValid;//  0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
+    int layer = 0;
     /*bool awalsDraw = false;
     bool renderShadow = true;
     bool isDecal = false;

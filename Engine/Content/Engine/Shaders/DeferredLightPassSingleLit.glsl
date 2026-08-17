@@ -19,7 +19,6 @@ EndUniform()
 #include Engine/ShaderLibrary/TexturesDef.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
     Uniform int lightIndex;
 EndUniform()
 
@@ -93,15 +92,15 @@ Texture2D(0, 10, sss, sssSampler)
         surface.viewDirection = normalize(viewPos - FragPos);
         surface.depth = -(view * vec4(FragPos, 1.0)).z;
         surface.color = Albedo.rgb;
-        surface.alpha = AO;
-        surface.occlusion = 1.0;
+        surface.alpha = 1.0;
+        surface.occlusion = AO;
         surface.metallic = Metallic;
         surface.smoothness = Specular;
         surface.roughness = clamp(1.0 - surface.smoothness, 0.05, 1);
 
-        surface.clearCoat = 0; //1;
-        surface.clearCoatRoughness = 0; //0.05;
-        surface.clearCoatIOR = 1;
+        surface.clearCoat = texture(gNormal, texCoord).b * dot(surface.normal, vec3(0, 1, 0)); //1;
+        surface.clearCoatRoughness = 0.75; //0.05; //0.05;
+        surface.clearCoatIOR = 1.5;
 
         //FragColor = vec4(FragPos, 1.0);
         //return;
@@ -125,13 +124,13 @@ Texture2D(0, 10, sss, sssSampler)
 
 		    color += IncomingLight3(surface, light);
             color += Emission; //TODO: Review this later to check if is right
-            FragColor = vec4(color, surface.alpha);
+            FragColor = vec4(color, 1); //surface.alpha);
         #endif
 
         #if defined(INDIRECT)
 	        vec3 color = AmbientLight3(surface);
             color += Emission; //TODO: Review this later to check if is right
-            FragColor = vec4(color, surface.alpha);
+            FragColor = vec4(color, 1); //surface.alpha);
         #endif
 
         #if defined(DIRECTIONAL)
@@ -141,7 +140,7 @@ Texture2D(0, 10, sss, sssSampler)
 
 		    vec3 color = IncomingLight3(surface, light);
             //color += Emission; //TODO: Review this later to check if is right
-            FragColor = vec4(color, surface.alpha);
+            FragColor = vec4(color, 1); //surface.alpha);
         #endif
     }
 #endif

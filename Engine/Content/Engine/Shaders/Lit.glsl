@@ -11,6 +11,7 @@
     Float occlusion 1 0 1
     Float metallic 0 0 1
     Float smoothness 0.5 0.0 1.0
+    Float clearCoat 0.0 0.0 1.0
     Float cutoff 0.5 0 1
 #pragma EndProperties
 
@@ -40,6 +41,7 @@ BeginUniform(0, 0, Main)
     Uniform float occlusion;
     Uniform float metallic;
     Uniform float smoothness;
+    Uniform float clearCoat;
     Uniform float cutoff;
 EndUniform()
 
@@ -196,11 +198,12 @@ uniform int perDrawInt_1;
         surface.metallic = GetMetallic(uv);
         surface.smoothness = GetSmoothness(uv);
         surface.roughness = clamp(1.0 - smoothness, 0.05, 1);
+        surface.clearCoat = clearCoat;
 
         #ifdef Deferred
         
         //gPosition = surface.position;
-        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);
+        gNormal = vec3(pack_normal_octahedron(surface.normal), surface.clearCoat);
         gAlbedoSpec = vec4(surface.color.rgb, 1);
         gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perInstanceDataOut.w); //perDrawInt_1);
         gEmission = GetEmission(uv);

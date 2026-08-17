@@ -308,6 +308,7 @@ vec3 AmbientLight3(Surface surfaceWS){
     vec3 coatR = reflect(-V, N);
     float coatMip = surfaceWS.clearCoatRoughness * MAX_REFLECTION_LOD;
     vec3 coatPrefilter = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, coatR, coatMip).rgb * _SkyLightIntensity;
+    coatPrefilter *= 2.5;
     vec3 coatF = ClearCoatFresnel(max(dot(N,V),0.0), surfaceWS.clearCoatIOR);
     vec3 clearCoatSpec = coatPrefilter * coatF * surfaceWS.clearCoat;
 

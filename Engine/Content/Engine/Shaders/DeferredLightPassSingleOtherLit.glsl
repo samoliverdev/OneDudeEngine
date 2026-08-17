@@ -12,7 +12,6 @@
 #include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
-    Uniform vec3 viewPos;
     Uniform int lightIndex;
     Uniform float screenWidth; 
     Uniform float screenHeight;
@@ -58,16 +57,23 @@ Texture2D(0, 10, sss, sssSampler)
         float Metallic = texture(gOther, screenUV).g;
         float AO = texture(gOther, screenUV).b;
 
+        vec3 viewPos = invView[3].xyz;
+
         Surface surface;
         surface.position = FragPos;
         surface.normal = Normal;
         surface.viewDirection = normalize(viewPos - FragPos);
         surface.depth = -(view * vec4(FragPos, 1.0)).z;
         surface.color = Albedo.rgb;
-        surface.alpha = AO;
-        surface.occlusion = 1.0;
+        surface.alpha = 1;
+        surface.occlusion = AO;
         surface.metallic = Metallic;
         surface.smoothness = Specular;
+        surface.roughness = clamp(1.0 - surface.smoothness, 0.05, 1);
+
+        surface.clearCoat = texture(gNormal, screenUV).b * dot(surface.normal, vec3(0, 1, 0)); //1;
+        surface.clearCoatRoughness = 0.05; //0.05;
+        surface.clearCoatIOR = 1.5;
 
         //BRDF brdf = GetBRDF(surface);
         //GI gi = GetGI(surface, brdf);
@@ -78,9 +84,10 @@ Texture2D(0, 10, sss, sssSampler)
         float sss = texture(sss, screenUV).r;
         //light.attenuation = min(light.attenuation, sss);
         
-        vec3 color = IncomingLight(surface, light);
+        vec3 color = IncomingLight3(surface, light);
         //color += Emission;
-        FragColor = vec4(color, surface.alpha);
+        FragColor = vec4(color, 1); //surface.alpha);
+        //FragColor = vec4(light.color * light.attenuation, 1.0);
 
         //FragColor = vec4(1.0, 0.0, 1.0, 1.0); // bright magenta
     }

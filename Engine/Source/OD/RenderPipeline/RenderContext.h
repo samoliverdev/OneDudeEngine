@@ -33,6 +33,7 @@ struct OD_API CameraRenderPass {
     PassRenderSettings settings = {};
     PassCollectSettings collectSettings = {}; 
     bool isReflectionProbePass = false;
+    
     // Optional: custom environment settings, quality preset, etc.
 };
 

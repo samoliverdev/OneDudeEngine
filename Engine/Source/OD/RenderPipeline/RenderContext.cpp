@@ -2128,6 +2128,8 @@ void tf_for_each3(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
 
 //////////////////////////////////////////
 inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.layer = info.layer;
+
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
     data.targetMaterial = c.material.get();
     data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
@@ -2160,6 +2162,8 @@ inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendere
 }
 
 inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.layer = info.layer;
+
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
     data.targetMaterial = c.material.get();
     data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
@@ -2189,6 +2193,8 @@ inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, Stati
 }
 
 inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, SkinnedMeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.layer = info.layer;
+
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
     data.targetMaterial = c.material.get();
     data.targetMesh = c.mesh.get();
@@ -2226,6 +2232,8 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
 }
 
 inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.layer = info.layer;
+
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.PositionReadSafe());// t.Position());
     data.targetMaterial = model->materials[target.materialIndex].get();
     data.targetMesh = model->meshs[target.meshIndex].get();
@@ -2267,6 +2275,8 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
 }
 
 inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target, int index){
+    data.layer = info.layer;
+
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
     data.targetMaterial = model->materials[target.materialIndex].get();
     data.targetMesh = model->meshs[target.meshIndex].get();
@@ -2300,6 +2310,8 @@ inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, Stat
 }
 
 inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, SkinnedModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.layer = info.layer;
+    
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
     data.targetMaterial = model->materials[target.materialIndex].get();
     data.targetMesh = model->meshs[target.meshIndex].get();
