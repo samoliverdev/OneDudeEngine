@@ -15,7 +15,7 @@ struct SurfaceOutput{
     vec3 emission;
 
     float metallic;
-    float smoothness;
+    float roughness;
     float occlusion;
     float alpha;
 };
@@ -26,7 +26,7 @@ SurfaceOutput DefaultSurface(){
     s.normal = vec3(0.0, 0.0, 1.0);
     s.emission = vec3(0.0);
     s.metallic = 0.0;
-    s.smoothness = 0.5;
+    s.roughness = 0.5;
     s.occlusion = 1.0;
     s.alpha = 1.0;
     return s;

@@ -10,6 +10,8 @@ uniform samplerCube _PrefilterMap;
 uniform float _SkyLightIntensity;
 uniform sampler2D _BrdfLUT;*/
 
+const float clearCoatIOR = 1.5;
+
 float DistributionGGX(vec3 N, vec3 H, float roughness){
     float a = roughness*roughness;
     float a2 = a*a;
@@ -225,7 +227,7 @@ vec3 ClearCoatBRDF(Surface surface, vec3 L){
 
     float NDF = DistributionGGX(N, H, roughness);
     float G = GeometrySmith(N, V, L, roughness);
-    vec3 F = ClearCoatFresnel(VdotH, surface.clearCoatIOR);
+    vec3 F = ClearCoatFresnel(VdotH, clearCoatIOR);
 
     vec3 numerator = NDF * G * F;
 
@@ -309,7 +311,7 @@ vec3 AmbientLight3(Surface surfaceWS){
     float coatMip = surfaceWS.clearCoatRoughness * MAX_REFLECTION_LOD;
     vec3 coatPrefilter = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, coatR, coatMip).rgb * _SkyLightIntensity;
     coatPrefilter *= 2.5;
-    vec3 coatF = ClearCoatFresnel(max(dot(N,V),0.0), surfaceWS.clearCoatIOR);
+    vec3 coatF = ClearCoatFresnel(max(dot(N,V),0.0), clearCoatIOR);
     vec3 clearCoatSpec = coatPrefilter * coatF * surfaceWS.clearCoat;
 
     //Fresnel visibility

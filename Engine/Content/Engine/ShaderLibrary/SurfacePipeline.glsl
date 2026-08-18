@@ -33,7 +33,10 @@ Surface ConvertToEngineSurface(SurfaceOutput s, SurfaceInput IN){
 
     surface.occlusion = s.occlusion;
     surface.metallic = s.metallic;
-    surface.smoothness = s.smoothness;
+    surface.roughness = s.roughness;
+
+    surface.clearCoat = 0;
+    surface.clearCoatRoughness = 0;
 
     return surface;
 }
@@ -61,7 +64,7 @@ void main(){
     #ifdef Deferred
         gNormal = vec3(pack_normal_octahedron(surface.normal), 0.0);
         gAlbedoSpec = vec4(surface.color, 1.0);
-        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perInstanceDataOut.w); // float(perDrawInt_1));
+        gOther = vec4(surface.roughness, surface.metallic, surface.occlusion, perInstanceDataOut.w); // float(perDrawInt_1));
         gEmission = surf.emission;
     #else
         //BRDF brdf = GetBRDF(surface);

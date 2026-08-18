@@ -9,7 +9,7 @@
     Texture2D maskMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
-    Float smoothness 0.5 0.0 1.0
+    Float roughness 0.5 0.0 1.0
     Float cutoff 0.5 0 1
 #pragma EndProperties
 
@@ -38,7 +38,7 @@ BeginUniform(0, 0, Main)
     Uniform vec4 emissionColor;
     Uniform float occlusion;
     Uniform float metallic;
-    Uniform float smoothness;
+    Uniform float roughness;
     Uniform float cutoff;
 EndUniform()
 
@@ -133,12 +133,6 @@ uniform int perDrawInt_1;
         return _metallic;
     }
 
-    float GetSmoothness(vec2 baseUV){
-        float _smoothness = smoothness;
-        _smoothness *= GetMask(baseUV).a;
-        return _smoothness;
-    }
-
     float GetOcclusion(vec2 baseUV){
         //return 1.0;
 
@@ -185,8 +179,8 @@ uniform int perDrawInt_1;
         surface.alpha = base.a;
         surface.occlusion = GetOcclusion(uv);
         surface.metallic = GetMetallic(uv);
-        surface.smoothness = GetSmoothness(uv);
-        surface.roughness = clamp(1.0 - smoothness, 0.05, 1);
+        //surface.smoothness = GetSmoothness(uv);
+        surface.roughness = roughness; //clamp(1.0 - smoothness, 0.05, 1);
 
         #ifdef Deferred
         
@@ -197,7 +191,7 @@ uniform int perDrawInt_1;
         //gAlbedoSpec.a = surface.smoothness;
         //gEmission.rgb = GetEmission(uv);
         gOther = vec4(
-            surface.smoothness,
+            surface.roughness,
             surface.metallic,
             surface.occlusion,
             perDrawInt_1

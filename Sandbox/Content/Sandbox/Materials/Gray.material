@@ -4,6 +4,19 @@
         "shaderPath": "Engine/Shaders/Lit2.glsl",
         "maps": [
             {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
                 "key": "metallic",
                 "value": {
                     "type": 2,
@@ -20,19 +33,6 @@
                 }
             },
             {
-                "key": "color",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 1.0,
-                        "v.w": 1.0
-                    },
-                    "vec.vectorIsColor": true
-                }
-            },
-            {
                 "key": "sizeOffset",
                 "value": {
                     "type": 5,
@@ -46,6 +46,13 @@
                 }
             },
             {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
+                }
+            },
+            {
                 "key": "emissionColor",
                 "value": {
                     "type": 5,
@@ -56,13 +63,6 @@
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
-                }
-            },
-            {
-                "key": "mainTex",
-                "value": {
-                    "type": 7,
-                    "texPath": "Engine/Textures/White.jpg"
                 }
             },
             {
@@ -111,6 +111,24 @@
                 "value": {
                     "type": 2,
                     "valueFloat": 0.5,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "emissionIntensity",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 0.0
+                }
+            },
+            {
+                "key": "roughness",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.522000014,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }

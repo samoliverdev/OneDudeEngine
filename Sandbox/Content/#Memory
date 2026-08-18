@@ -1,13 +1,13 @@
 {
     "Material": {
         "enableInstancing": true,
-        "shaderPath": "Engine/Shaders/Lit.glsl",
+        "shaderPath": "Engine/Shaders/Lit2.glsl",
         "maps": [
             {
                 "key": "metallic",
                 "value": {
                     "type": 2,
-                    "valueFloat": 1.0,
+                    "valueFloat": 0.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -16,7 +16,7 @@
                 "key": "emissionMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/Materials/Complex/circuitry-emission.png"
+                    "texPath": "Engine/Textures/Black.jpg"
                 }
             },
             {
@@ -33,6 +33,33 @@
                 }
             },
             {
+                "key": "emissionColor",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 0.0,
+                        "v.y": 0.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "#PolygonCity\\Textures\\PolygonCity_Road_01.png"
+                }
+            },
+            {
+                "key": "normal",
+                "value": {
+                    "type": 7,
+                    "texPath": "#PolygonCity\\Textures\\PolygonCity_Road_Normal.png"
+                }
+            },
+            {
                 "key": "sizeOffset",
                 "value": {
                     "type": 5,
@@ -43,26 +70,6 @@
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": false
-                }
-            },
-            {
-                "key": "emissionColor",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 1.0,
-                        "v.w": 0.0
-                    },
-                    "vec.vectorIsColor": true
-                }
-            },
-            {
-                "key": "mainTex",
-                "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/Materials/Complex/circuitry-albedo.png"
                 }
             },
             {
@@ -85,7 +92,16 @@
                 "key": "maskMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/Materials/Complex/circuitry-mask-mods.png"
+                    "texPath": "Engine/Textures/White.jpg"
+                }
+            },
+            {
+                "key": "emissionIntensity",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 0.0
                 }
             },
             {
@@ -98,10 +114,10 @@
                 }
             },
             {
-                "key": "smoothness",
+                "key": "roughness",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.5,
+                    "valueFloat": 0.560999989,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }

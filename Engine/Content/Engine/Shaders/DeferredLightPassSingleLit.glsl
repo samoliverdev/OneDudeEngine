@@ -95,12 +95,11 @@ Texture2D(0, 10, sss, sssSampler)
         surface.alpha = 1.0;
         surface.occlusion = AO;
         surface.metallic = Metallic;
-        surface.smoothness = Specular;
-        surface.roughness = clamp(1.0 - surface.smoothness, 0.05, 1);
+        //surface.smoothness = Specular;
+        surface.roughness = Specular; //clamp(1.0 - surface.smoothness, 0.05, 1);
 
-        surface.clearCoat = texture(gNormal, texCoord).b * dot(surface.normal, vec3(0, 1, 0)); //1;
-        surface.clearCoatRoughness = 0.75; //0.05; //0.05;
-        surface.clearCoatIOR = 1.5;
+        surface.clearCoat = texture(gNormal, texCoord).b * clamp(dot(surface.normal, vec3(0, 1, 0)), 0, 1); //1;
+        surface.clearCoatRoughness = texture(gAlbedoSpec, texCoord).a; //0.75; //0.05; //0.05;
 
         //FragColor = vec4(FragPos, 1.0);
         //return;

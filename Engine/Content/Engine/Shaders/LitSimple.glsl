@@ -3,7 +3,7 @@
     Vector4 sizeOffset 1 1 0 0
     Texture2D mainTex White
     Float metallic 0 0 1
-    Float smoothness 0.5 0.0 1.0
+    Float roughness 0.5 0.0 1.0
 #pragma EndProperties
 
 #pragma BeginPassDef
@@ -29,7 +29,7 @@ BeginUniform(0, 0, Main)
     Uniform vec4 sizeOffset;
     Uniform vec3 viewPos;
     Uniform float metallic;
-    Uniform float smoothness;
+    Uniform float roughness;
 EndUniform()
 Texture2D(0, 6, mainTex, mainTexSampler)
 
@@ -69,7 +69,7 @@ Texture2D(0, 6, mainTex, mainTexSampler)
         s.alpha = base.a;
         s.normal = ApplyNormalMap(IN.TBN, vec3(0.5, 0.5, 1.0), 1);
         s.metallic = metallic;
-        s.smoothness = smoothness;
+        s.roughness = roughness;
         
         return s;
     }

@@ -97,7 +97,7 @@ Texture2D(0, 10, gDepth, gDepthSampler)
         surface.alpha = AO;
         surface.occlusion = 1.0;
         surface.metallic = Metallic;
-        surface.smoothness = Specular;
+        surface.roughness = Specular;
 
         //FragColor = vec4(Normal, 1);
         //return;
