@@ -924,6 +924,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         context->pipelineData._IrradianceMapScale = Vector4Zero;
     }
     if(environmentSettings.environmentLight == EnvironmentLight::SkyCubemap){
+        Material::SetGlobalCubemap("_EnvironmentMap", environmentSettings.skyCubemap);
         Material::SetGlobalCubemap("_IrradianceMap", environmentSettings.skyIrradianceMap);
         Material::SetGlobalCubemap("_PrefilterMap", environmentSettings.skyPrefilterMap);
         if(environmentSettings.skyPrefilterMapF != nullptr) Material::SetGlobalTexture("_PrefilterMap", environmentSettings.skyPrefilterMapF, 0);

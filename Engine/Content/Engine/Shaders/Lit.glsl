@@ -8,6 +8,8 @@
     Color4 emissionColor 0 0 0 0
     Float emissionIntensity 1 
     Texture2D maskMap White
+    Texture2D roughnessMap White
+    Texture2D metallicMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
     Float roughness 0.5 0.0 1.0
@@ -26,6 +28,18 @@
     CullFace BACK
     DepthTest LESS
     Blend Off
+#pragma EndPassDef
+
+#pragma BeginPassDef
+    Name Transparent
+    SupportInstancing true
+    DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
+    MultiCompile Forward Deferred
+
+    CullFace BACK
+    DepthTest LEQUAL
+    Blend ONE ONE_MINUS_SRC_ALPHA
+    DepthMask False    
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -52,9 +66,12 @@ Texture2D(0, 7, normalMap, normalMapSampler)
 Texture2D(0, 8, emissionMap, emissionMapSampler)
 Texture2D(0, 9, maskMap, maskMapSampler)
 
+Texture2D(0, 9, roughnessMap, roughnessMapSampler)
+Texture2D(0, 9, metallicMap, metallicMapSampler)
+
 uniform int perDrawInt_1;
 
-#if defined(VERTEX) && defined(MainPass)
+#if defined(VERTEX)
     Out(0) vec3 outPos;
     Out(1) vec3 outNormal;
     Out(2) vec2 outTexCoord;
@@ -95,7 +112,7 @@ uniform int perDrawInt_1;
     }
 #endif
 
-#if defined(FRAGMENT) && defined(MainPass)
+#if defined(FRAGMENT) 
     #include Engine/ShaderLibrary/Core.glsl
     #include Engine/ShaderLibrary/Common.glsl
     #include Engine/ShaderLibrary/Surface.glsl
@@ -185,14 +202,14 @@ uniform int perDrawInt_1;
 
         Surface surface;
         surface.position = outWorldPos;
-        surface.normal = normalize(outWorldNormal); //outWorldNormal;// _normal;
+        surface.normal = _normal; //normalize(outWorldNormal); //outWorldNormal;// _normal;
         surface.viewDirection = normalize(viewPos - outWorldPos);
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
         surface.alpha = base.a;
         surface.occlusion = GetOcclusion(uv);
-        surface.metallic = GetMetallic(uv);
-        surface.roughness = clamp(roughness, 0.025, 1);
+        surface.metallic = metallic * SampleTexture2D(metallicMap, metallicMapSampler, uv).r; //GetMetallic(uv);
+        surface.roughness = clamp(roughness, 0.025, 1) * SampleTexture2D(roughnessMap, roughnessMapSampler, uv).r;
         surface.clearCoat = clearCoat;
         surface.clearCoatRoughness = clamp(clearCoatRoughness, 0.025, 1); //clearCoatRoughness;
 
@@ -219,6 +236,14 @@ uniform int perDrawInt_1;
 
         //fragColor = vec4(surface.normal, 1);
         //return;
+
+        #if defined(Transparent)
+
+        LightingResult lighting = GetFinalLighting(surface);
+        vec3 finalColor = lighting.diffuse * surface.alpha + lighting.specular;
+        fragColor = vec4(finalColor, surface.alpha);
+
+        #else
         
         vec3 color = GetFinalColor(surface);
         color += GetEmission(uv);
@@ -228,6 +253,7 @@ uniform int perDrawInt_1;
         //return;
 
         //fragColor = vec4(gi.specular, surface.alpha);
+        #endif
         
         #endif
     }

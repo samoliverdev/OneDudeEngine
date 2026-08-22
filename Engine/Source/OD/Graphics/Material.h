@@ -306,6 +306,8 @@ void Material::save(Archive& ar) const{
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
     );
+
+    ArchiveDumpNVP(ar, currentPass);
 }
 
 template<class Archive>
@@ -316,6 +318,8 @@ void Material::load(Archive& ar){
         CEREAL_NVP(shaderPath),
         CEREAL_NVP(maps)
     );
+
+    ArchiveDumpNVP(ar, currentPass);
 
     if(shaderPath.empty() == false){
         SetShader(ResourceManager::Get().LoadByPath<Shader>(shaderPath));

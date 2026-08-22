@@ -7,7 +7,7 @@
                 "key": "metallic",
                 "value": {
                     "type": 2,
-                    "valueFloat": 0.0,
+                    "valueFloat": 1.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -27,9 +27,22 @@
                         "v.x": 1.0,
                         "v.y": 1.0,
                         "v.z": 1.0,
-                        "v.w": 1.0
+                        "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "sizeOffset",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 0.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": false
                 }
             },
             {
@@ -53,26 +66,6 @@
                 }
             },
             {
-                "key": "normal",
-                "value": {
-                    "type": 7,
-                    "texPath": "Engine/Textures/White.jpg"
-                }
-            },
-            {
-                "key": "sizeOffset",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 0.0,
-                        "v.w": 0.0
-                    },
-                    "vec.vectorIsColor": false
-                }
-            },
-            {
                 "key": "normalMap",
                 "value": {
                     "type": 7,
@@ -83,9 +76,16 @@
                 "key": "normalStrength",
                 "value": {
                     "type": 2,
-                    "valueFloat": 1.0,
+                    "valueFloat": 1.00999999,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 10.0
+                }
+            },
+            {
+                "key": "maskMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Engine/Textures/White.jpg"
                 }
             },
             {
@@ -95,13 +95,6 @@
                     "valueFloat": 1.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 0.0
-                }
-            },
-            {
-                "key": "maskMap",
-                "value": {
-                    "type": 7,
-                    "texPath": "Engine/Textures/White.jpg"
                 }
             },
             {
@@ -117,7 +110,32 @@
                 "key": "roughness",
                 "value": {
                     "type": 2,
+                    "valueFloat": 1.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "cutoff",
+                "value": {
+                    "type": 2,
                     "valueFloat": 0.5,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
+                }
+            },
+            {
+                "key": "roughnessMap",
+                "value": {
+                    "type": 7,
+                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_rough_1k.jpg"
+                }
+            },
+            {
+                "key": "clearCoat",
+                "value": {
+                    "type": 2,
+                    "valueFloat": 0.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
                 }
@@ -132,23 +150,13 @@
                 }
             },
             {
-                "key": "clearCoat",
+                "key": "metallicMap",
                 "value": {
-                    "type": 2,
-                    "valueFloat": 0.0,
-                    "valueFloatMin": 0.0,
-                    "valueFloatMax": 1.0
-                }
-            },
-            {
-                "key": "cutoff",
-                "value": {
-                    "type": 2,
-                    "valueFloat": 0.5,
-                    "valueFloatMin": 0.0,
-                    "valueFloatMax": 1.0
+                    "type": 7,
+                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_metal_1k.jpg"
                 }
             }
-        ]
+        ],
+        "currentPass": 1
     }
 }

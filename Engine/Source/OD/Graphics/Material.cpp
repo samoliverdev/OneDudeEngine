@@ -64,6 +64,7 @@ void Material::SetShader(Ref<Shader> s){
     isDirty = true;
     isDirtyUniformData = true;
     shader = s; 
+    currentPass = math::clamp<int>(currentPass, 0, s->passes.size() - 1);
     //graphicsDevice->MaterialOnSetShader(*this);
     UpdateCurrentShader();
     UpdateMaps(); 
@@ -479,6 +480,13 @@ void Material::OnGui(){
         toSave = true;
         isDirty = isDirtyUniformData = true;
     }
+
+    std::vector<std::string> passes;
+    for(auto& i: shader->passes){
+        passes.push_back(i.name);
+    }
+
+    ImGui::DrawEnumCombo("CurPass", currentPass, passes, passes.size());
 
     /*ImGui::BeginGroup();
     ImGui::Text("Shader: %s", (GetShader() == nullptr ? "" : GetShader()->Path().c_str()));

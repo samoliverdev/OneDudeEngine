@@ -83,7 +83,7 @@ Texture2D(0, 10, sss, sssSampler)
         float sss = texture(sss, screenUV).r;
         //light.attenuation = min(light.attenuation, sss);
         
-        vec3 color = IncomingLight3(surface, light);
+        vec3 color = EvaluateDirectLight(surface, light);
         //color += Emission;
         FragColor = vec4(color, 1); //surface.alpha);
         //FragColor = vec4(light.color * light.attenuation, 1.0);

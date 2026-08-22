@@ -1,0 +1,530 @@
+{
+    "Entities": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "InfoComponents": [
+        {
+            "name": "Camera",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Env",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Plane",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Directional Light",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "Level",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        },
+        {
+            "name": "cannon_01_1k",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
+        }
+    ],
+    "InfoComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "TransformComponents": [
+        {
+            "localPosition": {
+                "v.x": 1.412656307,
+                "v.y": 1.230098605,
+                "v.z": 2.781452655
+            },
+            "localRotation": {
+                "q.x": -0.089020438,
+                "q.y": 0.408544689,
+                "q.z": 0.040075212,
+                "q.w": 0.907502174
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.155686795
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4,
+            "hasParent": true,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.075739867,
+                "q.y": -0.834432125,
+                "q.z": 0.382634788,
+                "q.w": 0.389329195
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [
+                2
+            ],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": -1.346895337,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
+        }
+    ],
+    "TransformComponentEntities": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "Standard/FreeCameras": [
+        {
+            "moveSpeed": 10.0,
+            "rotSpeed": 50.0,
+            "moveRightMouseHold": true
+        }
+    ],
+    "Standard/FreeCameraEntities": [
+        0
+    ],
+    "Standard/Greyboxings": [
+        {
+            "shape": 0,
+            "pivot": 0,
+            "planeSize": {
+                "v.x": 100.0,
+                "v.y": 100.0
+            },
+            "cubeSize": {
+                "v.x": 1.0,
+                "v.y": 1.0,
+                "v.z": 1.0
+            },
+            "resolution": {
+                "v.x": 8,
+                "v.y": 8,
+                "v.z": 8
+            },
+            "radius": 0.5,
+            "height": 2.0
+        }
+    ],
+    "Standard/GreyboxingEntities": [
+        2
+    ],
+    "EnvironmentComponents": [
+        {
+            "settings": {
+                "environmentSky": 0,
+                "environmentLight": 0,
+                "ambient": {
+                    "r": 0.112499997,
+                    "g": 0.112499997,
+                    "b": 0.112499997,
+                    "a": 1.0
+                },
+                "cleanColor": {
+                    "r": 0.5,
+                    "g": 0.112499997,
+                    "b": 0.800000011,
+                    "a": 1.0
+                },
+                "directionalshadowQuality": 4,
+                "othershadowQuality": 2,
+                "directinalShadowCascade": {
+                    "value0": 0.112499997,
+                    "value1": 0.25,
+                    "value2": 0.5,
+                    "value3": 1.0
+                },
+                "shadowDistance": 150.0,
+                "shadowBias": 0.000012628,
+                "enableSSS": false,
+                "sssSurfaceThickness": 0.004999998,
+                "sssBilinearThreshold": 0.025624999,
+                "sssShadowContrast": 4.0,
+                "toneMapping": {
+                    "enable": true,
+                    "mode": 0,
+                    "exposure": 1.0
+                },
+                "colorGrading": {
+                    "enable": false,
+                    "postExposure": 0.0,
+                    "contrast": 0.0,
+                    "colorFilter": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 1.0
+                    },
+                    "hueShift": 0.0,
+                    "saturation": 0.0
+                },
+                "bloom": {
+                    "enable": false,
+                    "maxIterations": 3,
+                    "downscaleLimit": 3,
+                    "bicubicUpsampling": true,
+                    "threshold": 0.5,
+                    "thresholdKnee": 1.0,
+                    "intensity": 1.0,
+                    "debug": false
+                },
+                "ssao": {
+                    "enable": false,
+                    "intensity": 0.5,
+                    "radius": 0.5,
+                    "bias": 0.025
+                },
+                "ssgi": {
+                    "enable": false,
+                    "sampleRadius": 1.0,
+                    "hitThickness": 0.5,
+                    "sampleCount": 4.0,
+                    "sliceCount": 4.0,
+                    "backfaceLighting": 0.0,
+                    "giIntensity": 1.0,
+                    "aoIntensity": 1.0,
+                    "useScreenSpaceSampling": true,
+                    "useLinearThickness": false,
+                    "debug": false,
+                    "resolutionMode": 1,
+                    "useTemporalDenoise": true,
+                    "useSpatialDenoise": false,
+                    "denoiseMaxIterations": 4
+                },
+                "skyCustomMaterial": {
+                    "isNull": false,
+                    "path": "#Memory"
+                },
+                "skyCubemap": {
+                    "isNull": false,
+                    "path": "Sandbox/HDRIs/kloofendal_43d_clear_puresky_2k.hdr"
+                }
+            },
+            "features": {
+                "typeIds": []
+            }
+        }
+    ],
+    "EnvironmentComponentEntities": [
+        1
+    ],
+    "CameraComponents": [
+        {
+            "type": 0,
+            "isMain": true,
+            "orthographicSize": 5.0,
+            "fieldOfView": 45.0,
+            "nearClipPlane": 0.112499997,
+            "farClipPlane": 100.0,
+            "cleanColor": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0,
+                "v.w": 1.0
+            },
+            "renderingPath": 1,
+            "passRenderSettings": {
+                "drawShadow": true,
+                "drawPostProcessing": true,
+                "drawUI": true,
+                "drawGizmos": true
+            },
+            "collectSettings": {
+                "collectStatic": true,
+                "collectDynamic": true,
+                "collectModel": true,
+                "collectMesh": true,
+                "collectSkinnedModel": true,
+                "collectSkinnedMesh": true,
+                "collectCluster": true,
+                "collectDecal": true,
+                "collectParticle": true
+            }
+        }
+    ],
+    "CameraComponentEntities": [
+        0
+    ],
+    "LightComponents": [
+        {
+            "type": 0,
+            "color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "intensity": 25.0,
+            "falloff": 1.0,
+            "radius": 5.0,
+            "coneAngleInner": 45.0,
+            "coneAngleOuter": 45.0,
+            "renderShadow": true,
+            "shadowStrength": 1.0,
+            "shadowBias": 0.0,
+            "shadowNormalBias": 0.0
+        }
+    ],
+    "LightComponentEntities": [
+        3
+    ],
+    "MeshRendererComponents": [
+        {}
+    ],
+    "MeshRendererComponentEntities": [
+        2
+    ],
+    "ModelRendererComponents": [
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.168504953,
+                    "v.y": 0.429471641,
+                    "v.z": 0.470417976
+                },
+                "extents": {
+                    "v.x": 0.637543737,
+                    "v.y": 0.429405897,
+                    "v.z": 1.151417732
+                }
+            },
+            "renderTargetVisibility": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ],
+            "castShadow": true,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/PBR_Models/cannon_01/cannon_01_1k.gltf"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Sandbox/PBR_Models/cannon_01/cannon_01.material"
+                ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
+            }
+        }
+    ],
+    "ModelRendererComponentEntities": [
+        5
+    ],
+    "RigidbodyComponents": [
+        {
+            "type": 1,
+            "interpolate": false,
+            "shape": {
+                "type": 3,
+                "center": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "size": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                },
+                "radius": 1.0,
+                "height": 1.0,
+                "modelSourceRef": {
+                    "isNull": true,
+                    "path": ""
+                },
+                "modelSourceMeshIndex": -1
+            },
+            "extraShapes": [],
+            "mass": 1.0,
+            "friction": 1.0,
+            "linearDamping": 0.0,
+            "angularDamping": 0.05,
+            "motionQuality": 0,
+            "constraints": 63,
+            "neverSleep": false,
+            "mask": {
+                "mask": 1023
+            },
+            "overrideCenterOfMass": false,
+            "centerOfMass": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            }
+        }
+    ],
+    "RigidbodyComponentEntities": [
+        2
+    ]
+}

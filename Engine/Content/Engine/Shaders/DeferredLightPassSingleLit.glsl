@@ -105,7 +105,7 @@ Texture2D(0, 10, sss, sssSampler)
         //return;
 
         //BRDF brdf = GetBRDF(surface);
-        //GI gi = GetGI(surface, brdf);
+        GI gi = GetGI(surface);
 
         FragColor = vec4(1, 1, 1, 1);
 
@@ -115,19 +115,19 @@ Texture2D(0, 10, sss, sssSampler)
         float sss = texture(sss, texCoord).r;
 
         #ifdef INDIRECTPLUSDIRECTIONAL
-            vec3 color = AmbientLight3(surface);
+            vec3 color = EvaluateIndirectLight(surface, gi);
 
             ShadowData shadowData = GetShadowData(surface);
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
             light.attenuation = min(light.attenuation, sss);
 
-		    color += IncomingLight3(surface, light);
+		    color += EvaluateDirectLight(surface, light);
             color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, 1); //surface.alpha);
         #endif
 
         #if defined(INDIRECT)
-	        vec3 color = AmbientLight3(surface);
+	        vec3 color = EvaluateIndirectLight(surface, gi);
             color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, 1); //surface.alpha);
         #endif
@@ -137,7 +137,7 @@ Texture2D(0, 10, sss, sssSampler)
             Light light = GetDirectionalLight(lightIndex, surface, shadowData);
             //light.attenuation = min(light.attenuation, sss);
 
-		    vec3 color = IncomingLight3(surface, light);
+		    vec3 color = EvaluateDirectLight(surface, light);
             //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, 1); //surface.alpha);
         #endif

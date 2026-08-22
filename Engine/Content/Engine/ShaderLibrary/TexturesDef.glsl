@@ -5,3 +5,5 @@ Texture2DArray(0, 4, _DirectionalShadowAtlas, _DirectionalShadowAtlasSampler)
 Texture2DArray(0, 5, _OtherShadowAtlas, _OtherShadowAtlasSampler)
 //Uniform mediump sampler2DArray _DirectionalShadowAtlas;
 //Uniform mediump sampler2DArray _OtherShadowAtlas;
+
+TextureCube(0, 6, _EnvironmentMap, _EnvironmentMapSampler)
