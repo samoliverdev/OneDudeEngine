@@ -2,7 +2,7 @@
     "settings": {
         "filter": 1,
         "wrap": 0,
-        "mipmap": false,
-        "textureFormat": 1
+        "mipmap": true,
+        "textureFormat": 0
     }
 }

@@ -219,6 +219,7 @@ vec3 ClearCoatFresnel(float cosTheta, float ior){
 //#define DIFFUSE_BRDF_OREN_NAYAR
 
 #define SPECULAR_BRDF_GGX
+//#define SPECULAR_BRDF_GGX_CUSTOM
 
 ////////////////// Lambert //////////////////////
 vec3 DiffuseBRDF_Lambert(vec3 albedo){
@@ -232,276 +233,90 @@ vec3 DiffuseIBL_Lambert(vec3 irradiance, vec3 albedo){
 }
 
 //////////////////// Burley ////////////////////////
-
-vec3 TangentToWorld(vec3 H, vec3 N){
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
-    return normalize(tangent * H.x + bitangent * H.y + N * H.z);
-}
-
-vec3 ImportanceSampleCosine(vec2 Xi, vec3 N){
-    float phi = 2.0 * PI * Xi.x;
-    float cosTheta = sqrt(1.0 - Xi.y);
-    float sinTheta = sqrt(Xi.y);
-
-    vec3 H;
-
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-
-    return TangentToWorld(H, N);
-}
-
-float RadicalInverse_VdC(uint bits){
-    bits =
-        (bits << 16u) |
-        (bits >> 16u);
-
-    bits =
-        ((bits & 0x55555555u) << 1u) |
-        ((bits & 0xAAAAAAAAu) >> 1u);
-
-    bits =
-        ((bits & 0x33333333u) << 2u) |
-        ((bits & 0xCCCCCCCCu) >> 2u);
-
-    bits =
-        ((bits & 0x0F0F0F0Fu) << 4u) |
-        ((bits & 0xF0F0F0F0u) >> 4u);
-
-    return float(bits) * 2.3283064365386963e-10;
-}
-
-vec2 Hammersley(uint i, uint N){
-    return vec2(float(i) / float(N), RadicalInverse_VdC(i));
-}
-
-vec3 SampleEnvironment(vec3 L){
-    //return vec3(0);
-    return _AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, L).rgb * _SkyLightIntensity;
-    //return _AmbientLight.rgb + SampleTextureCube(_EnvironmentMap, _EnvironmentMapSampler, L).rgb * _SkyLightIntensity;
-}
-
-/*vec3 DiffuseBRDF_Burley(vec3 N, vec3 V, vec3 L, vec3 albedo, float roughness){
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-
-    vec3 H = normalize(V + L);
-
-    float LdotH = max(dot(L, H), 0.0);
-
-    float FD90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
-
-    float FL = pow(1.0 - NdotL, 5.0);
-
-    float FV = pow(1.0 - NdotV, 5.0);
-
-    float diffuse = (1.0 + (FD90 - 1.0) * FL) * (1.0 + (FD90 - 1.0) * FV);
-
-    return albedo * diffuse / PI;
-}*/
-
 vec3 DiffuseBRDF_Burley(vec3 N, vec3 V, vec3 L, vec3 albedo, float roughness){
+    vec3 H = normalize(V + L);
+    
+    float LdotH = max(dot(L, H), 0.0);
     float NdotL = max(dot(N, L), 0.0);
     float NdotV = max(dot(N, V), 0.0);
 
-    if(NdotL <= 0.0 || NdotV <= 0.0) return vec3(0.0);
+    float Fd90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
+    float FL = pow(clamp(1.0 - NdotL, 0.0, 1.0), 5.0);
+    float FV = pow(clamp(1.0 - NdotV, 0.0, 1.0), 5.0);
 
-    vec3 VplusL = V + L;
-    float len2 = dot(VplusL, VplusL);
-
-    if(len2 < 1e-6) return vec3(0.0);
-
-    vec3 H = VplusL * inversesqrt(len2);
-
-    float LdotH = max(dot(L, H), 0.0);
-
-    float FD90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
-
-    float FL = pow(1.0 - NdotL, 5.0);
-    float FV = pow(1.0 - NdotV, 5.0);
-
-    float FD = (1.0 + (FD90 - 1.0) * FL) * (1.0 + (FD90 - 1.0) * FV);
-
-    return albedo * FD / PI;
+    // Disney Diffuse formula: (1 + (Fd90 - 1)*FL) * (1 + (Fd90 - 1)*FV) * (albedo / PI)
+    float scatter = (1.0 + (Fd90 - 1.0) * FL) * (1.0 + (Fd90 - 1.0) * FV);
+    return (albedo / PI) * scatter;
 }
 
-vec3 DiffuseIBL_Burley(vec3 N, vec3 V, vec3 albedo, float roughness){
-    vec3 result = vec3(0.0);
-    const int SAMPLE_COUNT = 32;
-
-    for(int i = 0; i < SAMPLE_COUNT; i++){
-        vec2 Xi = Hammersley(uint(i), uint(SAMPLE_COUNT));
-
-        vec3 L = ImportanceSampleCosine(Xi, N);
-
-        float NdotL = max(dot(N, L), 0.0);
-        if(NdotL <= 0.0) continue;
-
-        vec3 environment = SampleEnvironment(L);
-        vec3 brdf = DiffuseBRDF_Burley(N, V, L, albedo, roughness);
-        result += brdf * environment * PI;
-    }
-
-    return result / float(SAMPLE_COUNT);
-
-    /*vec3 result = vec3(0.0);
-    const int SAMPLE_COUNT = 32;
-
-    for(int i = 0; i < SAMPLE_COUNT; i++){
-        vec2 Xi = Hammersley(uint(i), uint(SAMPLE_COUNT));
-        vec3 L = ImportanceSampleCosine(Xi, N);
-
-        float NdotL = max(dot(N, L), 0.0);
-
-        if(NdotL <= 0.0) continue;
-
-        vec3 H = normalize(V + L);
-
-        float NdotV = max(dot(N, V), 0.0);
-        float LdotH = max(dot(L, H), 0.0);
-
-        float FD90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
-
-        float FL = pow(1.0 - NdotL, 5.0);
-        float FV = pow(1.0 - NdotV, 5.0);
-        float FD = (1.0 + (FD90 - 1.0) * FL) * (1.0 + (FD90 - 1.0) * FV);
-
-        vec3 brdf = albedo * FD / PI;
-
-        vec3 environment = SampleEnvironment(L);
-
-        // Because cosine-weighted sampling has:
-        //
-        // PDF = NdotL / PI
-        //
-        // BRDF * NdotL / PDF
-        // = BRDF * PI
-
-        result += brdf * environment * PI;
-    }
-
-    return result / float(SAMPLE_COUNT);*/
+////////////////// Burley (Disney) IBL //////////////////////
+// Modulates irradiance based on NdotV and surface roughness 
+// to approximate retro-reflection under ambient light.
+vec3 DiffuseIBL_Burley(vec3 irradiance, vec3 albedo, float NdotV, float roughness){
+    float Fd90 = 0.5 + 2.0 * roughness; // Simplified retro-reflection factor at grazing angles
+    float FV = pow(clamp(1.0 - NdotV, 0.0, 1.0), 5.0);
+    float scatter = mix(1.0, Fd90, FV); // Modulates ambient response based on view angle
+    
+    return irradiance * albedo * scatter;
 }
 
 ///////////////////// OrenNayar //////////////////////
-/*vec3 DiffuseBRDF_OrenNayar(vec3 N, vec3 V, vec3 L, vec3 albedo, float roughness){
-    float sigma = roughness * (PI * 0.5);
-
-    float sigma2 = sigma * sigma;
-
-    float A = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
-
-    float B = 0.45 * (sigma2 / (sigma2 + 0.09));
-
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-
-    float thetaI = acos(NdotL);
-    float thetaR = acos(NdotV);
-
-    float alpha = max(thetaI, thetaR);
-    float beta  = min(thetaI, thetaR);
-
-    vec3 Lp = normalize(L - N * NdotL);
-    vec3 Vp = normalize(V - N * NdotV);
-
-    float gamma = max(dot(Lp, Vp), 0.0);
-
-    return albedo / PI * (A + B * gamma * sin(alpha) * tan(beta));
-}*/
-
 vec3 DiffuseBRDF_OrenNayar(vec3 N, vec3 V, vec3 L, vec3 albedo, float roughness){
     float NdotL = max(dot(N, L), 0.0);
     float NdotV = max(dot(N, V), 0.0);
 
-    if(NdotL <= 0.0 || NdotV <= 0.0) return vec3(0.0);
+    // Roughness parameter conversion (variance sigma^2)
+    float sigma2 = roughness * roughness;
 
-    float sigma = roughness * (PI * 0.5);
-    float sigma2 = sigma * sigma;
-
+    // Standard analytical approximation constants A and B
     float A = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
     float B = 0.45 * (sigma2 / (sigma2 + 0.09));
 
-    float alpha = max(acos(clamp(NdotL, 0.0, 1.0)), acos(clamp(NdotV, 0.0, 1.0)));
-    float beta = min(acos(clamp(NdotL, 0.0, 1.0)), acos(clamp(NdotV, 0.0, 1.0)));
+    // Calculate max(0, cos(phi_i - phi_r)) using projected vector dot product
+    vec3 lightProj = normalize(L - N * NdotL);
+    vec3 viewProj  = normalize(V - N * NdotV);
+    float cosPhiDiff = max(0.0, dot(lightProj, viewProj));
 
-    vec3 Lp = L - N * NdotL;
-    vec3 Vp = V - N * NdotV;
-
-    float gamma = 0.0;
-
-    float Lp2 = dot(Lp, Lp);
-    float Vp2 = dot(Vp, Vp);
-
-    if(Lp2 > 1e-6 && Vp2 > 1e-6){
-        Lp *= inversesqrt(Lp2);
-        Vp *= inversesqrt(Vp2);
-
-        gamma = max(dot(Lp, Vp), 0.0);
+    // Angle sine & tangent approximations via dot products
+    float sinAlpha, tanBeta;
+    if (NdotL < NdotV) {
+        sinAlpha = sqrt(1.0 - NdotL * NdotL);
+        tanBeta  = sqrt(1.0 - NdotV * NdotV) / max(NdotV, 0.0001);
+    } else {
+        sinAlpha = sqrt(1.0 - NdotV * NdotV);
+        tanBeta  = sqrt(1.0 - NdotL * NdotL) / max(NdotL, 0.0001);
     }
 
-    // Prevent grazing-angle numerical explosion.
-    float tanBeta = sin(beta) / max(cos(beta), 1e-4);
-    float diffuse = A + B * gamma * sin(alpha) * tanBeta;
-    return albedo * diffuse / PI;
+    return (albedo / PI) * (A + B * cosPhiDiff * sinAlpha * tanBeta);
 }
 
-vec3 DiffuseIBL_OrenNayar(vec3 N, vec3 V, vec3 albedo, float roughness){
-    vec3 result = vec3(0.0);
+////////////////// Oren-Nayar IBL //////////////////////
+// Modulates irradiance using the roughness variance parameter
+// to simulate ambient darkening and diffuse flattening.
+vec3 DiffuseIBL_OrenNayar(vec3 irradiance, vec3 albedo, float NdotV, float roughness){
+    float sigma2 = roughness * roughness;
+    float A = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
+    float B = 0.45 * (sigma2 / (sigma2 + 0.09));
+    
+    // 1. Clamp NdotV above zero to prevent division by near-zero at extreme grazing angles
+    float safeNdotV = max(NdotV, 0.08); 
 
-    const int SAMPLE_COUNT = 32;
-
-    for(int i = 0; i < SAMPLE_COUNT; i++){
-        vec2 Xi = Hammersley(uint(i), uint(SAMPLE_COUNT));
-
-        vec3 L = ImportanceSampleCosine(Xi, N);
-
-        float NdotL = max(dot(N, L), 0.0);
-        float NdotV = max(dot(N, V), 0.0);
-
-        if(NdotL <= 0.0) continue;
-
-        // Roughness -> Oren-Nayar sigma
-        float sigma = roughness * (PI * 0.5);
-
-        float sigma2 = sigma * sigma;
-
-        float A = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
-        float B = 0.45 * (sigma2 / (sigma2 + 0.09));
-
-        float thetaI = acos(clamp(NdotL, 0.0, 1.0));
-        float thetaR = acos(clamp(NdotV, 0.0, 1.0));
-
-        float alpha = max(thetaI, thetaR);
-        float beta = min(thetaI, thetaR);
-
-        vec3 Lp = L - N * NdotL;
-        vec3 Vp = V - N * NdotV;
-
-        float gamma = 0.0;
-
-        float LpLength = length(Lp);
-        float VpLength = length(Vp);
-
-        if(LpLength > 0.0001 && VpLength > 0.0001){
-            Lp /= LpLength;
-            Vp /= VpLength;
-
-            gamma = max(dot(Lp, Vp), 0.0);
-        }
-
-        float oren = A + B * gamma * sin(alpha) * tan(beta);
-        vec3 brdf = albedo * oren / PI;
-
-        vec3 environment = SampleEnvironment(L);
-
-        result += brdf * environment * PI;
-    }
-
-    return result / float(SAMPLE_COUNT);
+    // 2. Compute sin and tan with safe bounds
+    float sinThetaV = sqrt(max(0.0, 1.0 - safeNdotV * safeNdotV));
+    
+    // Clamp tanThetaV to avoid sky-high values that blow out tone mappers
+    float tanThetaV = min(sinThetaV / safeNdotV, 2.5);
+    
+    // 3. Smooth fade at extreme edges using (1 - NdotV)^5 fade factor
+    float edgeFade = 1.0 - pow(clamp(1.0 - NdotV, 0.0, 1.0), 5.0);
+    
+    // Ambient modifier with edge dampening
+    float ambientModifier = A + (B * 0.5 * sinThetaV * tanThetaV) * edgeFade;
+    
+    // Clamp total factor to a reasonable range [0.0, 1.5]
+    ambientModifier = clamp(ambientModifier, 0.0, 1.5);
+    
+    return irradiance * albedo * ambientModifier;
 }
 
 ////////////////// GGX //////////////////////
@@ -548,6 +363,52 @@ vec3 ClearCoatBRDF_GGX(Surface surface, vec3 L){
 }
 
 //////////////////////////////////////////////
+////////////////// Custom Callisto / Skin Dual-Lobe GGX //////////////////////
+vec3 SpecularBRDF_SkinGGX(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness) {
+    vec3 H = normalize(V + L);
+
+    float NdotV = max(dot(N, V), 0.0001);
+    float NdotL = max(dot(N, L), 0.0001);
+    float HdotV = max(dot(H, V), 0.0);
+
+    // 1. Dual Lobe Roughness Definitions
+    // Primary Lobe: Catches the pore detail and tight highlights (Moisture)
+    float roughnessPrimary = clamp(roughness * 0.55, 0.02, 1.0);
+    // Secondary Lobe: Spreads light broadly across skin contours
+    float roughnessSecondary = clamp(roughness * 1.45, 0.02, 1.0);
+
+    // 2. Normal Distribution Functions (NDF)
+    float D_Primary   = DistributionGGX(N, H, roughnessPrimary);
+    float D_Secondary = DistributionGGX(N, H, roughnessSecondary);
+
+    // Blend lobes (80% broad base, 20% sharp peak gives realistic wet skin)
+    float D_Skin = mix(D_Secondary, D_Primary, 0.25);
+
+    // 3. Modified Geometry Factor (Smoother visibility shadow)
+    float G = GeometrySmith(N, V, L, roughness);
+
+    // 4. Custom Fresnel (Boosts subtle reflections on micro-surface angles)
+    vec3 F = fresnelSchlick(HdotV, F0);
+
+    // Composite Dual-Lobe Specular BRDF
+    vec3 specular = (D_Skin * G * F) / (4.0 * NdotV * NdotL + 0.0001);
+    
+    return specular;
+}
+
+vec3 SpecularIBL_SkinGGX(vec3 specular, vec3 F, float NdotV, float roughness){
+    // Dual-lobe mipmap blending for environment specular
+    float mipPrimary   = (roughness * 0.55) * MAX_REFLECTION_LOD;
+    float mipSecondary = (roughness * 1.45) * MAX_REFLECTION_LOD;
+    
+    vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(NdotV, roughness)).rg;
+    
+    // Gives indirect skin highlights the same sharp-yet-soft depth seen on the right
+    return specular * (F * brdf.x + brdf.y);
+}
+
+
+///////////////////////////////////////////////
 
 struct GI{
     vec3 diffuseLighting;
@@ -565,17 +426,16 @@ GI GetGI(Surface surface){
     vec3 F0 = mix(vec3(0.04), surface.color, surface.metallic);
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, surface.roughness);
 
+    // Common Irradiance sampling
+    vec3 irradiance = _AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, N).rgb * _SkyLightIntensity;
+    float NdotV = max(dot(N, V), 0.0);
+
     #if defined(DIFFUSE_BRDF_LAMBERT)
-    vec3 diffuse = _AmbientLight.rgb + SampleTextureCube(_IrradianceMap, _IrradianceMapSampler, N).rgb * _SkyLightIntensity;
-    gi.diffuseLighting = DiffuseIBL_Lambert(diffuse, surface.color);
-    #endif
-
-    #if defined(DIFFUSE_BRDF_BURLEY)
-    gi.diffuseLighting = DiffuseIBL_Burley(N, V, surface.color, surface.roughness);
-    #endif
-
-    #if defined(DIFFUSE_BRDF_OREN_NAYAR)
-    gi.diffuseLighting = DiffuseIBL_OrenNayar(N, V, surface.color, surface.roughness);
+    gi.diffuseLighting = DiffuseIBL_Lambert(irradiance, surface.color);
+    #elif defined(DIFFUSE_BRDF_BURLEY)
+    gi.diffuseLighting = DiffuseIBL_Burley(irradiance, surface.color, NdotV, surface.roughness);
+    #elif defined(DIFFUSE_BRDF_OREN_NAYAR)
+    gi.diffuseLighting = DiffuseIBL_OrenNayar(irradiance, surface.color, NdotV, surface.roughness);
     #endif
 
     #if defined(SPECULAR_BRDF_GGX)
@@ -591,6 +451,13 @@ GI GetGI(Surface surface){
     vec3 coatF = ClearCoatFresnel(max(dot(N, V), 0.0), clearCoatIOR);
     vec3 clearCoatSpec = coatPrefilter * coatF * surface.clearCoat;
     gi.clearCoatSpecularLighting = clearCoatSpec;
+    #endif
+
+    #if defined(SPECULAR_BRDF_GGX_CUSTOM)
+    float mip = surface.roughness * MAX_REFLECTION_LOD;
+    vec3 specular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;
+    gi.specularLighting = SpecularIBL_SkinGGX(specular, F, max(dot(N, V), 0.0), surface.roughness);
+    gi.clearCoatSpecularLighting = vec3(0);
     #endif
 
     return gi;
@@ -625,6 +492,11 @@ vec3 EvaluateDirectLight(Surface surface, Light light){
 
     #if defined(SPECULAR_BRDF_GGX)
     vec3 specular = SpecularBRDF_GGX(N, V, L, F0, roughness);
+    vec3 coat = ClearCoatBRDF_GGX(surface, L);
+    #endif
+
+    #if defined(SPECULAR_BRDF_GGX_CUSTOM)
+    vec3 specular = SpecularBRDF_SkinGGX(N, V, L, F0, roughness);
     vec3 coat = ClearCoatBRDF_GGX(surface, L);
     #endif
 

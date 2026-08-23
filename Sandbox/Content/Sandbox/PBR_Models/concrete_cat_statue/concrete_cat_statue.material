@@ -1,7 +1,7 @@
 {
     "Material": {
         "enableInstancing": false,
-        "shaderPath": "Engine/Shaders/Lit.glsl",
+        "shaderPath": "Engine/Shaders/Lit2.glsl",
         "maps": [
             {
                 "key": "color",
@@ -11,7 +11,7 @@
                         "v.x": 1.0,
                         "v.y": 1.0,
                         "v.z": 1.0,
-                        "v.w": 0.0
+                        "v.w": 1.0
                     },
                     "vec.vectorIsColor": true
                 }
@@ -49,7 +49,7 @@
                 "key": "mainTex",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_diff_1k.jpg"
+                    "texPath": "Sandbox/PBR_Models/concrete_cat_statue/textures/concrete_cat_statue_diff_2k.jpg"
                 }
             },
             {
@@ -69,14 +69,14 @@
                 "key": "normalMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_nor_gl_1k.jpg"
+                    "texPath": "Sandbox/PBR_Models/concrete_cat_statue/textures/concrete_cat_statue_nor_gl_2k.jpg"
                 }
             },
             {
                 "key": "normalStrength",
                 "value": {
                     "type": 2,
-                    "valueFloat": 1.115000009,
+                    "valueFloat": 1.0,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 10.0
                 }
@@ -85,7 +85,7 @@
                 "key": "maskMap",
                 "value": {
                     "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_arm_1k.jpg"
+                    "texPath": "Sandbox/PBR_Models/concrete_cat_statue/textures/concrete_cat_statue_arm_2k.jpg"
                 }
             },
             {
@@ -122,38 +122,6 @@
                     "valueFloat": 0.5,
                     "valueFloatMin": 0.0,
                     "valueFloatMax": 1.0
-                }
-            },
-            {
-                "key": "clearCoatRoughness",
-                "value": {
-                    "type": 2,
-                    "valueFloat": 0.0,
-                    "valueFloatMin": 0.0,
-                    "valueFloatMax": 1.0
-                }
-            },
-            {
-                "key": "clearCoat",
-                "value": {
-                    "type": 2,
-                    "valueFloat": 0.0,
-                    "valueFloatMin": 0.0,
-                    "valueFloatMax": 1.0
-                }
-            },
-            {
-                "key": "roughnessMap",
-                "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_rough_1k.jpg"
-                }
-            },
-            {
-                "key": "metallicMap",
-                "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_metal_1k.jpg"
                 }
             }
         ],

@@ -1,0 +1,159 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v3.5.30",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "concrete_cat_statue"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "concrete_cat_statue",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Retopo_Node 300000_008.002",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "TEXCOORD_0": 1,
+            "NORMAL": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "name": "concrete_cat_statue_nor_gl",
+      "uri": "textures/concrete_cat_statue_nor_gl_2k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "concrete_cat_statue_diff",
+      "uri": "textures/concrete_cat_statue_diff_2k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "concrete_cat_statue_metal-concrete_cat_statue_rough",
+      "uri": "textures/concrete_cat_statue_arm_2k.jpg"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 6863,
+      "max": [
+        0.07482201606035233,
+        0.28300967812538147,
+        0.10024762153625488
+      ],
+      "min": [
+        -0.07814981788396835,
+        1.1276967626372425e-7,
+        -0.1497523933649063
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 6863,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 6863,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 35850,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 82356,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 54904,
+      "byteOffset": 82356,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 82356,
+      "byteOffset": 137260,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 71700,
+      "byteOffset": 219616,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 291316,
+      "uri": "concrete_cat_statue.bin"
+    }
+  ]
+}

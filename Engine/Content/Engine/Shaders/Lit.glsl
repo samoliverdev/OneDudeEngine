@@ -8,8 +8,6 @@
     Color4 emissionColor 0 0 0 0
     Float emissionIntensity 1 
     Texture2D maskMap White
-    Texture2D roughnessMap White
-    Texture2D metallicMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
     Float roughness 0.5 0.0 1.0
@@ -66,9 +64,6 @@ Texture2D(0, 7, normalMap, normalMapSampler)
 Texture2D(0, 8, emissionMap, emissionMapSampler)
 Texture2D(0, 9, maskMap, maskMapSampler)
 
-Texture2D(0, 9, roughnessMap, roughnessMapSampler)
-Texture2D(0, 9, metallicMap, metallicMapSampler)
-
 uniform int perDrawInt_1;
 
 #if defined(VERTEX)
@@ -106,7 +101,7 @@ uniform int perDrawInt_1;
 
         outWorldPos = vec3(targetModelMatrix * localPos); //vec3(targetModelMatrix * vec4(pos, 1.0));
         //vsOut.worldNormal = vec3(targetModelMatrix * vec4(normal, 0));
-        outWorldNormal = mat3(transpose(inverse(targetModelMatrix))) * localNormal; // for non-uniform scale objects
+        outWorldNormal = normalize( mat3(transpose(inverse(targetModelMatrix))) * localNormal ); // for non-uniform scale objects
 
         OutPosition = projection * view * targetModelMatrix * localPos;//GetLocalPos();
     }
@@ -193,11 +188,19 @@ uniform int perDrawInt_1;
         if(base.a < cutoff) discard;
         base = base * color;
         
-        /*vec3 normalMap = exture(normal, uv).rgb);
+        /*vec3 normalMap = texture(normal, uv).rgb);
         vec3 _normal = normalize(normalMap * 2.0 - 1.0); // transforms from [-1,1] to [0,1] 
         _normal = normalize(fsIn.TBN * _normal);*/ 
         
-        vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+        //vec3 _normal = GetNormal(mat3(outT, outB, outN), uv);// GetNormal(outTBN, uv);
+
+        vec3 N = normalize(outN);
+        vec3 T = normalize(outT);
+        T = normalize(T - N * dot(N, T));
+        vec3 B = normalize(cross(N, T));
+        mat3 TBN = mat3(T, B, N);
+        vec3 _normal = GetNormal(TBN, uv);
+
         vec3 viewPos = invView[3].xyz;
 
         Surface surface;
@@ -207,9 +210,9 @@ uniform int perDrawInt_1;
         surface.depth = -(view * vec4(outWorldPos, 1)).z;
         surface.color = base.rgb;
         surface.alpha = base.a;
-        surface.occlusion = GetOcclusion(uv);
-        surface.metallic = metallic * SampleTexture2D(metallicMap, metallicMapSampler, uv).r; //GetMetallic(uv);
-        surface.roughness = clamp(roughness, 0.025, 1) * SampleTexture2D(roughnessMap, roughnessMapSampler, uv).r;
+        surface.occlusion = SampleTexture2D(maskMap, maskMapSampler, uv).r; //GetOcclusion(uv);
+        surface.metallic = metallic * SampleTexture2D(maskMap, maskMapSampler, uv).b; //GetMetallic(uv);
+        surface.roughness = clamp(roughness, 0.025, 1) * SampleTexture2D(maskMap, maskMapSampler, uv).g;
         surface.clearCoat = clearCoat;
         surface.clearCoatRoughness = clamp(clearCoatRoughness, 0.025, 1); //clearCoatRoughness;
 

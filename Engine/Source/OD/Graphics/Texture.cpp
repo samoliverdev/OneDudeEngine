@@ -472,6 +472,9 @@ void Texture2D::OnGui(){
     const char* optionsString[] = {"Nearest", "Linear"};
     const char* curOptionString = optionsString[(int)settings.filter];
 
+    auto formatName = std::string(magic_enum::enum_name(settings.textureFormat));
+    ImGui::Text("Format: %s", formatName.c_str());
+
     if(ImGui::DrawEnumCombo<TextureFilter>("filter", &settings.filter)){
         save = true;
     }

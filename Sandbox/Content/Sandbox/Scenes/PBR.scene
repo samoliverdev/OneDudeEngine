@@ -5,7 +5,8 @@
         2,
         3,
         4,
-        5
+        5,
+        6
     ],
     "InfoComponents": [
         {
@@ -55,6 +56,14 @@
             "active": false,
             "entityType": 0,
             "prefabPath": ""
+        },
+        {
+            "name": "concrete_cat_statue_2k",
+            "tag": "",
+            "layer": 0,
+            "active": false,
+            "entityType": 0,
+            "prefabPath": ""
         }
     ],
     "InfoComponentEntities": [
@@ -63,7 +72,8 @@
         2,
         3,
         4,
-        5
+        5,
+        6
     ],
     "TransformComponents": [
         {
@@ -199,6 +209,28 @@
             "parent": 4294967295,
             "hasParent": false,
             "isCollection": false
+        },
+        {
+            "localPosition": {
+                "v.x": 0.0,
+                "v.y": 0.0,
+                "v.z": 0.0
+            },
+            "localRotation": {
+                "q.x": 0.0,
+                "q.y": 0.0,
+                "q.z": 0.0,
+                "q.w": 1.0
+            },
+            "localScale": {
+                "v.x": 4.0,
+                "v.y": 4.0,
+                "v.z": 4.0
+            },
+            "children": [],
+            "parent": 4294967295,
+            "hasParent": false,
+            "isCollection": false
         }
     ],
     "TransformComponentEntities": [
@@ -207,7 +239,8 @@
         2,
         3,
         4,
-        5
+        5,
+        6
     ],
     "Standard/FreeCameras": [
         {
@@ -471,10 +504,64 @@
                 "isNull": true,
                 "path": ""
             }
+        },
+        {
+            "localTransform": {
+                "position": {
+                    "v.x": 0.0,
+                    "v.y": 0.0,
+                    "v.z": 0.0
+                },
+                "rotation": {
+                    "q.x": 0.0,
+                    "q.y": 0.0,
+                    "q.z": 0.0,
+                    "q.w": 1.0
+                },
+                "scale": {
+                    "v.x": 1.0,
+                    "v.y": 1.0,
+                    "v.z": 1.0
+                }
+            },
+            "subMeshIndex": -1,
+            "boundingVolume": {
+                "center": {
+                    "v.x": -0.0016639,
+                    "v.y": 0.141504898,
+                    "v.z": -0.024752385
+                },
+                "extents": {
+                    "v.x": 0.076485916,
+                    "v.y": 0.141504779,
+                    "v.z": 0.125
+                }
+            },
+            "renderTargetVisibility": [
+                true
+            ],
+            "castShadow": true,
+            "modelRef": {
+                "isNull": false,
+                "path": "Sandbox/PBR_Models/concrete_cat_statue/concrete_cat_statue_2k.gltf"
+            },
+            "materialVectorRef": {
+                "isNull": [
+                    false
+                ],
+                "path": [
+                    "Sandbox/PBR_Models/concrete_cat_statue/concrete_cat_statue.material"
+                ]
+            },
+            "customShadowPass": {
+                "isNull": true,
+                "path": ""
+            }
         }
     ],
     "ModelRendererComponentEntities": [
-        5
+        5,
+        6
     ],
     "RigidbodyComponents": [
         {
