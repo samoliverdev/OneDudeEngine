@@ -1060,12 +1060,15 @@ void Scene::Update(){
     float _fixedStep = OD::Time::FixedDelta();
 
     fixedUpdateAccumulator += _delta;
+    int physicsSteps = 0;
     
     #if ENABLE_FIXED
     {
     OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate");
     if(_fixedStep > 0.0f && _delta >= 0.0f){
         while(fixedUpdateAccumulator >= _fixedStep){ //INFO: This can be bug if Time::FixedDelta() return 0 
+            physicsSteps++;
+
             for(auto s: SceneManager::Get().globalFixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
             for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
             {
@@ -1076,6 +1079,14 @@ void Scene::Update(){
 
             fixedUpdateAccumulator -= _fixedStep;
         }
+
+        /*LogInfo(
+            "dt={} accumulator={} steps={}",
+            _delta,
+            fixedUpdateAccumulator,
+            physicsSteps
+        );*/
+
     }/* else {
         // PAUSED or invalid fixed step → freeze interpolation safely
         fixedUpdateAccumulator = std::clamp(fixedUpdateAccumulator, 0.0f, _fixedStep > 0.0f ? _fixedStep : 0.0f);

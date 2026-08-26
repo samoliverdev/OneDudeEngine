@@ -1800,6 +1800,8 @@ void RigidbodyComponent::OnGui(Entity& e, Scene& scene){
 
 	ImGui::DrawLayerMask("mask", rb.mask);
 
+	ImGui::Checkbox("useTransformScale", &rb.useTransformScale);
+
     /*CollisionShape shape = rb.GetShape();
 
     ImGui::Spacing();
@@ -2220,7 +2222,10 @@ void RigidbodyComponent::AddExplosionImpulse(float force, Vector3 explosionPosit
 	bodyInterface.AddImpulse(data->bodyID, impulse, centerOfMass);
 }
 
+//Deprecated: Remove this later
 void RigidbodyComponent::SetAngularFactor(Vector3 v){
+	Assert(false && "Deprecated");
+	return;
     angularFactor = v;
     if(data == nullptr) return;
 	if(type != RigidbodyComponent::Type::Dynamic) return;
@@ -2812,7 +2817,9 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         return;
     }
 
-    Vec3 scale = ToJolt(transform.Scale());
+	//TODO: Review this later, maybe disable the scaling, or add a option, Warning: and this can cause bug, check later
+    Vec3 scale = rb.useTransformScale ? ToJolt(transform.Scale()) : JPH::Vec3::sReplicate(1.0f);
+	//JPH::Vec3 scale = JPH::Vec3::sReplicate(1.0f);
 
     if(!scale.IsClose(Vec3::sReplicate(1.0f))){
         auto result = ScaledShapeSettings(finalShape, scale).Create();
@@ -2878,8 +2885,9 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
         rb.data = nullptr;
         return;
     }
-
-    rb.SetAngularFactor(rb.angularFactor);
+				
+	//This look like is bug, making some object falling thgrou floor, in some cases
+    //rb.SetAngularFactor(rb.angularFactor);
 }
 
 void PhysicsSystem::RemoveRigidbody(Entity entity, RigidbodyComponent& rb){
@@ -3694,6 +3702,111 @@ void PhysicsSystem::OnEnd(Scene& inScene){
 	scene->GetRegistry().on_destroy<HeightmapColliderComponent>().disconnect<&OnRemoveHeightmap>();
 }
 
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+
+using namespace JPH;
+
+void CreateTestBodies(JPH::PhysicsSystem& physicsSystem)
+{
+    BodyInterface& bodyInterface = physicsSystem.GetBodyInterface();
+	//BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock();
+
+    // ------------------------------------------------------------
+    // Floor
+    // ------------------------------------------------------------
+
+    RefConst<Shape> floorShape =
+        new BoxShape(Vec3(50.0f, 1.0f, 50.0f));
+
+    BodyCreationSettings floorSettings(
+        floorShape,
+        RVec3(0.0_r, -1.0_r, 0.0_r),
+        Quat::sIdentity(),
+        EMotionType::Static,
+        0 //Layers::NON_MOVING
+    );
+
+    BodyID floorID = bodyInterface.CreateAndAddBody(
+        floorSettings,
+        EActivation::DontActivate
+    );
+
+    JPH_ASSERT(!floorID.IsInvalid());
+
+
+    // ------------------------------------------------------------
+    // Capsule shape
+    // ------------------------------------------------------------
+
+    // Jolt CapsuleShape takes:
+    //     half height of cylindrical part
+    //     radius
+    //
+    // Total height = 2 * halfHeight + 2 * radius
+    //
+    // Here:
+    //     halfHeight = 1.0
+    //     radius     = 0.5
+    //     total      = 3.0
+
+    RefConst<Shape> capsuleShape =
+        new CapsuleShape(
+            1.0f,   // half height
+            0.5f    // radius
+        );
+
+	std::mt19937 rng(12345);
+	std::uniform_real_distribution<float> offset(-0.05f, 0.05f);
+
+    // ------------------------------------------------------------
+    // 10 capsules
+    // ------------------------------------------------------------
+
+    for (int i = 0; i < 10; ++i)
+    {
+        int x = i % 5;
+        int z = i / 5;
+
+        /*RVec3 position(
+            -4.0_r + x * 2.0_r,
+            5.0_r + z * 4.0_r,
+            0.0_r
+        );*/
+
+		RVec3 position(
+			-4.0_r + x * 2.0_r + offset(rng),
+			5.0_r + z * 4.0_r,
+			0.0_r + offset(rng)
+		);
+
+        BodyCreationSettings capsuleSettings(
+            capsuleShape,
+            position,
+            Quat::sIdentity(),
+            EMotionType::Dynamic,
+            0 //Layers::MOVING
+        );
+
+        // Start with normal discrete collision.
+        capsuleSettings.mMotionQuality =
+            EMotionQuality::Discrete;
+
+        capsuleSettings.mLinearDamping = 0.05f;
+        capsuleSettings.mAngularDamping = 0.05f;
+
+        BodyID bodyID = bodyInterface.CreateAndAddBody(
+            capsuleSettings,
+            EActivation::Activate
+        );
+
+        JPH_ASSERT(!bodyID.IsInvalid());
+    }
+}
+
 void PhysicsSystem::OnStart(Scene& scene){
 	//Reset all data from copied scene
 
@@ -3724,6 +3837,8 @@ void PhysicsSystem::OnStart(Scene& scene){
 	for(auto [e, comp]: vehicleView.each()){
 		comp.data = nullptr;
 	}
+
+	//CreateTestBodies(physicsWorld->physicsSystem);
 }
 
 PhysicsSystem::~PhysicsSystem(){
@@ -3905,6 +4020,7 @@ int PhysicsSystem::ExecutionSortPriority(SystemType type){
 };
 
 void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
+	//return;
 	OD_PROFILE_SCOPE("PhysicsSystem::PrePhysicsUpdate");
 
 	if(skipUpdate) return;
@@ -3928,12 +4044,21 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 }
 
 void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
+				
 	//OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
 
 	if(skipUpdate) return;
 
 	Assert(&GlobalSettings::Get().Get<PhysicsSettings>() == currentSettings);
 	if(scene->Running() == false) return;
+
+	/*physicsWorld->physicsSystem.Update(
+        1.0f / 60.0f,
+        cCollisionSteps,
+        physicsWorld->tempAllocator,
+        &physicsWorld->jobSystem
+    );
+	return;*/
 
 	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock();
 
@@ -4473,6 +4598,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 }
 
 void PhysicsSystem::PostPhysicsUpdate(Scene& inScene){
+	//return;
 	OD_PROFILE_SCOPE("PhysicsSystem::PostPhysicsUpdate");
 
 	if(skipUpdate) return;
@@ -4811,7 +4937,9 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 				0,
 				0 // para centralizar em -Z
 			);
+			//TODO: Review this later, maybe disable the scaling, or add a option, Warning: and this can cause bug, check later
 			JPH::Vec3 scale = ToJolt(transform.Scale());// Aplica escala do Transform
+			//JPH::Vec3 scale = JPH::Vec3::sReplicate(1.0f);
 
 			JPH::HeightFieldShapeSettings heightFieldSettings(
 				rb.heights.data(),   // float* inSamples

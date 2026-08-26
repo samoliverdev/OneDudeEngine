@@ -202,6 +202,7 @@ struct OD_API RigidbodyComponent{
 
     void AddExplosionImpulse(float force, Vector3 explosionPosition, float radius, float upwardsModifier);
 
+    //Deprecated: Remove this later
     void SetAngularFactor(Vector3 v);
 
     float LinearDamping();
@@ -233,6 +234,8 @@ struct OD_API RigidbodyComponent{
 
         ArchiveDump(ar, CEREAL_NVP(overrideCenterOfMass));
         ArchiveDump(ar, CEREAL_NVP(centerOfMass));
+
+        ArchiveDump(ar, CEREAL_NVP(useTransformScale));
     }
 
     //This can be bug, see DEFINE_COPY_MOVE_CONSTRUCTORS_SHARED comments
@@ -274,6 +277,7 @@ private:
     float angularDamping = 0.05;
     PhysicMotionQuality motionQuality;
     bool neverSleep = false;
+    bool useTransformScale = true;
 
     Vector3 previousPosition = Vector3Zero;
     Quaternion previousRotation = QuaternionIdentity;
