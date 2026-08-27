@@ -159,10 +159,10 @@ else()
 endif()
 add_subdirectory(Engine/ThirdParty/msdf-atlas-gen)
 
-if(OD_SUPPORT_WEBGPU)
+#if(OD_SUPPORT_WEBGPU)
     add_subdirectory(Engine/ThirdParty/glslang)
     add_subdirectory(Engine/ThirdParty/SPIRV-Reflect)
-endif()
+#endif()
 #add_subdirectory(Engine/ThirdParty/imgui)
 #add_subdirectory(Engine/ThirdParty/SPIRV-Cross)
 #add_subdirectory(Engine/ThirdParty/EASTL)
@@ -255,6 +255,9 @@ set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui_widgets.cpp
     Engine/ThirdParty/imgui/backends/imgui_impl_glfw.cpp
 )
+
+set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/vk-bootstrap/VkBootstrap.cpp)
+
 if(OD_SUPPORT_OPENGL)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/backends/imgui_impl_opengl3.cpp
@@ -321,6 +324,9 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/miniz/
     Engine/ThirdParty/physfs-release-3.2.0/src/
     Engine/ThirdParty/miniaudio/
+
+    C:/VulkanSDK/1.4.357.0/Include/
+
     #Engine/ThirdParty/spdlog-1.17.0/include/
     #Engine/ThirdParty/tinygltf/
     #Engine/ThirdParty/SPIRV-Cross/
@@ -354,15 +360,19 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+
+set(Vulkan_ROOT "C:/VulkanSDK/1.4.357.0")
+find_package(Vulkan REQUIRED)
+target_link_libraries(Engine PRIVATE Vulkan::Vulkan)
+
 target_link_libraries(Engine PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 #target_link_libraries(Engine PUBLIC spdlog::spdlog_header_only)
 if(WIN32)
     target_link_libraries(Engine PRIVATE comctl32)
 endif()
-if(OD_SUPPORT_WEBGPU)
-    target_link_libraries(Engine PRIVATE glslang glslang-default-resource-limits spirv-reflect-static
-)
-endif()
+#if(OD_SUPPORT_WEBGPU)
+    target_link_libraries(Engine PRIVATE glslang glslang-default-resource-limits spirv-reflect-static)
+#endif()
 if(OD_USE_ASSIMP)
     target_link_libraries(Engine PRIVATE assimp)
     target_compile_definitions(Engine PRIVATE USE_ASSIMP)

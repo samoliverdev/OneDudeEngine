@@ -18,6 +18,8 @@
 #include "OD/CoreModulesStartup.h"
 #include "OD/Serialization/SerializationFull.h"
 
+#include "OD/GPU/GPU.h"
+
 #include "OD/Graphics/Texture.h"
 
 namespace OD{
@@ -32,6 +34,113 @@ bool inUpdate = false;
 Action<void()> onFrameEnd;
 
 ApplicationCallbacks callbacks;
+
+struct GPURendererContext{
+    bool multithread = false;
+    std::atomic<bool> running = false;
+
+    GPURenderFrame frames[2];
+
+    GPURenderFrame* simulationFrame = nullptr; // Owned by main thread.
+    GPURenderFrame* renderFrame = nullptr; // Owned by render thread.
+
+    std::thread renderThread;
+
+    std::mutex mutex;
+    std::condition_variable condition;
+
+    bool renderRequested = false;
+    bool renderFinished = false;
+};
+
+GPURendererContext gpuRendererContext;
+GPUDevice* gpuDevice = nullptr;
+
+void Application::RenderThreadLoop(){
+    Platform::MakeMultiThreadContext();
+
+    gpuDevice->Init();
+
+    while(gpuRendererContext.running){
+        
+        // Wait for this frame's render work.
+        {
+            std::unique_lock<std::mutex> lock(gpuRendererContext.mutex);
+
+            gpuRendererContext.condition.wait(
+                lock,
+                [&]{
+                    return gpuRendererContext.renderRequested || !gpuRendererContext.running;
+                }
+            );
+
+            if(!gpuRendererContext.running) return;
+
+            gpuRendererContext.renderRequested = false;
+        }
+
+        // ------------------------------------------------
+        // Execute render commands.
+        //
+        // This happens on the render thread.
+        // ------------------------------------------------
+
+        //RunRender(*renderFrame);
+        {
+        //SimpleTimer s([](float t){ LogInfo("GpuTime: {}", t); });
+        gpuDevice->RunRender(*gpuRendererContext.renderFrame);
+        gpuRendererContext.renderFrame->Clear();
+        Platform::SwapBuffers();
+        }
+
+        // ------------------------------------------------
+        // Tell main thread that render is complete.
+        // ------------------------------------------------
+
+        {
+            std::lock_guard<std::mutex> lock(gpuRendererContext.mutex);
+            gpuRendererContext.renderFinished = true;
+        }
+
+        gpuRendererContext.condition.notify_one();
+    }
+
+    gpuDevice->Shut();
+}
+
+void StartRender(){
+    {
+        std::lock_guard<std::mutex> lock(gpuRendererContext.mutex);
+        gpuRendererContext.renderRequested = true;
+    }
+
+    gpuRendererContext.condition.notify_one();
+}
+
+void WaitForRender(){
+    std::unique_lock<std::mutex> lock(gpuRendererContext.mutex);
+
+    gpuRendererContext.condition.wait(
+        lock,
+        [&]
+        {
+            return gpuRendererContext.renderFinished || !gpuRendererContext.running;
+        }
+    );
+
+    gpuRendererContext.renderFinished = false;
+}
+
+void SwapRenderFrames(){
+    std::swap(
+        gpuRendererContext.simulationFrame,
+        gpuRendererContext.renderFrame
+    );
+}
+
+GPURenderFrame& Application::GetRenderFrame(){
+    return *gpuRendererContext.simulationFrame;
+}
 
 //Module* mainModule;
 bool running = true;
@@ -89,13 +198,31 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
-    
-    
+    gpuRendererContext.multithread = false;
+
     Graphics::SelectGraphicsDevice();
 
     if(Platform::SystemStartup(appConfig) == false) return false;
 
     Graphics::Initialize();
+
+    ////////////////////////////////
+    #ifdef TestNewGPU_API
+    gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
+
+    if(!gpuRendererContext.multithread) gpuDevice->Init();
+
+    gpuRendererContext.running = true;
+
+    gpuRendererContext.simulationFrame = &gpuRendererContext.frames[0];
+    gpuRendererContext.renderFrame = &gpuRendererContext.frames[1];
+
+    if(gpuRendererContext.multithread){
+        Platform::StopCurrentContext();
+        gpuRendererContext.renderThread = std::thread(&Application::RenderThreadLoop);
+    }
+    #endif
+    ////////////////////////////////
     
     //Input::_Initialize(0, 0);
     #ifdef __EMSCRIPTEN__
@@ -218,7 +345,11 @@ void Application::Loop(){
     Input::PostUpdate();
     Graphics::_End();
     Platform::LateUpdate();
+
+    #ifndef TestNewGPU_API
+    Platform::PollEvents();
     Platform::SwapBuffers();
+    #endif
     }
 
     #if OD_PROFILE
@@ -286,7 +417,42 @@ bool Application::Run(){
     LogInfo("EMSCRIPTEN Loop");
     emscripten_set_main_loop(Loop, 0, true);
 #else
-    while(running) Loop();
+    while(running){
+        #ifdef TestNewGPU_API
+        /*SimpleTimer timer([](float t){
+            LogInfo("FrameTime: {}", t);
+        });*/
+        if(!gpuRendererContext.multithread){
+            {
+            //SimpleTimer s([](float t){ LogInfo("CpuTime: {}", t); });
+            Loop();
+            }
+
+            {
+            //SimpleTimer s([](float t){ LogInfo("GpuTime: {}", t); });
+            gpuDevice->SyncSingleThreadData();
+            gpuDevice->RunRender(*gpuRendererContext.simulationFrame);
+            gpuRendererContext.simulationFrame->Clear();
+            Platform::PollEvents();
+            Platform::SwapBuffers();
+            }
+            continue;
+        }
+
+        StartRender();
+
+        {
+        //SimpleTimer s([](float t){ LogInfo("CpuTime: {}", t); });
+        Loop();
+        Platform::PollEvents();
+        }
+        WaitForRender();
+        SwapRenderFrames();
+        gpuDevice->SyncSingleThreadData();
+        #else
+        Loop();
+        #endif
+    }
 #endif
 
     OnExit();
@@ -295,6 +461,18 @@ bool Application::Run(){
 }
 
 void Application::OnExit(){
+    ///////////////////////////
+    #ifdef TestNewGPU_API
+    if(!gpuRendererContext.multithread) gpuDevice->Shut();
+
+    gpuRendererContext.condition.notify_all();
+
+    if(gpuRendererContext.renderThread.joinable())
+        gpuRendererContext.renderThread.join();
+
+    #endif
+    /////////////////
+
     if(callbacks.onShutdown != nullptr) callbacks.onShutdown();
 
     GlobalSettings::Get().Save("../GlobalSettings");
@@ -331,6 +509,7 @@ void Application::OnExit(){
 
 void Application::Quit(){
     running = false;
+    gpuRendererContext.running = running;
 }
 
 void Application::Exit(){

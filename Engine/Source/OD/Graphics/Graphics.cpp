@@ -21,6 +21,9 @@
 #include "OD/Platform/WebGPU/WebGPUGraphicsDevice.h"
 #endif
 
+#include "OD/Platform/OpenglGPU/OpenglGPU.h"
+#include "OD/Platform/VulkangGPU/VulkanGPU.h"
+
 namespace OD{
 
 void GraphicsModuleInit(){
@@ -78,7 +81,16 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
 int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 
+GraphicsDevice* Graphics::GetGraphicsDevice(){
+    return graphicsDevice;
+}
+
 void Graphics::SelectGraphicsDevice(){
+    #ifdef TestNewGPU_API
+    //graphicsDevice = new OpenglGPUDevice();
+    graphicsDevice = new VulkanGPUDevice();
+    return;
+    #endif
     
     if(curGraphicsDevice >= supportedGraphicsDevices.size()){
         curGraphicsDevice = supportedGraphicsDevices.size() - 1;

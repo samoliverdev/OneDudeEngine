@@ -18,7 +18,8 @@
 
 #include <imgui/backends/imgui_impl_glfw.h>
 
-#define GLFW_INCLUDE_NONE
+//#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 //#include "OpenGL/GL.h"
 #include <GLFW/glfw3.h>
 
@@ -40,6 +41,8 @@ int windowPosX, windowPosY;
 bool vSync = false;
 bool fullscreen = false;
 bool hidden = false;
+
+bool imGuiSupport = false;
 
 CursorState cursorState;
 
@@ -90,6 +93,7 @@ void UpdateWindowTitle(GLFWwindow* window){
 
 void imguiOnInit(GLFWwindow* window){
     if(graphicsDevice->ImGuiSupport() == false) return;
+    imGuiSupport = true;
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -191,6 +195,7 @@ void Platform::ImguiEnd(){
 }
 
 void imguiOnDestroy(){
+    if(imGuiSupport == false) return;
     //if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
@@ -329,6 +334,20 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
     return true;
 }
 
+void Platform::StopCurrentContext(){
+    auto graphicsDeviceInfo = graphicsDevice->GetInfo();
+    if(graphicsDeviceInfo.apiName == "OpenGL"){
+        glfwMakeContextCurrent(nullptr);
+    }
+}
+
+void Platform::MakeMultiThreadContext(){
+    auto graphicsDeviceInfo = graphicsDevice->GetInfo();
+    if(graphicsDeviceInfo.apiName == "OpenGL"){
+        glfwMakeContextCurrent(window);
+    }
+}
+
 void Platform::PreUpdate(){
     OD_PROFILE_SCOPE("Platform::PreUpdate");
     //UpdateFpsCounter(window);
@@ -372,6 +391,10 @@ bool Platform::PumpMessages(){
     return true; 
 }
 
+void Platform::PollEvents(){
+    glfwPollEvents();
+}
+
 void Platform::SwapBuffers(){
     {
     /*OD_PROFILE_SCOPE("Platform::glFlush");
@@ -379,16 +402,16 @@ void Platform::SwapBuffers(){
     Sleep(1);*/
     }
 
-    {
-    OD_PROFILE_SCOPE("Platform::SwapBuffers");
+    //{
+    //OD_PROFILE_SCOPE("Platform::SwapBuffers");
     glfwSwapBuffers(window);
-    }
+    //}
 
-    {
+    /*{
     OD_PROFILE_SCOPE("Platform::glfwPollEvents");
     glfwPollEvents();
     //glfwWaitEvents();
-    }
+    }*/
 }
 
 float Platform::GetTime(){ return glfwGetTime(); }
@@ -522,6 +545,11 @@ void* Platform::GetInternalData(){
 void Platform::EndOffscreenContextCurrent(){
     glfwMakeContextCurrent(nullptr);
 }*/
+
+void Platform::CreateVulkanSurface(void* instance, void* surface){
+    VkResult err = glfwCreateWindowSurface((VkInstance)instance, window, NULL, (VkSurfaceKHR*)surface);
+    if(err) Assert(false);
+}
 
 }
 

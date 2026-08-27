@@ -24,6 +24,8 @@ class InstancingBuffer;
 class UniformBuffer;
 struct TextParams;
 
+class GraphicsDevice;
+
 struct GraphicsStats{
     int drawCalls;
     int vertices;
@@ -199,6 +201,8 @@ public:
     static double EndGPUTime();
 
     static void CreateLuaBind(sol::state& lua);
+
+    static GraphicsDevice* GetGraphicsDevice();
 
 private:
     static void SelectGraphicsDevice();

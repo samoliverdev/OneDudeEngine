@@ -1,0 +1,29 @@
+#pragma once
+#include "OD/GPU/GPU.h"
+#include "OD/Graphics/GraphicsDevice.h"
+
+namespace OD{
+
+class VulkanGPUDevice: public GraphicsDevice, public GPUDevice{
+public:
+    VulkanGPUDevice();
+
+    virtual GraphicsStats& GetStats() override;
+    virtual GPUMemoryStats& GetMemoryStats() override;
+    virtual GraphicsDebug& GetGraphicsDebug() override;
+
+    virtual GraphicsDeviceInfo GetInfo() override;
+
+    virtual bool SupportMultithread() override { return true; }
+    
+    virtual void Init() override;
+    virtual void Shut() override;
+    virtual void RunRender(GPURenderFrame& frame) override;
+
+    virtual void SyncSingleThreadData() override;
+
+    virtual MeshId AllocMeshId() override;
+    virtual PipelineId AllocPipelineId() override;
+};
+
+}

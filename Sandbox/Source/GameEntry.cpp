@@ -30,6 +30,8 @@
 #include "Samples/SSGI.h"
 #include "Samples/UI.h"
 
+#include "Samples/GPUSample1.h"
+
 #include <OD/Graphics/Texture.h>
 
 OD::ApplicationConfig GetStartAppConfig(){
@@ -44,6 +46,12 @@ OD::ApplicationConfig GetStartAppConfig(){
 OD::Module* CreateMainModule(){
     int i = -1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
+
+    #ifdef TestNewGPU_API
+    i = -2;
+    #endif
+
+    if(i == -2) return new GPUSample1();
 
     if(i == -1) return new LoadSceneSample();
     

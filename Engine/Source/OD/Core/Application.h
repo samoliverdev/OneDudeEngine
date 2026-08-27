@@ -14,6 +14,8 @@ namespace OD{
 
 class Module;
 struct Project;
+
+struct GPURenderFrame;
     
 struct ApplicationConfig{
     int startPosX;
@@ -39,6 +41,8 @@ public:
     static void Quit();
     static void Exit();
     static void GetFramebufferSize(int* width, int* height);
+
+    static GPURenderFrame& GetRenderFrame();
 
     static int ScreenWidth();
     static int ScreenHeight();
@@ -86,6 +90,8 @@ private:
 
     static void DrawImGui();
     static void DrawImGui(std::function<void()> func);
+
+    static void RenderThreadLoop();
 };
 
 }

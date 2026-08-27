@@ -11,6 +11,8 @@ class OD_API Platform{
     friend class Application;
 public:
     static bool PumpMessages();
+    
+    static void PollEvents();
     static void SwapBuffers();
 
     static float GetTime();
@@ -47,8 +49,14 @@ public:
     static void UpdatePopupProgress(unsigned int);
     static void HidePopupProgress();
 
+    static void CreateVulkanSurface(void* instance, void* surface);
+
 private:
     static bool SystemStartup(const struct ApplicationConfig& config);
+
+    static void StopCurrentContext();
+    static void MakeMultiThreadContext();
+    
     static void SystemShutdown(void* plat_state);
 
     static void PreUpdate();
