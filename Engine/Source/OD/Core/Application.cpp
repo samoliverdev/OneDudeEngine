@@ -198,7 +198,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
-    gpuRendererContext.multithread = false;
+    gpuRendererContext.multithread = true;
 
     Graphics::SelectGraphicsDevice();
 

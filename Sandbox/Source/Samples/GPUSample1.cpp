@@ -29,69 +29,150 @@ void SimulateHeavyWork(float milliseconds){
     }
 }
 
-float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    0.0f,  0.5f, 0.0f
-};  
+float positions[] = {
+    -0.8f,  0.5f, 0.0f,
+    -0.2f, -0.5f, 0.0f,
+     0.4f,  0.5f, 0.0f
+};
+
+float colors[] = {
+    1.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 1.0f
+};
+
+uint32_t indices[] = {
+    0, 1, 2
+};
+
 const char* shaderSource = R"GLSL(
     #ifdef Vertex
+    layout(location = 0) in vec3 aPos;
+    layout(location = 7) in vec3 aColor;
 
-    layout (location = 0) in vec3 aPos;
-
-    void main(){
-        gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    }
-
+    #ifdef Vulkan
+    layout(location = 0) out vec3 vColor;
+    #else
+    out vec3 vColor;
     #endif
 
-    #ifdef Fragment
-    out vec4 FragColor;
     void main(){
-        FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+        gl_Position = vec4(aPos, 1.0);
+        vColor = aColor;
+        //vColor = vec3(1.0, 0.0, 0.0);
+    }
+    #endif
+
+
+    #ifdef Fragment
+    #ifdef Vulkan
+    layout(location = 0) in vec3 vColor;
+    layout(location = 0) out vec4 FragColor;
+    #else
+    in vec3 vColor;
+    out vec4 FragColor;
+    #endif
+
+    void main(){
+        FragColor = vec4(vColor, 1.0);
     }
     #endif
     )GLSL";
 
-MeshId mesh;
-PipelineId pipeline;
+BufferId vertexBuffer;
+BufferId positionBuffer;
+BufferId colorBuffer;
+BufferId indexBuffer;
+
+PipelineId pipelineSingle;
+PipelineId pipelineSeparate;
 
 void GPUSample1::OnInit(){
     GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
     auto& frame = Application::GetRenderFrame();
 
-    mesh = gpuDevice->AllocMeshId();
-    frame.commands.CreateMesh(mesh, vertices, sizeof(vertices));
+    // -------------------------------------------------
+    // Triangle 1: POSITION + COLOR in ONE VBO
+    // -------------------------------------------------
+    float interleaved[] = {
+        // position          // color
+        -0.9f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+        -0.1f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+        -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
+    };
+    vertexBuffer = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::GPUToCPU);
 
-    pipeline = gpuDevice->AllocPipelineId();
-    frame.commands.CreatePipeline(pipeline, shaderSource, static_cast<uint32_t>(strlen(shaderSource)));
+    // -------------------------------------------------
+    // Triangle 2: POSITION and COLOR in TWO VBOs
+    // -------------------------------------------------
+    positionBuffer = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(positionBuffer, positions, sizeof(positions), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
+
+    colorBuffer = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(colorBuffer, colors, sizeof(colors), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
+
+    // -------------------------------------------------
+    // Index buffer
+    // -------------------------------------------------
+    indexBuffer = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(indexBuffer, indices, sizeof(indices), GPUBufferUsage::Index, GPUBufferMemory::GPUOnly);
+
+    // -------------------------------------------------
+    // Pipeline 1: interleaved buffer
+    // -------------------------------------------------
+    pipelineSingle = gpuDevice->AllocPipelineId();
+    GPUPipelineInfo pipelineInfo = {};
+    pipelineInfo.vertexLayout.attributes[0] = {GPUVertexSemantic::Position, GPUVertexFormat::Float3, 0, 0};
+    pipelineInfo.vertexLayout.attributes[1] = {GPUVertexSemantic::Color0, GPUVertexFormat::Float3, 0, 12};
+    pipelineInfo.vertexLayout.attributeCount = 2;
+    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, GPUVertexInputRate::Vertex};
+    pipelineInfo.vertexLayout.bufferCount = 1;
+    frame.resourceCommands.CreatePipeline(pipelineSingle, shaderSource, pipelineInfo);
+
+
+    // -------------------------------------------------
+    // Pipeline 2: separate buffers
+    // -------------------------------------------------
+    pipelineSeparate = gpuDevice->AllocPipelineId();
+    GPUPipelineInfo separateInfo = {};
+    separateInfo.vertexLayout.attributes[0] = {GPUVertexSemantic::Position, GPUVertexFormat::Float3, 0, 0};
+    separateInfo.vertexLayout.attributes[1] = {GPUVertexSemantic::Color0, GPUVertexFormat::Float3, 1, 0};
+    separateInfo.vertexLayout.attributeCount = 2;
+    separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
+    separateInfo.vertexLayout.bufferCount = 2;
+    frame.resourceCommands.CreatePipeline(pipelineSeparate, shaderSource, separateInfo);
 }
 
 void GPUSample1::OnUpdate(float deltaTime){
-    SimulateHeavyWork(33);
-
-    if(Input::IsKeyDown(KeyCode::D)){
-        GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-        auto& frame = Application::GetRenderFrame();
-
-        frame.commands.DestroyMesh(mesh);
-
-        mesh = gpuDevice->AllocMeshId();
-        frame.commands.CreateMesh(mesh, vertices, sizeof(vertices));
-
-        LogInfo("Update Mesh: {}", mesh);
-    }
+    //SimulateHeavyWork(33);
+    //if(Input::IsKeyDown(KeyCode::D)){}
 }   
 
 void GPUSample1::OnRender(float deltaTime){
     auto& frame = Application::GetRenderFrame();
 
-    frame.commands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    frame.commands.Clean(0, 0, 0, 255); 
+    frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 255, 0, 255}});
 
-    for(int i = 0; i < 90000; i++){
-        frame.commands.Draw(mesh, pipeline, 3);
-    }
+    // ================================================
+    // Triangle 1
+    // Position + Color in ONE VBO
+    // ================================================
+    frame.renderCommands.SetPipeline(pipelineSingle);
+    frame.renderCommands.SetVertexBuffer(0, vertexBuffer);
+    frame.renderCommands.Draw(3);
+
+    // ================================================
+    // Triangle 2
+    // Position + Color in TWO VBOs
+    // ================================================
+    frame.renderCommands.SetPipeline(pipelineSeparate);
+    frame.renderCommands.SetVertexBuffer(0, positionBuffer);
+    frame.renderCommands.SetVertexBuffer(1, colorBuffer);
+    frame.renderCommands.SetIndexBuffer(indexBuffer);
+    frame.renderCommands.DrawIndexed(3);
 }
 
 void GPUSample1::OnExit(){}

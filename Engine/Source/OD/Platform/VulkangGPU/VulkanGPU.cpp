@@ -2,6 +2,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/Platform.h"
+#include "OD/Platform/BaseGpu/ResourcePool.h"
 
 #include <vulkan/vulkan.h>
 #include <vk-bootstrap/VkBootstrap.h>
@@ -14,6 +15,10 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <unordered_map>
+
+//#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 
 #define VK_CHECK(x)                                                 \
 	do                                                              \
@@ -26,77 +31,62 @@
 		}                                                           \
 	} while (0)
 
-namespace OD{
+namespace OD {
 
 GraphicsDeviceInfo vkInfo;
-
 GraphicsStats vkGraphicsStats;
 GPUMemoryStats vkGPUMemoryStats;
 GraphicsDebug vkGraphicsDebug;
 
-GraphicsStats& VulkanGPUDevice::GetStats(){ return vkGraphicsStats; }
-GPUMemoryStats& VulkanGPUDevice::GetMemoryStats(){ return vkGPUMemoryStats; }
-GraphicsDebug& VulkanGPUDevice::GetGraphicsDebug(){ return vkGraphicsDebug; }
-GraphicsDeviceInfo VulkanGPUDevice::GetInfo(){ return vkInfo; }
+GraphicsStats& VulkanGPUDevice::GetStats() { return vkGraphicsStats; }
+GPUMemoryStats& VulkanGPUDevice::GetMemoryStats() { return vkGPUMemoryStats; }
+GraphicsDebug& VulkanGPUDevice::GetGraphicsDebug() { return vkGraphicsDebug; }
+GraphicsDeviceInfo VulkanGPUDevice::GetInfo() { return vkInfo; }
 
-VulkanGPUDevice::VulkanGPUDevice(){
+VulkanGPUDevice::VulkanGPUDevice() {
     vkInfo.apiName = "Vulkan";
     vkInfo.version = 1;
     vkInfo.supportUniformBuffer = true;
 }
 
-////////////////////////////////////
-const char* vkShaderSource = R"GLSL(
-    #ifdef Vertex
-    void main(){
-        const vec3 positions[3] = vec3[3](
-            vec3(1.0f, 1.0f, 0.0f),
-            vec3(-1.0f, 1.0f, 0.0f),
-            vec3(0.0f, -1.0f, 0.0f)
-        );
-        gl_Position = vec4(positions[gl_VertexIndex], 1.0f);
-    }
-    #endif
+/*struct BufferData {
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    GPUBufferUsage usage;
+    GPUBufferMemory memory;
+    VkDeviceSize size = 0;
+};
+ResourcePool<BufferData> bufferPool;
 
-    #ifdef Fragment
-    layout(location = 0) out vec4 outFragColor;
-    void main(){
-        outFragColor = vec4(1.f,0.f,0.f,1.0f);
-    }
-    #endif
-    )GLSL";
-
-///////////////////////////////////////////
+struct PipelineData {
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    GPUPipelineInfo info;
+};
+ResourcePool<PipelineData> pipelinePool;*/
 
 bool _isInitialized{ false };
 int _frameNumber {0};
 
 VkExtent2D _windowExtent{ 800, 600 };
+VkInstance _instance;
+VkDebugUtilsMessengerEXT _debug_messenger;
+VkPhysicalDevice _chosenGPU;
+VkDevice _device;
+VkSurfaceKHR _surface;
 
-VkInstance _instance; // Vulkan library handle
-VkDebugUtilsMessengerEXT _debug_messenger; // Vulkan debug output handle
-VkPhysicalDevice _chosenGPU; // GPU chosen as the default device
-VkDevice _device; // Vulkan device for commands
-VkSurfaceKHR _surface; // Vulkan window surface
+VmaAllocator _allocator;
 
-// --- other code ---
-VkSwapchainKHR _swapchain; // from other articles
-
-// image format expected by the windowing system
+VkSwapchainKHR _swapchain;
 VkFormat _swapchainImageFormat;
-
-//array of images from the swapchain
 std::vector<VkImage> _swapchainImages;
-
-//array of image-views from the swapchain
 std::vector<VkImageView> _swapchainImageViews;
 
-// ---- other code -----
-VkQueue _graphicsQueue; //queue we will submit to
-uint32_t _graphicsQueueFamily; //family of that queue
+VkQueue _graphicsQueue;
+uint32_t _graphicsQueueFamily;
 
-VkCommandPool _commandPool; //the command pool for our commands
-VkCommandBuffer _mainCommandBuffer; //the buffer we will record into
+VkCommandPool _commandPool;
+VkCommandBuffer _mainCommandBuffer;
 
 VkRenderPass _renderPass;
 std::vector<VkFramebuffer> _framebuffers;
@@ -104,467 +94,496 @@ std::vector<VkFramebuffer> _framebuffers;
 VkSemaphore _presentSemaphore, _renderSemaphore;
 VkFence _renderFence;
 
-VkPipelineLayout _trianglePipelineLayout;
-VkPipeline _trianglePipeline;
+std::vector<VkSemaphore> _presentSemaphores2;
+std::vector<VkSemaphore> _renderSemaphores2;
 
-////////////////////////////////////
 
-static EShLanguage ToGlslangStage(VkShaderStageFlagBits stage){
-    switch (stage){
-        case VK_SHADER_STAGE_VERTEX_BIT:
-            return EShLangVertex;
-
-        case VK_SHADER_STAGE_FRAGMENT_BIT:
-            return EShLangFragment;
-
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            return EShLangCompute;
-
-        case VK_SHADER_STAGE_GEOMETRY_BIT:
-            return EShLangGeometry;
-
-        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            return EShLangTessControl;
-
-        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            return EShLangTessEvaluation;
-
-        default:
-            throw std::runtime_error("Unsupported Vulkan shader stage");
+EShLanguage ToGlslangStage(VkShaderStageFlagBits stage){
+    switch(stage){
+        case VK_SHADER_STAGE_VERTEX_BIT: return EShLangVertex;
+        case VK_SHADER_STAGE_FRAGMENT_BIT: return EShLangFragment;
+        case VK_SHADER_STAGE_COMPUTE_BIT: return EShLangCompute;
+        case VK_SHADER_STAGE_GEOMETRY_BIT: return EShLangGeometry;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return EShLangTessControl;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return EShLangTessEvaluation;
+        default: throw std::runtime_error("Unsupported Vulkan shader stage");
     }
 }
 
 std::vector<uint32_t> CompileGLSL(const std::string& source, VkShaderStageFlagBits stage){
     static bool initialized = false;
     if(!initialized){
-        
+        glslang::InitializeProcess();
         initialized = true;
     }
 
     const EShLanguage shaderStage = ToGlslangStage(stage);
-
     const char* sourceString = source.c_str();
 
     glslang::TShader shader(shaderStage);
-
     shader.setStrings(&sourceString, 1);
+    shader.setEnvInput(glslang::EShSourceGlsl, shaderStage, glslang::EShClientVulkan, 100);
+    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
 
-    // GLSL -> Vulkan
-    shader.setEnvInput(
-        glslang::EShSourceGlsl,
-        shaderStage,
-        glslang::EShClientVulkan,
-        100
-    );
-
-    shader.setEnvClient(
-        glslang::EShClientVulkan,
-        glslang::EShTargetVulkan_1_1
-    );
-
-    shader.setEnvTarget(
-        glslang::EShTargetSpv,
-        glslang::EShTargetSpv_1_3
-    );
-
-    // Default resource limits.
-    const TBuiltInResource* resources = GetDefaultResources();// {}; //DefaultTBuiltInResource;
-
+    const TBuiltInResource* resources = GetDefaultResources();
     EShMessages messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
 
     if(!shader.parse(resources, 450, false, messages)){
-        std::string error = "GLSL compilation failed:\n";
-        error += shader.getInfoLog();
-        error += "\n";
-        error += shader.getInfoDebugLog();
+        std::string error = "GLSL compilation failed:\n" + std::string(shader.getInfoLog()) + "\n" + shader.getInfoDebugLog();
         LogInfo("Error: {}", error);
         throw std::runtime_error(error);
     }
 
     glslang::TProgram program;
-
     program.addShader(&shader);
 
     if(!program.link(messages)){
-        std::string error = "GLSL linking failed:\n";
-        error += program.getInfoLog();
-        error += "\n";
-        error += program.getInfoDebugLog();
+        std::string error = "GLSL linking failed:\n" + std::string(program.getInfoLog()) + "\n" + program.getInfoDebugLog();
         LogInfo("Error: {}", error);
         throw std::runtime_error(error);
     }
 
     std::vector<uint32_t> spirv;
-
     spv::SpvBuildLogger logger;
-
     glslang::SpvOptions options;
     options.generateDebugInfo = false;
     options.disableOptimizer = false;
     options.optimizeSize = false;
 
-    glslang::GlslangToSpv(
-        *program.getIntermediate(shaderStage),
-        spirv,
-        &logger,
-        &options
-    );
-
-    if(!logger.getAllMessages().empty()){
-        // Optional: print SPIR-V generation warnings.
-        // printf("%s\n", logger.getAllMessages().c_str());
-    }
-
+    glslang::GlslangToSpv(*program.getIntermediate(shaderStage), spirv, &logger, &options);
     return spirv;
 }
 
-bool load_shader_module(const char* filePath, VkShaderStageFlagBits stage, VkShaderModule* outShaderModule){
-    std::vector<uint32_t> spirv = CompileGLSL(filePath, stage);
+bool load_shader_module(const char* source, VkShaderStageFlagBits stage, VkShaderModule* outShaderModule){
+    std::vector<uint32_t> spirv = CompileGLSL(source, stage);
 
-    //create a new shader module, using the buffer we loaded
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.pNext = nullptr;
-
-    //codeSize has to be in bytes, so multiply the ints in the buffer by size of int to know the real size of the buffer
     createInfo.codeSize = spirv.size() * sizeof(uint32_t);
     createInfo.pCode = spirv.data();
 
-    //check that the creation goes well.
-    VkShaderModule shaderModule;
-    if(vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) return false;
-
-    *outShaderModule = shaderModule;
-    return true;
+    return vkCreateShaderModule(_device, &createInfo, nullptr, outShaderModule) == VK_SUCCESS;
 }
 
-//////////////////////////////////
-
-class PipelineBuilder {
-public:
-	std::vector<VkPipelineShaderStageCreateInfo> _shaderStages;
-	VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
-	VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
-	VkViewport _viewport;
-	VkRect2D _scissor;
-	VkPipelineRasterizationStateCreateInfo _rasterizer;
-	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
-	VkPipelineMultisampleStateCreateInfo _multisampling;
-	VkPipelineLayout _pipelineLayout;
-
-	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass){
-        //make viewport state from our stored viewport and scissor.
-        //at the moment we won't support multiple viewports or scissors
-        VkPipelineViewportStateCreateInfo viewportState = {};
-        viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.pNext = nullptr;
-
-        viewportState.viewportCount = 1;
-        viewportState.pViewports = &_viewport;
-        viewportState.scissorCount = 1;
-        viewportState.pScissors = &_scissor;
-
-        //setup dummy color blending. We aren't using transparent objects yet
-        //the blending is just "no blend", but we do write to the color attachment
-        VkPipelineColorBlendStateCreateInfo colorBlending = {};
-        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.pNext = nullptr;
-
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &_colorBlendAttachment;
-
-        //build the actual pipeline
-        //we now use all of the info structs we have been writing into into this one to create the pipeline
-        VkGraphicsPipelineCreateInfo pipelineInfo = {};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.pNext = nullptr;
-
-        pipelineInfo.stageCount = _shaderStages.size();
-        pipelineInfo.pStages = _shaderStages.data();
-        pipelineInfo.pVertexInputState = &_vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &_inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &_rasterizer;
-        pipelineInfo.pMultisampleState = &_multisampling;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.layout = _pipelineLayout;
-        pipelineInfo.renderPass = pass;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-        //it's easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
-        VkPipeline newPipeline;
-        if (vkCreateGraphicsPipelines(
-            device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
-            std::cout << "failed to create pipeline\n";
-            return VK_NULL_HANDLE; // failed to create graphics pipeline
-        }
-        else
-        {
-            return newPipeline;
-        }
+static uint32_t GetVertexLocation(GPUVertexSemantic semantic){
+    switch(semantic){
+        case GPUVertexSemantic::Position:   return 0;
+        case GPUVertexSemantic::Normal:     return 1;
+        case GPUVertexSemantic::Tangent:    return 2;
+        case GPUVertexSemantic::UV0:        return 3;
+        case GPUVertexSemantic::UV1:        return 4;
+        case GPUVertexSemantic::UV2:        return 5;
+        case GPUVertexSemantic::UV3:        return 6;
+        case GPUVertexSemantic::Color0:     return 7;
+        case GPUVertexSemantic::Color1:     return 8;
+        case GPUVertexSemantic::Weights:    return 9;
+        case GPUVertexSemantic::Influences: return 10;
+        case GPUVertexSemantic::Custom0:    return 11;
+        case GPUVertexSemantic::Custom1:    return 12;
+        case GPUVertexSemantic::Custom2:    return 13;
+        case GPUVertexSemantic::Custom3:    return 14;
     }
-};
+    return 0;
+}
 
-///////////////////////////////////
+VkFormat GetVulkanFormat(GPUVertexFormat format){
+    switch(format){
+        case GPUVertexFormat::Float:   return VK_FORMAT_R32_SFLOAT;
+        case GPUVertexFormat::Float2:  return VK_FORMAT_R32G32_SFLOAT;
+        case GPUVertexFormat::Float3:  return VK_FORMAT_R32G32B32_SFLOAT;
+        case GPUVertexFormat::Float4:  return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case GPUVertexFormat::Int:     return VK_FORMAT_R32_SINT;
+        case GPUVertexFormat::Int2:    return VK_FORMAT_R32G32_SINT;
+        case GPUVertexFormat::Int3:    return VK_FORMAT_R32G32B32_SINT;
+        case GPUVertexFormat::Int4:    return VK_FORMAT_R32G32B32A32_SINT;
+        case GPUVertexFormat::UInt:    return VK_FORMAT_R32_UINT;
+        case GPUVertexFormat::UInt2:   return VK_FORMAT_R32G32_UINT;
+        case GPUVertexFormat::UInt3:   return VK_FORMAT_R32G32B32_UINT;
+        case GPUVertexFormat::UInt4:   return VK_FORMAT_R32G32B32A32_UINT;
+        default: return VK_FORMAT_R32G32B32A32_SFLOAT;
+    }
+}
+
+VkBufferUsageFlags GetVulkanBufferUsage(GPUBufferUsage usage){
+    switch(usage){
+        case GPUBufferUsage::Vertex:  return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        case GPUBufferUsage::Index:   return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        case GPUBufferUsage::Uniform: return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        case GPUBufferUsage::Storage: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+    return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+}
+
+VmaMemoryUsage GetVulkanMemoryUsage(GPUBufferMemory memory){
+    switch(memory){
+        case GPUBufferMemory::GPUOnly:  return VMA_MEMORY_USAGE_GPU_ONLY;
+        case GPUBufferMemory::CPUToGPU: return VMA_MEMORY_USAGE_CPU_TO_GPU;
+        case GPUBufferMemory::GPUToCPU: return VMA_MEMORY_USAGE_GPU_TO_CPU;
+        case GPUBufferMemory::CPUOnly:  return VMA_MEMORY_USAGE_CPU_ONLY;
+    }
+    return VMA_MEMORY_USAGE_AUTO;
+}
+
+VkCullModeFlags GetVulkanCullMode(GPUCullFace cull){
+    switch(cull){
+        case GPUCullFace::NONE:           return VK_CULL_MODE_NONE;
+        case GPUCullFace::BACK:           return VK_CULL_MODE_BACK_BIT;
+        case GPUCullFace::FRONT:          return VK_CULL_MODE_FRONT_BIT;
+        case GPUCullFace::FRONT_AND_BACK: return VK_CULL_MODE_FRONT_AND_BACK;
+    }
+    return VK_CULL_MODE_BACK_BIT;
+}
+
+VkCompareOp GetVulkanCompareOp(GPUDepthTest depthTest){
+    switch(depthTest){
+        case GPUDepthTest::DISABLE:       return VK_COMPARE_OP_ALWAYS;
+        case GPUDepthTest::LESS:          return VK_COMPARE_OP_LESS;
+        case GPUDepthTest::LESS_EQUAL:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+        case GPUDepthTest::EQUAL:         return VK_COMPARE_OP_EQUAL;
+        case GPUDepthTest::GREATER:       return VK_COMPARE_OP_GREATER;
+        case GPUDepthTest::GREATER_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+        case GPUDepthTest::DIFFERENT:     return VK_COMPARE_OP_NOT_EQUAL;
+        case GPUDepthTest::NEVER:         return VK_COMPARE_OP_NEVER;
+        case GPUDepthTest::ALWAYS:        return VK_COMPARE_OP_ALWAYS;
+    }
+    return VK_COMPARE_OP_LESS;
+}
+
+VkBlendFactor GetVulkanBlendFactor(GPUBlendMode mode){
+    switch(mode){
+        case GPUBlendMode::ZERO:                     return VK_BLEND_FACTOR_ZERO;
+        case GPUBlendMode::ONE:                      return VK_BLEND_FACTOR_ONE;
+        case GPUBlendMode::SRC_COLOR:                return VK_BLEND_FACTOR_SRC_COLOR;
+        case GPUBlendMode::ONE_MINUS_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case GPUBlendMode::DST_COLOR:                return VK_BLEND_FACTOR_DST_COLOR;
+        case GPUBlendMode::ONE_MINUS_DST_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case GPUBlendMode::SRC_ALPHA:                return VK_BLEND_FACTOR_SRC_ALPHA;
+        case GPUBlendMode::ONE_MINUS_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case GPUBlendMode::DST_ALPHA:                return VK_BLEND_FACTOR_DST_ALPHA;
+        case GPUBlendMode::ONE_MINUS_DST_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case GPUBlendMode::CONSTANT_COLOR:           return VK_BLEND_FACTOR_CONSTANT_COLOR;
+        case GPUBlendMode::ONE_MINUS_CONSTANT_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+        case GPUBlendMode::CONSTANT_ALPHA:           return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+        case GPUBlendMode::ONE_MINUS_CONSTANT_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    }
+    return VK_BLEND_FACTOR_ONE;
+}
+
+VkBlendOp GetVulkanBlendOp(GPUBlendOp op){
+    switch(op){
+        case GPUBlendOp::FUNC_ADD:              return VK_BLEND_OP_ADD;
+        case GPUBlendOp::FUNC_SUBTRACT:         return VK_BLEND_OP_SUBTRACT;
+        case GPUBlendOp::FUNC_REVERSE_SUBTRACT: return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case GPUBlendOp::MIN:                   return VK_BLEND_OP_MIN;
+        case GPUBlendOp::MAX:                   return VK_BLEND_OP_MAX;
+    }
+    return VK_BLEND_OP_ADD;
+}
+
+void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info){
+    std::string srcStr = source;
+    std::string vertexSource = "#version 450\n#define Vulkan\n#define Vertex\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define Vulkan\n#define Fragment\n" + srcStr;
+
+    VkShaderModule vertModule = VK_NULL_HANDLE;
+    VkShaderModule fragModule = VK_NULL_HANDLE;
+    if(!load_shader_module(vertexSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, &vertModule) || !load_shader_module(fragmentSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, &fragModule)) {
+        LogError("Failed to build pipeline shaders");
+        return;
+    }
+
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {
+        vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertModule),
+        vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule)
+    };
+
+    std::vector<VkVertexInputBindingDescription> bindings;
+    for(uint32_t i = 0; i < info.vertexLayout.bufferCount; ++i){
+        VkVertexInputBindingDescription binding{};
+        binding.binding = i;
+        binding.stride = static_cast<uint32_t>(info.vertexLayout.buffers[i].stride);
+        binding.inputRate = (info.vertexLayout.buffers[i].inputRate == GPUVertexInputRate::Instance)
+            ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        bindings.push_back(binding);
+    }
+
+    std::vector<VkVertexInputAttributeDescription> attributes;
+    for(uint32_t i = 0; i < info.vertexLayout.attributeCount; ++i){
+        const auto& attr = info.vertexLayout.attributes[i];
+        VkVertexInputAttributeDescription attrib{};
+        attrib.location = GetVertexLocation(attr.semantic);
+        attrib.binding = attr.bufferSlot;
+        attrib.format = GetVulkanFormat(attr.format);
+        attrib.offset = static_cast<uint32_t>(attr.offset);
+        attributes.push_back(attrib);
+    }
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+    vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+    vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
+    rasterizer.cullMode = GetVulkanCullMode(info.cullFace);
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; //VK_FRONT_FACE_COUNTER_CLOCKWISE; //VK_FRONT_FACE_CLOCKWISE;
+
+    VkPipelineMultisampleStateCreateInfo multisampling = vkinit::multisampling_state_create_info();
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = vkinit::color_blend_attachment_state();
+    colorBlendAttachment.blendEnable = info.blend ? VK_TRUE : VK_FALSE;
+    if(info.blend){
+        colorBlendAttachment.srcColorBlendFactor = GetVulkanBlendFactor(info.srcBlend);
+        colorBlendAttachment.dstColorBlendFactor = GetVulkanBlendFactor(info.dstBlend);
+        colorBlendAttachment.colorBlendOp = GetVulkanBlendOp(info.opBlend);
+        colorBlendAttachment.srcAlphaBlendFactor = GetVulkanBlendFactor(info.srcAlphaBlend);
+        colorBlendAttachment.dstAlphaBlendFactor = GetVulkanBlendFactor(info.dstAlphaBlend);
+        colorBlendAttachment.alphaBlendOp = GetVulkanBlendOp(info.opBlend);
+    }
+    colorBlendAttachment.colorWriteMask = (info.colorMask.x > 0 ? VK_COLOR_COMPONENT_R_BIT : 0) |
+                                           (info.colorMask.y > 0 ? VK_COLOR_COMPONENT_G_BIT : 0) |
+                                           (info.colorMask.z > 0 ? VK_COLOR_COMPONENT_B_BIT : 0) |
+                                           (info.colorMask.w > 0 ? VK_COLOR_COMPONENT_A_BIT : 0);
+
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = (info.depthTest != GPUDepthTest::DISABLE) ? VK_TRUE : VK_FALSE;
+    depthStencil.depthWriteEnable = info.depthMask ? VK_TRUE : VK_FALSE;
+    depthStencil.depthCompareOp = GetVulkanCompareOp(info.depthTest);
+
+    std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.pDynamicStates = dynamicStates.data();
+
+    VkPipelineLayoutCreateInfo layoutInfo = vkinit::pipeline_layout_create_info();
+    VkPipelineLayout layout;
+    VK_CHECK(vkCreatePipelineLayout(_device, &layoutInfo, nullptr, &layout));
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.pNext = nullptr;
+
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &colorBlendAttachment;
+
+    VkPipelineViewportStateCreateInfo viewportState = {};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.pNext = nullptr;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = nullptr;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = nullptr;
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pColorBlendState = &colorBlending; //vkinit::pipeline_color_blend_state_create_info(1, &colorBlendAttachment);
+    pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = layout;
+    pipelineInfo.renderPass = _renderPass;
+
+    VkPipeline pipeline;
+    VK_CHECK(vkCreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+
+    vkDestroyShaderModule(_device, vertModule, nullptr);
+    vkDestroyShaderModule(_device, fragModule, nullptr);
+
+    pipelinePool.data[id].pipeline = pipeline;
+    pipelinePool.data[id].layout = layout;
+    pipelinePool.data[id].info = info;
+}
+
+void create_allocator(){
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = _chosenGPU;
+    allocatorInfo.device = _device;
+    allocatorInfo.instance = _instance;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+}
 
 void init_vulkan(){
     vkb::InstanceBuilder builder;
+    auto inst_ret = builder.set_app_name("OD Engine Vulkan")
+        .request_validation_layers(true)
+        .require_api_version(1, 1, 0)
+        .use_default_debug_messenger()
+        .build();
 
-	//make the Vulkan instance, with basic debug features
-	auto inst_ret = builder.set_app_name("Example Vulkan Application")
-		.request_validation_layers(true)
-		.require_api_version(1, 1, 0)
-		.use_default_debug_messenger()
-		.build();
+    vkb::Instance vkb_inst = inst_ret.value();
+    _instance = vkb_inst.instance;
+    _debug_messenger = vkb_inst.debug_messenger;
 
-	vkb::Instance vkb_inst = inst_ret.value();
-
-	//store the instance
-	_instance = vkb_inst.instance;
-	//store the debug messenger
-	_debug_messenger = vkb_inst.debug_messenger;
-
-    // get the surface of the window we opened with SDL
-	//SDL_Vulkan_CreateSurface(_window, _instance, &_surface);
     Platform::CreateVulkanSurface(_instance, &_surface);
 
-	//use vkbootstrap to select a GPU.
-	//We want a GPU that can write to the SDL surface and supports Vulkan 1.1
-	vkb::PhysicalDeviceSelector selector{ vkb_inst };
-	vkb::PhysicalDevice physicalDevice = selector
-		.set_minimum_version(1, 1)
-		.set_surface(_surface)
-		.select()
-		.value();
+    vkb::PhysicalDeviceSelector selector{ vkb_inst };
+    vkb::PhysicalDevice physicalDevice = selector.set_minimum_version(1, 1).set_surface(_surface).select().value();
 
-	//create the final Vulkan device
-	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
+    vkb::DeviceBuilder deviceBuilder{ physicalDevice };
+    vkb::Device vkbDevice = deviceBuilder.build().value();
 
-	vkb::Device vkbDevice = deviceBuilder.build().value();
+    _device = vkbDevice.device;
+    _chosenGPU = physicalDevice.physical_device;
 
-	// Get the VkDevice handle used in the rest of a Vulkan application
-	_device = vkbDevice.device;
-	_chosenGPU = physicalDevice.physical_device;
+    _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+    _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
-    // use vkbootstrap to get a Graphics queue
-	_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
-	_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+    create_allocator();
 }
 
 void init_swapchain(){
-    vkb::SwapchainBuilder swapchainBuilder{_chosenGPU,_device,_surface };
+    vkb::SwapchainBuilder swapchainBuilder{ _chosenGPU, _device, _surface };
+    vkb::Swapchain vkbSwapchain = swapchainBuilder
+        .use_default_format_selection()
+        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+        .set_desired_extent(_windowExtent.width, _windowExtent.height)
+        .build()
+        .value();
 
-	vkb::Swapchain vkbSwapchain = swapchainBuilder
-		.use_default_format_selection()
-		//use vsync present mode
-		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
-		.set_desired_extent(_windowExtent.width, _windowExtent.height)
-		.build()
-		.value();
-
-	//store swapchain and its related images
-	_swapchain = vkbSwapchain.swapchain;
-	_swapchainImages = vkbSwapchain.get_images().value();
-	_swapchainImageViews = vkbSwapchain.get_image_views().value();
-
-	_swapchainImageFormat = vkbSwapchain.image_format;
+    _swapchain = vkbSwapchain.swapchain;
+    _swapchainImages = vkbSwapchain.get_images().value();
+    _swapchainImageViews = vkbSwapchain.get_image_views().value();
+    _swapchainImageFormat = vkbSwapchain.image_format;
 }
 
 void init_commands(){
-    //create a command pool for commands submitted to the graphics queue.
-	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
+    VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
 
-    //allocate the default command buffer that we will use for rendering
-	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
-	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+    VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+    VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
 }
 
 void init_default_renderpass(){
-    // the renderpass will use this color attachment.
-	VkAttachmentDescription color_attachment = {};
-	//the attachment will have the format needed by the swapchain
-	color_attachment.format = _swapchainImageFormat;
-	//1 sample, we won't be doing MSAA
-	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	// we Clear when this attachment is loaded
-	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	// we keep the attachment stored when the renderpass ends
-	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	//we don't care about stencil
-	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-	//we don't know or care about the starting layout of the attachment
-	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-	//after the renderpass ends, the image has to be on a layout ready for display
-	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentDescription color_attachment = {};
+    color_attachment.format = _swapchainImageFormat;
+    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference color_attachment_ref = {};
-	//attachment number will index into the pAttachments array in the parent renderpass itself
-	color_attachment_ref.attachment = 0;
-	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	//we are going to create 1 subpass, which is the minimum you can do
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &color_attachment_ref;
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_attachment_ref;
 
     VkRenderPassCreateInfo render_pass_info = {};
-	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments = &color_attachment;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
 
-	//connect the color attachment to the info
-	render_pass_info.attachmentCount = 1;
-	render_pass_info.pAttachments = &color_attachment;
-	//connect the subpass to the info
-	render_pass_info.subpassCount = 1;
-	render_pass_info.pSubpasses = &subpass;
-
-	VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass));
+    VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass));
 }
 
 void init_framebuffers(){
-    //create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
-	VkFramebufferCreateInfo fb_info = {};
-	fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	fb_info.pNext = nullptr;
+    VkFramebufferCreateInfo fb_info = {};
+    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.renderPass = _renderPass;
+    fb_info.attachmentCount = 1;
+    fb_info.width = _windowExtent.width;
+    fb_info.height = _windowExtent.height;
+    fb_info.layers = 1;
 
-	fb_info.renderPass = _renderPass;
-	fb_info.attachmentCount = 1;
-	fb_info.width = _windowExtent.width;
-	fb_info.height = _windowExtent.height;
-	fb_info.layers = 1;
+    const uint32_t swapchain_imagecount = _swapchainImages.size();
+    _framebuffers.resize(swapchain_imagecount);
 
-	//grab how many images we have in the swapchain
-	const uint32_t swapchain_imagecount = _swapchainImages.size();
-	_framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
-
-	//create framebuffers for each of the swapchain image views
-	for(int i = 0; i < swapchain_imagecount; i++){
-		fb_info.pAttachments = &_swapchainImageViews[i];
-		VK_CHECK(vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]));
-	}
+    for(size_t i = 0; i < swapchain_imagecount; i++){
+        fb_info.pAttachments = &_swapchainImageViews[i];
+        VK_CHECK(vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]));
+    }
 }
 
 void init_sync_structures(){
-    //create synchronization structures
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
 
-	VkFenceCreateInfo fenceCreateInfo = {};
-	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceCreateInfo.pNext = nullptr;
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore));
+    VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore));
 
-	//we want to create the fence with the Create Signaled flag, so we can wait on it before using it on a GPU command (for the first frame)
-	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    uint32_t imageCount = _swapchainImages.size();
+    _presentSemaphores2.resize(imageCount);
+    _renderSemaphores2.resize(imageCount);
 
-	VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
-
-	//for the semaphores we don't need any flags
-	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = nullptr;
-	semaphoreCreateInfo.flags = 0;
-
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore));
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore));
+    for(size_t i = 0; i < imageCount; i++){
+        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphores2[i]));
+        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphores2[i]));
+    }
 }
 
-void init_pipelines(){
-    std::string source = std::string(vkShaderSource);
-    std::string vertexSource =
-        "#version 450\n"
-        "#define Vertex\n" +
-        source;
-
-    std::string fragmentSource =
-        "#version 450\n"
-        "#define Fragment\n" +
-        source;
-
-    VkShaderModule triangleFragShader;
-	if(!load_shader_module(fragmentSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, &triangleFragShader)){
-		Assert(false && "Error when building the triangle fragment shader module");
-	}
-
-	VkShaderModule triangleVertexShader;
-	if(!load_shader_module(vertexSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, &triangleVertexShader)){
-		Assert(false && "Error when building the triangle vertex shader module");
-	}
-
-    //build the pipeline layout that controls the inputs/outputs of the shader
-	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
-	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::pipeline_layout_create_info();
-
-	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr, &_trianglePipelineLayout));
-
-    //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
-	PipelineBuilder pipelineBuilder;
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, triangleVertexShader));
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
-	//vertex input controls how to read vertices from vertex buffers. We aren't using it yet
-	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
-	//input assembly is the configuration for drawing triangle lists, strips, or individual points.
-	//we are just going to draw triangle list
-	pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-	//build viewport and scissor from the swapchain extents
-	pipelineBuilder._viewport.x = 0.0f;
-	pipelineBuilder._viewport.y = 0.0f;
-	pipelineBuilder._viewport.width = (float)_windowExtent.width;
-	pipelineBuilder._viewport.height = (float)_windowExtent.height;
-	pipelineBuilder._viewport.minDepth = 0.0f;
-	pipelineBuilder._viewport.maxDepth = 1.0f;
-	pipelineBuilder._scissor.offset = { 0, 0 };
-	pipelineBuilder._scissor.extent = _windowExtent;
-	//configure the rasterizer to draw filled triangles
-	pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
-	//we don't use multisampling, so just run the default one
-	pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
-	//a single blend attachment with no blending and writing to RGBA
-	pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
-	//use the triangle layout we created
-	pipelineBuilder._pipelineLayout = _trianglePipelineLayout;
-
-	//finally build the pipeline
-	_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
-}
-
-void cleanup(){
+void VulkanGPUDevice::Cleanup(){
     if(!_isInitialized) return;
 
     glslang::FinalizeProcess();
-
     vkDeviceWaitIdle(_device);
+
+    for(auto& data : bufferPool.data){
+        if(data.buffer != VK_NULL_HANDLE){
+            vmaDestroyBuffer(_allocator, data.buffer, data.allocation);
+            data.buffer = VK_NULL_HANDLE;
+        }
+    }
+
+    for(auto& data : pipelinePool.data){
+        if(data.pipeline != VK_NULL_HANDLE){
+            vkDestroyPipeline(_device, data.pipeline, nullptr);
+            vkDestroyPipelineLayout(_device, data.layout, nullptr);
+            data.pipeline = VK_NULL_HANDLE;
+        }
+    }
+
+    vmaDestroyAllocator(_allocator);
 
     vkDestroyCommandPool(_device, _commandPool, nullptr);
 
-    //destroy sync objects
+    for(size_t i = 0; i < _swapchainImages.size(); i++){
+        vkDestroySemaphore(_device, _presentSemaphores2[i], nullptr);
+        vkDestroySemaphore(_device, _renderSemaphores2[i], nullptr);
+    }
+
     vkDestroyFence(_device, _renderFence, nullptr);
     vkDestroySemaphore(_device, _renderSemaphore, nullptr);
     vkDestroySemaphore(_device, _presentSemaphore, nullptr);
 
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-
     vkDestroyRenderPass(_device, _renderPass, nullptr);
 
-    //destroy swapchain resources
-    for(int i = 0; i < _framebuffers.size(); i++){
+    for(size_t i = 0; i < _framebuffers.size(); i++){
         vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
-
         vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
     }
 
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
-
     vkDestroyDevice(_device, nullptr);
     vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
     vkDestroyInstance(_instance, nullptr);
 }
-
-///////////////////////////////////
 
 void VulkanGPUDevice::Init(){
     LogInfo("VulkanGPUDevice::Initialize");
@@ -576,124 +595,364 @@ void VulkanGPUDevice::Init(){
     init_swapchain();
     init_commands();
     init_default_renderpass();
-	init_framebuffers();
+    init_framebuffers();
     init_sync_structures();
-    init_pipelines();
     _isInitialized = true;
 }
 
 void VulkanGPUDevice::Shut(){
     LogInfo("VulkanGPUDevice::Shut");
-
-    cleanup();
+    Cleanup();
 }
 
 void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
-    //return;
+    // 1. MUST WAIT FOR PREVIOUS FRAME BEFORE DOING ANY QUEUE OPERATIONS OR STAGING COPIES
     VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(_device, 1, &_renderFence));
+    VK_CHECK(vkResetFences(_device, 1, &_renderFence));
 
-    uint32_t swapchainImageIndex;
-	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex));
-
-    //now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer, 0));
-
-    //naming it cmd for shorter writing
-	VkCommandBuffer cmd = _mainCommandBuffer;
-
-	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
-	VkCommandBufferBeginInfo cmdBeginInfo = {};
-	cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdBeginInfo.pNext = nullptr;
-	cmdBeginInfo.pInheritanceInfo = nullptr;
-	cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
-
-    //make a clear-color from frame number. This will flash with a 120*pi frame period.
-	VkClearValue clearValue;
-	float flash = abs(sin(_frameNumber / 120.f));
-	clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
-
-	//start the main renderpass.
-	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = {};
-	rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	rpInfo.pNext = nullptr;
-	rpInfo.renderPass = _renderPass;
-	rpInfo.renderArea.offset.x = 0;
-	rpInfo.renderArea.offset.y = 0;
-	rpInfo.renderArea.extent = _windowExtent;
-	rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-	//connect clear values
-	rpInfo.clearValueCount = 1;
-	rpInfo.pClearValues = &clearValue;
-
-	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
-    vkCmdDraw(cmd, 3, 1, 0, 0);
-
-    //finalize the render pass
-	vkCmdEndRenderPass(cmd);
-	//finalize the command buffer (we can no longer add commands, but it can now be executed)
-	VK_CHECK(vkEndCommandBuffer(cmd));
-
-    //prepare the submission to the queue.
-	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
-	//we will signal the _renderSemaphore, to signal that rendering has finished
-
-	VkSubmitInfo submit = {};
-	submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit.pNext = nullptr;
-	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	submit.pWaitDstStageMask = &waitStage;
-	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores = &_presentSemaphore;
-	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores = &_renderSemaphore;
-	submit.commandBufferCount = 1;
-	submit.pCommandBuffers = &cmd;
-
-	//submit command buffer to the queue and execute it.
-	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence));
-
-    // this will put the image we just rendered into the visible window.
-	// we want to wait on the _renderSemaphore for that,
-	// as it's necessary that drawing commands have finished before the image is displayed to the user
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext = nullptr;
-	presentInfo.pSwapchains = &_swapchain;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pWaitSemaphores = &_renderSemaphore;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &swapchainImageIndex;
-
-	VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
-
-	//increase the number of frames drawn
-	_frameNumber++;
-
-    for(const GPUCommandBuffer::Command& cmd : frame.commands.commands){
+    // Process Resource Commands first
+    for(const GPUResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
+            case GPUResourceCommands::Type::CreateBuffer:{
+                /*Assert(cmd.createBuffer.id < bufferPool.data.size());
+
+                if(bufferPool.data[cmd.createBuffer.id].buffer != VK_NULL_HANDLE){
+                    LogError("Trying CreateBuffer on Used id");
+                    continue;
+                }
+
+                VkBufferCreateInfo bufferInfo = {};
+                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferInfo.size = cmd.createBuffer.size;
+                bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
+
+                VmaAllocationCreateInfo allocInfo = {};
+                allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
+                if (cmd.createBuffer.memory != GPUBufferMemory::GPUOnly) {
+                    allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                }
+
+                VkBuffer buffer;
+                VmaAllocation allocation;
+                VmaAllocationInfo resultAllocInfo;
+                VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &resultAllocInfo));
+
+                if (cmd.createBuffer.data && cmd.createBuffer.size > 0) {
+                    if (cmd.createBuffer.memory != GPUBufferMemory::GPUOnly) {
+                        void* mappedData = resultAllocInfo.pMappedData;
+                        if (!mappedData) {
+                            vmaMapMemory(_allocator, allocation, &mappedData);
+                            std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
+                            vmaUnmapMemory(_allocator, allocation);
+                        } else {
+                            std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
+                        }
+                    }
+                }
+
+                bufferPool.data[cmd.createBuffer.id].buffer = buffer;
+                bufferPool.data[cmd.createBuffer.id].allocation = allocation;
+                bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
+                bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
+                bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
+                break;*/
+
+                Assert(cmd.createBuffer.id < bufferPool.data.size());
+
+                if(bufferPool.data[cmd.createBuffer.id].buffer != VK_NULL_HANDLE){
+                    LogError("Trying CreateBuffer on Used id");
+                    continue;
+                }
+
+                // 1. Setup usage flags for the main GPU buffer
+                VkBufferCreateInfo bufferInfo = {};
+                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferInfo.size = cmd.createBuffer.size;
+                bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
+
+                // If memory is GPUOnly, we MUST allow it to act as a copy destination!
+                if(cmd.createBuffer.memory == GPUBufferMemory::GPUOnly){
+                    bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+                }
+
+                VmaAllocationCreateInfo allocInfo = {};
+                allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
+                if(cmd.createBuffer.memory != GPUBufferMemory::GPUOnly){
+                    allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                }
+
+                VkBuffer buffer;
+                VmaAllocation allocation;
+                VmaAllocationInfo resultAllocInfo;
+                VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &resultAllocInfo));
+
+                // 2. Upload Data
+                if(cmd.createBuffer.data && cmd.createBuffer.size > 0){
+                    if(cmd.createBuffer.memory != GPUBufferMemory::GPUOnly){
+                        // Host visible copy (CPUToGPU / CPUOnly)
+                        void* mappedData = resultAllocInfo.pMappedData;
+                        bool needUnmap = false;
+                        if(!mappedData){
+                            vmaMapMemory(_allocator, allocation, &mappedData);
+                            needUnmap = true;
+                        }
+
+                        std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
+                        vmaFlushAllocation(_allocator, allocation, 0, cmd.createBuffer.size);
+
+                        if(needUnmap){
+                            vmaUnmapMemory(_allocator, allocation);
+                        }
+                    } else {
+                        // GPUOnly copy via Staging Buffer
+                        VkBufferCreateInfo stagingInfo = {};
+                        stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                        stagingInfo.size = cmd.createBuffer.size;
+                        stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+                        VmaAllocationCreateInfo stagingAllocInfo = {};
+                        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+                        stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+                        VkBuffer stagingBuffer;
+                        VmaAllocation stagingAllocation;
+                        VmaAllocationInfo stagingResultInfo;
+                        VK_CHECK(vmaCreateBuffer(_allocator, &stagingInfo, &stagingAllocInfo, &stagingBuffer, &stagingAllocation, &stagingResultInfo));
+
+                        // Copy CPU data to staging buffer memory
+                        std::memcpy(stagingResultInfo.pMappedData, cmd.createBuffer.data, cmd.createBuffer.size);
+                        vmaFlushAllocation(_allocator, stagingAllocation, 0, cmd.createBuffer.size);
+
+                        // Allocate dynamic single-use command buffer for GPU transfer
+                        VkCommandBufferAllocateInfo allocCmdInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+                        VkCommandBuffer transferCmd;
+                        VK_CHECK(vkAllocateCommandBuffers(_device, &allocCmdInfo, &transferCmd));
+
+                        VkCommandBufferBeginInfo beginInfo = {};
+                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                        VK_CHECK(vkBeginCommandBuffer(transferCmd, &beginInfo));
+
+                        VkBufferCopy copyRegion = {};
+                        copyRegion.srcOffset = 0;
+                        copyRegion.dstOffset = 0;
+                        copyRegion.size = cmd.createBuffer.size;
+                        vkCmdCopyBuffer(transferCmd, stagingBuffer, buffer, 1, &copyRegion);
+
+                        VK_CHECK(vkEndCommandBuffer(transferCmd));
+
+                        // Execute copy operation on GPU Queue immediately
+                        VkSubmitInfo submitInfo = {};
+                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                        submitInfo.commandBufferCount = 1;
+                        submitInfo.pCommandBuffers = &transferCmd;
+
+                        VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
+                        VK_CHECK(vkQueueWaitIdle(_graphicsQueue)); // Synchronize transfer completion
+
+                        // Cleanup staging resources
+                        vkFreeCommandBuffers(_device, _commandPool, 1, &transferCmd);
+                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);
+                    }
+                }
+
+                bufferPool.data[cmd.createBuffer.id].buffer = buffer;
+                bufferPool.data[cmd.createBuffer.id].allocation = allocation;
+                bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
+                bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
+                bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
+                break;
+            }
+
+            case GPUResourceCommands::Type::DestroyBuffer:{
+                auto& bufData = bufferPool.data[cmd.destroyBuffer.id];
+                if(bufData.buffer != VK_NULL_HANDLE){
+                    vmaDestroyBuffer(_allocator, bufData.buffer, bufData.allocation);
+                    bufData.buffer = VK_NULL_HANDLE;
+                    bufData.allocation = VK_NULL_HANDLE;
+                }
+                bufferPool.idsDestred.push_back(cmd.destroyBuffer.id);
+                break;
+            }
+
+            case GPUResourceCommands::Type::CreatePipeline:{
+                CreateVulkanPipeline(cmd.createPipeline.id, cmd.createPipeline.source, cmd.createPipeline.info);
+                break;
+            }
+
+            case GPUResourceCommands::Type::DestroyPipeline:{
+                auto& pipeData = pipelinePool.data[cmd.destroyPipeline.id];
+                if(pipeData.pipeline != VK_NULL_HANDLE){
+                    vkDestroyPipeline(_device, pipeData.pipeline, nullptr);
+                    vkDestroyPipelineLayout(_device, pipeData.layout, nullptr);
+                    pipeData.pipeline = VK_NULL_HANDLE;
+                    pipeData.layout = VK_NULL_HANDLE;
+                }
+                pipelinePool.idsDestred.push_back(cmd.destroyPipeline.id);
+                break;
+            }
         }
     }
+
+    //VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
+    //VK_CHECK(vkResetFences(_device, 1, &_renderFence));
+
+    uint32_t swapchainImageIndex;
+    //VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex));
+
+    // We can index by frame number temporarily to acquire, or index by imageIndex after:
+    uint32_t syncIndex = _frameNumber % _swapchainImages.size();
+    VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphores2[syncIndex], nullptr, &swapchainImageIndex));
+
+    VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer, 0));
+    VkCommandBuffer cmd = _mainCommandBuffer;
+
+    VkCommandBufferBeginInfo cmdBeginInfo = {};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+    VkClearValue clearValue{};
+    clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+    VkRenderPassBeginInfo rpInfo = {};
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpInfo.renderPass = _renderPass;
+    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.extent = _windowExtent;
+    rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
+    rpInfo.clearValueCount = 1;
+    rpInfo.pClearValues = &clearValue;
+
+    vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(_windowExtent.width);
+    viewport.height = static_cast<float>(_windowExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = _windowExtent;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    for(const GPUCommandBuffer::Command& renderCmd : frame.renderCommands.commands){
+        switch(renderCmd.type){
+            case GPUCommandBuffer::Type::Clear:{
+                VkClearAttachment clearAttachment{};
+                clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                clearAttachment.colorAttachment = 0;
+                clearAttachment.clearValue.color = { {
+                    renderCmd.clear.clearValue.color.x,
+                    renderCmd.clear.clearValue.color.y,
+                    renderCmd.clear.clearValue.color.z,
+                    renderCmd.clear.clearValue.color.w
+                } };
+
+                VkClearRect clearRect{};
+                clearRect.rect.offset = { 0, 0 };
+                clearRect.rect.extent = _windowExtent;
+                clearRect.baseArrayLayer = 0;
+                clearRect.layerCount = 1;
+
+                vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::Viewport:{
+                VkViewport customViewport{};
+                customViewport.x = static_cast<float>(renderCmd.viewport.x);
+                customViewport.y = static_cast<float>(renderCmd.viewport.y);
+                customViewport.width = static_cast<float>(renderCmd.viewport.w);
+                customViewport.height = static_cast<float>(renderCmd.viewport.h);
+                customViewport.minDepth = 0.0f;
+                customViewport.maxDepth = 1.0f;
+                vkCmdSetViewport(cmd, 0, 1, &customViewport);
+
+                VkRect2D customScissor{};
+                customScissor.offset = { static_cast<int32_t>(renderCmd.viewport.x), static_cast<int32_t>(renderCmd.viewport.y) };
+                customScissor.extent = { renderCmd.viewport.w, renderCmd.viewport.h };
+                vkCmdSetScissor(cmd, 0, 1, &customScissor);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::SetPipeline:{
+                const auto& pipeData = pipelinePool.data[renderCmd.setPipeline.id];
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::SetVertexBuffer:{
+                const auto& bufData = bufferPool.data[renderCmd.setVertexBuffer.buffer];
+                Assert(bufData.buffer != VK_NULL_HANDLE);
+                Assert(renderCmd.setVertexBuffer.buffer != InvalidID);
+                Assert(renderCmd.setVertexBuffer.buffer < bufferPool.data.size());
+                VkDeviceSize offsets[] = { 0 };
+                vkCmdBindVertexBuffers(cmd, renderCmd.setVertexBuffer.slot, 1, &bufData.buffer, offsets);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::SetIndexBuffer:{
+                const auto& bufData = bufferPool.data[renderCmd.setIndexBuffer.buffer];
+                vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::Draw:{
+                vkCmdDraw(cmd, renderCmd.draw.vertexCount, 1, 0, 0);
+                break;
+            }
+
+            case GPUCommandBuffer::Type::DrawIndexed:{
+                vkCmdDrawIndexed(cmd, renderCmd.drawIndexed.indexCount, 1, 0, 0, 0);
+                break;
+            }
+        }
+    }
+
+    vkCmdEndRenderPass(cmd);
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    VkSubmitInfo submit = {};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submit.pWaitDstStageMask = &waitStage;
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &_presentSemaphores2[syncIndex]; //&_presentSemaphore;
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &_renderSemaphores2[swapchainImageIndex]; //&_renderSemaphore;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+
+    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence));
+
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pSwapchains = &_swapchain;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pWaitSemaphores = &_renderSemaphores2[swapchainImageIndex]; //&_renderSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pImageIndices = &swapchainImageIndex;
+
+    VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
+    _frameNumber++;
 }
 
 void VulkanGPUDevice::SyncSingleThreadData(){
-
+    bufferPool.SyncSingleThreadData();
+    pipelinePool.SyncSingleThreadData();
 }
 
-///////////////////////////////////
-
-MeshId VulkanGPUDevice::AllocMeshId(){
-    return 0;
+BufferId VulkanGPUDevice::AllocBufferId(){
+    return bufferPool.AllocId();
 }
 
 PipelineId VulkanGPUDevice::AllocPipelineId(){
-    return 0;
+    return pipelinePool.AllocId();
 }
 
-}
+} // namespace OD

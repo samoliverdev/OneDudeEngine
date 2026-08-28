@@ -1,6 +1,9 @@
 #pragma once
 #include "OD/GPU/GPU.h"
 #include "OD/Graphics/GraphicsDevice.h"
+#include "OD/Platform/BaseGpu/ResourcePool.h"
+#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 namespace OD{
 
@@ -22,8 +25,28 @@ public:
 
     virtual void SyncSingleThreadData() override;
 
-    virtual MeshId AllocMeshId() override;
+    virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
+
+private:
+    struct BufferData {
+        VkBuffer buffer = VK_NULL_HANDLE;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        GPUBufferUsage usage;
+        GPUBufferMemory memory;
+        VkDeviceSize size = 0;
+    };
+    ResourcePool<BufferData> bufferPool;
+
+    struct PipelineData {
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        GPUPipelineInfo info;
+    };
+    ResourcePool<PipelineData> pipelinePool;
+
+    void CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info);
+    void Cleanup();
 };
 
 }

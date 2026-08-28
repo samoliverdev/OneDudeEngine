@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Core/Log.h"
 #include <vector>
 
 namespace OD{

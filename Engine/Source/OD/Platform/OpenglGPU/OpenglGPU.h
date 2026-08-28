@@ -24,7 +24,7 @@ public:
 
     virtual void SyncSingleThreadData() override;
 
-    virtual MeshId AllocMeshId() override;
+    virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
 };
 
