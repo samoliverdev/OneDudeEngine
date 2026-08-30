@@ -36,6 +36,8 @@ namespace OD{
 extern GraphicsDevice* graphicsDevice;
 
 GLFWwindow* window;
+GLFWwindow* sharedContextWindow;
+
 //GLFWwindow* offscreenWindow;
 int windowPosX, windowPosY;
 bool vSync = false;
@@ -337,7 +339,12 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
 void Platform::StopCurrentContext(){
     auto graphicsDeviceInfo = graphicsDevice->GetInfo();
     if(graphicsDeviceInfo.apiName == "OpenGL"){
-        glfwMakeContextCurrent(nullptr);
+        //glfwMakeContextCurrent(nullptr);
+
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        sharedContextWindow = glfwCreateWindow(1, 1, "SharedContext", nullptr, window);// Share all compatible OpenGL objects with the main context.
+        Assert(sharedContextWindow != nullptr);
+        glfwMakeContextCurrent(sharedContextWindow);
     }
 }
 

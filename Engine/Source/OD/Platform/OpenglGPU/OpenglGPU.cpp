@@ -211,6 +211,9 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
             bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
             glCheckError();
+
+            bufferPool.gpuToCpuResourceStatesIds.push_back(cmd.createBuffer.id);
+            bufferPool.gpuToCpuResourceStatesData.push_back({GPUResourceStatsType::Created});
             break;
         }
 
@@ -386,11 +389,42 @@ void OpenglGPUDevice::SyncSingleThreadData(){
 ///////////////////////////////////
 
 MeshId OpenglGPUDevice::AllocBufferId(){
-    return bufferPool.AllocId();
+    MeshId id = bufferPool.AllocId();
+    bufferPool.resourceStatus.resize(bufferPool.curId);
+    return id;
 }
 
 PipelineId OpenglGPUDevice::AllocPipelineId(){
     return pipelinePool.AllocId();
+}
+
+BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory){
+    auto id = bufferPool.AllocId();
+    BufferData bufferData = {};
+
+    GLuint buffer = 0;
+    glGenBuffers(1, &buffer);
+    GLenum target = GetBufferTarget(usage);
+
+    glBindBuffer(target, buffer);
+    glBufferData(target, size, data, GetOpenGLBufferUsage(memory));
+    bufferData.buffer = buffer;
+    bufferData.usage = usage;
+    bufferData.memory = memory;
+    glCheckError();
+
+    bufferPool.singleThreadIds.push_back(id);
+    bufferPool.singleThreadDatas.push_back(bufferData);
+
+    bufferPool.resourceStatus.resize(bufferPool.curId);
+    bufferPool.resourceStatus[id].type = GPUResourceStatsType::Created;
+    bufferPool.resourceStatus[id].erroMessage = "";
+
+    return id;
+}
+
+GPUResourceStats OpenglGPUDevice::GetBufferStats(BufferId id){ 
+    return bufferPool.resourceStatus[id]; 
 }
 
 }

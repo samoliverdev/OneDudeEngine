@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Core/Log.h"
+#include "OD/GPU/GPU.h"
 #include <vector>
 
 namespace OD{
@@ -10,6 +11,13 @@ struct ResourcePool{
     std::vector<uint32_t> freeIds;
     std::vector<uint32_t> idsDestred;
     uint32_t curId = 0;
+
+    std::vector<uint32_t> singleThreadIds;
+    std::vector<T> singleThreadDatas;
+
+    std::vector<GPUResourceStats> resourceStatus;
+    std::vector<uint32_t> gpuToCpuResourceStatesIds;
+    std::vector<GPUResourceStats> gpuToCpuResourceStatesData;
 
     uint32_t AllocId(){
         if(freeIds.empty() == false){
@@ -29,6 +37,20 @@ struct ResourcePool{
             freeIds.push_back(i);
         }
         idsDestred.clear();
+
+        Assert(singleThreadIds.size() == singleThreadDatas.size());
+        for(int i = 0; i < singleThreadIds.size(); i++){
+            data[singleThreadIds[i]] = singleThreadDatas[i];
+        }
+        singleThreadIds.clear();
+        singleThreadDatas.clear();
+        
+        Assert(gpuToCpuResourceStatesIds.size() == gpuToCpuResourceStatesData.size());
+        for(int i = 0; i < gpuToCpuResourceStatesIds.size(); i++){
+            resourceStatus[gpuToCpuResourceStatesIds[i]] = gpuToCpuResourceStatesData[i];
+        }
+        gpuToCpuResourceStatesIds.clear();
+        gpuToCpuResourceStatesData.clear();
     }
 };
 

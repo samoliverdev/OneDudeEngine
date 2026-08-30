@@ -26,6 +26,10 @@ public:
 
     virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
+
+    virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly) override;
+
+    GPUResourceStats GetBufferStats(BufferId id) override; 
 };
 
 }

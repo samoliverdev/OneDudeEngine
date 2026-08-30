@@ -15,6 +15,17 @@ using BufferId = uint32_t;
 
 /////////////////////////////////////
 
+enum class GPUResourceStatsType{
+    None, Created, Failed
+};
+
+struct GPUResourceStats{
+    GPUResourceStatsType type = GPUResourceStatsType::None;
+    std::string erroMessage;
+};
+
+/////////////////////////////////////
+
 constexpr uint32_t MAX_COLOR_ATTACHMENTS = 8;
 
 enum class OD_API_IMPORT GPUFramebufferTextureFormat: uint8_t{
@@ -563,6 +574,10 @@ public:
 
     virtual BufferId AllocBufferId(){ return InvalidID; }
     virtual PipelineId AllocPipelineId(){ return InvalidID; }
+
+    virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly){ return InvalidID; }
+
+    virtual GPUResourceStats GetBufferStats(BufferId id){ return {}; }
 };
 
 }

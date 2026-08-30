@@ -80,12 +80,16 @@ const char* shaderSource = R"GLSL(
     )GLSL";
 
 BufferId vertexBuffer;
+BufferId vertexBuffer2;
+
 BufferId positionBuffer;
 BufferId colorBuffer;
 BufferId indexBuffer;
 
 PipelineId pipelineSingle;
 PipelineId pipelineSeparate;
+
+//#define TestDeviceCreateBuffer
 
 void GPUSample1::OnInit(){
     GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
@@ -100,8 +104,20 @@ void GPUSample1::OnInit(){
         -0.1f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
         -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
     };
+    float interleaved2[] = {
+        // position          // color
+        0.9f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+        0.1f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+        0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
+    };
     vertexBuffer = gpuDevice->AllocBufferId();
     frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::GPUToCPU);
+    Assert(gpuDevice->GetBufferStats(vertexBuffer).type == GPUResourceStatsType::None);
+
+    #ifdef TestDeviceCreateBuffer
+    vertexBuffer2 = gpuDevice->CreateBuffer(interleaved2, sizeof(interleaved2), GPUBufferUsage::Vertex, GPUBufferMemory::GPUToCPU);
+    Assert(gpuDevice->GetBufferStats(vertexBuffer2).type == GPUResourceStatsType::Created);
+    #endif
 
     // -------------------------------------------------
     // Triangle 2: POSITION and COLOR in TWO VBOs
@@ -163,6 +179,12 @@ void GPUSample1::OnRender(float deltaTime){
     frame.renderCommands.SetPipeline(pipelineSingle);
     frame.renderCommands.SetVertexBuffer(0, vertexBuffer);
     frame.renderCommands.Draw(3);
+
+    #ifdef TestDeviceCreateBuffer
+    frame.renderCommands.SetPipeline(pipelineSingle);
+    frame.renderCommands.SetVertexBuffer(0, vertexBuffer2);
+    frame.renderCommands.Draw(3);
+    #endif
 
     // ================================================
     // Triangle 2
