@@ -12,6 +12,8 @@ using MeshId = uint32_t;
 using PipelineId = uint32_t;
 using FramebufferId = uint32_t;
 using BufferId = uint32_t;
+using BindGroupLayoutId = uint32_t;
+using BindGroupId = uint32_t;
 
 /////////////////////////////////////
 
@@ -157,6 +159,54 @@ struct OD_API GPUMeshLayout{
     uint32_t bufferCount = 0;
 };
 
+/////////////////////////////////////
+
+constexpr uint32_t MAX_BINDGROUP_COUT = 4;
+
+enum class GPUBindingType{
+    UniformBuffer,
+    StorageBuffer,
+    Texture2D, //Texture + sampler
+    //Texture, // Maybe will dont have
+    //Sampler, // Maybe will dont have
+    //StorageTexture, //Will be Add later
+};
+
+struct GPUBindLayoutEntry{
+    uint32_t binding;
+    GPUBindingType type;
+
+    //GPUShaderStage visibility; //Will be default for all shader stages
+
+    size_t minUniformBufferSize;
+    bool dynamicOffset = false;
+
+    // Only meaningful for StorageTexture 
+    //GPUTextureFormat textureFormat; //Will be Add later
+    //GPUTextureViewDimension viewDimension; //Will be Add later
+};
+
+struct GPUBindGroupLayoutInfo{
+    GPUBindLayoutEntry entries[4];
+    uint32_t entriesCount = 0;
+};
+
+//////////////////////////////////////
+
+struct GPUBindingEntry{
+    uint32_t binding;
+    BufferId buffer;
+    size_t offset;
+    size_t size;
+    bool dynamicOffset;
+};
+
+struct GPUBindGroupInfo{
+    BindGroupLayoutId layout;
+    GPUBindingEntry entries[64];
+    uint32_t entriesCount = 0;
+};
+
 //////////////////////////////////////
 
 enum class OD_API_IMPORT GPUDepthTest: uint8_t{
@@ -205,7 +255,6 @@ enum class OD_API_IMPORT GPUBlendOp: uint8_t{
 
 struct OD_API GPUPipelineInfo{
     GPUMeshLayout vertexLayout;
-    GPUFrameBufferLayout framebufferLayout;
     GPUCullFace cullFace = GPUCullFace::BACK;
     GPUDepthTest depthTest = GPUDepthTest::LESS;
     bool depthMask = true;
@@ -216,9 +265,12 @@ struct OD_API GPUPipelineInfo{
     GPUBlendMode srcAlphaBlend;
     GPUBlendMode dstAlphaBlend;
     GPUBlendOp opBlend = GPUBlendOp::FUNC_ADD;
+
+    uint32_t bindGroupLayoutCount = 0;
+    BindGroupLayoutId bindGroupLayouts[MAX_BINDGROUP_COUT];
 };
 
-//////////////////////////////////////
+///////////////////////////////////////
 
 enum class GPUBufferUsage: uint8_t{
     Vertex,
@@ -349,6 +401,8 @@ struct OD_API GPUResourceCommands{
         DestroyPipeline,
         CreateBuffer,
         DestroyBuffer,
+        CreateBindGroupLayout,
+        CreateBindGroup
     };
 
     struct Command{
@@ -381,6 +435,14 @@ struct OD_API GPUResourceCommands{
                 const void* data;
                 size_t size;
             } uploadBuffer;
+
+            struct {
+                BindGroupLayoutId id; GPUBindGroupLayoutInfo* info;
+            } createBindGroupLayout;
+
+            struct {
+                BindGroupId id; GPUBindGroupInfo* info;
+            } createBindGroup;
         };
     };
 
@@ -426,6 +488,28 @@ struct OD_API GPUResourceCommands{
         commands.push_back(cmd);
     }
 
+    void CreateBindGroupLayout(BindGroupLayoutId id, GPUBindGroupLayoutInfo& info){
+        GPUBindGroupLayoutInfo* copyData = uploadBuffer.Allocate<GPUBindGroupLayoutInfo>();
+        std::memcpy(copyData, &info, sizeof(GPUBindGroupLayoutInfo));
+        
+        Command cmd{};
+        cmd.type = Type::CreateBindGroupLayout;
+        cmd.createBindGroupLayout.id = id;
+        cmd.createBindGroupLayout.info = copyData;
+        commands.push_back(cmd);
+    }
+
+    void CreateBindGroup(BindGroupId id, GPUBindGroupInfo& info){ 
+        GPUBindGroupInfo* copyData = uploadBuffer.Allocate<GPUBindGroupInfo>();
+        std::memcpy(copyData, &info, sizeof(GPUBindGroupInfo));
+        
+        Command cmd{};
+        cmd.type = Type::CreateBindGroup;
+        cmd.createBindGroup.id = id;
+        cmd.createBindGroup.info = copyData;
+        commands.push_back(cmd);
+    }
+
     std::vector<Command> commands;
     UploadBuffer uploadBuffer = {};
 };
@@ -437,6 +521,7 @@ struct OD_API GPUCommandBuffer{
         SetPipeline,
         SetVertexBuffer,
         SetIndexBuffer,
+        SetBindGroup,
         Draw,
         DrawIndexed,
     };
@@ -466,6 +551,11 @@ struct OD_API GPUCommandBuffer{
             struct {
                 BufferId buffer;
             } setIndexBuffer;
+
+            struct {
+                uint8_t slot;
+                BindGroupId group;
+            } setBindGroup;
 
             struct{
                 uint32_t vertexCount;
@@ -521,6 +611,14 @@ struct OD_API GPUCommandBuffer{
         commands.push_back(cmd);
     }
     
+    void SetBindGroup(uint8_t slot, BindGroupId group){
+        Command cmd{};
+        cmd.type = Type::SetBindGroup;
+        cmd.setBindGroup.slot = slot;
+        cmd.setBindGroup.group = group;
+        commands.push_back(cmd);
+    }
+
     void Draw(uint32_t vertexCount){
         Command cmd{};
         cmd.type = Type::Draw;
@@ -575,7 +673,12 @@ public:
     virtual BufferId AllocBufferId(){ return InvalidID; }
     virtual PipelineId AllocPipelineId(){ return InvalidID; }
 
+    virtual BindGroupLayoutId AllocCreateBindGroupLayoutId(){ return InvalidID; }
+    virtual BindGroupId AllocCreateBindGroupId(){ return InvalidID; }
+
     virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly){ return InvalidID; }
+    virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){ return InvalidID; }
+    virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info){ return InvalidID; }
 
     virtual GPUResourceStats GetBufferStats(BufferId id){ return {}; }
 };

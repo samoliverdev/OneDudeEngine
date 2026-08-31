@@ -97,6 +97,7 @@ VkFence _renderFence;
 std::vector<VkSemaphore> _presentSemaphores2;
 std::vector<VkSemaphore> _renderSemaphores2;
 
+VkDescriptorPool _descriptorPool;
 
 EShLanguage ToGlslangStage(VkShaderStageFlagBits stage){
     switch(stage){
@@ -281,6 +282,14 @@ VkBlendOp GetVulkanBlendOp(GPUBlendOp op){
     return VK_BLEND_OP_ADD;
 }
 
+VkDescriptorType GetVulkanDescriptorType(GPUBindingType type){
+    switch(type){
+        case GPUBindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    }
+    Assert(false);
+    return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+}
+
 void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info){
     std::string srcStr = source;
     std::string vertexSource = "#version 450\n#define Vulkan\n#define Vertex\n" + srcStr;
@@ -361,7 +370,17 @@ void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, co
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
+    std::vector<VkDescriptorSetLayout> layouts;
+    for(int i = 0; i < info.bindGroupLayoutCount; i++){
+        auto index = info.bindGroupLayouts[i];
+        VkDescriptorSetLayout layout = bindGroupLayoutPool.data[index].layout;
+        layouts.push_back(layout);
+    }
+
     VkPipelineLayoutCreateInfo layoutInfo = vkinit::pipeline_layout_create_info();
+    layoutInfo.setLayoutCount = layouts.size();
+    layoutInfo.pSetLayouts = layouts.data();
+
     VkPipelineLayout layout;
     VK_CHECK(vkCreatePipelineLayout(_device, &layoutInfo, nullptr, &layout));
 
@@ -537,11 +556,28 @@ void init_sync_structures(){
     }
 }
 
+void init_descriptors(){
+    //create a descriptor pool that will hold 10 uniform buffers
+	std::vector<VkDescriptorPoolSize> sizes ={
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 }
+	};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = 0;
+	pool_info.maxSets = 10;
+	pool_info.poolSizeCount = (uint32_t)sizes.size();
+	pool_info.pPoolSizes = sizes.data();
+	vkCreateDescriptorPool(_device, &pool_info, nullptr, &_descriptorPool);
+}
+
 void VulkanGPUDevice::Cleanup(){
     if(!_isInitialized) return;
 
     glslang::FinalizeProcess();
     vkDeviceWaitIdle(_device);
+
+    vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
 
     for(auto& data : bufferPool.data){
         if(data.buffer != VK_NULL_HANDLE){
@@ -555,6 +591,13 @@ void VulkanGPUDevice::Cleanup(){
             vkDestroyPipeline(_device, data.pipeline, nullptr);
             vkDestroyPipelineLayout(_device, data.layout, nullptr);
             data.pipeline = VK_NULL_HANDLE;
+        }
+    }
+
+    for(auto& data : bindGroupLayoutPool.data){
+        if(data.layout != VK_NULL_HANDLE){
+            vkDestroyDescriptorSetLayout(_device, data.layout, nullptr);
+            data.layout = VK_NULL_HANDLE;
         }
     }
 
@@ -597,6 +640,7 @@ void VulkanGPUDevice::Init(){
     init_default_renderpass();
     init_framebuffers();
     init_sync_structures();
+    init_descriptors();
     _isInitialized = true;
 }
 
@@ -606,6 +650,8 @@ void VulkanGPUDevice::Shut(){
 }
 
 void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
+    PipelineId currentPipeline = INVALID_ID;
+
     // 1. MUST WAIT FOR PREVIOUS FRAME BEFORE DOING ANY QUEUE OPERATIONS OR STAGING COPIES
     VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
     VK_CHECK(vkResetFences(_device, 1, &_renderFence));
@@ -791,6 +837,82 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 pipelinePool.idsDestred.push_back(cmd.destroyPipeline.id);
                 break;
             }
+            
+            case GPUResourceCommands::Type::CreateBindGroupLayout:{
+                BindGroupLayoutData& data = bindGroupLayoutPool.data[cmd.createBindGroupLayout.id];
+                //data.info = cmd.createBindGroupLayout.info;
+
+                auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
+                    VkDescriptorSetLayoutBinding entry = {};
+                    entry.binding = e.binding;
+                    entry.descriptorCount = 1;
+                    entry.descriptorType = GetVulkanDescriptorType(e.type);// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    entry.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                    return entry;
+                };
+
+                std::vector<VkDescriptorSetLayoutBinding> entries;
+                for(int i = 0; i < cmd.createBindGroupLayout.info->entriesCount; i++){
+                    auto& e = cmd.createBindGroupLayout.info->entries[i];
+                    
+                    //LogInfo("binding={} type={}", e.binding, static_cast<int>(e.type));
+                    entries.push_back(Convert(e));
+                }
+
+                VkDescriptorSetLayoutCreateInfo setinfo = {};
+                setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                setinfo.pNext = nullptr;
+                setinfo.flags = 0; //no flags
+                setinfo.pBindings = entries.data();
+                setinfo.bindingCount = entries.size();
+
+                VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
+                break;
+            }
+
+            case GPUResourceCommands::Type::CreateBindGroup:{
+                VkDescriptorSetLayout layout = bindGroupLayoutPool.data[cmd.createBindGroup.info->layout].layout;
+    
+                VkDescriptorSetAllocateInfo allocInfo ={};
+                allocInfo.pNext = nullptr;
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = _descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layout;
+                VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.data[cmd.createBindGroup.id].descriptorSet));
+
+                std::vector<VkDescriptorBufferInfo> bInfos;
+                std::vector<VkWriteDescriptorSet> writes;
+                bInfos.resize(cmd.createBindGroup.info->entriesCount);
+                writes.resize(cmd.createBindGroup.info->entriesCount);
+
+                for(int i = 0; i < cmd.createBindGroup.info->entriesCount; i++){
+                    if(bindGroupLayoutPool.data[cmd.createBindGroup.info->layout].info.entries[i].type == GPUBindingType::UniformBuffer){
+                        BufferData& bufferData = bufferPool.data[cmd.createBindGroup.info->entries[i].buffer];
+
+                        VkDescriptorBufferInfo& binfo = bInfos[i];
+                        binfo = {};
+                        binfo.buffer = bufferData.buffer;// _frames[i].cameraBuffer._buffer;
+                        binfo.offset = cmd.createBindGroup.info->entries[i].offset;
+                        binfo.range = cmd.createBindGroup.info->entries[i].size;// ssizeof(GPUCameraData);
+
+                        VkWriteDescriptorSet& setWrite = writes[i];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = cmd.createBindGroup.info->entries[i].binding;
+                        setWrite.dstSet = bindGroupPool.data[cmd.createBindGroup.id].descriptorSet;
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        setWrite.pBufferInfo = &binfo;
+                    } else {
+                        Assert(false);
+                    }
+                }
+
+                vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+                break;
+            }
         }
     }
 
@@ -883,6 +1005,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             case GPUCommandBuffer::Type::SetPipeline:{
                 const auto& pipeData = pipelinePool.data[renderCmd.setPipeline.id];
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
+                currentPipeline = renderCmd.setPipeline.id;
                 break;
             }
 
@@ -901,6 +1024,14 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
             }
+
+            case GPUCommandBuffer::Type::SetBindGroup:{
+                const BindGroupData& bindGroupData = bindGroupPool.data[renderCmd.setBindGroup.group];
+                const PipelineData& pipelineData = pipelinePool.data[currentPipeline];
+
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineData.layout, 0, 1, &bindGroupData.descriptorSet, 0, nullptr);
+                break;
+            };
 
             case GPUCommandBuffer::Type::Draw:{
                 vkCmdDraw(cmd, renderCmd.draw.vertexCount, 1, 0, 0);
@@ -945,6 +1076,9 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
 void VulkanGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
+
+    bindGroupLayoutPool.SyncSingleThreadData();
+    bindGroupPool.SyncSingleThreadData();
 }
 
 BufferId VulkanGPUDevice::AllocBufferId(){
@@ -953,6 +1087,102 @@ BufferId VulkanGPUDevice::AllocBufferId(){
 
 PipelineId VulkanGPUDevice::AllocPipelineId(){
     return pipelinePool.AllocId();
+}
+
+BindGroupLayoutId VulkanGPUDevice::AllocCreateBindGroupLayoutId(){
+    return bindGroupLayoutPool.AllocId();
+}
+
+BindGroupId VulkanGPUDevice::AllocCreateBindGroupId(){
+    return bindGroupPool.AllocId();
+}
+
+BindGroupLayoutId VulkanGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){
+    auto id = bindGroupLayoutPool.AllocId();
+    BindGroupLayoutData data = {};
+
+    auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
+        VkDescriptorSetLayoutBinding entry = {};
+        entry.binding = e.binding;
+        entry.descriptorCount = 1;
+        entry.descriptorType = GetVulkanDescriptorType(e.type);// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        entry.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        return entry;
+    };
+
+    std::vector<VkDescriptorSetLayoutBinding> entries;
+    for(auto& i: info.entries){
+        entries.push_back(Convert(i));
+    }
+
+	VkDescriptorSetLayoutCreateInfo setinfo = {};
+	setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	setinfo.pNext = nullptr;
+	setinfo.flags = 0; //no flags
+	setinfo.pBindings = entries.data();
+    setinfo.bindingCount = entries.size();
+
+	VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
+
+    bindGroupLayoutPool.singleThreadIds.push_back(id);
+    bindGroupLayoutPool.singleThreadDatas.push_back(data);
+    bindGroupLayoutPool.resourceStatus.resize(bindGroupLayoutPool.curId);
+    bindGroupLayoutPool.resourceStatus[id].type = GPUResourceStatsType::Created;
+    bindGroupLayoutPool.resourceStatus[id].erroMessage = "";
+    return id;
+}
+
+BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
+    auto id = bindGroupPool.AllocId();
+    BindGroupData data = {};
+
+    VkDescriptorSetLayout layout = bindGroupLayoutPool.data[info.layout].layout;
+    
+    VkDescriptorSetAllocateInfo allocInfo ={};
+    allocInfo.pNext = nullptr;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = _descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout;
+    VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.data[id].descriptorSet));
+
+    std::vector<VkDescriptorBufferInfo> bInfos;
+    std::vector<VkWriteDescriptorSet> writes;
+    bInfos.resize(info.entriesCount);
+    writes.resize(info.entriesCount);
+
+    for(int i = 0; i < info.entriesCount; i++){
+        if(bindGroupLayoutPool.data[info.layout].info.entries[i].type == GPUBindingType::UniformBuffer){
+            BufferData& bufferData = bufferPool.data[info.entries[i].buffer];
+
+            VkDescriptorBufferInfo& binfo = bInfos[i];
+            binfo = {};
+            binfo.buffer = bufferData.buffer;// _frames[i].cameraBuffer._buffer;
+            binfo.offset = info.entries[i].offset;
+            binfo.range = info.entries[i].size;// ssizeof(GPUCameraData);
+
+            VkWriteDescriptorSet setWrite = writes[i];
+            setWrite = {};
+            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            setWrite.pNext = nullptr;
+            setWrite.dstBinding = info.entries[i].binding;
+            setWrite.dstSet = bindGroupPool.data[id].descriptorSet;
+            setWrite.descriptorCount = 1;
+            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            setWrite.pBufferInfo = &binfo;
+        } else {
+            Assert(false);
+        }
+    }
+
+    vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+
+    bindGroupPool.singleThreadIds.push_back(id);
+    bindGroupPool.singleThreadDatas.push_back(data);
+    bindGroupPool.resourceStatus.resize(bindGroupPool.curId);
+    bindGroupPool.resourceStatus[id].type = GPUResourceStatsType::Created;
+    bindGroupPool.resourceStatus[id].erroMessage = "";
+    return id;
 }
 
 } // namespace OD

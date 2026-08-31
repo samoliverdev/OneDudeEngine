@@ -2,6 +2,9 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
+#include <string>
+#include <regex>
+#include <optional>
 #include <index_vector.hpp>
 #include <glad.h>
 
@@ -51,11 +54,21 @@ struct BufferData{
 };
 ResourcePool<BufferData> bufferPool;
 
+struct BindGroupLookUp{
+    GLuint bindingsLookUp[20];
+};
+
 struct PipelineData{
     uint32_t program = 0;
     GPUPipelineInfo info;
+    BindGroupLookUp groupsLookUp[4];
 };
 ResourcePool<PipelineData> pipelinePool;
+
+struct BindGroupData{
+    GPUBindGroupInfo info;
+};
+ResourcePool<BindGroupData> bindGroupPool;
 
 unsigned int globalVAO = 0;
 
@@ -89,6 +102,113 @@ void OpenglGPUDevice::LoadContext(void* data){
 
 ////////////////////////////////////
 
+enum class ShaderBindingType
+{
+    UniformBuffer,
+    Sampler2D,
+    SamplerCube
+};
+
+struct ShaderBinding{
+    uint32_t set = 0;
+    uint32_t binding = 0;
+
+    std::string name;
+    ShaderBindingType type;
+};
+
+std::optional<ShaderBinding> ParseLayoutBinding(std::string& line){
+    static const std::regex regex(
+        R"(layout\s*\(\s*set\s*=\s*(\d+)\s*,\s*binding\s*=\s*(\d+)\s*\)\s*)"
+        R"(uniform\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+([A-Za-z_][A-Za-z0-9_]*))?)"
+    );
+
+    std::smatch match;
+
+    if(!std::regex_search(line, match, regex))
+        return std::nullopt;
+
+    ShaderBinding result;
+
+    result.set = static_cast<uint32_t>(std::stoul(match[1]));
+    result.binding = static_cast<uint32_t>(std::stoul(match[2]));
+
+    const std::string type = match[3].str();
+
+    // Determine binding type.
+    if(type == "sampler2D"){
+        result.type = ShaderBindingType::Sampler2D;
+    } else if(type == "samplerCube"){
+        result.type = ShaderBindingType::SamplerCube;
+    } else {
+        // Anything else is treated as a uniform buffer.
+        result.type = ShaderBindingType::UniformBuffer;
+    }
+
+    // For:
+    //
+    // uniform CameraBuffer
+    //
+    // match[4] is empty.
+    //
+    // For:
+    //
+    // uniform sampler2D Albedo
+    //
+    // match[4] = Albedo.
+    //
+    if(result.type == ShaderBindingType::UniformBuffer)
+        result.name = type;
+    else
+        result.name = match[4].str();
+
+    // Find the beginning of "uniform".
+    const size_t uniformPos = line.find("uniform", match.position(0));
+
+    if(uniformPos != std::string::npos){
+        // Remove only:
+        //
+        // layout(set = X, binding = X)
+        //
+        // and preserve the uniform declaration.
+        line.erase(
+            match.position(0),
+            uniformPos - match.position(0)
+        );
+
+        // Uniform buffers need std140 on OpenGL.
+        if(result.type == ShaderBindingType::UniformBuffer){
+            line.insert(0, "layout(std140) ");
+        }
+    }
+
+    return result;
+}
+
+std::string ProcessShaderSource(std::string shaderSource, std::vector<ShaderBinding>& bindings){
+    std::stringstream input(shaderSource);
+    std::string line;
+
+    std::string output;
+
+    while(std::getline(input, line)){
+        auto binding = ParseLayoutBinding(line);
+
+        if(binding){
+            /*LogInfo("set:     {}", binding->set);
+            LogInfo("binding: {}", binding->binding);
+            LogInfo("name:    {}", binding->name);*/
+
+            bindings.push_back(binding.value());
+        }
+
+        output += line;
+        output += '\n';
+    }
+
+    return output;
+}
+
 void OpenglGPUDevice::Init(){
     LogInfo("OpenglGPUDevice::Initialize");
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
@@ -101,6 +221,33 @@ void OpenglGPUDevice::Init(){
     glGenVertexArrays(1, &globalVAO);
 	glBindVertexArray(globalVAO);
     glCheckError();
+
+    /*std::string shaderSource = R"GLSL(
+    layout(location = 0) in vec3 aPos;
+    layout(location = 7) in vec3 aColor;
+
+    layout(set = 0, binding = 0) uniform CameraBuffer{
+        mat4 view;
+        mat4 proj;
+        mat4 viewproj;
+    } cameraData;
+    layout(set = 0, binding = 2) uniform sampler2D test; 
+    layout(set = 1, binding = 0) uniform samplerCube test2; 
+    )GLSL";
+
+    std::vector<ShaderBinding> bindings;
+    auto out = ProcessShaderSource(shaderSource, bindings);
+    LogInfo("-----------------\n{}-------------------\n", out);*/
+
+    /*std::string line = "layout       (     set        =    0,       binding =       0      )   uniform         CameraBuffer";
+
+    auto binding = ParseLayoutBinding(line);
+    if(binding){
+        LogInfo("set:     {}", binding->set);
+        LogInfo("binding: {}", binding->binding);
+        LogInfo("name:    {}", binding->name);
+        LogInfo("line:    {}", line);
+    }*/
 }
 
 void OpenglGPUDevice::Shut(){
@@ -191,6 +338,8 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
     PipelineId currentPipeline = INVALID_ID;
     GPUPipelineInfo currentPipelineInfo = {};
 
+    int curBindIndex = 0;
+
     for(const GPUResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
         case GPUResourceCommands::Type::CreateBuffer:{
@@ -232,7 +381,13 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             int  success;
             char infoLog[512];
 
-            std::string source = std::string(cmd.createPipeline.source);
+            //std::string source = std::string(cmd.createPipeline.source);
+
+            std::vector<ShaderBinding> bindings;
+            std::string source = ProcessShaderSource(cmd.createPipeline.source, bindings);
+            auto out = ProcessShaderSource(source, bindings);
+            //LogInfo("-----------------\n{}-------------------\n", out);
+
             std::string vertexSource =
                 "#version 460 core\n"
                 "#define OpenGL\n"
@@ -276,6 +431,12 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glDeleteShader(fragShader); 
 
             glCheckError();
+
+            for(int i = 0; i < bindings.size(); i++){
+                GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.data[cmd.createPipeline.id].program, bindings[i].name.c_str());
+                Assert(blockIndex != GL_INVALID_INDEX);
+                pipelinePool.data[cmd.createPipeline.id].groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
+            }
             
             break;
         }
@@ -286,6 +447,11 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glCheckError();
             pipelinePool.data[cmd.destroyPipeline.id].program = 0;
             pipelinePool.idsDestred.push_back(cmd.destroyPipeline.id);
+            break;
+        }
+        
+        case GPUResourceCommands::Type::CreateBindGroup:{
+            std::memcpy(&bindGroupPool.data[cmd.createBindGroup.id].info, cmd.createBindGroup.info, sizeof(GPUBindGroupInfo));
             break;
         }
         }
@@ -331,6 +497,8 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             currentPipeline = cmd.setPipeline.id;
             currentPipelineInfo = pipeline.info;
             glCheckError();
+
+            curBindIndex = 0;
             break;
         }
 
@@ -363,7 +531,41 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
 
             GLuint ebo = bufferPool.data[cmd.setIndexBuffer.buffer].buffer;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+            break;
         };
+
+        case GPUCommandBuffer::Type::SetBindGroup:{
+            //Assert(group < bindGroups.size());
+
+            const BindGroupData& bindGroup = bindGroupPool.data[cmd.setBindGroup.group];
+
+            for(int i = 0; i < bindGroup.info.entriesCount; i++){
+                const GPUBindingEntry& binding = bindGroup.info.entries[i];
+                Assert(binding.buffer != InvalidID);
+
+                const BufferData& buffer = bufferPool.data[binding.buffer];
+                Assert(buffer.usage == GPUBufferUsage::Uniform);
+
+                Assert(buffer.buffer != InvalidID);
+                Assert(binding.dynamicOffset == false);
+
+                const PipelineData& pipeline = pipelinePool.data[currentPipeline];
+                GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+
+                glBindBufferRange(
+                    GL_UNIFORM_BUFFER,
+                    curBindIndex,
+                    buffer.buffer,
+                    static_cast<GLintptr>(binding.offset),
+                    static_cast<GLsizeiptr>(binding.size)
+                );
+                glCheckError();
+                glUniformBlockBinding(pipeline.program, blockIndex, curBindIndex);
+                curBindIndex += 1;
+                glCheckError();
+            }
+            break;
+        }
 
         case GPUCommandBuffer::Type::Draw:{
             glDrawArrays(GL_TRIANGLES, 0, cmd.draw.vertexCount);
@@ -384,6 +586,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
 void OpenglGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
+    bindGroupPool.SyncSingleThreadData();
 }
 
 ///////////////////////////////////
@@ -396,6 +599,14 @@ MeshId OpenglGPUDevice::AllocBufferId(){
 
 PipelineId OpenglGPUDevice::AllocPipelineId(){
     return pipelinePool.AllocId();
+}
+
+BindGroupLayoutId OpenglGPUDevice::AllocCreateBindGroupLayoutId(){
+    return InvalidID; 
+}
+
+BindGroupId OpenglGPUDevice::AllocCreateBindGroupId(){
+    return bindGroupPool.AllocId();
 }
 
 BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory){
@@ -420,6 +631,23 @@ BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferU
     bufferPool.resourceStatus[id].type = GPUResourceStatsType::Created;
     bufferPool.resourceStatus[id].erroMessage = "";
 
+    return id;
+}
+
+BindGroupLayoutId OpenglGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){ 
+    return InvalidID; 
+}
+
+BindGroupId OpenglGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
+    auto id = bindGroupPool.AllocId();
+    BindGroupData data = {};
+    data.info = info;
+
+    bindGroupPool.singleThreadIds.push_back(id);
+    bindGroupPool.singleThreadDatas.push_back(data);
+    bindGroupPool.resourceStatus.resize(bindGroupPool.curId);
+    bindGroupPool.resourceStatus[id].type = GPUResourceStatsType::Created;
+    bindGroupPool.resourceStatus[id].erroMessage = "";
     return id;
 }
 

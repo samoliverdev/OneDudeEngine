@@ -45,6 +45,11 @@ uint32_t indices[] = {
     0, 1, 2
 };
 
+struct Data{
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 const char* shaderSource = R"GLSL(
     #ifdef Vertex
     layout(location = 0) in vec3 aPos;
@@ -56,8 +61,17 @@ const char* shaderSource = R"GLSL(
     out vec3 vColor;
     #endif
 
+    layout(set = 0, binding = 0) uniform CameraData{
+        mat4 view;
+        mat4 proj;
+    };
+
+    layout(set = 0, binding = 1) uniform ModelData{
+        mat4 model;
+    };
+
     void main(){
-        gl_Position = vec4(aPos, 1.0);
+        gl_Position = proj * view * model * vec4(aPos, 1.0);
         vColor = aColor;
         //vColor = vec3(1.0, 0.0, 0.0);
     }
@@ -86,14 +100,44 @@ BufferId positionBuffer;
 BufferId colorBuffer;
 BufferId indexBuffer;
 
+BufferId uniformBuffer;
+BufferId uniformBuffer2;
+
 PipelineId pipelineSingle;
 PipelineId pipelineSeparate;
+
+BindGroupLayoutId bindGroupLayout;
+BindGroupId bindGroup;
 
 //#define TestDeviceCreateBuffer
 
 void GPUSample1::OnInit(){
     GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
     auto& frame = Application::GetRenderFrame();
+
+    GPUBindGroupLayoutInfo bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::UniformBuffer, sizeof(Data), false};
+    bindGroupLayoutInfo.entries[1] = {1, GPUBindingType::UniformBuffer, sizeof(glm::mat4), false};
+    bindGroupLayoutInfo.entriesCount = 2;
+    bindGroupLayout = gpuDevice->AllocCreateBindGroupLayoutId();// gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+    frame.resourceCommands.CreateBindGroupLayout(bindGroup, bindGroupLayoutInfo);
+
+    Data camData = { glm::identity<glm::mat4>(), glm::identity<glm::mat4>()};
+    glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));
+
+    uniformBuffer = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(uniformBuffer, &camData, sizeof(camData), GPUBufferUsage::Uniform, GPUBufferMemory::CPUToGPU);
+
+    uniformBuffer2 = gpuDevice->AllocBufferId();
+    frame.resourceCommands.CreateBuffer(uniformBuffer2, &matrix, sizeof(glm::mat4), GPUBufferUsage::Uniform, GPUBufferMemory::CPUToGPU);
+
+    GPUBindGroupInfo bindGroupInfo = {};
+    bindGroupInfo.layout = bindGroupLayout;
+    bindGroupInfo.entries[0] = {0, uniformBuffer, 0, sizeof(Data), false};
+    bindGroupInfo.entries[1] = {1, uniformBuffer2, 0, sizeof(glm::mat4), false};
+    bindGroupInfo.entriesCount = 2;
+    bindGroup = gpuDevice->AllocCreateBindGroupId(); //gpuDevice->CreateBindGroup(bindGroupInfo);
+    frame.resourceCommands.CreateBindGroup(bindGroup, bindGroupInfo);
 
     // -------------------------------------------------
     // Triangle 1: POSITION + COLOR in ONE VBO
@@ -111,7 +155,7 @@ void GPUSample1::OnInit(){
         0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
     };
     vertexBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::GPUToCPU);
+    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::CPUToGPU);
     Assert(gpuDevice->GetBufferStats(vertexBuffer).type == GPUResourceStatsType::None);
 
     #ifdef TestDeviceCreateBuffer
@@ -144,6 +188,8 @@ void GPUSample1::OnInit(){
     pipelineInfo.vertexLayout.attributeCount = 2;
     pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, GPUVertexInputRate::Vertex};
     pipelineInfo.vertexLayout.bufferCount = 1;
+    pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
+    pipelineInfo.bindGroupLayoutCount = 1;
     frame.resourceCommands.CreatePipeline(pipelineSingle, shaderSource, pipelineInfo);
 
 
@@ -158,10 +204,13 @@ void GPUSample1::OnInit(){
     separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
     separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
     separateInfo.vertexLayout.bufferCount = 2;
+    separateInfo.bindGroupLayouts[0] = bindGroupLayout;
+    separateInfo.bindGroupLayoutCount = 1;
     frame.resourceCommands.CreatePipeline(pipelineSeparate, shaderSource, separateInfo);
 }
 
 void GPUSample1::OnUpdate(float deltaTime){
+    //SimulateHeavyWork(16);
     //SimulateHeavyWork(33);
     //if(Input::IsKeyDown(KeyCode::D)){}
 }   
@@ -172,16 +221,20 @@ void GPUSample1::OnRender(float deltaTime){
     frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 255, 0, 255}});
 
+
+    for(int i = 0; i < 1000; i++){
     // ================================================
     // Triangle 1
     // Position + Color in ONE VBO
     // ================================================
     frame.renderCommands.SetPipeline(pipelineSingle);
+    frame.renderCommands.SetBindGroup(0, bindGroup);
     frame.renderCommands.SetVertexBuffer(0, vertexBuffer);
     frame.renderCommands.Draw(3);
 
     #ifdef TestDeviceCreateBuffer
     frame.renderCommands.SetPipeline(pipelineSingle);
+    frame.renderCommands.SetBindGroup(0, bindGroup);
     frame.renderCommands.SetVertexBuffer(0, vertexBuffer2);
     frame.renderCommands.Draw(3);
     #endif
@@ -191,10 +244,12 @@ void GPUSample1::OnRender(float deltaTime){
     // Position + Color in TWO VBOs
     // ================================================
     frame.renderCommands.SetPipeline(pipelineSeparate);
+    frame.renderCommands.SetBindGroup(0, bindGroup);
     frame.renderCommands.SetVertexBuffer(0, positionBuffer);
     frame.renderCommands.SetVertexBuffer(1, colorBuffer);
     frame.renderCommands.SetIndexBuffer(indexBuffer);
     frame.renderCommands.DrawIndexed(3);
+    }
 }
 
 void GPUSample1::OnExit(){}

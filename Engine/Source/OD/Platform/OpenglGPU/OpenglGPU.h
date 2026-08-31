@@ -26,8 +26,12 @@ public:
 
     virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
+    virtual BindGroupLayoutId AllocCreateBindGroupLayoutId() override;
+    virtual BindGroupId AllocCreateBindGroupId() override;
 
     virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly) override;
+    virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info) override;
+    virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info) override;
 
     GPUResourceStats GetBufferStats(BufferId id) override; 
 };

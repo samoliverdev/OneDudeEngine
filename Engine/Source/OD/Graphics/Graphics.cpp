@@ -326,6 +326,7 @@ void Graphics::DrawLine(Vector3 start, Vector3 end, Vector3 color, int lineWidth
 void Graphics::DrawLine(Matrix4 model, Vector3 start, Vector3 end, Vector3 color, int lineWidth){ 
     graphicsDevice->DrawLine(model, start, end, color, lineWidth); 
 }
+
 void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){ 
     graphicsDevice->DrawWireCube(modelMatrix, color, lineWidth); 
 }
