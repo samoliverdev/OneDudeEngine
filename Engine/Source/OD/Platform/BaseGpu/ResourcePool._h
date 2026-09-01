@@ -1,0 +1,76 @@
+#pragma once
+#include "OD/Core/Log.h"
+#include "OD/GPU/GPU.h"
+#include <vector>
+
+namespace OD{
+
+template <typename T>
+struct ResourcePool{
+    std::vector<T> data;
+    std::vector<uint32_t> freeIds;
+    std::vector<uint32_t> idsDestred;
+    uint32_t curId = 0;
+
+    std::vector<uint32_t> singleThreadIds;
+    std::vector<T> singleThreadDatas;
+
+    std::vector<GPUResourceStats> resourceStatus;
+    std::vector<uint32_t> gpuToCpuResourceStatesIds;
+    std::vector<GPUResourceStats> gpuToCpuResourceStatesData;
+
+    inline T& Get(uint32_t id){
+        return data[id];
+    }
+
+    inline uint32_t AllocId(){
+        if(freeIds.empty() == false){
+            MeshId id = freeIds.back();
+            freeIds.pop_back();
+            return id;
+        }
+
+        MeshId id = curId;
+        curId += 1;
+        return id;
+    }
+
+    inline void PushCpuResource(uint32_t id, T& data){
+        singleThreadIds.push_back(id);
+        singleThreadDatas.push_back(data);
+        resourceStatus.resize(curId);
+        resourceStatus[id].type = GPUResourceStatsType::Created;
+        resourceStatus[id].erroMessage = "";
+    }
+
+    inline void SyncSingleThreadData(){
+        data.resize(curId);
+        for(auto i: idsDestred){
+            freeIds.push_back(i);
+        }
+        idsDestred.clear();
+
+        Assert(singleThreadIds.size() == singleThreadDatas.size());
+        for(int i = 0; i < singleThreadIds.size(); i++){
+            data[singleThreadIds[i]] = singleThreadDatas[i];
+        }
+        singleThreadIds.clear();
+        singleThreadDatas.clear();
+        
+        Assert(gpuToCpuResourceStatesIds.size() == gpuToCpuResourceStatesData.size());
+        for(int i = 0; i < gpuToCpuResourceStatesIds.size(); i++){
+            resourceStatus[gpuToCpuResourceStatesIds[i]] = gpuToCpuResourceStatesData[i];
+        }
+        gpuToCpuResourceStatesIds.clear();
+        gpuToCpuResourceStatesData.clear();
+    }
+
+    template <typename Func>
+    inline void ForEach(Func&& func){
+        for(uint32_t id = 0; id < curId; ++id){
+            func(id, Get(id));
+        }
+    }
+};
+
+}

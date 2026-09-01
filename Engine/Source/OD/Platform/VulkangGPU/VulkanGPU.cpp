@@ -383,7 +383,7 @@ void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, co
     std::vector<VkDescriptorSetLayout> layouts;
     for(int i = 0; i < info.bindGroupLayoutCount; i++){
         auto index = info.bindGroupLayouts[i];
-        VkDescriptorSetLayout layout = bindGroupLayoutPool.data[index].layout;
+        VkDescriptorSetLayout layout = bindGroupLayoutPool.Get(index).layout;
         layouts.push_back(layout);
     }
 
@@ -432,9 +432,9 @@ void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, co
     vkDestroyShaderModule(_device, vertModule, nullptr);
     vkDestroyShaderModule(_device, fragModule, nullptr);
 
-    pipelinePool.data[id].pipeline = pipeline;
-    pipelinePool.data[id].layout = layout;
-    pipelinePool.data[id].info = info;
+    pipelinePool.Get(id).pipeline = pipeline;
+    pipelinePool.Get(id).layout = layout;
+    pipelinePool.Get(id).info = info;
 }
 
 void create_allocator(){
@@ -448,8 +448,8 @@ void create_allocator(){
 void init_vulkan(){
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
-        .request_validation_layers(true)
         .require_api_version(1, 1, 0)
+        .request_validation_layers(true)
         .use_default_debug_messenger()
         .build();
 
@@ -605,27 +605,27 @@ void VulkanGPUDevice::Cleanup(){
 
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
 
-    for(auto& data : bufferPool.data){
+    bufferPool.ForEach([&](uint32_t id, BufferData& data){
         if(data.buffer != VK_NULL_HANDLE){
             vmaDestroyBuffer(_allocator, data.buffer, data.allocation);
             data.buffer = VK_NULL_HANDLE;
         }
-    }
+    });
 
-    for(auto& data : pipelinePool.data){
+    pipelinePool.ForEach([&](uint32_t id, PipelineData& data){
         if(data.pipeline != VK_NULL_HANDLE){
             vkDestroyPipeline(_device, data.pipeline, nullptr);
             vkDestroyPipelineLayout(_device, data.layout, nullptr);
             data.pipeline = VK_NULL_HANDLE;
         }
-    }
+    });
 
-    for(auto& data : bindGroupLayoutPool.data){
+    bindGroupLayoutPool.ForEach([&](uint32_t id, BindGroupLayoutData& data){ 
         if(data.layout != VK_NULL_HANDLE){
             vkDestroyDescriptorSetLayout(_device, data.layout, nullptr);
             data.layout = VK_NULL_HANDLE;
         }
-    }
+    });
 
     vmaDestroyAllocator(_allocator);
 
@@ -729,9 +729,9 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
                 break;*/
 
-                Assert(cmd.createBuffer.id < bufferPool.data.size());
+                //Assert(cmd.createBuffer.id < bufferPool.data.size());
 
-                if(bufferPool.data[cmd.createBuffer.id].buffer != VK_NULL_HANDLE){
+                if(bufferPool.Get(cmd.createBuffer.id).buffer != VK_NULL_HANDLE){
                     LogError("Trying CreateBuffer on Used id");
                     continue;
                 }
@@ -828,18 +828,18 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                     }
                 }
 
-                bufferPool.data[cmd.createBuffer.id].buffer = buffer;
-                bufferPool.data[cmd.createBuffer.id].allocation = allocation;
-                bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
-                bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
-                bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
+                bufferPool.Get(cmd.createBuffer.id).buffer = buffer;
+                bufferPool.Get(cmd.createBuffer.id).allocation = allocation;
+                bufferPool.Get(cmd.createBuffer.id).usage = cmd.createBuffer.usage;
+                bufferPool.Get(cmd.createBuffer.id).memory = cmd.createBuffer.memory;
+                bufferPool.Get(cmd.createBuffer.id).size = cmd.createBuffer.size;
 
                 //LogInfo("CreateBuffer");
                 break;
             }
 
             case GPUResourceCommands::Type::DestroyBuffer:{
-                auto& bufData = bufferPool.data[cmd.destroyBuffer.id];
+                auto& bufData = bufferPool.Get(cmd.destroyBuffer.id);
                 if(bufData.buffer != VK_NULL_HANDLE){
                     vmaDestroyBuffer(_allocator, bufData.buffer, bufData.allocation);
                     bufData.buffer = VK_NULL_HANDLE;
@@ -856,7 +856,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             }
 
             case GPUResourceCommands::Type::DestroyPipeline:{
-                auto& pipeData = pipelinePool.data[cmd.destroyPipeline.id];
+                auto& pipeData = pipelinePool.Get(cmd.destroyPipeline.id);
                 if(pipeData.pipeline != VK_NULL_HANDLE){
                     vkDestroyPipeline(_device, pipeData.pipeline, nullptr);
                     vkDestroyPipelineLayout(_device, pipeData.layout, nullptr);
@@ -868,7 +868,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             }
             
             case GPUResourceCommands::Type::CreateBindGroupLayout:{
-                BindGroupLayoutData& data = bindGroupLayoutPool.data[cmd.createBindGroupLayout.id];
+                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
                 //data.info = cmd.createBindGroupLayout.info;
 
                 auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
@@ -900,7 +900,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             }
 
             case GPUResourceCommands::Type::CreateBindGroup:{
-                VkDescriptorSetLayout layout = bindGroupLayoutPool.data[cmd.createBindGroup.info->layout].layout;
+                VkDescriptorSetLayout layout = bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout).layout;
     
                 VkDescriptorSetAllocateInfo allocInfo ={};
                 allocInfo.pNext = nullptr;
@@ -908,7 +908,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 allocInfo.descriptorPool = _descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout;
-                VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.data[cmd.createBindGroup.id].descriptorSet));
+                VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet));
 
                 std::vector<VkDescriptorBufferInfo> bInfos;
                 std::vector<VkWriteDescriptorSet> writes;
@@ -916,8 +916,8 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 writes.resize(cmd.createBindGroup.info->entriesCount);
 
                 for(int i = 0; i < cmd.createBindGroup.info->entriesCount; i++){
-                    if(bindGroupLayoutPool.data[cmd.createBindGroup.info->layout].info.entries[i].type == GPUBindingType::UniformBuffer){
-                        BufferData& bufferData = bufferPool.data[cmd.createBindGroup.info->entries[i].buffer];
+                    if(bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout).info.entries[i].type == GPUBindingType::UniformBuffer){
+                        BufferData& bufferData = bufferPool.Get(cmd.createBindGroup.info->entries[i].buffer);
 
                         VkDescriptorBufferInfo& binfo = bInfos[i];
                         binfo = {};
@@ -930,7 +930,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = cmd.createBindGroup.info->entries[i].binding;
-                        setWrite.dstSet = bindGroupPool.data[cmd.createBindGroup.id].descriptorSet;
+                        setWrite.dstSet = bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                         setWrite.pBufferInfo = &binfo;
@@ -1028,31 +1028,31 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             }
 
             case GPUCommandBuffer::Type::SetPipeline:{
-                const auto& pipeData = pipelinePool.data[renderCmd.setPipeline.id];
+                const auto& pipeData = pipelinePool.Get(renderCmd.setPipeline.id);
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
                 currentPipeline = renderCmd.setPipeline.id;
                 break;
             }
 
             case GPUCommandBuffer::Type::SetVertexBuffer:{
-                const auto& bufData = bufferPool.data[renderCmd.setVertexBuffer.buffer];
+                const auto& bufData = bufferPool.Get(renderCmd.setVertexBuffer.buffer);
                 Assert(bufData.buffer != VK_NULL_HANDLE);
                 Assert(renderCmd.setVertexBuffer.buffer != InvalidID);
-                Assert(renderCmd.setVertexBuffer.buffer < bufferPool.data.size());
+                //Assert(renderCmd.setVertexBuffer.buffer < bufferPool.data.size());
                 VkDeviceSize offsets[] = { 0 };
                 vkCmdBindVertexBuffers(cmd, renderCmd.setVertexBuffer.slot, 1, &bufData.buffer, offsets);
                 break;
             }
 
             case GPUCommandBuffer::Type::SetIndexBuffer:{
-                const auto& bufData = bufferPool.data[renderCmd.setIndexBuffer.buffer];
+                const auto& bufData = bufferPool.Get(renderCmd.setIndexBuffer.buffer);
                 vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
             }
 
             case GPUCommandBuffer::Type::SetBindGroup:{
-                const BindGroupData& bindGroupData = bindGroupPool.data[renderCmd.setBindGroup.group];
-                const PipelineData& pipelineData = pipelinePool.data[currentPipeline];
+                const BindGroupData& bindGroupData = bindGroupPool.Get(renderCmd.setBindGroup.group);
+                const PipelineData& pipelineData = pipelinePool.Get(currentPipeline);
 
                 vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineData.layout, 0, 1, &bindGroupData.descriptorSet, 0, nullptr);
                 break;
@@ -1125,7 +1125,9 @@ BindGroupId VulkanGPUDevice::AllocCreateBindGroupId(){
 
 BindGroupLayoutId VulkanGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){
     auto id = bindGroupLayoutPool.AllocId();
-    BindGroupLayoutData data = {};
+    BindGroupLayoutData& data = bindGroupLayoutPool.Get(id);
+
+    //data.info = cmd.createBindGroupLayout.info;
 
     auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
         VkDescriptorSetLayoutBinding entry = {};
@@ -1137,32 +1139,28 @@ BindGroupLayoutId VulkanGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo&
     };
 
     std::vector<VkDescriptorSetLayoutBinding> entries;
-    for(auto& i: info.entries){
-        entries.push_back(Convert(i));
+    for(int i = 0; i < info.entriesCount; i++){
+        auto& e = info.entries[i];
+        //LogInfo("binding={} type={}", e.binding, static_cast<int>(e.type));
+        entries.push_back(Convert(e));
     }
 
-	VkDescriptorSetLayoutCreateInfo setinfo = {};
-	setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	setinfo.pNext = nullptr;
-	setinfo.flags = 0; //no flags
-	setinfo.pBindings = entries.data();
+    VkDescriptorSetLayoutCreateInfo setinfo = {};
+    setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    setinfo.pNext = nullptr;
+    setinfo.flags = 0; //no flags
+    setinfo.pBindings = entries.data();
     setinfo.bindingCount = entries.size();
 
-	VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
-
-    bindGroupLayoutPool.singleThreadIds.push_back(id);
-    bindGroupLayoutPool.singleThreadDatas.push_back(data);
-    bindGroupLayoutPool.resourceStatus.resize(bindGroupLayoutPool.curId);
-    bindGroupLayoutPool.resourceStatus[id].type = GPUResourceStatsType::Created;
-    bindGroupLayoutPool.resourceStatus[id].erroMessage = "";
+    VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
     return id;
 }
 
 BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
     auto id = bindGroupPool.AllocId();
-    BindGroupData data = {};
+    BindGroupData& data = bindGroupPool.Get(id);
 
-    VkDescriptorSetLayout layout = bindGroupLayoutPool.data[info.layout].layout;
+    VkDescriptorSetLayout layout = bindGroupLayoutPool.Get(info.layout).layout;
     
     VkDescriptorSetAllocateInfo allocInfo ={};
     allocInfo.pNext = nullptr;
@@ -1170,7 +1168,7 @@ BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
     allocInfo.descriptorPool = _descriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
-    VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.data[id].descriptorSet));
+    VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.Get(id).descriptorSet));
 
     std::vector<VkDescriptorBufferInfo> bInfos;
     std::vector<VkWriteDescriptorSet> writes;
@@ -1178,8 +1176,8 @@ BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
     writes.resize(info.entriesCount);
 
     for(int i = 0; i < info.entriesCount; i++){
-        if(bindGroupLayoutPool.data[info.layout].info.entries[i].type == GPUBindingType::UniformBuffer){
-            BufferData& bufferData = bufferPool.data[info.entries[i].buffer];
+        if(bindGroupLayoutPool.Get(info.layout).info.entries[i].type == GPUBindingType::UniformBuffer){
+            BufferData& bufferData = bufferPool.Get(info.entries[i].buffer);
 
             VkDescriptorBufferInfo& binfo = bInfos[i];
             binfo = {};
@@ -1192,7 +1190,7 @@ BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
             setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             setWrite.pNext = nullptr;
             setWrite.dstBinding = info.entries[i].binding;
-            setWrite.dstSet = bindGroupPool.data[id].descriptorSet;
+            setWrite.dstSet = bindGroupPool.Get(id).descriptorSet;
             setWrite.descriptorCount = 1;
             setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             setWrite.pBufferInfo = &binfo;
@@ -1202,12 +1200,6 @@ BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
     }
 
     vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
-
-    bindGroupPool.singleThreadIds.push_back(id);
-    bindGroupPool.singleThreadDatas.push_back(data);
-    bindGroupPool.resourceStatus.resize(bindGroupPool.curId);
-    bindGroupPool.resourceStatus[id].type = GPUResourceStatsType::Created;
-    bindGroupPool.resourceStatus[id].erroMessage = "";
     return id;
 }
 

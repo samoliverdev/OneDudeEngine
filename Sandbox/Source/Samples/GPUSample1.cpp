@@ -119,7 +119,9 @@ void GPUSample1::OnInit(){
     bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::UniformBuffer, sizeof(Data), false};
     bindGroupLayoutInfo.entries[1] = {1, GPUBindingType::UniformBuffer, sizeof(glm::mat4), false};
     bindGroupLayoutInfo.entriesCount = 2;
-    bindGroupLayout = gpuDevice->AllocCreateBindGroupLayoutId();// gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    //bindGroupLayout = gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+    bindGroupLayout = gpuDevice->AllocCreateBindGroupLayoutId();
     frame.resourceCommands.CreateBindGroupLayout(bindGroup, bindGroupLayoutInfo);
 
     Data camData = { glm::identity<glm::mat4>(), glm::identity<glm::mat4>()};
@@ -136,7 +138,9 @@ void GPUSample1::OnInit(){
     bindGroupInfo.entries[0] = {0, uniformBuffer, 0, sizeof(Data), false};
     bindGroupInfo.entries[1] = {1, uniformBuffer2, 0, sizeof(glm::mat4), false};
     bindGroupInfo.entriesCount = 2;
-    bindGroup = gpuDevice->AllocCreateBindGroupId(); //gpuDevice->CreateBindGroup(bindGroupInfo);
+
+    //bindGroup = gpuDevice->CreateBindGroup(bindGroupInfo);
+    bindGroup = gpuDevice->AllocCreateBindGroupId(); 
     frame.resourceCommands.CreateBindGroup(bindGroup, bindGroupInfo);
 
     // -------------------------------------------------
@@ -222,7 +226,7 @@ void GPUSample1::OnRender(float deltaTime){
     frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 255, 0, 255}});
 
 
-    for(int i = 0; i < 1000; i++){
+    for(int i = 0; i < 1; i++){
     // ================================================
     // Triangle 1
     // Position + Color in ONE VBO

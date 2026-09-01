@@ -343,9 +343,9 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
     for(const GPUResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
         case GPUResourceCommands::Type::CreateBuffer:{
-            Assert(cmd.createBuffer.id < bufferPool.data.size());
+            //Assert(cmd.createBuffer.id < bufferPool.data.size());
 
-            if(bufferPool.data[cmd.createBuffer.id].buffer != 0){
+            if(bufferPool.Get(cmd.createBuffer.id).buffer != 0){
                 LogError("Trying CreateBuffer on Used id");
                 continue;
             }
@@ -356,9 +356,9 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
 
             glBindBuffer(target, buffer);
             glBufferData(target, cmd.createBuffer.size, cmd.createBuffer.data, GetOpenGLBufferUsage(cmd.createBuffer.memory));
-            bufferPool.data[cmd.createBuffer.id].buffer = buffer;
-            bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
-            bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
+            bufferPool.Get(cmd.createBuffer.id).buffer = buffer;
+            bufferPool.Get(cmd.createBuffer.id).usage = cmd.createBuffer.usage;
+            bufferPool.Get(cmd.createBuffer.id).memory = cmd.createBuffer.memory;
             glCheckError();
 
             bufferPool.gpuToCpuResourceStatesIds.push_back(cmd.createBuffer.id);
@@ -367,16 +367,16 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
         }
 
         case GPUResourceCommands::Type::DestroyBuffer:{
-            Assert(bufferPool.data[cmd.destroyBuffer.id].buffer != 0);
-            glDeleteBuffers(1, &bufferPool.data[cmd.destroyBuffer.id].buffer);
+            Assert(bufferPool.Get(cmd.destroyBuffer.id).buffer != 0);
+            glDeleteBuffers(1, &bufferPool.Get(cmd.destroyBuffer.id).buffer);
             glCheckError();
-            bufferPool.data[cmd.destroyBuffer.id].buffer = 0;
+            bufferPool.Get(cmd.destroyBuffer.id).buffer = 0;
             bufferPool.idsDestred.push_back(cmd.destroyBuffer.id);
             break;
         }
 
         case GPUResourceCommands::Type::CreatePipeline:{
-            pipelinePool.data[cmd.createPipeline.id].info = cmd.createPipeline.info;
+            pipelinePool.Get(cmd.createPipeline.id).info = cmd.createPipeline.info;
 
             int  success;
             char infoLog[512];
@@ -417,41 +417,41 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             Assert(success);
 
             //unsigned int shaderProgram;
-            pipelinePool.data[cmd.createPipeline.id].program = glCreateProgram();
+            pipelinePool.Get(cmd.createPipeline.id).program = glCreateProgram();
 
-            glAttachShader(pipelinePool.data[cmd.createPipeline.id].program, vertexShader);
-            glAttachShader(pipelinePool.data[cmd.createPipeline.id].program, fragShader);
-            glLinkProgram(pipelinePool.data[cmd.createPipeline.id].program);
+            glAttachShader(pipelinePool.Get(cmd.createPipeline.id).program, vertexShader);
+            glAttachShader(pipelinePool.Get(cmd.createPipeline.id).program, fragShader);
+            glLinkProgram(pipelinePool.Get(cmd.createPipeline.id).program);
 
-            glGetProgramiv(pipelinePool.data[cmd.createPipeline.id].program, GL_LINK_STATUS, &success);
+            glGetProgramiv(pipelinePool.Get(cmd.createPipeline.id).program, GL_LINK_STATUS, &success);
             Assert(success);
 
-            glUseProgram(pipelinePool.data[cmd.createPipeline.id].program);
+            glUseProgram(pipelinePool.Get(cmd.createPipeline.id).program);
             glDeleteShader(vertexShader);
             glDeleteShader(fragShader); 
 
             glCheckError();
 
             for(int i = 0; i < bindings.size(); i++){
-                GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.data[cmd.createPipeline.id].program, bindings[i].name.c_str());
+                GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
                 Assert(blockIndex != GL_INVALID_INDEX);
-                pipelinePool.data[cmd.createPipeline.id].groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
+                pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
             }
             
             break;
         }
 
         case GPUResourceCommands::Type::DestroyPipeline:{
-            Assert(pipelinePool.data[cmd.destroyPipeline.id].program != 0);
-            glDeleteProgram(pipelinePool.data[cmd.destroyPipeline.id].program);
+            Assert(pipelinePool.Get(cmd.destroyPipeline.id).program != 0);
+            glDeleteProgram(pipelinePool.Get(cmd.destroyPipeline.id).program);
             glCheckError();
-            pipelinePool.data[cmd.destroyPipeline.id].program = 0;
+            pipelinePool.Get(cmd.destroyPipeline.id).program = 0;
             pipelinePool.idsDestred.push_back(cmd.destroyPipeline.id);
             break;
         }
         
         case GPUResourceCommands::Type::CreateBindGroup:{
-            std::memcpy(&bindGroupPool.data[cmd.createBindGroup.id].info, cmd.createBindGroup.info, sizeof(GPUBindGroupInfo));
+            std::memcpy(&bindGroupPool.Get(cmd.createBindGroup.id).info, cmd.createBindGroup.info, sizeof(GPUBindGroupInfo));
             break;
         }
         }
@@ -492,7 +492,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
         }
 
         case GPUCommandBuffer::Type::SetPipeline:{
-            PipelineData& pipeline = pipelinePool.data[cmd.setPipeline.id];
+            PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
             glUseProgram(pipeline.program);
             currentPipeline = cmd.setPipeline.id;
             currentPipelineInfo = pipeline.info;
@@ -503,10 +503,10 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
         }
 
         case GPUCommandBuffer::Type::SetVertexBuffer:{
-            Assert(bufferPool.data[cmd.setVertexBuffer.buffer].usage == GPUBufferUsage::Vertex);
+            Assert(bufferPool.Get(cmd.setVertexBuffer.buffer).usage == GPUBufferUsage::Vertex);
 
             const uint32_t slot = cmd.setVertexBuffer.slot;
-            GLuint vbo = bufferPool.data[cmd.setVertexBuffer.buffer].buffer;
+            GLuint vbo = bufferPool.Get(cmd.setVertexBuffer.buffer).buffer;
             const GPUMeshLayout& layout = currentPipelineInfo.vertexLayout;
             const GPUVertexBufferLayout& bufferLayout = layout.buffers[slot];
 
@@ -527,9 +527,9 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
         }
 
         case GPUCommandBuffer::Type::SetIndexBuffer:{
-            Assert(bufferPool.data[cmd.setIndexBuffer.buffer].usage == GPUBufferUsage::Index);
+            Assert(bufferPool.Get(cmd.setIndexBuffer.buffer).usage == GPUBufferUsage::Index);
 
-            GLuint ebo = bufferPool.data[cmd.setIndexBuffer.buffer].buffer;
+            GLuint ebo = bufferPool.Get(cmd.setIndexBuffer.buffer).buffer;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             break;
         };
@@ -537,19 +537,19 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
         case GPUCommandBuffer::Type::SetBindGroup:{
             //Assert(group < bindGroups.size());
 
-            const BindGroupData& bindGroup = bindGroupPool.data[cmd.setBindGroup.group];
+            const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
 
             for(int i = 0; i < bindGroup.info.entriesCount; i++){
                 const GPUBindingEntry& binding = bindGroup.info.entries[i];
                 Assert(binding.buffer != InvalidID);
 
-                const BufferData& buffer = bufferPool.data[binding.buffer];
+                const BufferData& buffer = bufferPool.Get(binding.buffer);
                 Assert(buffer.usage == GPUBufferUsage::Uniform);
 
                 Assert(buffer.buffer != InvalidID);
                 Assert(binding.dynamicOffset == false);
 
-                const PipelineData& pipeline = pipelinePool.data[currentPipeline];
+                const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                 GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
 
                 glBindBufferRange(
@@ -592,9 +592,7 @@ void OpenglGPUDevice::SyncSingleThreadData(){
 ///////////////////////////////////
 
 MeshId OpenglGPUDevice::AllocBufferId(){
-    MeshId id = bufferPool.AllocId();
-    bufferPool.resourceStatus.resize(bufferPool.curId);
-    return id;
+    return bufferPool.AllocId();
 }
 
 PipelineId OpenglGPUDevice::AllocPipelineId(){
@@ -624,13 +622,7 @@ BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferU
     bufferData.memory = memory;
     glCheckError();
 
-    bufferPool.singleThreadIds.push_back(id);
-    bufferPool.singleThreadDatas.push_back(bufferData);
-
-    bufferPool.resourceStatus.resize(bufferPool.curId);
-    bufferPool.resourceStatus[id].type = GPUResourceStatsType::Created;
-    bufferPool.resourceStatus[id].erroMessage = "";
-
+    bufferPool.CpuPushResource(id, bufferData);
     return id;
 }
 
@@ -643,16 +635,12 @@ BindGroupId OpenglGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
     BindGroupData data = {};
     data.info = info;
 
-    bindGroupPool.singleThreadIds.push_back(id);
-    bindGroupPool.singleThreadDatas.push_back(data);
-    bindGroupPool.resourceStatus.resize(bindGroupPool.curId);
-    bindGroupPool.resourceStatus[id].type = GPUResourceStatsType::Created;
-    bindGroupPool.resourceStatus[id].erroMessage = "";
+    bindGroupPool.CpuPushResource(id, data);
     return id;
 }
 
 GPUResourceStats OpenglGPUDevice::GetBufferStats(BufferId id){ 
-    return bufferPool.resourceStatus[id]; 
+    return bufferPool.GetStatus(id);// .resourceStatus[id]; 
 }
 
 }
