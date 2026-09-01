@@ -126,10 +126,10 @@ void GPUSample1::OnInit(){
     glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));
 
     uniformBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(uniformBuffer, &camData, sizeof(camData), GPUBufferUsage::Uniform, GPUBufferMemory::CPUToGPU);
+    frame.resourceCommands.CreateBuffer(uniformBuffer, &camData, sizeof(camData), GPUBufferUsage::Uniform, GPUBufferMemory::GPUOnly);
 
     uniformBuffer2 = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(uniformBuffer2, &matrix, sizeof(glm::mat4), GPUBufferUsage::Uniform, GPUBufferMemory::CPUToGPU);
+    frame.resourceCommands.CreateBuffer(uniformBuffer2, &matrix, sizeof(glm::mat4), GPUBufferUsage::Uniform, GPUBufferMemory::GPUOnly);
 
     GPUBindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout;
@@ -155,7 +155,7 @@ void GPUSample1::OnInit(){
         0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
     };
     vertexBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::CPUToGPU);
+    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
     Assert(gpuDevice->GetBufferStats(vertexBuffer).type == GPUResourceStatsType::None);
 
     #ifdef TestDeviceCreateBuffer

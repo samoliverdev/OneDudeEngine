@@ -91,13 +91,23 @@ VkCommandBuffer _mainCommandBuffer;
 VkRenderPass _renderPass;
 std::vector<VkFramebuffer> _framebuffers;
 
-VkSemaphore _presentSemaphore, _renderSemaphore;
-VkFence _renderFence;
-
-std::vector<VkSemaphore> _presentSemaphores2;
-std::vector<VkSemaphore> _renderSemaphores2;
+std::vector<VkSemaphore> _renderSemaphores;
 
 VkDescriptorPool _descriptorPool;
+
+struct FrameData {
+	VkSemaphore _presentSemaphore;
+	VkFence _renderFence;	
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+};
+constexpr unsigned int FRAME_OVERLAP = 1;
+FrameData _frames[FRAME_OVERLAP];
+
+//getter for the frame we are rendering to right now.
+FrameData& get_current_frame(){
+    return _frames[_frameNumber % FRAME_OVERLAP];
+}
 
 EShLanguage ToGlslangStage(VkShaderStageFlagBits stage){
     switch(stage){
@@ -485,6 +495,22 @@ void init_commands(){
 
     VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
     VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+
+    //create a command pool for commands submitted to the graphics queue.
+	//we also want the pool to allow for resetting of individual command buffers
+	//VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+	for (int i = 0; i < FRAME_OVERLAP; i++) {
+
+	
+		VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_frames[i]._commandPool));
+
+		//allocate the default command buffer that we will use for rendering
+		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_frames[i]._commandPool, 1);
+
+		VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i]._mainCommandBuffer));
+
+	}
 }
 
 void init_default_renderpass(){
@@ -539,21 +565,21 @@ void init_sync_structures(){
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
 
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore));
-    VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore));
 
     uint32_t imageCount = _swapchainImages.size();
-    _presentSemaphores2.resize(imageCount);
-    _renderSemaphores2.resize(imageCount);
+    _renderSemaphores.resize(imageCount);
 
     for(size_t i = 0; i < imageCount; i++){
-        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphores2[i]));
-        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphores2[i]));
+        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphores[i]));
     }
+
+	for(int i = 0; i < FRAME_OVERLAP; i++){     
+        VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i]._renderFence));
+        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._presentSemaphore));
+	}
 }
 
 void init_descriptors(){
@@ -606,13 +632,14 @@ void VulkanGPUDevice::Cleanup(){
     vkDestroyCommandPool(_device, _commandPool, nullptr);
 
     for(size_t i = 0; i < _swapchainImages.size(); i++){
-        vkDestroySemaphore(_device, _presentSemaphores2[i], nullptr);
-        vkDestroySemaphore(_device, _renderSemaphores2[i], nullptr);
+        vkDestroySemaphore(_device, _renderSemaphores[i], nullptr);
     }
 
-    vkDestroyFence(_device, _renderFence, nullptr);
-    vkDestroySemaphore(_device, _renderSemaphore, nullptr);
-    vkDestroySemaphore(_device, _presentSemaphore, nullptr);
+    for(auto& i: _frames){
+        vkDestroyFence(_device, i._renderFence, nullptr);
+        vkDestroySemaphore(_device, i._presentSemaphore, nullptr);
+        vkDestroyCommandPool(_device, i._commandPool, nullptr);
+    }
 
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
     vkDestroyRenderPass(_device, _renderPass, nullptr);
@@ -652,9 +679,8 @@ void VulkanGPUDevice::Shut(){
 void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
     PipelineId currentPipeline = INVALID_ID;
 
-    // 1. MUST WAIT FOR PREVIOUS FRAME BEFORE DOING ANY QUEUE OPERATIONS OR STAGING COPIES
-    VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
-    VK_CHECK(vkResetFences(_device, 1, &_renderFence));
+    VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
     // Process Resource Commands first
     for(const GPUResourceCommands::Command& cmd : frame.resourceCommands.commands){
@@ -807,6 +833,8 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
                 bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
                 bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
+
+                //LogInfo("CreateBuffer");
                 break;
             }
 
@@ -823,6 +851,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
 
             case GPUResourceCommands::Type::CreatePipeline:{
                 CreateVulkanPipeline(cmd.createPipeline.id, cmd.createPipeline.source, cmd.createPipeline.info);
+                //LogInfo("CreatePipeline");
                 break;
             }
 
@@ -919,15 +948,11 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
     //VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
     //VK_CHECK(vkResetFences(_device, 1, &_renderFence));
 
+    VK_CHECK(vkResetCommandBuffer(get_current_frame()._mainCommandBuffer, 0));
+    VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
+
     uint32_t swapchainImageIndex;
-    //VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex));
-
-    // We can index by frame number temporarily to acquire, or index by imageIndex after:
-    uint32_t syncIndex = _frameNumber % _swapchainImages.size();
-    VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphores2[syncIndex], nullptr, &swapchainImageIndex));
-
-    VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer, 0));
-    VkCommandBuffer cmd = _mainCommandBuffer;
+	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
 
     VkCommandBufferBeginInfo cmdBeginInfo = {};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1053,19 +1078,20 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     submit.pWaitDstStageMask = &waitStage;
     submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &_presentSemaphores2[syncIndex]; //&_presentSemaphore;
+    submit.pWaitSemaphores = &get_current_frame()._presentSemaphore;
     submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &_renderSemaphores2[swapchainImageIndex]; //&_renderSemaphore;
+    VkSemaphore renderSemaphore =_renderSemaphores[swapchainImageIndex];
+    submit.pSignalSemaphores = &renderSemaphore; //&get_current_frame()._renderSemaphore;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &cmd;
 
-    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence));
+    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, get_current_frame()._renderFence));
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pSwapchains = &_swapchain;
     presentInfo.swapchainCount = 1;
-    presentInfo.pWaitSemaphores = &_renderSemaphores2[swapchainImageIndex]; //&_renderSemaphore;
+    presentInfo.pWaitSemaphores = &renderSemaphore; //;// &get_current_frame()._renderSemaphore;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
 
