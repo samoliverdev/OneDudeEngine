@@ -31,6 +31,8 @@ public:
     virtual BindGroupLayoutId AllocCreateBindGroupLayoutId() override;
     virtual BindGroupId AllocCreateBindGroupId() override;
 
+    virtual Texture2DId AllocTexture2DId() override;
+
     virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info) override;
     virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info) override;
 
@@ -43,6 +45,14 @@ private:
         VkDeviceSize size = 0;
     };
     ResourcePool<BufferData> bufferPool;
+
+    struct Texture2DData{
+        VkImage image = VK_NULL_HANDLE;
+	    VmaAllocation allocation = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkSampler sampler = VK_NULL_HANDLE;
+    };
+    ResourcePool<Texture2DData> texture2DDataPool;
 
     struct PipelineData{
         VkPipeline pipeline = VK_NULL_HANDLE;

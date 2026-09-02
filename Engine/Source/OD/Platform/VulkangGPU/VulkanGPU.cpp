@@ -104,6 +104,79 @@ struct FrameData {
 constexpr unsigned int FRAME_OVERLAP = 1;
 FrameData _frames[FRAME_OVERLAP];
 
+struct UploadContext {
+	VkFence _uploadFence;
+	VkCommandPool _commandPool;
+	VkCommandBuffer _commandBuffer;
+};
+UploadContext _uploadContext;
+
+struct AllocatedBuffer {
+	VkBuffer _buffer;
+	VmaAllocation _allocation;
+};
+
+AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage){
+	//allocate vertex buffer
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.pNext = nullptr;
+	bufferInfo.size = allocSize;
+	bufferInfo.usage = usage;
+
+	//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = memoryUsage;
+
+	AllocatedBuffer newBuffer;
+	VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &newBuffer._buffer, &newBuffer._allocation, nullptr));
+	return newBuffer;
+}
+
+void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function){
+    VkCommandBuffer cmd = _uploadContext._commandBuffer;
+
+	//begin the command buffer recording. We will use this command buffer exactly once before resetting, so we tell vulkan that
+	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+	//execute the function
+	function(cmd);
+
+	VK_CHECK(vkEndCommandBuffer(cmd));
+
+	VkSubmitInfo submit = vkinit::submit_info(&cmd);
+
+	//submit command buffer to the queue and execute it.
+	// _uploadFence will now block until the graphic commands finish execution
+	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence));
+
+	vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
+	vkResetFences(_device, 1, &_uploadContext._uploadFence);
+
+	// reset the command buffers inside the command pool
+	vkResetCommandPool(_device, _uploadContext._commandPool, 0);
+}
+
+struct DeletionQueue{
+	std::deque<std::function<void()>> deletors;
+
+	void push_function(std::function<void()>&& function){
+		deletors.push_back(function);
+	}
+
+	void flush(){
+		// reverse iterate the deletion queue to execute all the functions
+		for(auto it = deletors.rbegin(); it != deletors.rend(); it++){
+			(*it)(); //call the function
+		}
+		deletors.clear();
+	}
+};
+
+DeletionQueue mainDeletionQueue;
+
 //getter for the frame we are rendering to right now.
 FrameData& get_current_frame(){
     return _frames[_frameNumber % FRAME_OVERLAP];
@@ -295,6 +368,7 @@ VkBlendOp GetVulkanBlendOp(GPUBlendOp op){
 VkDescriptorType GetVulkanDescriptorType(GPUBindingType type){
     switch(type){
         case GPUBindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case GPUBindingType::Texture2D: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
     Assert(false);
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -500,17 +574,21 @@ void init_commands(){
 	//we also want the pool to allow for resetting of individual command buffers
 	//VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-	for (int i = 0; i < FRAME_OVERLAP; i++) {
-
-	
+	for(int i = 0; i < FRAME_OVERLAP; i++){
 		VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_frames[i]._commandPool));
-
 		//allocate the default command buffer that we will use for rendering
 		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_frames[i]._commandPool, 1);
-
 		VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i]._mainCommandBuffer));
-
 	}
+
+    VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily);
+	//create pool for upload context
+	VK_CHECK(vkCreateCommandPool(_device, &uploadCommandPoolInfo, nullptr, &_uploadContext._commandPool));
+	mainDeletionQueue.push_function([=](){ vkDestroyCommandPool(_device, _uploadContext._commandPool, nullptr); });
+
+	//allocate the default command buffer that we will use for the instant commands
+	VkCommandBufferAllocateInfo cmdAllocInfo2 = vkinit::command_buffer_allocate_info(_uploadContext._commandPool, 1);
+	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo2, &_uploadContext._commandBuffer));
 }
 
 void init_default_renderpass(){
@@ -580,12 +658,20 @@ void init_sync_structures(){
         VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i]._renderFence));
         VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._presentSemaphore));
 	}
+
+    VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
+	VK_CHECK(vkCreateFence(_device, &uploadFenceCreateInfo, nullptr, &_uploadContext._uploadFence));
+    mainDeletionQueue.push_function([=](){ vkDestroyFence(_device, _uploadContext._uploadFence, nullptr); });
 }
 
 void init_descriptors(){
     //create a descriptor pool that will hold 10 uniform buffers
-	std::vector<VkDescriptorPoolSize> sizes ={
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 }
+	std::vector<VkDescriptorPoolSize> sizes = {
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 },
+		//add combined-image-sampler descriptor types to the pool
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 }
 	};
 
 	VkDescriptorPoolCreateInfo pool_info = {};
@@ -602,6 +688,8 @@ void VulkanGPUDevice::Cleanup(){
 
     glslang::FinalizeProcess();
     vkDeviceWaitIdle(_device);
+
+    mainDeletionQueue.flush();
 
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
 
@@ -625,6 +713,13 @@ void VulkanGPUDevice::Cleanup(){
             vkDestroyDescriptorSetLayout(_device, data.layout, nullptr);
             data.layout = VK_NULL_HANDLE;
         }
+    });
+
+    texture2DDataPool.ForEach([&](uint32_t id, Texture2DData& data){
+        vkDestroySampler(_device, data.sampler, nullptr);
+        vkDestroyImageView(_device, data.imageView, nullptr);
+        //vkDestroyImage(_device, data.image, nullptr);
+        vmaDestroyImage(_allocator, data.image, data.allocation);
     });
 
     vmaDestroyAllocator(_allocator);
@@ -795,8 +890,17 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                         std::memcpy(stagingResultInfo.pMappedData, cmd.createBuffer.data, cmd.createBuffer.size);
                         vmaFlushAllocation(_allocator, stagingAllocation, 0, cmd.createBuffer.size);
 
+                        immediate_submit([&](VkCommandBuffer transferCmd){
+                            VkBufferCopy copy;
+                            copy.dstOffset = 0;
+                            copy.srcOffset = 0;
+                            copy.size = cmd.createBuffer.size;
+                            vkCmdCopyBuffer(transferCmd, stagingBuffer, buffer, 1, &copy);
+                        });
+                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);
+
                         // Allocate dynamic single-use command buffer for GPU transfer
-                        VkCommandBufferAllocateInfo allocCmdInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+                        /*VkCommandBufferAllocateInfo allocCmdInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
                         VkCommandBuffer transferCmd;
                         VK_CHECK(vkAllocateCommandBuffers(_device, &allocCmdInfo, &transferCmd));
 
@@ -824,7 +928,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
 
                         // Cleanup staging resources
                         vkFreeCommandBuffers(_device, _commandPool, 1, &transferCmd);
-                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);
+                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);*/
                     }
                 }
 
@@ -849,6 +953,91 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
+            case GPUResourceCommands::Type::CreateTexture2D:{
+                if(texture2DDataPool.Get(cmd.createTexture2D.id).image != VK_NULL_HANDLE){
+                    LogError("Trying CreateTexture2D on Used id");
+                    continue;
+                }
+
+                Texture2DData& texData = texture2DDataPool.Get(cmd.createTexture2D.id);
+
+                VkDeviceSize imageSize = cmd.createTexture2D.size;// texWidth * texHeight * 4;
+
+                //the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
+                VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
+
+                //allocate temporary buffer for holding texture data to upload
+                AllocatedBuffer stagingBuffer = create_buffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+
+                //copy data to buffer
+                void* data;
+                vmaMapMemory(_allocator, stagingBuffer._allocation, &data);
+                memcpy(data, cmd.createTexture2D.data, cmd.createTexture2D.size);
+                vmaUnmapMemory(_allocator, stagingBuffer._allocation);
+
+                VkExtent3D imageExtent;
+                imageExtent.width = cmd.createTexture2D.info.width;
+                imageExtent.height = cmd.createTexture2D.info.height;
+                imageExtent.depth = 1;
+
+                VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
+
+                VmaAllocationCreateInfo dimg_allocinfo = {};
+                dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+                //allocate and create the image
+                VK_CHECK(vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &texData.image, &texData.allocation, nullptr));
+
+                immediate_submit([&](VkCommandBuffer cmd) {
+                    VkImageSubresourceRange range;
+                    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    range.baseMipLevel = 0;
+                    range.levelCount = 1;
+                    range.baseArrayLayer = 0;
+                    range.layerCount = 1;
+
+                    VkImageMemoryBarrier imageBarrier_toTransfer = {};
+                    imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    imageBarrier_toTransfer.image = texData.image;
+                    imageBarrier_toTransfer.subresourceRange = range;
+                    imageBarrier_toTransfer.srcAccessMask = 0;
+                    imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    //barrier the image into the transfer-receive layout
+                    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+
+                    VkBufferImageCopy copyRegion = {};
+                    copyRegion.bufferOffset = 0;
+                    copyRegion.bufferRowLength = 0;
+                    copyRegion.bufferImageHeight = 0;
+                    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    copyRegion.imageSubresource.mipLevel = 0;
+                    copyRegion.imageSubresource.baseArrayLayer = 0;
+                    copyRegion.imageSubresource.layerCount = 1;
+                    copyRegion.imageExtent = imageExtent;
+                    //copy the buffer into the image
+                    vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+                    VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+                    imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                    //barrier the image into the shader readable layout
+                    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+                });
+                vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
+
+                VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8A8_SRGB, texData.image, VK_IMAGE_ASPECT_COLOR_BIT);
+	            VK_CHECK(vkCreateImageView(_device, &imageinfo, nullptr, &texData.imageView));
+
+                VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
+                VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &texData.sampler));
+
+                break;
+            }
+
             case GPUResourceCommands::Type::CreatePipeline:{
                 CreateVulkanPipeline(cmd.createPipeline.id, cmd.createPipeline.source, cmd.createPipeline.info);
                 //LogInfo("CreatePipeline");
@@ -869,6 +1058,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             
             case GPUResourceCommands::Type::CreateBindGroupLayout:{
                 BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
+                std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(GPUBindGroupLayoutInfo));
                 //data.info = cmd.createBindGroupLayout.info;
 
                 auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
@@ -900,23 +1090,25 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
             }
 
             case GPUResourceCommands::Type::CreateBindGroup:{
-                VkDescriptorSetLayout layout = bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout).layout;
+                BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout);
     
                 VkDescriptorSetAllocateInfo allocInfo ={};
                 allocInfo.pNext = nullptr;
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = _descriptorPool;
                 allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &layout;
+                allocInfo.pSetLayouts = &layoutData.layout;
                 VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet));
 
                 std::vector<VkDescriptorBufferInfo> bInfos;
+                std::vector<VkDescriptorImageInfo> imageInfos;
                 std::vector<VkWriteDescriptorSet> writes;
                 bInfos.resize(cmd.createBindGroup.info->entriesCount);
+                imageInfos.resize(cmd.createBindGroup.info->entriesCount);
                 writes.resize(cmd.createBindGroup.info->entriesCount);
 
                 for(int i = 0; i < cmd.createBindGroup.info->entriesCount; i++){
-                    if(bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout).info.entries[i].type == GPUBindingType::UniformBuffer){
+                    if(layoutData.info.entries[i].type == GPUBindingType::UniformBuffer){
                         BufferData& bufferData = bufferPool.Get(cmd.createBindGroup.info->entries[i].buffer);
 
                         VkDescriptorBufferInfo& binfo = bInfos[i];
@@ -934,6 +1126,21 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                         setWrite.pBufferInfo = &binfo;
+                    } else if(layoutData.info.entries[i].type == GPUBindingType::Texture2D){
+                        Texture2DData& texData = texture2DDataPool.Get(cmd.createBindGroup.info->entries[i].texture);
+
+                        VkDescriptorImageInfo& imageBufferInfo = imageInfos[i];
+                        imageBufferInfo.sampler = texData.sampler;
+                        imageBufferInfo.imageView = texData.imageView;
+                        imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                        VkWriteDescriptorSet& setWrite = writes[i];
+                        setWrite = vkinit::write_descriptor_image(
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 
+                            bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet, 
+                            &imageBufferInfo, 
+                            cmd.createBindGroup.info->entries[i].binding
+                        );
                     } else {
                         Assert(false);
                     }
@@ -1121,6 +1328,10 @@ BindGroupLayoutId VulkanGPUDevice::AllocCreateBindGroupLayoutId(){
 
 BindGroupId VulkanGPUDevice::AllocCreateBindGroupId(){
     return bindGroupPool.AllocId();
+}
+
+Texture2DId VulkanGPUDevice::AllocTexture2DId(){ 
+    return texture2DDataPool.AllocId(); 
 }
 
 BindGroupLayoutId VulkanGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){

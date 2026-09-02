@@ -122,7 +122,7 @@ void GPUSample1::OnInit(){
 
     //bindGroupLayout = gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
     bindGroupLayout = gpuDevice->AllocCreateBindGroupLayoutId();
-    frame.resourceCommands.CreateBindGroupLayout(bindGroup, bindGroupLayoutInfo);
+    frame.resourceCommands.CreateBindGroupLayout(bindGroupLayout, bindGroupLayoutInfo);
 
     Data camData = { glm::identity<glm::mat4>(), glm::identity<glm::mat4>()};
     glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));

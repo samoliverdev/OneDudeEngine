@@ -54,6 +54,11 @@ struct BufferData{
 };
 ResourcePool<BufferData> bufferPool;
 
+struct Texture2DData{
+    uint32_t tex = 0;
+};
+ResourcePool<Texture2DData> texture2DPool;
+
 struct BindGroupLookUp{
     GLuint bindingsLookUp[20];
 };
@@ -64,6 +69,11 @@ struct PipelineData{
     BindGroupLookUp groupsLookUp[4];
 };
 ResourcePool<PipelineData> pipelinePool;
+
+struct BindGroupLayoutData{
+    GPUBindGroupLayoutInfo info;
+};
+ResourcePool<BindGroupLayoutData> bindGroupLayoutPool;
 
 struct BindGroupData{
     GPUBindGroupInfo info;
@@ -339,6 +349,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
     GPUPipelineInfo currentPipelineInfo = {};
 
     int curBindIndex = 0;
+    int curTextureIndex = 0;
 
     for(const GPUResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
@@ -372,6 +383,23 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glCheckError();
             bufferPool.Get(cmd.destroyBuffer.id).buffer = 0;
             bufferPool.idsDestred.push_back(cmd.destroyBuffer.id);
+            break;
+        }
+
+        case GPUResourceCommands::Type::CreateTexture2D:{
+            Texture2DData& texData = texture2DPool.Get(cmd.createTexture2D.id);
+            const GPUTexture2DInfo& info = cmd.createTexture2D.info;
+
+            glGenTextures(1, &texData.tex);  
+            glBindTexture(GL_TEXTURE_2D, texData.tex);  
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.width, info.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, cmd.createTexture2D.data);
+            glGenerateMipmap(GL_TEXTURE_2D);
             break;
         }
 
@@ -433,9 +461,20 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glCheckError();
 
             for(int i = 0; i < bindings.size(); i++){
-                GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
-                Assert(blockIndex != GL_INVALID_INDEX);
-                pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
+                if(bindings[i].type == ShaderBindingType::UniformBuffer){
+                    GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
+                    glCheckError();
+
+                    Assert(blockIndex != GL_INVALID_INDEX);
+                    pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
+                }
+
+                if(bindings[i].type == ShaderBindingType::Sampler2D){
+                    GLuint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
+                    glCheckError();
+
+                    pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = uniformLoc;
+                }
             }
             
             break;
@@ -450,6 +489,12 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
         
+        case GPUResourceCommands::Type::CreateBindGroupLayout:{
+            BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
+            std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(GPUBindGroupLayoutInfo));
+            break;
+        }
+
         case GPUResourceCommands::Type::CreateBindGroup:{
             std::memcpy(&bindGroupPool.Get(cmd.createBindGroup.id).info, cmd.createBindGroup.info, sizeof(GPUBindGroupInfo));
             break;
@@ -499,6 +544,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glCheckError();
 
             curBindIndex = 0;
+            curTextureIndex = 0;
             break;
         }
 
@@ -538,31 +584,52 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             //Assert(group < bindGroups.size());
 
             const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
+            const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.info.layout);
 
             for(int i = 0; i < bindGroup.info.entriesCount; i++){
-                const GPUBindingEntry& binding = bindGroup.info.entries[i];
-                Assert(binding.buffer != InvalidID);
+                if(bindGroupLayout.info.entries[i].type == GPUBindingType::UniformBuffer){
+                    const GPUBindingEntry& binding = bindGroup.info.entries[i];
+                    Assert(binding.buffer != InvalidID);
 
-                const BufferData& buffer = bufferPool.Get(binding.buffer);
-                Assert(buffer.usage == GPUBufferUsage::Uniform);
+                    const BufferData& buffer = bufferPool.Get(binding.buffer);
+                    Assert(buffer.usage == GPUBufferUsage::Uniform);
 
-                Assert(buffer.buffer != InvalidID);
-                Assert(binding.dynamicOffset == false);
+                    Assert(buffer.buffer != InvalidID);
+                    Assert(binding.dynamicOffset == false);
 
-                const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                    const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                    GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
 
-                glBindBufferRange(
-                    GL_UNIFORM_BUFFER,
-                    curBindIndex,
-                    buffer.buffer,
-                    static_cast<GLintptr>(binding.offset),
-                    static_cast<GLsizeiptr>(binding.size)
-                );
-                glCheckError();
-                glUniformBlockBinding(pipeline.program, blockIndex, curBindIndex);
-                curBindIndex += 1;
-                glCheckError();
+                    glBindBufferRange(
+                        GL_UNIFORM_BUFFER,
+                        curBindIndex,
+                        buffer.buffer,
+                        static_cast<GLintptr>(binding.offset),
+                        static_cast<GLsizeiptr>(binding.size)
+                    );
+                    glCheckError();
+                    glUniformBlockBinding(pipeline.program, blockIndex, curBindIndex);
+                    glCheckError();
+
+                    curBindIndex += 1;
+                }
+
+                if(bindGroupLayout.info.entries[i].type == GPUBindingType::Texture2D){
+                    const GPUBindingEntry& binding = bindGroup.info.entries[i];
+                    Assert(binding.buffer != InvalidID);
+
+                    const Texture2DData& tex = texture2DPool.Get(binding.texture);
+
+                    const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                    GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+
+                    glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                    glBindTexture(GL_TEXTURE_2D, tex.tex);
+                    glUniform1i(uniformLoc, curTextureIndex); // set it manually
+                    glCheckError();
+
+                    curTextureIndex += 1;
+                }
             }
             break;
         }
@@ -600,11 +667,15 @@ PipelineId OpenglGPUDevice::AllocPipelineId(){
 }
 
 BindGroupLayoutId OpenglGPUDevice::AllocCreateBindGroupLayoutId(){
-    return InvalidID; 
+    return bindGroupLayoutPool.AllocId(); 
 }
 
 BindGroupId OpenglGPUDevice::AllocCreateBindGroupId(){
     return bindGroupPool.AllocId();
+}
+
+Texture2DId OpenglGPUDevice::AllocTexture2DId(){
+    return texture2DPool.AllocId();
 }
 
 BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory){

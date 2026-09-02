@@ -87,8 +87,8 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
 
 void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
-    graphicsDevice = new OpenglGPUDevice();
-    //graphicsDevice = new VulkanGPUDevice();
+    //graphicsDevice = new OpenglGPUDevice();
+    graphicsDevice = new VulkanGPUDevice();
     return;
     #endif
     

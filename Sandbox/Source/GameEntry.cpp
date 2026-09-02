@@ -8,7 +8,7 @@
 #include "Samples/ECS.h"
 //#include "Framebuffer_5.h"
 #include "Samples/Physics.h"
-#include "Samples/Animation.h"
+//#include "Samples/Animation.h"
 #include "Samples/Serialization.h"
 #include "Samples/SynthCity.h"
 #include "Samples/Animator.h"
@@ -31,6 +31,7 @@
 #include "Samples/UI.h"
 
 #include "Samples/GPUSample1.h"
+#include "Samples/GPUSample2.h"
 
 #include <OD/Graphics/Texture.h>
 
@@ -44,14 +45,15 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = -1; //35;
+    int i = 10; //-1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     #ifdef TestNewGPU_API
-    i = -2;
+    i = -3; //-2;
     #endif
-
+    
     if(i == -2) return new GPUSample1();
+    if(i == -3) return new GPUSample2();
 
     if(i == -1) return new LoadSceneSample();
     
@@ -61,7 +63,7 @@ OD::Module* CreateMainModule(){
     if(i == 3) return new ECSSample();
     //if(i == 4) return new Framebuffer_5();
     if(i == 5) return new PhysicsSample();
-    if(i == 6) return new AnimationSample();
+    //if(i == 6) return new AnimationSample();
     if(i == 8) return new SerializationSample();
     if(i == 9) return new SynthCitySample();
     if(i == 10) return new AnimatorSample();

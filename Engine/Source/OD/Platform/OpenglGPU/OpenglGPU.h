@@ -28,6 +28,7 @@ public:
     virtual PipelineId AllocPipelineId() override;
     virtual BindGroupLayoutId AllocCreateBindGroupLayoutId() override;
     virtual BindGroupId AllocCreateBindGroupId() override;
+    virtual Texture2DId AllocTexture2DId() override;
 
     virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly) override;
     virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info) override;

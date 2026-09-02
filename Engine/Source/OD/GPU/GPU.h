@@ -14,6 +14,7 @@ using FramebufferId = uint32_t;
 using BufferId = uint32_t;
 using BindGroupLayoutId = uint32_t;
 using BindGroupId = uint32_t;
+using Texture2DId = uint32_t;
 
 /////////////////////////////////////
 
@@ -62,6 +63,18 @@ struct OD_API GPUFrameBufferLayout{
     GPUFramebufferDepthAttachment depthAttachment;
     uint8_t samples = 1;
     bool swapChainTarget = false;
+};
+
+//////////////////////////////////////
+
+enum class GPUImageFormat{
+    R8G8B8A8_SRGB
+};
+
+struct OD_API GPUTexture2DInfo{
+    uint32_t width;
+    uint32_t height;
+    GPUImageFormat format;
 };
 
 //////////////////////////////////////
@@ -195,10 +208,13 @@ struct GPUBindGroupLayoutInfo{
 
 struct GPUBindingEntry{
     uint32_t binding;
+
     BufferId buffer;
     size_t offset;
     size_t size;
     bool dynamicOffset;
+
+    Texture2DId texture;
 };
 
 struct GPUBindGroupInfo{
@@ -402,7 +418,9 @@ struct OD_API GPUResourceCommands{
         CreateBuffer,
         DestroyBuffer,
         CreateBindGroupLayout,
-        CreateBindGroup
+        CreateBindGroup,
+
+        CreateTexture2D,
     };
 
     struct Command{
@@ -443,6 +461,13 @@ struct OD_API GPUResourceCommands{
             struct {
                 BindGroupId id; GPUBindGroupInfo* info;
             } createBindGroup;
+
+            struct {
+                Texture2DId id;
+                const void* data;
+                size_t size;
+                GPUTexture2DInfo info;
+            } createTexture2D;
         };
     };
 
@@ -507,6 +532,19 @@ struct OD_API GPUResourceCommands{
         cmd.type = Type::CreateBindGroup;
         cmd.createBindGroup.id = id;
         cmd.createBindGroup.info = copyData;
+        commands.push_back(cmd);
+    }
+
+    void CreateTexture2D(Texture2DId id, GPUTexture2DInfo& info, void* data, size_t size){ 
+        void *copyData = uploadBuffer.AllocateData(size);
+        std::memcpy(copyData, data, size);
+        
+        Command cmd{};
+        cmd.type = Type::CreateTexture2D;
+        cmd.createTexture2D.id = id;
+        cmd.createTexture2D.data = copyData;
+        cmd.createTexture2D.size = size;
+        cmd.createTexture2D.info = info;
         commands.push_back(cmd);
     }
 
@@ -658,23 +696,11 @@ public:
 
     virtual void SyncSingleThreadData(){}
 
-    /*inline MeshId CreateMesh(GPURenderFrame& frame, const void* data, size_t size){
-        MeshId id = AllocMeshId();
-        frame.resourceCommands.CreateMesh(id, data, size);
-        return id;
-    }
-
-    void DestroyMesh(GPURenderFrame& frame, MeshId& id){
-        if(id == InvalidID) return;
-        frame.resourceCommands.DestroyMesh(id);
-        id = InvalidID;
-    }*/
-
     virtual BufferId AllocBufferId(){ return InvalidID; }
     virtual PipelineId AllocPipelineId(){ return InvalidID; }
-
     virtual BindGroupLayoutId AllocCreateBindGroupLayoutId(){ return InvalidID; }
     virtual BindGroupId AllocCreateBindGroupId(){ return InvalidID; }
+    virtual Texture2DId AllocTexture2DId(){ return InvalidID; }
 
     virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly){ return InvalidID; }
     virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){ return InvalidID; }
