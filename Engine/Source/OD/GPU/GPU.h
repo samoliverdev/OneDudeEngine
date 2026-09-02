@@ -690,11 +690,11 @@ public:
 
     virtual bool SupportMultithread(){ return false; }
 
-    virtual void Init(){}
+    virtual void Init(bool multithread){}
     virtual void Shut(){}
-    virtual void RunRender(GPURenderFrame& frame){}
-
-    virtual void SyncSingleThreadData(){}
+    virtual void StartRender(){}
+    virtual void UpdateRender(){}
+    virtual GPURenderFrame* GetRenderFrame(){ return nullptr; }
 
     virtual BufferId AllocBufferId(){ return InvalidID; }
     virtual PipelineId AllocPipelineId(){ return InvalidID; }

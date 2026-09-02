@@ -35,7 +35,6 @@ uint32_t indices_2[] = {
 
 const char* shaderSource_2 = R"GLSL(
     #ifdef Vertex
-
     layout(location = 0) in vec3 aPos;
     layout(location = 3) in vec2 aUV;
 
@@ -54,12 +53,9 @@ const char* shaderSource_2 = R"GLSL(
             vUV = aUV;
         #endif
     }
-
     #endif
 
-
     #ifdef Fragment
-
     #ifdef Vulkan
     layout(location = 0) in vec2 vUV;
     layout(location = 0) out vec4 FragColor;
@@ -79,7 +75,6 @@ const char* shaderSource_2 = R"GLSL(
 
         FragColor = mix(texture(tex1, vUV), texture(tex2, vUV), 0.2);
     }
-
     #endif
 )GLSL";
 
@@ -97,7 +92,7 @@ BindGroupId bindGroup_2;
 
 void GPUSample2::OnInit(){
     GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = Application::GetRenderFrame();
+    auto& frame = *gpuDevice->GetRenderFrame();
 
     GPUBindGroupLayoutInfo bindGroupLayoutInfo = {};
     bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::Texture2D};
@@ -176,7 +171,8 @@ void GPUSample2::OnInit(){
 void GPUSample2::OnUpdate(float deltaTime){}
 
 void GPUSample2::OnRender(float deltaTime){
-    auto& frame = Application::GetRenderFrame();
+    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
+    auto& frame = *gpuDevice->GetRenderFrame();
 
     frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 0, 0, 255}});

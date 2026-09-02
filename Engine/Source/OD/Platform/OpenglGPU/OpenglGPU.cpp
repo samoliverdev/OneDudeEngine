@@ -2,6 +2,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
+#include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
 #include <string>
 #include <regex>
 #include <optional>
@@ -91,6 +92,8 @@ GraphicsDebug _GraphicsDebug;
 GraphicsStats& OpenglGPUDevice::GetStats(){ return _GraphicsStats; }
 GPUMemoryStats& OpenglGPUDevice::GetMemoryStats(){ return _GPUMemoryStats; }
 GraphicsDebug& OpenglGPUDevice::GetGraphicsDebug(){ return _GraphicsDebug; }
+
+MultithreadRendererContext multithreadRendererContext;
 
 GraphicsDeviceInfo OpenglGPUDevice::GetInfo(){
     return info;
@@ -219,7 +222,7 @@ std::string ProcessShaderSource(std::string shaderSource, std::vector<ShaderBind
     return output;
 }
 
-void OpenglGPUDevice::Init(){
+void _Init(){
     LogInfo("OpenglGPUDevice::Initialize");
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     
@@ -260,8 +263,59 @@ void OpenglGPUDevice::Init(){
     }*/
 }
 
-void OpenglGPUDevice::Shut(){
+void _Shut(){
     LogInfo("OpenglGPUDevice::Shut");
+}
+
+void OpenglGPUDevice::Init(bool inmultithread){
+    multithread = inmultithread;
+
+    multithreadRendererContext.StartupFrames();
+
+    if(multithread){
+        multithreadRendererContext.init = _Init;
+        multithreadRendererContext.shut = _Shut;
+        multithreadRendererContext.runRender = [&](GPURenderFrame& f){ 
+            RunRender(f); 
+            f.Clear();
+            Platform::SwapBuffers();
+        };
+        multithreadRendererContext.Init();
+    } else {
+        _Init();
+    }
+}
+
+void OpenglGPUDevice::Shut(){
+    if(multithread){
+        multithreadRendererContext.Shut();
+    } else {
+        _Shut();
+    }
+}
+
+void OpenglGPUDevice::StartRender(){
+    if(multithread){
+        multithreadRendererContext.StartRender();
+    } else {
+        SyncSingleThreadData();
+    }
+}
+
+void OpenglGPUDevice::UpdateRender(){
+    if(multithread){
+        multithreadRendererContext.WaitForRender();
+        multithreadRendererContext.SwapRenderFrames();
+        SyncSingleThreadData();
+    } else {
+        RunRender(*multithreadRendererContext.simulationFrame);
+        multithreadRendererContext.simulationFrame->Clear();
+        Platform::SwapBuffers();
+    }
+}
+
+GPURenderFrame* OpenglGPUDevice::GetRenderFrame(){ 
+    return multithreadRendererContext.simulationFrame; 
 }
 
 ////////////////////////////////////////////////

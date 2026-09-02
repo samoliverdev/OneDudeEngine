@@ -750,7 +750,7 @@ void VulkanGPUDevice::Cleanup(){
     vkDestroyInstance(_instance, nullptr);
 }
 
-void VulkanGPUDevice::Init(){
+void VulkanGPUDevice::_Init(){
     LogInfo("VulkanGPUDevice::Initialize");
 
     _windowExtent.width = Application::ScreenWidth();
@@ -766,9 +766,56 @@ void VulkanGPUDevice::Init(){
     _isInitialized = true;
 }
 
-void VulkanGPUDevice::Shut(){
+void VulkanGPUDevice::_Shut(){
     LogInfo("VulkanGPUDevice::Shut");
     Cleanup();
+}
+
+void VulkanGPUDevice::Init(bool inmultithread){
+    multithread = inmultithread;
+
+    multithreadRendererContext.StartupFrames();
+
+    if(multithread){
+        multithreadRendererContext.init = [&](){ _Init(); };
+        multithreadRendererContext.shut = [&](){ _Shut(); };
+        multithreadRendererContext.runRender = [&](GPURenderFrame& f){  RunRender(f); f.Clear(); Platform::SwapBuffers(); };
+        multithreadRendererContext.Init();
+    } else {
+        _Init();
+    }
+}
+
+void VulkanGPUDevice::Shut(){
+    if(multithread){
+        multithreadRendererContext.Shut();
+    } else {
+        _Shut();
+    }
+}
+
+void VulkanGPUDevice::StartRender(){
+    if(multithread){
+        multithreadRendererContext.StartRender();
+    } else {
+        SyncSingleThreadData();
+    }
+}
+
+void VulkanGPUDevice::UpdateRender(){
+    if(multithread){
+        multithreadRendererContext.WaitForRender();
+        multithreadRendererContext.SwapRenderFrames();
+        SyncSingleThreadData();
+    } else {
+        RunRender(*multithreadRendererContext.simulationFrame);
+        multithreadRendererContext.simulationFrame->Clear();
+        Platform::SwapBuffers();
+    }
+}
+
+GPURenderFrame* VulkanGPUDevice::GetRenderFrame(){
+    return multithreadRendererContext.simulationFrame; 
 }
 
 void VulkanGPUDevice::RunRender(GPURenderFrame& frame){

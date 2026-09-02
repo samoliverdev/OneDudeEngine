@@ -18,11 +18,11 @@ public:
 
     virtual bool SupportMultithread() override { return true; }
     
-    virtual void Init() override;
+    virtual void Init(bool multithread) override;
     virtual void Shut() override;
-    virtual void RunRender(GPURenderFrame& frame) override;
-
-    virtual void SyncSingleThreadData() override;
+    virtual void StartRender() override;
+    virtual void UpdateRender() override;
+    virtual GPURenderFrame* GetRenderFrame() override;
 
     virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
@@ -35,6 +35,12 @@ public:
     virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info) override;
 
     GPUResourceStats GetBufferStats(BufferId id) override; 
+
+private:
+    bool multithread;
+
+    void RunRender(GPURenderFrame& frame);
+    void SyncSingleThreadData();
 };
 
 }

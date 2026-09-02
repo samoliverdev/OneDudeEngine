@@ -9,6 +9,7 @@ enum class CursorState{Normal, Disabled, Hidden};
 
 class OD_API Platform{
     friend class Application;
+    friend class MultithreadRendererContext;
 public:
     static bool PumpMessages();
     

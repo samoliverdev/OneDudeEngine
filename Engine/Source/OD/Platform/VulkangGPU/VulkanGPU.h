@@ -2,6 +2,7 @@
 #include "OD/GPU/GPU.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
+#include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
@@ -19,11 +20,11 @@ public:
 
     virtual bool SupportMultithread() override { return true; }
     
-    virtual void Init() override;
+    virtual void Init(bool multithread) override;
     virtual void Shut() override;
-    virtual void RunRender(GPURenderFrame& frame) override;
-
-    virtual void SyncSingleThreadData() override;
+    virtual void StartRender() override;
+    virtual void UpdateRender() override;
+    virtual GPURenderFrame* GetRenderFrame() override;
 
     virtual MeshId AllocBufferId() override;
     virtual PipelineId AllocPipelineId() override;
@@ -73,8 +74,18 @@ private:
     };
     ResourcePool<BindGroupData> bindGroupPool;
 
+    MultithreadRendererContext multithreadRendererContext;
+
+    bool multithread;
+
+    void _Init();
+    void _Shut();
+
     void CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info);
     void Cleanup();
+
+    void RunRender(GPURenderFrame& frame);
+    void SyncSingleThreadData();
 };
 
 }

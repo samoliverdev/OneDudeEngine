@@ -113,7 +113,7 @@ BindGroupId bindGroup;
 
 void GPUSample1::OnInit(){
     GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = Application::GetRenderFrame();
+    auto& frame = *gpuDevice->GetRenderFrame();
 
     GPUBindGroupLayoutInfo bindGroupLayoutInfo = {};
     bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::UniformBuffer, sizeof(Data), false};
@@ -220,7 +220,8 @@ void GPUSample1::OnUpdate(float deltaTime){
 }   
 
 void GPUSample1::OnRender(float deltaTime){
-    auto& frame = Application::GetRenderFrame();
+    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
+    auto& frame = *gpuDevice->GetRenderFrame();
 
     frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 255, 0, 255}});

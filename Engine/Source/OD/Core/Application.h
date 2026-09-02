@@ -42,8 +42,6 @@ public:
     static void Exit();
     static void GetFramebufferSize(int* width, int* height);
 
-    static GPURenderFrame& GetRenderFrame();
-
     static int ScreenWidth();
     static int ScreenHeight();
     static float DeltaTime();
@@ -90,8 +88,6 @@ private:
 
     static void DrawImGui();
     static void DrawImGui(std::function<void()> func);
-
-    static void RenderThreadLoop();
 };
 
 }
