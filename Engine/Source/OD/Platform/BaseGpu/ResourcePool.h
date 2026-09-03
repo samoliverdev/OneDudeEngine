@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Core/Log.h"
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 #include <vector>
 
 namespace OD{
@@ -9,7 +9,7 @@ template <typename T, uint32_t ChunkSize = 1024>
 struct ResourcePool{
     struct Chunk{
         std::array<T, ChunkSize> data;
-        std::array<GPUResourceStats, ChunkSize> status;
+        std::array<Gfx::ResourceStats, ChunkSize> status;
     };
 
     std::vector<std::unique_ptr<Chunk>> chunks;
@@ -23,7 +23,7 @@ struct ResourcePool{
 
     //std::vector<GPUResourceStats> resourceStatus;
     std::vector<uint32_t> gpuToCpuResourceStatesIds;
-    std::vector<GPUResourceStats> gpuToCpuResourceStatesData;
+    std::vector<Gfx::ResourceStats> gpuToCpuResourceStatesData;
 
     inline uint32_t AllocId(){
         if(!freeIds.empty()){
@@ -49,7 +49,7 @@ struct ResourcePool{
         }
     }
 
-    inline GPUResourceStats& GetStatus(uint32_t id){
+    inline Gfx::ResourceStats& GetStatus(uint32_t id){
         uint32_t chunkIndex = id / ChunkSize;
         uint32_t index      = id % ChunkSize;
         return chunks[chunkIndex]->status[index];
@@ -77,7 +77,7 @@ struct ResourcePool{
         resourceStatus[id].erroMessage = "";*/
     }
 
-    inline void GpuPushResourceStatus(uint32_t id, GPUResourceStats status){
+    inline void GpuPushResourceStatus(uint32_t id, Gfx::ResourceStats status){
         gpuToCpuResourceStatesIds.push_back(id);
         gpuToCpuResourceStatesData.push_back(status);
     };

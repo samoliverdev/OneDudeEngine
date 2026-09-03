@@ -2,7 +2,7 @@
 #include "GPUSample2.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
 
@@ -82,50 +82,45 @@ const char* shaderSource_2 = R"GLSL(
 // GPU resources
 // -------------------------------------------------
 
-BufferId vertexBuffer_2;
-BufferId indexBuffer_2;
+Gfx::Buffer vertexBuffer_2;
+Gfx::Buffer indexBuffer_2;
 
-PipelineId pipeline_2;
+Gfx::Pipeline pipeline_2;
 
-BindGroupLayoutId bindGroupLayout_2;
-BindGroupId bindGroup_2;
+Gfx::BindGroupLayout bindGroupLayout_2;
+Gfx::BindGroup bindGroup_2;
 
 void GPUSample2::OnInit(){
-    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = *gpuDevice->GetRenderFrame();
+    Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
 
-    GPUBindGroupLayoutInfo bindGroupLayoutInfo = {};
-    bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::Texture2D};
-    bindGroupLayoutInfo.entries[1] = {1, GPUBindingType::Texture2D};
+    Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::Texture2D};
+    bindGroupLayoutInfo.entries[1] = {1, Gfx::BindingType::Texture2D};
     bindGroupLayoutInfo.entriesCount = 2;
-    bindGroupLayout_2 = gpuDevice->AllocCreateBindGroupLayoutId();
-    frame.resourceCommands.CreateBindGroupLayout(bindGroupLayout_2, bindGroupLayoutInfo);
+    bindGroupLayout_2 = gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
 
     // -------------------------------------------------
     // Vertex buffer
     // -------------------------------------------------
-    vertexBuffer_2 = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(vertexBuffer_2, vertices_2, sizeof(vertices_2), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
+    vertexBuffer_2 = gpuDevice->CreateBuffer(vertices_2, sizeof(vertices_2), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
 
     // -------------------------------------------------
     // Index buffer
     // -------------------------------------------------
-    indexBuffer_2 = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(indexBuffer_2, indices_2, sizeof(indices_2), GPUBufferUsage::Index, GPUBufferMemory::GPUOnly);
+    indexBuffer_2 = gpuDevice->CreateBuffer(indices_2, sizeof(indices_2), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
 
     // -------------------------------------------------
     // Pipeline
     // -------------------------------------------------
-    pipeline_2 = gpuDevice->AllocPipelineId();
-    GPUPipelineInfo pipelineInfo = {};
-    pipelineInfo.vertexLayout.attributes[0] = { GPUVertexSemantic::Position, GPUVertexFormat::Float3, 0, 0 };
-    pipelineInfo.vertexLayout.attributes[1] = { GPUVertexSemantic::UV0, GPUVertexFormat::Float2, 0, sizeof(float) * 3 };
+    Gfx::PipelineInfo pipelineInfo = {};
+    pipelineInfo.vertexLayout.attributes[0] = { Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0 };
+    pipelineInfo.vertexLayout.attributes[1] = { Gfx::VertexSemantic::UV0, Gfx::VertexFormat::Float2, 0, sizeof(float) * 3 };
     pipelineInfo.vertexLayout.attributeCount = 2;
-    pipelineInfo.vertexLayout.buffers[0] = { sizeof(float) * 5, GPUVertexInputRate::Vertex };
+    pipelineInfo.vertexLayout.buffers[0] = { sizeof(float) * 5, Gfx::VertexInputRate::Vertex };
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout_2;
     pipelineInfo.bindGroupLayoutCount = 1;
-    frame.resourceCommands.CreatePipeline(pipeline_2, shaderSource_2, pipelineInfo);
+    pipeline_2 = gpuDevice->CreatePipeline(shaderSource_2, pipelineInfo);
 
     stbi_set_flip_vertically_on_load(true);  
 
@@ -133,29 +128,27 @@ void GPUSample2::OnInit(){
 	stbi_uc* pixels = stbi_load("Sandbox/Textures/image.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     Assert(pixels);
 
-    auto texture = gpuDevice->AllocTexture2DId();
     size_t imageSize = texWidth * texHeight * 4;
-    GPUTexture2DInfo texInfo = {};
+    Gfx::Texture2DInfo texInfo = {};
     texInfo.width = texWidth;
     texInfo.height = texHeight;
-    texInfo.format = GPUImageFormat::R8G8B8A8_SRGB;
-    frame.resourceCommands.CreateTexture2D(texture, texInfo, pixels, imageSize);
+    texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    auto texture = gpuDevice->CreateTexture2D(texInfo, pixels, imageSize);
     stbi_image_free(pixels);
 
 	pixels = stbi_load("Sandbox/Textures/brickwall.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     Assert(pixels);
 
-    auto texture2 = gpuDevice->AllocTexture2DId();
     imageSize = texWidth * texHeight * 4;
     texInfo = {};
     texInfo.width = texWidth;
     texInfo.height = texHeight;
-    texInfo.format = GPUImageFormat::R8G8B8A8_SRGB;
-    frame.resourceCommands.CreateTexture2D(texture2, texInfo, pixels, imageSize);
+    texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    auto texture2 = gpuDevice->CreateTexture2D(texInfo, pixels, imageSize);
     stbi_image_free(pixels);
     
 
-    GPUBindGroupInfo bindGroupInfo = {};
+    Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout_2;
     bindGroupInfo.entries[0] = {};
     bindGroupInfo.entries[0].binding = 0;
@@ -164,27 +157,26 @@ void GPUSample2::OnInit(){
     bindGroupInfo.entries[1].binding = 1;
     bindGroupInfo.entries[1].texture = texture2;
     bindGroupInfo.entriesCount = 2;
-    bindGroup_2 = gpuDevice->AllocCreateBindGroupId(); 
-    frame.resourceCommands.CreateBindGroup(bindGroup_2, bindGroupInfo);
+    bindGroup_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
 }
 
 void GPUSample2::OnUpdate(float deltaTime){}
 
 void GPUSample2::OnRender(float deltaTime){
-    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = *gpuDevice->GetRenderFrame();
+    Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
+    Gfx::CommandBuffer* cmd = gpuDevice->GetCommandBuffer();
 
-    frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 0, 0, 255}});
+    cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 0, 0, 255}});
 
     // -------------------------------------------------
     // Draw quad
     // -------------------------------------------------
-    frame.renderCommands.SetPipeline(pipeline_2);
-    frame.renderCommands.SetVertexBuffer(0, vertexBuffer_2);
-    frame.renderCommands.SetIndexBuffer(indexBuffer_2);
-    frame.renderCommands.SetBindGroup(0, bindGroup_2);
-    frame.renderCommands.DrawIndexed(6);
+    cmd->SetPipeline(pipeline_2);
+    cmd->SetVertexBuffer(0, vertexBuffer_2);
+    cmd->SetIndexBuffer(indexBuffer_2);
+    cmd->SetBindGroup(0, bindGroup_2);
+    cmd->DrawIndexed(6);
 }
 
 void GPUSample2::OnExit(){}

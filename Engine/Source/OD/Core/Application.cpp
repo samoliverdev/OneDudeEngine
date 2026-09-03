@@ -18,7 +18,7 @@
 #include "OD/CoreModulesStartup.h"
 #include "OD/Serialization/SerializationFull.h"
 
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 
 #include "OD/Graphics/Texture.h"
 
@@ -35,7 +35,7 @@ Action<void()> onFrameEnd;
 
 ApplicationCallbacks callbacks;
 
-GPUDevice* gpuDevice = nullptr;
+Gfx::Device* gpuDevice = nullptr;
 
 //Module* mainModule;
 bool running = true;
@@ -103,7 +103,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     ////////////////////////////////
     #ifdef TestNewGPU_API
-    gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
+    gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
     gpuDevice->Init(true);
     #endif
     ////////////////////////////////

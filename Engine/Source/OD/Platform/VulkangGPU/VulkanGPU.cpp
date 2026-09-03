@@ -31,7 +31,8 @@
 		}                                                           \
 	} while (0)
 
-namespace OD {
+namespace OD{
+namespace Gfx{   
 
 GraphicsDeviceInfo vkInfo;
 GraphicsStats vkGraphicsStats;
@@ -250,131 +251,131 @@ bool load_shader_module(const char* source, VkShaderStageFlagBits stage, VkShade
     return vkCreateShaderModule(_device, &createInfo, nullptr, outShaderModule) == VK_SUCCESS;
 }
 
-static uint32_t GetVertexLocation(GPUVertexSemantic semantic){
+static uint32_t GetVertexLocation(VertexSemantic semantic){
     switch(semantic){
-        case GPUVertexSemantic::Position:   return 0;
-        case GPUVertexSemantic::Normal:     return 1;
-        case GPUVertexSemantic::Tangent:    return 2;
-        case GPUVertexSemantic::UV0:        return 3;
-        case GPUVertexSemantic::UV1:        return 4;
-        case GPUVertexSemantic::UV2:        return 5;
-        case GPUVertexSemantic::UV3:        return 6;
-        case GPUVertexSemantic::Color0:     return 7;
-        case GPUVertexSemantic::Color1:     return 8;
-        case GPUVertexSemantic::Weights:    return 9;
-        case GPUVertexSemantic::Influences: return 10;
-        case GPUVertexSemantic::Custom0:    return 11;
-        case GPUVertexSemantic::Custom1:    return 12;
-        case GPUVertexSemantic::Custom2:    return 13;
-        case GPUVertexSemantic::Custom3:    return 14;
+        case VertexSemantic::Position:   return 0;
+        case VertexSemantic::Normal:     return 1;
+        case VertexSemantic::Tangent:    return 2;
+        case VertexSemantic::UV0:        return 3;
+        case VertexSemantic::UV1:        return 4;
+        case VertexSemantic::UV2:        return 5;
+        case VertexSemantic::UV3:        return 6;
+        case VertexSemantic::Color0:     return 7;
+        case VertexSemantic::Color1:     return 8;
+        case VertexSemantic::Weights:    return 9;
+        case VertexSemantic::Influences: return 10;
+        case VertexSemantic::Custom0:    return 11;
+        case VertexSemantic::Custom1:    return 12;
+        case VertexSemantic::Custom2:    return 13;
+        case VertexSemantic::Custom3:    return 14;
     }
     return 0;
 }
 
-VkFormat GetVulkanFormat(GPUVertexFormat format){
+VkFormat GetVulkanFormat(VertexFormat format){
     switch(format){
-        case GPUVertexFormat::Float:   return VK_FORMAT_R32_SFLOAT;
-        case GPUVertexFormat::Float2:  return VK_FORMAT_R32G32_SFLOAT;
-        case GPUVertexFormat::Float3:  return VK_FORMAT_R32G32B32_SFLOAT;
-        case GPUVertexFormat::Float4:  return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case GPUVertexFormat::Int:     return VK_FORMAT_R32_SINT;
-        case GPUVertexFormat::Int2:    return VK_FORMAT_R32G32_SINT;
-        case GPUVertexFormat::Int3:    return VK_FORMAT_R32G32B32_SINT;
-        case GPUVertexFormat::Int4:    return VK_FORMAT_R32G32B32A32_SINT;
-        case GPUVertexFormat::UInt:    return VK_FORMAT_R32_UINT;
-        case GPUVertexFormat::UInt2:   return VK_FORMAT_R32G32_UINT;
-        case GPUVertexFormat::UInt3:   return VK_FORMAT_R32G32B32_UINT;
-        case GPUVertexFormat::UInt4:   return VK_FORMAT_R32G32B32A32_UINT;
+        case VertexFormat::Float:   return VK_FORMAT_R32_SFLOAT;
+        case VertexFormat::Float2:  return VK_FORMAT_R32G32_SFLOAT;
+        case VertexFormat::Float3:  return VK_FORMAT_R32G32B32_SFLOAT;
+        case VertexFormat::Float4:  return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case VertexFormat::Int:     return VK_FORMAT_R32_SINT;
+        case VertexFormat::Int2:    return VK_FORMAT_R32G32_SINT;
+        case VertexFormat::Int3:    return VK_FORMAT_R32G32B32_SINT;
+        case VertexFormat::Int4:    return VK_FORMAT_R32G32B32A32_SINT;
+        case VertexFormat::UInt:    return VK_FORMAT_R32_UINT;
+        case VertexFormat::UInt2:   return VK_FORMAT_R32G32_UINT;
+        case VertexFormat::UInt3:   return VK_FORMAT_R32G32B32_UINT;
+        case VertexFormat::UInt4:   return VK_FORMAT_R32G32B32A32_UINT;
         default: return VK_FORMAT_R32G32B32A32_SFLOAT;
     }
 }
 
-VkBufferUsageFlags GetVulkanBufferUsage(GPUBufferUsage usage){
+VkBufferUsageFlags GetVulkanBufferUsage(BufferUsage usage){
     switch(usage){
-        case GPUBufferUsage::Vertex:  return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        case GPUBufferUsage::Index:   return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        case GPUBufferUsage::Uniform: return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        case GPUBufferUsage::Storage: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        case BufferUsage::Vertex:  return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        case BufferUsage::Index:   return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        case BufferUsage::Uniform: return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        case BufferUsage::Storage: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
     return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 }
 
-VmaMemoryUsage GetVulkanMemoryUsage(GPUBufferMemory memory){
+VmaMemoryUsage GetVulkanMemoryUsage(BufferMemory memory){
     switch(memory){
-        case GPUBufferMemory::GPUOnly:  return VMA_MEMORY_USAGE_GPU_ONLY;
-        case GPUBufferMemory::CPUToGPU: return VMA_MEMORY_USAGE_CPU_TO_GPU;
-        case GPUBufferMemory::GPUToCPU: return VMA_MEMORY_USAGE_GPU_TO_CPU;
-        case GPUBufferMemory::CPUOnly:  return VMA_MEMORY_USAGE_CPU_ONLY;
+        case BufferMemory::GPUOnly:  return VMA_MEMORY_USAGE_GPU_ONLY;
+        case BufferMemory::CPUToGPU: return VMA_MEMORY_USAGE_CPU_TO_GPU;
+        case BufferMemory::GPUToCPU: return VMA_MEMORY_USAGE_GPU_TO_CPU;
+        case BufferMemory::CPUOnly:  return VMA_MEMORY_USAGE_CPU_ONLY;
     }
     return VMA_MEMORY_USAGE_AUTO;
 }
 
-VkCullModeFlags GetVulkanCullMode(GPUCullFace cull){
+VkCullModeFlags GetVulkanCullMode(CullFace cull){
     switch(cull){
-        case GPUCullFace::NONE:           return VK_CULL_MODE_NONE;
-        case GPUCullFace::BACK:           return VK_CULL_MODE_BACK_BIT;
-        case GPUCullFace::FRONT:          return VK_CULL_MODE_FRONT_BIT;
-        case GPUCullFace::FRONT_AND_BACK: return VK_CULL_MODE_FRONT_AND_BACK;
+        case CullFace::NONE:           return VK_CULL_MODE_NONE;
+        case CullFace::BACK:           return VK_CULL_MODE_BACK_BIT;
+        case CullFace::FRONT:          return VK_CULL_MODE_FRONT_BIT;
+        case CullFace::FRONT_AND_BACK: return VK_CULL_MODE_FRONT_AND_BACK;
     }
     return VK_CULL_MODE_BACK_BIT;
 }
 
-VkCompareOp GetVulkanCompareOp(GPUDepthTest depthTest){
+VkCompareOp GetVulkanCompareOp(DepthTest depthTest){
     switch(depthTest){
-        case GPUDepthTest::DISABLE:       return VK_COMPARE_OP_ALWAYS;
-        case GPUDepthTest::LESS:          return VK_COMPARE_OP_LESS;
-        case GPUDepthTest::LESS_EQUAL:    return VK_COMPARE_OP_LESS_OR_EQUAL;
-        case GPUDepthTest::EQUAL:         return VK_COMPARE_OP_EQUAL;
-        case GPUDepthTest::GREATER:       return VK_COMPARE_OP_GREATER;
-        case GPUDepthTest::GREATER_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
-        case GPUDepthTest::DIFFERENT:     return VK_COMPARE_OP_NOT_EQUAL;
-        case GPUDepthTest::NEVER:         return VK_COMPARE_OP_NEVER;
-        case GPUDepthTest::ALWAYS:        return VK_COMPARE_OP_ALWAYS;
+        case DepthTest::DISABLE:       return VK_COMPARE_OP_ALWAYS;
+        case DepthTest::LESS:          return VK_COMPARE_OP_LESS;
+        case DepthTest::LESS_EQUAL:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+        case DepthTest::EQUAL:         return VK_COMPARE_OP_EQUAL;
+        case DepthTest::GREATER:       return VK_COMPARE_OP_GREATER;
+        case DepthTest::GREATER_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+        case DepthTest::DIFFERENT:     return VK_COMPARE_OP_NOT_EQUAL;
+        case DepthTest::NEVER:         return VK_COMPARE_OP_NEVER;
+        case DepthTest::ALWAYS:        return VK_COMPARE_OP_ALWAYS;
     }
     return VK_COMPARE_OP_LESS;
 }
 
-VkBlendFactor GetVulkanBlendFactor(GPUBlendMode mode){
+VkBlendFactor GetVulkanBlendFactor(BlendMode mode){
     switch(mode){
-        case GPUBlendMode::ZERO:                     return VK_BLEND_FACTOR_ZERO;
-        case GPUBlendMode::ONE:                      return VK_BLEND_FACTOR_ONE;
-        case GPUBlendMode::SRC_COLOR:                return VK_BLEND_FACTOR_SRC_COLOR;
-        case GPUBlendMode::ONE_MINUS_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        case GPUBlendMode::DST_COLOR:                return VK_BLEND_FACTOR_DST_COLOR;
-        case GPUBlendMode::ONE_MINUS_DST_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-        case GPUBlendMode::SRC_ALPHA:                return VK_BLEND_FACTOR_SRC_ALPHA;
-        case GPUBlendMode::ONE_MINUS_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        case GPUBlendMode::DST_ALPHA:                return VK_BLEND_FACTOR_DST_ALPHA;
-        case GPUBlendMode::ONE_MINUS_DST_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-        case GPUBlendMode::CONSTANT_COLOR:           return VK_BLEND_FACTOR_CONSTANT_COLOR;
-        case GPUBlendMode::ONE_MINUS_CONSTANT_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-        case GPUBlendMode::CONSTANT_ALPHA:           return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-        case GPUBlendMode::ONE_MINUS_CONSTANT_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+        case BlendMode::ZERO:                     return VK_BLEND_FACTOR_ZERO;
+        case BlendMode::ONE:                      return VK_BLEND_FACTOR_ONE;
+        case BlendMode::SRC_COLOR:                return VK_BLEND_FACTOR_SRC_COLOR;
+        case BlendMode::ONE_MINUS_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case BlendMode::DST_COLOR:                return VK_BLEND_FACTOR_DST_COLOR;
+        case BlendMode::ONE_MINUS_DST_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case BlendMode::SRC_ALPHA:                return VK_BLEND_FACTOR_SRC_ALPHA;
+        case BlendMode::ONE_MINUS_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case BlendMode::DST_ALPHA:                return VK_BLEND_FACTOR_DST_ALPHA;
+        case BlendMode::ONE_MINUS_DST_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case BlendMode::CONSTANT_COLOR:           return VK_BLEND_FACTOR_CONSTANT_COLOR;
+        case BlendMode::ONE_MINUS_CONSTANT_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+        case BlendMode::CONSTANT_ALPHA:           return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+        case BlendMode::ONE_MINUS_CONSTANT_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
     }
     return VK_BLEND_FACTOR_ONE;
 }
 
-VkBlendOp GetVulkanBlendOp(GPUBlendOp op){
+VkBlendOp GetVulkanBlendOp(BlendOp op){
     switch(op){
-        case GPUBlendOp::FUNC_ADD:              return VK_BLEND_OP_ADD;
-        case GPUBlendOp::FUNC_SUBTRACT:         return VK_BLEND_OP_SUBTRACT;
-        case GPUBlendOp::FUNC_REVERSE_SUBTRACT: return VK_BLEND_OP_REVERSE_SUBTRACT;
-        case GPUBlendOp::MIN:                   return VK_BLEND_OP_MIN;
-        case GPUBlendOp::MAX:                   return VK_BLEND_OP_MAX;
+        case BlendOp::FUNC_ADD:              return VK_BLEND_OP_ADD;
+        case BlendOp::FUNC_SUBTRACT:         return VK_BLEND_OP_SUBTRACT;
+        case BlendOp::FUNC_REVERSE_SUBTRACT: return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case BlendOp::MIN:                   return VK_BLEND_OP_MIN;
+        case BlendOp::MAX:                   return VK_BLEND_OP_MAX;
     }
     return VK_BLEND_OP_ADD;
 }
 
-VkDescriptorType GetVulkanDescriptorType(GPUBindingType type){
+VkDescriptorType GetVulkanDescriptorType(BindingType type){
     switch(type){
-        case GPUBindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        case GPUBindingType::Texture2D: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case BindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case BindingType::Texture2D: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
     Assert(false);
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 }
 
-void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info){
+void VulkanGPUDevice::CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info){
     std::string srcStr = source;
     std::string vertexSource = "#version 450\n#define Vulkan\n#define Vertex\n" + srcStr;
     std::string fragmentSource = "#version 450\n#define Vulkan\n#define Fragment\n" + srcStr;
@@ -396,7 +397,7 @@ void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, co
         VkVertexInputBindingDescription binding{};
         binding.binding = i;
         binding.stride = static_cast<uint32_t>(info.vertexLayout.buffers[i].stride);
-        binding.inputRate = (info.vertexLayout.buffers[i].inputRate == GPUVertexInputRate::Instance)
+        binding.inputRate = (info.vertexLayout.buffers[i].inputRate == VertexInputRate::Instance)
             ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
         bindings.push_back(binding);
     }
@@ -444,7 +445,7 @@ void VulkanGPUDevice::CreateVulkanPipeline(PipelineId id, const char* source, co
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = (info.depthTest != GPUDepthTest::DISABLE) ? VK_TRUE : VK_FALSE;
+    depthStencil.depthTestEnable = (info.depthTest != DepthTest::DISABLE) ? VK_TRUE : VK_FALSE;
     depthStencil.depthWriteEnable = info.depthMask ? VK_TRUE : VK_FALSE;
     depthStencil.depthCompareOp = GetVulkanCompareOp(info.depthTest);
 
@@ -715,7 +716,7 @@ void VulkanGPUDevice::Cleanup(){
         }
     });
 
-    texture2DDataPool.ForEach([&](uint32_t id, Texture2DData& data){
+    texture2DPool.ForEach([&](uint32_t id, Texture2DData& data){
         vkDestroySampler(_device, data.sampler, nullptr);
         vkDestroyImageView(_device, data.imageView, nullptr);
         //vkDestroyImage(_device, data.image, nullptr);
@@ -779,7 +780,7 @@ void VulkanGPUDevice::Init(bool inmultithread){
     if(multithread){
         multithreadRendererContext.init = [&](){ _Init(); };
         multithreadRendererContext.shut = [&](){ _Shut(); };
-        multithreadRendererContext.runRender = [&](GPURenderFrame& f){  RunRender(f); f.Clear(); Platform::SwapBuffers(); };
+        multithreadRendererContext.runRender = [&](RenderFrame& f){  RunRender(f); f.Clear(); Platform::SwapBuffers(); };
         multithreadRendererContext.Init();
     } else {
         _Init();
@@ -814,20 +815,20 @@ void VulkanGPUDevice::UpdateRender(){
     }
 }
 
-GPURenderFrame* VulkanGPUDevice::GetRenderFrame(){
-    return multithreadRendererContext.simulationFrame; 
+CommandBuffer* VulkanGPUDevice::GetCommandBuffer(){
+    return &multithreadRendererContext.simulationFrame->renderCommands; 
 }
 
-void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
-    PipelineId currentPipeline = INVALID_ID;
+void VulkanGPUDevice::RunRender(RenderFrame& frame){
+    Pipeline currentPipeline = INVALID_ID;
 
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
     // Process Resource Commands first
-    for(const GPUResourceCommands::Command& cmd : frame.resourceCommands.commands){
+    for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
-            case GPUResourceCommands::Type::CreateBuffer:{
+            case ResourceCommands::Type::CreateBuffer:{
                 /*Assert(cmd.createBuffer.id < bufferPool.data.size());
 
                 if(bufferPool.data[cmd.createBuffer.id].buffer != VK_NULL_HANDLE){
@@ -885,13 +886,13 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
 
                 // If memory is GPUOnly, we MUST allow it to act as a copy destination!
-                if(cmd.createBuffer.memory == GPUBufferMemory::GPUOnly){
+                if(cmd.createBuffer.memory == BufferMemory::GPUOnly){
                     bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
                 }
 
                 VmaAllocationCreateInfo allocInfo = {};
                 allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
-                if(cmd.createBuffer.memory != GPUBufferMemory::GPUOnly){
+                if(cmd.createBuffer.memory != BufferMemory::GPUOnly){
                     allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
                 }
 
@@ -902,7 +903,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
 
                 // 2. Upload Data
                 if(cmd.createBuffer.data && cmd.createBuffer.size > 0){
-                    if(cmd.createBuffer.memory != GPUBufferMemory::GPUOnly){
+                    if(cmd.createBuffer.memory != BufferMemory::GPUOnly){
                         // Host visible copy (CPUToGPU / CPUOnly)
                         void* mappedData = resultAllocInfo.pMappedData;
                         bool needUnmap = false;
@@ -989,7 +990,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUResourceCommands::Type::DestroyBuffer:{
+            case ResourceCommands::Type::DestroyBuffer:{
                 auto& bufData = bufferPool.Get(cmd.destroyBuffer.id);
                 if(bufData.buffer != VK_NULL_HANDLE){
                     vmaDestroyBuffer(_allocator, bufData.buffer, bufData.allocation);
@@ -1000,13 +1001,13 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUResourceCommands::Type::CreateTexture2D:{
-                if(texture2DDataPool.Get(cmd.createTexture2D.id).image != VK_NULL_HANDLE){
+            case ResourceCommands::Type::CreateTexture2D:{
+                if(texture2DPool.Get(cmd.createTexture2D.id).image != VK_NULL_HANDLE){
                     LogError("Trying CreateTexture2D on Used id");
                     continue;
                 }
 
-                Texture2DData& texData = texture2DDataPool.Get(cmd.createTexture2D.id);
+                Texture2DData& texData = texture2DPool.Get(cmd.createTexture2D.id);
 
                 VkDeviceSize imageSize = cmd.createTexture2D.size;// texWidth * texHeight * 4;
 
@@ -1085,13 +1086,13 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUResourceCommands::Type::CreatePipeline:{
+            case ResourceCommands::Type::CreatePipeline:{
                 CreateVulkanPipeline(cmd.createPipeline.id, cmd.createPipeline.source, cmd.createPipeline.info);
                 //LogInfo("CreatePipeline");
                 break;
             }
 
-            case GPUResourceCommands::Type::DestroyPipeline:{
+            case ResourceCommands::Type::DestroyPipeline:{
                 auto& pipeData = pipelinePool.Get(cmd.destroyPipeline.id);
                 if(pipeData.pipeline != VK_NULL_HANDLE){
                     vkDestroyPipeline(_device, pipeData.pipeline, nullptr);
@@ -1103,12 +1104,12 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
             
-            case GPUResourceCommands::Type::CreateBindGroupLayout:{
+            case ResourceCommands::Type::CreateBindGroupLayout:{
                 BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
-                std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(GPUBindGroupLayoutInfo));
+                std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(BindGroupLayoutInfo));
                 //data.info = cmd.createBindGroupLayout.info;
 
-                auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
+                auto Convert = [](BindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
                     VkDescriptorSetLayoutBinding entry = {};
                     entry.binding = e.binding;
                     entry.descriptorCount = 1;
@@ -1136,7 +1137,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUResourceCommands::Type::CreateBindGroup:{
+            case ResourceCommands::Type::CreateBindGroup:{
                 BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout);
     
                 VkDescriptorSetAllocateInfo allocInfo ={};
@@ -1155,7 +1156,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 writes.resize(cmd.createBindGroup.info->entriesCount);
 
                 for(int i = 0; i < cmd.createBindGroup.info->entriesCount; i++){
-                    if(layoutData.info.entries[i].type == GPUBindingType::UniformBuffer){
+                    if(layoutData.info.entries[i].type == BindingType::UniformBuffer){
                         BufferData& bufferData = bufferPool.Get(cmd.createBindGroup.info->entries[i].buffer);
 
                         VkDescriptorBufferInfo& binfo = bInfos[i];
@@ -1173,8 +1174,8 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                         setWrite.pBufferInfo = &binfo;
-                    } else if(layoutData.info.entries[i].type == GPUBindingType::Texture2D){
-                        Texture2DData& texData = texture2DDataPool.Get(cmd.createBindGroup.info->entries[i].texture);
+                    } else if(layoutData.info.entries[i].type == BindingType::Texture2D){
+                        Texture2DData& texData = texture2DPool.Get(cmd.createBindGroup.info->entries[i].texture);
 
                         VkDescriptorImageInfo& imageBufferInfo = imageInfos[i];
                         imageBufferInfo.sampler = texData.sampler;
@@ -1241,9 +1242,9 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
     scissor.extent = _windowExtent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    for(const GPUCommandBuffer::Command& renderCmd : frame.renderCommands.commands){
+    for(const CommandBuffer::Command& renderCmd : frame.renderCommands.commands){
         switch(renderCmd.type){
-            case GPUCommandBuffer::Type::Clear:{
+            case CommandBuffer::Type::Clear:{
                 VkClearAttachment clearAttachment{};
                 clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 clearAttachment.colorAttachment = 0;
@@ -1264,7 +1265,7 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUCommandBuffer::Type::Viewport:{
+            case CommandBuffer::Type::Viewport:{
                 VkViewport customViewport{};
                 customViewport.x = static_cast<float>(renderCmd.viewport.x);
                 customViewport.y = static_cast<float>(renderCmd.viewport.y);
@@ -1281,14 +1282,14 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUCommandBuffer::Type::SetPipeline:{
+            case CommandBuffer::Type::SetPipeline:{
                 const auto& pipeData = pipelinePool.Get(renderCmd.setPipeline.id);
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
                 currentPipeline = renderCmd.setPipeline.id;
                 break;
             }
 
-            case GPUCommandBuffer::Type::SetVertexBuffer:{
+            case CommandBuffer::Type::SetVertexBuffer:{
                 const auto& bufData = bufferPool.Get(renderCmd.setVertexBuffer.buffer);
                 Assert(bufData.buffer != VK_NULL_HANDLE);
                 Assert(renderCmd.setVertexBuffer.buffer != InvalidID);
@@ -1298,13 +1299,13 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             }
 
-            case GPUCommandBuffer::Type::SetIndexBuffer:{
+            case CommandBuffer::Type::SetIndexBuffer:{
                 const auto& bufData = bufferPool.Get(renderCmd.setIndexBuffer.buffer);
                 vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
             }
 
-            case GPUCommandBuffer::Type::SetBindGroup:{
+            case CommandBuffer::Type::SetBindGroup:{
                 const BindGroupData& bindGroupData = bindGroupPool.Get(renderCmd.setBindGroup.group);
                 const PipelineData& pipelineData = pipelinePool.Get(currentPipeline);
 
@@ -1312,12 +1313,12 @@ void VulkanGPUDevice::RunRender(GPURenderFrame& frame){
                 break;
             };
 
-            case GPUCommandBuffer::Type::Draw:{
+            case CommandBuffer::Type::Draw:{
                 vkCmdDraw(cmd, renderCmd.draw.vertexCount, 1, 0, 0);
                 break;
             }
 
-            case GPUCommandBuffer::Type::DrawIndexed:{
+            case CommandBuffer::Type::DrawIndexed:{
                 vkCmdDrawIndexed(cmd, renderCmd.drawIndexed.indexCount, 1, 0, 0, 0);
                 break;
             }
@@ -1361,104 +1362,43 @@ void VulkanGPUDevice::SyncSingleThreadData(){
     bindGroupPool.SyncSingleThreadData();
 }
 
-BufferId VulkanGPUDevice::AllocBufferId(){
-    return bufferPool.AllocId();
+Pipeline VulkanGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
+    auto id = pipelinePool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreatePipeline(id, source, info);
+    return id;
 }
 
-PipelineId VulkanGPUDevice::AllocPipelineId(){
-    return pipelinePool.AllocId();
+void VulkanGPUDevice::DestroyPipeline(Pipeline id){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
 }
 
-BindGroupLayoutId VulkanGPUDevice::AllocCreateBindGroupLayoutId(){
-    return bindGroupLayoutPool.AllocId();
+Buffer VulkanGPUDevice::CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){
+    auto id = bufferPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, data, size, usage, memory);
+    return id;
 }
 
-BindGroupId VulkanGPUDevice::AllocCreateBindGroupId(){
-    return bindGroupPool.AllocId();
+void VulkanGPUDevice::DestroyBuffer(Buffer id){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBuffer(id);
 }
 
-Texture2DId VulkanGPUDevice::AllocTexture2DId(){ 
-    return texture2DDataPool.AllocId(); 
-}
-
-BindGroupLayoutId VulkanGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){
+BindGroupLayout VulkanGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
     auto id = bindGroupLayoutPool.AllocId();
-    BindGroupLayoutData& data = bindGroupLayoutPool.Get(id);
-
-    //data.info = cmd.createBindGroupLayout.info;
-
-    auto Convert = [](GPUBindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
-        VkDescriptorSetLayoutBinding entry = {};
-        entry.binding = e.binding;
-        entry.descriptorCount = 1;
-        entry.descriptorType = GetVulkanDescriptorType(e.type);// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        entry.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        return entry;
-    };
-
-    std::vector<VkDescriptorSetLayoutBinding> entries;
-    for(int i = 0; i < info.entriesCount; i++){
-        auto& e = info.entries[i];
-        //LogInfo("binding={} type={}", e.binding, static_cast<int>(e.type));
-        entries.push_back(Convert(e));
-    }
-
-    VkDescriptorSetLayoutCreateInfo setinfo = {};
-    setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    setinfo.pNext = nullptr;
-    setinfo.flags = 0; //no flags
-    setinfo.pBindings = entries.data();
-    setinfo.bindingCount = entries.size();
-
-    VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroupLayout(id, info);
     return id;
 }
 
-BindGroupId VulkanGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
+BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
     auto id = bindGroupPool.AllocId();
-    BindGroupData& data = bindGroupPool.Get(id);
-
-    VkDescriptorSetLayout layout = bindGroupLayoutPool.Get(info.layout).layout;
-    
-    VkDescriptorSetAllocateInfo allocInfo ={};
-    allocInfo.pNext = nullptr;
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = _descriptorPool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout;
-    VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.Get(id).descriptorSet));
-
-    std::vector<VkDescriptorBufferInfo> bInfos;
-    std::vector<VkWriteDescriptorSet> writes;
-    bInfos.resize(info.entriesCount);
-    writes.resize(info.entriesCount);
-
-    for(int i = 0; i < info.entriesCount; i++){
-        if(bindGroupLayoutPool.Get(info.layout).info.entries[i].type == GPUBindingType::UniformBuffer){
-            BufferData& bufferData = bufferPool.Get(info.entries[i].buffer);
-
-            VkDescriptorBufferInfo& binfo = bInfos[i];
-            binfo = {};
-            binfo.buffer = bufferData.buffer;// _frames[i].cameraBuffer._buffer;
-            binfo.offset = info.entries[i].offset;
-            binfo.range = info.entries[i].size;// ssizeof(GPUCameraData);
-
-            VkWriteDescriptorSet setWrite = writes[i];
-            setWrite = {};
-            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            setWrite.pNext = nullptr;
-            setWrite.dstBinding = info.entries[i].binding;
-            setWrite.dstSet = bindGroupPool.Get(id).descriptorSet;
-            setWrite.descriptorCount = 1;
-            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            setWrite.pBufferInfo = &binfo;
-        } else {
-            Assert(false);
-        }
-    }
-
-    vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroup(id, info);
     return id;
 }
 
+Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info, void* data, size_t size){
+    auto id = texture2DPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2D(id, info, data, size);
+    return id;
+}
+
+}
 } // namespace OD

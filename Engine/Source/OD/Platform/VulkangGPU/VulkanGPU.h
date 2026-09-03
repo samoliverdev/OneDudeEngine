@@ -1,5 +1,5 @@
 #pragma once
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
 #include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
@@ -7,8 +7,9 @@
 #include <vk_mem_alloc.h>
 
 namespace OD{
+namespace Gfx{   
 
-class VulkanGPUDevice: public GraphicsDevice, public GPUDevice{
+class VulkanGPUDevice: public GraphicsDevice, public Device{
 public:
     VulkanGPUDevice();
 
@@ -24,25 +25,23 @@ public:
     virtual void Shut() override;
     virtual void StartRender() override;
     virtual void UpdateRender() override;
-    virtual GPURenderFrame* GetRenderFrame() override;
 
-    virtual MeshId AllocBufferId() override;
-    virtual PipelineId AllocPipelineId() override;
+    virtual CommandBuffer* GetCommandBuffer() override;
 
-    virtual BindGroupLayoutId AllocCreateBindGroupLayoutId() override;
-    virtual BindGroupId AllocCreateBindGroupId() override;
-
-    virtual Texture2DId AllocTexture2DId() override;
-
-    virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info) override;
-    virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info) override;
+    virtual Pipeline CreatePipeline(const char* source, PipelineInfo info) override;
+    virtual void DestroyPipeline(Pipeline id) override;
+    virtual Buffer CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory) override;
+    virtual void DestroyBuffer(Buffer id) override;
+    virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
+    virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
+    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
 
 private:
     struct BufferData{
         VkBuffer buffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;
-        GPUBufferUsage usage;
-        GPUBufferMemory memory;
+        BufferUsage usage;
+        BufferMemory memory;
         VkDeviceSize size = 0;
     };
     ResourcePool<BufferData> bufferPool;
@@ -53,24 +52,24 @@ private:
         VkImageView imageView = VK_NULL_HANDLE;
         VkSampler sampler = VK_NULL_HANDLE;
     };
-    ResourcePool<Texture2DData> texture2DDataPool;
+    ResourcePool<Texture2DData> texture2DPool;
 
     struct PipelineData{
         VkPipeline pipeline = VK_NULL_HANDLE;
         VkPipelineLayout layout = VK_NULL_HANDLE;
-        GPUPipelineInfo info;
+        PipelineInfo info;
     };
     ResourcePool<PipelineData> pipelinePool;
 
     struct BindGroupLayoutData{
         VkDescriptorSetLayout layout = VK_NULL_HANDLE;
-        GPUBindGroupLayoutInfo info;
+        BindGroupLayoutInfo info;
     };
     ResourcePool<BindGroupLayoutData> bindGroupLayoutPool;
 
     struct BindGroupData{
         VkDescriptorSet descriptorSet  = VK_NULL_HANDLE;
-        GPUBindGroupInfo info;
+        BindGroupInfo info;
     };
     ResourcePool<BindGroupData> bindGroupPool;
 
@@ -81,11 +80,12 @@ private:
     void _Init();
     void _Shut();
 
-    void CreateVulkanPipeline(PipelineId id, const char* source, const GPUPipelineInfo& info);
+    void CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info);
     void Cleanup();
 
-    void RunRender(GPURenderFrame& frame);
+    void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
 };
 
+}
 }

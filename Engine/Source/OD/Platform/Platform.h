@@ -7,9 +7,13 @@ namespace OD{
 
 enum class CursorState{Normal, Disabled, Hidden};
 
+namespace Gfx{
+    struct MultithreadRendererContext;
+}
+
 class OD_API Platform{
     friend class Application;
-    friend class MultithreadRendererContext;
+    friend struct OD::Gfx::MultithreadRendererContext;
 public:
     static bool PumpMessages();
     

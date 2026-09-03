@@ -1,19 +1,20 @@
 #pragma once
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 #include "OD/Platform/Platform.h"
 #include <thread>
 #include <mutex>
 #include <functional>
 
 namespace OD{
+namespace Gfx{    
 
 struct MultithreadRendererContext{
     std::atomic<bool> running = false;
 
-    GPURenderFrame frames[2];
+    Gfx::RenderFrame frames[2];
 
-    GPURenderFrame* simulationFrame = nullptr; // Owned by main thread.
-    GPURenderFrame* renderFrame = nullptr; // Owned by render thread.
+    Gfx::RenderFrame* simulationFrame = nullptr; // Owned by main thread.
+    Gfx::RenderFrame* renderFrame = nullptr; // Owned by render thread.
 
     std::thread renderThread;
 
@@ -25,7 +26,7 @@ struct MultithreadRendererContext{
 
     std::function<void()> init; 
     std::function<void()> shut; 
-    std::function<void(GPURenderFrame&)> runRender;
+    std::function<void(RenderFrame&)> runRender;
 
     void StartupFrames(){
         simulationFrame = &frames[0];
@@ -62,7 +63,7 @@ struct MultithreadRendererContext{
         std::swap(simulationFrame, renderFrame);
     }
 
-    GPURenderFrame& GetRenderFrame(){
+    RenderFrame& GetRenderFrame(){
         return *simulationFrame;
     }
 
@@ -117,4 +118,5 @@ struct MultithreadRendererContext{
     }
 };
 
+}
 }

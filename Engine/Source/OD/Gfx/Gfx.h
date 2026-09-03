@@ -5,25 +5,25 @@
 #include <mutex>
 
 namespace OD{
+namespace Gfx{   
 
 static constexpr uint32_t InvalidID = std::numeric_limits<uint32_t>::max();
-using TextureId = uint32_t;
-using MeshId = uint32_t;
-using PipelineId = uint32_t;
-using FramebufferId = uint32_t;
-using BufferId = uint32_t;
-using BindGroupLayoutId = uint32_t;
-using BindGroupId = uint32_t;
-using Texture2DId = uint32_t;
+using Texture = uint32_t;
+using Pipeline = uint32_t;
+using Framebuffer = uint32_t;
+using Buffer = uint32_t;
+using BindGroupLayout = uint32_t;
+using BindGroup = uint32_t;
+using Texture2D = uint32_t;
 
 /////////////////////////////////////
 
-enum class GPUResourceStatsType{
+enum class ResourceStatsType{
     None, Created, Failed
 };
 
-struct GPUResourceStats{
-    GPUResourceStatsType type = GPUResourceStatsType::None;
+struct ResourceStats{
+    ResourceStatsType type = ResourceStatsType::None;
     std::string erroMessage;
 };
 
@@ -31,50 +31,50 @@ struct GPUResourceStats{
 
 constexpr uint32_t MAX_COLOR_ATTACHMENTS = 8;
 
-enum class OD_API_IMPORT GPUFramebufferTextureFormat: uint8_t{
+enum class OD_API_IMPORT FramebufferTextureFormat: uint8_t{
     None, RGB, RGBA8, RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER
 };
 
-enum class OD_API_IMPORT GPUFramebufferDepthTextureFormat: uint8_t{
+enum class OD_API_IMPORT FramebufferDepthTextureFormat: uint8_t{
     None, DEPTH24_STENCIL8, DEPTH32F_STENCIL8, DEPTH_COMPONENT16, DEPTH_COMPONENT24, DEPTH_COMPONENT32, DEPTH_COMPONENT32F
 };
 
-enum class OD_API_IMPORT GPUFramebufferAttachmentType: uint8_t{
+enum class OD_API_IMPORT FramebufferAttachmentType: uint8_t{
     TEXTURE_2D,
     TEXTURE_2D_MULTISAMPLE,
     TEXTURE_2D_ARRAY,
     CUBEMAP
 };
 
-struct OD_API GPUFramebufferAttachment{
-    GPUFramebufferTextureFormat format;
+struct OD_API FramebufferAttachment{
+    FramebufferTextureFormat format;
     uint8_t mipLevels = 1;
 };
 
-struct OD_API GPUFramebufferDepthAttachment{
-    GPUFramebufferDepthTextureFormat format;
+struct OD_API FramebufferDepthAttachment{
+    FramebufferDepthTextureFormat format;
     uint8_t mipLevels = 1;
 };
 
-struct OD_API GPUFrameBufferLayout{
-    GPUFramebufferAttachmentType type = GPUFramebufferAttachmentType::TEXTURE_2D;
-    GPUFramebufferAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
+struct OD_API FrameBufferLayout{
+    FramebufferAttachmentType type = FramebufferAttachmentType::TEXTURE_2D;
+    FramebufferAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
     uint8_t colorAttachmentsCount = 0;
-    GPUFramebufferDepthAttachment depthAttachment;
+    FramebufferDepthAttachment depthAttachment;
     uint8_t samples = 1;
     bool swapChainTarget = false;
 };
 
 //////////////////////////////////////
 
-enum class GPUImageFormat{
+enum class ImageFormat{
     R8G8B8A8_SRGB
 };
 
-struct OD_API GPUTexture2DInfo{
+struct OD_API Texture2DInfo{
     uint32_t width;
     uint32_t height;
-    GPUImageFormat format;
+    ImageFormat format;
 };
 
 //////////////////////////////////////
@@ -82,7 +82,7 @@ struct OD_API GPUTexture2DInfo{
 constexpr uint32_t MAX_VERTEX_ATTRIBUTES = 16;
 constexpr uint32_t MAX_VERTEX_BUFFERS = 16;
 
-enum class GPUVertexSemantic: uint8_t{
+enum class VertexSemantic: uint8_t{
     Position,
     Normal,
     Tangent,
@@ -104,7 +104,7 @@ enum class GPUVertexSemantic: uint8_t{
     Custom3
 };
 
-enum class GPUVertexFormat: uint8_t{
+enum class VertexFormat: uint8_t{
     Float,
     Float2,
     Float3,
@@ -140,14 +140,14 @@ enum class GPUVertexFormat: uint8_t{
     Half4
 };
 
-enum class GPUVertexInputRate: uint8_t{
+enum class VertexInputRate: uint8_t{
     Vertex,
     Instance
 };
 
-struct OD_API GPUVertexAttribute{
-    GPUVertexSemantic semantic;
-    GPUVertexFormat format;
+struct OD_API VertexAttribute{
+    VertexSemantic semantic;
+    VertexFormat format;
 
     // Vertex buffer binding this attribute comes from.
     uint8_t bufferSlot = 0;
@@ -156,19 +156,19 @@ struct OD_API GPUVertexAttribute{
     size_t offset = 0;
 };
 
-struct OD_API GPUVertexBufferLayout{
+struct OD_API VertexBufferLayout{
     // Distance in bytes between two consecutive
     // vertices/instances in this buffer.
     size_t stride = 0;
 
-    GPUVertexInputRate inputRate = GPUVertexInputRate::Vertex;
+    VertexInputRate inputRate = VertexInputRate::Vertex;
 };
 
-struct OD_API GPUMeshLayout{
-    GPUVertexAttribute attributes[MAX_VERTEX_ATTRIBUTES];
+struct OD_API MeshLayout{
+    VertexAttribute attributes[MAX_VERTEX_ATTRIBUTES];
     uint32_t attributeCount = 0;
 
-    GPUVertexBufferLayout buffers[MAX_VERTEX_BUFFERS];
+    VertexBufferLayout buffers[MAX_VERTEX_BUFFERS];
     uint32_t bufferCount = 0;
 };
 
@@ -176,7 +176,7 @@ struct OD_API GPUMeshLayout{
 
 constexpr uint32_t MAX_BINDGROUP_COUT = 4;
 
-enum class GPUBindingType{
+enum class BindingType{
     UniformBuffer,
     StorageBuffer,
     Texture2D, //Texture + sampler
@@ -185,9 +185,9 @@ enum class GPUBindingType{
     //StorageTexture, //Will be Add later
 };
 
-struct GPUBindLayoutEntry{
+struct BindLayoutEntry{
     uint32_t binding;
-    GPUBindingType type;
+    BindingType type;
 
     //GPUShaderStage visibility; //Will be default for all shader stages
 
@@ -199,33 +199,33 @@ struct GPUBindLayoutEntry{
     //GPUTextureViewDimension viewDimension; //Will be Add later
 };
 
-struct GPUBindGroupLayoutInfo{
-    GPUBindLayoutEntry entries[4];
+struct BindGroupLayoutInfo{
+    BindLayoutEntry entries[4];
     uint32_t entriesCount = 0;
 };
 
 //////////////////////////////////////
 
-struct GPUBindingEntry{
+struct BindingEntry{
     uint32_t binding;
 
-    BufferId buffer;
+    Buffer buffer;
     size_t offset;
     size_t size;
     bool dynamicOffset;
 
-    Texture2DId texture;
+    Texture2D texture;
 };
 
-struct GPUBindGroupInfo{
-    BindGroupLayoutId layout;
-    GPUBindingEntry entries[64];
+struct BindGroupInfo{
+    BindGroupLayout layout;
+    BindingEntry entries[64];
     uint32_t entriesCount = 0;
 };
 
 //////////////////////////////////////
 
-enum class OD_API_IMPORT GPUDepthTest: uint8_t{
+enum class OD_API_IMPORT DepthTest: uint8_t{
     DISABLE         = 0,
     LESS            = 1,
     LESS_EQUAL      = 2,
@@ -237,14 +237,14 @@ enum class OD_API_IMPORT GPUDepthTest: uint8_t{
     ALWAYS          = 8
 };
 
-enum class OD_API_IMPORT GPUCullFace: uint8_t{
+enum class OD_API_IMPORT CullFace: uint8_t{
     NONE            = 0,
     BACK            = 1,
     FRONT           = 2,
     FRONT_AND_BACK  = 3
 };
 
-enum class OD_API_IMPORT GPUBlendMode: uint8_t{
+enum class OD_API_IMPORT BlendMode: uint8_t{
     ZERO,
     ONE,
     SRC_COLOR,
@@ -261,7 +261,7 @@ enum class OD_API_IMPORT GPUBlendMode: uint8_t{
     ONE_MINUS_CONSTANT_ALPHA	
 };
 
-enum class OD_API_IMPORT GPUBlendOp: uint8_t{
+enum class OD_API_IMPORT BlendOp: uint8_t{
     FUNC_ADD,
     FUNC_SUBTRACT,
     FUNC_REVERSE_SUBTRACT,
@@ -269,26 +269,26 @@ enum class OD_API_IMPORT GPUBlendOp: uint8_t{
     MAX
 };  
 
-struct OD_API GPUPipelineInfo{
-    GPUMeshLayout vertexLayout;
-    GPUCullFace cullFace = GPUCullFace::BACK;
-    GPUDepthTest depthTest = GPUDepthTest::LESS;
+struct OD_API PipelineInfo{
+    MeshLayout vertexLayout;
+    CullFace cullFace = CullFace::BACK;
+    DepthTest depthTest = DepthTest::LESS;
     bool depthMask = true;
     Vector4 colorMask = {1, 1, 1, 1};
     bool blend = false;
-    GPUBlendMode srcBlend;
-    GPUBlendMode dstBlend;
-    GPUBlendMode srcAlphaBlend;
-    GPUBlendMode dstAlphaBlend;
-    GPUBlendOp opBlend = GPUBlendOp::FUNC_ADD;
+    BlendMode srcBlend;
+    BlendMode dstBlend;
+    BlendMode srcAlphaBlend;
+    BlendMode dstAlphaBlend;
+    BlendOp opBlend = BlendOp::FUNC_ADD;
 
     uint32_t bindGroupLayoutCount = 0;
-    BindGroupLayoutId bindGroupLayouts[MAX_BINDGROUP_COUT];
+    BindGroupLayout bindGroupLayouts[MAX_BINDGROUP_COUT];
 };
 
 ///////////////////////////////////////
 
-enum class GPUBufferUsage: uint8_t{
+enum class BufferUsage: uint8_t{
     Vertex,
     Index,
     Uniform,
@@ -298,7 +298,7 @@ enum class GPUBufferUsage: uint8_t{
     CopyDestination*/
 };
 
-enum class GPUBufferMemory : uint8_t{
+enum class BufferMemory : uint8_t{
     GPUOnly,
     CPUToGPU,
     GPUToCPU,
@@ -307,21 +307,21 @@ enum class GPUBufferMemory : uint8_t{
 
 /////////////////////////////////////
 
-enum class GPUClearFlags : uint8_t{
+enum class ClearFlags : uint8_t{
     None    = 0,
     Color   = 1 << 0,
     Depth   = 1 << 1,
     Stencil = 1 << 2
 };
 
-struct GPUClearValue{
+struct ClearValue{
     Vector4 color = {0, 0, 0, 0};
     float depth = 1.0f;
     uint32_t stencil = 0;
 };
 
-constexpr GPUClearFlags operator|(GPUClearFlags a, GPUClearFlags b){
-    return static_cast<GPUClearFlags>(
+constexpr ClearFlags operator|(ClearFlags a, ClearFlags b){
+    return static_cast<ClearFlags>(
         static_cast<uint8_t>(a) |
         static_cast<uint8_t>(b)
     );
@@ -411,7 +411,7 @@ private:
     static constexpr size_t DefaultBlockSize = 64 * 1024;
 };
 
-struct OD_API GPUResourceCommands{
+struct OD_API ResourceCommands{
     enum class Type{
         CreatePipeline,
         DestroyPipeline,
@@ -428,25 +428,25 @@ struct OD_API GPUResourceCommands{
 
         union{
             struct{
-                BufferId id;
-                GPUBufferUsage usage;
-                GPUBufferMemory memory;
+                Buffer id;
+                BufferUsage usage;
+                BufferMemory memory;
                 const void* data;
                 size_t size;
             } createBuffer;
 
             struct{
-                BufferId id;
+                Buffer id;
             } destroyBuffer;
 
             struct{
-                PipelineId id;
+                Pipeline id;
                 const char* source;
-                GPUPipelineInfo info;
+                PipelineInfo info;
             } createPipeline;
 
             struct{
-                PipelineId id;
+                Pipeline id;
             } destroyPipeline;
 
             struct{
@@ -455,18 +455,18 @@ struct OD_API GPUResourceCommands{
             } uploadBuffer;
 
             struct {
-                BindGroupLayoutId id; GPUBindGroupLayoutInfo* info;
+                BindGroupLayout id; BindGroupLayoutInfo* info;
             } createBindGroupLayout;
 
             struct {
-                BindGroupId id; GPUBindGroupInfo* info;
+                BindGroup id; BindGroupInfo* info;
             } createBindGroup;
 
             struct {
-                Texture2DId id;
+                Texture2D id;
                 const void* data;
                 size_t size;
-                GPUTexture2DInfo info;
+                Texture2DInfo info;
             } createTexture2D;
         };
     };
@@ -476,7 +476,7 @@ struct OD_API GPUResourceCommands{
         uploadBuffer.Clear();
     }
 
-    void CreatePipeline(PipelineId id, const char* source, GPUPipelineInfo info){
+    void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
         Command cmd{};
         cmd.type = Type::CreatePipeline;
         cmd.createPipeline.id = id;
@@ -485,14 +485,14 @@ struct OD_API GPUResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyPipeline(PipelineId id){
+    void DestroyPipeline(Pipeline id){
         Command cmd{};
         cmd.type = Type::DestroyPipeline;
         cmd.destroyPipeline.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateBuffer(BufferId id, const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly){
+    void CreateBuffer(Buffer id, const void* data, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
         void* copyData = uploadBuffer.AllocateData(size);
         std::memcpy(copyData, data, size);
 
@@ -506,16 +506,16 @@ struct OD_API GPUResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyBuffer(BufferId id){
+    void DestroyBuffer(Buffer id){
         Command cmd{};
         cmd.type = Type::DestroyBuffer;
         cmd.destroyBuffer.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateBindGroupLayout(BindGroupLayoutId id, GPUBindGroupLayoutInfo& info){
-        GPUBindGroupLayoutInfo* copyData = uploadBuffer.Allocate<GPUBindGroupLayoutInfo>();
-        std::memcpy(copyData, &info, sizeof(GPUBindGroupLayoutInfo));
+    void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
+        BindGroupLayoutInfo* copyData = uploadBuffer.Allocate<BindGroupLayoutInfo>();
+        std::memcpy(copyData, &info, sizeof(BindGroupLayoutInfo));
         
         Command cmd{};
         cmd.type = Type::CreateBindGroupLayout;
@@ -524,9 +524,9 @@ struct OD_API GPUResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateBindGroup(BindGroupId id, GPUBindGroupInfo& info){ 
-        GPUBindGroupInfo* copyData = uploadBuffer.Allocate<GPUBindGroupInfo>();
-        std::memcpy(copyData, &info, sizeof(GPUBindGroupInfo));
+    void CreateBindGroup(BindGroup id, BindGroupInfo& info){ 
+        BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
+        std::memcpy(copyData, &info, sizeof(BindGroupInfo));
         
         Command cmd{};
         cmd.type = Type::CreateBindGroup;
@@ -535,7 +535,7 @@ struct OD_API GPUResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateTexture2D(Texture2DId id, GPUTexture2DInfo& info, void* data, size_t size){ 
+    void CreateTexture2D(Texture2D id, Texture2DInfo& info, void* data, size_t size){ 
         void *copyData = uploadBuffer.AllocateData(size);
         std::memcpy(copyData, data, size);
         
@@ -552,7 +552,7 @@ struct OD_API GPUResourceCommands{
     UploadBuffer uploadBuffer = {};
 };
 
-struct OD_API GPUCommandBuffer{
+struct OD_API CommandBuffer{
     enum class Type{
         Clear,
         Viewport,
@@ -573,26 +573,26 @@ struct OD_API GPUCommandBuffer{
             } viewport;
 
             struct{
-                GPUClearFlags flags;
-                GPUClearValue clearValue;
+                ClearFlags flags;
+                ClearValue clearValue;
             } clear;
 
             struct{
-                PipelineId id;
+                Pipeline id;
             } setPipeline;
 
             struct{
                 uint32_t slot;
-                BufferId buffer;
+                Buffer buffer;
             } setVertexBuffer;
 
             struct {
-                BufferId buffer;
+                Buffer buffer;
             } setIndexBuffer;
 
             struct {
                 uint8_t slot;
-                BindGroupId group;
+                BindGroup group;
             } setBindGroup;
 
             struct{
@@ -609,7 +609,7 @@ struct OD_API GPUCommandBuffer{
         commands.clear();
     }
 
-    void Clean(GPUClearFlags flags, const GPUClearValue& clearValue){
+    void Clean(ClearFlags flags, const ClearValue& clearValue){
         Command cmd{};
         cmd.type = Type::Clear;
         cmd.clear.flags = flags;
@@ -627,14 +627,14 @@ struct OD_API GPUCommandBuffer{
         commands.push_back(cmd);
     }
 
-    void SetPipeline(PipelineId pipeline){
+    void SetPipeline(Pipeline pipeline){
         Command cmd{};
         cmd.type = Type::SetPipeline;
         cmd.setPipeline.id = pipeline;
         commands.push_back(cmd);
     }
 
-    void SetVertexBuffer(uint32_t slot, BufferId buffer){
+    void SetVertexBuffer(uint32_t slot, Buffer buffer){
         Command cmd{};
         cmd.type = Type::SetVertexBuffer;
         cmd.setVertexBuffer.slot = slot;
@@ -642,14 +642,14 @@ struct OD_API GPUCommandBuffer{
         commands.push_back(cmd);
     }
 
-    void SetIndexBuffer(BufferId buffer){
+    void SetIndexBuffer(Buffer buffer){
         Command cmd{};
         cmd.type = Type::SetIndexBuffer;
         cmd.setIndexBuffer.buffer = buffer;
         commands.push_back(cmd);
     }
     
-    void SetBindGroup(uint8_t slot, BindGroupId group){
+    void SetBindGroup(uint8_t slot, BindGroup group){
         Command cmd{};
         cmd.type = Type::SetBindGroup;
         cmd.setBindGroup.slot = slot;
@@ -674,9 +674,9 @@ struct OD_API GPUCommandBuffer{
     std::vector<Command> commands;
 };
 
-struct OD_API GPURenderFrame{
-    GPUResourceCommands resourceCommands = {};
-    GPUCommandBuffer renderCommands = {};
+struct OD_API RenderFrame{
+    ResourceCommands resourceCommands = {};
+    CommandBuffer renderCommands = {};
 
     inline void Clear(){
         resourceCommands.Clear();
@@ -684,9 +684,9 @@ struct OD_API GPURenderFrame{
     }
 };
 
-class OD_API GPUDevice{
+class OD_API Device{
 public:
-    virtual ~GPUDevice(){}
+    virtual ~Device(){}
 
     virtual bool SupportMultithread(){ return false; }
 
@@ -694,19 +694,19 @@ public:
     virtual void Shut(){}
     virtual void StartRender(){}
     virtual void UpdateRender(){}
-    virtual GPURenderFrame* GetRenderFrame(){ return nullptr; }
 
-    virtual BufferId AllocBufferId(){ return InvalidID; }
-    virtual PipelineId AllocPipelineId(){ return InvalidID; }
-    virtual BindGroupLayoutId AllocCreateBindGroupLayoutId(){ return InvalidID; }
-    virtual BindGroupId AllocCreateBindGroupId(){ return InvalidID; }
-    virtual Texture2DId AllocTexture2DId(){ return InvalidID; }
+    virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
 
-    virtual BufferId CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory = GPUBufferMemory::GPUOnly){ return InvalidID; }
-    virtual BindGroupLayoutId CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){ return InvalidID; }
-    virtual BindGroupId CreateBindGroup(GPUBindGroupInfo& info){ return InvalidID; }
+    virtual CommandBuffer* GetCommandBuffer(){ return nullptr; }
 
-    virtual GPUResourceStats GetBufferStats(BufferId id){ return {}; }
+    virtual Pipeline CreatePipeline(const char* source, PipelineInfo info){ return InvalidID; }
+    virtual void DestroyPipeline(Pipeline id){}
+    virtual Buffer CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){ return InvalidID; }
+    virtual void DestroyBuffer(Buffer id){}
+    virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
+    virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
+    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
 };
 
+}
 }

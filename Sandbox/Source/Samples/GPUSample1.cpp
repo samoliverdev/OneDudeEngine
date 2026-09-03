@@ -2,7 +2,7 @@
 #include "GPUSample1.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
-#include "OD/GPU/GPU.h"
+#include "OD/Gfx/Gfx.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
 #include <chrono>
@@ -93,55 +93,50 @@ const char* shaderSource = R"GLSL(
     #endif
     )GLSL";
 
-BufferId vertexBuffer;
-BufferId vertexBuffer2;
+Gfx::Buffer vertexBuffer;
+Gfx::Buffer vertexBuffer2;
 
-BufferId positionBuffer;
-BufferId colorBuffer;
-BufferId indexBuffer;
+Gfx::Buffer positionBuffer;
+Gfx::Buffer colorBuffer;
+Gfx::Buffer indexBuffer;
 
-BufferId uniformBuffer;
-BufferId uniformBuffer2;
+Gfx::Buffer uniformBuffer;
+Gfx::Buffer uniformBuffer2;
 
-PipelineId pipelineSingle;
-PipelineId pipelineSeparate;
+Gfx::Pipeline pipelineSingle;
+Gfx::Pipeline pipelineSeparate;
 
-BindGroupLayoutId bindGroupLayout;
-BindGroupId bindGroup;
+Gfx::BindGroupLayout bindGroupLayout;
+Gfx::BindGroup bindGroup;
 
 //#define TestDeviceCreateBuffer
 
 void GPUSample1::OnInit(){
-    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = *gpuDevice->GetRenderFrame();
+    Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
 
-    GPUBindGroupLayoutInfo bindGroupLayoutInfo = {};
-    bindGroupLayoutInfo.entries[0] = {0, GPUBindingType::UniformBuffer, sizeof(Data), false};
-    bindGroupLayoutInfo.entries[1] = {1, GPUBindingType::UniformBuffer, sizeof(glm::mat4), false};
+    Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(Data), false};
+    bindGroupLayoutInfo.entries[1] = {1, Gfx::BindingType::UniformBuffer, sizeof(glm::mat4), false};
     bindGroupLayoutInfo.entriesCount = 2;
 
     //bindGroupLayout = gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
-    bindGroupLayout = gpuDevice->AllocCreateBindGroupLayoutId();
-    frame.resourceCommands.CreateBindGroupLayout(bindGroupLayout, bindGroupLayoutInfo);
+    bindGroupLayout = gpuDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
 
     Data camData = { glm::identity<glm::mat4>(), glm::identity<glm::mat4>()};
     glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));
 
-    uniformBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(uniformBuffer, &camData, sizeof(camData), GPUBufferUsage::Uniform, GPUBufferMemory::GPUOnly);
+    uniformBuffer = gpuDevice->CreateBuffer(&camData, sizeof(camData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
 
-    uniformBuffer2 = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(uniformBuffer2, &matrix, sizeof(glm::mat4), GPUBufferUsage::Uniform, GPUBufferMemory::GPUOnly);
+    uniformBuffer2 = gpuDevice->CreateBuffer(&matrix, sizeof(glm::mat4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
 
-    GPUBindGroupInfo bindGroupInfo = {};
+    Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout;
     bindGroupInfo.entries[0] = {0, uniformBuffer, 0, sizeof(Data), false};
     bindGroupInfo.entries[1] = {1, uniformBuffer2, 0, sizeof(glm::mat4), false};
     bindGroupInfo.entriesCount = 2;
 
     //bindGroup = gpuDevice->CreateBindGroup(bindGroupInfo);
-    bindGroup = gpuDevice->AllocCreateBindGroupId(); 
-    frame.resourceCommands.CreateBindGroup(bindGroup, bindGroupInfo);
+    bindGroup = gpuDevice->CreateBindGroup(bindGroupInfo);
 
     // -------------------------------------------------
     // Triangle 1: POSITION + COLOR in ONE VBO
@@ -158,59 +153,48 @@ void GPUSample1::OnInit(){
         0.1f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
         0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
     };
-    vertexBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(vertexBuffer, interleaved, sizeof(interleaved), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
-    Assert(gpuDevice->GetBufferStats(vertexBuffer).type == GPUResourceStatsType::None);
-
-    #ifdef TestDeviceCreateBuffer
-    vertexBuffer2 = gpuDevice->CreateBuffer(interleaved2, sizeof(interleaved2), GPUBufferUsage::Vertex, GPUBufferMemory::GPUToCPU);
-    Assert(gpuDevice->GetBufferStats(vertexBuffer2).type == GPUResourceStatsType::Created);
-    #endif
+    vertexBuffer = gpuDevice->CreateBuffer(interleaved, sizeof(interleaved), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    Assert(gpuDevice->GetBufferStats(vertexBuffer).type == Gfx::ResourceStatsType::None);
 
     // -------------------------------------------------
     // Triangle 2: POSITION and COLOR in TWO VBOs
     // -------------------------------------------------
-    positionBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(positionBuffer, positions, sizeof(positions), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
+    positionBuffer = gpuDevice->CreateBuffer(positions, sizeof(positions), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
 
-    colorBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(colorBuffer, colors, sizeof(colors), GPUBufferUsage::Vertex, GPUBufferMemory::GPUOnly);
+    colorBuffer = gpuDevice->CreateBuffer(colors, sizeof(colors), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
 
     // -------------------------------------------------
     // Index buffer
     // -------------------------------------------------
-    indexBuffer = gpuDevice->AllocBufferId();
-    frame.resourceCommands.CreateBuffer(indexBuffer, indices, sizeof(indices), GPUBufferUsage::Index, GPUBufferMemory::GPUOnly);
+    indexBuffer = gpuDevice->CreateBuffer(indices, sizeof(indices), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
 
     // -------------------------------------------------
     // Pipeline 1: interleaved buffer
     // -------------------------------------------------
-    pipelineSingle = gpuDevice->AllocPipelineId();
-    GPUPipelineInfo pipelineInfo = {};
-    pipelineInfo.vertexLayout.attributes[0] = {GPUVertexSemantic::Position, GPUVertexFormat::Float3, 0, 0};
-    pipelineInfo.vertexLayout.attributes[1] = {GPUVertexSemantic::Color0, GPUVertexFormat::Float3, 0, 12};
+    Gfx::PipelineInfo pipelineInfo = {};
+    pipelineInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
+    pipelineInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 0, 12};
     pipelineInfo.vertexLayout.attributeCount = 2;
-    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, GPUVertexInputRate::Vertex};
+    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, Gfx::VertexInputRate::Vertex};
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
     pipelineInfo.bindGroupLayoutCount = 1;
-    frame.resourceCommands.CreatePipeline(pipelineSingle, shaderSource, pipelineInfo);
+    pipelineSingle = gpuDevice->CreatePipeline(shaderSource, pipelineInfo);
 
 
     // -------------------------------------------------
     // Pipeline 2: separate buffers
     // -------------------------------------------------
-    pipelineSeparate = gpuDevice->AllocPipelineId();
-    GPUPipelineInfo separateInfo = {};
-    separateInfo.vertexLayout.attributes[0] = {GPUVertexSemantic::Position, GPUVertexFormat::Float3, 0, 0};
-    separateInfo.vertexLayout.attributes[1] = {GPUVertexSemantic::Color0, GPUVertexFormat::Float3, 1, 0};
+    Gfx::PipelineInfo separateInfo = {};
+    separateInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
+    separateInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 1, 0};
     separateInfo.vertexLayout.attributeCount = 2;
-    separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
-    separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, GPUVertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
     separateInfo.vertexLayout.bufferCount = 2;
     separateInfo.bindGroupLayouts[0] = bindGroupLayout;
     separateInfo.bindGroupLayoutCount = 1;
-    frame.resourceCommands.CreatePipeline(pipelineSeparate, shaderSource, separateInfo);
+    pipelineSeparate = gpuDevice->CreatePipeline(shaderSource, separateInfo);
 }
 
 void GPUSample1::OnUpdate(float deltaTime){
@@ -220,40 +204,32 @@ void GPUSample1::OnUpdate(float deltaTime){
 }   
 
 void GPUSample1::OnRender(float deltaTime){
-    GPUDevice* gpuDevice = dynamic_cast<GPUDevice*>(Graphics::GetGraphicsDevice());
-    auto& frame = *gpuDevice->GetRenderFrame();
+    Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
+    Gfx::CommandBuffer* cmd = gpuDevice->GetCommandBuffer();
 
-    frame.renderCommands.Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    frame.renderCommands.Clean(GPUClearFlags::Color | GPUClearFlags::Depth, {{0, 255, 0, 255}});
-
+    cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 255, 0, 255}});
 
     for(int i = 0; i < 1; i++){
     // ================================================
     // Triangle 1
     // Position + Color in ONE VBO
     // ================================================
-    frame.renderCommands.SetPipeline(pipelineSingle);
-    frame.renderCommands.SetBindGroup(0, bindGroup);
-    frame.renderCommands.SetVertexBuffer(0, vertexBuffer);
-    frame.renderCommands.Draw(3);
-
-    #ifdef TestDeviceCreateBuffer
-    frame.renderCommands.SetPipeline(pipelineSingle);
-    frame.renderCommands.SetBindGroup(0, bindGroup);
-    frame.renderCommands.SetVertexBuffer(0, vertexBuffer2);
-    frame.renderCommands.Draw(3);
-    #endif
+    cmd->SetPipeline(pipelineSingle);
+    cmd->SetBindGroup(0, bindGroup);
+    cmd->SetVertexBuffer(0, vertexBuffer);
+    cmd->Draw(3);
 
     // ================================================
     // Triangle 2
     // Position + Color in TWO VBOs
     // ================================================
-    frame.renderCommands.SetPipeline(pipelineSeparate);
-    frame.renderCommands.SetBindGroup(0, bindGroup);
-    frame.renderCommands.SetVertexBuffer(0, positionBuffer);
-    frame.renderCommands.SetVertexBuffer(1, colorBuffer);
-    frame.renderCommands.SetIndexBuffer(indexBuffer);
-    frame.renderCommands.DrawIndexed(3);
+    cmd->SetPipeline(pipelineSeparate);
+    cmd->SetBindGroup(0, bindGroup);
+    cmd->SetVertexBuffer(0, positionBuffer);
+    cmd->SetVertexBuffer(1, colorBuffer);
+    cmd->SetIndexBuffer(indexBuffer);
+    cmd->DrawIndexed(3);
     }
 }
 

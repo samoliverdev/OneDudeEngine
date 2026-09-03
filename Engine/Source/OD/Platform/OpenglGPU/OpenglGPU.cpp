@@ -12,6 +12,7 @@
 #define OPENGL_CHECK_ERRORS 1
 
 namespace OD{
+namespace Gfx{  
 
 #if OPENGL_CHECK_ERRORS
     #define glCheckError() glCheckError_(__FILE__, __LINE__)
@@ -50,8 +51,8 @@ int glCheckError_(const char *file, int line, std::function<void()> callback = n
 
 struct BufferData{
     uint32_t buffer = 0;
-    GPUBufferUsage usage;
-    GPUBufferMemory memory;
+    BufferUsage usage;
+    BufferMemory memory;
 };
 ResourcePool<BufferData> bufferPool;
 
@@ -66,18 +67,18 @@ struct BindGroupLookUp{
 
 struct PipelineData{
     uint32_t program = 0;
-    GPUPipelineInfo info;
+    PipelineInfo info;
     BindGroupLookUp groupsLookUp[4];
 };
 ResourcePool<PipelineData> pipelinePool;
 
 struct BindGroupLayoutData{
-    GPUBindGroupLayoutInfo info;
+    BindGroupLayoutInfo info;
 };
 ResourcePool<BindGroupLayoutData> bindGroupLayoutPool;
 
 struct BindGroupData{
-    GPUBindGroupInfo info;
+    BindGroupInfo info;
 };
 ResourcePool<BindGroupData> bindGroupPool;
 
@@ -275,11 +276,7 @@ void OpenglGPUDevice::Init(bool inmultithread){
     if(multithread){
         multithreadRendererContext.init = _Init;
         multithreadRendererContext.shut = _Shut;
-        multithreadRendererContext.runRender = [&](GPURenderFrame& f){ 
-            RunRender(f); 
-            f.Clear();
-            Platform::SwapBuffers();
-        };
+        multithreadRendererContext.runRender = [&](RenderFrame& f){ RunRender(f); f.Clear(); Platform::SwapBuffers(); };
         multithreadRendererContext.Init();
     } else {
         _Init();
@@ -314,54 +311,54 @@ void OpenglGPUDevice::UpdateRender(){
     }
 }
 
-GPURenderFrame* OpenglGPUDevice::GetRenderFrame(){ 
-    return multithreadRendererContext.simulationFrame; 
+CommandBuffer* OpenglGPUDevice::GetCommandBuffer(){ 
+    return &multithreadRendererContext.simulationFrame->renderCommands; 
 }
 
 ////////////////////////////////////////////////
 
-GLuint GetVertexLocation(GPUVertexSemantic semantic){
+GLuint GetVertexLocation(VertexSemantic semantic){
     switch(semantic){
-        case GPUVertexSemantic::Position:   return 0;
-        case GPUVertexSemantic::Normal:     return 1;
-        case GPUVertexSemantic::Tangent:    return 2;
+        case VertexSemantic::Position:   return 0;
+        case VertexSemantic::Normal:     return 1;
+        case VertexSemantic::Tangent:    return 2;
 
-        case GPUVertexSemantic::UV0:        return 3;
-        case GPUVertexSemantic::UV1:        return 4;
-        case GPUVertexSemantic::UV2:        return 5;
-        case GPUVertexSemantic::UV3:        return 6;
+        case VertexSemantic::UV0:        return 3;
+        case VertexSemantic::UV1:        return 4;
+        case VertexSemantic::UV2:        return 5;
+        case VertexSemantic::UV3:        return 6;
 
-        case GPUVertexSemantic::Color0:     return 7;
-        case GPUVertexSemantic::Color1:     return 8;
+        case VertexSemantic::Color0:     return 7;
+        case VertexSemantic::Color1:     return 8;
 
-        case GPUVertexSemantic::Weights:    return 9;
-        case GPUVertexSemantic::Influences: return 10;
+        case VertexSemantic::Weights:    return 9;
+        case VertexSemantic::Influences: return 10;
 
-        case GPUVertexSemantic::Custom0:    return 11;
-        case GPUVertexSemantic::Custom1:    return 12;
-        case GPUVertexSemantic::Custom2:    return 13;
-        case GPUVertexSemantic::Custom3:    return 14;
+        case VertexSemantic::Custom0:    return 11;
+        case VertexSemantic::Custom1:    return 12;
+        case VertexSemantic::Custom2:    return 13;
+        case VertexSemantic::Custom3:    return 14;
     }
 
     Assert(false);
     return 0;
 }
 
-void ApplyVertexAttribute(GLuint location, GPUVertexFormat format, size_t offset, size_t stride){
+void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, size_t stride){
     switch(format){
-        case GPUVertexFormat::Float:
+        case VertexFormat::Float:
             glVertexAttribPointer(location, 1, GL_FLOAT, GL_FALSE, stride, (void*)offset);
             break;
 
-        case GPUVertexFormat::Float2:
+        case VertexFormat::Float2:
             glVertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, stride, (void*)offset);
             break;
 
-        case GPUVertexFormat::Float3:
+        case VertexFormat::Float3:
             glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, stride, (void*)offset);
             break;
 
-        case GPUVertexFormat::Float4:
+        case VertexFormat::Float4:
             glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, stride, (void*)offset);
             break;
 
@@ -371,43 +368,43 @@ void ApplyVertexAttribute(GLuint location, GPUVertexFormat format, size_t offset
     }
 }
 
-GLenum GetBufferTarget(GPUBufferUsage usage){
+GLenum GetBufferTarget(BufferUsage usage){
     switch(usage){
-        case GPUBufferUsage::Vertex: return GL_ARRAY_BUFFER;
-        case GPUBufferUsage::Index: return GL_ELEMENT_ARRAY_BUFFER;
-        case GPUBufferUsage::Uniform: return GL_UNIFORM_BUFFER;
-        case GPUBufferUsage::Storage: return GL_SHADER_STORAGE_BUFFER;
+        case BufferUsage::Vertex: return GL_ARRAY_BUFFER;
+        case BufferUsage::Index: return GL_ELEMENT_ARRAY_BUFFER;
+        case BufferUsage::Uniform: return GL_UNIFORM_BUFFER;
+        case BufferUsage::Storage: return GL_SHADER_STORAGE_BUFFER;
     }
     Assert(false);
     return GL_ARRAY_BUFFER;
 }
 
-GLenum GetOpenGLBufferUsage(GPUBufferMemory memory){
+GLenum GetOpenGLBufferUsage(BufferMemory memory){
     switch(memory){
-        case GPUBufferMemory::GPUOnly: return GL_STATIC_DRAW;
-        case GPUBufferMemory::CPUToGPU: return GL_DYNAMIC_DRAW;
-        case GPUBufferMemory::GPUToCPU: return GL_DYNAMIC_READ;
-        case GPUBufferMemory::CPUOnly: return GL_STREAM_DRAW;
+        case BufferMemory::GPUOnly: return GL_STATIC_DRAW;
+        case BufferMemory::CPUToGPU: return GL_DYNAMIC_DRAW;
+        case BufferMemory::GPUToCPU: return GL_DYNAMIC_READ;
+        case BufferMemory::CPUOnly: return GL_STREAM_DRAW;
     }
 
     Assert(false);
     return GL_STATIC_DRAW;
 }
 
-constexpr bool HasFlag(GPUClearFlags value, GPUClearFlags flag){
+constexpr bool HasFlag(ClearFlags value, ClearFlags flag){
     return (static_cast<uint8_t>(value) & static_cast<uint8_t>(flag)) != 0;
 }
 
-void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
-    PipelineId currentPipeline = INVALID_ID;
-    GPUPipelineInfo currentPipelineInfo = {};
+void OpenglGPUDevice::RunRender(RenderFrame& frame){
+    Pipeline currentPipeline = INVALID_ID;
+    PipelineInfo currentPipelineInfo = {};
 
     int curBindIndex = 0;
     int curTextureIndex = 0;
 
-    for(const GPUResourceCommands::Command& cmd: frame.resourceCommands.commands){
+    for(const ResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
-        case GPUResourceCommands::Type::CreateBuffer:{
+        case ResourceCommands::Type::CreateBuffer:{
             //Assert(cmd.createBuffer.id < bufferPool.data.size());
 
             if(bufferPool.Get(cmd.createBuffer.id).buffer != 0){
@@ -427,11 +424,11 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             glCheckError();
 
             bufferPool.gpuToCpuResourceStatesIds.push_back(cmd.createBuffer.id);
-            bufferPool.gpuToCpuResourceStatesData.push_back({GPUResourceStatsType::Created});
+            bufferPool.gpuToCpuResourceStatesData.push_back({ResourceStatsType::Created});
             break;
         }
 
-        case GPUResourceCommands::Type::DestroyBuffer:{
+        case ResourceCommands::Type::DestroyBuffer:{
             Assert(bufferPool.Get(cmd.destroyBuffer.id).buffer != 0);
             glDeleteBuffers(1, &bufferPool.Get(cmd.destroyBuffer.id).buffer);
             glCheckError();
@@ -440,9 +437,9 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUResourceCommands::Type::CreateTexture2D:{
+        case ResourceCommands::Type::CreateTexture2D:{
             Texture2DData& texData = texture2DPool.Get(cmd.createTexture2D.id);
-            const GPUTexture2DInfo& info = cmd.createTexture2D.info;
+            const Texture2DInfo& info = cmd.createTexture2D.info;
 
             glGenTextures(1, &texData.tex);  
             glBindTexture(GL_TEXTURE_2D, texData.tex);  
@@ -457,7 +454,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUResourceCommands::Type::CreatePipeline:{
+        case ResourceCommands::Type::CreatePipeline:{
             pipelinePool.Get(cmd.createPipeline.id).info = cmd.createPipeline.info;
 
             int  success;
@@ -534,7 +531,7 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUResourceCommands::Type::DestroyPipeline:{
+        case ResourceCommands::Type::DestroyPipeline:{
             Assert(pipelinePool.Get(cmd.destroyPipeline.id).program != 0);
             glDeleteProgram(pipelinePool.Get(cmd.destroyPipeline.id).program);
             glCheckError();
@@ -543,37 +540,37 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
         
-        case GPUResourceCommands::Type::CreateBindGroupLayout:{
+        case ResourceCommands::Type::CreateBindGroupLayout:{
             BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
-            std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(GPUBindGroupLayoutInfo));
+            std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(BindGroupLayoutInfo));
             break;
         }
 
-        case GPUResourceCommands::Type::CreateBindGroup:{
-            std::memcpy(&bindGroupPool.Get(cmd.createBindGroup.id).info, cmd.createBindGroup.info, sizeof(GPUBindGroupInfo));
+        case ResourceCommands::Type::CreateBindGroup:{
+            std::memcpy(&bindGroupPool.Get(cmd.createBindGroup.id).info, cmd.createBindGroup.info, sizeof(BindGroupInfo));
             break;
         }
         }
     }
 
-    for(const GPUCommandBuffer::Command& cmd: frame.renderCommands.commands){
+    for(const CommandBuffer::Command& cmd: frame.renderCommands.commands){
         switch(cmd.type){
 
-        case GPUCommandBuffer::Type::Clear:{
+        case CommandBuffer::Type::Clear:{
             const auto& clear = cmd.clear;
             GLbitfield mask = 0;
 
-            if(HasFlag(clear.flags, GPUClearFlags::Color)){
+            if(HasFlag(clear.flags, ClearFlags::Color)){
                 glClearColor(clear.clearValue.color.r, clear.clearValue.color.g, clear.clearValue.color.b, clear.clearValue.color.a);
                 mask |= GL_COLOR_BUFFER_BIT;
             }
 
-            if(HasFlag(clear.flags, GPUClearFlags::Depth)){
+            if(HasFlag(clear.flags, ClearFlags::Depth)){
                 glClearDepth(clear.clearValue.depth);
                 mask |= GL_DEPTH_BUFFER_BIT;
             }
 
-            if(HasFlag(clear.flags, GPUClearFlags::Stencil)){
+            if(HasFlag(clear.flags, ClearFlags::Stencil)){
                 glClearStencil(static_cast<GLint>(clear.clearValue.stencil));
                 mask |= GL_STENCIL_BUFFER_BIT;
             }
@@ -584,13 +581,13 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUCommandBuffer::Type::Viewport:{
+        case CommandBuffer::Type::Viewport:{
             glViewport(cmd.viewport.x, cmd.viewport.y, cmd.viewport.w, cmd.viewport.h);
             glCheckError();
             break;
         }
 
-        case GPUCommandBuffer::Type::SetPipeline:{
+        case CommandBuffer::Type::SetPipeline:{
             PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
             glUseProgram(pipeline.program);
             currentPipeline = cmd.setPipeline.id;
@@ -602,51 +599,51 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUCommandBuffer::Type::SetVertexBuffer:{
-            Assert(bufferPool.Get(cmd.setVertexBuffer.buffer).usage == GPUBufferUsage::Vertex);
+        case CommandBuffer::Type::SetVertexBuffer:{
+            Assert(bufferPool.Get(cmd.setVertexBuffer.buffer).usage == BufferUsage::Vertex);
 
             const uint32_t slot = cmd.setVertexBuffer.slot;
             GLuint vbo = bufferPool.Get(cmd.setVertexBuffer.buffer).buffer;
-            const GPUMeshLayout& layout = currentPipelineInfo.vertexLayout;
-            const GPUVertexBufferLayout& bufferLayout = layout.buffers[slot];
+            const MeshLayout& layout = currentPipelineInfo.vertexLayout;
+            const VertexBufferLayout& bufferLayout = layout.buffers[slot];
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
             for(uint32_t i = 0; i < layout.attributeCount; ++i){
-                const GPUVertexAttribute& attribute = layout.attributes[i];
+                const VertexAttribute& attribute = layout.attributes[i];
                 if(attribute.bufferSlot != slot) continue;
 
                 GLuint location = GetVertexLocation(attribute.semantic);
                 ApplyVertexAttribute(location, attribute.format, attribute.offset, bufferLayout.stride);
                 glEnableVertexAttribArray(location);
-                glVertexAttribDivisor(location, bufferLayout.inputRate == GPUVertexInputRate::Instance ? 1 : 0);
+                glVertexAttribDivisor(location, bufferLayout.inputRate == VertexInputRate::Instance ? 1 : 0);
             }
 
             glCheckError();
             break;
         }
 
-        case GPUCommandBuffer::Type::SetIndexBuffer:{
-            Assert(bufferPool.Get(cmd.setIndexBuffer.buffer).usage == GPUBufferUsage::Index);
+        case CommandBuffer::Type::SetIndexBuffer:{
+            Assert(bufferPool.Get(cmd.setIndexBuffer.buffer).usage == BufferUsage::Index);
 
             GLuint ebo = bufferPool.Get(cmd.setIndexBuffer.buffer).buffer;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             break;
         };
 
-        case GPUCommandBuffer::Type::SetBindGroup:{
+        case CommandBuffer::Type::SetBindGroup:{
             //Assert(group < bindGroups.size());
 
             const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
             const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.info.layout);
 
             for(int i = 0; i < bindGroup.info.entriesCount; i++){
-                if(bindGroupLayout.info.entries[i].type == GPUBindingType::UniformBuffer){
-                    const GPUBindingEntry& binding = bindGroup.info.entries[i];
+                if(bindGroupLayout.info.entries[i].type == BindingType::UniformBuffer){
+                    const BindingEntry& binding = bindGroup.info.entries[i];
                     Assert(binding.buffer != InvalidID);
 
                     const BufferData& buffer = bufferPool.Get(binding.buffer);
-                    Assert(buffer.usage == GPUBufferUsage::Uniform);
+                    Assert(buffer.usage == BufferUsage::Uniform);
 
                     Assert(buffer.buffer != InvalidID);
                     Assert(binding.dynamicOffset == false);
@@ -668,8 +665,8 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
                     curBindIndex += 1;
                 }
 
-                if(bindGroupLayout.info.entries[i].type == GPUBindingType::Texture2D){
-                    const GPUBindingEntry& binding = bindGroup.info.entries[i];
+                if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
+                    const BindingEntry& binding = bindGroup.info.entries[i];
                     Assert(binding.buffer != InvalidID);
 
                     const Texture2DData& tex = texture2DPool.Get(binding.texture);
@@ -688,13 +685,13 @@ void OpenglGPUDevice::RunRender(GPURenderFrame& frame){
             break;
         }
 
-        case GPUCommandBuffer::Type::Draw:{
+        case CommandBuffer::Type::Draw:{
             glDrawArrays(GL_TRIANGLES, 0, cmd.draw.vertexCount);
             glCheckError();
             break;
         }
 
-        case GPUCommandBuffer::Type::DrawIndexed:{
+        case CommandBuffer::Type::DrawIndexed:{
             glDrawElements(GL_TRIANGLES, cmd.drawIndexed.indexCount, GL_UNSIGNED_INT, nullptr);
             glCheckError();
             break;
@@ -712,60 +709,47 @@ void OpenglGPUDevice::SyncSingleThreadData(){
 
 ///////////////////////////////////
 
-MeshId OpenglGPUDevice::AllocBufferId(){
-    return bufferPool.AllocId();
+Pipeline OpenglGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
+    auto id = pipelinePool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreatePipeline(id, source, info);
+    return id;
 }
 
-PipelineId OpenglGPUDevice::AllocPipelineId(){
-    return pipelinePool.AllocId();
+void OpenglGPUDevice::DestroyPipeline(Pipeline id){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
 }
 
-BindGroupLayoutId OpenglGPUDevice::AllocCreateBindGroupLayoutId(){
-    return bindGroupLayoutPool.AllocId(); 
-}
-
-BindGroupId OpenglGPUDevice::AllocCreateBindGroupId(){
-    return bindGroupPool.AllocId();
-}
-
-Texture2DId OpenglGPUDevice::AllocTexture2DId(){
-    return texture2DPool.AllocId();
-}
-
-BufferId OpenglGPUDevice::CreateBuffer(const void* data, size_t size, GPUBufferUsage usage, GPUBufferMemory memory){
+Buffer OpenglGPUDevice::CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){
     auto id = bufferPool.AllocId();
-    BufferData bufferData = {};
-
-    GLuint buffer = 0;
-    glGenBuffers(1, &buffer);
-    GLenum target = GetBufferTarget(usage);
-
-    glBindBuffer(target, buffer);
-    glBufferData(target, size, data, GetOpenGLBufferUsage(memory));
-    bufferData.buffer = buffer;
-    bufferData.usage = usage;
-    bufferData.memory = memory;
-    glCheckError();
-
-    bufferPool.CpuPushResource(id, bufferData);
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, data, size, usage, memory);
     return id;
 }
 
-BindGroupLayoutId OpenglGPUDevice::CreateBindGroupLayout(GPUBindGroupLayoutInfo& info){ 
-    return InvalidID; 
+void OpenglGPUDevice::DestroyBuffer(Buffer id){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBuffer(id);
 }
 
-BindGroupId OpenglGPUDevice::CreateBindGroup(GPUBindGroupInfo& info){
+BindGroupLayout OpenglGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
+    auto id = bindGroupLayoutPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroupLayout(id, info);
+    return id;
+}
+
+BindGroup OpenglGPUDevice::CreateBindGroup(BindGroupInfo& info){
     auto id = bindGroupPool.AllocId();
-    BindGroupData data = {};
-    data.info = info;
-
-    bindGroupPool.CpuPushResource(id, data);
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroup(id, info);
     return id;
 }
 
-GPUResourceStats OpenglGPUDevice::GetBufferStats(BufferId id){ 
+Texture2D OpenglGPUDevice::CreateTexture2D(Texture2DInfo& info, void* data, size_t size){
+    auto id = texture2DPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2D(id, info, data, size);
+    return id;
+}
+
+ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){ 
     return bufferPool.GetStatus(id);// .resourceStatus[id]; 
 }
 
+}
 }
