@@ -2262,6 +2262,10 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
     data.SetFlag(RenderData::Flag::FromModel, true);
 
     Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    if(c.useCustomData){
+        perInstanceData = c.customData;
+        perInstanceData.w = float(info.layer);
+    }
     SetPerInstanceData(data.targetMatrix, perInstanceData);
 
     data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 

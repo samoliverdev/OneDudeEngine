@@ -360,6 +360,7 @@ public:
     //inline RenderStagePasses& GetRenderStagePasses(){ return renderStagePasses; }
 
     void SaveScreenshot(const std::string& filename);
+    void SaveScreenshot(Ref<Framebuffer>& framebuffer, const std::string& filename);
 
     int ExecutionSortPriority(SystemType type) override; 
     

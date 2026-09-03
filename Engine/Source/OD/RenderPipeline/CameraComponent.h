@@ -9,6 +9,8 @@ namespace sol{ class state; }
 
 namespace OD{
 
+class Framebuffer;
+
 struct OD_API CameraComponent{
     enum class Type{
         Perspective, Orthographic 
@@ -29,6 +31,8 @@ struct OD_API CameraComponent{
 
     PassRenderSettings passRenderSettings = {true, true, true, true};
     PassCollectSettings collectSettings = {};
+
+    Ref<Framebuffer> customRenderOut = nullptr;
 
     //TODO: Implement Later
     /*

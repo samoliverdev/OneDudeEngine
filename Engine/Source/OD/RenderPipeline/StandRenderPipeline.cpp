@@ -1746,6 +1746,33 @@ void StandRenderPipeline::SaveScreenshot(const std::string& filename){
     Graphics::EndFramebuffer();
 }
 
+void StandRenderPipeline::SaveScreenshot(Ref<Framebuffer>& framebuffer, const std::string& filename){
+    Graphics::BeginFramebuffer(*framebuffer, false);
+
+    int width = framebuffer->Width();
+    int height = framebuffer->Height();
+    int channels = 4;
+
+    // Allocate buffer (RGBA8)
+    std::vector<unsigned char> pixels(width * height * channels);
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Flip vertically (OpenGL is upside down)
+    for(int y = 0; y < height / 2; y++){
+        int opposite = height - y - 1;
+        for(int x = 0; x < width * channels; x++){
+            std::swap(pixels[y * width * channels + x], pixels[opposite * width * channels + x]);
+        }
+    }
+
+    // Save PNG
+    stbi_write_png(filename.c_str(), width, height, channels, pixels.data(), width * channels);
+
+    Graphics::EndFramebuffer();
+}
+
 void StandRenderPipeline::Update(Scene& scene){
     if(scene.Running() == false) return;
 
@@ -1886,6 +1913,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
 
     camPasses.clear();
 
+    std::vector<CameraRenderPass> singleCamPasses;
+
     //-----------EnvironmentProbeComponent-----------
     auto envProbeView = scene.GetRegistry().view<EnvironmentProbeComponent, TransformComponent>();
     for(auto entity : envProbeView){
@@ -1979,20 +2008,33 @@ void StandRenderPipeline::RenderNew(Scene& scene){
 
             //Assert(Mathf::HasNaN(trans.GlobalModelMatrix()) == false);
 
-            if(renderContext->overrideFramebuffer != nullptr){
-                width = renderContext->overrideFramebuffer->Width();
-                height = renderContext->overrideFramebuffer->Height();
+            if(cam.customRenderOut != nullptr && cam.customRenderOut->IsValid()){
+                cam.UpdateCameraData(trans, cam.customRenderOut->Width(), cam.customRenderOut->Height());
+
+                CameraRenderPass pass = {};
+                pass.target = cam.customRenderOut;
+                pass.camera = cam.GetCamera();
+                pass.renderingPath = cam.renderingPath;
+                pass.settings = cam.passRenderSettings;
+                pass.collectSettings = cam.collectSettings;
+                pass.cullingMask = AllLayersMask;
+                singleCamPasses.push_back(pass);
+            } else {
+                if(renderContext->overrideFramebuffer != nullptr){
+                    width = renderContext->overrideFramebuffer->Width();
+                    height = renderContext->overrideFramebuffer->Height();
+                }
+
+                if(width > 0 && height > 0) cam.UpdateCameraData(trans, width, height);
+
+                CameraRenderPass pass = {};
+                pass.camera = cam.GetCamera();
+                pass.renderingPath = cam.renderingPath;
+                pass.settings = cam.passRenderSettings;
+                pass.collectSettings = cam.collectSettings;
+                pass.cullingMask = AllLayersMask;
+                camPasses.push_back(pass);
             }
-
-            if(width > 0 && height > 0) cam.UpdateCameraData(trans, width, height);
-
-            CameraRenderPass pass = {};
-            pass.camera = cam.GetCamera();
-            pass.renderingPath = cam.renderingPath;
-            pass.settings = cam.passRenderSettings;
-            pass.collectSettings = cam.collectSettings;
-            pass.cullingMask = AllLayersMask;
-            camPasses.push_back(pass);
         }
     }
 
@@ -2001,6 +2043,10 @@ void StandRenderPipeline::RenderNew(Scene& scene){
     });
 
     for(auto& pass: camPasses){
+        cameraRenderer.RenderPassNew(pass, renderContext.get(), shadow, *environmentSettings);
+    }
+
+    for(auto& pass: singleCamPasses){
         cameraRenderer.RenderPassNew(pass, renderContext.get(), shadow, *environmentSettings);
     }
 

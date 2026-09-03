@@ -29,7 +29,8 @@ struct OD_API alignas(16) RenderData{
     };
 
     Matrix4 targetMatrix;
-    PerDrawData perDrawData;
+    //TODO: Depreaced, remove later 
+    PerDrawData perDrawData; 
     AABB aabb;
     AlignedVector<Matrix4>* posePalette = nullptr;
     UniformBuffer* skinnedBuffer = nullptr;
