@@ -33,6 +33,7 @@ public:
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
+    virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
 
     ResourceStats GetBufferStats(Buffer id) override; 
 

@@ -29,7 +29,7 @@ struct ResourceStats{
 
 /////////////////////////////////////
 
-constexpr uint32_t MAX_COLOR_ATTACHMENTS = 8;
+constexpr uint32_t MAX_COLOR_ATTACHMENTS = 7;
 
 enum class OD_API_IMPORT FramebufferTextureFormat: uint8_t{
     None, RGB, RGBA8, RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER
@@ -63,6 +63,12 @@ struct OD_API FrameBufferLayout{
     FramebufferDepthAttachment depthAttachment;
     uint8_t samples = 1;
     bool swapChainTarget = false;
+};
+
+struct OD_API FrameBufferCreateInfo{
+    FrameBufferLayout layout;
+    uint32_t width = 1;
+    uint32_t height = 1;
 };
 
 //////////////////////////////////////
@@ -180,6 +186,13 @@ enum class BindingType{
     UniformBuffer,
     StorageBuffer,
     Texture2D, //Texture + sampler
+    Texture2DArray, 
+    TextureCube,
+    TextureCubeArray,
+
+    // Texture3D,
+    // StorageTexture,
+
     //Texture, // Maybe will dont have
     //Sampler, // Maybe will dont have
     //StorageTexture, //Will be Add later
@@ -214,7 +227,11 @@ struct BindingEntry{
     size_t size;
     bool dynamicOffset;
 
-    Texture2D texture;
+    Texture2D texture = InvalidID;
+
+    Framebuffer framebuffer = InvalidID;
+    int framebufferAttacement = 0;
+    uint32_t framebufferLayer = 0;
 };
 
 struct BindGroupInfo{
@@ -284,6 +301,8 @@ struct OD_API PipelineInfo{
 
     uint32_t bindGroupLayoutCount = 0;
     BindGroupLayout bindGroupLayouts[MAX_BINDGROUP_COUT];
+
+    FrameBufferLayout framebufferLayout = {};
 };
 
 ///////////////////////////////////////
@@ -421,6 +440,7 @@ struct OD_API ResourceCommands{
         CreateBindGroup,
 
         CreateTexture2D,
+        CreateFramebuffer,
     };
 
     struct Command{
@@ -468,6 +488,11 @@ struct OD_API ResourceCommands{
                 size_t size;
                 Texture2DInfo info;
             } createTexture2D;
+            
+            struct {
+                Framebuffer framebuffer;
+                FrameBufferCreateInfo info;
+            } createFramebuffer;
         };
     };
 
@@ -548,6 +573,14 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
+    void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
+        Command cmd{};
+        cmd.type = Type::CreateFramebuffer;
+        cmd.createFramebuffer.framebuffer = framebuffer;
+        cmd.createFramebuffer.info = info;
+        commands.push_back(cmd);
+    }
+
     std::vector<Command> commands;
     UploadBuffer uploadBuffer = {};
 };
@@ -562,6 +595,10 @@ struct OD_API CommandBuffer{
         SetBindGroup,
         Draw,
         DrawIndexed,
+
+        BeginWindowFramebuffer,
+        BeginFramebuffer,
+        EndFramebuffer,
     };
 
     struct Command{
@@ -602,6 +639,10 @@ struct OD_API CommandBuffer{
             struct{
                 uint32_t indexCount;
             } drawIndexed;
+
+            struct {
+                Framebuffer framebuffer;
+            } beginFramebuffer;
         };
     };
 
@@ -671,6 +712,25 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
+    void BeginWindowFramebuffer(){
+        Command cmd{};
+        cmd.type = Type::BeginWindowFramebuffer;
+        commands.push_back(cmd);
+    }
+
+    void BeginFramebuffer(Framebuffer framebuffer){
+        Command cmd{};
+        cmd.type = Type::BeginFramebuffer;
+        cmd.beginFramebuffer.framebuffer = framebuffer;
+        commands.push_back(cmd);
+    }
+
+    void EndFramebuffer(){
+        Command cmd{};
+        cmd.type = Type::EndFramebuffer;
+        commands.push_back(cmd);
+    }
+
     std::vector<Command> commands;
 };
 
@@ -698,6 +758,7 @@ public:
     virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
 
     virtual CommandBuffer* GetCommandBuffer(){ return nullptr; }
+    virtual FrameBufferLayout GetWindowFrameBufferLayout(){ return {}; }
 
     virtual Pipeline CreatePipeline(const char* source, PipelineInfo info){ return InvalidID; }
     virtual void DestroyPipeline(Pipeline id){}
@@ -706,6 +767,7 @@ public:
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
     virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
+    virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
 };
 
 }

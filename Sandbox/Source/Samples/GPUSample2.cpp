@@ -86,12 +86,25 @@ Gfx::Buffer vertexBuffer_2;
 Gfx::Buffer indexBuffer_2;
 
 Gfx::Pipeline pipeline_2;
+Gfx::Pipeline pipeline1_2;
 
 Gfx::BindGroupLayout bindGroupLayout_2;
 Gfx::BindGroup bindGroup_2;
+Gfx::BindGroup bindGroup1_2;
+
+Gfx::Framebuffer framebuffer_2;
 
 void GPUSample2::OnInit(){
     Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
+
+    Gfx::FrameBufferCreateInfo framebufferInfo = {};
+    framebufferInfo.width = 800;
+    framebufferInfo.height = 600;
+    framebufferInfo.layout.type = Gfx::FramebufferAttachmentType::TEXTURE_2D;
+    framebufferInfo.layout.colorAttachments[0].format = Gfx::FramebufferTextureFormat::RGBA8;
+    framebufferInfo.layout.colorAttachmentsCount = 1;
+    framebufferInfo.layout.depthAttachment.format = Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16;
+    framebuffer_2 = gpuDevice->CreateFramebuffer(framebufferInfo);
 
     Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
     bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::Texture2D};
@@ -120,7 +133,11 @@ void GPUSample2::OnInit(){
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout_2;
     pipelineInfo.bindGroupLayoutCount = 1;
+    pipelineInfo.framebufferLayout = gpuDevice->GetWindowFrameBufferLayout();
     pipeline_2 = gpuDevice->CreatePipeline(shaderSource_2, pipelineInfo);
+
+    pipelineInfo.framebufferLayout = framebufferInfo.layout;
+    pipeline1_2 = gpuDevice->CreatePipeline(shaderSource_2, pipelineInfo);
 
     stbi_set_flip_vertically_on_load(true);  
 
@@ -158,6 +175,10 @@ void GPUSample2::OnInit(){
     bindGroupInfo.entries[1].texture = texture2;
     bindGroupInfo.entriesCount = 2;
     bindGroup_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
+
+    bindGroupInfo.entries[0].framebuffer = framebuffer_2;
+    bindGroupInfo.entries[0].framebufferAttacement = 0;
+    bindGroup1_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
 }
 
 void GPUSample2::OnUpdate(float deltaTime){}
@@ -166,17 +187,27 @@ void GPUSample2::OnRender(float deltaTime){
     Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
     Gfx::CommandBuffer* cmd = gpuDevice->GetCommandBuffer();
 
-    cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 0, 0, 255}});
+    cmd->BeginFramebuffer(framebuffer_2);
+        cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 255, 0, 255}});
 
-    // -------------------------------------------------
-    // Draw quad
-    // -------------------------------------------------
-    cmd->SetPipeline(pipeline_2);
-    cmd->SetVertexBuffer(0, vertexBuffer_2);
-    cmd->SetIndexBuffer(indexBuffer_2);
-    cmd->SetBindGroup(0, bindGroup_2);
-    cmd->DrawIndexed(6);
+        cmd->SetPipeline(pipeline1_2);
+        cmd->SetVertexBuffer(0, vertexBuffer_2);
+        cmd->SetIndexBuffer(indexBuffer_2);
+        cmd->SetBindGroup(0, bindGroup_2);
+        cmd->DrawIndexed(6);
+    cmd->EndFramebuffer();
+
+    cmd->BeginWindowFramebuffer();
+        cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 0, 0, 255}});
+
+        cmd->SetPipeline(pipeline_2);
+        cmd->SetVertexBuffer(0, vertexBuffer_2);
+        cmd->SetIndexBuffer(indexBuffer_2);
+        cmd->SetBindGroup(0, bindGroup1_2);
+        cmd->DrawIndexed(6);
+    cmd->EndFramebuffer();
 }
 
 void GPUSample2::OnExit(){}

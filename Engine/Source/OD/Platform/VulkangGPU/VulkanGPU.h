@@ -27,6 +27,7 @@ public:
     virtual void UpdateRender() override;
 
     virtual CommandBuffer* GetCommandBuffer() override;
+    virtual FrameBufferLayout GetWindowFrameBufferLayout() override;
 
     virtual Pipeline CreatePipeline(const char* source, PipelineInfo info) override;
     virtual void DestroyPipeline(Pipeline id) override;
@@ -35,6 +36,7 @@ public:
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
+    virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
 
 private:
     struct BufferData{
@@ -68,10 +70,43 @@ private:
     ResourcePool<BindGroupLayoutData> bindGroupLayoutPool;
 
     struct BindGroupData{
-        VkDescriptorSet descriptorSet  = VK_NULL_HANDLE;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         BindGroupInfo info;
     };
     ResourcePool<BindGroupData> bindGroupPool;
+
+    struct VulkanFramebufferAttachment{
+        VkImage image = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VkSampler sampler = VK_NULL_HANDLE;
+        bool initialized = false;
+    };
+
+    struct FramebufferData{
+        uint64_t hash;
+        uint32_t id;
+        
+        VkFramebuffer framebuffer = VK_NULL_HANDLE;
+        VkRenderPass renderPass = VK_NULL_HANDLE;
+
+        std::vector<VulkanFramebufferAttachment> colorAttachments;
+        VulkanFramebufferAttachment depthAttachment;
+
+        uint32_t width = 0;
+        uint32_t height = 0;
+
+        FrameBufferLayout layout;
+    };
+    ResourcePool<FramebufferData> framebufferPool;
+
+    struct RenderPasses{
+        uint64_t hash;
+        uint32_t id;
+        VkRenderPass renderPass;
+    };
+    std::vector<RenderPasses> renderPasses;
 
     MultithreadRendererContext multithreadRendererContext;
 
@@ -80,7 +115,13 @@ private:
     void _Init();
     void _Shut();
 
+    void InitDefaultRenderpass();
+    void InitFramebuffers();
+
+    VkRenderPass GetOrCreate(const FrameBufferLayout& layout);
+
     void CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info);
+    void CreateFramebuffer(Framebuffer id, const FrameBufferCreateInfo& createInfo);
     void Cleanup();
 
     void RunRender(RenderFrame& frame);

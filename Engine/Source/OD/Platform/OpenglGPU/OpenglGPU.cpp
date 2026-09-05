@@ -82,6 +82,18 @@ struct BindGroupData{
 };
 ResourcePool<BindGroupData> bindGroupPool;
 
+struct FramebufferData{
+    unsigned int framebuffer = 0;
+    unsigned int depthAttachment = 0;
+    std::vector<unsigned int> colorAttachments;
+    uint32_t width;
+    uint32_t height;
+    FrameBufferLayout layout;
+    FrameBufferCreateInfo info;
+};
+ResourcePool<FramebufferData> framebufferPool;
+
+
 unsigned int globalVAO = 0;
 
 GraphicsDeviceInfo info;
@@ -223,6 +235,63 @@ std::string ProcessShaderSource(std::string shaderSource, std::vector<ShaderBind
     return output;
 }
 
+#pragma region Framebuffer
+GLenum ToGLInternalFormat(FramebufferTextureFormat format){
+    switch(format){
+        case FramebufferTextureFormat::RGB: return GL_RGB8;
+        case FramebufferTextureFormat::RGBA8: return GL_RGBA8;
+        case FramebufferTextureFormat::RGB11B10F: return GL_R11F_G11F_B10F;
+        case FramebufferTextureFormat::RGB16F: return GL_RGB16F;
+        case FramebufferTextureFormat::RGBA16F: return GL_RGBA16F;
+        case FramebufferTextureFormat::RGB32F: return GL_RGB32F;
+        case FramebufferTextureFormat::RGBA32F: return GL_RGBA32F;
+        case FramebufferTextureFormat::RED_INTEGER: return GL_R32I;
+        default: return GL_NONE;
+    }
+}
+
+GLenum ToGLFormat(FramebufferTextureFormat format){
+    switch(format){
+        case FramebufferTextureFormat::RGB:
+        case FramebufferTextureFormat::RGB11B10F:
+        case FramebufferTextureFormat::RGB16F:
+        case FramebufferTextureFormat::RGB32F: return GL_RGB;
+        case FramebufferTextureFormat::RGBA8:
+        case FramebufferTextureFormat::RGBA16F:
+        case FramebufferTextureFormat::RGBA32F: return GL_RGBA;
+        case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
+        default:
+            return GL_NONE;
+    }
+}
+
+GLenum ToGLType(FramebufferTextureFormat format){
+    switch(format){
+        case FramebufferTextureFormat::RED_INTEGER: return GL_INT;
+        case FramebufferTextureFormat::RGB11B10F: return GL_UNSIGNED_INT_10F_11F_11F_REV;
+        case FramebufferTextureFormat::RGB16F:
+        case FramebufferTextureFormat::RGBA16F:
+        case FramebufferTextureFormat::RGB32F:
+        case FramebufferTextureFormat::RGBA32F: return GL_FLOAT;
+        default: return GL_UNSIGNED_BYTE;
+    }
+}
+
+GLenum ToGLDepthInternalFormat(FramebufferDepthTextureFormat format){
+    switch(format){
+        case FramebufferDepthTextureFormat::DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
+        case FramebufferDepthTextureFormat::DEPTH32F_STENCIL8: return GL_DEPTH32F_STENCIL8;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT16: return GL_DEPTH_COMPONENT16;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT24: return GL_DEPTH_COMPONENT24;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32: return GL_DEPTH_COMPONENT32;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32F: return GL_DEPTH_COMPONENT32F;
+        default: return GL_NONE;
+    }
+}
+
+#pragma endregion
+
+#pragma region Device
 void _Init(){
     LogInfo("OpenglGPUDevice::Initialize");
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
@@ -550,6 +619,128 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             std::memcpy(&bindGroupPool.Get(cmd.createBindGroup.id).info, cmd.createBindGroup.info, sizeof(BindGroupInfo));
             break;
         }
+
+        case ResourceCommands::Type::CreateFramebuffer:{
+            const auto& info = cmd.createFramebuffer.info;
+
+            FramebufferData& data = framebufferPool.Get(cmd.createFramebuffer.framebuffer);
+
+            data.layout = info.layout;
+            data.width = info.width;
+            data.height = info.height;
+
+            // ------------------------------------------------------------
+            // Create framebuffer
+            // ------------------------------------------------------------
+            glGenFramebuffers(1, &data.framebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
+
+            // ------------------------------------------------------------
+            // Color attachments
+            // ------------------------------------------------------------
+            data.colorAttachments.resize(info.layout.colorAttachmentsCount);
+
+            std::vector<GLenum> drawBuffers;
+            drawBuffers.reserve(info.layout.colorAttachmentsCount);
+
+            for(uint32_t i = 0; i < info.layout.colorAttachmentsCount; ++i){
+                const FramebufferAttachment& attachment = info.layout.colorAttachments[i];
+
+                //OpenGLFramebufferAttachment& texture = data.colorAttachments[i];
+                //texture.format = attachment.format;
+
+                GLenum internalFormat = ToGLInternalFormat(attachment.format);
+                GLenum format = ToGLFormat(attachment.format);
+                GLenum type = ToGLType(attachment.format);
+
+                Assert(internalFormat != GL_NONE);
+
+                // --------------------------------------------------------
+                // Create texture
+                // --------------------------------------------------------
+                glGenTextures(1, &data.colorAttachments[i]);
+                glBindTexture(GL_TEXTURE_2D, data.colorAttachments[i]);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                // --------------------------------------------------------
+                // Allocate texture
+                // --------------------------------------------------------
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
+
+                // --------------------------------------------------------
+                // Generate mipmaps if requested
+                // --------------------------------------------------------
+                if(attachment.mipLevels > 1){
+                    glGenerateMipmap(GL_TEXTURE_2D);
+                }
+
+                // --------------------------------------------------------
+                // Attach texture to framebuffer
+                // --------------------------------------------------------
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, data.colorAttachments[i], 0);
+                drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+            }
+
+            // ------------------------------------------------------------
+            // Depth attachment
+            // ------------------------------------------------------------
+            if(info.layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
+                const FramebufferDepthAttachment& attachment = info.layout.depthAttachment;
+                //OpenGLFramebufferDepthAttachment& texture = data.depthAttachment;
+                //texture.format = attachment.format;
+
+                GLenum internalFormat = ToGLDepthInternalFormat(attachment.format);
+                Assert(internalFormat != GL_NONE);
+
+                // --------------------------------------------------------
+                // Create depth texture
+                // --------------------------------------------------------
+                glGenTextures(1, &data.depthAttachment);
+                glBindTexture(GL_TEXTURE_2D, data.depthAttachment);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                // --------------------------------------------------------
+                // Allocate depth texture
+                // --------------------------------------------------------
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+                // --------------------------------------------------------
+                // Attach depth
+                // --------------------------------------------------------
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, data.depthAttachment, 0);
+                
+                if(attachment.mipLevels > 1){
+                    glGenerateMipmap(GL_TEXTURE_2D);
+                }
+            }
+
+            // ------------------------------------------------------------
+            // Configure draw buffers
+            // ------------------------------------------------------------
+            if(drawBuffers.empty()){
+                glDrawBuffer(GL_NONE);
+                glReadBuffer(GL_NONE);
+            } else {
+                glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
+            }
+
+            // ------------------------------------------------------------
+            // Check framebuffer
+            // ------------------------------------------------------------
+            GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            Assert(status == GL_FRAMEBUFFER_COMPLETE && "OpenGL framebuffer is incomplete");
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            break;
+        };
+
         }
     }
 
@@ -669,17 +860,33 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     const BindingEntry& binding = bindGroup.info.entries[i];
                     Assert(binding.buffer != InvalidID);
 
-                    const Texture2DData& tex = texture2DPool.Get(binding.texture);
+                    if(binding.texture != InvalidID){
+                        const Texture2DData& tex = texture2DPool.Get(binding.texture);
 
-                    const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                    GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
 
-                    glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                    glBindTexture(GL_TEXTURE_2D, tex.tex);
-                    glUniform1i(uniformLoc, curTextureIndex); // set it manually
-                    glCheckError();
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_2D, tex.tex);
+                        glUniform1i(uniformLoc, curTextureIndex); // set it manually
+                        glCheckError();
 
-                    curTextureIndex += 1;
+                        curTextureIndex += 1;
+                    }
+                    
+                    if(binding.framebuffer != InvalidID){
+                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_2D, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
+                        glUniform1i(uniformLoc, curTextureIndex); // set it manually
+                        glCheckError();
+
+                        curTextureIndex += 1;
+                    }
                 }
             }
             break;
@@ -693,6 +900,27 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
         case CommandBuffer::Type::DrawIndexed:{
             glDrawElements(GL_TRIANGLES, cmd.drawIndexed.indexCount, GL_UNSIGNED_INT, nullptr);
+            glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::BeginWindowFramebuffer:{
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::BeginFramebuffer:{
+            FramebufferData& data = framebufferPool.Get(cmd.beginFramebuffer.framebuffer);
+
+            Assert(data.framebuffer > 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
+            glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::EndFramebuffer:{
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glCheckError();
             break;
         }
@@ -747,9 +975,16 @@ Texture2D OpenglGPUDevice::CreateTexture2D(Texture2DInfo& info, void* data, size
     return id;
 }
 
+Framebuffer OpenglGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){ 
+    auto id = framebufferPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
+    return id;
+}
+
 ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){ 
     return bufferPool.GetStatus(id);// .resourceStatus[id]; 
 }
 
+#pragma endregion
 }
 }
