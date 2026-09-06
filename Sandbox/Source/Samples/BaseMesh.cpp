@@ -106,9 +106,9 @@ void BaseMeshSample::OnRender(float deltaTime){
 
     Graphics::Begin();
 
-    Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     //OD::Graphics::BeginRenderToScreen({0.5f, 0.1f, 0.1f, 1.0f});
-    Graphics::BeginRenderToScreen({0.0f, 0.0f, 0.0f, 0.0f});
+    Graphics::BeginRenderToScreen({0.0f, 0.0f, 1.0f, 0.0f});
+    Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
 
     Camera cam = {Matrix4Identity, Matrix4Identity};
     Graphics::SetCamera(cam);

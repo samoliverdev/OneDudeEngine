@@ -6,6 +6,8 @@
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 
+#include "OD/Gfx/Gfx.h"
+
 namespace OD {
 
 enum class OD_API_IMPORT DepthTest{
@@ -122,6 +124,8 @@ struct OD_API SubShader{
     //std::vector<std::string> _uniforms;
     SubShaderDataGL;
     SubShaderDataWG;
+
+    Gfx::Pipeline _pipeline;
 
     std::string name = "NoName";
 

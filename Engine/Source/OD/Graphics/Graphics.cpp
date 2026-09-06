@@ -11,6 +11,7 @@
 #include "Texture.h"
 #include "OD/Defines.h"
 #include "OD/Core/Lua.h"
+#include "OD/Gfx/Gfx.h"
 
 //#define ENGINE_RESOURCE_PATH "res/Engine/"
 
@@ -80,6 +81,7 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
 
 int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
+Gfx::Device* gfxDevice = nullptr;
 
 GraphicsDevice* Graphics::GetGraphicsDevice(){
     return graphicsDevice;
@@ -89,6 +91,7 @@ void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
     //graphicsDevice = new Gfx::OpenglGPUDevice();
     graphicsDevice = new Gfx::VulkanGPUDevice();
+    gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
     return;
     #endif
     
@@ -244,15 +247,27 @@ Camera Graphics::GetCamera(){
 }
 
 void Graphics::BeginRenderToScreen(Vector4 clearColor){
+    #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->BeginWindowFramebuffer();
+    gfxDevice->GetCommandBuffer()->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{clearColor.x, clearColor.y, clearColor.z, clearColor.a}});
+    #else
     graphicsDevice->BeginRenderToScreen(clearColor); 
+    #endif
 }
 
 void Graphics::EndRenderToScreen(){
+    #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->EndFramebuffer();
+    #else
     graphicsDevice->EndRenderToScreen(); 
+    #endif
 }
 
 void Graphics::Clean(float r, float g, float b, float a){ 
+    #ifdef TestNewGPU_API
+    #else
     graphicsDevice->Clean(r, g, b, a); 
+    #endif
 }
 
 void Graphics::CleanColorOnly(float r, float g, float b, float a){

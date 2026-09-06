@@ -3,6 +3,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Gfx/Gfx.h"
+#include "OD/Gfx/GfxReflection.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
 
@@ -179,6 +180,9 @@ void GPUSample2::OnInit(){
     bindGroupInfo.entries[0].framebuffer = framebuffer_2;
     bindGroupInfo.entries[0].framebufferAttacement = 0;
     bindGroup1_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
+
+    Gfx::ShaderReflection reflection;
+    Gfx::Reflect(shaderSource_2, reflection);
 }
 
 void GPUSample2::OnUpdate(float deltaTime){}
@@ -189,7 +193,7 @@ void GPUSample2::OnRender(float deltaTime){
 
     cmd->BeginFramebuffer(framebuffer_2);
         cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 255, 0, 255}});
+        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 1, 0, 1}});
 
         cmd->SetPipeline(pipeline1_2);
         cmd->SetVertexBuffer(0, vertexBuffer_2);
@@ -200,7 +204,7 @@ void GPUSample2::OnRender(float deltaTime){
 
     cmd->BeginWindowFramebuffer();
         cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 0, 0, 255}});
+        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{1, 0, 0, 1}});
 
         cmd->SetPipeline(pipeline_2);
         cmd->SetVertexBuffer(0, vertexBuffer_2);

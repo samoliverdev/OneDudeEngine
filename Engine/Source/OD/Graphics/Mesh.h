@@ -3,6 +3,7 @@
 #include "OD/Core/Math.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace OD {
 
@@ -130,6 +131,15 @@ private:
     void Bind();
     size_t CalculateRamUsage();
     size_t CalculateVRamUsage();
+
+    Gfx::Buffer vertexVbo = Gfx::InvalidID;
+    Gfx::Buffer uvVbo = Gfx::InvalidID;
+    Gfx::Buffer normalVbo = Gfx::InvalidID;
+    Gfx::Buffer colorVbo = Gfx::InvalidID;
+    Gfx::Buffer tangentVbo = Gfx::InvalidID;
+    Gfx::Buffer jointVbo = Gfx::InvalidID;
+    Gfx::Buffer weightsVbo = Gfx::InvalidID; 
+    Gfx::Buffer ebo = Gfx::InvalidID;
 };
 
 }

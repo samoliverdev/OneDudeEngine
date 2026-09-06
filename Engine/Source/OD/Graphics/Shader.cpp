@@ -10,6 +10,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 void _Combine_(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
     bool last = (terms.size() == 1);
@@ -146,7 +147,12 @@ bool Shader::LoadFromFile(const std::string& path){
         return true;
     }
 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return false;
+    #else
     return graphicsDevice->ShaderCreate(*this, path);
+    #endif
 }
 
 bool Shader::LoadFromPackage(const std::string& path, Package& package){
@@ -249,7 +255,13 @@ void Shader::Destroy(){
             //if(j.second.drawTypes[2] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[2]);
 
             for(int _i = 0; _i < (int)Shader::DrawType::Count; _i++){
-                if(j.second.drawTypes[_i] != nullptr) graphicsDevice->SubShaderDestroy(*j.second.drawTypes[_i]);
+                if(j.second.drawTypes[_i] != nullptr){
+                    #ifdef TestNewGPU_API
+                    Assert(false);
+                    #else
+                    graphicsDevice->SubShaderDestroy(*j.second.drawTypes[_i]);
+                    #endif
+                }
             }
         }
     }
@@ -487,6 +499,10 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::string drawTypeStr = DrawTypeToString(drawType);
         shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
 
+        #ifdef TestNewGPU_API
+        Assert(false);
+        gfxDevice->DestroyPipeline(shader->_pipeline);
+        #else
         graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,
             shaderSourceData.baseSource, 
@@ -494,6 +510,8 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
             shaderSourceData.passes[pass].pipeline,
             errors
         );
+        #endif
+
         if(shader == nullptr){
             isComplete = false;
         }

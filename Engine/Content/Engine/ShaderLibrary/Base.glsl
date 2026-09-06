@@ -35,6 +35,28 @@
 
 #endif
 
+#if defined(GFX_API)
+    #define In(loc) layout(location = loc) in
+    #define InFlat(loc) layout(location = loc) flat in
+    #define Out(loc) layout(location = loc) out
+    #define OutFlat(loc) layout(location = loc) flat out
+    #define Attribute(loc) layout(location = loc) in
+
+    #define OutPosition gl_Position
+    #define VertexIndex gl_VertexID
+
+    #define BeginUniform(inSet, inBinding, name) layout(set = 0, binding = 0) uniform name{
+    #define EndUniform() };
+    #define Uniform
+
+    #define Texture2D(inset, inbinding, name, nameSampler) layout(set = inset, binding = inbinding) uniform sampler2D name;
+    #define Texture2DArray(inset, inbinding, name, nameSampler) layout(set = inset, binding = inbinding) uniform sampler2DArray name;
+    #define TextureCube(inset, inbinding, name, nameSampler) layout(set = inset, binding = inbinding) uniform samplerCube name;
+
+    #define TextureSize(tex, lod) vec3(1) //textureSize(tex, lod)
+
+#endif
+
 #if defined(WebGPU_API)
     #define In(loc) layout(location = loc) in 
     #define InFlat(loc) layout(location = loc) flat in

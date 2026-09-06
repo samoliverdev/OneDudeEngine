@@ -14,6 +14,7 @@ namespace OD{
 
 /*extern*/ GraphicsStats stats;
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){

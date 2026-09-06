@@ -3,6 +3,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Gfx/Gfx.h"
+#include "OD/Gfx/GfxReflection.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Input.h"
 #include <chrono>
@@ -179,6 +180,7 @@ void GPUSample1::OnInit(){
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
     pipelineInfo.bindGroupLayoutCount = 1;
+    pipelineInfo.framebufferLayout = gpuDevice->GetWindowFrameBufferLayout();
     pipelineSingle = gpuDevice->CreatePipeline(shaderSource, pipelineInfo);
 
 
@@ -194,7 +196,11 @@ void GPUSample1::OnInit(){
     separateInfo.vertexLayout.bufferCount = 2;
     separateInfo.bindGroupLayouts[0] = bindGroupLayout;
     separateInfo.bindGroupLayoutCount = 1;
+    separateInfo.framebufferLayout = gpuDevice->GetWindowFrameBufferLayout();
     pipelineSeparate = gpuDevice->CreatePipeline(shaderSource, separateInfo);
+
+    Gfx::ShaderReflection reflection;
+    Gfx::Reflect(shaderSource, reflection);
 }
 
 void GPUSample1::OnUpdate(float deltaTime){
@@ -207,30 +213,32 @@ void GPUSample1::OnRender(float deltaTime){
     Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
     Gfx::CommandBuffer* cmd = gpuDevice->GetCommandBuffer();
 
-    cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-    cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 255, 0, 255}});
+    cmd->BeginWindowFramebuffer();
+        cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 255, 0, 255}});
 
-    for(int i = 0; i < 1; i++){
-    // ================================================
-    // Triangle 1
-    // Position + Color in ONE VBO
-    // ================================================
-    cmd->SetPipeline(pipelineSingle);
-    cmd->SetBindGroup(0, bindGroup);
-    cmd->SetVertexBuffer(0, vertexBuffer);
-    cmd->Draw(3);
+        for(int i = 0; i < 1; i++){
+        // ================================================
+        // Triangle 1
+        // Position + Color in ONE VBO
+        // ================================================
+        cmd->SetPipeline(pipelineSingle);
+        cmd->SetBindGroup(0, bindGroup);
+        cmd->SetVertexBuffer(0, vertexBuffer);
+        cmd->Draw(3);
 
-    // ================================================
-    // Triangle 2
-    // Position + Color in TWO VBOs
-    // ================================================
-    cmd->SetPipeline(pipelineSeparate);
-    cmd->SetBindGroup(0, bindGroup);
-    cmd->SetVertexBuffer(0, positionBuffer);
-    cmd->SetVertexBuffer(1, colorBuffer);
-    cmd->SetIndexBuffer(indexBuffer);
-    cmd->DrawIndexed(3);
-    }
+        // ================================================
+        // Triangle 2
+        // Position + Color in TWO VBOs
+        // ================================================
+        cmd->SetPipeline(pipelineSeparate);
+        cmd->SetBindGroup(0, bindGroup);
+        cmd->SetVertexBuffer(0, positionBuffer);
+        cmd->SetVertexBuffer(1, colorBuffer);
+        cmd->SetIndexBuffer(indexBuffer);
+        cmd->DrawIndexed(3);
+        }
+    cmd->EndFramebuffer();
 }
 
 void GPUSample1::OnExit(){}

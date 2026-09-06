@@ -1393,6 +1393,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
 
             case ResourceCommands::Type::DestroyBuffer:{
+                if(cmd.destroyBuffer.id == InvalidID){
+                    LogError("Trying destroy a InvalidID!");
+                    break;
+                }
+
                 auto& bufData = bufferPool.Get(cmd.destroyBuffer.id);
                 if(bufData.buffer != VK_NULL_HANDLE){
                     vmaDestroyBuffer(_allocator, bufData.buffer, bufData.allocation);
@@ -1868,7 +1873,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 hasWindowRenderPass = true;
                 
                 VkClearValue clearValue{};
-                clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+                clearValue.color = { { 1.0f, 0.0f, 0.0f, 1.0f } };
 
                 VkRenderPassBeginInfo rpInfo = {};
                 rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1881,7 +1886,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
                 vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                VkViewport viewport{};
+                /*VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.y = 0.0f;
                 viewport.width = static_cast<float>(_windowExtent.width);
@@ -1893,7 +1898,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 VkRect2D scissor{};
                 scissor.offset = { 0, 0 };
                 scissor.extent = _windowExtent;
-                vkCmdSetScissor(cmd, 0, 1, &scissor);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);*/
                 break;
             }
         
@@ -2001,10 +2006,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
         rpInfo.clearValueCount = 1;
         rpInfo.pClearValues = &clearValue;
-
         vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        VkClearAttachment clearAttachment{};
+        /*VkClearAttachment clearAttachment{};
         clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         clearAttachment.colorAttachment = 0;
         clearAttachment.clearValue.color = { {
@@ -2020,7 +2024,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         clearRect.baseArrayLayer = 0;
         clearRect.layerCount = 1;
 
-        vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);
+        vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);*/
 
         vkCmdEndRenderPass(cmd);
     }

@@ -12,6 +12,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 IdPool meshIdPool;
 
@@ -53,6 +54,17 @@ Mesh::Mesh(const Mesh& other){
 Mesh::~Mesh(){
     meshIdPool.Push(id);
     graphicsDevice->MeshDestroy(*this);
+
+    #ifdef TestNewGPU_API
+    if(vertexVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(vertexVbo);
+    if(uvVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(uvVbo);
+    if(normalVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(normalVbo);
+    if(colorVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(colorVbo);
+    if(tangentVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(tangentVbo);
+    if(jointVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(jointVbo);
+    if(weightsVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(weightsVbo);
+    if(ebo != Gfx::InvalidID) gfxDevice->DestroyBuffer(ebo);
+    #endif
 }
 
 void Mesh::AppedFrom(const Mesh& mesh){
@@ -207,9 +219,25 @@ void Mesh::Submit(
     std::vector<Vector4>* weights,
     std::vector<IVector4>* influences
 ){
+    #ifdef TestNewGPU_API
+    if(vertexVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(vertexVbo);
+    if(uvVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(uvVbo);
+    if(normalVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(normalVbo);
+    if(colorVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(colorVbo);
+    if(tangentVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(tangentVbo);
+    if(jointVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(jointVbo);
+    if(weightsVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(weightsVbo);
+    if(ebo != Gfx::InvalidID) gfxDevice->DestroyBuffer(ebo);
+
+    vertexVbo = gfxDevice->CreateBuffer(vertices->data(), vertices->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    uvVbo = gfxDevice->CreateBuffer(uv->data(), uv->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    ebo = gfxDevice->CreateBuffer(indices->data(), indices->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+
+    #else
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
     //Destroy();
     graphicsDevice->MeshCreateOrSubmit(*this, indices, vertices, uv, normals, colors, tangents, weights, influences);
+    #endif
 }
 
 void Mesh::SubmitInstancingModelMatrixs(){

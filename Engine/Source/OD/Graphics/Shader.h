@@ -13,6 +13,7 @@ class OD_API Shader: public Resource{
     friend class Material;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
+    friend class Graphics;
 public:
     Shader(std::string sourcePath);
     Shader(){}
