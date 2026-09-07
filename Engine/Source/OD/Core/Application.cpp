@@ -99,14 +99,15 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     if(Platform::SystemStartup(appConfig) == false) return false;
 
-    Graphics::Initialize();
-
     ////////////////////////////////
     #ifdef TestNewGPU_API
     gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
     gpuDevice->Init(true);
     #endif
     ////////////////////////////////
+
+    Graphics::Initialize();
+
     
     //Input::_Initialize(0, 0);
     #ifdef __EMSCRIPTEN__

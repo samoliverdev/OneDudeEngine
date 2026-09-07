@@ -305,6 +305,14 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
         return false;
     };
 
+    auto ContainsName = [&](const std::string& name){
+        for(const auto& binding : reflection.bindings){
+            if(name.empty()) continue;
+            if(name == binding.name) return true;
+        }
+        return false;
+    };
+
     for(auto* binding : bindings){
         ShaderBindingInfo info;
         info.name = binding->name;// ? binding->name : "";
@@ -332,6 +340,7 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
             //}
         }
 
+        if(ContainsName(info.name)) continue;
         if(ContainsBlockName(info.blockName)) continue;
         reflection.bindings.push_back(std::move(info));
     }
@@ -392,8 +401,8 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
 
 bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     std::string srcStr = shaderSource;
-    std::string vertexSource = "#version 450\n#define Vulkan\n#define VERTEX\n" + srcStr;
-    std::string fragmentSource = "#version 450\n#define Vulkan\n#define FRAGMENT\n" + srcStr;
+    std::string vertexSource = "#version 450\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
 
     std::vector<uint32_t> spirvV = CompileGLSL(vertexSource, EShLangVertex);
     std::vector<uint32_t> spirvF = CompileGLSL(fragmentSource, EShLangFragment);
@@ -412,11 +421,9 @@ void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, Pipeline
     // Vertex attributes
     // ------------------------------------------------------------
     for(const ShaderVertexAttribute& attribute : reflection.vertexAttributes){
-        VertexAttribute& dst = pipelineOut.vertexLayout.attributes[
-            pipelineOut.vertexLayout.attributeCount++
-        ];
+        VertexAttribute& dst = pipelineOut.vertexLayout.attributes[pipelineOut.vertexLayout.attributeCount++];
 
-        dst.semantic = VertexSemantic::Custom0; // map below
+        dst.semantic = SlotToVertexSemanticTo(attribute.location); VertexSemantic::Custom0; // map below
         dst.format = attribute.format;
         dst.bufferSlot = 0;
         dst.offset = 0;
@@ -429,8 +436,7 @@ void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, Pipeline
     for (const ShaderBindingInfo& binding : reflection.bindings){
         // Currently assuming set == bind group index.
         // Make sure your PipelineInfo supports enough groups.
-        if (binding.set >= pipelineOut.bindGroupLayoutCount)
-            pipelineOut.bindGroupLayoutCount = binding.set + 1;
+        //if(binding.set >= pipelineOut.bindGroupLayoutCount) pipelineOut.bindGroupLayoutCount = binding.set + 1;
 
         BindGroupLayoutInfo& layout = layoutsOut[binding.set]; //info.bindGroupLayouts[binding.set];
 

@@ -117,12 +117,12 @@ void BaseMeshSample::OnRender(float deltaTime){
     //Graphics::DrawMesh(mesh, *meshMat, math::translate(Vector3(-0.5f, 0, 0)));
     cmd.Execute();
     
-    cam = {Matrix4Identity,math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
+    /*cam = {Matrix4Identity,math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
     Graphics::SetCamera(cam);
     Transform tt;
     tt.Position(Vector3(25*2, 25*2, 0));
     tt.Scale(Vector3(25*2));
-    Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetModelMatrix(), false, {});
+    Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetModelMatrix(), false, {});*/
     
     Graphics::EndRenderToScreen();
 

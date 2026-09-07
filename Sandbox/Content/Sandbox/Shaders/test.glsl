@@ -12,6 +12,7 @@
     void main(){
         mat4 targetModelMatrix = GetModelMatrix();
         outPos = texCoord;
+
         OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif

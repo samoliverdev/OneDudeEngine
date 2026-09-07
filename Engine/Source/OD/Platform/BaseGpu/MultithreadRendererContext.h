@@ -23,6 +23,7 @@ struct MultithreadRendererContext{
 
     bool renderRequested = false;
     bool renderFinished = false;
+    bool renderThreadInitialized = false;
 
     std::function<void()> init; 
     std::function<void()> shut; 
@@ -37,6 +38,13 @@ struct MultithreadRendererContext{
         running = true;
         Platform::StopCurrentContext();
         renderThread = std::thread([&]{ RenderThreadLoop(); });
+        //Sync/Wait
+
+        // Wait until render thread has initialized the graphics context.
+        {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait(lock, [&] { return renderThreadInitialized || !running; });
+        }
     }
 
     void Shut(){
@@ -71,6 +79,13 @@ struct MultithreadRendererContext{
         Platform::MakeMultiThreadContext();
 
         init();
+        
+        // Tell the main thread that initialization is complete.
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            renderThreadInitialized = true;
+        }
+        condition.notify_one();
 
         while(running){
             

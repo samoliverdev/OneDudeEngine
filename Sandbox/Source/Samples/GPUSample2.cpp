@@ -37,9 +37,9 @@ uint32_t indices_2[] = {
 const char* shaderSource_2 = R"GLSL(
     #ifdef VERTEX
     layout(location = 0) in vec3 aPos;
-    layout(location = 3) in vec2 aUV;
+    layout(location = 1) in vec2 aUV;
 
-    #ifdef Vulkan
+    #ifdef Vulkan_API
     layout(location = 0) out vec2 vUV;
     #else
     out vec2 vUV;
@@ -47,17 +47,18 @@ const char* shaderSource_2 = R"GLSL(
 
     void main(){
         gl_Position = vec4(aPos, 1.0);
+        //gl_Position.y = -gl_Position.y;
 
-        #ifdef Vulkan
+        /*#ifdef Vulkan_API
             vUV = vec2(aUV.x, 1.0 - aUV.y);
-        #else
+        #else*/
             vUV = aUV;
-        #endif
+        //#endif
     }
     #endif
 
     #ifdef FRAGMENT
-    #ifdef Vulkan
+    #ifdef Vulkan_API
     layout(location = 0) in vec2 vUV;
     layout(location = 0) out vec4 FragColor;
     #else
@@ -65,8 +66,13 @@ const char* shaderSource_2 = R"GLSL(
     out vec4 FragColor;
     #endif
 
+    #ifdef Vulkan_API
     layout(set = 0, binding = 0) uniform sampler2D tex1;
     layout(set = 0, binding = 1) uniform sampler2D tex2;
+    #else
+    uniform sampler2D tex1;
+    uniform sampler2D tex2;
+    #endif
 
     void main(){
         FragColor = vec4(vUV, 0.0, 1.0);

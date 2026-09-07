@@ -11,7 +11,11 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+
 extern Gfx::Device* gfxDevice;
+extern Gfx::BindGroupLayout emptyLayout;
+extern Gfx::BindGroupLayout camGroupLayout;
+extern Gfx::BindGroupLayout drawDrawMeshGroupLayout;
 
 void _Combine_(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
     bool last = (terms.size() == 1);
@@ -501,8 +505,8 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
 
         #ifdef TestNewGPU_API
-        std::string GFX_API = "#define GFX_API\n";
-        shaderSourceData.baseSource.insert(0, GFX_API);
+        //std::string GFX_API = "#define GFX_API\n";
+        //shaderSourceData.baseSource.insert(0, GFX_API);
 
         //Assert(false);
         if(shader->_pipeline != Gfx::InvalidID) gfxDevice->DestroyPipeline(shader->_pipeline);
@@ -515,16 +519,39 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
         Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
 
-        int _i = 0;
-        for(int i = 0; i < layoutsOut.size(); i++){
-            if(layoutsOut[i].entriesCount <= 0) continue;
-            pipelineInfo.bindGroupLayouts[_i] = gfxDevice->CreateBindGroupLayout(layoutsOut[i]);
-            _i += 1;
+        pipelineInfo.framebufferLayout = gfxDevice->GetWindowFrameBufferLayout();
+
+        pipelineInfo.bindGroupLayouts[0] = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
+        pipelineInfo.bindGroupLayouts[1] = drawDrawMeshGroupLayout;
+        pipelineInfo.bindGroupLayouts[2] = camGroupLayout;
+        pipelineInfo.bindGroupLayoutCount = 3;
+        
+        /*for(int i = 0; i < layoutsOut.size(); i++){
+            if(layoutsOut[i].entriesCount == 0){
+                pipelineInfo.bindGroupLayouts[i] = Gfx::InvalidID;
+            } else {
+                auto info = layoutsOut[i];
+                pipelineInfo.bindGroupLayouts[i] = gfxDevice->CreateBindGroupLayout(info);
+            }
+        }*/
+
+        //pipelineInfo.bindGroupLayoutCount = _i;
+
+        /*pipelineInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
+        pipelineInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::UV0, Gfx::VertexFormat::Float3, 1, 0};
+        pipelineInfo.vertexLayout.attributeCount = 2;
+        pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+        pipelineInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+        pipelineInfo.vertexLayout.bufferCount = 2;*/
+
+        pipelineInfo.vertexLayout.bufferCount = pipelineInfo.vertexLayout.attributeCount;
+        for(int i = 0; i < pipelineInfo.vertexLayout.attributeCount; i++){
+            pipelineInfo.vertexLayout.buffers[i] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
         }
-        pipelineInfo.bindGroupLayoutCount = _i;
+
         shader->_pipeline = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
 
-        shaderSourceData.baseSource.erase(0, GFX_API.size());
+        //shaderSourceData.baseSource.erase(0, GFX_API.size());
         #else
         graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,

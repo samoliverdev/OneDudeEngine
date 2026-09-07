@@ -233,6 +233,9 @@ void Mesh::Submit(
     uvVbo = gfxDevice->CreateBuffer(uv->data(), uv->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     ebo = gfxDevice->CreateBuffer(indices->data(), indices->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
 
+    indiceCount = indices->size();
+    vertexCount = vertices->size();
+
     #else
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
     //Destroy();

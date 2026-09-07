@@ -107,7 +107,9 @@ enum class VertexSemantic: uint8_t{
     Custom0,
     Custom1,
     Custom2,
-    Custom3
+    Custom3,
+    
+    Invalid,
 };
 
 enum class VertexFormat: uint8_t{
@@ -152,7 +154,8 @@ enum class VertexInputRate: uint8_t{
 };
 
 struct OD_API VertexAttribute{
-    VertexSemantic semantic;
+    VertexSemantic semantic; //INFO: hlsl i think this is the binding Index
+    //uint8_t customBindIndex = UINT8_MAX; //For now add this to override the semantic bind index, so when implement direct x, handle the this design later
     VertexFormat format;
 
     // Vertex buffer binding this attribute comes from.
@@ -177,6 +180,48 @@ struct OD_API MeshLayout{
     VertexBufferLayout buffers[MAX_VERTEX_BUFFERS];
     uint32_t bufferCount = 0;
 };
+
+inline uint32_t VertexSemanticToSlot(VertexSemantic semantic){
+    switch(semantic){
+        case VertexSemantic::Position:   return 0;
+        case VertexSemantic::UV0:        return 1;
+        case VertexSemantic::Normal:     return 2;
+        case VertexSemantic::Tangent:    return 4;
+        case VertexSemantic::UV1:        return 3;
+        case VertexSemantic::UV2:        return 5;
+        case VertexSemantic::UV3:        return 6;
+        case VertexSemantic::Color0:     return 7;
+        case VertexSemantic::Color1:     return 8;
+        case VertexSemantic::Weights:    return 9;
+        case VertexSemantic::Influences: return 10;
+        case VertexSemantic::Custom0:    return 11;
+        case VertexSemantic::Custom1:    return 12;
+        case VertexSemantic::Custom2:    return 13;
+        case VertexSemantic::Custom3:    return 14;
+    }
+    return 0;
+}
+
+inline VertexSemantic SlotToVertexSemanticTo(uint32_t slot){
+    switch(slot){
+        case 0:         return VertexSemantic::Position;
+        case 1:         return VertexSemantic::UV0;
+        case 2:         return VertexSemantic::Normal;
+        case 4:         return VertexSemantic::Tangent;
+        case 3:         return VertexSemantic::UV1;
+        case 5:         return VertexSemantic::UV2;
+        case 6:         return VertexSemantic::UV3;
+        case 7:         return VertexSemantic::Color0;
+        case 8:         return VertexSemantic::Color1;
+        case 9:         return VertexSemantic::Weights;
+        case 10:        return VertexSemantic::Influences;
+        case 11:        return VertexSemantic::Custom0;
+        case 12:        return VertexSemantic::Custom1;
+        case 13:        return VertexSemantic::Custom2;
+        case 14:        return VertexSemantic::Custom3;
+    }
+    return VertexSemantic::Invalid;
+}
 
 /////////////////////////////////////
 
@@ -441,6 +486,8 @@ struct OD_API ResourceCommands{
 
         CreateTexture2D,
         CreateFramebuffer,
+
+        UpdateBuffer,
     };
 
     struct Command{
@@ -469,11 +516,6 @@ struct OD_API ResourceCommands{
                 Pipeline id;
             } destroyPipeline;
 
-            struct{
-                const void* data;
-                size_t size;
-            } uploadBuffer;
-
             struct {
                 BindGroupLayout id; BindGroupLayoutInfo* info;
             } createBindGroupLayout;
@@ -493,6 +535,12 @@ struct OD_API ResourceCommands{
                 Framebuffer framebuffer;
                 FrameBufferCreateInfo info;
             } createFramebuffer;
+            
+            struct{
+                Buffer id;
+                const void* data;
+                size_t size;
+            } updateBuffer;
         };
     };
 
@@ -532,6 +580,18 @@ struct OD_API ResourceCommands{
         cmd.createBuffer.data = copyData;
         cmd.createBuffer.size = size;
         cmd.createBuffer.memory = memory;
+        commands.push_back(cmd);
+    }
+
+    void UpdatedBuffer(Buffer id, const void* data, size_t size){
+        void* copyData = uploadBuffer.AllocateData(size);
+        std::memcpy(copyData, data, size);
+
+        Command cmd{};
+        cmd.type = Type::UpdateBuffer;
+        cmd.updateBuffer.id = id;
+        cmd.updateBuffer.data = copyData;
+        cmd.updateBuffer.size = size;
         commands.push_back(cmd);
     }
 
@@ -772,6 +832,8 @@ public:
     virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
+
+    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size){}
 };
 
 }

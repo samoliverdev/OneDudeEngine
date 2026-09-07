@@ -10,7 +10,7 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 invView;
 EndUniform()
 
-#if defined(OpenGL_API) && defined(UseUniformBuffer)
+#if defined(OpenGL_API) && defined(UseUniformBuffer) && !defined(OpenGL_API_New)
     uniform mat4 model;
 #else
 

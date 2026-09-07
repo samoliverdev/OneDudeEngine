@@ -83,6 +83,24 @@ int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 Gfx::Device* gfxDevice = nullptr;
 
+Gfx::BindGroupLayout emptyLayout;
+Gfx::BindGroupLayout camGroupLayout;
+Gfx::BindGroupLayout drawDrawMeshGroupLayout;
+
+Gfx::BindGroup emptyBindGroup;
+Gfx::BindGroup camBindGroup;
+Gfx::BindGroup emptyModelBindGroup;
+
+Gfx::Buffer camBuffer;
+Gfx::Buffer emptyModelBuffer;
+
+struct CameraData{
+    Matrix4 projection = Matrix4Identity;
+    Matrix4 view = Matrix4Identity;
+    Matrix4 invProjection = Matrix4Identity;
+    Matrix4 inView = Matrix4Identity;
+};
+
 GraphicsDevice* Graphics::GetGraphicsDevice(){
     return graphicsDevice;
 }
@@ -114,6 +132,49 @@ void Graphics::SelectGraphicsDevice(){
 
 void Graphics::Initialize(){
     graphicsDevice->Initialize();
+
+    #ifdef TestNewGPU_API
+    CameraData camData;
+    Matrix4 identity = Matrix4Identity;
+
+    camBuffer = gfxDevice->CreateBuffer(&camData, sizeof(CameraData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    emptyModelBuffer = gfxDevice->CreateBuffer(&identity, sizeof(Matrix4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+
+    Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entriesCount = 0;
+    emptyLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(CameraData), false};
+    bindGroupLayoutInfo.entriesCount = 1;
+    camGroupLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(Matrix4), false};
+    bindGroupLayoutInfo.entriesCount = 1;
+    drawDrawMeshGroupLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    Gfx::BindGroupInfo bindGroupInfo = {};
+    bindGroupInfo.layout = emptyLayout;
+    bindGroupInfo.entriesCount = 0;
+    emptyBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+
+    bindGroupInfo = {};
+    bindGroupInfo.layout = camGroupLayout;
+    bindGroupInfo.entries[0].binding = 0;
+    bindGroupInfo.entries[0].buffer = camBuffer;
+    bindGroupInfo.entries[0].size = sizeof(CameraData);
+    bindGroupInfo.entriesCount = 1;
+    camBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+
+    bindGroupInfo = {};
+    bindGroupInfo.layout = drawDrawMeshGroupLayout;
+    bindGroupInfo.entries[0].binding = 0;
+    bindGroupInfo.entries[0].buffer = emptyModelBuffer;
+    bindGroupInfo.entries[0].size = sizeof(Matrix4);
+    bindGroupInfo.entriesCount = 1;
+    emptyModelBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+    #endif
 }
 
 void Graphics::Shutdown(){
@@ -239,7 +300,17 @@ bool Graphics::HasBegin(){
 }
 
 void Graphics::SetCamera(Camera& camera){ 
+    #ifdef TestNewGPU_API
+    CameraData data = {camera.projection, camera.view, math::inverse(camera.projection), math::inverse(camera.view)};
+
+    /*if(graphicsDevice->GetInfo().apiName == "Vulkan"){
+        data.projection[1][1] *= -1.0f;
+    }*/
+
+    gfxDevice->UpdatedBuffer(camBuffer, &data, sizeof(CameraData));
+    #else
     graphicsDevice->SetCamera(camera); 
+    #endif
 }
 
 Camera Graphics::GetCamera(){ 
@@ -265,6 +336,7 @@ void Graphics::EndRenderToScreen(){
 
 void Graphics::Clean(float r, float g, float b, float a){ 
     #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{r, g, b, a}});
     #else
     graphicsDevice->Clean(r, g, b, a); 
     #endif
@@ -279,7 +351,11 @@ void Graphics::CleanDepthOnly(){
 }
 
 void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){ 
+    #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->Viewport(x, y, w, h);
+    #else
     graphicsDevice->SetViewport(x, y, w, h); 
+    #endif
 }
 
 void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, unsigned int* h){ 
@@ -299,7 +375,24 @@ void Graphics::Scissor(unsigned int x, unsigned int y, int w, int h){
 }
 
 void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    auto* cmd = gfxDevice->GetCommandBuffer();
+    cmd->SetPipeline(mat.currentShader.drawTypes[0]->_pipeline);
+    cmd->SetBindGroup(0, emptyBindGroup);
+    cmd->SetBindGroup(1, emptyModelBindGroup);
+    cmd->SetBindGroup(2, camBindGroup);
+    cmd->SetVertexBuffer(0, mesh.vertexVbo);
+    cmd->SetVertexBuffer(1, mesh.uvVbo);
+    if(mesh.ebo == INVALID_ID){
+        cmd->Draw(mesh.vertexCount);
+    } else {
+        cmd->SetIndexBuffer(mesh.ebo);
+        cmd->DrawIndexed(mesh.indiceCount);
+    }
+    #else
     graphicsDevice->DrawMesh(mesh, mat, modelMatrix, perDrawData); 
+    #endif
 }
 
 void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){ 

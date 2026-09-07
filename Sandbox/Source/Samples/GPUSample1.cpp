@@ -56,12 +56,13 @@ const char* shaderSource = R"GLSL(
     layout(location = 0) in vec3 aPos;
     layout(location = 7) in vec3 aColor;
 
-    #ifdef Vulkan
+    #ifdef Vulkan_API
     layout(location = 0) out vec3 vColor;
     #else
     out vec3 vColor;
     #endif
 
+    #ifdef Vulkan_API
     layout(set = 0, binding = 0) uniform CameraData{
         mat4 view;
         mat4 proj;
@@ -70,6 +71,16 @@ const char* shaderSource = R"GLSL(
     layout(set = 0, binding = 1) uniform ModelData{
         mat4 model;
     };
+    #else 
+    layout(std140) uniform CameraData{
+        mat4 view;
+        mat4 proj;
+    };
+
+    layout(std140) uniform ModelData{
+        mat4 model;
+    };
+    #endif
 
     void main(){
         gl_Position = proj * view * model * vec4(aPos, 1.0);
@@ -80,7 +91,7 @@ const char* shaderSource = R"GLSL(
 
 
     #ifdef FRAGMENT
-    #ifdef Vulkan
+    #ifdef Vulkan_API
     layout(location = 0) in vec3 vColor;
     layout(location = 0) out vec4 FragColor;
     #else
@@ -127,7 +138,6 @@ void GPUSample1::OnInit(){
     glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));
 
     uniformBuffer = gpuDevice->CreateBuffer(&camData, sizeof(camData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
-
     uniformBuffer2 = gpuDevice->CreateBuffer(&matrix, sizeof(glm::mat4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
 
     Gfx::BindGroupInfo bindGroupInfo = {};
@@ -176,7 +186,7 @@ void GPUSample1::OnInit(){
     pipelineInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
     pipelineInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 0, 12};
     pipelineInfo.vertexLayout.attributeCount = 2;
-    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, Gfx::VertexInputRate::Vertex};
+    pipelineInfo.vertexLayout.buffers[0] = {sizeof(Vector3) * 2, Gfx::VertexInputRate::Vertex};
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
     pipelineInfo.bindGroupLayoutCount = 1;
@@ -191,8 +201,8 @@ void GPUSample1::OnInit(){
     separateInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
     separateInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 1, 0};
     separateInfo.vertexLayout.attributeCount = 2;
-    separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
-    separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[0] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[1] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
     separateInfo.vertexLayout.bufferCount = 2;
     separateInfo.bindGroupLayouts[0] = bindGroupLayout;
     separateInfo.bindGroupLayoutCount = 1;

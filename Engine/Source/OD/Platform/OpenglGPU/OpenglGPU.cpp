@@ -1,4 +1,5 @@
 #include "OpenglGPU.h"
+#include "OD/Gfx/GfxReflection.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
@@ -386,6 +387,7 @@ CommandBuffer* OpenglGPUDevice::GetCommandBuffer(){
 
 ////////////////////////////////////////////////
 
+/*
 GLuint GetVertexLocation(VertexSemantic semantic){
     switch(semantic){
         case VertexSemantic::Position:   return 0;
@@ -412,6 +414,7 @@ GLuint GetVertexLocation(VertexSemantic semantic){
     Assert(false);
     return 0;
 }
+*/
 
 void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, size_t stride){
     switch(format){
@@ -531,29 +534,54 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
             //std::string source = std::string(cmd.createPipeline.source);
 
-            std::vector<ShaderBinding> bindings;
-            std::string source = ProcessShaderSource(cmd.createPipeline.source, bindings);
-            auto out = ProcessShaderSource(source, bindings);
+            //std::vector<ShaderBinding> bindings;
+            std::string source = cmd.createPipeline.source; //ProcessShaderSource(cmd.createPipeline.source, bindings);
+            //auto out = ProcessShaderSource(source, bindings);
             //LogInfo("-----------------\n{}-------------------\n", out);
+
+            Gfx::ShaderReflection reflection;
+            Gfx::Reflect(cmd.createPipeline.source, reflection);
 
             std::string vertexSource =
                 "#version 460 core\n"
-                "#define OpenGL\n"
-                "#define Vertex\n" +
+                "#define OpenGL_API\n"
+                "#define OpenGL_API_New\n"
+                "#define UseUniformBuffer\n"
+                "#define VERTEX\n" +
                 source;
 
             std::string fragmentSource =
                 "#version 460 core\n"
-                "#define OpenGL\n"
-                "#define Fragment\n" +
+                "#define OpenGL_API\n"
+                "#define OpenGL_API_New\n"
+                "#define UseUniformBuffer\n"
+                "#define FRAGMENT\n" +
                 source;
 
+        
             unsigned int vertexShader;
             vertexShader = glCreateShader(GL_VERTEX_SHADER);  
             const GLchar* vCStr = vertexSource.c_str();
             glShaderSource(vertexShader, 1, &vCStr, 0);
             glCompileShader(vertexShader);  
             glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+            if(success == GL_FALSE){
+                GLint maxLength = 0;
+                glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
+                glCheckError();
+
+                std::vector<GLchar> infoLog(maxLength);
+                glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
+                glCheckError();
+
+                glDeleteShader(vertexShader);
+                glCheckError();
+
+                //printf("%s", infoLog.data());
+                //Assert(false && "Shader compilation failure!");
+                LogError("Shader compilation failure!");
+                LogError("{}", infoLog.data());
+            }
             Assert(success);
 
             unsigned int fragShader;
@@ -562,6 +590,23 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             glShaderSource(fragShader, 1, &fCStr, 0);
             glCompileShader(fragShader);  
             glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
+            if(success == GL_FALSE){
+                GLint maxLength = 0;
+                glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
+                glCheckError();
+
+                std::vector<GLchar> infoLog(maxLength);
+                glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
+                glCheckError();
+
+                glDeleteShader(vertexShader);
+                glCheckError();
+
+                //printf("%s", infoLog.data());
+                //Assert(false && "Shader compilation failure!");
+                LogError("Shader compilation failure!");
+                LogError("{}", infoLog.data());
+            }
             Assert(success);
 
             //unsigned int shaderProgram;
@@ -580,7 +625,27 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
             glCheckError();
 
-            for(int i = 0; i < bindings.size(); i++){
+            for(int i = 0; i < reflection.bindings.size(); i++){
+                const auto& _bind = reflection.bindings[i];
+
+                if(_bind.type == BindingType::UniformBuffer){
+                    GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, _bind.blockName.c_str());
+                    glCheckError();
+
+                    Assert(blockIndex != GL_INVALID_INDEX);
+                    pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[_bind.set].bindingsLookUp[_bind.binding] = blockIndex;
+                }
+
+                if(_bind.type == BindingType::Texture2D){
+                    GLint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline.id).program, _bind.name.c_str());
+                    glCheckError();
+
+                    Assert(uniformLoc >= 0);
+                    pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[_bind.set].bindingsLookUp[_bind.binding] = uniformLoc;
+                }
+            }
+
+            /*for(int i = 0; i < bindings.size(); i++){
                 if(bindings[i].type == ShaderBindingType::UniformBuffer){
                     GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
                     glCheckError();
@@ -590,12 +655,13 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 if(bindings[i].type == ShaderBindingType::Sampler2D){
-                    GLuint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
+                    GLint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
                     glCheckError();
 
+                    Assert(uniformLoc >= 0);
                     pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = uniformLoc;
                 }
-            }
+            }*/
             
             break;
         }
@@ -804,7 +870,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 const VertexAttribute& attribute = layout.attributes[i];
                 if(attribute.bufferSlot != slot) continue;
 
-                GLuint location = GetVertexLocation(attribute.semantic);
+                GLuint location = VertexSemanticToSlot(attribute.semantic); // GetVertexLocation(attribute.semantic);
                 ApplyVertexAttribute(location, attribute.format, attribute.offset, bufferLayout.stride);
                 glEnableVertexAttribArray(location);
                 glVertexAttribDivisor(location, bufferLayout.inputRate == VertexInputRate::Instance ? 1 : 0);

@@ -16,9 +16,6 @@
 
     #if defined(UseUniformBuffer)
         #define BeginUniform(inSet, inBinding, name) layout(std140) uniform name{
-        #define BeginCameraUniform() layout(std140) uniform CamDraw{
-        #define BeginMaterialUniform() layout(std140) uniform Main{
-        #define BeginPerDrawUniform() //layout(std140) uniform PerDraw{
         #define EndUniform() };
         #define Uniform
     #else
@@ -35,7 +32,7 @@
 
 #endif
 
-#if defined(GFX_API)
+#if defined(Vulkan_API)
     #define In(loc) layout(location = loc) in
     #define InFlat(loc) layout(location = loc) flat in
     #define Out(loc) layout(location = loc) out

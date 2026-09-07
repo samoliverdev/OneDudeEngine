@@ -38,6 +38,8 @@ public:
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
 
+    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size) override;
+
 private:
     struct BufferData{
         VkBuffer buffer = VK_NULL_HANDLE;
@@ -112,11 +114,14 @@ private:
 
     bool multithread;
 
+    //VkDescriptorSetLayout emptyLayout;
+
     void _Init();
     void _Shut();
 
     void InitDefaultRenderpass();
     void InitFramebuffers();
+    void InitDescriptors();
 
     VkRenderPass GetOrCreate(const FrameBufferLayout& layout);
 
