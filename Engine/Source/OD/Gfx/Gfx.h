@@ -461,7 +461,7 @@ struct OD_API ResourceCommands{
 
             struct{
                 Pipeline id;
-                const char* source;
+                char* source;
                 PipelineInfo info;
             } createPipeline;
 
@@ -502,10 +502,14 @@ struct OD_API ResourceCommands{
     }
 
     void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
+        size_t size = std::strlen(source) + 1;
+        char* copyData = static_cast<char*>(uploadBuffer.AllocateData(size));
+        std::memcpy(copyData, source, size);
+
         Command cmd{};
         cmd.type = Type::CreatePipeline;
         cmd.createPipeline.id = id;
-        cmd.createPipeline.source = source;
+        cmd.createPipeline.source = copyData; //source;
         cmd.createPipeline.info = info;
         commands.push_back(cmd);
     }

@@ -35,7 +35,7 @@ uint32_t indices_2[] = {
 // -------------------------------------------------
 
 const char* shaderSource_2 = R"GLSL(
-    #ifdef Vertex
+    #ifdef VERTEX
     layout(location = 0) in vec3 aPos;
     layout(location = 3) in vec2 aUV;
 
@@ -56,7 +56,7 @@ const char* shaderSource_2 = R"GLSL(
     }
     #endif
 
-    #ifdef Fragment
+    #ifdef FRAGMENT
     #ifdef Vulkan
     layout(location = 0) in vec2 vUV;
     layout(location = 0) out vec4 FragColor;

@@ -45,5 +45,6 @@ struct OD_API ShaderReflection {
 };
 
 bool OD_API Reflect(const char* shaderSource, ShaderReflection& reflection);
+void OD_API ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, PipelineInfo& pipelineOut, std::vector<BindGroupLayoutInfo>& layoutsOut);
 
 }}

@@ -125,7 +125,7 @@ struct OD_API SubShader{
     SubShaderDataGL;
     SubShaderDataWG;
 
-    Gfx::Pipeline _pipeline;
+    Gfx::Pipeline _pipeline = Gfx::InvalidID;
 
     std::string name = "NoName";
 

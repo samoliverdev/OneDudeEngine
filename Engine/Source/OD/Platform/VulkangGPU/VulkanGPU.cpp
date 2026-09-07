@@ -373,8 +373,8 @@ VkDescriptorType GetVulkanDescriptorType(BindingType type){
 
 void VulkanGPUDevice::CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info){
     std::string srcStr = source;
-    std::string vertexSource = "#version 450\n#define Vulkan\n#define Vertex\n" + srcStr;
-    std::string fragmentSource = "#version 450\n#define Vulkan\n#define Fragment\n" + srcStr;
+    std::string vertexSource = "#version 450\n#define Vulkan\n#define VERTEX\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define Vulkan\n#define FRAGMENT\n" + srcStr;
 
     VkShaderModule vertModule = VK_NULL_HANDLE;
     VkShaderModule fragModule = VK_NULL_HANDLE;
@@ -1500,6 +1500,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
 
             case ResourceCommands::Type::DestroyPipeline:{
+                if(cmd.destroyPipeline.id == InvalidID){
+                    LogError("Trying destroy a InvalidID!");
+                    break;
+                }
+
                 auto& pipeData = pipelinePool.Get(cmd.destroyPipeline.id);
                 if(pipeData.pipeline != VK_NULL_HANDLE){
                     vkDestroyPipeline(_device, pipeData.pipeline, nullptr);

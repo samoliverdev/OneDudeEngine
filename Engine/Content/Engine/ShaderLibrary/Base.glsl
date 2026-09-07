@@ -45,7 +45,7 @@
     #define OutPosition gl_Position
     #define VertexIndex gl_VertexID
 
-    #define BeginUniform(inSet, inBinding, name) layout(set = 0, binding = 0) uniform name{
+    #define BeginUniform(inSet, inBinding, name) layout(set = inSet, binding = inBinding) uniform name{
     #define EndUniform() };
     #define Uniform
 

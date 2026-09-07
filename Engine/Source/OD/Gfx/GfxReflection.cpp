@@ -1,9 +1,16 @@
 #include "GfxReflection.h"
+#include "OD/Base.h"
 #include "OD/Core/Log.h"
 #include <spirv_reflect.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/Public/ResourceLimits.h>
 #include <SPIRV/GlslangToSpv.h>
+
+#include <spirv/unified1/spirv.hpp>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <unordered_map>
 
 namespace OD{
 namespace Gfx{   
@@ -90,6 +97,133 @@ static bool ReflectBindingType(const SpvReflectDescriptorBinding& binding, Bindi
     return false;
 }
 
+static std::string GetSPIRVBlockName(const void* spirvData, size_t spirvSize, uint32_t variableId){
+    const uint32_t* words = static_cast<const uint32_t*>(spirvData);
+    const size_t wordCount = spirvSize / sizeof(uint32_t);
+
+    if(!words || wordCount < 5) return {};
+
+    // SPIR-V header is 5 words.
+    std::unordered_map<uint32_t, std::string> names;
+    std::unordered_map<uint32_t, uint32_t> pointerTypes;
+    std::unordered_map<uint32_t, uint32_t> structTypes;
+
+    for(size_t i = 5; i < wordCount;){
+        const uint32_t firstWord = words[i];
+
+        const uint16_t opcode =
+            static_cast<uint16_t>(firstWord & 0xFFFF);
+
+        const uint16_t wordLength =
+            static_cast<uint16_t>(firstWord >> 16);
+
+        if (wordLength == 0 || i + wordLength > wordCount)
+            break;
+
+        switch (opcode)
+        {
+        case spv::OpName:
+        {
+            // OpName <id> "name"
+            if (wordLength >= 3)
+            {
+                const uint32_t id = words[i + 1];
+
+                const char* name =
+                    reinterpret_cast<const char*>(&words[i + 2]);
+
+                names[id] = name;
+            }
+            break;
+        }
+
+        case spv::OpTypePointer:
+        {
+            // OpTypePointer <result-id> <storage-class> <type-id>
+            if (wordLength >= 4)
+            {
+                const uint32_t resultId = words[i + 1];
+                const uint32_t typeId   = words[i + 3];
+
+                pointerTypes[resultId] = typeId;
+            }
+            break;
+        }
+
+        case spv::OpTypeStruct:
+        {
+            // OpTypeStruct <result-id> ...
+            if (wordLength >= 2)
+            {
+                const uint32_t resultId = words[i + 1];
+
+                structTypes[resultId] = resultId;
+            }
+            break;
+        }
+
+        default:
+            break;
+        }
+
+        i += wordLength;
+    }
+
+    // Find:
+    //
+    // OpVariable %pointerType variableId
+    //
+    // We need to know the pointer type used by the variable.
+    uint32_t pointerTypeId = 0;
+
+    for (size_t i = 5; i < wordCount;)
+    {
+        const uint32_t firstWord = words[i];
+
+        const uint16_t opcode =
+            static_cast<uint16_t>(firstWord & 0xFFFF);
+
+        const uint16_t wordLength =
+            static_cast<uint16_t>(firstWord >> 16);
+
+        if (wordLength == 0 || i + wordLength > wordCount)
+            break;
+
+        if (opcode == spv::OpVariable && wordLength >= 4)
+        {
+            const uint32_t typeId = words[i + 1];
+            const uint32_t resultId = words[i + 2];
+
+            if (resultId == variableId)
+            {
+                pointerTypeId = typeId;
+                break;
+            }
+        }
+
+        i += wordLength;
+    }
+
+    if (!pointerTypeId)
+        return {};
+
+    // Pointer -> struct
+    auto pointerIt = pointerTypes.find(pointerTypeId);
+
+    if (pointerIt == pointerTypes.end())
+        return {};
+
+    const uint32_t structId = pointerIt->second;
+
+    // Struct -> OpName
+    auto nameIt = names.find(structId);
+
+    if (nameIt == names.end())
+        return {};
+
+    return nameIt->second;
+}
+
 bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& reflection, bool skipVertexAttributes){
     //reflection.vertexAttributes.clear();
     //reflection.bindings.clear();
@@ -134,7 +268,7 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
         }
 
         ShaderVertexAttribute attribute;
-        attribute.name = input->name ? input->name : "";
+        attribute.name = input->name;// ? input->name : "";
         attribute.location = input->location;
         attribute.format = ReflectVertexFormat(input);
         reflection.vertexAttributes.push_back(std::move(attribute));
@@ -163,9 +297,17 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
         return false;
     }
 
+    auto ContainsBlockName = [&](const std::string& name){
+        for(const auto& binding : reflection.bindings){
+            if(name.empty()) continue;
+            if(name == binding.blockName) return true;
+        }
+        return false;
+    };
+
     for(auto* binding : bindings){
         ShaderBindingInfo info;
-        info.name = binding->name ? binding->name : "";
+        info.name = binding->name;// ? binding->name : "";
         info.set = binding->set;
         info.binding = binding->binding;
 
@@ -180,7 +322,9 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
         if(info.type == BindingType::UniformBuffer){
             //if(binding->block){
                 info.size = binding->block.size;
-                info.blockName = binding->block.name ? binding->block.name : "";
+                info.blockName = binding->block.name;// ? binding->block.name : "";
+
+                info.blockName = GetSPIRVBlockName(spirvData, spirvSize, binding->spirv_id);
 
                 for(uint32_t i = 0; i < binding->block.member_count; ++i){
                     info.variables.push_back(ReflectVariable(binding->block.members[i]));
@@ -188,6 +332,7 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
             //}
         }
 
+        if(ContainsBlockName(info.blockName)) continue;
         reflection.bindings.push_back(std::move(info));
     }
 
@@ -234,6 +379,9 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
     std::vector<uint32_t> spirv;
     spv::SpvBuildLogger logger;
     glslang::SpvOptions options;
+    /*options.stripDebugInfo = true;
+    options.emitNonSemanticShaderDebugSource = true;
+    options.emitNonSemanticShaderDebugInfo = true;*/
     options.generateDebugInfo = true; //false;
     options.disableOptimizer = true; //false;
     options.optimizeSize = false;
@@ -244,8 +392,8 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
 
 bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     std::string srcStr = shaderSource;
-    std::string vertexSource = "#version 450\n#define Vulkan\n#define Vertex\n" + srcStr;
-    std::string fragmentSource = "#version 450\n#define Vulkan\n#define Fragment\n" + srcStr;
+    std::string vertexSource = "#version 450\n#define Vulkan\n#define VERTEX\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define Vulkan\n#define FRAGMENT\n" + srcStr;
 
     std::vector<uint32_t> spirvV = CompileGLSL(vertexSource, EShLangVertex);
     std::vector<uint32_t> spirvF = CompileGLSL(fragmentSource, EShLangFragment);
@@ -257,6 +405,51 @@ bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     ReflectSPIRV(spirvF.data(), spirvF.size() * sizeof(uint32_t), reflection, true);
 
     return false;
+}
+
+void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, PipelineInfo& pipelineOut, std::vector<BindGroupLayoutInfo>& layoutsOut){
+    // ------------------------------------------------------------
+    // Vertex attributes
+    // ------------------------------------------------------------
+    for(const ShaderVertexAttribute& attribute : reflection.vertexAttributes){
+        VertexAttribute& dst = pipelineOut.vertexLayout.attributes[
+            pipelineOut.vertexLayout.attributeCount++
+        ];
+
+        dst.semantic = VertexSemantic::Custom0; // map below
+        dst.format = attribute.format;
+        dst.bufferSlot = 0;
+        dst.offset = 0;
+    }
+
+    // ------------------------------------------------------------
+    // Descriptor bindings
+    // ------------------------------------------------------------
+    layoutsOut.resize(4); //Max possible Bindgroups/Sets
+    for (const ShaderBindingInfo& binding : reflection.bindings){
+        // Currently assuming set == bind group index.
+        // Make sure your PipelineInfo supports enough groups.
+        if (binding.set >= pipelineOut.bindGroupLayoutCount)
+            pipelineOut.bindGroupLayoutCount = binding.set + 1;
+
+        BindGroupLayoutInfo& layout = layoutsOut[binding.set]; //info.bindGroupLayouts[binding.set];
+
+        Assert(layout.entriesCount < 4);
+        if(layout.entriesCount >= 4) continue;
+
+        BindLayoutEntry& entry = layout.entries[layout.entriesCount++];
+
+        entry.binding = binding.binding;
+        entry.type = binding.type;
+
+        if(binding.type == BindingType::UniformBuffer){
+            entry.minUniformBufferSize = binding.size;
+            entry.dynamicOffset = false;
+        } else {
+            entry.minUniformBufferSize = 0;
+            entry.dynamicOffset = false;
+        }
+    }
 }
 
 }}

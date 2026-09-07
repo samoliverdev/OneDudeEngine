@@ -52,7 +52,7 @@ struct Data{
 };
 
 const char* shaderSource = R"GLSL(
-    #ifdef Vertex
+    #ifdef VERTEX
     layout(location = 0) in vec3 aPos;
     layout(location = 7) in vec3 aColor;
 
@@ -79,7 +79,7 @@ const char* shaderSource = R"GLSL(
     #endif
 
 
-    #ifdef Fragment
+    #ifdef FRAGMENT
     #ifdef Vulkan
     layout(location = 0) in vec3 vColor;
     layout(location = 0) out vec4 FragColor;

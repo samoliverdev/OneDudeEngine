@@ -11,6 +11,7 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
     Uniform vec4 color;
@@ -19,29 +20,25 @@ Texture2D(0, 1, mainTex, mainSampler)
 
 #if defined(MainPass)
     #if defined(VERTEX)
-    layout(location = 0) in vec3 _pos;
-    layout(location = 1) in vec2 _texCoord;
-    out vec2 texCoord;
+    //layout(location = 0) in vec3 _pos;
+    //layout(location = 1) in vec2 _texCoord;
+    Out(0) vec2 _texCoord;
 
-    BeginUniform(2, 0, CamDraw)
-        Uniform mat4 projection;
-        Uniform mat4 view;
-    EndUniform()
-
-    uniform mat4 model;
+    //uniform mat4 model;
 
     void main(){
-        texCoord = _texCoord;
-        gl_Position = projection * view * model * vec4(_pos, 1.0);
+        _texCoord = texCoord;
+        mat4 targetModelMatrix = GetModelMatrix();
+        gl_Position = projection * view * model *  GetLocalPos(); //vec4(_pos, 1.0);
     }
     #endif
 
     #if defined(FRAGMENT)
-    in vec2 texCoord;
-    out vec4 fragColor;
+    In(0) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     void main(){
-        vec4 sampled = vec4(1.0, 1.0, 1.0, texture(mainTex, texCoord).r);
+        vec4 sampled = vec4(1.0, 1.0, 1.0, texture(mainTex, _texCoord).r);
         fragColor = vec4(color.rgb, 1.0) * sampled;
         //fragColor = vec4(1, 1, 1, 1) * sampled;
     }

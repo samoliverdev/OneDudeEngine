@@ -2,6 +2,7 @@
 #include "Shader.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#include "OD/Gfx/GfxReflection.h"
 #include "OD/Core/Hash.h"
 #include "OD/Serialization/SerializationFull.h"
 #include <numeric>
@@ -500,8 +501,30 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
 
         #ifdef TestNewGPU_API
-        Assert(false);
-        gfxDevice->DestroyPipeline(shader->_pipeline);
+        std::string GFX_API = "#define GFX_API\n";
+        shaderSourceData.baseSource.insert(0, GFX_API);
+
+        //Assert(false);
+        if(shader->_pipeline != Gfx::InvalidID) gfxDevice->DestroyPipeline(shader->_pipeline);
+
+        Gfx::ShaderReflection reflection;
+        Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
+
+        Gfx::PipelineInfo pipelineInfo = {};
+
+        std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
+        Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
+
+        int _i = 0;
+        for(int i = 0; i < layoutsOut.size(); i++){
+            if(layoutsOut[i].entriesCount <= 0) continue;
+            pipelineInfo.bindGroupLayouts[_i] = gfxDevice->CreateBindGroupLayout(layoutsOut[i]);
+            _i += 1;
+        }
+        pipelineInfo.bindGroupLayoutCount = _i;
+        shader->_pipeline = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
+
+        shaderSourceData.baseSource.erase(0, GFX_API.size());
         #else
         graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,
@@ -540,7 +563,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
     //currentShader = shader;
 
     shaderSourceData.baseSource.erase(0, insirtSize);
-    Assert(shaderSourceData.baseSource.size() ==  startSize);
+    Assert(shaderSourceData.baseSource.size() == startSize);
 }
 
 }
