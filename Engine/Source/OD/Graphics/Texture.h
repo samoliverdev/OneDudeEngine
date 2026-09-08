@@ -2,6 +2,7 @@
 #include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace cereal{
     class BinaryOutputArchive;
@@ -76,6 +77,7 @@ struct OD_API Texture2DSetting{
 
 class OD_API Texture2D: public Resource{
     friend class Graphics;
+    friend class Material;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
 public:
@@ -139,6 +141,8 @@ private:
     bool isComplete = false;
     Texture2DDataGL;
     Texture2DDataWG;
+
+    Gfx::Texture2D tex;
 
     void SaveTo(cereal::BinaryOutputArchive& ar);
     void LoadFrom(cereal::BinaryInputArchive& ar);

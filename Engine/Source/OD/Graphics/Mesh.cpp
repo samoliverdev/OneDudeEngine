@@ -220,6 +220,7 @@ void Mesh::Submit(
     std::vector<IVector4>* influences
 ){
     #ifdef TestNewGPU_API
+    if(ebo != Gfx::InvalidID) gfxDevice->DestroyBuffer(ebo);
     if(vertexVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(vertexVbo);
     if(uvVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(uvVbo);
     if(normalVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(normalVbo);
@@ -227,15 +228,28 @@ void Mesh::Submit(
     if(tangentVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(tangentVbo);
     if(jointVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(jointVbo);
     if(weightsVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(weightsVbo);
-    if(ebo != Gfx::InvalidID) gfxDevice->DestroyBuffer(ebo);
-
-    vertexVbo = gfxDevice->CreateBuffer(vertices->data(), vertices->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
-    uvVbo = gfxDevice->CreateBuffer(uv->data(), uv->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
-    ebo = gfxDevice->CreateBuffer(indices->data(), indices->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
-
+    if(influencesVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(influencesVbo);
+    
+    int eboCount = influences->size() == 0 ? 1 : influences->size();
+    int vertexCount = vertices->size() == 0 ? 1 : vertices->size();
+    int uvCount = uv->size() == 0 ? 1 : uv->size();
+    int normalCount = normals->size() == 0 ? 1 : normals->size();
+    int colorCount = colors->size() == 0 ? 1 : colors->size();
+    int tangentCount = tangents->size() == 0 ? 1 : tangents->size();
+    int weightsCount = weights->size() == 0 ? 1 : weights->size();
+    int influencesCount = influences->size() == 0 ? 1 : influences->size();
+    
+    ebo = gfxDevice->CreateBuffer(indices->data(), eboCount * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+    vertexVbo = gfxDevice->CreateBuffer(vertices->data(), vertexCount * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    uvVbo = gfxDevice->CreateBuffer(uv->data(), uvCount * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    normalVbo = gfxDevice->CreateBuffer(normals->data(), normalCount * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    colorVbo = gfxDevice->CreateBuffer(colors->data(), colorCount * sizeof(Vector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    tangentVbo = gfxDevice->CreateBuffer(tangents->data(), tangentCount * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    weightsVbo = gfxDevice->CreateBuffer(weights->data(), weightsCount * sizeof(Vector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    influencesVbo = gfxDevice->CreateBuffer(influences->data(), influencesCount * sizeof(IVector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    
     indiceCount = indices->size();
     vertexCount = vertices->size();
-
     #else
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
     //Destroy();

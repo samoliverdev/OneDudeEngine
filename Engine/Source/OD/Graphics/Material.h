@@ -4,6 +4,7 @@
 #include "OD/Graphics/Shader.h"
 #include "OD/Graphics/Texture.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace sol{ class state; }
 
@@ -216,6 +217,10 @@ private:
     Shader::SubShaderTarget currentShader = {}; //nullptr;
 
     uint32_t id = 0;
+
+    Gfx::Buffer materialBuffer = Gfx::InvalidID;
+    Gfx::BindGroup materialBindGroup = Gfx::InvalidID;
+    Gfx::ShaderBindingInfo materialBindGroupInfo;
 
     Ref<Texture2D> keepAlive = nullptr;
 

@@ -292,7 +292,6 @@ bool Shader::InitPass(int pass){
     std::vector<std::string> combinations;
 
     std::set<DrawType> drawTypes = { Shader::DrawType::DefaultDraw};
-    
 
     for(auto i: shaderSourceData.passes[pass].properties /*baseShader->Pragmas()*/){
         if(i.size() < 2) continue;
@@ -335,8 +334,19 @@ bool Shader::InitPass(int pass){
         if(c == false) i.push_back("_");
     }
 
+    #ifdef TestNewGPU_API
+    Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
+    
+    pipelineInfo = {};
+    layoutsOut.clear();
+    Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
+
+    materialBindGroupLayout = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
+    #endif
+
     AddShaderVaring("", std::set<std::string>(), pass, drawTypes);
     if(isComplete == false) return false;
+
     
     if(multCompile.size() < 1) return true;
 
@@ -350,7 +360,7 @@ bool Shader::InitPass(int pass){
             LogInfo("SplitValue: %s", j.c_str());
         }*/
         //LogInfo("Shader Varing Key: \"%s\" Original: \"%s\" KeywordsCount: %zd", key.c_str(), s.c_str(), keywords.size());
-        if(passes[pass].shaders.count(key) == false) {
+        if(passes[pass].shaders.count(key) == false){
             AddShaderVaring(key, keywords, pass, drawTypes);
             if(isComplete == false) return false;
         }
@@ -511,17 +521,16 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         //Assert(false);
         if(shader->_pipeline != Gfx::InvalidID) gfxDevice->DestroyPipeline(shader->_pipeline);
 
-        Gfx::ShaderReflection reflection;
-        Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
+        //Gfx::ShaderReflection reflection;
+        //Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
 
-        Gfx::PipelineInfo pipelineInfo = {};
-
+        /*Gfx::PipelineInfo pipelineInfo = {};
         std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
-        Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
+        Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);*/
 
         pipelineInfo.framebufferLayout = gfxDevice->GetWindowFrameBufferLayout();
 
-        pipelineInfo.bindGroupLayouts[0] = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
+        pipelineInfo.bindGroupLayouts[0] = materialBindGroupLayout; //layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
         pipelineInfo.bindGroupLayouts[1] = drawDrawMeshGroupLayout;
         pipelineInfo.bindGroupLayouts[2] = camGroupLayout;
         pipelineInfo.bindGroupLayoutCount = 3;

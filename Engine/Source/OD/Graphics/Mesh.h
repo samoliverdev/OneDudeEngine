@@ -139,6 +139,7 @@ private:
     Gfx::Buffer tangentVbo = Gfx::InvalidID;
     Gfx::Buffer jointVbo = Gfx::InvalidID;
     Gfx::Buffer weightsVbo = Gfx::InvalidID; 
+    Gfx::Buffer influencesVbo = Gfx::InvalidID; 
     Gfx::Buffer ebo = Gfx::InvalidID;
 };
 

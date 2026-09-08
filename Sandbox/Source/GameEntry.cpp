@@ -45,7 +45,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 10; //-1; //35;
+    int i = 1; //-1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     #ifdef TestNewGPU_API

@@ -4,6 +4,7 @@
 #include "Graphics.h"
 #include "GraphicsDevice.h"
 #include "Texture.h"
+#include "Texture.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Serialization/SerializationFull.h"
 #include "OD/Core/Resource.h"
@@ -15,6 +16,7 @@ namespace OD{
 /*extern*/ GraphicsStats stats;
 extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
+extern Gfx::BindGroupLayout emptyLayout;
 
 void MaterialMap::OnLoad(std::string& texPath){
     if(texPath.empty() == false){
@@ -80,6 +82,38 @@ void Material::SetShader(Ref<Shader> s){
     }
 
     graphicsDevice->MaterialOnSetShader(*this);
+
+    #ifdef TestNewGPU_API
+    gfxDevice->DestroyBuffer(materialBuffer);
+
+    if(shader->materialBindGroupLayout != emptyLayout){
+        Gfx::BindGroupInfo bindGroupInfo = {};
+        bindGroupInfo.layout = shader->materialBindGroupLayout != emptyLayout;
+        for(auto& i: shader->reflection.bindings){
+            if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
+                materialBindGroupInfo = i;
+                materialBuffer = gfxDevice->CreateBuffer(nullptr, i.size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = materialBuffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+                bindGroupInfo.entriesCount += 1;
+            }
+
+            if(i.type == Gfx::BindingType::Texture2D && maps.count(i.name)){
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg")->tex; //maps[i.name].texture;
+                bindGroupInfo.entriesCount += 1;
+            }
+        }
+
+        materialBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+    }
+    
+
+    #endif
 }
 
 bool Material::IsBlend(){

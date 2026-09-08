@@ -1,6 +1,8 @@
 #pragma once
 #include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Gfx/Gfx.h"
+#include "OD/Gfx/GfxReflection.h"
 #include "SubShader.h"
 #include <set>
 #include <vector>
@@ -68,6 +70,11 @@ private:
     int curPass = 0;
     //Ref<SubShader> currentShader;
     SubShaderTarget currentShader;
+
+    Gfx::ShaderReflection reflection;
+    Gfx::BindGroupLayout materialBindGroupLayout;
+    Gfx::PipelineInfo pipelineInfo;
+    std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
 
     bool isComplete = false;
     ShaderDataGL;

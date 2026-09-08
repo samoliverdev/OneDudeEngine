@@ -384,6 +384,8 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     cmd->SetBindGroup(2, camBindGroup);
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
     cmd->SetVertexBuffer(1, mesh.uvVbo);
+    cmd->SetVertexBuffer(2, mesh.normalVbo);
+    cmd->SetVertexBuffer(4, mesh.tangentVbo);
     if(mesh.ebo == INVALID_ID){
         cmd->Draw(mesh.vertexCount);
     } else {

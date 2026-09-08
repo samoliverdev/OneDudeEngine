@@ -13,6 +13,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
@@ -37,10 +38,16 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     tex->SetLoadSettings(settings);
     tex->settings = settings;
+
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     if(graphicsDevice->Texture2DCreate(*tex, data, width, height, dataType) == false){
         graphicsDevice->Texture2DDestroy(*tex);
         return nullptr;
     }
+    #endif
+    
 
     tex->path = "#" + label;
     return tex;
@@ -67,10 +74,14 @@ Ref<Texture2D> Texture2D::CreateFromPackage(const char* path, Package& package, 
     if(inpath.empty() == false && inpath[0] != '#') LoadArchive(package, inpath + ".meta", settings, "settings");
 
     tex->SetLoadSettings(settings);
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     if(tex->LoadFromFileMemory(data, size) == false){ //if(graphicsDevice->Texture2DCreate(*tex, data, size) == false){
         package.FreeFileData(data);
         return nullptr;
     }
+    #endif
 
     package.FreeFileData(data);
     return tex;
@@ -108,11 +119,15 @@ bool Texture2D::LoadFromFileMemory(void* indata, size_t insize, const std::strin
         //Assert(size % (sizeof(unsigned char)*3) == 0);
     }
 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     if(graphicsDevice->Texture2DCreate(*this, data, width, height, TextureDataType::UnsignedByte) == false){
         graphicsDevice->Texture2DDestroy(*this);
         stbi_image_free(data);
         return false;
     }
+    #endif
 
     path = "#"+label;
     stbi_image_free(data);
@@ -197,6 +212,9 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
             Assert(false && "Not supported yet!!!");
         }
 
+        #ifdef TestNewGPU_API
+        Assert(false);
+        #else
         bool success = graphicsDevice->Texture2DCreate(
             *this,
             data,
@@ -204,13 +222,14 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
             height,
             TextureDataType::UnsignedByte
         );
-
+        
         stbi_image_free(data);
 
         if(!success){
             graphicsDevice->Texture2DDestroy(*this);
             return false;
         }
+        #endif
 
         this->path = path;
         return true;
@@ -247,6 +266,9 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
             Assert(false && "Not supported yet!!!");
         }
 
+        #ifdef TestNewGPU_API
+        Assert(false);
+        #else
         bool success = graphicsDevice->Texture2DCreate(
             *this,
             data.data(),
@@ -259,6 +281,7 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
             graphicsDevice->Texture2DDestroy(*this);
             return false;
         }
+        #endif
 
         this->path = path;
         return true;
@@ -313,6 +336,9 @@ bool Texture2D::LoadFromPackage(const std::string& path, Package& package){
             Assert(false && "Not supported yet!!!");
         }
 
+        #ifdef TestNewGPU_API
+        Assert(false);
+        #else
         bool success = graphicsDevice->Texture2DCreate(
             *this,
             data.data(),
@@ -325,6 +351,7 @@ bool Texture2D::LoadFromPackage(const std::string& path, Package& package){
             graphicsDevice->Texture2DDestroy(*this);
             return false;
         }
+        #endif
 
         this->path = path;
         return true;
@@ -362,7 +389,12 @@ Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
 }
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return nullptr;
+    #else
     return graphicsDevice->Texture2DCreateBrdfLUTTexture2D();
+    #endif
     
     Assert(false && "Not Work for now");
     return nullptr;
@@ -435,13 +467,22 @@ Texture2D::Texture2D(){
 
 Texture2D::~Texture2D(){
     //LogInfo("OnDestroy: {}", path);
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     Assert(graphicsDevice != nullptr);
     graphicsDevice->Texture2DDestroy(*this);
+    #endif
 }
 
 bool Texture2D::IsValid(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return false;
+    #else
     Assert(graphicsDevice != nullptr);
     return graphicsDevice->Texture2DIsValid(*this);
+    #endif
 }
 
 unsigned int Texture2D::Width(){ 
@@ -453,7 +494,12 @@ unsigned int Texture2D::Height(){
 }
 
 void* Texture2D::RenderId(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return nullptr;
+    #else
     return graphicsDevice->Texture2DRenderId(*this);
+    #endif
 }
 
 void Texture2D::OnGui(){
@@ -577,8 +623,13 @@ bool Texture2D::Save(const std::string& outPath, SaveType type){
 }
 
 bool Texture2D::GetPixelData(std::vector<uint8_t>& outData){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return false;
+    #else
     Assert(graphicsDevice != nullptr);
     return graphicsDevice->Texture2DGetPixelData(*this, outData);
+    #endif
 }
 
 void Texture2D::SaveTo(cereal::BinaryOutputArchive& ar){
@@ -671,10 +722,14 @@ void Texture2D::LoadFrom(cereal::BinaryInputArchive& ar){
         //throw std::runtime_error("Failed to decode PNG in Model::LoadTo");
     }
 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     if(graphicsDevice->Texture2DCreate(*this, decoded, w, h, TextureDataType::UnsignedByte) == false){
         Assert(false);
         graphicsDevice->Texture2DDestroy(*this);
     }
+    #endif
 
     stbi_image_free(decoded);
 }
@@ -710,11 +765,19 @@ void Texture2D::CreateLuaBind(sol::state& lua){
 }
 
 Texture2DArray::Texture2DArray(const std::vector<std::string>& filePaths){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     graphicsDevice->Texture2DArrayCreate(*this, filePaths);
+    #endif
 }
 
 Texture2DArray::~Texture2DArray(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     graphicsDevice->Texture2DArrayDestroy(*this);
+    #endif
 }
 
 void Texture2DArray::OnGui(){
