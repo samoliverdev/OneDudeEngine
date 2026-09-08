@@ -35,7 +35,7 @@
 namespace OD{
 namespace Gfx{   
 
-#define TestDrawInverted 
+//#define TestDrawInverted 
 
 GraphicsDeviceInfo vkInfo;
 GraphicsStats vkGraphicsStats;
