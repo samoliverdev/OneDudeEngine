@@ -40,7 +40,7 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
     tex->settings = settings;
 
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     #else
     if(graphicsDevice->Texture2DCreate(*tex, data, width, height, dataType) == false){
         graphicsDevice->Texture2DDestroy(*tex);

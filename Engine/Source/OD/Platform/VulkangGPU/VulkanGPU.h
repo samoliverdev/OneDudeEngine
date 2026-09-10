@@ -36,10 +36,17 @@ public:
     virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size) override;
     virtual void DestroyBuffer(Buffer id) override;
 
+    virtual Texture2D CreateTexture2D(Texture2DInfo& info) override;
+    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size) override;
+    virtual void DestroyTexture2D(Texture2D tex) override;
+
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
+    virtual void DestroyBindGroupLayout(BindGroupLayout layout) override;
+    
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
-    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
+
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
+    virtual void DestroyFramebuffer(Framebuffer destroy) override;
 
 private:
     struct BufferData{
@@ -53,6 +60,8 @@ private:
 
     struct Texture2DData{
         VkImage image = VK_NULL_HANDLE;
+        uint32_t width = 0;
+        uint32_t height = 0;
 	    VmaAllocation allocation = VK_NULL_HANDLE;
         VkImageView imageView = VK_NULL_HANDLE;
         VkSampler sampler = VK_NULL_HANDLE;
@@ -124,14 +133,31 @@ private:
     void InitFramebuffers();
     void InitDescriptors();
 
-    VkRenderPass GetOrCreate(const FrameBufferLayout& layout);
-
-    void CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info);
-    void CreateFramebuffer(Framebuffer id, const FrameBufferCreateInfo& createInfo);
     void Cleanup();
 
     void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
+
+    VkRenderPass GetOrCreate(const FrameBufferLayout& layout);
+
+    bool _CreatePipeline(PipelineData& data, const char* source, const PipelineInfo& info);
+    void _DestroyPipeline(PipelineData& data);
+
+    bool _CreateBuffer(BufferData& data, size_t size, BufferUsage usage, BufferMemory memory);
+    void _UpdatedBuffer(BufferData& data, const void* _data, size_t size);
+    void _DestroyBuffer(BufferData& data);
+
+    bool _CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& createInfo);
+    void _DestroyFramebuffer(FramebufferData& data);
+
+    bool _CreateTexture2D(Texture2DData& data, const Texture2DInfo& info); 
+    void _UploadTexture2D(Texture2DData& data, const void* _data, size_t size);
+    void _DestroyTexture2D(Texture2DData& data); 
+
+    bool _CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info);
+    void _DestroyBindGroupLayout(BindGroupLayoutData& data);
+
+    bool _CreateBindGroup(BindGroupData& data, BindGroupInfo& info);
 };
 
 }

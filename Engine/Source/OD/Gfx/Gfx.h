@@ -479,15 +479,22 @@ struct OD_API ResourceCommands{
     enum class Type{
         CreatePipeline,
         DestroyPipeline,
+
         CreateBuffer,
+        UpdateBuffer,
         DestroyBuffer,
-        CreateBindGroupLayout,
-        CreateBindGroup,
 
         CreateTexture2D,
-        CreateFramebuffer,
+        UploadTexture2D,
+        DestroyTexture2D,
 
-        UpdateBuffer,
+        CreateBindGroupLayout,
+        DestroyBindGroupLayout,
+
+        CreateBindGroup,
+
+        CreateFramebuffer,
+        DestroyFramebuffer,
     };
 
     struct Command{
@@ -525,10 +532,14 @@ struct OD_API ResourceCommands{
 
             struct {
                 Texture2D id;
-                const void* data;
-                size_t size;
                 Texture2DInfo info;
             } createTexture2D;
+
+            struct {
+                Texture2D id;
+                const void* data;
+                size_t size;
+            } uploadTexture2D;
             
             struct {
                 Framebuffer framebuffer;
@@ -540,6 +551,22 @@ struct OD_API ResourceCommands{
                 const void* data;
                 size_t size;
             } updateBuffer;
+
+            struct {
+                Texture2D id; 
+            } destroyTexture2D;
+
+            struct {
+                BindGroupLayout id; 
+            } destroyBindGroupLayout;
+
+            struct {
+                BindGroup id; 
+            } destroyBindGroup;
+
+            struct {
+                Framebuffer id; 
+            } destroyFramebuffer;
         };
     };
 
@@ -597,6 +624,33 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
+    void CreateTexture2D(Texture2D id, Texture2DInfo& info){
+        Command cmd{};
+        cmd.type = Type::CreateTexture2D;
+        cmd.createTexture2D.id = id;
+        cmd.createTexture2D.info = info;
+        commands.push_back(cmd);
+    }
+
+    void UploadTexture2D(Texture2D id, const void* data, size_t size){
+        void *copyData = uploadBuffer.AllocateData(size);
+        std::memcpy(copyData, data, size);
+
+        Command cmd{};
+        cmd.type = Type::UploadTexture2D;
+        cmd.uploadTexture2D.id = id;
+        cmd.uploadTexture2D.data = copyData;
+        cmd.uploadTexture2D.size = size;
+        commands.push_back(cmd);
+    }
+
+    void DestroyTexture2D(Texture2D id){
+        Command cmd{};
+        cmd.type = Type::DestroyTexture2D;
+        cmd.destroyTexture2D.id = id;
+        commands.push_back(cmd);
+    }
+
     void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
         BindGroupLayoutInfo* copyData = uploadBuffer.Allocate<BindGroupLayoutInfo>();
         std::memcpy(copyData, &info, sizeof(BindGroupLayoutInfo));
@@ -605,6 +659,13 @@ struct OD_API ResourceCommands{
         cmd.type = Type::CreateBindGroupLayout;
         cmd.createBindGroupLayout.id = id;
         cmd.createBindGroupLayout.info = copyData;
+        commands.push_back(cmd);
+    }
+
+    void DestroyBindGroupLayout(BindGroupLayout id){
+        Command cmd{};
+        cmd.type = Type::DestroyBindGroupLayout;
+        cmd.destroyBindGroupLayout.id = id;
         commands.push_back(cmd);
     }
 
@@ -619,24 +680,18 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateTexture2D(Texture2D id, Texture2DInfo& info, void* data, size_t size){ 
-        void *copyData = uploadBuffer.AllocateData(size);
-        std::memcpy(copyData, data, size);
-        
-        Command cmd{};
-        cmd.type = Type::CreateTexture2D;
-        cmd.createTexture2D.id = id;
-        cmd.createTexture2D.data = copyData;
-        cmd.createTexture2D.size = size;
-        cmd.createTexture2D.info = info;
-        commands.push_back(cmd);
-    }
-
     void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
         Command cmd{};
         cmd.type = Type::CreateFramebuffer;
         cmd.createFramebuffer.framebuffer = framebuffer;
         cmd.createFramebuffer.info = info;
+        commands.push_back(cmd);
+    }
+
+    void DestroyFramebuffer(Texture2D id){
+        Command cmd{};
+        cmd.type = Type::DestroyFramebuffer;
+        cmd.destroyFramebuffer.id = id;
         commands.push_back(cmd);
     }
 
@@ -826,14 +881,17 @@ public:
     virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size){}
     virtual void DestroyBuffer(Buffer id){}
 
-    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
-    virtual void UpdateTexture(Texture2D texture, const void* data, uint32_t mip, uint32_t x, uint32_t y, uint32_t width, uint32_t height){}
+    virtual Texture2D CreateTexture2D(Texture2DInfo& info){ return InvalidID; }
+    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size){}
+    virtual void DestroyTexture2D(Texture2D tex){}
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
-    virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
-    virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
+    virtual void DestroyBindGroupLayout(BindGroupLayout layout){}
 
-    
+    virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
+
+    virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
+    virtual void DestroyFramebuffer(Framebuffer destroy){}
 };
 
 }

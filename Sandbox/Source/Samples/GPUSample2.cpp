@@ -159,7 +159,8 @@ void GPUSample2::OnInit(){
     texInfo.width = texWidth;
     texInfo.height = texHeight;
     texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
-    auto texture = gpuDevice->CreateTexture2D(texInfo, pixels, imageSize);
+    auto texture = gpuDevice->CreateTexture2D(texInfo);
+    gpuDevice->UploadTexture2D(texture, pixels, imageSize);
     stbi_image_free(pixels);
 
 	pixels = stbi_load("Sandbox/Textures/brickwall.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -170,7 +171,8 @@ void GPUSample2::OnInit(){
     texInfo.width = texWidth;
     texInfo.height = texHeight;
     texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
-    auto texture2 = gpuDevice->CreateTexture2D(texInfo, pixels, imageSize);
+    auto texture2 = gpuDevice->CreateTexture2D(texInfo);
+    gpuDevice->UploadTexture2D(texture2, pixels, imageSize);
     stbi_image_free(pixels);
     
 

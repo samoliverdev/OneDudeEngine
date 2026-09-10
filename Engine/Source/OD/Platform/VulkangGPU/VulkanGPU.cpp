@@ -36,6 +36,7 @@ namespace OD{
 namespace Gfx{   
 
 //#define TestDrawInverted 
+#define DONT_DEFERRED_RESOURCE_CREATION
 
 GraphicsDeviceInfo vkInfo;
 GraphicsStats vkGraphicsStats;
@@ -381,7 +382,7 @@ VkDescriptorType GetVulkanDescriptorType(BindingType type){
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 }
 
-void VulkanGPUDevice::CreateVulkanPipeline(Pipeline id, const char* source, const PipelineInfo& info){
+bool VulkanGPUDevice::_CreatePipeline(PipelineData& data, const char* source, const PipelineInfo& info){
     std::string srcStr = source;
     std::string vertexSource = "#version 450\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
     std::string fragmentSource = "#version 450\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
@@ -390,7 +391,7 @@ void VulkanGPUDevice::CreateVulkanPipeline(Pipeline id, const char* source, cons
     VkShaderModule fragModule = VK_NULL_HANDLE;
     if(!load_shader_module(vertexSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, &vertModule) || !load_shader_module(fragmentSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, &fragModule)) {
         LogError("Failed to build pipeline shaders");
-        return;
+        return false;
     }
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {
@@ -515,9 +516,204 @@ void VulkanGPUDevice::CreateVulkanPipeline(Pipeline id, const char* source, cons
     vkDestroyShaderModule(_device, vertModule, nullptr);
     vkDestroyShaderModule(_device, fragModule, nullptr);
 
-    pipelinePool.Get(id).pipeline = pipeline;
-    pipelinePool.Get(id).layout = layout;
-    pipelinePool.Get(id).info = info;
+    data.pipeline = pipeline;
+    data.layout = layout;
+    data.info = info;
+
+    return true;
+}
+
+void VulkanGPUDevice::_DestroyPipeline(PipelineData& data){
+    Assert(data.pipeline != VK_NULL_HANDLE);
+    Assert(data.layout != VK_NULL_HANDLE);
+
+    vkDestroyPipeline(_device, data.pipeline, nullptr);
+    vkDestroyPipelineLayout(_device, data.layout, nullptr);
+    data.pipeline = VK_NULL_HANDLE;
+    data.layout = VK_NULL_HANDLE;
+}
+
+#pragma endregion
+
+#pragma region Buffer
+
+bool VulkanGPUDevice::_CreateBuffer(BufferData& data, size_t size, BufferUsage usage, BufferMemory memory){
+    // --------------------------------------------------
+    // Create Vulkan buffer
+    // --------------------------------------------------
+
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = GetVulkanBufferUsage(usage);
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    // GPU-only buffers are updated through staging copies.
+    if(memory == BufferMemory::GPUOnly){
+        bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+
+    // --------------------------------------------------
+    // Allocate memory
+    // --------------------------------------------------
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = GetVulkanMemoryUsage(memory);
+
+    // Keep CPU-visible buffers persistently mapped.
+    if(memory != BufferMemory::GPUOnly){
+        allocInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    }
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+
+    VK_CHECK(vmaCreateBuffer(
+        _allocator,
+        &bufferInfo,
+        &allocInfo,
+        &buffer,
+        &allocation,
+        nullptr
+    ));
+
+    // --------------------------------------------------
+    // Store resource
+    // --------------------------------------------------
+
+    data.buffer = buffer;
+    data.allocation = allocation;
+    data.usage = usage;
+    data.memory = memory;
+    data.size = size;
+
+    return true;
+}
+
+void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, size_t size){
+    if(!data || size == 0){
+        return;
+    }
+
+    /*if(cmd.updateBuffer.offset + cmd.updateBuffer.size > bufferData.size) {
+        LogError("UpdateBuffer exceeds buffer size");
+        break;
+    }*/
+
+    // CPU visible buffer
+    if (bufferData.memory != BufferMemory::GPUOnly) {
+
+        void* mappedData = nullptr;
+        bool needUnmap = false;
+
+        VmaAllocationInfo allocInfo{};
+        vmaGetAllocationInfo(
+            _allocator,
+            bufferData.allocation,
+            &allocInfo
+        );
+
+        mappedData = allocInfo.pMappedData;
+
+        if (!mappedData) {
+            VK_CHECK(vmaMapMemory(
+                _allocator,
+                bufferData.allocation,
+                &mappedData
+            ));
+
+            needUnmap = true;
+        }
+
+        std::memcpy(
+            static_cast<char*>(mappedData), // + cmd.updateBuffer.offset,
+            data,
+            size
+        );
+
+        vmaFlushAllocation(
+            _allocator,
+            bufferData.allocation,
+            0, //cmd.updateBuffer.offset,
+            size
+        );
+
+        if (needUnmap) {
+            vmaUnmapMemory(
+                _allocator,
+                bufferData.allocation
+            );
+        }
+    }
+    // GPU-only buffer
+    else {
+
+        VkBufferCreateInfo stagingInfo{};
+        stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        stagingInfo.size = size;
+        stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+        VmaAllocationCreateInfo stagingAllocInfo{};
+        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+        stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        VkBuffer stagingBuffer;
+        VmaAllocation stagingAllocation;
+        VmaAllocationInfo stagingResultInfo{};
+
+        VK_CHECK(vmaCreateBuffer(
+            _allocator,
+            &stagingInfo,
+            &stagingAllocInfo,
+            &stagingBuffer,
+            &stagingAllocation,
+            &stagingResultInfo
+        ));
+
+        // CPU -> staging
+        std::memcpy(
+            stagingResultInfo.pMappedData,
+            data,
+            size
+        );
+
+        vmaFlushAllocation(
+            _allocator,
+            stagingAllocation,
+            0,
+            size
+        );
+
+        // staging -> GPU buffer
+        immediate_submit([&](VkCommandBuffer transferCmd) {
+
+            VkBufferCopy copy{};
+            copy.srcOffset = 0;
+            copy.dstOffset = 0; //cmd.updateBuffer.offset;
+            copy.size = size;
+
+            vkCmdCopyBuffer(
+                transferCmd,
+                stagingBuffer,
+                bufferData.buffer,
+                1,
+                &copy
+            );
+        });
+
+        vmaDestroyBuffer(
+            _allocator,
+            stagingBuffer,
+            stagingAllocation
+        );
+    }
+
+}
+
+void VulkanGPUDevice::_DestroyBuffer(BufferData& data){
+    vmaDestroyBuffer(_allocator, data.buffer, data.allocation);
+    data.buffer = VK_NULL_HANDLE;
+    data.allocation = VK_NULL_HANDLE;
 }
 
 #pragma endregion
@@ -700,6 +896,198 @@ VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, 
 
 #pragma endregion
 
+#pragma region Texture2D
+
+bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
+    //the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
+    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8A8_SRGB;
+
+    texData.width = info.width;
+    texData.height = info.height;
+
+    VkExtent3D imageExtent;
+    imageExtent.width = info.width;
+    imageExtent.height = info.height;
+    imageExtent.depth = 1;
+
+    VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
+
+    VmaAllocationCreateInfo dimg_allocinfo = {};
+    dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    //allocate and create the image
+    VK_CHECK(vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &texData.image, &texData.allocation, nullptr));
+
+    VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(image_format, texData.image, VK_IMAGE_ASPECT_COLOR_BIT);
+    VK_CHECK(vkCreateImageView(_device, &imageinfo, nullptr, &texData.imageView));
+
+    VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
+    VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &texData.sampler));
+
+    return true;
+} 
+
+void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size){
+    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* mapped = nullptr;
+    vmaMapMemory(_allocator, staging._allocation, &mapped);
+    memcpy(mapped, data, size);
+    vmaUnmapMemory(_allocator, staging._allocation);
+    VkExtent3D extent{texData.width, texData.height, 1};
+    immediate_submit([&](VkCommandBuffer command){
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = texData.image; barrier.subresourceRange = range;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        VkBufferImageCopy copy{};
+        copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; copy.imageExtent = extent;
+        vkCmdCopyBufferToImage(command, staging._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    });
+    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
+}
+
+void VulkanGPUDevice::_DestroyTexture2D(Texture2DData& data){
+    Assert(data.sampler == INVALID_ID);
+    Assert(data.imageView == INVALID_ID);
+    Assert(data.image == INVALID_ID);
+
+    vkDestroySampler(_device, data.sampler, nullptr);
+    vkDestroyImageView(_device, data.imageView, nullptr);
+    vmaDestroyImage(_allocator, data.image, data.allocation);
+    data.sampler = INVALID_ID;
+    data.imageView = INVALID_ID;
+    data.image = INVALID_ID;
+} 
+
+#pragma endregion
+
+#pragma region BindGroupLayout
+bool VulkanGPUDevice::_CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info){
+    data.info = info;
+
+    auto Convert = [](BindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
+        VkDescriptorSetLayoutBinding entry = {};
+        entry.binding = e.binding;
+        entry.descriptorCount = 1;
+        entry.descriptorType = GetVulkanDescriptorType(e.type);// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        entry.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        return entry;
+    };
+
+    std::vector<VkDescriptorSetLayoutBinding> entries;
+    for(int i = 0; i < info.entriesCount; i++){
+        auto& e = info.entries[i];
+        
+        //LogInfo("binding={} type={}", e.binding, static_cast<int>(e.type));
+        entries.push_back(Convert(e));
+    }
+
+    VkDescriptorSetLayoutCreateInfo setinfo = {};
+    setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    setinfo.pNext = nullptr;
+    setinfo.flags = 0; //no flags
+    setinfo.pBindings = entries.data();
+    setinfo.bindingCount = entries.size();
+
+    VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
+
+    return true;
+}
+
+void VulkanGPUDevice::_DestroyBindGroupLayout(BindGroupLayoutData& data){
+    vkDestroyDescriptorSetLayout(_device, data.layout, nullptr);
+    data.layout = VK_NULL_HANDLE;
+}
+#pragma endregion
+
+#pragma region BindGroup
+
+bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info){
+    BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(info.layout);
+    
+    VkDescriptorSetAllocateInfo allocInfo ={};
+    allocInfo.pNext = nullptr;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = _descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layoutData.layout;
+    VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &data.descriptorSet));
+
+    std::vector<VkDescriptorBufferInfo> bInfos;
+    std::vector<VkDescriptorImageInfo> imageInfos;
+    std::vector<VkWriteDescriptorSet> writes;
+    bInfos.resize(info.entriesCount);
+    imageInfos.resize(info.entriesCount);
+    writes.resize(info.entriesCount);
+
+    for(int i = 0; i < info.entriesCount; i++){
+        if(layoutData.info.entries[i].type == BindingType::UniformBuffer){
+            BufferData& bufferData = bufferPool.Get(info.entries[i].buffer);
+
+            VkDescriptorBufferInfo& binfo = bInfos[i];
+            binfo = {};
+            binfo.buffer = bufferData.buffer;// _frames[i].cameraBuffer._buffer;
+            binfo.offset = info.entries[i].offset;
+            binfo.range = info.entries[i].size;// ssizeof(GPUCameraData);
+
+            VkWriteDescriptorSet& setWrite = writes[i];
+            setWrite = {};
+            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            setWrite.pNext = nullptr;
+            setWrite.dstBinding = info.entries[i].binding;
+            setWrite.dstSet = data.descriptorSet;
+            setWrite.descriptorCount = 1;
+            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            setWrite.pBufferInfo = &binfo;
+        } else if(layoutData.info.entries[i].type == BindingType::Texture2D){
+            VkImageView imageView = VK_NULL_HANDLE;
+            VkSampler sampler = VK_NULL_HANDLE; 
+
+            if(info.entries[i].texture != InvalidID){
+                Texture2DData& texData = texture2DPool.Get(info.entries[i].texture);
+                imageView = texData.imageView;
+                sampler = texData.sampler;
+            }
+
+            if(info.entries[i].framebuffer != InvalidID){
+                FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
+                int attacment = info.entries[i].framebufferAttacement;
+                imageView = attacment < 0 ? framebufferData.depthAttachment.imageView : framebufferData.colorAttachments[attacment].imageView;
+                sampler = attacment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attacment].sampler;
+            }
+
+            VkDescriptorImageInfo& imageBufferInfo = imageInfos[i];
+            imageBufferInfo.sampler = sampler;
+            imageBufferInfo.imageView = imageView;
+            imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkWriteDescriptorSet& setWrite = writes[i];
+            setWrite = vkinit::write_descriptor_image(
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 
+                data.descriptorSet, 
+                &imageBufferInfo, 
+                info.entries[i].binding
+            );
+        } else {
+            Assert(false);
+        }
+    }
+
+    vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+
+    return true;
+}
+
+#pragma endregion
+
 #pragma region Framebuffer
 
 uint64_t HashCombineByte(uint64_t hash, uint8_t value){
@@ -760,9 +1148,7 @@ VkRenderPass VulkanGPUDevice::GetOrCreate(const FrameBufferLayout& layout){
     return pass.renderPass;
 }
 
-void VulkanGPUDevice::CreateFramebuffer(Framebuffer id, const FrameBufferCreateInfo& info){
-    FramebufferData& data = framebufferPool.Get(id);
-
+bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& info){
     //VulkanFramebuffer result{};
 
     data.width = info.width;
@@ -898,6 +1284,13 @@ void VulkanGPUDevice::CreateFramebuffer(Framebuffer id, const FrameBufferCreateI
     framebufferInfo.height = info.height;
     framebufferInfo.layers = 1;
     VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &data.framebuffer));
+
+    return true;
+}
+
+void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
+    vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
+    data.framebuffer = INVALID_ID;
 }
 
 #pragma endregion
@@ -1112,11 +1505,7 @@ void VulkanGPUDevice::Cleanup(){
     });
 
     pipelinePool.ForEach([&](uint32_t id, PipelineData& data){
-        if(data.pipeline != VK_NULL_HANDLE){
-            vkDestroyPipeline(_device, data.pipeline, nullptr);
-            vkDestroyPipelineLayout(_device, data.layout, nullptr);
-            data.pipeline = VK_NULL_HANDLE;
-        }
+        _DestroyPipeline(data);
     });
 
     bindGroupLayoutPool.ForEach([&](uint32_t id, BindGroupLayoutData& data){ 
@@ -1127,10 +1516,8 @@ void VulkanGPUDevice::Cleanup(){
     });
 
     texture2DPool.ForEach([&](uint32_t id, Texture2DData& data){
-        vkDestroySampler(_device, data.sampler, nullptr);
-        vkDestroyImageView(_device, data.imageView, nullptr);
-        //vkDestroyImage(_device, data.image, nullptr);
-        vmaDestroyImage(_allocator, data.image, data.allocation);
+        if(data.image == INVALID_ID) return;
+        _DestroyTexture2D(data);
     });
 
     vmaDestroyAllocator(_allocator);
@@ -1243,427 +1630,108 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
             case ResourceCommands::Type::CreateBuffer:{
-                auto& bufferData = bufferPool.Get(cmd.createBuffer.id);
-
-                if(bufferData.buffer != VK_NULL_HANDLE){
-                    LogError("Trying CreateBuffer on Used id");
-                    break;
+                Assert(bufferPool.IsValid(cmd.createBuffer.id));
+                auto& data = bufferPool.Get(cmd.createBuffer.id);
+                if(!_CreateBuffer(data, cmd.createBuffer.size, cmd.createBuffer.usage, cmd.createBuffer.memory)){
+                    bufferPool.AddDestroyedId(cmd.createBuffer.id);
                 }
-
-                // --------------------------------------------------
-                // Create Vulkan buffer
-                // --------------------------------------------------
-
-                VkBufferCreateInfo bufferInfo{};
-                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                bufferInfo.size = cmd.createBuffer.size;
-                bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
-                bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-                // GPU-only buffers are updated through staging copies.
-                if(cmd.createBuffer.memory == BufferMemory::GPUOnly){
-                    bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-                }
-
-                // --------------------------------------------------
-                // Allocate memory
-                // --------------------------------------------------
-
-                VmaAllocationCreateInfo allocInfo{};
-                allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
-
-                // Keep CPU-visible buffers persistently mapped.
-                if(cmd.createBuffer.memory != BufferMemory::GPUOnly){
-                    allocInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-                }
-
-                VkBuffer buffer = VK_NULL_HANDLE;
-                VmaAllocation allocation = VK_NULL_HANDLE;
-
-                VK_CHECK(vmaCreateBuffer(
-                    _allocator,
-                    &bufferInfo,
-                    &allocInfo,
-                    &buffer,
-                    &allocation,
-                    nullptr
-                ));
-
-                // --------------------------------------------------
-                // Store resource
-                // --------------------------------------------------
-
-                bufferData.buffer = buffer;
-                bufferData.allocation = allocation;
-                bufferData.usage = cmd.createBuffer.usage;
-                bufferData.memory = cmd.createBuffer.memory;
-                bufferData.size = cmd.createBuffer.size;
-
                 break;
             }
 
             case ResourceCommands::Type::UpdateBuffer: {
+                Assert(bufferPool.IsValid(cmd.updateBuffer.id));
                 auto& bufferData = bufferPool.Get(cmd.updateBuffer.id);
-
-                if(bufferData.buffer == VK_NULL_HANDLE) {
-                    LogError("Trying UpdateBuffer on Invalid Buffer");
-                    break;
-                }
-
-                if(!cmd.updateBuffer.data || cmd.updateBuffer.size == 0) {
-                    break;
-                }
-
-                /*if(cmd.updateBuffer.offset + cmd.updateBuffer.size > bufferData.size) {
-                    LogError("UpdateBuffer exceeds buffer size");
-                    break;
-                }*/
-
-                // CPU visible buffer
-                if (bufferData.memory != BufferMemory::GPUOnly) {
-
-                    void* mappedData = nullptr;
-                    bool needUnmap = false;
-
-                    VmaAllocationInfo allocInfo{};
-                    vmaGetAllocationInfo(
-                        _allocator,
-                        bufferData.allocation,
-                        &allocInfo
-                    );
-
-                    mappedData = allocInfo.pMappedData;
-
-                    if (!mappedData) {
-                        VK_CHECK(vmaMapMemory(
-                            _allocator,
-                            bufferData.allocation,
-                            &mappedData
-                        ));
-
-                        needUnmap = true;
-                    }
-
-                    std::memcpy(
-                        static_cast<char*>(mappedData), // + cmd.updateBuffer.offset,
-                        cmd.updateBuffer.data,
-                        cmd.updateBuffer.size
-                    );
-
-                    vmaFlushAllocation(
-                        _allocator,
-                        bufferData.allocation,
-                        0, //cmd.updateBuffer.offset,
-                        cmd.updateBuffer.size
-                    );
-
-                    if (needUnmap) {
-                        vmaUnmapMemory(
-                            _allocator,
-                            bufferData.allocation
-                        );
-                    }
-                }
-                // GPU-only buffer
-                else {
-
-                    VkBufferCreateInfo stagingInfo{};
-                    stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                    stagingInfo.size = cmd.updateBuffer.size;
-                    stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-                    VmaAllocationCreateInfo stagingAllocInfo{};
-                    stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-                    stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-                    VkBuffer stagingBuffer;
-                    VmaAllocation stagingAllocation;
-                    VmaAllocationInfo stagingResultInfo{};
-
-                    VK_CHECK(vmaCreateBuffer(
-                        _allocator,
-                        &stagingInfo,
-                        &stagingAllocInfo,
-                        &stagingBuffer,
-                        &stagingAllocation,
-                        &stagingResultInfo
-                    ));
-
-                    // CPU -> staging
-                    std::memcpy(
-                        stagingResultInfo.pMappedData,
-                        cmd.updateBuffer.data,
-                        cmd.updateBuffer.size
-                    );
-
-                    vmaFlushAllocation(
-                        _allocator,
-                        stagingAllocation,
-                        0,
-                        cmd.updateBuffer.size
-                    );
-
-                    // staging -> GPU buffer
-                    immediate_submit([&](VkCommandBuffer transferCmd) {
-
-                        VkBufferCopy copy{};
-                        copy.srcOffset = 0;
-                        copy.dstOffset = 0; //cmd.updateBuffer.offset;
-                        copy.size = cmd.updateBuffer.size;
-
-                        vkCmdCopyBuffer(
-                            transferCmd,
-                            stagingBuffer,
-                            bufferData.buffer,
-                            1,
-                            &copy
-                        );
-                    });
-
-                    vmaDestroyBuffer(
-                        _allocator,
-                        stagingBuffer,
-                        stagingAllocation
-                    );
-                }
-
+                _UpdatedBuffer(bufferData, cmd.updateBuffer.data, cmd.updateBuffer.size);
                 break;
             }
 
             case ResourceCommands::Type::DestroyBuffer:{
-                if(cmd.destroyBuffer.id == InvalidID){
-                    LogError("Trying destroy a InvalidID!");
-                    break;
-                }
-
-                auto& bufData = bufferPool.Get(cmd.destroyBuffer.id);
-                if(bufData.buffer != VK_NULL_HANDLE){
-                    vmaDestroyBuffer(_allocator, bufData.buffer, bufData.allocation);
-                    bufData.buffer = VK_NULL_HANDLE;
-                    bufData.allocation = VK_NULL_HANDLE;
-                }
-                bufferPool.idsDestred.push_back(cmd.destroyBuffer.id);
+                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
+                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
+                _DestroyBuffer(data);
+                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
                 break;
             }
 
             case ResourceCommands::Type::CreateTexture2D:{
-                if(texture2DPool.Get(cmd.createTexture2D.id).image != VK_NULL_HANDLE){
-                    LogError("Trying CreateTexture2D on Used id");
-                    break;
+                Assert(texture2DPool.IsValid(cmd.createTexture2D.id));
+                auto& data = texture2DPool.Get(cmd.createTexture2D.id);
+                if(!_CreateTexture2D(data, cmd.createTexture2D.info)){
+                    texture2DPool.AddDestroyedId(cmd.createTexture2D.id);
                 }
+                break;
+            }
 
-                Texture2DData& texData = texture2DPool.Get(cmd.createTexture2D.id);
+            case ResourceCommands::Type::UploadTexture2D:{
+                Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
+                auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
+                _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size);
+                break;
+            }
 
-                VkDeviceSize imageSize = cmd.createTexture2D.size;// texWidth * texHeight * 4;
-
-                //the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
-                VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8A8_SRGB;
-
-                //allocate temporary buffer for holding texture data to upload
-                AllocatedBuffer stagingBuffer = create_buffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-
-                //copy data to buffer
-                void* data;
-                vmaMapMemory(_allocator, stagingBuffer._allocation, &data);
-                memcpy(data, cmd.createTexture2D.data, cmd.createTexture2D.size);
-                vmaUnmapMemory(_allocator, stagingBuffer._allocation);
-
-                VkExtent3D imageExtent;
-                imageExtent.width = cmd.createTexture2D.info.width;
-                imageExtent.height = cmd.createTexture2D.info.height;
-                imageExtent.depth = 1;
-
-                VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
-
-                VmaAllocationCreateInfo dimg_allocinfo = {};
-                dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-                //allocate and create the image
-                VK_CHECK(vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &texData.image, &texData.allocation, nullptr));
-
-                immediate_submit([&](VkCommandBuffer cmd) {
-                    VkImageSubresourceRange range;
-                    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    range.baseMipLevel = 0;
-                    range.levelCount = 1;
-                    range.baseArrayLayer = 0;
-                    range.layerCount = 1;
-
-                    VkImageMemoryBarrier imageBarrier_toTransfer = {};
-                    imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    imageBarrier_toTransfer.image = texData.image;
-                    imageBarrier_toTransfer.subresourceRange = range;
-                    imageBarrier_toTransfer.srcAccessMask = 0;
-                    imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    //barrier the image into the transfer-receive layout
-                    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
-
-                    VkBufferImageCopy copyRegion = {};
-                    copyRegion.bufferOffset = 0;
-                    copyRegion.bufferRowLength = 0;
-                    copyRegion.bufferImageHeight = 0;
-                    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    copyRegion.imageSubresource.mipLevel = 0;
-                    copyRegion.imageSubresource.baseArrayLayer = 0;
-                    copyRegion.imageSubresource.layerCount = 1;
-                    copyRegion.imageExtent = imageExtent;
-                    //copy the buffer into the image
-                    vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-
-                    VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
-                    imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    //barrier the image into the shader readable layout
-                    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
-                });
-                vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
-
-                VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(image_format, texData.image, VK_IMAGE_ASPECT_COLOR_BIT);
-	            VK_CHECK(vkCreateImageView(_device, &imageinfo, nullptr, &texData.imageView));
-
-                VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
-                VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &texData.sampler));
-
+            case ResourceCommands::Type::DestroyTexture2D:{
+                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
+                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
+                _DestroyTexture2D(data);
+                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
                 break;
             }
 
             case ResourceCommands::Type::CreatePipeline:{
-                CreateVulkanPipeline(cmd.createPipeline.id, cmd.createPipeline.source, cmd.createPipeline.info);
-                //LogInfo("CreatePipeline");
+                Assert(pipelinePool.IsValid(cmd.createPipeline.id));
+                auto& data = pipelinePool.Get(cmd.createPipeline.id);
+                if(!_CreatePipeline(data, cmd.createPipeline.source, cmd.createPipeline.info)){
+                    pipelinePool.AddDestroyedId(cmd.createPipeline.id);
+                }
                 break;
             }
 
             case ResourceCommands::Type::DestroyPipeline:{
-                if(cmd.destroyPipeline.id == InvalidID){
-                    LogError("Trying destroy a InvalidID!");
-                    break;
-                }
-
-                auto& pipeData = pipelinePool.Get(cmd.destroyPipeline.id);
-                if(pipeData.pipeline != VK_NULL_HANDLE){
-                    vkDestroyPipeline(_device, pipeData.pipeline, nullptr);
-                    vkDestroyPipelineLayout(_device, pipeData.layout, nullptr);
-                    pipeData.pipeline = VK_NULL_HANDLE;
-                    pipeData.layout = VK_NULL_HANDLE;
-                }
-                pipelinePool.idsDestred.push_back(cmd.destroyPipeline.id);
+                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
+                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
+                _DestroyPipeline(data);
+                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
                 break;
             }
             
             case ResourceCommands::Type::CreateBindGroupLayout:{
+                Assert(bindGroupLayoutPool.IsValid(cmd.createBindGroupLayout.id));
                 BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
-                std::memcpy(&data.info, cmd.createBindGroupLayout.info, sizeof(BindGroupLayoutInfo));
-                //data.info = cmd.createBindGroupLayout.info;
-
-                auto Convert = [](BindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
-                    VkDescriptorSetLayoutBinding entry = {};
-                    entry.binding = e.binding;
-                    entry.descriptorCount = 1;
-                    entry.descriptorType = GetVulkanDescriptorType(e.type);// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    entry.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-                    return entry;
-                };
-
-                std::vector<VkDescriptorSetLayoutBinding> entries;
-                for(int i = 0; i < cmd.createBindGroupLayout.info->entriesCount; i++){
-                    auto& e = cmd.createBindGroupLayout.info->entries[i];
-                    
-                    //LogInfo("binding={} type={}", e.binding, static_cast<int>(e.type));
-                    entries.push_back(Convert(e));
+                if(!_CreateBindGroupLayout(data, *cmd.createBindGroupLayout.info)){
+                    bindGroupLayoutPool.AddDestroyedId(cmd.createBindGroupLayout.id);
                 }
+                break;
+            }
 
-                VkDescriptorSetLayoutCreateInfo setinfo = {};
-                setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                setinfo.pNext = nullptr;
-                setinfo.flags = 0; //no flags
-                setinfo.pBindings = entries.data();
-                setinfo.bindingCount = entries.size();
-
-                VK_CHECK(vkCreateDescriptorSetLayout(_device, &setinfo, nullptr, &data.layout));
+            case ResourceCommands::Type::DestroyBindGroupLayout:{
+                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
+                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
+                _DestroyBindGroupLayout(data);
+                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
                 break;
             }
 
             case ResourceCommands::Type::CreateBindGroup:{
-                BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(cmd.createBindGroup.info->layout);
-    
-                VkDescriptorSetAllocateInfo allocInfo ={};
-                allocInfo.pNext = nullptr;
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &layoutData.layout;
-                VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet));
-
-                std::vector<VkDescriptorBufferInfo> bInfos;
-                std::vector<VkDescriptorImageInfo> imageInfos;
-                std::vector<VkWriteDescriptorSet> writes;
-                bInfos.resize(cmd.createBindGroup.info->entriesCount);
-                imageInfos.resize(cmd.createBindGroup.info->entriesCount);
-                writes.resize(cmd.createBindGroup.info->entriesCount);
-
-                for(int i = 0; i < cmd.createBindGroup.info->entriesCount; i++){
-                    if(layoutData.info.entries[i].type == BindingType::UniformBuffer){
-                        BufferData& bufferData = bufferPool.Get(cmd.createBindGroup.info->entries[i].buffer);
-
-                        VkDescriptorBufferInfo& binfo = bInfos[i];
-                        binfo = {};
-                        binfo.buffer = bufferData.buffer;// _frames[i].cameraBuffer._buffer;
-                        binfo.offset = cmd.createBindGroup.info->entries[i].offset;
-                        binfo.range = cmd.createBindGroup.info->entries[i].size;// ssizeof(GPUCameraData);
-
-                        VkWriteDescriptorSet& setWrite = writes[i];
-                        setWrite = {};
-                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                        setWrite.pNext = nullptr;
-                        setWrite.dstBinding = cmd.createBindGroup.info->entries[i].binding;
-                        setWrite.dstSet = bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet;
-                        setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        setWrite.pBufferInfo = &binfo;
-                    } else if(layoutData.info.entries[i].type == BindingType::Texture2D){
-                        VkImageView imageView = VK_NULL_HANDLE;
-                        VkSampler sampler = VK_NULL_HANDLE; 
-
-                        if(cmd.createBindGroup.info->entries[i].texture != InvalidID){
-                            Texture2DData& texData = texture2DPool.Get(cmd.createBindGroup.info->entries[i].texture);
-                            imageView = texData.imageView;
-                            sampler = texData.sampler;
-                        }
-
-                        if(cmd.createBindGroup.info->entries[i].framebuffer != InvalidID){
-                            FramebufferData& framebufferData = framebufferPool.Get(cmd.createBindGroup.info->entries[i].framebuffer);
-                            int attacment = cmd.createBindGroup.info->entries[i].framebufferAttacement;
-                            imageView = attacment < 0 ? framebufferData.depthAttachment.imageView : framebufferData.colorAttachments[attacment].imageView;
-                            sampler = attacment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attacment].sampler;
-                        }
-
-                        VkDescriptorImageInfo& imageBufferInfo = imageInfos[i];
-                        imageBufferInfo.sampler = sampler;
-                        imageBufferInfo.imageView = imageView;
-                        imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-                        VkWriteDescriptorSet& setWrite = writes[i];
-                        setWrite = vkinit::write_descriptor_image(
-                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 
-                            bindGroupPool.Get(cmd.createBindGroup.id).descriptorSet, 
-                            &imageBufferInfo, 
-                            cmd.createBindGroup.info->entries[i].binding
-                        );
-                    } else {
-                        Assert(false);
-                    }
-                }
-
-                vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+                Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
+                auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
+                _CreateBindGroup(data, *cmd.createBindGroup.info);
                 break;
             }
             
             case ResourceCommands::Type::CreateFramebuffer:{
-                CreateFramebuffer(cmd.createFramebuffer.framebuffer, cmd.createFramebuffer.info);
+                Assert(framebufferPool.IsValid(cmd.createFramebuffer.framebuffer));
+                auto& data = framebufferPool.Get(cmd.createFramebuffer.framebuffer);
+                if(!_CreateFramebuffer(data, cmd.createFramebuffer.info)){
+                    framebufferPool.AddDestroyedId(cmd.createFramebuffer.framebuffer);
+                }
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyFramebuffer:{
+                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
+                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
+                _DestroyFramebuffer(data);
+                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
                 break;
             }
         }
@@ -2120,10 +2188,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
 void VulkanGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
+    texture2DPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
-
     bindGroupLayoutPool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
+    framebufferPool.SyncSingleThreadData();
 }
 
 Pipeline VulkanGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
@@ -2137,9 +2206,21 @@ void VulkanGPUDevice::DestroyPipeline(Pipeline id){
 }
 
 Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    BufferData data;
+    if(!_CreateBuffer(data, size, usage, memory)) return InvalidID;
+    auto id = bufferPool.AllocId();
+    bufferPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = bufferPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, size, usage, memory);
     return id;
+
+    #endif
 }
 
 void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
@@ -2150,10 +2231,52 @@ void VulkanGPUDevice::DestroyBuffer(Buffer id){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyBuffer(id);
 }
 
+Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    Texture2DData data;
+    if(!_CreateTexture2D(data, info)) return InvalidID;
+    auto id = texture2DPool.AllocId();
+    texture2DPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
+    auto id = texture2DPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2D(id, info);
+    return id;
+
+    #endif
+}
+
+void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size);
+}
+
+void VulkanGPUDevice::DestroyTexture2D(Texture2D tex){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
+}   
+
 BindGroupLayout VulkanGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    BindGroupLayoutData data;
+    if(!_CreateBindGroupLayout(data, info)) return InvalidID;
+    auto id = bindGroupLayoutPool.AllocId();
+    bindGroupLayoutPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = bindGroupLayoutPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroupLayout(id, info);
     return id;
+
+    #endif
+}
+
+void VulkanGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBindGroupLayout(layout);
 }
 
 BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
@@ -2162,16 +2285,14 @@ BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
     return id;
 }
 
-Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info, void* data, size_t size){
-    auto id = texture2DPool.AllocId();
-    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2D(id, info, data, size);
-    return id;
-}
-
 Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){ 
     auto id = framebufferPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
     return id;
+}
+
+void VulkanGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyFramebuffer(framebuffer);
 }
 
 #pragma endregion

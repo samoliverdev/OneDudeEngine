@@ -7,8 +7,11 @@ namespace OD{
 
 template <typename T, uint32_t ChunkSize = 1024>
 struct ResourcePool{
+    uint32_t InvalidID = std::numeric_limits<uint32_t>::max();
+
     struct Chunk{
         std::array<T, ChunkSize> data;
+        std::array<bool, ChunkSize> isValid;
         std::array<Gfx::ResourceStats, ChunkSize> status;
     };
 
@@ -25,6 +28,14 @@ struct ResourcePool{
     std::vector<uint32_t> gpuToCpuResourceStatesIds;
     std::vector<Gfx::ResourceStats> gpuToCpuResourceStatesData;
 
+    inline bool IsValid(uint32_t id){
+        if(id == InvalidID) return false;
+        uint32_t chunkIndex = id / ChunkSize;
+        uint32_t index      = id % ChunkSize;
+        if(chunks[chunkIndex]->isValid[index] == false) return false;
+        return true;
+    }
+
     inline uint32_t AllocId(){
         if(!freeIds.empty()){
             uint32_t id = freeIds.back();
@@ -36,6 +47,11 @@ struct ResourcePool{
         curId++;
 
         EnsureChunk(id);
+
+        uint32_t chunkIndex = id / ChunkSize;
+        uint32_t index      = id % ChunkSize;
+        chunks[chunkIndex]->isValid[index] = true;
+
         return id;
     }
 
@@ -68,11 +84,11 @@ struct ResourcePool{
     }
 
     inline void CpuPushResource(uint32_t id, T& resource){
-        Assert(false);
-        /*singleThreadIds.push_back(id);
+        //Assert(false);
+        singleThreadIds.push_back(id);
         singleThreadDatas.push_back(resource);
 
-        resourceStatus.resize(curId);
+        /*resourceStatus.resize(curId);
         resourceStatus[id].type = GPUResourceStatsType::Created;
         resourceStatus[id].erroMessage = "";*/
     }
@@ -88,13 +104,12 @@ struct ResourcePool{
         }
         idsDestred.clear();
 
-        /*Assert(singleThreadIds.size() == singleThreadDatas.size());
-
+        Assert(singleThreadIds.size() == singleThreadDatas.size());
         for(size_t i = 0; i < singleThreadIds.size(); i++){
             Get(singleThreadIds[i]) = singleThreadDatas[i];
         }
         singleThreadIds.clear();
-        singleThreadDatas.clear();*/
+        singleThreadDatas.clear();
 
         Assert(gpuToCpuResourceStatesIds.size() == gpuToCpuResourceStatesData.size());
         for(size_t i = 0; i < gpuToCpuResourceStatesIds.size(); i++){
@@ -104,10 +119,21 @@ struct ResourcePool{
         gpuToCpuResourceStatesData.clear();
     }
 
+    inline void AddDestroyedId(uint32_t id){
+        idsDestred.push_back(id);
+        uint32_t chunkIndex = id / ChunkSize;
+        uint32_t index      = id % ChunkSize;
+        chunks[chunkIndex]->isValid[index] = false;
+    }
+
     template <typename Func>
     inline void ForEach(Func&& func){
         for(uint32_t id = 0; id < curId; ++id){
-            func(id, Get(id));
+            uint32_t chunkIndex = id / ChunkSize;
+            uint32_t index      = id % ChunkSize;
+
+            if(chunks[chunkIndex]->isValid[index] == false) continue;
+            func(id, chunks[chunkIndex]->data[index]);
         }
     }
 };
