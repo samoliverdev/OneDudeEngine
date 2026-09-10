@@ -468,7 +468,7 @@ Texture2D::Texture2D(){
 Texture2D::~Texture2D(){
     //LogInfo("OnDestroy: {}", path);
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     #else
     Assert(graphicsDevice != nullptr);
     graphicsDevice->Texture2DDestroy(*this);

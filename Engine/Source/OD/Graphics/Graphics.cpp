@@ -107,8 +107,8 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
 
 void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
-    //graphicsDevice = new Gfx::OpenglGPUDevice();
-    graphicsDevice = new Gfx::VulkanGPUDevice();
+    graphicsDevice = new Gfx::OpenglGPUDevice();
+    //graphicsDevice = new Gfx::VulkanGPUDevice();
     gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
     return;
     #endif

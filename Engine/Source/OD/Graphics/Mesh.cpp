@@ -230,9 +230,9 @@ void Mesh::Submit(
     if(weightsVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(weightsVbo);
     if(influencesVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(influencesVbo);
     
-    if(!influences->empty()){
-        ebo = gfxDevice->CreateBuffer(influences->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
-        gfxDevice->UpdatedBuffer(ebo, indices->data(), influences->size() * sizeof(unsigned int));
+    if(!indices->empty()){
+        ebo = gfxDevice->CreateBuffer(indices->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+        gfxDevice->UpdatedBuffer(ebo, indices->data(), indices->size() * sizeof(unsigned int));
     } else {
         ebo = gfxDevice->CreateBuffer(sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
     }

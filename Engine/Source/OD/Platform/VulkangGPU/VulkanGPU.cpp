@@ -1646,6 +1646,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
 
             case ResourceCommands::Type::DestroyBuffer:{
+                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
+                    LogError("DestroyBuffer: Invalid id!");
+                    break;
+                }
+
                 Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
                 auto& data = bufferPool.Get(cmd.destroyBuffer.id);
                 _DestroyBuffer(data);
