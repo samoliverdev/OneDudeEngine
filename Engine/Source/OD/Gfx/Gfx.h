@@ -498,7 +498,6 @@ struct OD_API ResourceCommands{
                 Buffer id;
                 BufferUsage usage;
                 BufferMemory memory;
-                const void* data;
                 size_t size;
             } createBuffer;
 
@@ -569,15 +568,11 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateBuffer(Buffer id, const void* data, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
-        void* copyData = uploadBuffer.AllocateData(size);
-        std::memcpy(copyData, data, size);
-
+    void CreateBuffer(Buffer id, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
         Command cmd{};
         cmd.type = Type::CreateBuffer;
         cmd.createBuffer.usage = usage;
         cmd.createBuffer.id = id;
-        cmd.createBuffer.data = copyData;
         cmd.createBuffer.size = size;
         cmd.createBuffer.memory = memory;
         commands.push_back(cmd);
@@ -826,14 +821,19 @@ public:
 
     virtual Pipeline CreatePipeline(const char* source, PipelineInfo info){ return InvalidID; }
     virtual void DestroyPipeline(Pipeline id){}
-    virtual Buffer CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){ return InvalidID; }
+
+    virtual Buffer CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){ return InvalidID; }
+    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size){}
     virtual void DestroyBuffer(Buffer id){}
+
+    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
+    virtual void UpdateTexture(Texture2D texture, const void* data, uint32_t mip, uint32_t x, uint32_t y, uint32_t width, uint32_t height){}
+
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
     virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
-    virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size){ return InvalidID; }
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
 
-    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size){}
+    
 };
 
 }

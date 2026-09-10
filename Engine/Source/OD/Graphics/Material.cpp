@@ -92,7 +92,7 @@ void Material::SetShader(Ref<Shader> s){
         for(auto& i: shader->reflection.bindings){
             if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
                 materialBindGroupInfo = i;
-                materialBuffer = gfxDevice->CreateBuffer(nullptr, i.size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+                materialBuffer = gfxDevice->CreateBuffer(i.size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
 
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;

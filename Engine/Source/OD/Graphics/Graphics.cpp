@@ -137,8 +137,11 @@ void Graphics::Initialize(){
     CameraData camData;
     Matrix4 identity = Matrix4Identity;
 
-    camBuffer = gfxDevice->CreateBuffer(&camData, sizeof(CameraData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
-    emptyModelBuffer = gfxDevice->CreateBuffer(&identity, sizeof(Matrix4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    camBuffer = gfxDevice->CreateBuffer(sizeof(CameraData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    gfxDevice->UpdatedBuffer(camBuffer, &camData, sizeof(CameraData));
+
+    emptyModelBuffer = gfxDevice->CreateBuffer(sizeof(Matrix4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    gfxDevice->UpdatedBuffer(emptyModelBuffer, &identity, sizeof(Matrix4));
 
     Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
     bindGroupLayoutInfo.entriesCount = 0;

@@ -1243,164 +1243,62 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
             case ResourceCommands::Type::CreateBuffer:{
-                /*Assert(cmd.createBuffer.id < bufferPool.data.size());
+                auto& bufferData = bufferPool.Get(cmd.createBuffer.id);
 
-                if(bufferPool.data[cmd.createBuffer.id].buffer != VK_NULL_HANDLE){
+                if(bufferData.buffer != VK_NULL_HANDLE){
                     LogError("Trying CreateBuffer on Used id");
-                    continue;
+                    break;
                 }
 
-                VkBufferCreateInfo bufferInfo = {};
+                // --------------------------------------------------
+                // Create Vulkan buffer
+                // --------------------------------------------------
+
+                VkBufferCreateInfo bufferInfo{};
                 bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
                 bufferInfo.size = cmd.createBuffer.size;
                 bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
+                bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-                VmaAllocationCreateInfo allocInfo = {};
-                allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
-                if (cmd.createBuffer.memory != GPUBufferMemory::GPUOnly) {
-                    allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-                }
-
-                VkBuffer buffer;
-                VmaAllocation allocation;
-                VmaAllocationInfo resultAllocInfo;
-                VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &resultAllocInfo));
-
-                if (cmd.createBuffer.data && cmd.createBuffer.size > 0) {
-                    if (cmd.createBuffer.memory != GPUBufferMemory::GPUOnly) {
-                        void* mappedData = resultAllocInfo.pMappedData;
-                        if (!mappedData) {
-                            vmaMapMemory(_allocator, allocation, &mappedData);
-                            std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
-                            vmaUnmapMemory(_allocator, allocation);
-                        } else {
-                            std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
-                        }
-                    }
-                }
-
-                bufferPool.data[cmd.createBuffer.id].buffer = buffer;
-                bufferPool.data[cmd.createBuffer.id].allocation = allocation;
-                bufferPool.data[cmd.createBuffer.id].usage = cmd.createBuffer.usage;
-                bufferPool.data[cmd.createBuffer.id].memory = cmd.createBuffer.memory;
-                bufferPool.data[cmd.createBuffer.id].size = cmd.createBuffer.size;
-                break;*/
-
-                //Assert(cmd.createBuffer.id < bufferPool.data.size());
-
-                if(bufferPool.Get(cmd.createBuffer.id).buffer != VK_NULL_HANDLE){
-                    LogError("Trying CreateBuffer on Used id");
-                    continue;
-                }
-
-                // 1. Setup usage flags for the main GPU buffer
-                VkBufferCreateInfo bufferInfo = {};
-                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                bufferInfo.size = cmd.createBuffer.size;
-                bufferInfo.usage = GetVulkanBufferUsage(cmd.createBuffer.usage);
-
-                // If memory is GPUOnly, we MUST allow it to act as a copy destination!
+                // GPU-only buffers are updated through staging copies.
                 if(cmd.createBuffer.memory == BufferMemory::GPUOnly){
                     bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
                 }
 
-                VmaAllocationCreateInfo allocInfo = {};
+                // --------------------------------------------------
+                // Allocate memory
+                // --------------------------------------------------
+
+                VmaAllocationCreateInfo allocInfo{};
                 allocInfo.usage = GetVulkanMemoryUsage(cmd.createBuffer.memory);
+
+                // Keep CPU-visible buffers persistently mapped.
                 if(cmd.createBuffer.memory != BufferMemory::GPUOnly){
-                    allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                    allocInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
                 }
 
-                VkBuffer buffer;
-                VmaAllocation allocation;
-                VmaAllocationInfo resultAllocInfo;
-                VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &resultAllocInfo));
+                VkBuffer buffer = VK_NULL_HANDLE;
+                VmaAllocation allocation = VK_NULL_HANDLE;
 
-                // 2. Upload Data
-                if(cmd.createBuffer.data && cmd.createBuffer.size > 0){
-                    if(cmd.createBuffer.memory != BufferMemory::GPUOnly){
-                        // Host visible copy (CPUToGPU / CPUOnly)
-                        void* mappedData = resultAllocInfo.pMappedData;
-                        bool needUnmap = false;
-                        if(!mappedData){
-                            vmaMapMemory(_allocator, allocation, &mappedData);
-                            needUnmap = true;
-                        }
+                VK_CHECK(vmaCreateBuffer(
+                    _allocator,
+                    &bufferInfo,
+                    &allocInfo,
+                    &buffer,
+                    &allocation,
+                    nullptr
+                ));
 
-                        std::memcpy(mappedData, cmd.createBuffer.data, cmd.createBuffer.size);
-                        vmaFlushAllocation(_allocator, allocation, 0, cmd.createBuffer.size);
+                // --------------------------------------------------
+                // Store resource
+                // --------------------------------------------------
 
-                        if(needUnmap){
-                            vmaUnmapMemory(_allocator, allocation);
-                        }
-                    } else {
-                        // GPUOnly copy via Staging Buffer
-                        VkBufferCreateInfo stagingInfo = {};
-                        stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                        stagingInfo.size = cmd.createBuffer.size;
-                        stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                bufferData.buffer = buffer;
+                bufferData.allocation = allocation;
+                bufferData.usage = cmd.createBuffer.usage;
+                bufferData.memory = cmd.createBuffer.memory;
+                bufferData.size = cmd.createBuffer.size;
 
-                        VmaAllocationCreateInfo stagingAllocInfo = {};
-                        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-                        stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-                        VkBuffer stagingBuffer;
-                        VmaAllocation stagingAllocation;
-                        VmaAllocationInfo stagingResultInfo;
-                        VK_CHECK(vmaCreateBuffer(_allocator, &stagingInfo, &stagingAllocInfo, &stagingBuffer, &stagingAllocation, &stagingResultInfo));
-
-                        // Copy CPU data to staging buffer memory
-                        std::memcpy(stagingResultInfo.pMappedData, cmd.createBuffer.data, cmd.createBuffer.size);
-                        vmaFlushAllocation(_allocator, stagingAllocation, 0, cmd.createBuffer.size);
-
-                        immediate_submit([&](VkCommandBuffer transferCmd){
-                            VkBufferCopy copy;
-                            copy.dstOffset = 0;
-                            copy.srcOffset = 0;
-                            copy.size = cmd.createBuffer.size;
-                            vkCmdCopyBuffer(transferCmd, stagingBuffer, buffer, 1, &copy);
-                        });
-                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);
-
-                        // Allocate dynamic single-use command buffer for GPU transfer
-                        /*VkCommandBufferAllocateInfo allocCmdInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
-                        VkCommandBuffer transferCmd;
-                        VK_CHECK(vkAllocateCommandBuffers(_device, &allocCmdInfo, &transferCmd));
-
-                        VkCommandBufferBeginInfo beginInfo = {};
-                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-                        VK_CHECK(vkBeginCommandBuffer(transferCmd, &beginInfo));
-
-                        VkBufferCopy copyRegion = {};
-                        copyRegion.srcOffset = 0;
-                        copyRegion.dstOffset = 0;
-                        copyRegion.size = cmd.createBuffer.size;
-                        vkCmdCopyBuffer(transferCmd, stagingBuffer, buffer, 1, &copyRegion);
-
-                        VK_CHECK(vkEndCommandBuffer(transferCmd));
-
-                        // Execute copy operation on GPU Queue immediately
-                        VkSubmitInfo submitInfo = {};
-                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                        submitInfo.commandBufferCount = 1;
-                        submitInfo.pCommandBuffers = &transferCmd;
-
-                        VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-                        VK_CHECK(vkQueueWaitIdle(_graphicsQueue)); // Synchronize transfer completion
-
-                        // Cleanup staging resources
-                        vkFreeCommandBuffers(_device, _commandPool, 1, &transferCmd);
-                        vmaDestroyBuffer(_allocator, stagingBuffer, stagingAllocation);*/
-                    }
-                }
-
-                bufferPool.Get(cmd.createBuffer.id).buffer = buffer;
-                bufferPool.Get(cmd.createBuffer.id).allocation = allocation;
-                bufferPool.Get(cmd.createBuffer.id).usage = cmd.createBuffer.usage;
-                bufferPool.Get(cmd.createBuffer.id).memory = cmd.createBuffer.memory;
-                bufferPool.Get(cmd.createBuffer.id).size = cmd.createBuffer.size;
-
-                //LogInfo("CreateBuffer");
                 break;
             }
 
@@ -2238,10 +2136,14 @@ void VulkanGPUDevice::DestroyPipeline(Pipeline id){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
 }
 
-Buffer VulkanGPUDevice::CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){
+Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
     auto id = bufferPool.AllocId();
-    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, data, size, usage, memory);
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, size, usage, memory);
     return id;
+}
+
+void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
+    multithreadRendererContext.simulationFrame->resourceCommands.UpdatedBuffer(buffer, data, size);
 }
 
 void VulkanGPUDevice::DestroyBuffer(Buffer id){
@@ -2270,10 +2172,6 @@ Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
     auto id = framebufferPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
     return id;
-}
-
-void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UpdatedBuffer(buffer, data, size);
 }
 
 #pragma endregion

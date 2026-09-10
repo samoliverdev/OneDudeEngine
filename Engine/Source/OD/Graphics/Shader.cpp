@@ -334,16 +334,6 @@ bool Shader::InitPass(int pass){
         if(c == false) i.push_back("_");
     }
 
-    #ifdef TestNewGPU_API
-    Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
-    
-    pipelineInfo = {};
-    layoutsOut.clear();
-    Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
-
-    materialBindGroupLayout = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
-    #endif
-
     AddShaderVaring("", std::set<std::string>(), pass, drawTypes);
     if(isComplete == false) return false;
 
@@ -490,6 +480,18 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::string keyworld = "#define " + i + "\n";
         shaderSourceData.baseSource.insert(0, keyworld);
         insirtSize += keyworld.size();
+    }
+
+    if(key.empty()){
+        #ifdef TestNewGPU_API
+        Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
+        
+        pipelineInfo = {};
+        layoutsOut.clear();
+        Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
+
+        materialBindGroupLayout = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
+        #endif
     }
 
     //LogWarning("%s", shaderSourceData.baseSource.c_str());

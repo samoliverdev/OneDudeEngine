@@ -122,12 +122,14 @@ void GPUSample2::OnInit(){
     // -------------------------------------------------
     // Vertex buffer
     // -------------------------------------------------
-    vertexBuffer_2 = gpuDevice->CreateBuffer(vertices_2, sizeof(vertices_2), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    vertexBuffer_2 = gpuDevice->CreateBuffer(sizeof(vertices_2), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(vertexBuffer_2, vertices_2, sizeof(vertices_2));
 
     // -------------------------------------------------
     // Index buffer
     // -------------------------------------------------
-    indexBuffer_2 = gpuDevice->CreateBuffer(indices_2, sizeof(indices_2), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+    indexBuffer_2 = gpuDevice->CreateBuffer(sizeof(indices_2), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(indexBuffer_2, indices_2, sizeof(indices_2));
 
     // -------------------------------------------------
     // Pipeline

@@ -54,6 +54,7 @@ struct BufferData{
     uint32_t buffer = 0;
     BufferUsage usage;
     BufferMemory memory;
+    GLenum type;
 };
 ResourcePool<BufferData> bufferPool;
 
@@ -484,19 +485,23 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 continue;
             }
 
-            GLuint buffer = 0;
-            glGenBuffers(1, &buffer);
-            GLenum target = GetBufferTarget(cmd.createBuffer.usage);
-
-            glBindBuffer(target, buffer);
-            glBufferData(target, cmd.createBuffer.size, cmd.createBuffer.data, GetOpenGLBufferUsage(cmd.createBuffer.memory));
-            bufferPool.Get(cmd.createBuffer.id).buffer = buffer;
-            bufferPool.Get(cmd.createBuffer.id).usage = cmd.createBuffer.usage;
-            bufferPool.Get(cmd.createBuffer.id).memory = cmd.createBuffer.memory;
+            auto& data = bufferPool.Get(cmd.createBuffer.id);
+            glGenBuffers(1, &data.buffer);
             glCheckError();
-
+            data.type = GetBufferTarget(cmd.createBuffer.usage);
+            data.usage = cmd.createBuffer.usage;
+            data.memory = cmd.createBuffer.memory;
+            
             bufferPool.gpuToCpuResourceStatesIds.push_back(cmd.createBuffer.id);
             bufferPool.gpuToCpuResourceStatesData.push_back({ResourceStatsType::Created});
+            break;
+        }
+
+        case ResourceCommands::Type::UpdateBuffer:{
+            auto& data = bufferPool.Get(cmd.updateBuffer.id);
+            glBindBuffer(data.type, data.buffer);
+            glBufferData(data.type, cmd.updateBuffer.size, cmd.updateBuffer.data, GetOpenGLBufferUsage(data.memory));
+            glCheckError();
             break;
         }
 
@@ -1013,10 +1018,14 @@ void OpenglGPUDevice::DestroyPipeline(Pipeline id){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
 }
 
-Buffer OpenglGPUDevice::CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory){
+Buffer OpenglGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
     auto id = bufferPool.AllocId();
-    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, data, size, usage, memory);
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, size, usage, memory);
     return id;
+}
+
+void OpenglGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
+    multithreadRendererContext.simulationFrame->resourceCommands.UpdatedBuffer(buffer, data, size);
 }
 
 void OpenglGPUDevice::DestroyBuffer(Buffer id){

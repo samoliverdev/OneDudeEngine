@@ -137,8 +137,11 @@ void GPUSample1::OnInit(){
     Data camData = { glm::identity<glm::mat4>(), glm::identity<glm::mat4>()};
     glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.5f, 0, 0));
 
-    uniformBuffer = gpuDevice->CreateBuffer(&camData, sizeof(camData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
-    uniformBuffer2 = gpuDevice->CreateBuffer(&matrix, sizeof(glm::mat4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    uniformBuffer = gpuDevice->CreateBuffer(sizeof(camData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(uniformBuffer, &camData, sizeof(camData));
+
+    uniformBuffer2 = gpuDevice->CreateBuffer(sizeof(glm::mat4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(uniformBuffer2, &matrix, sizeof(glm::mat4));
 
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout;
@@ -164,20 +167,24 @@ void GPUSample1::OnInit(){
         0.1f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
         0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f
     };
-    vertexBuffer = gpuDevice->CreateBuffer(interleaved, sizeof(interleaved), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    vertexBuffer = gpuDevice->CreateBuffer(sizeof(interleaved), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(vertexBuffer, interleaved, sizeof(interleaved));
     Assert(gpuDevice->GetBufferStats(vertexBuffer).type == Gfx::ResourceStatsType::None);
 
     // -------------------------------------------------
     // Triangle 2: POSITION and COLOR in TWO VBOs
     // -------------------------------------------------
-    positionBuffer = gpuDevice->CreateBuffer(positions, sizeof(positions), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    positionBuffer = gpuDevice->CreateBuffer(sizeof(positions), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(positionBuffer, positions, sizeof(positions));
 
-    colorBuffer = gpuDevice->CreateBuffer(colors, sizeof(colors), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    colorBuffer = gpuDevice->CreateBuffer(sizeof(colors), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(colorBuffer, colors, sizeof(colors));
 
     // -------------------------------------------------
     // Index buffer
     // -------------------------------------------------
-    indexBuffer = gpuDevice->CreateBuffer(indices, sizeof(indices), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+    indexBuffer = gpuDevice->CreateBuffer(sizeof(indices), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
+    gpuDevice->UpdatedBuffer(indexBuffer, indices, sizeof(indices));
 
     // -------------------------------------------------
     // Pipeline 1: interleaved buffer
@@ -192,7 +199,6 @@ void GPUSample1::OnInit(){
     pipelineInfo.bindGroupLayoutCount = 1;
     pipelineInfo.framebufferLayout = gpuDevice->GetWindowFrameBufferLayout();
     pipelineSingle = gpuDevice->CreatePipeline(shaderSource, pipelineInfo);
-
 
     // -------------------------------------------------
     // Pipeline 2: separate buffers

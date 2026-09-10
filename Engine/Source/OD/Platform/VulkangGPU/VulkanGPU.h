@@ -31,14 +31,15 @@ public:
 
     virtual Pipeline CreatePipeline(const char* source, PipelineInfo info) override;
     virtual void DestroyPipeline(Pipeline id) override;
-    virtual Buffer CreateBuffer(const void* data, size_t size, BufferUsage usage, BufferMemory memory) override;
+
+    virtual Buffer CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory) override;
+    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size) override;
     virtual void DestroyBuffer(Buffer id) override;
+
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
     virtual Texture2D CreateTexture2D(Texture2DInfo& info, void* data, size_t size) override;
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
-
-    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size) override;
 
 private:
     struct BufferData{
