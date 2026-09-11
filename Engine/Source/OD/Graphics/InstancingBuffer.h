@@ -2,6 +2,7 @@
 #include "OD/Base.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Core/Math.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace OD{
 
@@ -27,6 +28,8 @@ private:
     int count = 0;
     bool isMatrix4x3 = false;
     InstancingBufferDataGL;
+
+    Gfx::Buffer buffer = Gfx::InvalidID;
 };
 
 }

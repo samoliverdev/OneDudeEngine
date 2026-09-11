@@ -3,6 +3,9 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
+const int MAX_BONES = 120;
+const int MAX_BONE_INFLUENCE = 4;
+
 BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;
     Uniform mat4 view;
@@ -16,6 +19,11 @@ EndUniform()
 
 BeginUniform(1, 0, PerDraw)
     Uniform mat4 model;
+
+    #if !defined(OpenGL_API) && defined(SKINNED)
+    mat4 animated[MAX_BONES];
+    #endif
+
 EndUniform()
 
 #endif
@@ -31,30 +39,23 @@ layout(location = 1) in vec2 texCoord;
 layout(location = 2) in vec3 normal;
 layout(location = 4) in vec3 tangents;
 
-#if defined(SKINNED) || defined(SKINNED2)
+//#if defined(SKINNED) || defined(SKINNED2)
 layout(location = 5) in ivec4 boneIds;
 layout(location = 6) in vec4 weights;
-#endif
+//#endif
 
-#ifdef INSTANCING
+//#ifdef INSTANCING
     #ifdef OpenGL_API
     layout(location = 10) in mat4 modelInstancing;
     #else   
-    layout(location = 5) in vec4 a_ModelMatrix_0;
-    layout(location = 6) in vec4 a_ModelMatrix_1;
-    layout(location = 7) in vec4 a_ModelMatrix_2;
-    layout(location = 8) in vec4 a_ModelMatrix_3;
+    layout(location = 7) in vec4 a_ModelMatrix_0;
+    layout(location = 8) in vec4 a_ModelMatrix_1;
+    layout(location = 9) in vec4 a_ModelMatrix_2;
+    layout(location = 10) in vec4 a_ModelMatrix_3;
     #endif
-#endif
+//#endif
 
-#ifdef INSTANCINGMATRIX43
-    layout(location = 10) in vec4 a_ModelMatrix_0;
-    layout(location = 11) in vec4 a_ModelMatrix_1;
-    layout(location = 12) in vec4 a_ModelMatrix_2;
-#endif
-
-const int MAX_BONES = 120;
-const int MAX_BONE_INFLUENCE = 4;
+#ifdef OpenGL_API
 
 #if defined(SKINNED)
     uniform mat4 animated[MAX_BONES];
@@ -66,6 +67,9 @@ layout(std140) uniform PerDrawData {
 };
 #endif
 
+#endif
+
+
 /*
 #ifdef SKINNED
 #undef INSTANCING
@@ -73,10 +77,16 @@ layout(std140) uniform PerDrawData {
 */
 
 vec4 GetPerInstanceData(){
+    #if !defined(OpenGL_API)
+        return vec4(model[0][3], model[1][3], model[2][3], model[3][3]);
+    #else
+
     #ifdef INSTANCING
         return vec4(modelInstancing[0][3], modelInstancing[1][3], modelInstancing[2][3], modelInstancing[3][3]);
     #else 
         return vec4(model[0][3], model[1][3], model[2][3], model[3][3]);
+    #endif
+
     #endif
 }
 
@@ -99,15 +109,6 @@ mat4 GetModelMatrix(){
         return result;
     //return mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, a_ModelMatrix_3);
     #endif
-#elif defined(INSTANCINGMATRIX43)
-    //INFO: This can be bug, becose probaly a_ModelMatrix_0 is not row, i think is colum
-    return transpose(mat4(a_ModelMatrix_0, a_ModelMatrix_1, a_ModelMatrix_2, vec4(0,0,0,1)));
-    /*return mat4(
-        vec4(a_ModelMatrix_0.x, a_ModelMatrix_1.x, a_ModelMatrix_2.x, 0.0), // col 0
-        vec4(a_ModelMatrix_0.y, a_ModelMatrix_1.y, a_ModelMatrix_2.y, 0.0), // col 1
-        vec4(a_ModelMatrix_0.z, a_ModelMatrix_1.z, a_ModelMatrix_2.z, 0.0), // col 2
-        vec4(a_ModelMatrix_0.w, a_ModelMatrix_1.w, a_ModelMatrix_2.w, 1.0)  // col 3 (translation / w)
-    );*/
 #else
     /*#ifdef SKINNED2
         mat4 scaleMat = mat4(1.0);

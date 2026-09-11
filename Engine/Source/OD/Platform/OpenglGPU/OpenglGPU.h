@@ -64,8 +64,7 @@ private:
 
     struct Texture2DData{
         uint32_t tex = 0;
-        uint32_t width = 0;
-        uint32_t height = 0;
+        Texture2DInfo info;
     };
     ResourcePool<Texture2DData> texture2DPool;
 

@@ -217,7 +217,7 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, VkShaderStageFlagBi
 
     if(!shader.parse(resources, 450, false, messages)){
         std::string error = "GLSL compilation failed:\n" + std::string(shader.getInfoLog()) + "\n" + shader.getInfoDebugLog();
-        LogInfo("Error: {}", error);
+        LogError("Error: {}", error);
         throw std::runtime_error(error);
     }
 
@@ -898,9 +898,39 @@ VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, 
 
 #pragma region Texture2D
 
+VkFormat GetImageFormat(ImageFormat f){
+    switch(f){
+        case ImageFormat::R8_UNORM: return VK_FORMAT_R8_UNORM;
+
+        case ImageFormat::R8G8B8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM;
+        case ImageFormat::R8G8B8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; //VK_FORMAT_R8G8B8_SRGB;
+
+        case ImageFormat::R8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
+        case ImageFormat::R8G8B8A8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB;
+    }
+
+    return VK_FORMAT_R8G8B8A8_UNORM;
+}
+
+std::vector<uint8_t> ConvertRGBToRGBA(const uint8_t* rgb, uint32_t width, uint32_t height){
+    const size_t pixelCount = static_cast<size_t>(width) * height;
+    std::vector<uint8_t> rgba(pixelCount * 4);
+
+    for(size_t i = 0; i < pixelCount; i++){
+        rgba[i * 4 + 0] = rgb[i * 3 + 0];
+        rgba[i * 4 + 1] = rgb[i * 3 + 1];
+        rgba[i * 4 + 2] = rgb[i * 3 + 2];
+        rgba[i * 4 + 3] = 255;
+    }
+
+    return rgba;
+}
+
 bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
+    texData.info = info;
+
     //the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
-    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8A8_SRGB;
+    VkFormat image_format = GetImageFormat(info.format);
 
     texData.width = info.width;
     texData.height = info.height;
@@ -1670,7 +1700,13 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             case ResourceCommands::Type::UploadTexture2D:{
                 Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
                 auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
-                _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size);
+
+                if(data.info.format != ImageFormat::R8_UNORM){
+                    auto rgba = ConvertRGBToRGBA((uint8_t*)cmd.uploadTexture2D.data, data.width, data.height);
+                    _UploadTexture2D(data, rgba.data(), rgba.size());
+                } else {
+                    _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size);
+                }
                 break;
             }
 

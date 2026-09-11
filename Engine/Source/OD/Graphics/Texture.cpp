@@ -15,6 +15,28 @@ namespace OD{
 extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
+Gfx::ImageFormat GetImageFormat(TextureFormat f){
+    switch(f){
+        case TextureFormat::RED8: return Gfx::ImageFormat::R8_UNORM;
+        case TextureFormat::RGB: return Gfx::ImageFormat::R8G8B8_UNORM;
+        case TextureFormat::RGBA: return Gfx::ImageFormat::R8G8B8A8_UNORM;
+    }
+
+    Assert(false);
+    return Gfx::ImageFormat::R8G8B8A8_SRGB;
+}
+
+size_t GetFormatSize(TextureFormat f){
+    switch(f){
+        case TextureFormat::RED8: return sizeof(uint8_t);
+        case TextureFormat::RGB: return sizeof(uint8_t)*3;
+        case TextureFormat::RGBA: return sizeof(uint8_t)*4;
+    }
+
+    Assert(false);
+    return 0;
+}
+
 Ref<Texture2D> Texture2D::CreateFromFile(const std::string& filePath, Texture2DSetting settings){
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     tex->SetLoadSettings(settings);
@@ -41,6 +63,15 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
 
     #ifdef TestNewGPU_API
     //Assert(false);
+    
+    Gfx::Texture2DInfo info = {};
+    info.width = width;
+    info.height = height;
+    info.format = GetImageFormat(settings.textureFormat);
+    tex->tex = gfxDevice->CreateTexture2D(info);
+    if(tex->tex == Gfx::InvalidID) return nullptr;
+    gfxDevice->UploadTexture2D(tex->tex, data, height * width * GetFormatSize(settings.textureFormat));
+
     #else
     if(graphicsDevice->Texture2DCreate(*tex, data, width, height, dataType) == false){
         graphicsDevice->Texture2DDestroy(*tex);
@@ -213,7 +244,24 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
         }
 
         #ifdef TestNewGPU_API
-        Assert(false);
+        //Assert(false);
+
+        if(tex != Gfx::InvalidID) gfxDevice->DestroyTexture2D(tex);
+
+        Gfx::Texture2DInfo info = {};
+        info.width = width;
+        info.height = height;
+        info.format = GetImageFormat(settings.textureFormat);
+        tex = gfxDevice->CreateTexture2D(info);
+
+        if(tex == Gfx::InvalidID){
+            stbi_image_free(data);
+            return false;
+        }
+
+        gfxDevice->UploadTexture2D(tex, data, height * width * GetFormatSize(settings.textureFormat));
+        stbi_image_free(data);
+
         #else
         bool success = graphicsDevice->Texture2DCreate(
             *this,
@@ -469,6 +517,7 @@ Texture2D::~Texture2D(){
     //LogInfo("OnDestroy: {}", path);
     #ifdef TestNewGPU_API
     //Assert(false);
+    if(tex != Gfx::InvalidID) gfxDevice->DestroyTexture2D(tex);
     #else
     Assert(graphicsDevice != nullptr);
     graphicsDevice->Texture2DDestroy(*this);
@@ -477,8 +526,8 @@ Texture2D::~Texture2D(){
 
 bool Texture2D::IsValid(){
     #ifdef TestNewGPU_API
-    Assert(false);
-    return false;
+    //Assert(false);
+    return tex != Gfx::InvalidID;
     #else
     Assert(graphicsDevice != nullptr);
     return graphicsDevice->Texture2DIsValid(*this);

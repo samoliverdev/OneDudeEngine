@@ -30,6 +30,11 @@
 
     #define TextureSize(tex, lod) textureSize(tex, lod)
 
+    #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
+    #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCube(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCubeLod(tex, sample, uv, lod) textureLod(tex, uv, lod)
+
 #endif
 
 #if defined(Vulkan_API)
@@ -52,6 +57,11 @@
 
     #define TextureSize(tex, lod) vec3(1) //textureSize(tex, lod)
 
+    #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
+    #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCube(tex, sample, uv) texture(tex, uv)
+    #define SampleTextureCubeLod(tex, sample, uv, lod) textureLod(tex, uv, lod)
+
 #endif
 
 #if defined(WebGPU_API)
@@ -73,6 +83,11 @@
     #define TextureCube(inset, inbinding, name, nameSampler) layout(set = inset, binding = (inbinding * 2 - 2 + 1)) uniform texture2D name;  layout(set = inset, binding = (inbinding * 2 - 2 + 1) + 1) uniform sampler nameSampler;
 
     #define TextureSize(tex, lod) vec3(1)
+
+    #define SampleTexture2D(tex, sample, uv) texture(sampler2D(tex, sample), uv)
+    #define SampleTexture2DArray(tex, sample, uv) vec4(0)
+    #define SampleTextureCube(tex, sample, uv) vec4(0)
+    #define SampleTextureCubeLod(tex, sample, uv, lod) vec4(0)
     
 #endif
 

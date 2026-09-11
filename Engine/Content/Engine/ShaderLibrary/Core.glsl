@@ -29,19 +29,4 @@ vec3 ToLinear(vec3 a){
     return a;
 #endif
 }
-
-#if defined(OpenGL_API)
-    #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
-    #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)
-    #define SampleTextureCube(tex, sample, uv) texture(tex, uv)
-    #define SampleTextureCubeLod(tex, sample, uv, lod) textureLod(tex, uv, lod)
-#endif
-
-#if defined(WebGPU_API)
-    #define SampleTexture2D(tex, sample, uv) texture(sampler2D(tex, sample), uv)
-    #define SampleTexture2DArray(tex, sample, uv) vec4(0)
-    #define SampleTextureCube(tex, sample, uv) vec4(0)
-    #define SampleTextureCubeLod(tex, sample, uv, lod) vec4(0)
-#endif
-
 #endif

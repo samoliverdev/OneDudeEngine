@@ -142,7 +142,7 @@ private:
     Texture2DDataGL;
     Texture2DDataWG;
 
-    Gfx::Texture2D tex;
+    Gfx::Texture2D tex = Gfx::InvalidID;
 
     void SaveTo(cereal::BinaryOutputArchive& ar);
     void LoadFrom(cereal::BinaryInputArchive& ar);

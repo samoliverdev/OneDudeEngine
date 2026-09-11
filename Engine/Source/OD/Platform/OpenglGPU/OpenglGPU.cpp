@@ -351,28 +351,88 @@ void OpenglGPUDevice::_DestroyBuffer(BufferData& data){
 #pragma endregion
 
 #pragma region Texture2D
+
+GLenum GetTextureDataType(ImageFormat f){
+    switch(f){
+        case ImageFormat::R8_UNORM: return GL_UNSIGNED_BYTE;
+
+        case ImageFormat::R8G8B8_UNORM: return GL_UNSIGNED_BYTE;
+        case ImageFormat::R8G8B8_SRGB: return GL_UNSIGNED_BYTE;
+
+        case ImageFormat::R8G8B8A8_UNORM: return GL_UNSIGNED_BYTE;
+        case ImageFormat::R8G8B8A8_SRGB: return GL_UNSIGNED_BYTE;
+    }
+
+    Assert(false);
+    return GL_INVALID_ENUM;
+}
+
+GLenum GetTextureInternalFormat(ImageFormat f){
+    switch(f){
+        case ImageFormat::R8_UNORM: return GL_R8;
+
+        case ImageFormat::R8G8B8_UNORM: return GL_RGB8;
+        case ImageFormat::R8G8B8_SRGB: return GL_SRGB8;
+
+        case ImageFormat::R8G8B8A8_UNORM: return GL_RGBA8;
+        case ImageFormat::R8G8B8A8_SRGB: return GL_SRGB8_ALPHA8;
+    }
+
+    Assert(false);
+    return GL_INVALID_ENUM;
+}
+
+GLint GetTextureFormat(ImageFormat f){
+    switch(f){
+        case ImageFormat::R8_UNORM: return GL_RED;
+
+        case ImageFormat::R8G8B8_UNORM: return GL_RGB;
+        case ImageFormat::R8G8B8_SRGB: return GL_RGB;
+
+        case ImageFormat::R8G8B8A8_UNORM: return GL_RGBA;
+        case ImageFormat::R8G8B8A8_SRGB: return GL_RGBA;
+    }
+
+    Assert(false);
+    return GL_INVALID_VALUE;
+}
+
+
 bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
-    texData.width = info.width;
-    texData.height = info.height;
+    texData.info = info;
 
     glGenTextures(1, &texData.tex);  
     glBindTexture(GL_TEXTURE_2D, texData.tex);  
+    glCheckError();
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCheckError();
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texData.width, texData.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, 
+        GetTextureInternalFormat(texData.info.format), 
+        texData.info.width, texData.info.height, 0, 
+        GetTextureFormat(texData.info.format), 
+        GetTextureDataType(texData.info.format), 
+        nullptr
+    );
+    glCheckError();
     glGenerateMipmap(GL_TEXTURE_2D);
+    glCheckError();
 
     return true;
 } 
 
 void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size){
     glBindTexture(GL_TEXTURE_2D, texData.tex);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texData.width, texData.height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glCheckError();
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texData.info.width, texData.info.height, GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), data);
+    glCheckError();
     glGenerateMipmap(GL_TEXTURE_2D);
+    glCheckError();
 }
 
 void OpenglGPUDevice::_DestroyTexture2D(Texture2DData& data){
@@ -737,6 +797,22 @@ void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, s
 
         case VertexFormat::Float4:
             glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, stride, (void*)offset);
+            break;
+
+        case VertexFormat::Int:
+            glVertexAttribPointer(location, 1, GL_INT, GL_FALSE, stride, (void*)offset);
+            break;
+
+        case VertexFormat::Int2:
+            glVertexAttribPointer(location, 2, GL_INT, GL_FALSE, stride, (void*)offset);
+            break;
+
+        case VertexFormat::Int3:
+            glVertexAttribPointer(location, 3, GL_INT, GL_FALSE, stride, (void*)offset);
+            break;
+
+        case VertexFormat::Int4:
+            glVertexAttribPointer(location, 4, GL_INT, GL_FALSE, stride, (void*)offset);
             break;
 
         default:

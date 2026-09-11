@@ -65,6 +65,7 @@ private:
 	    VmaAllocation allocation = VK_NULL_HANDLE;
         VkImageView imageView = VK_NULL_HANDLE;
         VkSampler sampler = VK_NULL_HANDLE;
+        Texture2DInfo info;
     };
     ResourcePool<Texture2DData> texture2DPool;
 

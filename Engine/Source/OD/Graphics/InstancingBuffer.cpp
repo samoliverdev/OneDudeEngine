@@ -7,13 +7,19 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 Ref<InstancingBuffer> InstancingBuffer::Create(){
     Ref<InstancingBuffer> buffer = CreateRef<InstancingBuffer>();
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    #else
     if(graphicsDevice->InstancingBufferCreate(*buffer) == false){
         graphicsDevice->InstancingBufferDestroy(*buffer);
         return nullptr;
     }
+    #endif
+
     return buffer;
 
     /*Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();
@@ -29,11 +35,20 @@ Ref<InstancingBuffer> InstancingBuffer::Create(){
 }
 
 InstancingBuffer::InstancingBuffer(){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    #else
     graphicsDevice->InstancingBufferCreate(*this);
+    #endif
 }
 
 InstancingBuffer::~InstancingBuffer(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);
+    #else
     graphicsDevice->InstancingBufferDestroy(*this);
+    #endif
 }
 
 //void UniformBuffer::Destroy(){
@@ -45,7 +60,12 @@ InstancingBuffer::~InstancingBuffer(){
 //}
 
 bool InstancingBuffer::IsValid(){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    return true;
+    #else
     return graphicsDevice->InstancingBufferIsValid(*this);
+    #endif
 }
 
 //void UniformBuffer::Bind(UniformBuffer& buffer, int bind){
@@ -55,13 +75,31 @@ bool InstancingBuffer::IsValid(){
 //}
 
 void InstancingBuffer::SetData(const Matrix4* data, unsigned int incount){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);
+    buffer = gfxDevice->CreateBuffer(sizeof(Matrix4) * incount, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    Assert(buffer != Gfx::InvalidID);
+    gfxDevice->UpdatedBuffer(buffer, data, sizeof(Matrix4) * incount);
+    count = incount;
+    #else
     graphicsDevice->InstancingBufferSetData(*this, data, incount);
     count = incount;
+    #endif
 }
 
 void InstancingBuffer::SetData(const Matrix4x3* data, unsigned int incount){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);
+    buffer = gfxDevice->CreateBuffer(sizeof(Matrix4x3) * incount, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    Assert(buffer != Gfx::InvalidID);
+    gfxDevice->UpdatedBuffer(buffer, data, sizeof(Matrix4x3) * incount);
+    count = incount;
+    #else
     graphicsDevice->InstancingBufferSetData(*this, data, count);
     count = incount;
+    #endif
 }
 
 }

@@ -74,6 +74,12 @@ struct OD_API FrameBufferCreateInfo{
 //////////////////////////////////////
 
 enum class ImageFormat{
+    R8_UNORM,
+
+    R8G8B8_UNORM,
+    R8G8B8_SRGB,
+
+    R8G8B8A8_UNORM,
     R8G8B8A8_SRGB
 };
 
