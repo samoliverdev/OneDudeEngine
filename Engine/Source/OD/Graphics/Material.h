@@ -71,8 +71,12 @@ struct OD_API MaterialMap{
             int listCount ;
         };
     };
-    
 
+    bool hasBufferData = false;
+    size_t bufferPos = 0;
+    size_t bufferSize = 0;
+    size_t bufferArrayStride = 0;
+    
     MaterialMap() = default;
     MaterialMap(const MaterialMap&) = default;
     MaterialMap& operator=(const MaterialMap&) = default;
@@ -221,6 +225,8 @@ private:
     Gfx::Buffer materialBuffer = Gfx::InvalidID;
     Gfx::BindGroup materialBindGroup = Gfx::InvalidID;
     Gfx::ShaderBindingInfo materialBindGroupInfo;
+    void* materialBufferData = nullptr;
+    size_t materialBufferSize;
 
     Ref<Texture2D> keepAlive = nullptr;
 

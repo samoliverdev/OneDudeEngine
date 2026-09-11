@@ -48,10 +48,10 @@ layout(location = 6) in vec4 weights;
     #ifdef OpenGL_API
     layout(location = 10) in mat4 modelInstancing;
     #else   
-    layout(location = 7) in vec4 a_ModelMatrix_0;
-    layout(location = 8) in vec4 a_ModelMatrix_1;
-    layout(location = 9) in vec4 a_ModelMatrix_2;
-    layout(location = 10) in vec4 a_ModelMatrix_3;
+    layout(location = 10) in vec4 a_ModelMatrix_0;
+    layout(location = 11) in vec4 a_ModelMatrix_1;
+    layout(location = 12) in vec4 a_ModelMatrix_2;
+    layout(location = 13) in vec4 a_ModelMatrix_3;
     #endif
 //#endif
 

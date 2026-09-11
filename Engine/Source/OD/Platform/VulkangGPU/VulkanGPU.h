@@ -44,6 +44,7 @@ public:
     virtual void DestroyBindGroupLayout(BindGroupLayout layout) override;
     
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
+    virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info) override;
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
     virtual void DestroyFramebuffer(Framebuffer destroy) override;
@@ -127,6 +128,8 @@ private:
 
     //VkDescriptorSetLayout emptyLayout;
 
+    std::vector<BindGroup> frameBindGroups;
+
     void _Init();
     void _Shut();
 
@@ -158,7 +161,7 @@ private:
     bool _CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info);
     void _DestroyBindGroupLayout(BindGroupLayoutData& data);
 
-    bool _CreateBindGroup(BindGroupData& data, BindGroupInfo& info);
+    bool _CreateBindGroup(BindGroupData& data, BindGroupInfo& info, VkDescriptorPool pool);
 };
 
 }

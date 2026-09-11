@@ -498,6 +498,7 @@ struct OD_API ResourceCommands{
         DestroyBindGroupLayout,
 
         CreateBindGroup,
+        CreateFrameBindGroup,
 
         CreateFramebuffer,
         DestroyFramebuffer,
@@ -535,6 +536,10 @@ struct OD_API ResourceCommands{
             struct {
                 BindGroup id; BindGroupInfo* info;
             } createBindGroup;
+
+            struct {
+                BindGroup id; BindGroupInfo* info;
+            } createFrameBindGroup;
 
             struct {
                 Texture2D id;
@@ -686,6 +691,17 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
+    void CreateFrameBindGroup(BindGroup id, BindGroupInfo& info){ 
+        BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
+        std::memcpy(copyData, &info, sizeof(BindGroupInfo));
+        
+        Command cmd{};
+        cmd.type = Type::CreateFrameBindGroup;
+        cmd.createFrameBindGroup.id = id;
+        cmd.createFrameBindGroup.info = copyData;
+        commands.push_back(cmd);
+    }
+
     void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
         Command cmd{};
         cmd.type = Type::CreateFramebuffer;
@@ -715,10 +731,14 @@ struct OD_API CommandBuffer{
         SetBindGroup,
         Draw,
         DrawIndexed,
+        DrawInstanced,
+        DrawIndexedInstanced,
 
         BeginWindowFramebuffer,
         BeginFramebuffer,
         EndFramebuffer,
+
+        CreateBindGroup,
     };
 
     struct Command{
@@ -759,6 +779,16 @@ struct OD_API CommandBuffer{
             struct{
                 uint32_t indexCount;
             } drawIndexed;
+
+            struct{
+                uint32_t vertexCount;
+                uint32_t count;
+            } drawInstanced;
+
+            struct{
+                uint32_t indexCount;
+                uint32_t count;
+            } drawIndexedInstanced;
 
             struct {
                 Framebuffer framebuffer;
@@ -832,6 +862,22 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
+    void DrawInstanced(uint32_t vertexCount, uint32_t count){
+        Command cmd{};
+        cmd.type = Type::DrawIndexedInstanced;
+        cmd.drawInstanced.vertexCount = vertexCount;
+        cmd.drawInstanced.count = count;
+        commands.push_back(cmd);
+    }
+
+    void DrawIndexedInstanced(uint32_t indexCount, uint32_t count){
+        Command cmd{};
+        cmd.type = Type::DrawIndexed;
+        cmd.drawIndexedInstanced.indexCount = indexCount;
+        cmd.drawIndexedInstanced.count = count;
+        commands.push_back(cmd);
+    }
+
     void BeginWindowFramebuffer(){
         Command cmd{};
         cmd.type = Type::BeginWindowFramebuffer;
@@ -895,6 +941,7 @@ public:
     virtual void DestroyBindGroupLayout(BindGroupLayout layout){}
 
     virtual BindGroup CreateBindGroup(BindGroupInfo& info){ return InvalidID; }
+    virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info){ return InvalidID; }
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
     virtual void DestroyFramebuffer(Framebuffer destroy){}

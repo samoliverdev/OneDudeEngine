@@ -28,7 +28,7 @@ void LoadModelSample::OnInit(){
     model->materials[0]->SetTexture("mainTex", dd);
     model->materials[0]->SetVector4("color", {1,1,1,1});
 
-    for(int i = 0; i < 100000; i++){
+    for(int i = 0; i < 100/*000*/; i++){
         float posRange = 25;
         Transform t;
 
@@ -48,7 +48,7 @@ void LoadModelSample::OnInit(){
     
     buffer2->SetData(&transforms2[0], transforms2.size());
 
-    useInstancing = true;
+    useInstancing = false; //true;
 }
 
 void LoadModelSample::OnUpdate(float deltaTime){
@@ -63,10 +63,13 @@ void LoadModelSample::OnRender(float deltaTime){
     cam.view = math::inverse(camTransform.GetModelMatrix());
 
     Graphics::Begin();
-    Graphics::Clean(0.0f, 0.0f, 0.0f, 0.0f);
+   
     Graphics::SetCamera(cam);
 
     Graphics::BeginRenderToScreen({0, 0, 0, 0});
+    Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    Graphics::Clean(0.0f, 1.0f, 0.0f, 0.0f);
+
     if(useInstancing){  
         //model->materials[0]->SetEnableInstancing(true);
         model->materials[0]->DisableKeyword("SKINNED");

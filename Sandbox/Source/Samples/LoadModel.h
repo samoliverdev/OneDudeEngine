@@ -22,7 +22,7 @@ struct LoadModelSample: OD::Module {
     std::vector<Matrix4> transforms;
     std::vector<Matrix4x3> transforms2;
 
-    bool useInstancing = false;
+    bool useInstancing = false; //false;
     bool useInstancingBuffer = true;
     bool useMatrix4x3 = false;
 

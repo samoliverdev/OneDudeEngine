@@ -833,6 +833,11 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
     int curBindIndex = 0;
     int curTextureIndex = 0;
 
+    for(auto i: frameBindGroups){
+        bindGroupPool.AddDestroyedId(i);
+    }
+    frameBindGroups.clear();
+
     for(const ResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
         case ResourceCommands::Type::CreateBuffer:{
@@ -930,6 +935,14 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             _CreateBindGroup(data, *cmd.createBindGroup.info);
             break;
         }
+
+        case ResourceCommands::Type::CreateFrameBindGroup:{
+                Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
+                auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
+                _CreateBindGroup(data, *cmd.createFrameBindGroup.info);
+                frameBindGroups.push_back(cmd.createFrameBindGroup.id);
+                break;
+            }
 
         case ResourceCommands::Type::CreateFramebuffer:{
             Assert(framebufferPool.IsValid(cmd.createFramebuffer.framebuffer));
@@ -1231,6 +1244,12 @@ void OpenglGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
 BindGroup OpenglGPUDevice::CreateBindGroup(BindGroupInfo& info){
     auto id = bindGroupPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroup(id, info);
+    return id;
+}
+
+BindGroup OpenglGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
+    auto id = bindGroupPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateFrameBindGroup(id, info);
     return id;
 }
 

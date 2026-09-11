@@ -94,6 +94,7 @@ std::vector<VkFramebuffer> _framebuffers;
 std::vector<VkSemaphore> _renderSemaphores;
 
 VkDescriptorPool _descriptorPool;
+VkDescriptorPool frameDescriptorPools;
 
 struct FrameData {
 	VkSemaphore _presentSemaphore;
@@ -312,6 +313,8 @@ VmaMemoryUsage GetVulkanMemoryUsage(BufferMemory memory){
 }
 
 VkCullModeFlags GetVulkanCullMode(CullFace cull){
+    return VK_CULL_MODE_NONE;
+    
     switch(cull){
         case CullFace::NONE:           return VK_CULL_MODE_NONE;
         #ifdef TestDrawInverted
@@ -493,7 +496,7 @@ bool VulkanGPUDevice::_CreatePipeline(PipelineData& data, const char* source, co
     viewportState.pScissors = nullptr;
 
     VkRenderPass renderPass = GetOrCreate(info.framebufferLayout);
-    Assert(renderPass != INVALID_ID);
+    Assert(renderPass != VK_NULL_HANDLE);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -985,16 +988,16 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
 }
 
 void VulkanGPUDevice::_DestroyTexture2D(Texture2DData& data){
-    Assert(data.sampler == INVALID_ID);
-    Assert(data.imageView == INVALID_ID);
-    Assert(data.image == INVALID_ID);
+    Assert(data.sampler != VK_NULL_HANDLE);
+    Assert(data.imageView != VK_NULL_HANDLE);
+    Assert(data.image != VK_NULL_HANDLE);
 
     vkDestroySampler(_device, data.sampler, nullptr);
     vkDestroyImageView(_device, data.imageView, nullptr);
     vmaDestroyImage(_allocator, data.image, data.allocation);
-    data.sampler = INVALID_ID;
-    data.imageView = INVALID_ID;
-    data.image = INVALID_ID;
+    data.sampler = VK_NULL_HANDLE;
+    data.imageView = VK_NULL_HANDLE;
+    data.image = VK_NULL_HANDLE;
 } 
 
 #pragma endregion
@@ -1040,13 +1043,14 @@ void VulkanGPUDevice::_DestroyBindGroupLayout(BindGroupLayoutData& data){
 
 #pragma region BindGroup
 
-bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info){
+bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info, VkDescriptorPool pool){
+    data.info = info;
     BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(info.layout);
     
     VkDescriptorSetAllocateInfo allocInfo ={};
     allocInfo.pNext = nullptr;
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = _descriptorPool;
+    allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layoutData.layout;
     VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &data.descriptorSet));
@@ -1187,7 +1191,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
 
     const FrameBufferLayout& layout = info.layout;
 
-    VkRenderPass pass = INVALID_ID;
+    VkRenderPass pass = VK_NULL_HANDLE;
 
     // ------------------------------------------------------------
     // Render pass
@@ -1320,7 +1324,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
 
 void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
     vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
-    data.framebuffer = INVALID_ID;
+    data.framebuffer = VK_NULL_HANDLE;
 }
 
 #pragma endregion
@@ -1511,10 +1515,11 @@ void VulkanGPUDevice::InitDescriptors(){
 	VkDescriptorPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = 0;
-	pool_info.maxSets = 10;
+	pool_info.maxSets = 1000;
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes = sizes.data();
 	vkCreateDescriptorPool(_device, &pool_info, nullptr, &_descriptorPool);
+    vkCreateDescriptorPool(_device, &pool_info, nullptr, &frameDescriptorPools);
 }
 
 void VulkanGPUDevice::Cleanup(){
@@ -1526,6 +1531,7 @@ void VulkanGPUDevice::Cleanup(){
     mainDeletionQueue.flush();
 
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
+    vkDestroyDescriptorPool(_device, frameDescriptorPools, nullptr);
 
     bufferPool.ForEach([&](uint32_t id, BufferData& data){
         if(data.buffer != VK_NULL_HANDLE){
@@ -1546,7 +1552,7 @@ void VulkanGPUDevice::Cleanup(){
     });
 
     texture2DPool.ForEach([&](uint32_t id, Texture2DData& data){
-        if(data.image == INVALID_ID) return;
+        if(data.image == VK_NULL_HANDLE) return;
         _DestroyTexture2D(data);
     });
 
@@ -1656,6 +1662,12 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
+    for(auto i: frameBindGroups){
+        bindGroupPool.AddDestroyedId(i);
+    }
+    frameBindGroups.clear();
+    vkResetDescriptorPool(_device, frameDescriptorPools, 0);
+    
     // Process Resource Commands first
     for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
@@ -1755,7 +1767,15 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             case ResourceCommands::Type::CreateBindGroup:{
                 Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
                 auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
-                _CreateBindGroup(data, *cmd.createBindGroup.info);
+                _CreateBindGroup(data, *cmd.createBindGroup.info, _descriptorPool);
+                break;
+            }
+
+            case ResourceCommands::Type::CreateFrameBindGroup:{
+                Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
+                auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
+                _CreateBindGroup(data, *cmd.createFrameBindGroup.info, frameDescriptorPools);
+                frameBindGroups.push_back(cmd.createFrameBindGroup.id);
                 break;
             }
             
@@ -1919,6 +1939,16 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
             case CommandBuffer::Type::DrawIndexed:{
                 vkCmdDrawIndexed(cmd, renderCmd.drawIndexed.indexCount, 1, 0, 0, 0);
+                break;
+            }
+
+            case CommandBuffer::Type::DrawInstanced:{
+                vkCmdDraw(cmd, renderCmd.drawInstanced.vertexCount, renderCmd.drawInstanced.count, 0, 0);
+                break;
+            }
+
+            case CommandBuffer::Type::DrawIndexedInstanced:{
+                vkCmdDrawIndexed(cmd, renderCmd.drawIndexedInstanced.indexCount, renderCmd.drawIndexedInstanced.indexCount, 0, 0, 0);
                 break;
             }
         
@@ -2321,8 +2351,26 @@ void VulkanGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
 }
 
 BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    BindGroupData data;
+    if(!_CreateBindGroup(data, info, _descriptorPool)) return InvalidID;
+    auto id = bindGroupPool.AllocId();
+    bindGroupPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = bindGroupPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroup(id, info);
+    return id;
+
+    #endif
+}
+
+BindGroup VulkanGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
+    auto id = bindGroupPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateFrameBindGroup(id, info);
     return id;
 }
 

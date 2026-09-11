@@ -9,6 +9,7 @@
 #include "SubShader.h"
 #include "Cubemap.h"
 #include "Texture.h"
+#include "Common.h"
 #include "OD/Defines.h"
 #include "OD/Core/Lua.h"
 #include "OD/Gfx/Gfx.h"
@@ -94,6 +95,37 @@ Gfx::BindGroup emptyModelBindGroup;
 Gfx::Buffer camBuffer;
 Gfx::Buffer emptyModelBuffer;
 
+struct UniformBufferPool{
+    Gfx::BindGroupLayout layout;
+    std::vector<Gfx::Buffer> buffers;
+    uint32_t curIndex = 0;
+
+    inline Gfx::BindGroup GetBindGroup(Gfx::Device& device, void* data, size_t size){
+        if(buffers.size() <= curIndex){
+            auto buffer = device.CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+            Assert(buffer != Gfx::InvalidID);
+            buffers.push_back(buffer);
+        }
+
+        device.UpdatedBuffer(buffers[curIndex], data, size);
+
+        Gfx::BindGroupInfo bindGroupInfo = {};
+        bindGroupInfo.layout = layout;
+        bindGroupInfo.entries[0].buffer = buffers[curIndex];
+        bindGroupInfo.entries[0].size = size;
+        bindGroupInfo.entriesCount = 1;
+        auto bindGroup = device.CreateFrameBindGroup(bindGroupInfo);
+        curIndex += 1;
+        return bindGroup;
+    }
+};
+
+UniformBufferPool drawMeshPool;
+UniformBufferPool drawMeshInstancingPool;
+
+Material* curMat = nullptr;
+Gfx::BindGroup curBindGroup;
+
 struct CameraData{
     Matrix4 projection = Matrix4Identity;
     Matrix4 view = Matrix4Identity;
@@ -177,6 +209,8 @@ void Graphics::Initialize(){
     bindGroupInfo.entries[0].size = sizeof(Matrix4);
     bindGroupInfo.entriesCount = 1;
     emptyModelBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+
+    drawMeshPool.layout = drawDrawMeshGroupLayout;
     #endif
 }
 
@@ -292,6 +326,11 @@ void Graphics::End(){
 
 void Graphics::_Begin(){
     graphicsDevice->_Begin(); 
+
+    drawMeshPool.curIndex = 0;
+
+    curMat = nullptr;
+    curBindGroup = emptyBindGroup;
 }
 
 void Graphics::_End(){
@@ -377,13 +416,126 @@ void Graphics::Scissor(unsigned int x, unsigned int y, int w, int h){
     graphicsDevice->Scissor(x, y, w, h); 
 }
 
+Gfx::BindGroup Graphics::BindMaterial(Material& mat){
+    if(mat.shader->materialBindGroupLayout == emptyLayout) return emptyBindGroup;
+
+    for(const auto& i: mat.maps){
+        const MaterialMap& map = i.second;
+        if(map.hasBufferData == false) continue;
+
+        if(map.type == MaterialMap::Type::Int){
+            Assert(map.bufferSize >= sizeof(int));
+            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueInt, sizeof(int));
+        } else if(map.type == MaterialMap::Type::Float){
+            Assert(map.bufferSize >= sizeof(float));
+            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueFloat, sizeof(float));
+        } else if(map.type == MaterialMap::Type::Vector2){
+            //#ifdef GLM_FORCE_ALIGNED
+                Assert(map.bufferSize >= (sizeof(float) * 2));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &map.vec.vector.x, sizeof(float) * 2);
+            /*#else
+                Assert(m.size >= sizeof(Vector2));
+                memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+            #endif*/
+        } else if(map.type == MaterialMap::Type::Vector3){
+            //#ifdef GLM_FORCE_ALIGNED
+                Vector3 v = Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z);
+                if(map.vec.vectorIsColor) v = ToLinear(v);
+                Assert(map.bufferSize >= (sizeof(float) * 3));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &v.x, sizeof(float) * 3);
+            /*#else
+                Assert(m.size >= sizeof(Vector3));
+                memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
+            #endif*/
+        } else if(map.type == MaterialMap::Type::Vector4){
+            Vector4 v = map.vec.vector;
+            if(map.vec.vectorIsColor) v = ToLinear(v);
+            Assert(map.bufferSize >= sizeof(Vector4));
+            memcpy((char*)mat.materialBufferData + map.bufferPos, &v, sizeof(Vector4));
+        } else if(map.type == MaterialMap::Type::Matrix4){
+            Assert(map.bufferSize >= sizeof(Matrix4));
+            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.matrix, sizeof(Matrix4));
+        } else if(map.type == MaterialMap::Type::FloatList){
+            Assert(map.list != nullptr);
+            Assert(map.listCount > 0);
+
+            //Assert(m.size >= sizeof(float) * map.listCount);
+            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
+            int stride = map.bufferArrayStride > 0 ?map.bufferArrayStride: 16; // fallback seguro
+            char* base = (char*)mat.materialBufferData + map.bufferPos;
+            float* src = static_cast<float*>(map.list);
+            for(int j = 0; j < map.listCount; ++j){
+                memcpy(base + j * stride, &src[j], sizeof(float));
+            }
+        } else if(map.type == MaterialMap::Type::Vector4List){
+            Assert(map.list != nullptr);
+            Assert(map.listCount > 0);
+
+            //Assert(m.size >= sizeof(Vector4) * map.listCount);
+            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
+            int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Vector4);
+            char* base = (char*)mat.materialBufferData + map.bufferPos;
+            Vector4* src = static_cast<Vector4*>(map.list);
+            for(int j = 0; j < map.listCount; ++j){
+                memcpy(base + j * stride, &src[j], sizeof(Vector4));
+            }
+        } else if(map.type == MaterialMap::Type::Matrix4List){
+            Assert(map.list != nullptr);
+            Assert(map.listCount > 0);
+            
+            //Assert(m.size >= sizeof(Matrix4) * map.listCount);
+            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
+            int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Matrix4); // normalmente 64
+            char* base = (char*)mat.materialBufferData + map.bufferPos;
+            Matrix4* src = static_cast<Matrix4*>(map.list);
+            for(int j = 0; j < map.listCount; ++j){
+                memcpy(base + j * stride, &src[j], sizeof(Matrix4));
+            }
+        } else {
+            Assert(false && "Type Not Supported in A UnifomBuffer");
+        }
+    }
+    gfxDevice->UpdatedBuffer(mat.materialBuffer, mat.materialBufferData, mat.materialBufferSize);
+
+    Gfx::BindGroupInfo bindGroupInfo = {};
+    bindGroupInfo.layout = mat.shader->materialBindGroupLayout;
+    for(auto& i: mat.shader->reflection.bindings){
+        if(i.set != 0) continue;
+
+        if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
+            bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = mat.materialBuffer;
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+            bindGroupInfo.entriesCount += 1;
+        }
+
+        if(i.type == Gfx::BindingType::Texture2D && mat.maps.count(i.name)){
+            bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = mat.maps[i.name].texture->tex;
+            bindGroupInfo.entriesCount += 1;
+        }
+    }
+
+    return gfxDevice->CreateFrameBindGroup(bindGroupInfo);
+}
+
 void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData){ 
     #ifdef TestNewGPU_API
     //Assert(false);
+    auto perDrawBindGroup = drawMeshPool.GetBindGroup(*gfxDevice, &modelMatrix, sizeof(Matrix4));
+
+    if(curMat != &mat || curMat->isDirty){
+        curMat = &mat;
+        curMat->isDirty = false;
+        curBindGroup = BindMaterial(*curMat);
+    }
+
     auto* cmd = gfxDevice->GetCommandBuffer();
     cmd->SetPipeline(mat.currentShader.drawTypes[0]->_pipeline);
-    cmd->SetBindGroup(0, emptyBindGroup);
-    cmd->SetBindGroup(1, emptyModelBindGroup);
+    cmd->SetBindGroup(0, curBindGroup);
+    cmd->SetBindGroup(1, perDrawBindGroup);
     cmd->SetBindGroup(2, camBindGroup);
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
     cmd->SetVertexBuffer(1, mesh.uvVbo);
@@ -409,15 +561,65 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Uniform
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 
+    #ifdef TestNewGPU_API
+    Assert(false);
+
+    auto DrawMeshInstancingInternal = [&](Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){
+        Assert(count <= 1000);
+        auto perDrawBindGroup = drawMeshInstancingPool.GetBindGroup(*gfxDevice, animMatrixs, sizeof(Matrix4) * count);
+
+        if(curMat != &mat || curMat->isDirty){
+            curMat = &mat;
+            curMat->isDirty = false;
+            curBindGroup = BindMaterial(*curMat);
+        }
+
+        auto* cmd = gfxDevice->GetCommandBuffer();
+        cmd->SetPipeline(mat.currentShader.drawTypes[0]->_pipeline);
+        cmd->SetBindGroup(0, curBindGroup);
+        cmd->SetBindGroup(1, perDrawBindGroup);
+        cmd->SetBindGroup(2, camBindGroup);
+        cmd->SetVertexBuffer(0, mesh.vertexVbo);
+        cmd->SetVertexBuffer(1, mesh.uvVbo);
+        cmd->SetVertexBuffer(2, mesh.normalVbo);
+        cmd->SetVertexBuffer(4, mesh.tangentVbo);
+        if(mesh.ebo == INVALID_ID){
+            cmd->Draw(mesh.vertexCount);
+        } else {
+            cmd->SetIndexBuffer(mesh.ebo);
+            cmd->DrawIndexed(mesh.indiceCount);
+        }
+    };
+
+    constexpr int MaxInstancesPerDraw = 1000;
+    int offset = 0;
+
+    while(offset < count){
+        int batchCount = std::min(MaxInstancesPerDraw, count - offset);
+        Matrix4* batchMatrices = animMatrixs + offset;
+        DrawMeshInstancingInternal(mesh, mat, batchMatrices, batchCount);
+        offset += batchCount;
+    }
+
+    #else
     graphicsDevice->DrawMeshInstancing(mesh, mat, animMatrixs, count); 
+    #endif
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4x3* animMatrixs, int count){
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     graphicsDevice->DrawMeshInstancing(mesh, mat, animMatrixs, count); 
+    #endif
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
-    graphicsDevice->DrawMeshInstancing(mesh, mat, buffer, count); 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
+    graphicsDevice->DrawMeshInstancing(mesh, mat, buffer, count);
+    #endif 
 }
 
 void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){ 

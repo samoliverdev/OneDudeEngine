@@ -85,14 +85,17 @@ void Material::SetShader(Ref<Shader> s){
 
     #ifdef TestNewGPU_API
     gfxDevice->DestroyBuffer(materialBuffer);
+    std::free(materialBufferData);
 
     if(shader->materialBindGroupLayout != emptyLayout){
         Gfx::BindGroupInfo bindGroupInfo = {};
-        bindGroupInfo.layout = shader->materialBindGroupLayout != emptyLayout;
+        bindGroupInfo.layout = shader->materialBindGroupLayout;
         for(auto& i: shader->reflection.bindings){
             if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
                 materialBindGroupInfo = i;
                 materialBuffer = gfxDevice->CreateBuffer(i.size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+                materialBufferData = std::malloc(i.size);
+                materialBufferSize = i.size;
 
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
@@ -104,15 +107,13 @@ void Material::SetShader(Ref<Shader> s){
             if(i.type == Gfx::BindingType::Texture2D && maps.count(i.name)){
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-                bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg")->tex; //maps[i.name].texture;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = maps[i.name].texture->tex;// ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg")->tex; //maps[i.name].texture;
                 bindGroupInfo.entriesCount += 1;
             }
         }
 
-        materialBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+        //materialBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
     }
-    
-
     #endif
 }
 
@@ -843,6 +844,32 @@ void Material::UpdateMaps(){
     }
     //*/
 
+    #ifdef TestNewGPU_API
+
+    bool hasMain = false;
+    Gfx::ShaderBindingInfo mainInfo;
+
+    for(auto& j: shader->reflection.bindings){
+        if(j.blockName == "Main"){
+            hasMain = true;
+            mainInfo = j;
+            break;
+        }
+    }
+
+    if(hasMain){
+        for(auto& i: maps){
+            for(auto& j: mainInfo.variables){
+                if(i.first == j.name){
+                    i.second.hasBufferData = true;
+                    i.second.bufferPos = j.offset;
+                    i.second.bufferSize = j.size;
+                    i.second.bufferArrayStride = j.arrayStride;
+                }
+            }
+        }
+    }
+    #endif
 }
 
 //void Material::ApplyUniformTo(Material& material, SubShader& shader, std::unordered_map<std::string, MaterialMap>& maps){

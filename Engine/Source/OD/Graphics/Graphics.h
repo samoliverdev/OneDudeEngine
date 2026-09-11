@@ -4,6 +4,7 @@
 #include "OD/Core/Color.h"
 #include "Camera.h"
 #include "RendererTypes.h"
+#include "OD/Gfx/Gfx.h"
 //#include "Framebuffer.h"
 
 //#define EnableExperimentalPerDrawCustomData 1
@@ -210,6 +211,8 @@ private:
     static void Shutdown();
     static void _Begin();
     static void _End();
+
+    static Gfx::BindGroup BindMaterial(Material& mat);
 };
 
 void GraphicsModuleInit();

@@ -45,6 +45,7 @@ public:
     virtual void DestroyBindGroupLayout(BindGroupLayout layout) override;
     
     virtual BindGroup CreateBindGroup(BindGroupInfo& info) override;
+    virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info) override;
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
     virtual void DestroyFramebuffer(Framebuffer destroy) override;
@@ -108,6 +109,8 @@ private:
     MultithreadRendererContext multithreadRendererContext;
 
     unsigned int globalVAO = 0;
+
+    std::vector<BindGroup> frameBindGroups;
 
     void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
