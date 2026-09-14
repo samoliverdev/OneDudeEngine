@@ -28,7 +28,7 @@ void LoadModelSample::OnInit(){
     model->materials[0]->SetTexture("mainTex", dd);
     model->materials[0]->SetVector4("color", {1,1,1,1});
 
-    for(int i = 0; i < 100/*000*/; i++){
+    for(int i = 0; i < 1000/*00*/; i++){
         float posRange = 25;
         Transform t;
 
@@ -48,8 +48,8 @@ void LoadModelSample::OnInit(){
     
     buffer2->SetData(&transforms2[0], transforms2.size());
 
-    useInstancing = true; //true;
-    useInstancingBuffer = true;
+    useInstancing = false; //true;
+    useInstancingBuffer = false;
     useMatrix4x3 = false;
 }
 

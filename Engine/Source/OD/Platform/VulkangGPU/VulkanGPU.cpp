@@ -3,6 +3,7 @@
 #include "OD/Core/Application.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
+#include "OD/Core/Instrumentor.h"
 
 #include <vulkan/vulkan.h>
 #include <vk-bootstrap/VkBootstrap.h>
@@ -67,6 +68,8 @@ ResourcePool<PipelineData> pipelinePool;*/
 bool _isInitialized{ false };
 int _frameNumber {0};
 
+const int MAX_DescriptorPoolSize = 10000;
+
 VkExtent2D _windowExtent{ 800, 600 };
 VkInstance _instance;
 VkDebugUtilsMessengerEXT _debug_messenger;
@@ -80,6 +83,9 @@ VkSwapchainKHR _swapchain;
 VkFormat _swapchainImageFormat;
 std::vector<VkImage> _swapchainImages;
 std::vector<VkImageView> _swapchainImageViews;
+VkImage _windowDepthImage = VK_NULL_HANDLE;
+VmaAllocation _windowDepthAllocation = VK_NULL_HANDLE;
+VkImageView _windowDepthImageView = VK_NULL_HANDLE;
 
 VkQueue _graphicsQueue;
 uint32_t _graphicsQueueFamily;
@@ -109,8 +115,38 @@ struct UploadContext {
 	VkFence _uploadFence;
 	VkCommandPool _commandPool;
 	VkCommandBuffer _commandBuffer;
+	bool _recording = false;
 };
 UploadContext _uploadContext;
+bool _uploadSubmitted = false;
+
+struct PendingUploadBuffer {
+    VkBuffer buffer;
+    VmaAllocation allocation;
+};
+std::vector<PendingUploadBuffer> _pendingUploadBuffers;
+std::vector<PendingUploadBuffer> _submittedUploadBuffers;
+void flush_pending_buffer_uploads(){
+    if(!_uploadContext._recording){
+        return;
+    }
+
+    VK_CHECK(vkEndCommandBuffer(_uploadContext._commandBuffer));
+
+    VkSubmitInfo submit = vkinit::submit_info(&_uploadContext._commandBuffer);
+    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence));
+
+    VK_CHECK(vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999));
+    VK_CHECK(vkResetFences(_device, 1, &_uploadContext._uploadFence));
+
+    for(const auto& pending : _pendingUploadBuffers){
+        vmaDestroyBuffer(_allocator, pending.buffer, pending.allocation);
+    }
+    _pendingUploadBuffers.clear();
+
+    VK_CHECK(vkResetCommandPool(_device, _uploadContext._commandPool, 0));
+    _uploadContext._recording = false;
+}
 
 struct AllocatedBuffer {
 	VkBuffer _buffer;
@@ -135,7 +171,9 @@ AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMem
 }
 
 void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function){
-    VkCommandBuffer cmd = _uploadContext._commandBuffer;
+	flush_pending_buffer_uploads();
+	Assert(!_uploadContext._recording);
+	VkCommandBuffer cmd = _uploadContext._commandBuffer;
 
 	//begin the command buffer recording. We will use this command buffer exactly once before resetting, so we tell vulkan that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -651,6 +689,16 @@ void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, s
     // GPU-only buffer
     else {
 
+        if(!_uploadContext._recording){
+            VK_CHECK(vkResetCommandPool(_device, _uploadContext._commandPool, 0));
+
+            VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info(
+                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+            );
+            VK_CHECK(vkBeginCommandBuffer(_uploadContext._commandBuffer, &beginInfo));
+            _uploadContext._recording = true;
+        }
+
         VkBufferCreateInfo stagingInfo{};
         stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         stagingInfo.size = size;
@@ -687,28 +735,22 @@ void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, s
             size
         );
 
-        // staging -> GPU buffer
-        immediate_submit([&](VkCommandBuffer transferCmd) {
+        // Record staging -> GPU buffer. All pending copies are submitted together
+        // after resource commands for this frame have been processed.
+        VkBufferCopy copy{};
+        copy.srcOffset = 0;
+        copy.dstOffset = 0; //cmd.updateBuffer.offset;
+        copy.size = size;
 
-            VkBufferCopy copy{};
-            copy.srcOffset = 0;
-            copy.dstOffset = 0; //cmd.updateBuffer.offset;
-            copy.size = size;
-
-            vkCmdCopyBuffer(
-                transferCmd,
-                stagingBuffer,
-                bufferData.buffer,
-                1,
-                &copy
-            );
-        });
-
-        vmaDestroyBuffer(
-            _allocator,
+        vkCmdCopyBuffer(
+            _uploadContext._commandBuffer,
             stagingBuffer,
-            stagingAllocation
+            bufferData.buffer,
+            1,
+            &copy
         );
+
+        _pendingUploadBuffers.push_back({stagingBuffer, stagingAllocation});
     }
 
 }
@@ -1330,7 +1372,7 @@ void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
 #pragma endregion
 
 #pragma region Device
-VulkanGPUDevice::VulkanGPUDevice() {
+VulkanGPUDevice::VulkanGPUDevice(VulkanPresentMode mode) : presentMode(mode) {
     vkInfo.apiName = "Vulkan";
     vkInfo.version = 1;
     vkInfo.supportUniformBuffer = true;
@@ -1338,7 +1380,8 @@ VulkanGPUDevice::VulkanGPUDevice() {
     _windowFrameBufferLayout = {};
     _windowFrameBufferLayout.colorAttachments[0].format = FramebufferTextureFormat::RGBA8;
     _windowFrameBufferLayout.colorAttachmentsCount = 1;
-    _windowFrameBufferLayout.depthAttachment.format = FramebufferDepthTextureFormat::None;
+    _windowFrameBufferLayout.depthAttachment.format = FramebufferDepthTextureFormat::DEPTH24_STENCIL8;
+    _windowFrameBufferLayout.swapChainTarget = true;
 }
 
 void create_allocator(){
@@ -1353,7 +1396,7 @@ void init_vulkan(){
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
         .require_api_version(1, 1, 0)
-        .request_validation_layers(true)
+        .request_validation_layers(false)
         .use_default_debug_messenger()
         .build();
 
@@ -1378,12 +1421,14 @@ void init_vulkan(){
     create_allocator();
 }
 
-void init_swapchain(){
+void init_swapchain(VulkanPresentMode presentMode){
     vkb::SwapchainBuilder swapchainBuilder{ _chosenGPU, _device, _surface };
     vkb::Swapchain vkbSwapchain = swapchainBuilder
         //.use_default_format_selection()
         .set_desired_format({ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
-        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+        .set_desired_present_mode(presentMode == VulkanPresentMode::VSync
+            ? VK_PRESENT_MODE_FIFO_KHR
+            : VK_PRESENT_MODE_IMMEDIATE_KHR)
         .set_desired_extent(_windowExtent.width, _windowExtent.height)
         .build()
         .value();
@@ -1392,6 +1437,53 @@ void init_swapchain(){
     _swapchainImages = vkbSwapchain.get_images().value();
     _swapchainImageViews = vkbSwapchain.get_image_views().value();
     _swapchainImageFormat = vkbSwapchain.image_format;
+}
+
+FramebufferDepthTextureFormat FindSupportedWindowDepthFormat(){
+    const FramebufferDepthTextureFormat candidates[] = {
+        FramebufferDepthTextureFormat::DEPTH32F_STENCIL8,
+        FramebufferDepthTextureFormat::DEPTH24_STENCIL8,
+        FramebufferDepthTextureFormat::DEPTH_COMPONENT32F,
+        FramebufferDepthTextureFormat::DEPTH_COMPONENT16
+    };
+
+    for(const auto candidate : candidates){
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(_chosenGPU, ToVkDepthFormat(candidate), &properties);
+        if((properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)
+            return candidate;
+    }
+
+    Assert(false && "No supported Vulkan depth format found");
+    return FramebufferDepthTextureFormat::None;
+}
+
+void init_window_depth_buffer(){
+    _windowFrameBufferLayout.depthAttachment.format = FindSupportedWindowDepthFormat();
+
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = ToVkDepthFormat(_windowFrameBufferLayout.depthAttachment.format);
+    imageInfo.extent = { _windowExtent.width, _windowExtent.height, 1 };
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VmaAllocationCreateInfo allocationInfo{};
+    allocationInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocationInfo, &_windowDepthImage, &_windowDepthAllocation, nullptr));
+
+    const bool hasStencil = _windowFrameBufferLayout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+        _windowFrameBufferLayout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
+        imageInfo.format,
+        _windowDepthImage,
+        VK_IMAGE_ASPECT_DEPTH_BIT | (hasStencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0)
+    );
+    VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &_windowDepthImageView));
 }
 
 void init_commands(){
@@ -1433,6 +1525,18 @@ void VulkanGPUDevice::InitDefaultRenderpass(){
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+    VkAttachmentDescription depth_attachment = {};
+    depth_attachment.format = ToVkDepthFormat(_windowFrameBufferLayout.depthAttachment.format);
+    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    const bool hasStencil = _windowFrameBufferLayout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+        _windowFrameBufferLayout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+    depth_attachment.stencilLoadOp = hasStencil ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkAttachmentReference color_attachment_ref = {};
     color_attachment_ref.attachment = 0;
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1441,11 +1545,17 @@ void VulkanGPUDevice::InitDefaultRenderpass(){
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_ref;
+    VkAttachmentReference depth_attachment_ref = {};
+    depth_attachment_ref.attachment = 1;
+    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+    VkAttachmentDescription attachments[] = { color_attachment, depth_attachment };
 
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = 1;
-    render_pass_info.pAttachments = &color_attachment;
+    render_pass_info.attachmentCount = 2;
+    render_pass_info.pAttachments = attachments;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
 
@@ -1463,7 +1573,7 @@ void VulkanGPUDevice::InitFramebuffers(){
     VkFramebufferCreateInfo fb_info = {};
     fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     fb_info.renderPass = _renderPass;
-    fb_info.attachmentCount = 1;
+    fb_info.attachmentCount = 2;
     fb_info.width = _windowExtent.width;
     fb_info.height = _windowExtent.height;
     fb_info.layers = 1;
@@ -1472,7 +1582,8 @@ void VulkanGPUDevice::InitFramebuffers(){
     _framebuffers.resize(swapchain_imagecount);
 
     for(size_t i = 0; i < swapchain_imagecount; i++){
-        fb_info.pAttachments = &_swapchainImageViews[i];
+        VkImageView attachments[] = { _swapchainImageViews[i], _windowDepthImageView };
+        fb_info.pAttachments = attachments;
         VK_CHECK(vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]));
     }
 }
@@ -1503,19 +1614,21 @@ void init_sync_structures(){
 }
 
 void VulkanGPUDevice::InitDescriptors(){
+
+    
     //create a descriptor pool that will hold 10 uniform buffers
 	std::vector<VkDescriptorPoolSize> sizes = {
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_DescriptorPoolSize },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_DescriptorPoolSize },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_DescriptorPoolSize },
 		//add combined-image-sampler descriptor types to the pool
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 }
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_DescriptorPoolSize }
 	};
 
 	VkDescriptorPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = 0;
-	pool_info.maxSets = 1000;
+	pool_info.maxSets = MAX_DescriptorPoolSize;
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes = sizes.data();
 	vkCreateDescriptorPool(_device, &pool_info, nullptr, &_descriptorPool);
@@ -1578,6 +1691,12 @@ void VulkanGPUDevice::Cleanup(){
         vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
     }
 
+    vkDestroyImageView(_device, _windowDepthImageView, nullptr);
+    vmaDestroyImage(_allocator, _windowDepthImage, _windowDepthAllocation);
+    _windowDepthImageView = VK_NULL_HANDLE;
+    _windowDepthImage = VK_NULL_HANDLE;
+    _windowDepthAllocation = VK_NULL_HANDLE;
+
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
     vkDestroyDevice(_device, nullptr);
     vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
@@ -1591,7 +1710,8 @@ void VulkanGPUDevice::_Init(){
     _windowExtent.height = Application::ScreenHeight();
 
     init_vulkan();
-    init_swapchain();
+    init_swapchain(presentMode);
+    init_window_depth_buffer();
     init_commands();
     InitDefaultRenderpass();
     InitFramebuffers();
@@ -1662,10 +1782,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
-    for(auto i: frameBindGroups){
+    /*for(auto i: frameBindGroups){
         bindGroupPool.AddDestroyedId(i);
     }
-    frameBindGroups.clear();
+    frameBindGroups.clear();*/
     vkResetDescriptorPool(_device, frameDescriptorPools, 0);
     
     // Process Resource Commands first
@@ -1713,7 +1833,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
                 auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
 
-                if(data.info.format != ImageFormat::R8_UNORM){
+                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
                     auto rgba = ConvertRGBToRGBA((uint8_t*)cmd.uploadTexture2D.data, data.width, data.height);
                     _UploadTexture2D(data, rgba.data(), rgba.size());
                 } else {
@@ -1797,6 +1917,8 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
         }
     }
+
+    flush_pending_buffer_uploads();
 
     //VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
     //VK_CHECK(vkResetFences(_device, 1, &_renderFence));
@@ -2071,8 +2193,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             case CommandBuffer::Type::BeginWindowFramebuffer:{
                 hasWindowRenderPass = true;
                 
-                VkClearValue clearValue{};
-                clearValue.color = { { 1.0f, 0.0f, 0.0f, 1.0f } };
+                VkClearValue clearValues[2]{};
+                clearValues[0].color = { { 1.0f, 0.0f, 0.0f, 1.0f } };
+                clearValues[1].depthStencil = { 1.0f, 0 };
 
                 VkRenderPassBeginInfo rpInfo = {};
                 rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -2080,8 +2203,8 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 rpInfo.renderArea.offset = { 0, 0 };
                 rpInfo.renderArea.extent = _windowExtent;
                 rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-                rpInfo.clearValueCount = 1;
-                rpInfo.pClearValues = &clearValue;
+                rpInfo.clearValueCount = 2;
+                rpInfo.pClearValues = clearValues;
 
                 vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -2195,16 +2318,17 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     }
 
     if(hasWindowRenderPass == false){
-        VkClearValue clearValue{};
-        clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        VkClearValue clearValues[2]{};
+        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        clearValues[1].depthStencil = { 1.0f, 0 };
         VkRenderPassBeginInfo rpInfo = {};
         rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rpInfo.renderPass = _renderPass;
         rpInfo.renderArea.offset = { 0, 0 };
         rpInfo.renderArea.extent = _windowExtent;
         rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-        rpInfo.clearValueCount = 1;
-        rpInfo.pClearValues = &clearValue;
+        rpInfo.clearValueCount = 2;
+        rpInfo.pClearValues = clearValues;
         vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         /*VkClearAttachment clearAttachment{};
@@ -2255,6 +2379,12 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
     VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
     _frameNumber++;
+
+    for(auto i: frameBindGroups){
+        bindGroupPool.AddDestroyedId(i);
+    }
+    frameBindGroups.clear();
+    //vkResetDescriptorPool(_device, frameDescriptorPools, 0);
 }
 
 void VulkanGPUDevice::SyncSingleThreadData(){

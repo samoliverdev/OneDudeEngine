@@ -596,12 +596,25 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         // --------------------------------------------------------
         // Allocate depth texture
         // --------------------------------------------------------
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        const bool hasStencil = attachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+            attachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+        const GLenum format = hasStencil ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
+        const GLenum type = attachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8
+            ? GL_UNSIGNED_INT_24_8
+            : attachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8
+                ? GL_FLOAT_32_UNSIGNED_INT_24_8_REV
+                : attachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16
+                    ? GL_UNSIGNED_SHORT
+                    : attachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT24
+                        ? GL_UNSIGNED_INT
+                        : GL_FLOAT;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
 
         // --------------------------------------------------------
         // Attach depth
         // --------------------------------------------------------
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, data.depthAttachment, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, data.depthAttachment, 0);
         
         if(attachment.mipLevels > 1){
             glGenerateMipmap(GL_TEXTURE_2D);
@@ -648,6 +661,15 @@ OpenglGPUDevice::OpenglGPUDevice(){
     info.apiName = "OpenGL";
     info.version = 4;
     info.supportUniformBuffer = true;
+
+    windowFrameBufferLayout.colorAttachments[0].format = FramebufferTextureFormat::RGBA8;
+    windowFrameBufferLayout.colorAttachmentsCount = 1;
+    windowFrameBufferLayout.depthAttachment.format = FramebufferDepthTextureFormat::DEPTH24_STENCIL8;
+    windowFrameBufferLayout.swapChainTarget = true;
+}
+
+FrameBufferLayout OpenglGPUDevice::GetWindowFrameBufferLayout(){
+    return windowFrameBufferLayout;
 }
 
 void OpenglGPUDevice::LoadContext(void* data){
@@ -661,6 +683,8 @@ void OpenglGPUDevice::LoadContext(void* data){
 void OpenglGPUDevice::_Init(){
     LogInfo("OpenglGPUDevice::Initialize");
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     
     LogInfo("Opengl Version: {}", (char*)glGetString(GL_VERSION));
     LogInfo("GL_VENDOR: {}", (char*)glGetString(GL_VENDOR));
@@ -833,10 +857,10 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
     int curBindIndex = 0;
     int curTextureIndex = 0;
 
-    for(auto i: frameBindGroups){
+    /*for(auto i: frameBindGroups){
         bindGroupPool.AddDestroyedId(i);
     }
-    frameBindGroups.clear();
+    frameBindGroups.clear();*/
 
     for(const ResourceCommands::Command& cmd: frame.resourceCommands.commands){
         switch(cmd.type){
@@ -937,12 +961,12 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         }
 
         case ResourceCommands::Type::CreateFrameBindGroup:{
-                Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
-                auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-                _CreateBindGroup(data, *cmd.createFrameBindGroup.info);
-                frameBindGroups.push_back(cmd.createFrameBindGroup.id);
-                break;
-            }
+            Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
+            auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
+            _CreateBindGroup(data, *cmd.createFrameBindGroup.info);
+            frameBindGroups.push_back(cmd.createFrameBindGroup.id);
+            break;
+        }
 
         case ResourceCommands::Type::CreateFramebuffer:{
             Assert(framebufferPool.IsValid(cmd.createFramebuffer.framebuffer));
@@ -1157,6 +1181,12 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
         }
     }
+
+    for(auto i: frameBindGroups){
+        bindGroupPool.AddDestroyedId(i);
+    }
+    frameBindGroups.clear();
+
 }
 
 void OpenglGPUDevice::SyncSingleThreadData(){

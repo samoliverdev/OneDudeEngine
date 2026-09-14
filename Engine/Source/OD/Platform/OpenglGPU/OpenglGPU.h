@@ -20,6 +20,7 @@ public:
     virtual GraphicsDeviceInfo GetInfo() override;
 
     virtual void LoadContext(void* data) override;
+    virtual FrameBufferLayout GetWindowFrameBufferLayout() override;
 
     virtual bool SupportMultithread() override { return true; }
     
@@ -102,6 +103,7 @@ private:
     ResourcePool<FramebufferData> framebufferPool;
 
     GraphicsDeviceInfo info;
+    FrameBufferLayout windowFrameBufferLayout;
     GraphicsStats _GraphicsStats;
     GPUMemoryStats _GPUMemoryStats;
     GraphicsDebug _GraphicsDebug;

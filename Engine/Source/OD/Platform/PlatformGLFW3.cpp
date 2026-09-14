@@ -234,6 +234,8 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
 
     #if !defined(__EMSCRIPTEN__)
     if(graphicsDeviceInfo.apiName == "OpenGL"){
+        glfwWindowHint(GLFW_DEPTH_BITS, 24);
+        glfwWindowHint(GLFW_STENCIL_BITS, 8);
         if(graphicsDeviceInfo.version == 4){
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);

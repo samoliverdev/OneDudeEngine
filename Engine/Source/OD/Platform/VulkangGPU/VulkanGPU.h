@@ -9,9 +9,14 @@
 namespace OD{
 namespace Gfx{   
 
+enum class VulkanPresentMode {
+    VSync,
+    Immediate
+};
+
 class VulkanGPUDevice: public GraphicsDevice, public Device{
 public:
-    VulkanGPUDevice();
+    explicit VulkanGPUDevice(VulkanPresentMode presentMode = VulkanPresentMode::VSync);
 
     virtual GraphicsStats& GetStats() override;
     virtual GPUMemoryStats& GetMemoryStats() override;
@@ -125,6 +130,7 @@ private:
     MultithreadRendererContext multithreadRendererContext;
 
     bool multithread;
+    VulkanPresentMode presentMode;
 
     //VkDescriptorSetLayout emptyLayout;
 

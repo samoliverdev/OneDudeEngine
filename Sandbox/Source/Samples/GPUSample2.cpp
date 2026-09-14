@@ -163,14 +163,14 @@ void GPUSample2::OnInit(){
     gpuDevice->UploadTexture2D(texture, pixels, imageSize);
     stbi_image_free(pixels);
 
-	pixels = stbi_load("Sandbox/Textures/brickwall.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	pixels = stbi_load("Sandbox/Textures/brickwall.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb);
     Assert(pixels);
 
-    imageSize = texWidth * texHeight * 4;
+    imageSize = texWidth * texHeight * 3;
     texInfo = {};
     texInfo.width = texWidth;
     texInfo.height = texHeight;
-    texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    texInfo.format = Gfx::ImageFormat::R8G8B8_SRGB;
     auto texture2 = gpuDevice->CreateTexture2D(texInfo);
     gpuDevice->UploadTexture2D(texture2, pixels, imageSize);
     stbi_image_free(pixels);
