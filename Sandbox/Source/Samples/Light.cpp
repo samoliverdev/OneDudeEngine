@@ -58,7 +58,7 @@ void LightSample::OnRender(float deltaTime){
     //Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    Graphics::BeginFramebuffer(*framebuffer, true, Vector4(0.1f, 0.1f, 0.1f, 1));
+    /*Graphics::BeginFramebuffer(*framebuffer, true, Vector4(0.1f, 0.1f, 0.1f, 1));
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
         Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         for(unsigned int i = 0; i < 10; i++){
@@ -67,20 +67,22 @@ void LightSample::OnRender(float deltaTime){
             modelTransform.EulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
             Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         }
-    Graphics::EndFramebuffer();
+    Graphics::EndFramebuffer();*/
 
     Graphics::BeginRenderToScreen(Vector4(0.1f, 0.1f, 0.1f, 1));
-        blitMat->SetTexture("mainTex", framebuffer, 0);
-        Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
+        Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+        Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
 
-        /*Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-        //Graphics::DrawModel(*lightModel, lightTransform.GetLocalModelMatrix());
+        //blitMat->SetTexture("mainTex", framebuffer, 0);
+        //Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
+
+        Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         for(unsigned int i = 0; i < 10; i++){
-            modelTransform.LocalPosition(cubePositions[i]);
+            modelTransform.Position(cubePositions[i]);
             float angle = 20.0f * i; 
-            modelTransform.LocalEulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
-            Graphics::DrawModel(*model, modelTransform.GetLocalModelMatrix());
-        }*/
+            modelTransform.EulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
+            Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
+        }
 
         /*Platform::ImguiBegin();
         OnGUI();

@@ -7,6 +7,10 @@ namespace OD{
 namespace Gfx{   
 
 struct OD_API ShaderVariable {
+    enum class OD_API_IMPORT Type{
+        None = 0, Int, Float, Vector2, Vector3, Vector4, Matrix4, FloatList, Vector4List, Matrix4List, Buffer
+    };
+
     std::string name;
 
     uint32_t offset = 0;
@@ -17,6 +21,8 @@ struct OD_API ShaderVariable {
     uint32_t arraySize = 1;
 
     std::vector<ShaderVariable> members;
+
+    Type type;
 };
 
 struct OD_API ShaderVertexAttribute {

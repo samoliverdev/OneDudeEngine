@@ -39,6 +39,40 @@ static VertexFormat ReflectVertexFormat(const SpvReflectInterfaceVariable* var){
     return VertexFormat::Float;
 }
 
+static ShaderVariable::Type ReflectShaderVariableType(const SpvReflectBlockVariable& variable){
+    const SpvReflectTypeDescription* type = variable.type_description;
+    if(!type)
+        return ShaderVariable::Type::None;
+
+    const SpvReflectTypeFlags flags = type->type_flags;
+    const bool isArray = (flags & SPV_REFLECT_TYPE_FLAG_ARRAY) != 0;
+
+    if((flags & SPV_REFLECT_TYPE_FLAG_STRUCT) != 0)
+        return ShaderVariable::Type::Buffer;
+
+    if((flags & SPV_REFLECT_TYPE_FLAG_MATRIX) != 0)
+        return isArray ? ShaderVariable::Type::Matrix4List : ShaderVariable::Type::Matrix4;
+
+    if((flags & SPV_REFLECT_TYPE_FLAG_VECTOR) != 0){
+        const uint32_t componentCount = type->traits.numeric.vector.component_count;
+        if(componentCount == 2)
+            return ShaderVariable::Type::Vector2;
+        if(componentCount == 3)
+            return ShaderVariable::Type::Vector3;
+        if(componentCount == 4)
+            return isArray ? ShaderVariable::Type::Vector4List : ShaderVariable::Type::Vector4;
+        return ShaderVariable::Type::None;
+    }
+
+    if((flags & SPV_REFLECT_TYPE_FLAG_FLOAT) != 0)
+        return isArray ? ShaderVariable::Type::FloatList : ShaderVariable::Type::Float;
+
+    if((flags & (SPV_REFLECT_TYPE_FLAG_INT | SPV_REFLECT_TYPE_FLAG_BOOL)) != 0)
+        return ShaderVariable::Type::Int;
+
+    return ShaderVariable::Type::None;
+}
+
 static ShaderVariable ReflectVariable(const SpvReflectBlockVariable& variable){
     ShaderVariable result;
 
@@ -49,7 +83,8 @@ static ShaderVariable ReflectVariable(const SpvReflectBlockVariable& variable){
     result.size = variable.size;
 
     result.arrayStride = variable.array.stride;
-    result.matrixStride = 0; //variable.matrix.stride;
+    result.matrixStride = variable.numeric.matrix.stride;
+    result.type = ReflectShaderVariableType(variable);
 
     result.arraySize = 1;
 

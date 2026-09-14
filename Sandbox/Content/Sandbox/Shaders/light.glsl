@@ -3,19 +3,7 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
-
-#if defined(OpenGL_API) && defined(UseUniformBuffer)
-    uniform mat4 model;
-#else
-BeginUniform(1, 0, PerDraw)
-    Uniform mat4 model;
-EndUniform()
-#endif
-
-BeginUniform(2, 0, CamDraw)
-    Uniform mat4 projection;
-    Uniform mat4 view;
-EndUniform()
+#include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
     Uniform vec3 material_ambient;
@@ -33,32 +21,22 @@ BeginUniform(0, 0, Main)
 EndUniform()
 
 #if defined(VERTEX) && defined(MainPass)
-    Attribute(0) vec3 _pos;
-    Attribute(1) vec2 _texCoord;
-    Attribute(2) vec3 _normal;
-
-    Out(0) vec3 pos;
-    Out(1) vec3 normal;
-    Out(2) vec2 texCoord;
     Out(3) vec3 worldPos;
     Out(4) vec3 worldNormal;
 
     void main() {
-        pos = _pos;
-        normal = _normal;
-        texCoord = _texCoord;
-        worldPos = vec3(model * vec4(pos, 1.0));
-        //worldNormal = vec3(model * vec4(normal, 1.01));
-        worldNormal = mat3(transpose(inverse(model))) * normal; // for non-uniform scale objects
+        mat4 _model = GetModelMatrix();
+        vec4 _pos = GetLocalPos();
 
-        OutPosition = projection * view * model * vec4(pos, 1.0);
+        worldPos = vec3(_model * _pos);
+        //worldNormal = vec3(model * vec4(normal, 1.01));
+        worldNormal = mat3(transpose(inverse(_model))) * normal; // for non-uniform scale objects
+
+        OutPosition = projection * view * _model * _pos;
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    In(0) vec3 pos;
-    In(1) vec3 normal;
-    In(2) vec2 texCoord;
     In(3) vec3 worldPos;
     In(4) vec3 worldNormal;
 

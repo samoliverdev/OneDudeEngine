@@ -858,7 +858,7 @@ void Material::UpdateMaps(){
     }
 
     if(hasMain){
-        for(auto& i: maps){
+        /*for(auto& i: maps){
             for(auto& j: mainInfo.variables){
                 if(i.first == j.name){
                     i.second.hasBufferData = true;
@@ -867,6 +867,15 @@ void Material::UpdateMaps(){
                     i.second.bufferArrayStride = j.arrayStride;
                 }
             }
+        }*/
+
+        for(auto& j: mainInfo.variables){
+            MaterialMap& map = maps[j.name];
+
+            map.hasBufferData = true;
+            map.bufferPos = j.offset;
+            map.bufferSize = j.size;
+            map.bufferArrayStride = j.arrayStride;
         }
     }
     #endif

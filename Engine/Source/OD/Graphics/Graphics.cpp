@@ -145,7 +145,6 @@ struct InstancingBufferPool{
     }
 };
 
-
 UniformBufferPool drawMeshPool;
 InstancingBufferPool drawMeshInstancingPool;
 
@@ -165,8 +164,8 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
 
 void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
-    graphicsDevice = new Gfx::OpenglGPUDevice();
-    //graphicsDevice = new Gfx::VulkanGPUDevice();
+    //graphicsDevice = new Gfx::OpenglGPUDevice();
+    graphicsDevice = new Gfx::VulkanGPUDevice();
     gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
     return;
     #endif
@@ -691,7 +690,17 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
 }
 
 void Graphics::DrawModel(Model& model, Matrix4 modelMatrix){ 
+    #ifdef TestNewGPU_API
+    int index = 0;
+    for(auto i: model.renderTargets){
+        Ref<Material> targetMaterial = model.materials[i.materialIndex];
+        Ref<Mesh> targetMesh = model.meshs[i.meshIndex];
+        Matrix4 targetMatrix =  modelMatrix * model.skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
+        DrawMesh(*targetMesh, *targetMaterial, targetMatrix);
+    }
+    #else
     graphicsDevice->DrawModel(model, modelMatrix); 
+    #endif
 }
 
 void Graphics::AddDrawLineCommand(Vector3 start, Vector3 end){ 
