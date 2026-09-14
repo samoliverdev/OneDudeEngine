@@ -114,6 +114,11 @@ enum class VertexSemantic: uint8_t{
     Custom1,
     Custom2,
     Custom3,
+
+    Intancing0,
+    Intancing1,
+    Intancing2,
+    Intancing3,
     
     Invalid,
 };
@@ -204,6 +209,11 @@ inline uint32_t VertexSemanticToSlot(VertexSemantic semantic){
         case VertexSemantic::Custom1:    return 12;
         case VertexSemantic::Custom2:    return 13;
         case VertexSemantic::Custom3:    return 14;
+
+        case VertexSemantic::Intancing0:    return 10;
+        case VertexSemantic::Intancing1:    return 11;
+        case VertexSemantic::Intancing2:    return 12;
+        case VertexSemantic::Intancing3:    return 13;
     }
     return 0;
 }
@@ -864,7 +874,7 @@ struct OD_API CommandBuffer{
 
     void DrawInstanced(uint32_t vertexCount, uint32_t count){
         Command cmd{};
-        cmd.type = Type::DrawIndexedInstanced;
+        cmd.type = Type::DrawInstanced;
         cmd.drawInstanced.vertexCount = vertexCount;
         cmd.drawInstanced.count = count;
         commands.push_back(cmd);
@@ -872,7 +882,7 @@ struct OD_API CommandBuffer{
 
     void DrawIndexedInstanced(uint32_t indexCount, uint32_t count){
         Command cmd{};
-        cmd.type = Type::DrawIndexed;
+        cmd.type = Type::DrawIndexedInstanced;
         cmd.drawIndexedInstanced.indexCount = indexCount;
         cmd.drawIndexedInstanced.count = count;
         commands.push_back(cmd);
