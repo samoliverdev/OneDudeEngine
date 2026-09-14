@@ -1948,7 +1948,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
 
             case CommandBuffer::Type::DrawIndexedInstanced:{
-                vkCmdDrawIndexed(cmd, renderCmd.drawIndexedInstanced.indexCount, renderCmd.drawIndexedInstanced.indexCount, 0, 0, 0);
+                vkCmdDrawIndexed(cmd, renderCmd.drawIndexedInstanced.indexCount, renderCmd.drawIndexedInstanced.count, 0, 0, 0);
                 break;
             }
         
@@ -2375,9 +2375,21 @@ BindGroup VulkanGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
 }
 
 Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){ 
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    FramebufferData data;
+    if(!_CreateFramebuffer(data, info)) return InvalidID;
+    auto id = framebufferPool.AllocId();
+    framebufferPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = framebufferPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
     return id;
+
+    #endif
 }
 
 void VulkanGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){

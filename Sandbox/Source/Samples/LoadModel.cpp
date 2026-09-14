@@ -48,7 +48,9 @@ void LoadModelSample::OnInit(){
     
     buffer2->SetData(&transforms2[0], transforms2.size());
 
-    useInstancing = false; //true;
+    useInstancing = true; //true;
+    useInstancingBuffer = true;
+    useMatrix4x3 = false;
 }
 
 void LoadModelSample::OnUpdate(float deltaTime){

@@ -37,6 +37,7 @@ layout(location = 1) in vec3 texCoord;
 layout(location = 1) in vec2 texCoord;
 #endif
 layout(location = 2) in vec3 normal;
+layout(location = 3) in vec4 aColor;
 layout(location = 4) in vec3 tangents;
 
 //#if defined(SKINNED) || defined(SKINNED2)
@@ -45,7 +46,7 @@ layout(location = 6) in vec4 weights;
 //#endif
 
 //#ifdef INSTANCING
-    #ifdef OpenGL_API
+    #if defined(OpenGL_API) || defined(Vulkan_API)
     layout(location = 10) in mat4 modelInstancing;
     #else   
     layout(location = 10) in vec4 a_ModelMatrix_0;
@@ -92,7 +93,7 @@ vec4 GetPerInstanceData(){
 
 mat4 GetModelMatrix(){
 #ifdef INSTANCING
-    #ifdef OpenGL_API
+    #if defined(OpenGL_API) || defined(Vulkan_API)
         mat4 result = modelInstancing;
         result[0][3] = 0;
         result[1][3] = 0;

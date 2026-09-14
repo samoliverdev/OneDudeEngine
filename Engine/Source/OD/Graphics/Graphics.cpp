@@ -9,6 +9,7 @@
 #include "SubShader.h"
 #include "Cubemap.h"
 #include "Texture.h"
+#include "InstancingBuffer.h"
 #include "Common.h"
 #include "OD/Defines.h"
 #include "OD/Core/Lua.h"
@@ -80,6 +81,8 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
     #endif
 };
 
+constexpr int MaxInstancesPerDraw = 1000;
+
 int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 Gfx::Device* gfxDevice = nullptr;
@@ -94,6 +97,7 @@ Gfx::BindGroup emptyModelBindGroup;
 
 Gfx::Buffer camBuffer;
 Gfx::Buffer emptyModelBuffer;
+Gfx::Buffer emptyInstacingVbo;
 
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
@@ -120,8 +124,30 @@ struct UniformBufferPool{
     }
 };
 
+struct InstancingBufferPool{
+    std::vector<Gfx::Buffer> buffers;
+    uint32_t curIndex = 0;
+
+    inline Gfx::Buffer GetBuffer(Gfx::Device& device, void* data, size_t size){
+        Assert(size <= (sizeof(Matrix4) * MaxInstancesPerDraw));
+
+        if(buffers.size() <= curIndex){
+            auto buffer = device.CreateBuffer(sizeof(Matrix4) * MaxInstancesPerDraw, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+            Assert(buffer != Gfx::InvalidID);
+            buffers.push_back(buffer);
+        }
+
+        auto out = buffers[curIndex];
+        device.UpdatedBuffer(out, data, size);
+
+        curIndex += 1;
+        return out;
+    }
+};
+
+
 UniformBufferPool drawMeshPool;
-UniformBufferPool drawMeshInstancingPool;
+InstancingBufferPool drawMeshInstancingPool;
 
 Material* curMat = nullptr;
 Gfx::BindGroup curBindGroup;
@@ -139,8 +165,8 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
 
 void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
-    //graphicsDevice = new Gfx::OpenglGPUDevice();
-    graphicsDevice = new Gfx::VulkanGPUDevice();
+    graphicsDevice = new Gfx::OpenglGPUDevice();
+    //graphicsDevice = new Gfx::VulkanGPUDevice();
     gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
     return;
     #endif
@@ -174,6 +200,9 @@ void Graphics::Initialize(){
 
     emptyModelBuffer = gfxDevice->CreateBuffer(sizeof(Matrix4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
     gfxDevice->UpdatedBuffer(emptyModelBuffer, &identity, sizeof(Matrix4));
+
+    emptyInstacingVbo = gfxDevice->CreateBuffer(sizeof(Matrix4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gfxDevice->UpdatedBuffer(emptyInstacingVbo, &Matrix4Identity, sizeof(Matrix4));
 
     Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
     bindGroupLayoutInfo.entriesCount = 0;
@@ -328,6 +357,7 @@ void Graphics::_Begin(){
     graphicsDevice->_Begin(); 
 
     drawMeshPool.curIndex = 0;
+    drawMeshInstancingPool.curIndex = 0;
 
     curMat = nullptr;
     curBindGroup = emptyBindGroup;
@@ -533,14 +563,20 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     }
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    cmd->SetPipeline(mat.currentShader.drawTypes[0]->_pipeline);
+    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipeline);
     cmd->SetBindGroup(0, curBindGroup);
     cmd->SetBindGroup(1, perDrawBindGroup);
     cmd->SetBindGroup(2, camBindGroup);
+
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
     cmd->SetVertexBuffer(1, mesh.uvVbo);
     cmd->SetVertexBuffer(2, mesh.normalVbo);
+    cmd->SetVertexBuffer(3, mesh.colorVbo);
     cmd->SetVertexBuffer(4, mesh.tangentVbo);
+    cmd->SetVertexBuffer(5, mesh.influencesVbo);
+    cmd->SetVertexBuffer(6, mesh.weightsVbo);
+    cmd->SetVertexBuffer(7, emptyInstacingVbo);
+
     if(mesh.ebo == INVALID_ID){
         cmd->Draw(mesh.vertexCount);
     } else {
@@ -562,11 +598,11 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Uniform
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
 
     auto DrawMeshInstancingInternal = [&](Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){
-        Assert(count <= 1000);
-        auto perDrawBindGroup = drawMeshInstancingPool.GetBindGroup(*gfxDevice, animMatrixs, sizeof(Matrix4) * count);
+        Assert(count <= MaxInstancesPerDraw);
+        auto intacingBuffer = drawMeshInstancingPool.GetBuffer(*gfxDevice, animMatrixs, sizeof(Matrix4) * count);
 
         if(curMat != &mat || curMat->isDirty){
             curMat = &mat;
@@ -575,23 +611,28 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         }
 
         auto* cmd = gfxDevice->GetCommandBuffer();
-        cmd->SetPipeline(mat.currentShader.drawTypes[0]->_pipeline);
+        cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipeline);
         cmd->SetBindGroup(0, curBindGroup);
-        cmd->SetBindGroup(1, perDrawBindGroup);
+        cmd->SetBindGroup(1, emptyModelBuffer);
         cmd->SetBindGroup(2, camBindGroup);
+
         cmd->SetVertexBuffer(0, mesh.vertexVbo);
         cmd->SetVertexBuffer(1, mesh.uvVbo);
         cmd->SetVertexBuffer(2, mesh.normalVbo);
+        cmd->SetVertexBuffer(3, mesh.colorVbo);
         cmd->SetVertexBuffer(4, mesh.tangentVbo);
+        cmd->SetVertexBuffer(5, mesh.influencesVbo);
+        cmd->SetVertexBuffer(6, mesh.weightsVbo);
+        cmd->SetVertexBuffer(7, intacingBuffer);
+
         if(mesh.ebo == INVALID_ID){
-            cmd->Draw(mesh.vertexCount);
+            cmd->DrawInstanced(mesh.vertexCount, count);
         } else {
             cmd->SetIndexBuffer(mesh.ebo);
-            cmd->DrawIndexed(mesh.indiceCount);
+            cmd->DrawIndexedInstanced(mesh.indiceCount, count);
         }
     };
 
-    constexpr int MaxInstancesPerDraw = 1000;
     int offset = 0;
 
     while(offset < count){
@@ -616,7 +657,34 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4x3* animMatr
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
+    if(curMat != &mat || curMat->isDirty){
+        curMat = &mat;
+        curMat->isDirty = false;
+        curBindGroup = BindMaterial(*curMat);
+    }
+
+    auto* cmd = gfxDevice->GetCommandBuffer();
+    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipeline);
+    cmd->SetBindGroup(0, curBindGroup);
+    cmd->SetBindGroup(1, emptyModelBuffer);
+    cmd->SetBindGroup(2, camBindGroup);
+
+    cmd->SetVertexBuffer(0, mesh.vertexVbo);
+    cmd->SetVertexBuffer(1, mesh.uvVbo);
+    cmd->SetVertexBuffer(2, mesh.normalVbo);
+    cmd->SetVertexBuffer(3, mesh.colorVbo);
+    cmd->SetVertexBuffer(4, mesh.tangentVbo);
+    cmd->SetVertexBuffer(5, mesh.influencesVbo);
+    cmd->SetVertexBuffer(6, mesh.weightsVbo);
+    cmd->SetVertexBuffer(7, buffer.buffer);
+
+    if(mesh.ebo == INVALID_ID){
+        cmd->DrawInstanced(mesh.vertexCount, count);
+    } else {
+        cmd->SetIndexBuffer(mesh.ebo);
+        cmd->DrawIndexedInstanced(mesh.indiceCount, count);
+    }
     #else
     graphicsDevice->DrawMeshInstancing(mesh, mat, buffer, count);
     #endif 

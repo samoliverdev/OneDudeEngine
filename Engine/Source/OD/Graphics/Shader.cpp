@@ -555,10 +555,33 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         pipelineInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
         pipelineInfo.vertexLayout.bufferCount = 2;*/
 
-        pipelineInfo.vertexLayout.bufferCount = pipelineInfo.vertexLayout.attributeCount;
+        /*pipelineInfo.vertexLayout.bufferCount = pipelineInfo.vertexLayout.attributeCount;
         for(int i = 0; i < pipelineInfo.vertexLayout.attributeCount; i++){
             pipelineInfo.vertexLayout.buffers[i] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
-        }
+        }*/
+
+        pipelineInfo.vertexLayout.attributeCount = 11;
+        pipelineInfo.vertexLayout.attributes[0] = { Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0 };
+        pipelineInfo.vertexLayout.attributes[1] = { Gfx::VertexSemantic::UV0, Gfx::VertexFormat::Float3, 1, 0 };
+        pipelineInfo.vertexLayout.attributes[2] = { Gfx::VertexSemantic::Normal, Gfx::VertexFormat::Float3, 2, 0 };
+        pipelineInfo.vertexLayout.attributes[3] = { Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float4, 3, 0 };
+        pipelineInfo.vertexLayout.attributes[4] = { Gfx::VertexSemantic::Tangent, Gfx::VertexFormat::Float3, 4, 0 };
+        pipelineInfo.vertexLayout.attributes[5] = { Gfx::VertexSemantic::Influences, Gfx::VertexFormat::Int4, 5, 0 };
+        pipelineInfo.vertexLayout.attributes[6] = { Gfx::VertexSemantic::Weights, Gfx::VertexFormat::Float4, 6, 0 };
+        pipelineInfo.vertexLayout.attributes[7] = { Gfx::VertexSemantic::Intancing0, Gfx::VertexFormat::Float4, 7, 0 };
+        pipelineInfo.vertexLayout.attributes[8] = { Gfx::VertexSemantic::Intancing1, Gfx::VertexFormat::Float4, 7, sizeof(Vector4) };
+        pipelineInfo.vertexLayout.attributes[9] = { Gfx::VertexSemantic::Intancing2, Gfx::VertexFormat::Float4, 7, sizeof(Vector4) * 2 };
+        pipelineInfo.vertexLayout.attributes[10] = { Gfx::VertexSemantic::Intancing3, Gfx::VertexFormat::Float4, 7, sizeof(Vector4) * 3 };
+
+        pipelineInfo.vertexLayout.bufferCount = 8;
+        pipelineInfo.vertexLayout.buffers[0] = { sizeof(Vector3), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[1] = { sizeof(Vector3), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[2] = { sizeof(Vector3), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[3] = { sizeof(Vector4), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[4] = { sizeof(Vector3), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[5] = { sizeof(IVector4), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[6] = { sizeof(Vector4), Gfx::VertexInputRate::Vertex };
+        pipelineInfo.vertexLayout.buffers[7] = { sizeof(Matrix4), Gfx::VertexInputRate::Instance };
 
         shader->_pipeline = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
 

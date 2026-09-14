@@ -44,7 +44,7 @@ InstancingBuffer::InstancingBuffer(){
 
 InstancingBuffer::~InstancingBuffer(){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);
     #else
     graphicsDevice->InstancingBufferDestroy(*this);
@@ -61,7 +61,7 @@ InstancingBuffer::~InstancingBuffer(){
 
 bool InstancingBuffer::IsValid(){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     return true;
     #else
     return graphicsDevice->InstancingBufferIsValid(*this);

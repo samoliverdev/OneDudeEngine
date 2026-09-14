@@ -28,7 +28,7 @@ private:
     int count = 0;
     bool isMatrix4x3 = false;
     InstancingBufferDataGL;
-
+    
     Gfx::Buffer buffer = Gfx::InvalidID;
 };
 

@@ -1124,6 +1124,16 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
+        case CommandBuffer::Type::DrawInstanced:{
+            glDrawArraysInstanced(GL_TRIANGLES, 0, cmd.drawInstanced.vertexCount, cmd.drawInstanced.count);
+            break;
+        }
+
+        case CommandBuffer::Type::DrawIndexedInstanced:{
+            glDrawElementsInstanced(GL_TRIANGLES, cmd.drawIndexedInstanced.indexCount,  GL_UNSIGNED_INT, 0, cmd.drawIndexedInstanced.count);
+            break;
+        }
+
         case CommandBuffer::Type::BeginWindowFramebuffer:{
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glCheckError();

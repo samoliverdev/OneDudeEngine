@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
+#include "OD/Base.h"
 #include "OD/Core/Math.h"
 #include <thread>
 #include <mutex>
@@ -194,27 +195,21 @@ struct OD_API MeshLayout{
 
 inline uint32_t VertexSemanticToSlot(VertexSemantic semantic){
     switch(semantic){
-        case VertexSemantic::Position:   return 0;
-        case VertexSemantic::UV0:        return 1;
-        case VertexSemantic::Normal:     return 2;
-        case VertexSemantic::Tangent:    return 4;
-        case VertexSemantic::UV1:        return 3;
-        case VertexSemantic::UV2:        return 5;
-        case VertexSemantic::UV3:        return 6;
-        case VertexSemantic::Color0:     return 7;
-        case VertexSemantic::Color1:     return 8;
-        case VertexSemantic::Weights:    return 9;
-        case VertexSemantic::Influences: return 10;
-        case VertexSemantic::Custom0:    return 11;
-        case VertexSemantic::Custom1:    return 12;
-        case VertexSemantic::Custom2:    return 13;
-        case VertexSemantic::Custom3:    return 14;
+        case VertexSemantic::Position:      return 0;
+        case VertexSemantic::UV0:           return 1;
+        case VertexSemantic::Normal:        return 2;
+        case VertexSemantic::Color0:        return 3;
+        case VertexSemantic::Tangent:       return 4;
 
+        case VertexSemantic::Influences:    return 5;
+        case VertexSemantic::Weights:       return 6;
+        
         case VertexSemantic::Intancing0:    return 10;
         case VertexSemantic::Intancing1:    return 11;
         case VertexSemantic::Intancing2:    return 12;
         case VertexSemantic::Intancing3:    return 13;
     }
+    Assert(false);
     return 0;
 }
 
@@ -223,19 +218,18 @@ inline VertexSemantic SlotToVertexSemanticTo(uint32_t slot){
         case 0:         return VertexSemantic::Position;
         case 1:         return VertexSemantic::UV0;
         case 2:         return VertexSemantic::Normal;
+        case 3:         return VertexSemantic::Color0;
         case 4:         return VertexSemantic::Tangent;
-        case 3:         return VertexSemantic::UV1;
-        case 5:         return VertexSemantic::UV2;
-        case 6:         return VertexSemantic::UV3;
-        case 7:         return VertexSemantic::Color0;
-        case 8:         return VertexSemantic::Color1;
-        case 9:         return VertexSemantic::Weights;
-        case 10:        return VertexSemantic::Influences;
-        case 11:        return VertexSemantic::Custom0;
-        case 12:        return VertexSemantic::Custom1;
-        case 13:        return VertexSemantic::Custom2;
-        case 14:        return VertexSemantic::Custom3;
+        
+        case 5:         return VertexSemantic::Influences;
+        case 6:         return VertexSemantic::Weights;
+
+        case 10:        return VertexSemantic::Intancing0;
+        case 11:        return VertexSemantic::Intancing1;
+        case 12:        return VertexSemantic::Intancing2;
+        case 13:        return VertexSemantic::Intancing3;
     }
+    Assert(false);
     return VertexSemantic::Invalid;
 }
 
