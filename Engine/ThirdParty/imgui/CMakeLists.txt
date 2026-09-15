@@ -5,6 +5,8 @@ set(ImguiSources
     imgui_tables.cpp
     imgui_widgets.cpp
     backends/imgui_impl_glfw.cpp
+
+	backends/imgui_impl_vulkan.cpp
 )
 if(SupportOpenGL)
     set(ImguiSources ${ImguiSources} 

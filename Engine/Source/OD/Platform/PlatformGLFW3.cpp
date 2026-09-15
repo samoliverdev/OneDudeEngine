@@ -34,6 +34,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 GLFWwindow* window;
 GLFWwindow* sharedContextWindow;
@@ -43,6 +44,39 @@ int windowPosX, windowPosY;
 bool vSync = false;
 bool fullscreen = false;
 bool hidden = false;
+
+ImDrawData* CloneImGuiDrawData(const ImDrawData* source){
+    if(source == nullptr)
+        return nullptr;
+
+    ImDrawData* clone = IM_NEW(ImDrawData)();
+    clone->Valid = source->Valid;
+    clone->CmdListsCount = source->CmdListsCount;
+    clone->TotalIdxCount = source->TotalIdxCount;
+    clone->TotalVtxCount = source->TotalVtxCount;
+    clone->DisplayPos = source->DisplayPos;
+    clone->DisplaySize = source->DisplaySize;
+    clone->FramebufferScale = source->FramebufferScale;
+    clone->OwnerViewport = source->OwnerViewport;
+    clone->CmdLists.reserve(source->CmdLists.Size);
+
+    for(int i = 0; i < source->CmdLists.Size; ++i)
+        clone->CmdLists.push_back(source->CmdLists[i]->CloneOutput());
+
+    return clone;
+}
+
+void DestroyImGuiDrawData(void* data){
+    auto* drawData = static_cast<ImDrawData*>(data);
+    if(drawData == nullptr)
+        return;
+
+    for(int i = 0; i < drawData->CmdLists.Size; ++i)
+        IM_DELETE(drawData->CmdLists[i]);
+
+    drawData->CmdLists.clear();
+    IM_DELETE(drawData);
+}
 
 bool imGuiSupport = false;
 
@@ -94,7 +128,11 @@ void UpdateWindowTitle(GLFWwindow* window){
 }
 
 void imguiOnInit(GLFWwindow* window){
-    if(graphicsDevice->ImGuiSupport() == false) return;
+    if(gfxDevice != nullptr){
+        if(gfxDevice->ImGuiSupported() == false) return;
+    } else if(graphicsDevice->ImGuiSupport() == false) {
+        return;
+    }
     imGuiSupport = true;
 
     // Setup Dear ImGui context
@@ -148,21 +186,35 @@ void imguiOnInit(GLFWwindow* window){
 }
 
 void Platform::ImguiBegin(){
-    if(graphicsDevice->ImGuiSupport() == false) return;
+    if(gfxDevice != nullptr){
+        if(gfxDevice->ImGuiSupported() == false) return;
+    } else if(graphicsDevice->ImGuiSupport() == false) {
+        return;
+    }
 
     /*#if defined(__EMSCRIPTEN__)
     return;
     #endif*/
 
+    
+#if !defined(TestNewGPU_API)
+    // The legacy renderer backend must run NewFrame before ImGui::NewFrame()
+    // so it can build the font atlas and update renderer-owned state.
     graphicsDevice->ImGuiNewFrame();
-    //ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+#else
+    ImGui_ImplGlfw_NewFrame();
+#endif
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
 }
 
 void Platform::ImguiEnd(){
-    if(graphicsDevice->ImGuiSupport() == false) return;
+    if(gfxDevice != nullptr){
+        if(gfxDevice->ImGuiSupported() == false) return;
+    } else if(graphicsDevice->ImGuiSupport() == false) {
+        return;
+    }
 
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -178,9 +230,12 @@ void Platform::ImguiEnd(){
     }
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());*/
 
-    /*int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    graphicsDevice->ImGuiRenderDrawData(0, 0, display_w, display_h);*/
+    if(gfxDevice != nullptr){
+        ImDrawData* snapshot = CloneImGuiDrawData(ImGui::GetDrawData());
+        gfxDevice->SubmitImGuiDrawData(snapshot, DestroyImGuiDrawData);
+        return;
+    }
+
     graphicsDevice->ImGuiRenderDrawData(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     return;
 
@@ -201,7 +256,9 @@ void imguiOnDestroy(){
     //if(graphicsDevice->ImGuiSupport() == false) return;
     
     // Cleanup
+#if !defined(TestNewGPU_API)
     //ImGui_ImplOpenGL3_Shutdown();
+#endif
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }

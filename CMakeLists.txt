@@ -254,6 +254,7 @@ set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui_tables.cpp
     Engine/ThirdParty/imgui/imgui_widgets.cpp
     Engine/ThirdParty/imgui/backends/imgui_impl_glfw.cpp
+    Engine/ThirdParty/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/vk-bootstrap/VkBootstrap.cpp)

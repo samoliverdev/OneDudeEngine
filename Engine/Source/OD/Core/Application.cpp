@@ -24,6 +24,8 @@
 
 namespace OD{
 
+extern Gfx::Device* gfxDevice;
+
 std::vector<std::string> args;
 std::vector<Module*> modules;
 std::vector<Module*> modulesToAdd;
@@ -148,7 +150,11 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 //#include <GLFW/glfw3.h>
 
 void Application::DrawImGui(){
+    #ifdef TestNewGPU_API
+    if(gfxDevice == nullptr || gfxDevice->ImGuiSupported() == false) return;
+    #else
     if(graphicsDevice->ImGuiSupport() == false) return;
+    #endif
 
     OD_PROFILE_SCOPE("Application::Run::OnGUI");
     Platform::ImguiBegin();
@@ -157,7 +163,11 @@ void Application::DrawImGui(){
 }
 
 void Application::DrawImGui(std::function<void()> func){
+    #ifdef TestNewGPU_API
+    if(gfxDevice == nullptr || gfxDevice->ImGuiSupported() == false) return;
+    #else
     if(graphicsDevice->ImGuiSupport() == false) return;
+    #endif
 
     OD_PROFILE_SCOPE("Application::Run::OnGUI");
     Platform::ImguiBegin();

@@ -31,6 +31,12 @@ public:
     virtual void StartRender() override;
     virtual void UpdateRender() override;
 
+    virtual bool ImGuiSupported() const override { return true; }
+    virtual void ImGuiInitialize() override;
+    virtual void ImGuiNewFrame() override;
+    virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
+    virtual void ImGuiShutdown() override;
+
     virtual CommandBuffer* GetCommandBuffer() override;
     virtual FrameBufferLayout GetWindowFrameBufferLayout() override;
 
@@ -135,6 +141,9 @@ private:
     //VkDescriptorSetLayout emptyLayout;
 
     std::vector<BindGroup> frameBindGroups;
+
+    VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
+    bool imguiInitialized = false;
 
     void _Init();
     void _Shut();

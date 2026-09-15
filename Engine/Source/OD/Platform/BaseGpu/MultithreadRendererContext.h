@@ -51,6 +51,9 @@ struct MultithreadRendererContext{
         running = false;
         condition.notify_all();
         if(renderThread.joinable()) renderThread.join();
+
+        frames[0].Clear();
+        frames[1].Clear();
     }
 
     void StartRender(){
@@ -100,7 +103,7 @@ struct MultithreadRendererContext{
                     }
                 );
 
-                if(!running) return;
+                if(!running) break;
 
                 renderRequested = false;
             }

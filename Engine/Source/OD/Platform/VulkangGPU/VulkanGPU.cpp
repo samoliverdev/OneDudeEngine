@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <vk-bootstrap/VkBootstrap.h>
 #include "vk_initializers.h"
+#include <imgui/backends/imgui_impl_vulkan.h>
 
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/Public/ResourceLimits.h>
@@ -1645,6 +1646,10 @@ void VulkanGPUDevice::Cleanup(){
 
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
     vkDestroyDescriptorPool(_device, frameDescriptorPools, nullptr);
+    if(imguiDescriptorPool != VK_NULL_HANDLE){
+        vkDestroyDescriptorPool(_device, imguiDescriptorPool, nullptr);
+        imguiDescriptorPool = VK_NULL_HANDLE;
+    }
 
     bufferPool.ForEach([&](uint32_t id, BufferData& data){
         if(data.buffer != VK_NULL_HANDLE){
@@ -1668,8 +1673,6 @@ void VulkanGPUDevice::Cleanup(){
         if(data.image == VK_NULL_HANDLE) return;
         _DestroyTexture2D(data);
     });
-
-    vmaDestroyAllocator(_allocator);
 
     vkDestroyCommandPool(_device, _commandPool, nullptr);
 
@@ -1697,6 +1700,9 @@ void VulkanGPUDevice::Cleanup(){
     _windowDepthImage = VK_NULL_HANDLE;
     _windowDepthAllocation = VK_NULL_HANDLE;
 
+    // All VMA-backed resources must be released before destroying the allocator.
+    vmaDestroyAllocator(_allocator);
+
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
     vkDestroyDevice(_device, nullptr);
     vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
@@ -1717,12 +1723,65 @@ void VulkanGPUDevice::_Init(){
     InitFramebuffers();
     init_sync_structures();
     InitDescriptors();
+    ImGuiInitialize();
     _isInitialized = true;
 }
 
 void VulkanGPUDevice::_Shut(){
     LogInfo("VulkanGPUDevice::Shut");
+    ImGuiShutdown();
     Cleanup();
+}
+
+void VulkanGPUDevice::ImGuiInitialize(){
+    if(ImGui::GetCurrentContext() == nullptr)
+        return;
+
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = 1000;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1000;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    VK_CHECK(vkCreateDescriptorPool(_device, &poolInfo, nullptr, &imguiDescriptorPool));
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.Instance = _instance;
+    initInfo.PhysicalDevice = _chosenGPU;
+    initInfo.Device = _device;
+    initInfo.QueueFamily = _graphicsQueueFamily;
+    initInfo.Queue = _graphicsQueue;
+    initInfo.DescriptorPool = imguiDescriptorPool;
+    initInfo.RenderPass = _renderPass;
+    initInfo.MinImageCount = std::max(2u, static_cast<uint32_t>(_swapchainImages.size()));
+    initInfo.ImageCount = static_cast<uint32_t>(_swapchainImages.size());
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    imguiInitialized = ImGui_ImplVulkan_Init(&initInfo);
+    if(imguiInitialized)
+        ImGui_ImplVulkan_NewFrame();
+}
+
+void VulkanGPUDevice::ImGuiNewFrame(){
+    if(imguiInitialized)
+        ImGui_ImplVulkan_NewFrame();
+}
+
+void VulkanGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    frame.RecordImGuiDrawData(data, destroy);
+}
+
+void VulkanGPUDevice::ImGuiShutdown(){
+    if(!imguiInitialized)
+        return;
+
+    ImGui_ImplVulkan_Shutdown();
+    imguiInitialized = false;
 }
 
 void VulkanGPUDevice::Init(bool inmultithread){
@@ -2221,6 +2280,22 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 scissor.offset = { 0, 0 };
                 scissor.extent = _windowExtent;
                 vkCmdSetScissor(cmd, 0, 1, &scissor);*/
+                break;
+            }
+
+            case CommandBuffer::Type::RenderImGui:{
+                const uint32_t index = renderCmd.renderImGui.snapshotIndex;
+                Assert(index < frame.imguiSnapshots.size());
+
+                const auto& snapshot = frame.imguiSnapshots[index];
+                if(snapshot.data == nullptr || !imguiInitialized)
+                    break;
+
+                ImGuiNewFrame();
+                ImGui_ImplVulkan_RenderDrawData(
+                    static_cast<ImDrawData*>(snapshot.data),
+                    cmd
+                );
                 break;
             }
         

@@ -3,6 +3,36 @@
 
 using namespace OD;
 
+TEST(GfxImGui, RecordsSnapshotOwnershipInRenderFrame)
+{
+    Gfx::RenderFrame frame;
+    void* snapshot = reinterpret_cast<void*>(static_cast<uintptr_t>(0x1234));
+
+    frame.RecordImGuiDrawData(snapshot, nullptr);
+
+    ASSERT_EQ(frame.renderCommands.commands.size(), 1u);
+    EXPECT_EQ(
+        frame.renderCommands.commands.front().type,
+        Gfx::CommandBuffer::Type::RenderImGui
+    );
+    EXPECT_EQ(frame.renderCommands.commands.front().renderImGui.snapshotIndex, 0u);
+    EXPECT_EQ(frame.imguiSnapshots.size(), 1u);
+    EXPECT_EQ(frame.imguiSnapshots.front().data, snapshot);
+}
+
+TEST(GfxImGui, InsertsRenderBeforeFramebufferEnd)
+{
+    Gfx::RenderFrame frame;
+    frame.renderCommands.BeginWindowFramebuffer();
+    frame.renderCommands.EndFramebuffer();
+
+    frame.RecordImGuiDrawData(reinterpret_cast<void*>(static_cast<uintptr_t>(0x5678)), nullptr);
+
+    ASSERT_EQ(frame.renderCommands.commands.size(), 3u);
+    EXPECT_EQ(frame.renderCommands.commands[1].type, Gfx::CommandBuffer::Type::RenderImGui);
+    EXPECT_EQ(frame.renderCommands.commands[2].type, Gfx::CommandBuffer::Type::EndFramebuffer);
+}
+
 TEST(GfxReflection, ReflectsShaderVariableTypes)
 {
     const char* shader = R"(

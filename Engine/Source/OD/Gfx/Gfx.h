@@ -8,6 +8,8 @@
 namespace OD{
 namespace Gfx{   
 
+using ImGuiDrawDataDestroyFunction = void(*)(void*);
+
 static constexpr uint32_t InvalidID = std::numeric_limits<uint32_t>::max();
 using Texture = uint32_t;
 using Pipeline = uint32_t;
@@ -738,6 +740,8 @@ struct OD_API CommandBuffer{
         DrawInstanced,
         DrawIndexedInstanced,
 
+        RenderImGui,
+
         BeginWindowFramebuffer,
         BeginFramebuffer,
         EndFramebuffer,
@@ -793,6 +797,10 @@ struct OD_API CommandBuffer{
                 uint32_t indexCount;
                 uint32_t count;
             } drawIndexedInstanced;
+
+            struct {
+                uint32_t snapshotIndex;
+            } renderImGui;
 
             struct {
                 Framebuffer framebuffer;
@@ -882,6 +890,13 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
+    void RenderImGui(uint32_t snapshotIndex){
+        Command cmd{};
+        cmd.type = Type::RenderImGui;
+        cmd.renderImGui.snapshotIndex = snapshotIndex;
+        commands.push_back(cmd);
+    }
+
     void BeginWindowFramebuffer(){
         Command cmd{};
         cmd.type = Type::BeginWindowFramebuffer;
@@ -905,10 +920,45 @@ struct OD_API CommandBuffer{
 };
 
 struct OD_API RenderFrame{
+    struct ImGuiSnapshot{
+        void* data = nullptr;
+        ImGuiDrawDataDestroyFunction destroy = nullptr;
+    };
+
     ResourceCommands resourceCommands = {};
     CommandBuffer renderCommands = {};
+    std::vector<ImGuiSnapshot> imguiSnapshots;
+
+    void RecordImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
+        const uint32_t snapshotIndex = static_cast<uint32_t>(imguiSnapshots.size());
+        imguiSnapshots.push_back({data, destroy});
+
+        auto insertAt = renderCommands.commands.end();
+        for(auto it = renderCommands.commands.end(); it != renderCommands.commands.begin();){
+            --it;
+            if(it->type == CommandBuffer::Type::EndFramebuffer){
+                insertAt = it;
+                break;
+            }
+        }
+
+        if(insertAt == renderCommands.commands.end()){
+            renderCommands.RenderImGui(snapshotIndex);
+            return;
+        }
+
+        CommandBuffer::Command command{};
+        command.type = CommandBuffer::Type::RenderImGui;
+        command.renderImGui.snapshotIndex = snapshotIndex;
+        renderCommands.commands.insert(insertAt, command);
+    }
 
     inline void Clear(){
+        for(auto& snapshot : imguiSnapshots){
+            if(snapshot.destroy != nullptr && snapshot.data != nullptr)
+                snapshot.destroy(snapshot.data);
+        }
+        imguiSnapshots.clear();
         resourceCommands.Clear();
         renderCommands.ClearCmds();
     }
@@ -924,6 +974,13 @@ public:
     virtual void Shut(){}
     virtual void StartRender(){}
     virtual void UpdateRender(){}
+
+    // These methods are called by the platform layer and renderer thread.
+    virtual bool ImGuiSupported() const { return false; }
+    virtual void ImGuiInitialize(){}
+    virtual void ImGuiNewFrame(){}
+    virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){}
+    virtual void ImGuiShutdown(){}
 
     virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
 

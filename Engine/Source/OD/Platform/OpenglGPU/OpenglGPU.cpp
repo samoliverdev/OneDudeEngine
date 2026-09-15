@@ -3,6 +3,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
+#include <imgui/backends/imgui_impl_opengl3.h>
 #include <string>
 #include <regex>
 #include <optional>
@@ -682,6 +683,7 @@ void OpenglGPUDevice::LoadContext(void* data){
 
 void OpenglGPUDevice::_Init(){
     LogInfo("OpenglGPUDevice::Initialize");
+    ImGuiInitialize();
     glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -725,6 +727,27 @@ void OpenglGPUDevice::_Init(){
 
 void OpenglGPUDevice::_Shut(){
     LogInfo("OpenglGPUDevice::Shut");
+    ImGuiShutdown();
+}
+
+void OpenglGPUDevice::ImGuiInitialize(){
+    ImGui_ImplOpenGL3_Init("#version 460");
+    // Build the font atlas before the main thread calls ImGui::NewFrame().
+    // Subsequent backend NewFrame calls remain on the render thread.
+    ImGui_ImplOpenGL3_NewFrame();
+}
+
+void OpenglGPUDevice::ImGuiNewFrame(){
+    ImGui_ImplOpenGL3_NewFrame();
+}
+
+void OpenglGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    frame.RecordImGuiDrawData(data, destroy);
+}
+
+void OpenglGPUDevice::ImGuiShutdown(){
+    ImGui_ImplOpenGL3_Shutdown();
 }
 
 void OpenglGPUDevice::Init(bool inmultithread){
@@ -1176,6 +1199,21 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         case CommandBuffer::Type::EndFramebuffer:{
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::RenderImGui:{
+            const uint32_t index = cmd.renderImGui.snapshotIndex;
+            Assert(index < frame.imguiSnapshots.size());
+
+            const auto& snapshot = frame.imguiSnapshots[index];
+            if(snapshot.data == nullptr)
+                break;
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+            ImGuiNewFrame();
+            ImGui_ImplOpenGL3_RenderDrawData(static_cast<ImDrawData*>(snapshot.data));
             break;
         }
 

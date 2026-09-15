@@ -28,6 +28,12 @@ public:
     virtual void Shut() override;
     virtual void StartRender() override;
     virtual void UpdateRender() override;
+
+    virtual bool ImGuiSupported() const override { return true; }
+    virtual void ImGuiInitialize() override;
+    virtual void ImGuiNewFrame() override;
+    virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
+    virtual void ImGuiShutdown() override;
     
     virtual CommandBuffer* GetCommandBuffer() override;
 
