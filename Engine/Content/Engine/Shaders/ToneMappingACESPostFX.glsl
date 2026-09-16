@@ -4,6 +4,7 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
     Uniform float option;
@@ -11,26 +12,20 @@ EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
-
-    out vec3 pos;
-    out vec2 texCoord;
+    Out(0) vec2 _texCoord;
 
     void main() {
-        pos = _pos;
-        texCoord = _texCoord;
-        gl_Position = vec4(pos, 1.0);
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord.xy;
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
     //uniform sampler2D mainTex;
 
-    in vec3 pos;
-    in vec2 texCoord;
-
-    out vec4 fragColor;
+    In(1) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     //Source: https://github.com/dmnsgn/glsl-tone-map/blob/main/aces.glsl
     // Narkowicz 2015, "ACES Filmic Tone Mapping Curve"
@@ -54,7 +49,7 @@ Texture2D(0, 1, mainTex, mainSampler)
 
     void main() {
         //const float gamma = 2.2;
-        vec3 color = texture(mainTex, texCoord).rgb;
+        vec3 color = texture(mainTex, _texCoord).rgb;
         color.rgb = min(color.rgb, 60.0);
         color = aces(color);
         

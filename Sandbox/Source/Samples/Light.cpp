@@ -17,6 +17,12 @@ void LightSample::OnInit(){
     lightTransform.LocalScale(Vector3(0.1f, 0.1f, 0.1f));
     lightTransform.LocalPosition(Vector3(-1, 2, 2));*/
 
+    RenderPassInfo renderPassInfo = {};
+    renderPassInfo.colorAttachments.push_back({FramebufferTextureFormat::RGBA8} );
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("TestPass", renderPassInfo);
+
     camMove.transform = &camTransform;
 
     modelTransform.Position(Vector3Zero);
@@ -38,7 +44,7 @@ void LightSample::OnInit(){
     model->materials[0]->SetVector3("light_diffuse",  Vector3(0.5f, 0.5f, 0.5f)); // darken diffuse light a bit
     model->materials[0]->SetVector3("light_specular", Vector3(1.0f, 1.0f, 1.0f)); 
 
-    framebuffer = ResourceManager::Get().Create<Framebuffer>(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
+    framebuffer = ResourceManager::Get().Create<Framebuffer>("TestPass", Application::ScreenWidth(), Application::ScreenHeight());
     blitMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
     fullScreenQuad = Mesh::FullScreenQuad();
 }
@@ -58,8 +64,10 @@ void LightSample::OnRender(float deltaTime){
     //Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
     Graphics::SetCamera(cam);
 
-    /*Graphics::BeginFramebuffer(*framebuffer, true, Vector4(0.1f, 0.1f, 0.1f, 1));
+    Graphics::BeginFramebuffer(*framebuffer, true, Vector4(0.1f, 0.1f, 0.1f, 1));
+    Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
     Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
+
         Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         for(unsigned int i = 0; i < 10; i++){
             modelTransform.Position(cubePositions[i]);
@@ -67,22 +75,22 @@ void LightSample::OnRender(float deltaTime){
             modelTransform.EulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
             Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         }
-    Graphics::EndFramebuffer();*/
+    Graphics::EndFramebuffer();
 
     Graphics::BeginRenderToScreen(Vector4(0.1f, 0.1f, 0.1f, 1));
         Graphics::SetViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
         Graphics::Clean(0.1f, 0.1f, 0.1f, 1);
 
-        //blitMat->SetTexture("mainTex", framebuffer, 0);
-        //Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
+        blitMat->SetTexture("mainTex", framebuffer, 0);
+        Graphics::DrawMesh(*fullScreenQuad, *blitMat, Matrix4Identity);
 
-        Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
+        /*Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
         for(unsigned int i = 0; i < 10; i++){
             modelTransform.Position(cubePositions[i]);
             float angle = 20.0f * i; 
             modelTransform.EulerAngles(Vector3(angle*1, angle*0.3f, angle*0.5f));
             Graphics::DrawModel(*model, modelTransform.GetModelMatrix());
-        }
+        }*/
 
         /*Platform::ImguiBegin();
         OnGUI();

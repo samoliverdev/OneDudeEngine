@@ -143,7 +143,7 @@ RenderContext::RenderContext(){
     framebufferSpecification.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
     framebufferSpecification.sample = 1;
     framebufferSpecification.createDepth = true;
-    entityIdOutColor = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+    entityIdOutColor = ResourceManager::Get().Create<Framebuffer>("EntityId", Application::ScreenWidth(), Application::ScreenHeight()); //ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     entityIdOutColor->name = "entityIdOutColor";
 
     framebufferSpecification.colorAttachments = {

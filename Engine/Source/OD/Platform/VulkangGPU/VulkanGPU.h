@@ -129,7 +129,7 @@ private:
     struct RenderPasses{
         uint64_t hash;
         uint32_t id;
-        VkRenderPass renderPass;
+        VkRenderPass renderPass = VK_NULL_HANDLE;
     };
     std::vector<RenderPasses> renderPasses;
 

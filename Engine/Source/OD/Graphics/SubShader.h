@@ -2,6 +2,7 @@
 //#include "OD/Core/Asset.h"
 #include "OD/Core/Math.h"
 #include "RendererTypes.h"
+#include "Framebuffer.h"
 
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
@@ -125,7 +126,8 @@ struct OD_API SubShader{
     SubShaderDataGL;
     SubShaderDataWG;
 
-    Gfx::Pipeline _pipeline = Gfx::InvalidID;
+    //Gfx::Pipeline _pipeline = Gfx::InvalidID;
+    Gfx::Pipeline _pipelines[MAX_FRAMEBUFFER_RENDER_PASSES];
 
     std::string name = "NoName";
 

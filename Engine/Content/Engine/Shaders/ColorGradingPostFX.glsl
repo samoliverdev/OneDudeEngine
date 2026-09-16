@@ -4,6 +4,7 @@ BeginPass
     #pragma DepthTest DISABLE
 
     #include Engine/ShaderLibrary/Base.glsl
+    #include Engine/ShaderLibrary/Vertex.glsl
 
     BeginUniform(0, 0, Main)
         Uniform vec4 _ColorAdjustments;
@@ -12,26 +13,20 @@ BeginPass
     Texture2D(0, 1, mainTex, mainSampler)
 
     BeginVertex
-    layout(location = 0) in vec3 _pos;
-    layout(location = 1) in vec2 _texCoord;
-
-    out vec3 pos;
-    out vec2 texCoord;
+    Out(0) vec2 _texCoord;
 
     void main() {
-        pos = _pos;
-        texCoord = _texCoord;
-        gl_Position = vec4(pos, 1.0);
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord.xy;
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
     EndVertex
 
     BeginFrag
     //uniform sampler2D mainTex;
 
-    in vec3 pos;
-    in vec2 texCoord;
-
-    out vec4 fragColor;
+    In(0) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     //uniform vec4 _ColorAdjustments;
     //uniform vec4 _ColorFilter;
@@ -93,7 +88,7 @@ BeginPass
     }
 
     void main(){
-        vec3 color = texture(mainTex, texCoord).rgb;
+        vec3 color = texture(mainTex, _texCoord).rgb;
         color = min(color, 60.0);
         color = ColorGradePostExposure(color);
         color = ColorGradingContrast(color);

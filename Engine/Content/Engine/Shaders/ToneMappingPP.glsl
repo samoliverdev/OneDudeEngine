@@ -4,6 +4,7 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 BeginUniform(0, 0, Main)
     Uniform float exposure;
@@ -11,33 +12,24 @@ EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
-
-    out vec3 pos;
-    out vec2 texCoord;
+    Out(0) vec2 _texCoord;
 
     void main() {
-        pos = _pos;
-        texCoord = _texCoord;
-        gl_Position = vec4(pos, 1.0);
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord.xy;
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
     }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-    //uniform sampler2D mainTex;
-    //uniform float exposure = 2;
-
-    in vec3 pos;
-    in vec2 texCoord;
-
-    out vec4 fragColor;
+    In(0) vec2 _texCoord;
+    Out(0) vec4 fragColor;
 
     const float offset = 1.0 / 300.0; 
 
     void main() {
         const float gamma = 2.2;
-        vec3 hdrColor = texture(mainTex, texCoord).rgb;
+        vec3 hdrColor = texture(mainTex, _texCoord).rgb;
     
         // reinhard tone mapping
         vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);

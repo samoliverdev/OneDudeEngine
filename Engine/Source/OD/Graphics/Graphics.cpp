@@ -99,6 +99,8 @@ Gfx::Buffer camBuffer;
 Gfx::Buffer emptyModelBuffer;
 Gfx::Buffer emptyInstacingVbo;
 
+int curFramebufferRenderPassIndex = -1;
+
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
     std::vector<Gfx::Buffer> buffers;
@@ -189,6 +191,12 @@ void Graphics::SelectGraphicsDevice(){
 
 void Graphics::Initialize(){
     graphicsDevice->Initialize();
+
+    RenderPassInfo renderPassInfo = {};
+    renderPassInfo.colorAttachments.push_back({FramebufferTextureFormat::RGBA8} );
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("DefaultWindows", renderPassInfo);
 
     #ifdef TestNewGPU_API
     CameraData camData;
@@ -358,6 +366,8 @@ void Graphics::_Begin(){
     drawMeshPool.curIndex = 0;
     drawMeshInstancingPool.curIndex = 0;
 
+    curFramebufferRenderPassIndex = -1;
+
     curMat = nullptr;
     curBindGroup = emptyBindGroup;
 }
@@ -390,6 +400,9 @@ Camera Graphics::GetCamera(){
 
 void Graphics::BeginRenderToScreen(Vector4 clearColor){
     #ifdef TestNewGPU_API
+    curFramebufferRenderPassIndex = FramebufferRenderPass::GetRenderPassIndex("DefaultWindows");
+    Assert(curFramebufferRenderPassIndex  != -1);
+
     gfxDevice->GetCommandBuffer()->BeginWindowFramebuffer();
     gfxDevice->GetCommandBuffer()->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{clearColor.x, clearColor.y, clearColor.z, clearColor.a}});
     #else
@@ -398,6 +411,8 @@ void Graphics::BeginRenderToScreen(Vector4 clearColor){
 }
 
 void Graphics::EndRenderToScreen(){
+    curFramebufferRenderPassIndex = -1;
+
     #ifdef TestNewGPU_API
     gfxDevice->GetCommandBuffer()->EndFramebuffer();
     #else
@@ -451,6 +466,7 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
     for(const auto& i: mat.maps){
         const MaterialMap& map = i.second;
         if(map.hasBufferData == false) continue;
+        if(map.type == MaterialMap::Type::None) continue;
 
         if(map.type == MaterialMap::Type::Int){
             Assert(map.bufferSize >= sizeof(int));
@@ -540,10 +556,23 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
         }
 
         if(i.type == Gfx::BindingType::Texture2D && mat.maps.count(i.name)){
-            bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
-            bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-            bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = mat.maps[i.name].texture->tex;
-            bindGroupInfo.entriesCount += 1;
+            auto& m = mat.maps[i.name];
+
+            if(m.type == MaterialMap::Type::Texture){
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
+                bindGroupInfo.entriesCount += 1;
+            }
+
+            if(m.type == MaterialMap::Type::Framebuffer){
+                Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                bindGroupInfo.entriesCount += 1;
+            }
         }
     }
 
@@ -561,8 +590,10 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
         curBindGroup = BindMaterial(*curMat);
     }
 
+    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+
     auto* cmd = gfxDevice->GetCommandBuffer();
-    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipeline);
+    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
     cmd->SetBindGroup(0, curBindGroup);
     cmd->SetBindGroup(1, perDrawBindGroup);
     cmd->SetBindGroup(2, camBindGroup);
@@ -609,8 +640,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
             curBindGroup = BindMaterial(*curMat);
         }
 
+        Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+
         auto* cmd = gfxDevice->GetCommandBuffer();
-        cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipeline);
+        cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
         cmd->SetBindGroup(0, curBindGroup);
         cmd->SetBindGroup(1, emptyModelBuffer);
         cmd->SetBindGroup(2, camBindGroup);
@@ -663,8 +696,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
         curBindGroup = BindMaterial(*curMat);
     }
 
+    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+
     auto* cmd = gfxDevice->GetCommandBuffer();
-    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipeline);
+    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
     cmd->SetBindGroup(0, curBindGroup);
     cmd->SetBindGroup(1, emptyModelBuffer);
     cmd->SetBindGroup(2, camBindGroup);
@@ -744,11 +779,25 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
 }
 
 void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){ 
+    #ifdef TestNewGPU_API
+    Assert(frambuffer.framebuffer != Gfx::InvalidID);
+
+    curFramebufferRenderPassIndex = frambuffer.passIndex;
+    Assert(curFramebufferRenderPassIndex  != -1);
+
+    gfxDevice->GetCommandBuffer()->BeginFramebuffer(frambuffer.framebuffer);
+    gfxDevice->GetCommandBuffer()->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{clearColor.x, clearColor.y, clearColor.z, clearColor.a}});
+    #else
     graphicsDevice->BeginFramebuffer(frambuffer, clean, clearColor, layer, mip); 
+    #endif
 }
 
 void Graphics::EndFramebuffer(){ 
+    #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->EndFramebuffer();
+    #else
     graphicsDevice->EndFramebuffer(); 
+    #endif
 }
 
 void Graphics::BeginGPUTime(){

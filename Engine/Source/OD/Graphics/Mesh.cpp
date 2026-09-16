@@ -230,13 +230,14 @@ void Mesh::Submit(
     if(weightsVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(weightsVbo);
     if(influencesVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(influencesVbo);
     
-    if(!indices->empty()){
+    if(indices != nullptr && !indices->empty()){
         ebo = gfxDevice->CreateBuffer(indices->size() * sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(ebo, indices->data(), indices->size() * sizeof(unsigned int));
     } else {
         ebo = gfxDevice->CreateBuffer(sizeof(unsigned int), Gfx::BufferUsage::Index, Gfx::BufferMemory::GPUOnly);
     }
     
+    Assert(vertices != nullptr);
     if(!vertices->empty()){
         vertexVbo = gfxDevice->CreateBuffer(vertices->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(vertexVbo, vertices->data(), vertices->size() * sizeof(Vector3));
@@ -244,49 +245,49 @@ void Mesh::Submit(
         vertexVbo = gfxDevice->CreateBuffer(sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!uv->empty()){
+    if(uv != nullptr && !uv->empty()){
         uvVbo = gfxDevice->CreateBuffer(uv->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(uvVbo, uv->data(), uv->size() * sizeof(Vector3));
     } else {
         uvVbo = gfxDevice->CreateBuffer(sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!normals->empty()){
+    if(normals != nullptr && !normals->empty()){
         normalVbo = gfxDevice->CreateBuffer(normals->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(normalVbo, normals->data(), normals->size() * sizeof(Vector3));
     } else {
         normalVbo = gfxDevice->CreateBuffer(sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!colors->empty()){
+    if(colors != nullptr && !colors->empty()){
         colorVbo = gfxDevice->CreateBuffer(colors->size() * sizeof(Vector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(colorVbo, colors->data(), colors->size() * sizeof(Vector4));
     } else {
         colorVbo = gfxDevice->CreateBuffer(sizeof(Vector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!tangents->empty()){
+    if(tangents != nullptr && !tangents->empty()){
         tangentVbo = gfxDevice->CreateBuffer(tangents->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(tangentVbo, tangents->data(), tangents->size() * sizeof(Vector3));
     } else {
         tangentVbo = gfxDevice->CreateBuffer(sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!weights->empty()){
+    if(weights != nullptr && !weights->empty()){
         weightsVbo = gfxDevice->CreateBuffer(weights->size() * sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(weightsVbo, weights->data(), weights->size() * sizeof(Vector3));
     } else {
         weightsVbo = gfxDevice->CreateBuffer(sizeof(Vector3), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
 
-    if(!influences->empty()){
+    if(influences != nullptr && !influences->empty()){
         influencesVbo = gfxDevice->CreateBuffer(influences->size() * sizeof(IVector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
         gfxDevice->UpdatedBuffer(influencesVbo, influences->data(), influences->size() * sizeof(IVector4));
     } else {
         influencesVbo = gfxDevice->CreateBuffer(sizeof(IVector4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
     }
     
-    indiceCount = indices->size();
+    indiceCount = indices == nullptr ? 0 : indices->size();
     vertexCount = vertices->size();
     #else
     //Assert(isReadable == true && "Only can Update isReadable Mesh");

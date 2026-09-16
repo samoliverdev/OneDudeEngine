@@ -498,6 +498,18 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     SubShaderTarget _shader;
 
+    std::vector<std::string> framebufferRenderPasses;
+    for(auto i: shaderSourceData.passes[pass].properties){
+        if(i[0] == "RenderPass"){
+            for(int j = 1; j < i.size(); j++){
+                framebufferRenderPasses.push_back(i[j]);
+            } 
+        }
+    }
+    if(framebufferRenderPasses.empty()){
+        framebufferRenderPasses.push_back("DefaultWindows");
+    }
+
     for(auto& drawType: drawTypes){
         std::string skinnedKeyworld = "#define SKINNED\n";
         std::string instancingKeyworld = "#define INSTANCING\n";
@@ -517,11 +529,21 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
 
         #ifdef TestNewGPU_API
+        for(auto& i: shader->_pipelines) i = Gfx::InvalidID;
+
+        for(auto framebufferRenderPass: framebufferRenderPasses){
+        int renderPassIndex = FramebufferRenderPass::GetRenderPassIndex(framebufferRenderPass);
+        Assert(renderPassIndex >= 0);
+        if(renderPassIndex == -1) continue;
+
+        std::string passDefine = "#define "+ framebufferRenderPass + "\n";
+        shaderSourceData.baseSource.insert(0, passDefine);
+
         //std::string GFX_API = "#define GFX_API\n";
         //shaderSourceData.baseSource.insert(0, GFX_API);
 
         //Assert(false);
-        if(shader->_pipeline != Gfx::InvalidID) gfxDevice->DestroyPipeline(shader->_pipeline);
+        //if(shader->_pipeline != Gfx::InvalidID) gfxDevice->DestroyPipeline(shader->_pipeline);
 
         //Gfx::ShaderReflection reflection;
         //Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
@@ -530,7 +552,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
         Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);*/
 
-        pipelineInfo.framebufferLayout = gfxDevice->GetWindowFrameBufferLayout();
+        pipelineInfo.framebufferLayout = FramebufferRenderPass::GetRenderPassLayout(renderPassIndex);// gfxDevice->GetWindowFrameBufferLayout();
 
         pipelineInfo.bindGroupLayouts[0] = materialBindGroupLayout; //layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
         pipelineInfo.bindGroupLayouts[1] = drawDrawMeshGroupLayout;
@@ -583,9 +605,10 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         pipelineInfo.vertexLayout.buffers[6] = { sizeof(Vector4), Gfx::VertexInputRate::Vertex };
         pipelineInfo.vertexLayout.buffers[7] = { sizeof(Matrix4), Gfx::VertexInputRate::Instance };
 
-        shader->_pipeline = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
+        shader->_pipelines[renderPassIndex] = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
 
-        //shaderSourceData.baseSource.erase(0, GFX_API.size());
+        shaderSourceData.baseSource.erase(0, passDefine.size());
+        }
         #else
         graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,

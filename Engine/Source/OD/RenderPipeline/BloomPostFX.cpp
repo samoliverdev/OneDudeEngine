@@ -17,6 +17,7 @@ void BloomFeature::OnGui(){
 }
 
 BloomFeature::BloomFeature(){
+    #ifndef TestNewGPU_API
     enable = false;
     event = RenderPassEvent::PostProcess;
     blitShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Blit.glsl"));
@@ -26,6 +27,7 @@ BloomFeature::BloomFeature(){
     bloomVerticalPassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomVerticalPostFX.glsl"));
     bloomCombinePassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomCombinePostFX.glsl"));
     bloomPrefilterPassShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BloomPrefilterPostFX.glsl"));
+    #endif
 }
 
 inline float LinearToGammaSpaceExact(float value){
@@ -49,6 +51,7 @@ void BloomFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 }
 
 void BloomFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+    #ifndef TestNewGPU_API
     Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
     auto spec = data.src->Specification();
 
@@ -212,6 +215,9 @@ void BloomFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData
     for(auto i: temps) delete i; //Graphics::FramebufferDestroy(*i); //i->Destroy();
     temps.clear();
     */
+   #else
+   Assert(false);
+   #endif
 }
 
 }

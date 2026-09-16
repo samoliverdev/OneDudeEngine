@@ -11,7 +11,10 @@ BeginUniform(0, 0, Main)
     Uniform int a;
 EndUniform()
 
+#if defined(Vulkan_API)
+#else
 uniform int perDrawInt_0;
+#endif
 
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec2 _texCoord;
@@ -30,6 +33,10 @@ uniform int perDrawInt_0;
     Out(0) int fragColor;
 
     void main(){
+        #if defined(Vulkan_API)
+        fragColor = -1;
+        #else
         fragColor = perDrawInt_0; 
+        #endif
     }
 #endif

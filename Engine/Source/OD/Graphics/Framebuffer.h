@@ -3,6 +3,7 @@
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Platform/WebGPU/WebGPU.h"
 #include "OD/Core/Resource.h"
+#include "OD/Gfx/Gfx.h"
 #include <vector>
 
 namespace sol{ class state; }
@@ -41,6 +42,26 @@ struct OD_API FrameBufferSpecification{
     bool swapChainTarget = false;
 };
 
+struct OD_API RenderPassInfo{
+    unsigned int sample = 1;
+    FramebufferAttachmentType type = FramebufferAttachmentType::TEXTURE_2D;
+
+    std::vector<FramebufferAttachment> colorAttachments;
+    FramebufferAttachment depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
+    bool createDepth = true;
+
+    bool swapChainTarget = false;
+};
+
+constexpr int MAX_FRAMEBUFFER_RENDER_PASSES = 128;
+
+class OD_API FramebufferRenderPass{
+public:
+    static bool RegisterRenderPass(const std::string& name, RenderPassInfo& info);
+    static int GetRenderPassIndex(const std::string& name);
+    static Gfx::FrameBufferLayout GetRenderPassLayout(const int index);
+};
+
 enum class OD_API_IMPORT FramebufferType{
     Stand = 0, 
     Deffered,
@@ -49,11 +70,13 @@ enum class OD_API_IMPORT FramebufferType{
 };
 
 class OD_API Framebuffer: public Resource{
+    friend class Graphics;
     friend class OpenGLGraphicsDevice;
     friend class WebGPUGraphicsDevice;
 public:
     Framebuffer(FramebufferType type, int width, int height, int layers = 1);
     Framebuffer(FrameBufferSpecification specification);
+    Framebuffer(const std::string& name, int width, int height, int layers = 1);
     ~Framebuffer();
     
     Framebuffer& operator=(const Framebuffer& other) = delete;
@@ -86,6 +109,10 @@ private:
     FrameBufferSpecification specification;
     FramebufferDataGL;
     FramebufferDataWG;
+
+    Gfx::Framebuffer framebuffer = Gfx::InvalidID;
+    std::string passName;
+    int passIndex = -1;
 };
 
 }

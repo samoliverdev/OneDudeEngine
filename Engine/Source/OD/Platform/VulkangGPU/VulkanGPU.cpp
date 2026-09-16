@@ -1366,8 +1366,61 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
 }
 
 void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
-    vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
-    data.framebuffer = VK_NULL_HANDLE;
+    //vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
+    //data.framebuffer = VK_NULL_HANDLE;
+
+    // VkFramebuffer references the attachment views,
+    // so destroy it first.
+    if(data.framebuffer != VK_NULL_HANDLE){
+        vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
+        data.framebuffer = VK_NULL_HANDLE;
+    }
+
+    // -----------------------------------------
+    // Color attachments
+    // -----------------------------------------
+
+    for(auto& attachment : data.colorAttachments){
+        if(attachment.sampler != VK_NULL_HANDLE){
+            vkDestroySampler(_device, attachment.sampler, nullptr);
+            attachment.sampler = VK_NULL_HANDLE;
+        }
+
+        if(attachment.imageView != VK_NULL_HANDLE){
+            vkDestroyImageView(_device, attachment.imageView, nullptr);
+            attachment.imageView = VK_NULL_HANDLE;
+        }
+
+        if(attachment.image != VK_NULL_HANDLE){
+            vmaDestroyImage(_allocator, attachment.image, attachment.allocation);
+            attachment.image = VK_NULL_HANDLE;
+            attachment.allocation = VK_NULL_HANDLE;
+        }
+    }
+
+    data.colorAttachments.clear();
+
+    // -----------------------------------------
+    // Depth attachment
+    // -----------------------------------------
+
+    auto& depth = data.depthAttachment;
+
+    if(depth.sampler != VK_NULL_HANDLE){
+        vkDestroySampler(_device, depth.sampler, nullptr);
+        depth.sampler = VK_NULL_HANDLE;
+    }
+
+    if(depth.imageView != VK_NULL_HANDLE){
+        vkDestroyImageView(_device, depth.imageView, nullptr);
+        depth.imageView = VK_NULL_HANDLE;
+    }
+
+    if(depth.image != VK_NULL_HANDLE){
+        vmaDestroyImage(_allocator, depth.image, depth.allocation);
+        depth.image = VK_NULL_HANDLE;
+        depth.allocation = VK_NULL_HANDLE;
+    }
 }
 
 #pragma endregion
@@ -1397,7 +1450,7 @@ void init_vulkan(){
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
         .require_api_version(1, 1, 0)
-        .request_validation_layers(false)
+        .request_validation_layers(true)
         .use_default_debug_messenger()
         .build();
 
@@ -1642,8 +1695,11 @@ void VulkanGPUDevice::Cleanup(){
     glslang::FinalizeProcess();
     vkDeviceWaitIdle(_device);
 
+    ImGuiShutdown();
+
     mainDeletionQueue.flush();
 
+    vkDestroyCommandPool(_device, _commandPool, nullptr);
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
     vkDestroyDescriptorPool(_device, frameDescriptorPools, nullptr);
     if(imguiDescriptorPool != VK_NULL_HANDLE){
@@ -1674,7 +1730,12 @@ void VulkanGPUDevice::Cleanup(){
         _DestroyTexture2D(data);
     });
 
-    vkDestroyCommandPool(_device, _commandPool, nullptr);
+    framebufferPool.ForEach([&](uint32_t id, FramebufferData& data){
+        if(data.framebuffer == VK_NULL_HANDLE) return;
+        _DestroyFramebuffer(data);
+    });
+
+    //vkDestroyCommandPool(_device, _commandPool, nullptr);
 
     for(size_t i = 0; i < _swapchainImages.size(); i++){
         vkDestroySemaphore(_device, _renderSemaphores[i], nullptr);
@@ -1699,6 +1760,12 @@ void VulkanGPUDevice::Cleanup(){
     _windowDepthImageView = VK_NULL_HANDLE;
     _windowDepthImage = VK_NULL_HANDLE;
     _windowDepthAllocation = VK_NULL_HANDLE;
+
+    for(auto& i: renderPasses){
+        if(i.renderPass == VK_NULL_HANDLE) continue;
+        if(i.hash == GetFramebufferLayoutHash(_windowFrameBufferLayout)) continue;
+        vkDestroyRenderPass(_device, i.renderPass, nullptr);
+    }
 
     // All VMA-backed resources must be released before destroying the allocator.
     vmaDestroyAllocator(_allocator);
@@ -1729,7 +1796,6 @@ void VulkanGPUDevice::_Init(){
 
 void VulkanGPUDevice::_Shut(){
     LogInfo("VulkanGPUDevice::Shut");
-    ImGuiShutdown();
     Cleanup();
 }
 

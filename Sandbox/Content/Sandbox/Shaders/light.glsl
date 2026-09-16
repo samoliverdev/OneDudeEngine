@@ -1,5 +1,6 @@
 #pragma BeginPassDef
     Name MainPass
+    RenderPass DefaultWindows TestPass
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

@@ -475,7 +475,7 @@ void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, Pipeline
 
         BindGroupLayoutInfo& layout = layoutsOut[binding.set]; //info.bindGroupLayouts[binding.set];
 
-        Assert(layout.entriesCount < 4);
+        Assert(layout.entriesCount <= 4);
         if(layout.entriesCount >= 4) continue;
 
         BindLayoutEntry& entry = layout.entries[layout.entriesCount++];

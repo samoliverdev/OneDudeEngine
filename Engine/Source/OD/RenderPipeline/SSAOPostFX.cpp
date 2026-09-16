@@ -16,6 +16,7 @@ void SSAOFeature::OnGui() {
 }
 
 SSAOFeature::SSAOFeature(){
+    #ifndef TestNewGPU_API
     enable = false;
     event = RenderPassEvent::PostProcessBeforeForward;
     aoPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSAOPostFX.glsl"));
@@ -58,6 +59,7 @@ SSAOFeature::SSAOFeature(){
         {TextureFilter::Nearest, TextureWrapping::Repeat, false, TextureFormat::RGB32F}
     );
     Assert(noise != nullptr);
+    #endif
 }
 
 void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
@@ -65,6 +67,7 @@ void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 }
 
 void SSAOFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+    #ifndef TestNewGPU_API
     if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;
@@ -147,6 +150,9 @@ void SSAOFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     aoPass->SetTexture("mainTex", data.src, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();*/
+    #else
+    Assert(false);
+    #endif
 }
 
 }

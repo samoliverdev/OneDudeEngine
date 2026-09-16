@@ -5,28 +5,23 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/Vertex.glsl
 
 Texture2D(0, 0, mainTex, mainTexSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-	layout (location = 0) in vec3 _pos;
-	layout (location = 1) in vec2 _texCoord;
+	Out(0) vec2 _texCoord;
 
-	out vec3 pos;
-	out vec2 texCoord;
-
-	void main() {
-		pos = _pos;
-		texCoord = _texCoord;
-		gl_Position = vec4(pos, 1.0);
-	}
+    void main() {
+        mat4 targetModelMatrix = GetModelMatrix();
+        _texCoord = texCoord.xy;
+        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
+    }
 #endif
 
 #if defined(FRAGMENT) && defined(MainPass)
-	in vec3 pos;
-	in vec2 texCoord;
-
-	out vec4 fragColor;
+	In(0) vec2 _texCoord;
+	Out(0) vec4 fragColor;
 
 	vec2 GetSourceTexelSize(){
 		return vec2(1.0) / vec2(textureSize(mainTex, 0));
@@ -47,7 +42,7 @@ Texture2D(0, 0, mainTex, mainTexSampler)
 		);
 		for(int i = 0; i < 9; i++){
 			float offset = offsets[i] * 2.0 * GetSourceTexelSize().x;
-			color += GetSource(texCoord + vec2(offset, 0.0)) * weights[i];
+			color += GetSource(_texCoord + vec2(offset, 0.0)) * weights[i];
 		}
 		return color; //vec4(color, 1.0);
 	}

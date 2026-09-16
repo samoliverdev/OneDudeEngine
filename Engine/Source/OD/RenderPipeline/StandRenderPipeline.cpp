@@ -68,6 +68,14 @@ public:
 };
 
 void StandRenderPipelineModuleInit(){
+    RenderPassInfo renderPassInfo = {};
+    renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RED_INTEGER} };
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("EntityId", renderPassInfo);
+
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<LightComponent>("LightComponent", "Renderer");
