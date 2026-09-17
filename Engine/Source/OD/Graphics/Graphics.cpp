@@ -785,8 +785,14 @@ void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 cle
     curFramebufferRenderPassIndex = frambuffer.passIndex;
     Assert(curFramebufferRenderPassIndex  != -1);
 
-    gfxDevice->GetCommandBuffer()->BeginFramebuffer(frambuffer.framebuffer);
-    gfxDevice->GetCommandBuffer()->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{clearColor.x, clearColor.y, clearColor.z, clearColor.a}});
+    gfxDevice->GetCommandBuffer()->BeginFramebuffer(
+        frambuffer.framebuffer,
+        layer,
+        mip,
+        clean,
+        Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth,
+        {{clearColor.x, clearColor.y, clearColor.z, clearColor.a}}
+    );
     #else
     graphicsDevice->BeginFramebuffer(frambuffer, clean, clearColor, layer, mip); 
     #endif

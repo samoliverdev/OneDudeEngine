@@ -885,6 +885,9 @@ struct OD_API CommandBuffer{
                 Framebuffer framebuffer;
                 uint32_t layer;
                 uint32_t mip;
+                bool clean;
+                ClearFlags clearFlags;
+                ClearValue clearValue;
             } beginFramebuffer;
 
             struct {
@@ -990,12 +993,18 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    inline void BeginFramebuffer(Framebuffer framebuffer, uint32_t layer = 0, uint32_t mip = 0){
+    inline void BeginFramebuffer(
+        Framebuffer framebuffer, uint32_t layer = 0, uint32_t mip = 0,
+        bool clean = true, ClearFlags clearFlags = ClearFlags::Color | ClearFlags::Depth,ClearValue clearValue = {}
+    ){
         Command cmd{};
         cmd.type = Type::BeginFramebuffer;
         cmd.beginFramebuffer.framebuffer = framebuffer;
         cmd.beginFramebuffer.layer = layer;
         cmd.beginFramebuffer.mip = mip;
+        cmd.beginFramebuffer.clean = clean;
+        cmd.beginFramebuffer.clearFlags = clearFlags;
+        cmd.beginFramebuffer.clearValue = clearValue;
         commands.push_back(cmd);
     }
 

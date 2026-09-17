@@ -89,7 +89,7 @@ TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
 {
     Gfx::CommandBuffer commands;
 
-    commands.BeginFramebuffer(42, 5, 3);
+    commands.BeginFramebuffer(42, 5, 3, false);
 
     ASSERT_EQ(commands.commands.size(), 1u);
     const auto& begin = commands.commands.front();
@@ -97,6 +97,18 @@ TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
     EXPECT_EQ(begin.beginFramebuffer.framebuffer, 42u);
     EXPECT_EQ(begin.beginFramebuffer.layer, 5u);
     EXPECT_EQ(begin.beginFramebuffer.mip, 3u);
+    EXPECT_FALSE(begin.beginFramebuffer.clean);
+    EXPECT_EQ(begin.beginFramebuffer.clearFlags, Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth);
+}
+
+TEST(GfxFramebuffer, DefaultsToCleaningAttachments)
+{
+    Gfx::CommandBuffer commands;
+
+    commands.BeginFramebuffer(42);
+
+    ASSERT_EQ(commands.commands.size(), 1u);
+    EXPECT_TRUE(commands.commands.front().beginFramebuffer.clean);
 }
 
 TEST(GfxFramebuffer, TestsClearFlags)

@@ -26,17 +26,21 @@ void GlobalSettings::Load(const std::string& path){
     try{
         std::ifstream stream(path);
         if(stream.is_open()){
-            cereal::JSONInputArchive ar(stream);
-            /*if(name.empty()){
-                ArchiveDumpNVP(ar, data);
+            if(stream.peek() == std::ifstream::traits_type::eof()){
+                success = true;
             } else {
-                ArchiveDumpNamed(ar, name, data);
-            }*/
+                cereal::JSONInputArchive ar(stream);
+                /*if(name.empty()){
+                    ArchiveDumpNVP(ar, data);
+                } else {
+                    ArchiveDumpNamed(ar, name, data);
+                }*/
 
-            for(auto& [name, section] : sections){
-                if(section.loadFunc) section.loadFunc(ar);
+                for(auto& [name, section] : sections){
+                    if(section.loadFunc) section.loadFunc(ar);
+                }
+                success = true;
             }
-            success = true;
         }
     } catch(const std::exception& e){
         LogError("Failed to load archive: {}", e.what());

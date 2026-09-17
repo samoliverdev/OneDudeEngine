@@ -146,6 +146,7 @@ private:
     struct RenderPasses{
         uint64_t hash;
         uint32_t id;
+        bool clean = true;
         VkRenderPass renderPass = VK_NULL_HANDLE;
     };
     std::vector<RenderPasses> renderPasses;
@@ -174,7 +175,7 @@ private:
     void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
 
-    VkRenderPass GetOrCreate(const FrameBufferLayout& layout);
+    VkRenderPass GetOrCreate(const FrameBufferLayout& layout, bool clean = true);
 
     bool _CreatePipeline(PipelineData& data, const char* source, const PipelineInfo& info);
     void _DestroyPipeline(PipelineData& data);

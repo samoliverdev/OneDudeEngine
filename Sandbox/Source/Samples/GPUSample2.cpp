@@ -201,9 +201,9 @@ void GPUSample2::OnRender(float deltaTime){
     Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
     Gfx::CommandBuffer* cmd = gpuDevice->GetCommandBuffer();
 
-    cmd->BeginFramebuffer(framebuffer_2);
+    cmd->BeginFramebuffer(framebuffer_2, 0, 0, true, Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 1, 0, 1}});
         cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 1, 0, 1}});
+        //cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{0, 1, 0, 1}});
 
         cmd->SetPipeline(pipeline1_2);
         cmd->SetVertexBuffer(0, vertexBuffer_2);
@@ -214,7 +214,7 @@ void GPUSample2::OnRender(float deltaTime){
 
     cmd->BeginWindowFramebuffer();
         cmd->Viewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-        cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{1, 0, 0, 1}});
+        //cmd->Clean(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, {{1, 0, 0, 1}});
 
         cmd->SetPipeline(pipeline_2);
         cmd->SetVertexBuffer(0, vertexBuffer_2);

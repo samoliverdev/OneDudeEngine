@@ -842,7 +842,7 @@ VkSampleCountFlagBits ToVkSampleCount(uint8_t samples){
     }
 }
 
-VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, VkFormat swapchainFormat = VK_FORMAT_UNDEFINED){
+VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, bool clean, VkFormat swapchainFormat = VK_FORMAT_UNDEFINED){
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkAttachmentReference> colorReferences;
 
@@ -870,13 +870,15 @@ VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, 
         VkAttachmentDescription attachment{};
         attachment.format = format;
         attachment.samples = samples;
-        // We don't care about the previous contents.
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.loadOp = clean ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD; //VK_ATTACHMENT_LOAD_OP_CLEAR
         // Keep the rendered result.
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        // The command path performs the image transition explicitly. Keeping
+        // the render-pass initial layout at the attachment layout makes both
+        // CLEAR and LOAD variants compatible with that transition.
+        attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //VK_IMAGE_LAYOUT_UNDEFINED
         if(layout.swapChainTarget && i == 0){
             attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         } else {
@@ -901,11 +903,13 @@ VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, 
         VkAttachmentDescription attachment{};
         attachment.format = ToVkDepthFormat(layout.depthAttachment.format);
         attachment.samples = samples;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.loadOp = clean ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        const bool hasStencil = layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+            layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+        attachment.stencilLoadOp = hasStencil ? (clean ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD) : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment.stencilStoreOp = hasStencil ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthReference.attachment = static_cast<uint32_t>(attachments.size());
         depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1401,17 +1405,18 @@ uint64_t GetFramebufferLayoutHash(const FrameBufferLayout& layout){
     return hash;
 }
 
-VkRenderPass VulkanGPUDevice::GetOrCreate(const FrameBufferLayout& layout){
+VkRenderPass VulkanGPUDevice::GetOrCreate(const FrameBufferLayout& layout, bool clean){
     uint64_t hash = GetFramebufferLayoutHash(layout);
     for(int i = 0; i < renderPasses.size(); i++){
-        if(renderPasses[i].hash == hash) return renderPasses[i].renderPass;
+        if(renderPasses[i].hash == hash && renderPasses[i].clean == clean) return renderPasses[i].renderPass;
     }
 
     uint32_t newId = renderPasses.size();
     RenderPasses pass = {};
     pass.hash = hash;
     pass.id = newId;
-    pass.renderPass = CreateRenderPass(_device, layout);
+    pass.clean = clean;
+    pass.renderPass = CreateRenderPass(_device, layout, clean);
     renderPasses.push_back(pass);
     return pass.renderPass;
 }
@@ -1864,6 +1869,7 @@ void VulkanGPUDevice::InitDefaultRenderpass(){
     RenderPasses pass = {};
     pass.hash = GetFramebufferLayoutHash(_windowFrameBufferLayout);
     pass.id = renderPasses.size();
+    pass.clean = true;
     pass.renderPass = _renderPass;
     renderPasses.push_back(pass);
 }
@@ -2013,7 +2019,7 @@ void VulkanGPUDevice::Cleanup(){
 
     for(auto& i: renderPasses){
         if(i.renderPass == VK_NULL_HANDLE) continue;
-        if(i.hash == GetFramebufferLayoutHash(_windowFrameBufferLayout)) continue;
+        if(i.renderPass == _renderPass) continue;
         vkDestroyRenderPass(_device, i.renderPass, nullptr);
     }
 
@@ -2504,11 +2510,16 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u;
                 const uint32_t layer = renderCmd.beginFramebuffer.layer;
                 const uint32_t mip = renderCmd.beginFramebuffer.mip;
+                bool clean = renderCmd.beginFramebuffer.clean;
                 Assert(layer < layerCount);
                 uint32_t mipCount = std::max(1u, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
                 for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
                     mipCount = std::max(mipCount, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
                 Assert(mip < mipCount);
+                if(!clean && !data.contentsInitialized){
+                    LogWarning("Vulkan BeginFramebuffer requested LOAD before framebuffer contents were initialized; using CLEAR."); //TODO: Maybe i can remove this warning later
+                    clean = true;
+                }
                 data.activeLayer = layer;
                 data.activeMip = mip;
 
@@ -2625,24 +2636,24 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 // Color clears
                 for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
                     VkClearValue clear{};
-                    clear.color.float32[0] = 0.0f;
-                    clear.color.float32[1] = 0.0f;
-                    clear.color.float32[2] = 1.0f;
-                    clear.color.float32[3] = 1.0f;
+                    clear.color.float32[0] = renderCmd.beginFramebuffer.clearValue.color.x;
+                    clear.color.float32[1] = renderCmd.beginFramebuffer.clearValue.color.y;
+                    clear.color.float32[2] = renderCmd.beginFramebuffer.clearValue.color.z;
+                    clear.color.float32[3] = renderCmd.beginFramebuffer.clearValue.color.w;
                     clearValues.push_back(clear);
                 }
 
                 // Depth clear
                 if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
                     VkClearValue clear{};
-                    clear.depthStencil.depth = 1.0f;
-                    clear.depthStencil.stencil = 0;
+                    clear.depthStencil.depth = renderCmd.beginFramebuffer.clearValue.depth;
+                    clear.depthStencil.stencil = renderCmd.beginFramebuffer.clearValue.stencil;
                     clearValues.push_back(clear);
                 }
 
                 VkRenderPassBeginInfo beginInfo{};
                 beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                beginInfo.renderPass = data.renderPass;
+                beginInfo.renderPass = GetOrCreate(layout, clean);
                 beginInfo.framebuffer = data.subresourceFramebuffers[mip * layerCount + layer];
                 beginInfo.renderArea.offset = { 0, 0 };
                 beginInfo.renderArea.extent = { std::max(1u, data.width >> mip), std::max(1u, data.height >> mip) };

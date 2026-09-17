@@ -1377,6 +1377,27 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 else if(isCube)
                     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, data.depthAttachment, mip);
             }
+
+            if(cmd.beginFramebuffer.clean){
+                const ClearValue& clear = cmd.beginFramebuffer.clearValue;
+                GLbitfield mask = 0;
+
+                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Color)){
+                    glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
+                    mask |= GL_COLOR_BUFFER_BIT;
+                }
+                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Depth)){
+                    glClearDepth(clear.depth);
+                    mask |= GL_DEPTH_BUFFER_BIT;
+                }
+                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Stencil)){
+                    glClearStencil(static_cast<GLint>(clear.stencil));
+                    mask |= GL_STENCIL_BUFFER_BIT;
+                }
+                if(mask != 0)
+                    glClear(mask);
+            }
+
             glCheckError();
             break;
         }
