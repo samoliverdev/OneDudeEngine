@@ -973,6 +973,36 @@ std::vector<uint8_t> ConvertRGBToRGBA(const uint8_t* rgb, uint32_t width, uint32
     return rgba;
 }
 
+VkFilter ToVkTextureFilter(TextureFilter filter){
+    return filter == TextureFilter::Nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR;
+}
+
+VkSamplerAddressMode ToVkTextureWrapping(TextureWrapping wrapping){
+    switch(wrapping){
+        case TextureWrapping::Repeat:         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case TextureWrapping::MirroredRepeat: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case TextureWrapping::ClampToEdge:    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case TextureWrapping::ClampToBorder:  return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+VkSamplerCreateInfo CreateTextureSampler(const TextureFilter filter, const TextureWrapping wrapping){
+    VkSamplerCreateInfo sampler = vkinit::sampler_create_info(
+        ToVkTextureFilter(filter), ToVkTextureWrapping(wrapping));
+    if(wrapping == TextureWrapping::ClampToBorder)
+        sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    return sampler;
+}
+
+uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap){
+    if(!mipmap) return 1;
+    uint32_t levels = 1;
+    for(uint32_t size = std::max(width, height); size > 1; size >>= 1)
+        ++levels;
+    return levels;
+}
+
 bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
     texData.info = info;
 
@@ -987,7 +1017,11 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     imageExtent.height = info.height;
     imageExtent.depth = 1;
 
-    VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap);
+    VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+        (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), imageExtent);
+    dimg_info.mipLevels = mipLevels;
 
     VmaAllocationCreateInfo dimg_allocinfo = {};
     dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -996,9 +1030,11 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     VK_CHECK(vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &texData.image, &texData.allocation, nullptr));
 
     VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(image_format, texData.image, VK_IMAGE_ASPECT_COLOR_BIT);
+    imageinfo.subresourceRange.levelCount = mipLevels;
     VK_CHECK(vkCreateImageView(_device, &imageinfo, nullptr, &texData.imageView));
 
-    VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
+    VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
+    samplerInfo.maxLod = static_cast<float>(mipLevels);
     VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &texData.sampler));
 
     return true;
@@ -1007,19 +1043,23 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
 bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
     data.info = info;
     VkExtent3D extent{info.width, info.height, 1};
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap);
     VkImageCreateInfo imageInfo = vkinit::image_create_info(GetImageFormat(info.format),
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+        (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), extent);
     imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     imageInfo.arrayLayers = 6;
-    imageInfo.mipLevels = 1;
+    imageInfo.mipLevels = mipLevels;
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocInfo, &data.image, &data.allocation, nullptr));
     VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(GetImageFormat(info.format), data.image, VK_IMAGE_ASPECT_COLOR_BIT);
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     viewInfo.subresourceRange.layerCount = 6;
+    viewInfo.subresourceRange.levelCount = mipLevels;
     VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.imageView));
-    VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
+    VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
+    samplerInfo.maxLod = static_cast<float>(mipLevels);
     VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &data.sampler));
     return true;
 }
@@ -1032,8 +1072,9 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
     vmaMapMemory(_allocator, staging._allocation, &mapped);
     memcpy(mapped, rawData, size);
     vmaUnmapMemory(_allocator, staging._allocation);
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap);
     immediate_submit([&](VkCommandBuffer command){
-        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1047,11 +1088,49 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
             copies[face].imageExtent = {data.info.width, data.info.height, 1};
         }
         vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies);
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        if(!data.info.mipmap){
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            return;
+        }
+
+        for(uint32_t mip = 1; mip < mipLevels; ++mip){
+            VkImageMemoryBarrier mipBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            mipBarrier.image = data.image;
+            mipBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, 1, 0, 6};
+            mipBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            mipBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            mipBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            mipBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &mipBarrier);
+
+            VkImageBlit blit{};
+            blit.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, 0, 6};
+            blit.srcOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> (mip - 1))), static_cast<int32_t>(std::max(1u, data.info.height >> (mip - 1))), 1};
+            blit.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip, 0, 6};
+            blit.dstOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> mip)), static_cast<int32_t>(std::max(1u, data.info.height >> mip)), 1};
+            vkCmdBlitImage(command, data.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+        }
+
+        VkImageMemoryBarrier generatedBarriers[2]{};
+        generatedBarriers[0] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        generatedBarriers[0].image = data.image;
+        generatedBarriers[0].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels - 1, 0, 6};
+        generatedBarriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        generatedBarriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        generatedBarriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        generatedBarriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        generatedBarriers[1] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        generatedBarriers[1].image = data.image;
+        generatedBarriers[1].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mipLevels - 1, 1, 0, 6};
+        generatedBarriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        generatedBarriers[1].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        generatedBarriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        generatedBarriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, generatedBarriers);
     });
     vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
@@ -1070,8 +1149,9 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
     memcpy(mapped, data, size);
     vmaUnmapMemory(_allocator, staging._allocation);
     VkExtent3D extent{texData.width, texData.height, 1};
+    const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap);
     immediate_submit([&](VkCommandBuffer command){
-        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 1};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1081,11 +1161,49 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
         VkBufferImageCopy copy{};
         copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; copy.imageExtent = extent;
         vkCmdCopyBufferToImage(command, staging._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        if(!texData.info.mipmap){
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            return;
+        }
+
+        for(uint32_t mip = 1; mip < mipLevels; ++mip){
+            VkImageMemoryBarrier mipBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            mipBarrier.image = texData.image;
+            mipBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, 1, 0, 1};
+            mipBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            mipBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            mipBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            mipBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &mipBarrier);
+
+            VkImageBlit blit{};
+            blit.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, 0, 1};
+            blit.srcOffsets[1] = {static_cast<int32_t>(std::max(1u, texData.width >> (mip - 1))), static_cast<int32_t>(std::max(1u, texData.height >> (mip - 1))), 1};
+            blit.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip, 0, 1};
+            blit.dstOffsets[1] = {static_cast<int32_t>(std::max(1u, texData.width >> mip)), static_cast<int32_t>(std::max(1u, texData.height >> mip)), 1};
+            vkCmdBlitImage(command, texData.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+        }
+
+        VkImageMemoryBarrier generatedBarriers[2]{};
+        generatedBarriers[0] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        generatedBarriers[0].image = texData.image;
+        generatedBarriers[0].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels - 1, 0, 1};
+        generatedBarriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        generatedBarriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        generatedBarriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        generatedBarriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        generatedBarriers[1] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        generatedBarriers[1].image = texData.image;
+        generatedBarriers[1].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mipLevels - 1, 1, 0, 1};
+        generatedBarriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        generatedBarriers[1].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        generatedBarriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        generatedBarriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, generatedBarriers);
     });
     vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
@@ -1343,7 +1461,8 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         imageInfo.samples = ToVkSampleCount(layout.samples);
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         //VK_CHECK(vkCreateImage(_device, &imageInfo, nullptr, &vkAttachment.image));
 
@@ -1369,7 +1488,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &vkAttachment.imageView));
 
-        VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
+        VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
         VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &vkAttachment.sampler));
     }
 
@@ -1395,7 +1514,8 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         imageInfo.samples = ToVkSampleCount(layout.samples);
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         //VK_CHECK(vkCreateImage(_device, &imageInfo, nullptr, &data.depthAttachment.image));
 
@@ -1417,7 +1537,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.depthAttachment.imageView));
 
-        VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
+        VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
         VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &data.depthAttachment.sampler));
     }
 
@@ -1607,6 +1727,7 @@ void init_swapchain(VulkanPresentMode presentMode){
         .set_desired_present_mode(presentMode == VulkanPresentMode::VSync
             ? VK_PRESENT_MODE_FIFO_KHR
             : VK_PRESENT_MODE_IMMEDIATE_KHR)
+        .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
         .set_desired_extent(_windowExtent.width, _windowExtent.height)
         .build()
         .value();
@@ -1648,7 +1769,7 @@ void init_window_depth_buffer(){
     imageInfo.arrayLayers = 1;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     VmaAllocationCreateInfo allocationInfo{};
     allocationInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -2562,6 +2683,103 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 scissor.offset = { 0, 0 };
                 scissor.extent = _windowExtent;
                 vkCmdSetScissor(cmd, 0, 1, &scissor);*/
+                break;
+            }
+
+            case CommandBuffer::Type::BlitFramebuffer:{
+                const auto& blit = renderCmd.blitFramebuffer;
+                Assert(framebufferPool.IsValid(blit.src));
+                auto& sourceFramebuffer = framebufferPool.Get(blit.src);
+                const bool depth = blit.srcPass < 0;
+                if(!depth)
+                    Assert(static_cast<uint32_t>(blit.srcPass) < sourceFramebuffer.colorAttachments.size());
+
+                VulkanFramebufferAttachment& source = depth
+                    ? sourceFramebuffer.depthAttachment
+                    : sourceFramebuffer.colorAttachments[blit.srcPass];
+                const VkImageAspectFlags aspect = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+                const uint32_t sourceWidth = sourceFramebuffer.width;
+                const uint32_t sourceHeight = sourceFramebuffer.height;
+
+                VkImage destinationImage = VK_NULL_HANDLE;
+                uint32_t destinationWidth = sourceWidth;
+                uint32_t destinationHeight = sourceHeight;
+                VkImageLayout destinationOldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkImageMemoryBarrier destinationBarrier{};
+                VulkanFramebufferAttachment* destinationAttachment = nullptr;
+
+                if(blit.dst == InvalidID){
+                    destinationImage = depth ? _windowDepthImage : _swapchainImages[swapchainImageIndex];
+                    destinationWidth = _windowExtent.width;
+                    destinationHeight = _windowExtent.height;
+                    destinationOldLayout = depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                } else {
+                    Assert(framebufferPool.IsValid(blit.dst));
+                    auto& destinationFramebuffer = framebufferPool.Get(blit.dst);
+                    if(depth){
+                        destinationAttachment = &destinationFramebuffer.depthAttachment;
+                    } else {
+                        Assert(static_cast<uint32_t>(blit.srcPass) < destinationFramebuffer.colorAttachments.size());
+                        destinationAttachment = &destinationFramebuffer.colorAttachments[blit.srcPass];
+                    }
+                    destinationImage = destinationAttachment->image;
+                    destinationWidth = destinationFramebuffer.width;
+                    destinationHeight = destinationFramebuffer.height;
+                    destinationOldLayout = destinationFramebuffer.contentsInitialized
+                        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                        : VK_IMAGE_LAYOUT_UNDEFINED;
+                }
+
+                std::vector<VkImageMemoryBarrier> barriers;
+                VkImageMemoryBarrier sourceBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                sourceBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                sourceBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                sourceBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                sourceBarrier.image = source.image;
+                sourceBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
+                barriers.push_back(sourceBarrier);
+
+                destinationBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                destinationBarrier.srcAccessMask = blit.dst == InvalidID || destinationOldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+                    ? 0
+                    : VK_ACCESS_SHADER_READ_BIT;
+                destinationBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                destinationBarrier.oldLayout = destinationOldLayout;
+                destinationBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                destinationBarrier.image = destinationImage;
+                destinationBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
+                barriers.push_back(destinationBarrier);
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+                    static_cast<uint32_t>(barriers.size()), barriers.data());
+
+                VkImageBlit imageBlit{};
+                imageBlit.srcSubresource = {aspect, 0, 0, 1};
+                imageBlit.srcOffsets[1] = {static_cast<int32_t>(sourceWidth), static_cast<int32_t>(sourceHeight), 1};
+                imageBlit.dstSubresource = {aspect, 0, 0, 1};
+                imageBlit.dstOffsets[1] = {static_cast<int32_t>(destinationWidth), static_cast<int32_t>(destinationHeight), 1};
+                vkCmdBlitImage(cmd, source.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_NEAREST);
+
+                sourceBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                sourceBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                sourceBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                destinationBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                destinationBarrier.dstAccessMask = blit.dst == InvalidID ? 0 : VK_ACCESS_SHADER_READ_BIT;
+                destinationBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                destinationBarrier.newLayout = blit.dst == InvalidID
+                    ? (depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkImageMemoryBarrier finalBarriers[] = {sourceBarrier, destinationBarrier};
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    blit.dst == InvalidID
+                        ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+                        : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    0, 0, nullptr, 0, nullptr, 2, finalBarriers);
+                if(blit.dst != InvalidID)
+                    framebufferPool.Get(blit.dst).contentsInitialized = true;
                 break;
             }
 

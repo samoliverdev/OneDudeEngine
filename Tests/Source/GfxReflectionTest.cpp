@@ -105,6 +105,20 @@ TEST(GfxFramebuffer, TestsClearFlags)
     EXPECT_FALSE(Gfx::HasFlag(Gfx::ClearFlags::Color, Gfx::ClearFlags::Stencil));
 }
 
+TEST(GfxFramebuffer, RecordsBlitCommand)
+{
+    Gfx::CommandBuffer commands;
+
+    commands.BlitFramebuffer(11, 22, 3);
+
+    ASSERT_EQ(commands.commands.size(), 1u);
+    const auto& blit = commands.commands.front();
+    EXPECT_EQ(blit.type, Gfx::CommandBuffer::Type::BlitFramebuffer);
+    EXPECT_EQ(blit.blitFramebuffer.src, 11u);
+    EXPECT_EQ(blit.blitFramebuffer.dst, 22u);
+    EXPECT_EQ(blit.blitFramebuffer.srcPass, 3);
+}
+
 TEST(GfxCubemap, RecordsUploadCommand)
 {
     Gfx::ResourceCommands commands;
@@ -116,4 +130,30 @@ TEST(GfxCubemap, RecordsUploadCommand)
     EXPECT_EQ(commands.commands.front().uploadCubemap.id, 7u);
     EXPECT_EQ(commands.commands.front().uploadCubemap.size, pixels.size());
     EXPECT_NE(commands.commands.front().uploadCubemap.data, pixels.data());
+}
+
+TEST(GfxTextureSampling, CreateInfosExposeIndependentSamplingDefaults)
+{
+    Gfx::Texture2DInfo texture;
+    Gfx::CubemapInfo cubemap;
+    Gfx::FrameBufferCreateInfo framebuffer;
+
+    EXPECT_EQ(texture.filter, Gfx::TextureFilter::Linear);
+    EXPECT_EQ(texture.wrapping, Gfx::TextureWrapping::Repeat);
+    EXPECT_TRUE(texture.mipmap);
+    EXPECT_EQ(cubemap.filter, Gfx::TextureFilter::Linear);
+    EXPECT_EQ(cubemap.wrapping, Gfx::TextureWrapping::Repeat);
+    EXPECT_TRUE(cubemap.mipmap);
+    EXPECT_EQ(framebuffer.filter, Gfx::TextureFilter::Linear);
+    EXPECT_EQ(framebuffer.wrapping, Gfx::TextureWrapping::Repeat);
+
+    framebuffer.filter = Gfx::TextureFilter::Nearest;
+    framebuffer.wrapping = Gfx::TextureWrapping::ClampToBorder;
+    texture.mipmap = false;
+    cubemap.mipmap = false;
+    EXPECT_EQ(framebuffer.layout.type, Gfx::FramebufferAttachmentType::TEXTURE_2D);
+    EXPECT_EQ(framebuffer.filter, Gfx::TextureFilter::Nearest);
+    EXPECT_EQ(framebuffer.wrapping, Gfx::TextureWrapping::ClampToBorder);
+    EXPECT_FALSE(texture.mipmap);
+    EXPECT_FALSE(cubemap.mipmap);
 }

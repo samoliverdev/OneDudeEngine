@@ -20,6 +20,18 @@ using BindGroup = uint32_t;
 using Texture2D = uint32_t;
 using Cubemap = uint32_t;
 
+enum class OD_API_IMPORT TextureFilter : uint8_t{
+    Nearest,
+    Linear
+};
+
+enum class OD_API_IMPORT TextureWrapping : uint8_t{
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+    ClampToBorder
+};
+
 /////////////////////////////////////
 
 enum class ResourceStatsType{
@@ -74,6 +86,9 @@ struct OD_API FrameBufferCreateInfo{
     FrameBufferLayout layout;
     uint32_t width = 1;
     uint32_t height = 1;
+    TextureFilter filter = TextureFilter::Linear;
+    TextureWrapping wrapping = TextureWrapping::Repeat;
+    //bool mipmap = true;
 };
 
 //////////////////////////////////////
@@ -89,15 +104,21 @@ enum class ImageFormat{
 };
 
 struct OD_API Texture2DInfo{
-    uint32_t width;
-    uint32_t height;
-    ImageFormat format;
+    uint32_t width = 1;
+    uint32_t height = 1;
+    ImageFormat format = ImageFormat::R8G8B8A8_UNORM;
+    TextureFilter filter = TextureFilter::Linear;
+    TextureWrapping wrapping = TextureWrapping::Repeat;
+    bool mipmap = true;
 };
 
 struct OD_API CubemapInfo{
     uint32_t width = 1;
     uint32_t height = 1;
     ImageFormat format = ImageFormat::R8G8B8A8_UNORM;
+    TextureFilter filter = TextureFilter::Linear;
+    TextureWrapping wrapping = TextureWrapping::Repeat;
+    bool mipmap = true;
 };
 
 //////////////////////////////////////
@@ -802,6 +823,7 @@ struct OD_API CommandBuffer{
         BeginWindowFramebuffer,
         BeginFramebuffer,
         EndFramebuffer,
+        BlitFramebuffer,
 
         CreateBindGroup,
     };
@@ -864,6 +886,12 @@ struct OD_API CommandBuffer{
                 uint32_t layer;
                 uint32_t mip;
             } beginFramebuffer;
+
+            struct {
+                Framebuffer src;
+                Framebuffer dst;
+                int srcPass;
+            } blitFramebuffer;
         };
     };
 
@@ -974,6 +1002,15 @@ struct OD_API CommandBuffer{
     inline void EndFramebuffer(){
         Command cmd{};
         cmd.type = Type::EndFramebuffer;
+        commands.push_back(cmd);
+    }
+
+    inline void BlitFramebuffer(Framebuffer src, Framebuffer dst = InvalidID, int srcPass = -1){
+        Command cmd{};
+        cmd.type = Type::BlitFramebuffer;
+        cmd.blitFramebuffer.src = src;
+        cmd.blitFramebuffer.dst = dst;
+        cmd.blitFramebuffer.srcPass = srcPass;
         commands.push_back(cmd);
     }
 

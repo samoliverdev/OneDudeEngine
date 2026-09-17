@@ -399,6 +399,22 @@ GLint GetTextureFormat(ImageFormat f){
     return GL_INVALID_VALUE;
 }
 
+GLenum ToGLTextureFilter(TextureFilter filter, bool mipmapped = false){
+    if(mipmapped)
+        return filter == TextureFilter::Nearest ? GL_NEAREST_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR;
+    return filter == TextureFilter::Nearest ? GL_NEAREST : GL_LINEAR;
+}
+
+GLenum ToGLTextureWrapping(TextureWrapping wrapping){
+    switch(wrapping){
+        case TextureWrapping::Repeat:         return GL_REPEAT;
+        case TextureWrapping::MirroredRepeat: return GL_MIRRORED_REPEAT;
+        case TextureWrapping::ClampToEdge:    return GL_CLAMP_TO_EDGE;
+        case TextureWrapping::ClampToBorder:  return GL_CLAMP_TO_BORDER;
+    }
+    return GL_REPEAT;
+}
+
 
 bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
     texData.info = info;
@@ -407,10 +423,10 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     glBindTexture(GL_TEXTURE_2D, texData.tex);  
     glCheckError();
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, info.mipmap));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
     glCheckError();
 
     glTexImage2D(
@@ -422,7 +438,7 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
         nullptr
     );
     glCheckError();
-    glGenerateMipmap(GL_TEXTURE_2D);
+    if(texData.info.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
     glCheckError();
 
     return true;
@@ -433,7 +449,7 @@ void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
     glCheckError();
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texData.info.width, texData.info.height, GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), data);
     glCheckError();
-    glGenerateMipmap(GL_TEXTURE_2D);
+    if(texData.info.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
     glCheckError();
 }
 
@@ -450,14 +466,12 @@ bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
             GetTextureInternalFormat(info.format), info.width, info.height, 0,
             GetTextureFormat(info.format), GetTextureDataType(info.format), nullptr);
     }
-    // CubemapInfo currently describes a single mip level, matching Vulkan's
-    // cubemap implementation. A mipmap minification filter would make the
-    // texture incomplete until a complete mip chain exists.
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, info.mipmap));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
+    if(info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     return true;
 }
 
@@ -472,6 +486,8 @@ void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
             GetTextureDataType(data.info.format), static_cast<const uint8_t*>(rawData) + face * faceSize);
         glCheckError();
     }
+    if(data.info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glCheckError();
 }
 
 void OpenglGPUDevice::_DestroyCubemap(CubemapData& data){
@@ -595,11 +611,11 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         glGenTextures(1, &data.colorAttachments[i]);
         const GLenum target = isArray ? GL_TEXTURE_2D_ARRAY : isCube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
         glBindTexture(target, data.colorAttachments[i]);
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, attachment.mipLevels > 1));
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
 
         // --------------------------------------------------------
         // Allocate texture
@@ -665,11 +681,11 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         glGenTextures(1, &data.depthAttachment);
         const GLenum target = isArray ? GL_TEXTURE_2D_ARRAY : isCube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
         glBindTexture(target, data.depthAttachment);
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, attachment.mipLevels > 1));
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
 
         // --------------------------------------------------------
         // Allocate depth texture
@@ -1367,6 +1383,36 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
         case CommandBuffer::Type::EndFramebuffer:{
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::BlitFramebuffer:{
+            const auto& blit = cmd.blitFramebuffer;
+            Assert(framebufferPool.IsValid(blit.src));
+            const auto& src = framebufferPool.Get(blit.src);
+            const GLuint dst = blit.dst == InvalidID ? 0 : [&](){
+                Assert(framebufferPool.IsValid(blit.dst));
+                return framebufferPool.Get(blit.dst).framebuffer;
+            }();
+
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, src.framebuffer);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst);
+            if(blit.srcPass < 0){
+                glBlitFramebuffer(0, 0, src.width, src.height, 0, 0,
+                    blit.dst == InvalidID ? src.width : framebufferPool.Get(blit.dst).width,
+                    blit.dst == InvalidID ? src.height : framebufferPool.Get(blit.dst).height,
+                    GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            } else {
+                glReadBuffer(GL_COLOR_ATTACHMENT0 + blit.srcPass);
+                // The default framebuffer does not have GL_COLOR_ATTACHMENT*;
+                // its color buffer is selected with GL_BACK.
+                glDrawBuffer(blit.dst == InvalidID ? GL_BACK : GL_COLOR_ATTACHMENT0 + blit.srcPass);
+                const uint32_t dstWidth = blit.dst == InvalidID ? src.width : framebufferPool.Get(blit.dst).width;
+                const uint32_t dstHeight = blit.dst == InvalidID ? src.height : framebufferPool.Get(blit.dst).height;
+                glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dstWidth, dstHeight,
+                    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            }
             glCheckError();
             break;
         }
