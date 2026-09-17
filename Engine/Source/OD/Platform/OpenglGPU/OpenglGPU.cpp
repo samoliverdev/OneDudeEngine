@@ -7,6 +7,7 @@
 #include <string>
 #include <regex>
 #include <optional>
+#include <algorithm>
 
 #define OPENGL_CHECK_ERRORS 1
 
@@ -514,6 +515,7 @@ GLenum ToGLDepthInternalFormat(FramebufferDepthTextureFormat format){
 }
 
 bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& info){
+    #undef max
     data.layout = info.layout;
     data.width = info.width;
     data.height = info.height;
@@ -523,6 +525,11 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     // ------------------------------------------------------------
     glGenFramebuffers(1, &data.framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
+
+    const bool isArray = info.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    const bool isCube = info.layout.type == FramebufferAttachmentType::CUBEMAP;
+    const uint32_t layerCount = isCube ? 6u : isArray ? math::max<uint8_t>(1u, info.layout.layers) : 1u;
+    if(isCube) Assert(info.width == info.height);
 
     // ------------------------------------------------------------
     // Color attachments
@@ -548,28 +555,58 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         // Create texture
         // --------------------------------------------------------
         glGenTextures(1, &data.colorAttachments[i]);
-        glBindTexture(GL_TEXTURE_2D, data.colorAttachments[i]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        const GLenum target = isArray ? GL_TEXTURE_2D_ARRAY : isCube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+        glBindTexture(target, data.colorAttachments[i]);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
         // --------------------------------------------------------
         // Allocate texture
         // --------------------------------------------------------
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
+        if(isArray){
+            glTexImage3D(target, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), static_cast<GLsizei>(layerCount), 0, format, type, nullptr);
+        } else if(isCube){
+            const uint32_t mipCount = std::max(1u, static_cast<uint32_t>(attachment.mipLevels));
+            glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+            glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(mipCount - 1));
+            for(uint32_t mip = 0; mip < mipCount; ++mip){
+                const GLsizei mipWidth = std::max<GLsizei>(1, static_cast<GLsizei>(info.width >> mip));
+                const GLsizei mipHeight = std::max<GLsizei>(1, static_cast<GLsizei>(info.height >> mip));
+                for(uint32_t face = 0; face < 6; ++face){
+                    glTexImage2D(
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+                        static_cast<GLint>(mip),
+                        internalFormat,
+                        mipWidth,
+                        mipHeight,
+                        0,
+                        format,
+                        type,
+                        nullptr
+                    );
+                }
+            }
+        } else {
+            glTexImage2D(target, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
+        }
 
         // --------------------------------------------------------
         // Generate mipmaps if requested
         // --------------------------------------------------------
-        if(attachment.mipLevels > 1){
-            glGenerateMipmap(GL_TEXTURE_2D);
+        if(attachment.mipLevels > 1 && !isCube){
+            glGenerateMipmap(target);
         }
 
         // --------------------------------------------------------
         // Attach texture to framebuffer
         // --------------------------------------------------------
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, data.colorAttachments[i], 0);
+        if(isArray)
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, data.colorAttachments[i], 0, 0);
+        else
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X : GL_TEXTURE_2D, data.colorAttachments[i], 0);
         drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
     }
 
@@ -588,11 +625,13 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         // Create depth texture
         // --------------------------------------------------------
         glGenTextures(1, &data.depthAttachment);
-        glBindTexture(GL_TEXTURE_2D, data.depthAttachment);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        const GLenum target = isArray ? GL_TEXTURE_2D_ARRAY : isCube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+        glBindTexture(target, data.depthAttachment);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, attachment.mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if(isCube) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
         // --------------------------------------------------------
         // Allocate depth texture
@@ -610,15 +649,43 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
                         ? GL_UNSIGNED_INT
                         : GL_FLOAT;
 
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
+        if(isArray)
+            glTexImage3D(target, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), static_cast<GLsizei>(layerCount), 0, format, type, nullptr);
+        else if(isCube){
+            const uint32_t mipCount = std::max(1u, static_cast<uint32_t>(attachment.mipLevels));
+            glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+            glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(mipCount - 1));
+            for(uint32_t mip = 0; mip < mipCount; ++mip){
+                const GLsizei mipWidth = std::max<GLsizei>(1, static_cast<GLsizei>(info.width >> mip));
+                const GLsizei mipHeight = std::max<GLsizei>(1, static_cast<GLsizei>(info.height >> mip));
+                for(uint32_t face = 0; face < 6; ++face){
+                    glTexImage2D(
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+                        static_cast<GLint>(mip),
+                        internalFormat,
+                        mipWidth,
+                        mipHeight,
+                        0,
+                        format,
+                        type,
+                        nullptr
+                    );
+                }
+            }
+        } else
+            glTexImage2D(target, 0, internalFormat, static_cast<GLsizei>(info.width), static_cast<GLsizei>(info.height), 0, format, type, nullptr);
 
         // --------------------------------------------------------
         // Attach depth
         // --------------------------------------------------------
-        glFramebufferTexture2D(GL_FRAMEBUFFER, hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, data.depthAttachment, 0);
+        const GLenum depthTarget = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+        if(isArray)
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, depthTarget, data.depthAttachment, 0, 0);
+        else
+            glFramebufferTexture2D(GL_FRAMEBUFFER, depthTarget, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X : GL_TEXTURE_2D, data.depthAttachment, 0);
         
-        if(attachment.mipLevels > 1){
-            glGenerateMipmap(GL_TEXTURE_2D);
+        if(attachment.mipLevels > 1 && !isCube){
+            glGenerateMipmap(target);
         }
     }
 
@@ -638,14 +705,25 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     Assert(status == GL_FRAMEBUFFER_COMPLETE && "OpenGL framebuffer is incomplete");
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(isArray ? GL_TEXTURE_2D_ARRAY : isCube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return true;
 }
 
 void OpenglGPUDevice::_DestroyFramebuffer(FramebufferData& data){
-
+    if(data.framebuffer != 0){
+        glDeleteFramebuffers(1, &data.framebuffer);
+        data.framebuffer = 0;
+    }
+    if(!data.colorAttachments.empty()){
+        glDeleteTextures(static_cast<GLsizei>(data.colorAttachments.size()), data.colorAttachments.data());
+        data.colorAttachments.clear();
+    }
+    if(data.depthAttachment != 0){
+        glDeleteTextures(1, &data.depthAttachment);
+        data.depthAttachment = 0;
+    }
 }
 #pragma endregion
 
@@ -868,12 +946,9 @@ void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, s
     }
 }
 
-
-constexpr bool HasFlag(ClearFlags value, ClearFlags flag){
-    return (static_cast<uint8_t>(value) & static_cast<uint8_t>(flag)) != 0;
-}
-
 void OpenglGPUDevice::RunRender(RenderFrame& frame){
+    #undef max
+
     Pipeline currentPipeline = INVALID_ID;
     PipelineInfo currentPipelineInfo = {};
 
@@ -1192,6 +1267,28 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
             Assert(data.framebuffer > 0);
             glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
+            const bool isArray = data.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+            const bool isCube = data.layout.type == FramebufferAttachmentType::CUBEMAP;
+            const uint32_t layerCount = isCube ? 6u : isArray ? math::max<uint8_t>(1u, data.layout.layers) : 1u;
+            const uint32_t layer = cmd.beginFramebuffer.layer;
+            const uint32_t mip = cmd.beginFramebuffer.mip;
+            Assert(layer < layerCount);
+
+            for(uint32_t i = 0; i < data.layout.colorAttachmentsCount; ++i){
+                if(isArray)
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, data.colorAttachments[i], mip, layer);
+                else if(isCube)
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, data.colorAttachments[i], mip);
+            }
+            if(data.depthAttachment != 0){
+                const bool hasStencil = data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+                    data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+                const GLenum attachment = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+                if(isArray)
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, data.depthAttachment, mip, layer);
+                else if(isCube)
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, data.depthAttachment, mip);
+            }
             glCheckError();
             break;
         }

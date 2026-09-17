@@ -114,15 +114,20 @@ private:
         uint32_t id;
         
         VkFramebuffer framebuffer = VK_NULL_HANDLE;
+        std::vector<VkFramebuffer> subresourceFramebuffers;
         VkRenderPass renderPass = VK_NULL_HANDLE;
 
         std::vector<VulkanFramebufferAttachment> colorAttachments;
         VulkanFramebufferAttachment depthAttachment;
+        std::vector<VkImageView> subresourceViews;
 
         uint32_t width = 0;
         uint32_t height = 0;
 
         FrameBufferLayout layout;
+        uint32_t activeLayer = 0;
+        uint32_t activeMip = 0;
+        bool contentsInitialized = false;
     };
     ResourcePool<FramebufferData> framebufferPool;
 

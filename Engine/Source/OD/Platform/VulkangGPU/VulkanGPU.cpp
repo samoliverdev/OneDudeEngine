@@ -1207,6 +1207,11 @@ uint64_t GetFramebufferLayoutHash(const FrameBufferLayout& layout){
         hash,
         layout.samples);
 
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers));
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 8));
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 16));
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 24));
+
     return hash;
 }
 
@@ -1226,6 +1231,7 @@ VkRenderPass VulkanGPUDevice::GetOrCreate(const FrameBufferLayout& layout){
 }
 
 bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& info){
+    #undef max
     //VulkanFramebuffer result{};
 
     data.width = info.width;
@@ -1233,6 +1239,9 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     data.layout = info.layout;
 
     const FrameBufferLayout& layout = info.layout;
+    const uint32_t layerCount = layout.type == FramebufferAttachmentType::CUBEMAP ? 6u :
+        layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u;
+    if(layout.type == FramebufferAttachmentType::CUBEMAP) Assert(info.width == info.height);
 
     VkRenderPass pass = VK_NULL_HANDLE;
 
@@ -1261,7 +1270,9 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         imageInfo.extent.height = info.height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = attachment.mipLevels;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = layerCount;
+        if(layout.type == FramebufferAttachmentType::CUBEMAP)
+            imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         imageInfo.samples = ToVkSampleCount(layout.samples);
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1279,14 +1290,15 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = vkAttachment.image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.viewType = layout.type == FramebufferAttachmentType::CUBEMAP ? VK_IMAGE_VIEW_TYPE_CUBE :
+            layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = attachment.mipLevels;
 
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &vkAttachment.imageView));
 
         VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
@@ -1310,7 +1322,9 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         imageInfo.extent.height = info.height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = attachment.mipLevels;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = layerCount;
+        if(layout.type == FramebufferAttachmentType::CUBEMAP)
+            imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         imageInfo.samples = ToVkSampleCount(layout.samples);
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1325,13 +1339,14 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = data.depthAttachment.image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.viewType = layout.type == FramebufferAttachmentType::CUBEMAP ? VK_IMAGE_VIEW_TYPE_CUBE :
+            layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = attachment.mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.depthAttachment.imageView));
 
         VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);// VK_FILTER_NEAREST);
@@ -1342,25 +1357,60 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     // VkFramebuffer
     // ------------------------------------------------------------
 
-    std::vector<VkImageView> views;
+    const uint32_t mipCount = [&](){
+        uint32_t count = 1;
+        for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+            count = std::max(count, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
+        count = std::max(count, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
+        return count;
+    }();
 
-    for(auto& attachment: data.colorAttachments){
-        views.push_back(attachment.imageView);
+    for(uint32_t mip = 0; mip < mipCount; ++mip){
+        for(uint32_t layer = 0; layer < layerCount; ++layer){
+            std::vector<VkImageView> views;
+            for(size_t attachmentIndex = 0; attachmentIndex < data.colorAttachments.size(); ++attachmentIndex){
+                auto& attachment = data.colorAttachments[attachmentIndex];
+                VkImageViewCreateInfo viewInfo{};
+                viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                viewInfo.image = attachment.image;
+                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                viewInfo.format = ToVkColorFormat(layout.colorAttachments[attachmentIndex].format);
+                viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT,
+                    std::min(mip, static_cast<uint32_t>(layout.colorAttachments[attachmentIndex].mipLevels - 1)), 1, layer, 1};
+                VkImageView view = VK_NULL_HANDLE;
+                VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view));
+                data.subresourceViews.push_back(view);
+                views.push_back(view);
+            }
+            if(data.depthAttachment.image != VK_NULL_HANDLE){
+                VkImageViewCreateInfo viewInfo{};
+                viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                viewInfo.image = data.depthAttachment.image;
+                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                viewInfo.format = ToVkDepthFormat(layout.depthAttachment.format);
+                viewInfo.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT,
+                    std::min(mip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1)), 1, layer, 1};
+                VkImageView view = VK_NULL_HANDLE;
+                VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view));
+                data.subresourceViews.push_back(view);
+                views.push_back(view);
+            }
+
+            VkFramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = data.renderPass;
+            framebufferInfo.attachmentCount = static_cast<uint32_t>(views.size());
+            framebufferInfo.pAttachments = views.data();
+            framebufferInfo.width = std::max(1u, info.width >> mip);
+            framebufferInfo.height = std::max(1u, info.height >> mip);
+            framebufferInfo.layers = 1;
+            VkFramebuffer framebuffer = VK_NULL_HANDLE;
+            VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &framebuffer));
+            data.subresourceFramebuffers.push_back(framebuffer);
+        }
     }
 
-    if(data.depthAttachment.imageView != VK_NULL_HANDLE){
-        views.push_back(data.depthAttachment.imageView);
-    }
-
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = data.renderPass;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(views.size());
-    framebufferInfo.pAttachments = views.data();
-    framebufferInfo.width = info.width;
-    framebufferInfo.height = info.height;
-    framebufferInfo.layers = 1;
-    VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &data.framebuffer));
+    data.framebuffer = data.subresourceFramebuffers.front();
 
     return true;
 }
@@ -1372,9 +1422,15 @@ void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
     // VkFramebuffer references the attachment views,
     // so destroy it first.
     if(data.framebuffer != VK_NULL_HANDLE){
-        vkDestroyFramebuffer(_device, data.framebuffer, nullptr);
+        for(VkFramebuffer framebuffer : data.subresourceFramebuffers)
+            if(framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(_device, framebuffer, nullptr);
+        data.subresourceFramebuffers.clear();
         data.framebuffer = VK_NULL_HANDLE;
     }
+
+    for(VkImageView view : data.subresourceViews)
+        if(view != VK_NULL_HANDLE) vkDestroyImageView(_device, view, nullptr);
+    data.subresourceViews.clear();
 
     // -----------------------------------------
     // Color attachments
@@ -1902,6 +1958,8 @@ FrameBufferLayout VulkanGPUDevice::GetWindowFrameBufferLayout(){
 }
 
 void VulkanGPUDevice::RunRender(RenderFrame& frame){
+    #undef max
+
     Pipeline currentPipeline = INVALID_ID;
 
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
@@ -2094,23 +2152,50 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     for(const CommandBuffer::Command& renderCmd : frame.renderCommands.commands){
         switch(renderCmd.type){
             case CommandBuffer::Type::Clear:{
-                VkClearAttachment clearAttachment{};
-                clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                clearAttachment.colorAttachment = 0;
-                clearAttachment.clearValue.color = { {
-                    renderCmd.clear.clearValue.color.x,
-                    renderCmd.clear.clearValue.color.y,
-                    renderCmd.clear.clearValue.color.z,
-                    renderCmd.clear.clearValue.color.w
-                } };
+                std::vector<VkClearAttachment> clearAttachments;
+                const bool hasColor = _currentFramebuffer == nullptr ||
+                    _currentFramebuffer->layout.colorAttachmentsCount > 0;
+                if(HasFlag(renderCmd.clear.flags, ClearFlags::Color) && hasColor){
+                    VkClearAttachment clear{};
+                    clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    clear.colorAttachment = 0;
+                    clear.clearValue.color = {{
+                        renderCmd.clear.clearValue.color.x,
+                        renderCmd.clear.clearValue.color.y,
+                        renderCmd.clear.clearValue.color.z,
+                        renderCmd.clear.clearValue.color.w
+                    }};
+                    clearAttachments.push_back(clear);
+                }
+
+                const bool hasDepth = _currentFramebuffer != nullptr &&
+                    _currentFramebuffer->layout.depthAttachment.format != FramebufferDepthTextureFormat::None;
+                if(HasFlag(renderCmd.clear.flags, ClearFlags::Depth) && hasDepth){
+                    VkClearAttachment clear{};
+                    clear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    clear.clearValue.depthStencil.depth = renderCmd.clear.clearValue.depth;
+                    clearAttachments.push_back(clear);
+                }
+                if(HasFlag(renderCmd.clear.flags, ClearFlags::Stencil) && hasDepth){
+                    VkClearAttachment clear{};
+                    clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    clear.clearValue.depthStencil.stencil = renderCmd.clear.clearValue.stencil;
+                    clearAttachments.push_back(clear);
+                }
 
                 VkClearRect clearRect{};
                 clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = _windowExtent;
+                clearRect.rect.extent = _currentFramebuffer == nullptr
+                    ? _windowExtent
+                    : VkExtent2D{
+                        std::max(1u, _currentFramebuffer->width >> _currentFramebuffer->activeMip),
+                        std::max(1u, _currentFramebuffer->height >> _currentFramebuffer->activeMip)
+                    };
                 clearRect.baseArrayLayer = 0;
                 clearRect.layerCount = 1;
 
-                vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);
+                if(!clearAttachments.empty())
+                    vkCmdClearAttachments(cmd, static_cast<uint32_t>(clearAttachments.size()), clearAttachments.data(), 1, &clearRect);
                 break;
             }
 
@@ -2203,6 +2288,18 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 auto& data = framebufferPool.Get(renderCmd.beginFramebuffer.framebuffer); 
                 const auto& layout = data.layout;
 
+                const uint32_t layerCount = layout.type == FramebufferAttachmentType::CUBEMAP ? 6u :
+                    layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u;
+                const uint32_t layer = renderCmd.beginFramebuffer.layer;
+                const uint32_t mip = renderCmd.beginFramebuffer.mip;
+                Assert(layer < layerCount);
+                uint32_t mipCount = std::max(1u, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
+                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+                    mipCount = std::max(mipCount, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
+                Assert(mip < mipCount);
+                data.activeLayer = layer;
+                data.activeMip = mip;
+
                 _currentFramebuffer = &data;
 
                 // ------------------------------------------------------------
@@ -2211,13 +2308,41 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
                 std::vector<VkImageMemoryBarrier> barriers;
 
-                // Color attachments
-                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
+                // Descriptor views expose the complete array/cubemap. On the
+                // first pass, transition the complete view to attachment layout;
+                // later passes transition only the selected slice/mip.
+                if(!data.contentsInitialized){
+                    auto addInitialBarrier = [&](VulkanFramebufferAttachment& attachment, VkImageAspectFlags aspect, uint32_t mipLevels){
+                        if(attachment.image == VK_NULL_HANDLE) return;
+                        VkImageMemoryBarrier barrier{};
+                        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        barrier.dstAccessMask = aspect == VK_IMAGE_ASPECT_COLOR_BIT
+                            ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                            : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                        barrier.newLayout = aspect == VK_IMAGE_ASPECT_COLOR_BIT
+                            ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                            : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        barrier.image = attachment.image;
+                        barrier.subresourceRange = {aspect, 0, mipLevels, 0, layerCount};
+                        barriers.push_back(barrier);
+                    };
+                    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+                        addInitialBarrier(data.colorAttachments[i], VK_IMAGE_ASPECT_COLOR_BIT, layout.colorAttachments[i].mipLevels);
+                    if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None)
+                        addInitialBarrier(data.depthAttachment, VK_IMAGE_ASPECT_DEPTH_BIT, layout.depthAttachment.mipLevels);
+                }
+
+                // Color attachments (the first pass already transitioned all
+                // subresources above).
+                for(uint32_t i = 0; i < layout.colorAttachmentsCount && data.contentsInitialized; ++i){
                     auto& attachment = data.colorAttachments[i];
 
                     VkImageMemoryBarrier barrier{};
                     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    if(attachment.initialized){
+                    if(data.contentsInitialized || !barriers.empty()){
                         // Previous usage was shader read.
                         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
                         barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -2232,20 +2357,20 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = 0;
-                    barrier.subresourceRange.levelCount = layout.colorAttachments[i].mipLevels;
-                    barrier.subresourceRange.baseArrayLayer = 0;
+                    barrier.subresourceRange.baseMipLevel = std::min(mip, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels - 1));
+                    barrier.subresourceRange.levelCount = 1;
+                    barrier.subresourceRange.baseArrayLayer = layer;
                     barrier.subresourceRange.layerCount = 1;
                     barriers.push_back(barrier);
                 }
 
                 // Depth attachment
-                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
+                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None && data.contentsInitialized){
                     auto& attachment = data.depthAttachment;
 
                     VkImageMemoryBarrier barrier{};
                     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    if(attachment.initialized){
+                    if(data.contentsInitialized || !barriers.empty()){
                         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
                         barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     } else {
@@ -2258,9 +2383,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = 0;
-                    barrier.subresourceRange.levelCount = layout.depthAttachment.mipLevels;
-                    barrier.subresourceRange.baseArrayLayer = 0;
+                    barrier.subresourceRange.baseMipLevel = std::min(mip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1));
+                    barrier.subresourceRange.levelCount = 1;
+                    barrier.subresourceRange.baseArrayLayer = layer;
                     barrier.subresourceRange.layerCount = 1;
                     barriers.push_back(barrier);
                 }
@@ -2306,9 +2431,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 VkRenderPassBeginInfo beginInfo{};
                 beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
                 beginInfo.renderPass = data.renderPass;
-                beginInfo.framebuffer = data.framebuffer;
+                beginInfo.framebuffer = data.subresourceFramebuffers[mip * layerCount + layer];
                 beginInfo.renderArea.offset = { 0, 0 };
-                beginInfo.renderArea.extent = { data.width, data.height };
+                beginInfo.renderArea.extent = { std::max(1u, data.width >> mip), std::max(1u, data.height >> mip) };
                 beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
                 beginInfo.pClearValues = clearValues.data();
                 vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
@@ -2398,10 +2523,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = 0;
-                    barrier.subresourceRange.levelCount = layout.colorAttachments[i].mipLevels;
-                    barrier.subresourceRange.baseArrayLayer = 0;
-                    barrier.subresourceRange.layerCount = 1;
+                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? std::min(framebuffer.activeMip, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels - 1)) : 0;
+                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : layout.colorAttachments[i].mipLevels;
+                    barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
+                    barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
                     barriers.push_back(barrier);
                     attachment.initialized = true;
                 }
@@ -2426,10 +2551,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = 0;
-                    barrier.subresourceRange.levelCount = layout.depthAttachment.mipLevels;
-                    barrier.subresourceRange.baseArrayLayer = 0;
-                    barrier.subresourceRange.layerCount = 1;
+                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? std::min(framebuffer.activeMip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1)) : 0;
+                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : layout.depthAttachment.mipLevels;
+                    barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
+                    barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
                     barriers.push_back(barrier);
                     attachment.initialized = true;
                 }
@@ -2453,6 +2578,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 _currentFramebuffer = nullptr;
+                framebuffer.contentsInitialized = true;
                 break;
             };
         }

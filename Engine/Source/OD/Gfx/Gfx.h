@@ -65,6 +65,7 @@ struct OD_API FrameBufferLayout{
     uint8_t colorAttachmentsCount = 0;
     FramebufferDepthAttachment depthAttachment;
     uint8_t samples = 1;
+    uint8_t layers = 1;
     bool swapChainTarget = false;
 };
 
@@ -403,6 +404,10 @@ constexpr ClearFlags operator|(ClearFlags a, ClearFlags b){
     );
 }
 
+constexpr bool HasFlag(ClearFlags value, ClearFlags flag){
+    return (static_cast<uint8_t>(value) & static_cast<uint8_t>(flag)) != 0;
+}
+
 /////////////////////////////////////
 
 class OD_API UploadBuffer{
@@ -587,12 +592,12 @@ struct OD_API ResourceCommands{
         };
     };
 
-    void Clear(){
+    inline void Clear(){
         commands.clear();
         uploadBuffer.Clear();
     }
 
-    void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
+    inline void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
         size_t size = std::strlen(source) + 1;
         char* copyData = static_cast<char*>(uploadBuffer.AllocateData(size));
         std::memcpy(copyData, source, size);
@@ -605,14 +610,14 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyPipeline(Pipeline id){
+    inline void DestroyPipeline(Pipeline id){
         Command cmd{};
         cmd.type = Type::DestroyPipeline;
         cmd.destroyPipeline.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateBuffer(Buffer id, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
+    inline void CreateBuffer(Buffer id, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
         Command cmd{};
         cmd.type = Type::CreateBuffer;
         cmd.createBuffer.usage = usage;
@@ -622,7 +627,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void UpdatedBuffer(Buffer id, const void* data, size_t size){
+    inline void UpdatedBuffer(Buffer id, const void* data, size_t size){
         void* copyData = uploadBuffer.AllocateData(size);
         std::memcpy(copyData, data, size);
 
@@ -634,14 +639,14 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyBuffer(Buffer id){
+    inline void DestroyBuffer(Buffer id){
         Command cmd{};
         cmd.type = Type::DestroyBuffer;
         cmd.destroyBuffer.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateTexture2D(Texture2D id, Texture2DInfo& info){
+    inline void CreateTexture2D(Texture2D id, Texture2DInfo& info){
         Command cmd{};
         cmd.type = Type::CreateTexture2D;
         cmd.createTexture2D.id = id;
@@ -649,7 +654,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void UploadTexture2D(Texture2D id, const void* data, size_t size){
+    inline void UploadTexture2D(Texture2D id, const void* data, size_t size){
         void *copyData = uploadBuffer.AllocateData(size);
         std::memcpy(copyData, data, size);
 
@@ -661,14 +666,14 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyTexture2D(Texture2D id){
+    inline void DestroyTexture2D(Texture2D id){
         Command cmd{};
         cmd.type = Type::DestroyTexture2D;
         cmd.destroyTexture2D.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
+    inline void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
         BindGroupLayoutInfo* copyData = uploadBuffer.Allocate<BindGroupLayoutInfo>();
         std::memcpy(copyData, &info, sizeof(BindGroupLayoutInfo));
         
@@ -679,14 +684,14 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyBindGroupLayout(BindGroupLayout id){
+    inline void DestroyBindGroupLayout(BindGroupLayout id){
         Command cmd{};
         cmd.type = Type::DestroyBindGroupLayout;
         cmd.destroyBindGroupLayout.id = id;
         commands.push_back(cmd);
     }
 
-    void CreateBindGroup(BindGroup id, BindGroupInfo& info){ 
+    inline void CreateBindGroup(BindGroup id, BindGroupInfo& info){
         BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
         std::memcpy(copyData, &info, sizeof(BindGroupInfo));
         
@@ -697,7 +702,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateFrameBindGroup(BindGroup id, BindGroupInfo& info){ 
+    inline void CreateFrameBindGroup(BindGroup id, BindGroupInfo& info){
         BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
         std::memcpy(copyData, &info, sizeof(BindGroupInfo));
         
@@ -708,7 +713,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
+    inline void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
         Command cmd{};
         cmd.type = Type::CreateFramebuffer;
         cmd.createFramebuffer.framebuffer = framebuffer;
@@ -716,7 +721,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    void DestroyFramebuffer(Texture2D id){
+    inline void DestroyFramebuffer(Texture2D id){
         Command cmd{};
         cmd.type = Type::DestroyFramebuffer;
         cmd.destroyFramebuffer.id = id;
@@ -804,15 +809,17 @@ struct OD_API CommandBuffer{
 
             struct {
                 Framebuffer framebuffer;
+                uint32_t layer;
+                uint32_t mip;
             } beginFramebuffer;
         };
     };
 
-    void ClearCmds(){
+    inline void ClearCmds(){
         commands.clear();
     }
 
-    void Clean(ClearFlags flags, const ClearValue& clearValue){
+    inline void Clean(ClearFlags flags, const ClearValue& clearValue){
         Command cmd{};
         cmd.type = Type::Clear;
         cmd.clear.flags = flags;
@@ -820,7 +827,7 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void Viewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h){
+    inline void Viewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h){
         Command cmd{};
         cmd.type = Type::Viewport;
         cmd.viewport.x = x;
@@ -830,14 +837,14 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void SetPipeline(Pipeline pipeline){
+    inline void SetPipeline(Pipeline pipeline){
         Command cmd{};
         cmd.type = Type::SetPipeline;
         cmd.setPipeline.id = pipeline;
         commands.push_back(cmd);
     }
 
-    void SetVertexBuffer(uint32_t slot, Buffer buffer){
+    inline void SetVertexBuffer(uint32_t slot, Buffer buffer){
         Command cmd{};
         cmd.type = Type::SetVertexBuffer;
         cmd.setVertexBuffer.slot = slot;
@@ -845,14 +852,14 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void SetIndexBuffer(Buffer buffer){
+    inline void SetIndexBuffer(Buffer buffer){
         Command cmd{};
         cmd.type = Type::SetIndexBuffer;
         cmd.setIndexBuffer.buffer = buffer;
         commands.push_back(cmd);
     }
     
-    void SetBindGroup(uint8_t slot, BindGroup group){
+    inline void SetBindGroup(uint8_t slot, BindGroup group){
         Command cmd{};
         cmd.type = Type::SetBindGroup;
         cmd.setBindGroup.slot = slot;
@@ -860,21 +867,21 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void Draw(uint32_t vertexCount){
+    inline void Draw(uint32_t vertexCount){
         Command cmd{};
         cmd.type = Type::Draw;
         cmd.draw.vertexCount = vertexCount;
         commands.push_back(cmd);
     }
 
-    void DrawIndexed(uint32_t indexCount){
+    inline void DrawIndexed(uint32_t indexCount){
         Command cmd{};
         cmd.type = Type::DrawIndexed;
         cmd.drawIndexed.indexCount = indexCount;
         commands.push_back(cmd);
     }
 
-    void DrawInstanced(uint32_t vertexCount, uint32_t count){
+    inline void DrawInstanced(uint32_t vertexCount, uint32_t count){
         Command cmd{};
         cmd.type = Type::DrawInstanced;
         cmd.drawInstanced.vertexCount = vertexCount;
@@ -882,7 +889,7 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void DrawIndexedInstanced(uint32_t indexCount, uint32_t count){
+    inline void DrawIndexedInstanced(uint32_t indexCount, uint32_t count){
         Command cmd{};
         cmd.type = Type::DrawIndexedInstanced;
         cmd.drawIndexedInstanced.indexCount = indexCount;
@@ -890,27 +897,29 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    void RenderImGui(uint32_t snapshotIndex){
+    inline void RenderImGui(uint32_t snapshotIndex){
         Command cmd{};
         cmd.type = Type::RenderImGui;
         cmd.renderImGui.snapshotIndex = snapshotIndex;
         commands.push_back(cmd);
     }
 
-    void BeginWindowFramebuffer(){
+    inline void BeginWindowFramebuffer(){
         Command cmd{};
         cmd.type = Type::BeginWindowFramebuffer;
         commands.push_back(cmd);
     }
 
-    void BeginFramebuffer(Framebuffer framebuffer){
+    inline void BeginFramebuffer(Framebuffer framebuffer, uint32_t layer = 0, uint32_t mip = 0){
         Command cmd{};
         cmd.type = Type::BeginFramebuffer;
         cmd.beginFramebuffer.framebuffer = framebuffer;
+        cmd.beginFramebuffer.layer = layer;
+        cmd.beginFramebuffer.mip = mip;
         commands.push_back(cmd);
     }
 
-    void EndFramebuffer(){
+    inline void EndFramebuffer(){
         Command cmd{};
         cmd.type = Type::EndFramebuffer;
         commands.push_back(cmd);
@@ -929,7 +938,7 @@ struct OD_API RenderFrame{
     CommandBuffer renderCommands = {};
     std::vector<ImGuiSnapshot> imguiSnapshots;
 
-    void RecordImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
+    inline void RecordImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
         const uint32_t snapshotIndex = static_cast<uint32_t>(imguiSnapshots.size());
         imguiSnapshots.push_back({data, destroy});
 

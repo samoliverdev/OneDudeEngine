@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <OD/Gfx/GfxReflection.h>
+#include <OD/Gfx/Gfx.h>
 
 using namespace OD;
 
@@ -81,4 +82,24 @@ TEST(GfxReflection, ReflectsShaderVariableTypes)
     EXPECT_EQ(variables[7].type, Gfx::ShaderVariable::Type::Vector4List);
     EXPECT_EQ(variables[8].type, Gfx::ShaderVariable::Type::Matrix4List);
     EXPECT_EQ(variables[9].type, Gfx::ShaderVariable::Type::Buffer);
+}
+
+TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
+{
+    Gfx::CommandBuffer commands;
+
+    commands.BeginFramebuffer(42, 5, 3);
+
+    ASSERT_EQ(commands.commands.size(), 1u);
+    const auto& begin = commands.commands.front();
+    EXPECT_EQ(begin.type, Gfx::CommandBuffer::Type::BeginFramebuffer);
+    EXPECT_EQ(begin.beginFramebuffer.framebuffer, 42u);
+    EXPECT_EQ(begin.beginFramebuffer.layer, 5u);
+    EXPECT_EQ(begin.beginFramebuffer.mip, 3u);
+}
+
+TEST(GfxFramebuffer, TestsClearFlags)
+{
+    EXPECT_TRUE(Gfx::HasFlag(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, Gfx::ClearFlags::Depth));
+    EXPECT_FALSE(Gfx::HasFlag(Gfx::ClearFlags::Color, Gfx::ClearFlags::Stencil));
 }
