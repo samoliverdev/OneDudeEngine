@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <OD/Gfx/GfxReflection.h>
 #include <OD/Gfx/Gfx.h>
+#include <array>
 
 using namespace OD;
 
@@ -102,4 +103,17 @@ TEST(GfxFramebuffer, TestsClearFlags)
 {
     EXPECT_TRUE(Gfx::HasFlag(Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth, Gfx::ClearFlags::Depth));
     EXPECT_FALSE(Gfx::HasFlag(Gfx::ClearFlags::Color, Gfx::ClearFlags::Stencil));
+}
+
+TEST(GfxCubemap, RecordsUploadCommand)
+{
+    Gfx::ResourceCommands commands;
+    const std::array<uint8_t, 24> pixels{};
+    commands.UploadCubemap(7, pixels.data(), pixels.size());
+
+    ASSERT_EQ(commands.commands.size(), 1u);
+    EXPECT_EQ(commands.commands.front().type, Gfx::ResourceCommands::Type::UploadCubemap);
+    EXPECT_EQ(commands.commands.front().uploadCubemap.id, 7u);
+    EXPECT_EQ(commands.commands.front().uploadCubemap.size, pixels.size());
+    EXPECT_NE(commands.commands.front().uploadCubemap.data, pixels.data());
 }

@@ -18,6 +18,7 @@ using Buffer = uint32_t;
 using BindGroupLayout = uint32_t;
 using BindGroup = uint32_t;
 using Texture2D = uint32_t;
+using Cubemap = uint32_t;
 
 /////////////////////////////////////
 
@@ -91,6 +92,12 @@ struct OD_API Texture2DInfo{
     uint32_t width;
     uint32_t height;
     ImageFormat format;
+};
+
+struct OD_API CubemapInfo{
+    uint32_t width = 1;
+    uint32_t height = 1;
+    ImageFormat format = ImageFormat::R8G8B8A8_UNORM;
 };
 
 //////////////////////////////////////
@@ -286,6 +293,7 @@ struct BindingEntry{
     bool dynamicOffset;
 
     Texture2D texture = InvalidID;
+    Cubemap cubemap = InvalidID;
 
     Framebuffer framebuffer = InvalidID;
     int framebufferAttacement = 0;
@@ -504,6 +512,9 @@ struct OD_API ResourceCommands{
         CreateTexture2D,
         UploadTexture2D,
         DestroyTexture2D,
+        CreateCubemap,
+        UploadCubemap,
+        DestroyCubemap,
 
         CreateBindGroupLayout,
         DestroyBindGroupLayout,
@@ -577,6 +588,21 @@ struct OD_API ResourceCommands{
             struct {
                 Texture2D id; 
             } destroyTexture2D;
+
+            struct {
+                Cubemap id;
+                CubemapInfo info;
+            } createCubemap;
+
+            struct {
+                Cubemap id;
+                const void* data;
+                size_t size;
+            } uploadCubemap;
+
+            struct {
+                Cubemap id;
+            } destroyCubemap;
 
             struct {
                 BindGroupLayout id; 
@@ -670,6 +696,32 @@ struct OD_API ResourceCommands{
         Command cmd{};
         cmd.type = Type::DestroyTexture2D;
         cmd.destroyTexture2D.id = id;
+        commands.push_back(cmd);
+    }
+
+    inline void CreateCubemap(Cubemap id, CubemapInfo& info){
+        Command cmd{};
+        cmd.type = Type::CreateCubemap;
+        cmd.createCubemap.id = id;
+        cmd.createCubemap.info = info;
+        commands.push_back(cmd);
+    }
+
+    inline void UploadCubemap(Cubemap id, const void* data, size_t size){
+        void* copyData = uploadBuffer.AllocateData(size);
+        std::memcpy(copyData, data, size);
+        Command cmd{};
+        cmd.type = Type::UploadCubemap;
+        cmd.uploadCubemap.id = id;
+        cmd.uploadCubemap.data = copyData;
+        cmd.uploadCubemap.size = size;
+        commands.push_back(cmd);
+    }
+
+    inline void DestroyCubemap(Cubemap id){
+        Command cmd{};
+        cmd.type = Type::DestroyCubemap;
+        cmd.destroyCubemap.id = id;
         commands.push_back(cmd);
     }
 
@@ -1006,6 +1058,9 @@ public:
     virtual Texture2D CreateTexture2D(Texture2DInfo& info){ return InvalidID; }
     virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size){}
     virtual void DestroyTexture2D(Texture2D tex){}
+    virtual Cubemap CreateCubemap(CubemapInfo& info){ return InvalidID; }
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size){}
+    virtual void DestroyCubemap(Cubemap cubemap){}
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
     virtual void DestroyBindGroupLayout(BindGroupLayout layout){}

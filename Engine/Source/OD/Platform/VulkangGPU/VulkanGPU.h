@@ -50,6 +50,9 @@ public:
     virtual Texture2D CreateTexture2D(Texture2DInfo& info) override;
     virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size) override;
     virtual void DestroyTexture2D(Texture2D tex) override;
+    virtual Cubemap CreateCubemap(CubemapInfo& info) override;
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size) override;
+    virtual void DestroyCubemap(Cubemap cubemap) override;
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
     virtual void DestroyBindGroupLayout(BindGroupLayout layout) override;
@@ -80,6 +83,15 @@ private:
         Texture2DInfo info;
     };
     ResourcePool<Texture2DData> texture2DPool;
+
+    struct CubemapData{
+        VkImage image = VK_NULL_HANDLE;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkSampler sampler = VK_NULL_HANDLE;
+        CubemapInfo info;
+    };
+    ResourcePool<CubemapData> cubemapPool;
 
     struct PipelineData{
         VkPipeline pipeline = VK_NULL_HANDLE;
@@ -177,6 +189,9 @@ private:
     bool _CreateTexture2D(Texture2DData& data, const Texture2DInfo& info); 
     void _UploadTexture2D(Texture2DData& data, const void* _data, size_t size);
     void _DestroyTexture2D(Texture2DData& data); 
+    bool _CreateCubemap(CubemapData& data, const CubemapInfo& info);
+    void _UploadCubemap(CubemapData& data, const void* rawData, size_t size);
+    void _DestroyCubemap(CubemapData& data);
 
     bool _CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info);
     void _DestroyBindGroupLayout(BindGroupLayoutData& data);

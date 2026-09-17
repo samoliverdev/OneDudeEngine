@@ -271,7 +271,7 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
             data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding] = blockIndex;
         }
 
-        if(_bind.type == BindingType::Texture2D){
+        if(_bind.type == BindingType::Texture2D || _bind.type == BindingType::TextureCube){
             GLint uniformLoc = glGetUniformLocation(data.program, _bind.name.c_str());
             glCheckError();
 
@@ -440,6 +440,44 @@ void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
 void OpenglGPUDevice::_DestroyTexture2D(Texture2DData& data){
 
 } 
+
+bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
+    data.info = info;
+    glGenTextures(1, &data.tex);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
+    for(int face = 0; face < 6; ++face){
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
+            GetTextureInternalFormat(info.format), info.width, info.height, 0,
+            GetTextureFormat(info.format), GetTextureDataType(info.format), nullptr);
+    }
+    // CubemapInfo currently describes a single mip level, matching Vulkan's
+    // cubemap implementation. A mipmap minification filter would make the
+    // texture incomplete until a complete mip chain exists.
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    return true;
+}
+
+void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size){
+    const size_t faceSize = size / 6;
+    const size_t expected = static_cast<size_t>(data.info.width) * data.info.height * 4 * 6;
+    if(size < expected) return;
+    glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
+    for(int face = 0; face < 6; ++face){
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, 0, 0,
+            data.info.width, data.info.height, GetTextureFormat(data.info.format),
+            GetTextureDataType(data.info.format), static_cast<const uint8_t*>(rawData) + face * faceSize);
+        glCheckError();
+    }
+}
+
+void OpenglGPUDevice::_DestroyCubemap(CubemapData& data){
+    if(data.tex != 0) glDeleteTextures(1, &data.tex);
+    data.tex = 0;
+}
 #pragma endregion
 
 #pragma region BindGroupLayout
@@ -805,6 +843,9 @@ void OpenglGPUDevice::_Init(){
 
 void OpenglGPUDevice::_Shut(){
     LogInfo("OpenglGPUDevice::Shut");
+    cubemapPool.ForEach([&](uint32_t, CubemapData& data){
+        if(data.tex != 0) _DestroyCubemap(data);
+    });
     ImGuiShutdown();
 }
 
@@ -1014,6 +1055,24 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
             _DestroyTexture2D(data);
             texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
+            break;
+        }
+
+        case ResourceCommands::Type::CreateCubemap:{
+            Assert(cubemapPool.IsValid(cmd.createCubemap.id));
+            auto& data = cubemapPool.Get(cmd.createCubemap.id);
+            if(!_CreateCubemap(data, cmd.createCubemap.info)) cubemapPool.AddDestroyedId(cmd.createCubemap.id);
+            break;
+        }
+        case ResourceCommands::Type::UploadCubemap:{
+            Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
+            _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size);
+            break;
+        }
+        case ResourceCommands::Type::DestroyCubemap:{
+            Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
+            _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
+            cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
             break;
         }
 
@@ -1230,6 +1289,19 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         curTextureIndex += 1;
                     }
                 }
+
+                if(bindGroupLayout.info.entries[i].type == BindingType::TextureCube){
+                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    if(binding.cubemap != InvalidID){
+                        const CubemapData& cube = cubemapPool.Get(binding.cubemap);
+                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
+                        glUniform1i(uniformLoc, curTextureIndex);
+                        curTextureIndex += 1;
+                    }
+                }
             }
             break;
         }
@@ -1328,6 +1400,7 @@ void OpenglGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
+    cubemapPool.SyncSingleThreadData();
 }
 
 ///////////////////////////////////
@@ -1392,7 +1465,33 @@ void OpenglGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_
 
 void OpenglGPUDevice::DestroyTexture2D(Texture2D tex){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
-}   
+}
+
+Cubemap OpenglGPUDevice::CreateCubemap(CubemapInfo& info){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    CubemapData data{};
+    if(!_CreateCubemap(data, info)) return InvalidID;
+    auto id = cubemapPool.AllocId();
+    cubemapPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
+    auto id = cubemapPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateCubemap(id, info);
+    return id;
+
+    #endif
+}
+
+void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size);
+}
+
+void OpenglGPUDevice::DestroyCubemap(Cubemap cubemap){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyCubemap(cubemap);
+}
 
 BindGroupLayout OpenglGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
     #ifdef DONT_DEFERRED_RESOURCE_CREATION

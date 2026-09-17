@@ -419,6 +419,7 @@ VkDescriptorType GetVulkanDescriptorType(BindingType type){
     switch(type){
         case BindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         case BindingType::Texture2D: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case BindingType::TextureCube: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
     Assert(false);
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1001,7 +1002,66 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &texData.sampler));
 
     return true;
-} 
+}
+
+bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
+    data.info = info;
+    VkExtent3D extent{info.width, info.height, 1};
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(GetImageFormat(info.format),
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
+    imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    imageInfo.arrayLayers = 6;
+    imageInfo.mipLevels = 1;
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocInfo, &data.image, &data.allocation, nullptr));
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(GetImageFormat(info.format), data.image, VK_IMAGE_ASPECT_COLOR_BIT);
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    viewInfo.subresourceRange.layerCount = 6;
+    VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.imageView));
+    VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
+    VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &data.sampler));
+    return true;
+}
+
+void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size){
+    const size_t faceSize = size / 6;
+    if(size < static_cast<size_t>(data.info.width) * data.info.height * 4 * 6) return;
+    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* mapped = nullptr;
+    vmaMapMemory(_allocator, staging._allocation, &mapped);
+    memcpy(mapped, rawData, size);
+    vmaUnmapMemory(_allocator, staging._allocation);
+    immediate_submit([&](VkCommandBuffer command){
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = data.image; barrier.subresourceRange = range;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        VkBufferImageCopy copies[6]{};
+        for(uint32_t face = 0; face < 6; ++face){
+            copies[face].bufferOffset = face * faceSize;
+            copies[face].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, face, 1};
+            copies[face].imageExtent = {data.info.width, data.info.height, 1};
+        }
+        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies);
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    });
+    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
+}
+
+void VulkanGPUDevice::_DestroyCubemap(CubemapData& data){
+    if(data.sampler) vkDestroySampler(_device, data.sampler, nullptr);
+    if(data.imageView) vkDestroyImageView(_device, data.imageView, nullptr);
+    if(data.image) vmaDestroyImage(_allocator, data.image, data.allocation);
+    data = {};
+}
 
 void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size){
     AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -1153,6 +1213,14 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
                 &imageBufferInfo, 
                 info.entries[i].binding
             );
+        } else if(layoutData.info.entries[i].type == BindingType::TextureCube){
+            CubemapData& cube = cubemapPool.Get(info.entries[i].cubemap);
+            VkDescriptorImageInfo& imageInfo = imageInfos[i];
+            imageInfo.sampler = cube.sampler;
+            imageInfo.imageView = cube.imageView;
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                data.descriptorSet, &imageInfo, info.entries[i].binding);
         } else {
             Assert(false);
         }
@@ -1786,6 +1854,11 @@ void VulkanGPUDevice::Cleanup(){
         _DestroyTexture2D(data);
     });
 
+    cubemapPool.ForEach([&](uint32_t id, CubemapData& data){
+        if(data.image == VK_NULL_HANDLE) return;
+        _DestroyCubemap(data);
+    });
+
     framebufferPool.ForEach([&](uint32_t id, FramebufferData& data){
         if(data.framebuffer == VK_NULL_HANDLE) return;
         _DestroyFramebuffer(data);
@@ -2030,6 +2103,24 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
                 _DestroyTexture2D(data);
                 texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
+                break;
+            }
+
+            case ResourceCommands::Type::CreateCubemap:{
+                Assert(cubemapPool.IsValid(cmd.createCubemap.id));
+                auto& data = cubemapPool.Get(cmd.createCubemap.id);
+                if(!_CreateCubemap(data, cmd.createCubemap.info)) cubemapPool.AddDestroyedId(cmd.createCubemap.id);
+                break;
+            }
+            case ResourceCommands::Type::UploadCubemap:{
+                Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
+                _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size);
+                break;
+            }
+            case ResourceCommands::Type::DestroyCubemap:{
+                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
+                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
+                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
                 break;
             }
 
@@ -2657,6 +2748,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 void VulkanGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
     texture2DPool.SyncSingleThreadData();
+    cubemapPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
     bindGroupLayoutPool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
@@ -2723,7 +2815,33 @@ void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_
 
 void VulkanGPUDevice::DestroyTexture2D(Texture2D tex){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
-}   
+}
+
+Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    CubemapData data{};
+    if(!_CreateCubemap(data, info)) return InvalidID;
+    auto id = cubemapPool.AllocId();
+    cubemapPool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
+    auto id = cubemapPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateCubemap(id, info);
+    return id;
+
+    #endif
+}
+
+void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size);
+}
+
+void VulkanGPUDevice::DestroyCubemap(Cubemap cubemap){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyCubemap(cubemap);
+}
 
 BindGroupLayout VulkanGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
     #ifdef DONT_DEFERRED_RESOURCE_CREATION

@@ -118,11 +118,11 @@ static bool ReflectBindingType(const SpvReflectDescriptorBinding& binding, Bindi
             return true;
 
         case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            result = BindingType::Texture2D;
+            result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
             return true;
 
         case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            result = BindingType::Texture2D;
+            result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
             return true;
 
         default:
